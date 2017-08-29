@@ -17,8 +17,6 @@ use SQE_API::Worker;
 
 my ($cgi, $error_ref) = SQE_CGI->new;
 
-$cgi->{DBH}->_set_scrollversion(3);
-
 if ($cgi) {
     print SQE_API::Worker::process($cgi);
 
