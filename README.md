@@ -1,3 +1,3 @@
 # SQE_API
 
-DotNet web API for the SQE project. 
+Asp.Net web API for the SQE project. 
