@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using SQE.Backend.DataAccess.Models;
 using SQE.Backend.Server.Helpers;
 using SQE.Backend.DataAccess;
+using SQE.Backend.Server.DTOs;
 
 namespace SQE.Backend.Server.Services
 {
@@ -107,6 +108,15 @@ namespace SQE.Backend.Server.Services
                 }
             }
             return null;
+        }
+
+        internal static UserData UserModelToDTO(User model)
+        {
+            return new UserData
+            {
+                userId = model.UserId,
+                userName = model.UserName,
+            };
         }
     }
 }

@@ -13,9 +13,8 @@ namespace SQE.Backend.DataAccess.Models
         public string Thumbnail { get; set; }
         public bool Locked { get; set; }
         public bool IsPublic {get; set;}
-        public DateTime LastEdit { get; set; }
-        public string ThumbnailURL { get; set; }
-        public List<Share> Sharing { get; set; }
+        public DateTime? LastEdit { get; set; }
+        public User Owner { get; set; }
     }
 
     public class Permission
@@ -29,6 +28,7 @@ namespace SQE.Backend.DataAccess.Models
         public User User { get; set; }
         public Permission Permission { get; set; }
     }
+
     
     public class Artefact
     {

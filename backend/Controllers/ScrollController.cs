@@ -27,16 +27,24 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task<ActionResult<ScrollVersion>> GetScrollVersion(int id)
+        public async Task<ActionResult<ScrollVersionGroup>> GetScrollVersion(int id)
         {
-            var version = await _scrollService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
+            var vg = await _scrollService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
 
-            if(version==null)
+            if(vg==null)
             {
                 return NotFound();
             }
 
-            return Ok(version);
+            return Ok(vg);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("list")]
+        public async Task<ActionResult<ScrollVersionList>> ListScrollVersions()
+        {
+            var groups = await _scrollService.ListScrollVersionsAsync(_userService.GetCurrentUserId());
+            return Ok(groups);
         }
     }
 }

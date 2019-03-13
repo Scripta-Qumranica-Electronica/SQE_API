@@ -13,46 +13,96 @@ namespace SQE.Backend.DataAccess
     public interface IScrollRepository
     {
         Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> scrollIds);
+        Task<Dictionary<int, List<int>>> GetScrollVersionGroups(int? scrollVersionId);
+        // Task<IEnumerable<Dictionary<int, List<Share>>>> GetScrollVersionShares(List<int> scrollIds);
     }
-  
+
     public class ScrollRepository : DBConnectionBase, IScrollRepository
     {
         public ScrollRepository(IConfiguration config) : base(config) { }
 
-
         public async Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> ids) //
         {
-            return null;
-            /*
-            string scrollIds = string.Join(",", ids);
+            var sql = ScrollVersionQuery.GetQuery(userId.HasValue, ids != null);
+            // We can't expand the ScrollIds parameters with MySql, as it is a list. We need to expand ourselves.
+            // Since ids is a list of integers, SQL injection is quite impossible.
 
-            var sql = @"SELECT 
-image_urls.url AS thumbnails,
-scroll_data.name as name,
-scroll_version.scroll_version_id  As id,
-scroll_version_group.locked As locked,
-user.user_name as user_name,
-user.user_id as user_id
-from scroll_data
-LEFT JOIN edition_catalog ON edition_catalog.scroll_id = scroll_data.scroll_id AND edition_catalog.edition_side = 0
-LEFT JOIN image_to_edition_catalog USING(edition_catalog_id)
-LEFT JOIN SQE_image ON SQE_image.image_catalog_id = image_to_edition_catalog.image_catalog_id AND SQE_image.type = 0 
-LEFT JOIN image_urls USING(image_urls_id)
-join scroll_version on scroll_version.scroll_version_id = scroll_data.scroll_id
-join scroll_version_group using (scroll_version_group_id)
-join user using (user_id)
-WHERE (scroll_version.user_id =((SELECT user_id FROM user WHERE user_name = ""sqe_api"") or scroll_version.user_id = @UserId)
-and scroll_version.scroll_version_id IN (@ScrollIds))
-group by scroll_version.scroll_version_id;";
+            if (ids != null)
+            {
+                var idList = "(" + string.Join(", ", ids.Select(id => id.ToString())) + ")";
+                sql = sql.Replace("@ScrollVersionIds", idList);
+            }
+
             using (var connection = OpenConnection())
             {
-                var results = await connection.QueryAsync<ScrollVersionsQueryResponse>(sql, new
+                var results = await connection.QueryAsync<ScrollVersionQuery.Result>(sql, new
                 {
-                    UserId = userId,
-                    ScrollIds = scrollIds,
+                    UserId = userId ?? -1, // @UserId is not expanded if userId is null
                 });
-                return results.Select(raw =>raw.CreateModel());
-            } */
+
+                var models = results.Select(result => CreateScrollVersion(result, userId));
+                return models;
+            }
+        }
+
+        private ScrollVersion CreateScrollVersion(ScrollVersionQuery.Result result, int? currentUserId)
+        {
+            var model = new ScrollVersion
+            {
+                Id = result.id,
+                Name = result.name,
+                Thumbnail = result.thumbnail,
+                Locked = result.locked,
+                LastEdit = result.last_edit,
+                IsPublic = result.user_name.ToUpper() == "SQE_API",
+                Owner = new User
+                {
+                    UserId = result.user_id,
+                    UserName = result.user_name,
+                }
+            };
+
+            if (currentUserId.HasValue && model.Owner.UserId == currentUserId.Value)
+            {
+                model.Permission = new Permission
+                {
+                    CanAdmin = true,
+                    CanWrite = true,
+                };
+            }
+            else
+            {
+                model.Permission = new Permission
+                {
+                    CanAdmin = false,
+                    CanWrite = false,
+                };
+            }
+
+            return model;
+        }
+
+        public async Task<Dictionary<int, List<int>>> GetScrollVersionGroups(int? scrollVersionId)
+        {
+            var sql = ScrollVersionGroupQuery.GetQuery(scrollVersionId.HasValue);
+
+            using (var connection = OpenConnection())
+            {
+                var results = await connection.QueryAsync<ScrollVersionGroupQuery.Result>(sql, new
+                {
+                    ScrollVersionId = scrollVersionId ?? -1,
+                });
+
+                var dictionary = new Dictionary<int, List<int>>();
+                foreach (var result in results)
+                {
+                    if (!dictionary.ContainsKey(result.group_id))
+                        dictionary[result.group_id] = new List<int>();
+                    dictionary[result.group_id].Add(result.scroll_version_id);
+                }
+
+                return dictionary;
+            }
         }
     }
 }
