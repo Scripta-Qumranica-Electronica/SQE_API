@@ -3,13 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using SQE.Backend.DataAccess.Models;
 
-namespace SQE.Backend.DataAccess.RawModels
+namespace SQE.Backend.DataAccess.Queries
 {
-    internal interface IQueryResponse<T>
-    {
-        T CreateModel();
-    }
-
     internal class UserQueryResponse : IQueryResponse<User>
     {
         public string user_name { get; set; }

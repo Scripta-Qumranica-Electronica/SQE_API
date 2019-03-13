@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SQE.Backend.DataAccess.Models;
 using Dapper;
-using SQE.Backend.DataAccess.RawModels;
+using SQE.Backend.DataAccess.Queries;
 using Microsoft.Extensions.Configuration;
 
 namespace SQE.Backend.DataAccess

@@ -24,7 +24,7 @@ namespace SQE.Backend.Server.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("login")] // api/user/login
+        [HttpPost("login")] // api/v1/user/login
         public async Task<ActionResult<User>> AuthenticateAsync([FromBody]LoginRequest userParam)
         {
             User user = await _userService.AuthenticateAsync(userParam.userName, userParam.password);

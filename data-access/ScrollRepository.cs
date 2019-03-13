@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Dapper;
-using SQE.Backend.DataAccess.RawModels;
+using SQE.Backend.DataAccess.Queries;
 using System.Linq;
 using SQE.Backend.DataAccess.Models;
 using Microsoft.Extensions.Configuration;
@@ -12,42 +12,18 @@ namespace SQE.Backend.DataAccess
 {
     public interface IScrollRepository
     {
-        Task<IEnumerable<Artefact>> ListArtefactsAsync(int masterVersionId);
-        Task<IEnumerable<ScrollVersion>> scrollVersion(int userId, List<int> scrollIds);
+        Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> scrollIds);
     }
-
+  
     public class ScrollRepository : DBConnectionBase, IScrollRepository
     {
         public ScrollRepository(IConfiguration config) : base(config) { }
 
-        // Task<IEnumerable<ScrollVersion>> GetScrollVersions(List<int> ids = null) IN @ids (@ids = string.join(',', ids.toStirng)
-        public async Task<IEnumerable<Artefact>> ListArtefactsAsync(int masterVersionId)
+
+        public async Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> ids) //
         {
-            var sql = @"
-select artefact_data.artefact_id As id,
-artefact_data.name AS name,
-artefact_data_owner.scroll_version_id As scroll_version_id,
-artefact_position.transform_matrix As transform_matrix,
-artefact_position.z_index AS zOrder
-from artefact_data inner join artefact_data_owner 
-on artefact_data.artefact_data_id = artefact_data_owner.artefact_data_id 
-and artefact_data_owner.scroll_version_id =@ScrollVersionId 
-inner join SQE_DEV.artefact_position on artefact_data.artefact_data_id = artefact_position.artefact_id
-";
-            using (var connection = OpenConnection())
-            {
-                var results = await connection.QueryAsync<ArtefactResponse>(sql, new
-                {
-                    ScrollVersionId = masterVersionId
-                });
-                return results.Select(raw => raw.CreateModel());
-            }
-        }
-
-
-
-        public async Task<IEnumerable<ScrollVersion>> scrollVersion(int userId, List<int> ids) //
-        {
+            return null;
+            /*
             string scrollIds = string.Join(",", ids);
 
             var sql = @"SELECT 
@@ -76,24 +52,8 @@ group by scroll_version.scroll_version_id;";
                     ScrollIds = scrollIds,
                 });
                 return results.Select(raw =>raw.CreateModel());
-            }
+            } */
         }
-
-  
-
-        private ScrollVersion SetPermissions(ScrollVersion sv, int userId)
-        {
-            // Set permissions based on the sharing info and userid
-
-            var shareInfo = sv.Sharing.FirstOrDefault(si => si.User.UserId == userId);
-            if (shareInfo != null)
-                sv.Permission = shareInfo.Permission;
-            else
-                sv.Permission = new Permission {CanRead = false, CanWrite = false };
-            return sv;
-        }
-
-
     }
 }
 

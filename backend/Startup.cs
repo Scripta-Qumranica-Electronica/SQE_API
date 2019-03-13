@@ -37,9 +37,10 @@ namespace SQE.Backend.Server
 
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IScrollService, ScrollService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IUserRepository, UserRepository>();
-            services.AddTransient<ScrollRepository, ScrollRepository>();
+            services.AddTransient<IScrollRepository, ScrollRepository>();
 
 
             // configure strongly typed settings objects

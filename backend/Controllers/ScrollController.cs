@@ -16,119 +16,27 @@ namespace SQE.Backend.Server.Controllers
     [ApiController]
     public class ScrollController : ControllerBase
     {
-        private ScrollRepository _repo;
+        private IScrollService _scrollService;
         private IUserService _userService;
 
-        public ScrollController(ScrollRepository scrollRepo, IUserService userService)
+        public ScrollController(IScrollService scrollService, IUserService userService)
         {
-            this._repo = scrollRepo;
+            this._scrollService = scrollService;
             this._userService = userService;
         }
 
-        [HttpGet("{id}/artefacts")]
-        public async Task<ActionResult<ListResult<Artefact>>> ListArtefacts(int id)
-        {
-            var artefacts = await _repo.ListArtefactsAsync(id);
-            return null;
-            //return new ListResult<Artefact>(artefacts);
-             
-        }
+        [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task<ActionResult<ListResult<ScrollVersion>>> scrollVersionData(int scroll_id)
+        public async Task<ActionResult<ScrollVersion>> GetScrollVersion(int id)
         {
-            var user = _userService.GetCurrentUser();
-            //var scrollVersions = await _repo.ListMyScrollVersions(user.UserId, scroll_id);
-            //var result = scrollVersions.Select(svModel => CreateScrollVersionDTO(svModel));
+            var version = await _scrollService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
 
-            //return new ListResult<ScrollVersion>(result);
-            return null;
-        }
-
-        [AllowAnonymous]
-        [HttpGet("list")]
-        public async Task<ActionResult<ListResult<ScrollVersion>>> scrollVersionList()
-        {
-            var user = _userService.GetCurrentUser();
-            //var scrollList = await _repo.scrollList(user.UserId); // TODO: Allow passing a null userId (if user is null)
-            // var result = scrollList.Select(svModel => CreateScrollVersionDTO(svModel));
-
-            //return new ListResult<ScrollVersion>(result);
-            return null;
-        }
-
-        [AllowAnonymous]
-        [HttpGet("scroll/{id}")]
-        public async Task<ActionResult<ListResult<ScrollVersion>>> scrollVersion(int id)
-        {
-            List<int> scrollIds = new List<int>(new int[] { 513, 12 , 3 });
-            var user = _userService.GetCurrentUser();
-            var scrollList = await _repo.scrollVersion(user.UserId, scrollIds); // TODO: Allow passing a null userId (if user is null)
-            var result = scrollList.Select(svModel => CreateScrollVersionDTO(svModel));
-
-            return new ListResult<ScrollVersion>(result); ;
-        }
-
-
-        private ScrollVersion CreateScrollVersionDTO(SQE.Backend.DataAccess.Models.ScrollVersion model)
-        {
-            List<Share> shares = null;
-
-            if (model.Sharing != null)
+            if(version==null)
             {
-                shares = model.Sharing.Select(sharingModel => new Share
-                {
-                    user = CreateUserDTO(sharingModel.User),
-                    permission = CreatePermissionDTO(sharingModel.Permission)
-                }).ToList();
+                return NotFound();
             }
 
-
-
-            return new ScrollVersion
-            {
-                id = model.Id,
-                name = model.Name,
-                permission = CreatePermissionDTO(model.Permission),
-                thumbnailUrls = model.Thumbnail,
-                shares = shares,
-                locked = model.Locked,
-                isPublic = model.IsPublic
-            };
-        }
-
-        private Artefact CreateArtefactDto(SQE.Backend.DataAccess.Models.Artefact model)
-        {
-            Polygon myMask = null;
-            if(model.Mask != null)
-            {
-            }
-            return new Artefact
-            {
-                id = model.Id,
-                scrollVersionId = model.ScrollVersionId,
-                imageFragmentId = model.ImagedFragmentId,
-                name = model.Name,
-                // mask = model.Mask,
-                transformMatrix = model.TransformMatrix,
-            };
-        }
-
-        private UserData CreateUserDTO(SQE.Backend.DataAccess.Models.User model)
-        {
-            return new UserData
-            {
-                userName = model.UserName,
-                userId = model.UserId
-            };
-        }
-
-        private Permission CreatePermissionDTO(SQE.Backend.DataAccess.Models.Permission model)
-        {
-            return new Permission
-            {
-                canWrite = model.CanWrite,
-                canLock = model.CanWrite,
-            };
+            return Ok(version);
         }
     }
 }

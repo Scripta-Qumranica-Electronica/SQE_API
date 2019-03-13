@@ -5,7 +5,6 @@ using System.Text;
 
 namespace SQE.Backend.DataAccess.Models
 {
-
     public class ScrollVersion
     {
         public int Id { get; set; }
@@ -15,16 +14,14 @@ namespace SQE.Backend.DataAccess.Models
         public bool Locked { get; set; }
         public bool IsPublic {get; set;}
         public DateTime LastEdit { get; set; }
-        public int ScrollVersionId { get; set; }
-        public List<int> ScrollVersionIds { get; set; }
-        public List<string> ThumbnailURLs { get; set; }
+        public string ThumbnailURL { get; set; }
         public List<Share> Sharing { get; set; }
     }
 
     public class Permission
     {
-        public bool CanRead { get; set; } //canLock
         public bool CanWrite { get; set; }
+        public bool CanAdmin { get; set; }
     }
 
     public class Share
@@ -42,11 +39,11 @@ namespace SQE.Backend.DataAccess.Models
         public Polygon Mask { get; set; }
         public string TransformMatrix { get; set; }
         public string Zorder { get; set; }
-        public string size { get; set; }
+        public string Size { get; set; }
     }
 
     public class Polygon
     {
-        public string Matrix { get; set; }
+        public string svg { get; set; }
     }
 }

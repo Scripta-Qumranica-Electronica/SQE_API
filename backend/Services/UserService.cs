@@ -18,7 +18,8 @@ namespace SQE.Backend.Server.Services
     public interface IUserService
     {
         Task<User> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
-        User GetCurrentUser(); // TODO: Return a User model object
+        User GetCurrentUser();
+        int? GetCurrentUserId();
     }
 
     public class UserService : IUserService
@@ -93,7 +94,7 @@ namespace SQE.Backend.Server.Services
             return null;
         }
 
-        private int? GetCurrentUserId()
+        public int? GetCurrentUserId()
         {
             var identity = (ClaimsIdentity)_accessor.HttpContext.User.Identity;
             IEnumerable<Claim> claims = identity.Claims;
