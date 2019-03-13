@@ -13,13 +13,13 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using System.Text;
-using backend.Services;
-using backend.Controllers;
-using data_access;
+using SQE.Backend.Server.Services;
+using SQE.Backend.Server.Controllers;
+using SQE.Backend.DataAccess;
 using Microsoft.AspNetCore.Http;
-using backend.Helpers;
+using SQE.Backend.Server.Helpers;
 
-namespace backend
+namespace SQE.Backend.Server
 {
     public class Startup
     {

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Dapper;
-using data_access.RawModels;
+using SQE.Backend.DataAccess.RawModels;
 using System.Linq;
-using data_access.Models;
+using SQE.Backend.DataAccess.Models;
 using Microsoft.Extensions.Configuration;
 
-namespace data_access
+namespace SQE.Backend.DataAccess
 {
     public interface IScrollRepository
     {
@@ -16,7 +16,7 @@ namespace data_access
         Task<IEnumerable<ScrollVersion>> scrollVersion(int userId, List<int> scrollIds);
     }
 
-    public class ScrollRepository : dbConnection, IScrollRepository
+    public class ScrollRepository : DBConnectionBase, IScrollRepository
     {
         public ScrollRepository(IConfiguration config) : base(config) { }
 

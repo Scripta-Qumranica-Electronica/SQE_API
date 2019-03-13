@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using data_access;
-using backend.DTOs;
-using backend.Services;
+using SQE.Backend.DataAccess;
+using SQE.Backend.Server.DTOs;
+using SQE.Backend.Server.Services;
 
-namespace backend.Controllers
+namespace SQE.Backend.Server.Controllers
 {
     [Authorize]
     [Route("api/v1/scroll-version")]
@@ -69,7 +69,7 @@ namespace backend.Controllers
         }
 
 
-        private ScrollVersion CreateScrollVersionDTO(data_access.Models.ScrollVersion model)
+        private ScrollVersion CreateScrollVersionDTO(SQE.Backend.DataAccess.Models.ScrollVersion model)
         {
             List<Share> shares = null;
 
@@ -96,7 +96,7 @@ namespace backend.Controllers
             };
         }
 
-        private Artefact CreateArtefactDto(data_access.Models.Artefact model)
+        private Artefact CreateArtefactDto(SQE.Backend.DataAccess.Models.Artefact model)
         {
             Polygon myMask = null;
             if(model.Mask != null)
@@ -113,7 +113,7 @@ namespace backend.Controllers
             };
         }
 
-        private UserData CreateUserDTO(data_access.Models.User model)
+        private UserData CreateUserDTO(SQE.Backend.DataAccess.Models.User model)
         {
             return new UserData
             {
@@ -122,7 +122,7 @@ namespace backend.Controllers
             };
         }
 
-        private Permission CreatePermissionDTO(data_access.Models.Permission model)
+        private Permission CreatePermissionDTO(SQE.Backend.DataAccess.Models.Permission model)
         {
             return new Permission
             {

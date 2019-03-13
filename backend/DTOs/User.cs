@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 
 
-namespace backend.DTOs
+namespace SQE.Backend.Server.DTOs
 {
     public class LoginRequest 
     {

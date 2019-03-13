@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
-using data_access.Models;
+using SQE.Backend.DataAccess.Models;
 using Dapper;
-using data_access.RawModels;
+using SQE.Backend.DataAccess.RawModels;
 using Microsoft.Extensions.Configuration;
 
-namespace data_access
+namespace SQE.Backend.DataAccess
 {
     public interface IUserRepository
     {
         Task<User> GetUserByPassword(string userName, string password);
     }
-    public class UserRepository: dbConnection , IUserRepository
+    public class UserRepository: DBConnectionBase , IUserRepository
     {
         public UserRepository(IConfiguration config): base(config) { }
 

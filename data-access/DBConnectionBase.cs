@@ -6,13 +6,13 @@ using System.Data;
 
 
 
-namespace data_access
+namespace SQE.Backend.DataAccess
 {
-    public class dbConnection
+    public class DBConnectionBase
     {
         protected IConfiguration _config;
 
-        public dbConnection(IConfiguration config)
+        public DBConnectionBase(IConfiguration config)
         {
             _config = config;
         }

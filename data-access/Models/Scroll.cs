@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace data_access.Models
+namespace SQE.Backend.DataAccess.Models
 {
 
     public class ScrollVersion

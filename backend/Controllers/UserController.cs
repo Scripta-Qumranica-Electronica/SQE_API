@@ -4,12 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using data_access.Models;
-using backend.Services;
-using backend.DTOs;
+using SQE.Backend.DataAccess.Models;
+using SQE.Backend.Server.Services;
+using SQE.Backend.Server.DTOs;
 
 
-namespace backend.Controllers
+namespace SQE.Backend.Server.Controllers
 {
     [Authorize]
     [Route("api/v1/user")]

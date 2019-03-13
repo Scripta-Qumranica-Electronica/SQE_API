@@ -9,11 +9,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using data_access.Models;
-using backend.Helpers;
-using data_access;
+using SQE.Backend.DataAccess.Models;
+using SQE.Backend.Server.Helpers;
+using SQE.Backend.DataAccess;
 
-namespace backend.Services
+namespace SQE.Backend.Server.Services
 {
     public interface IUserService
     {

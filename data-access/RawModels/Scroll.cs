@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using data_access.Models;
+using SQE.Backend.DataAccess.Models;
 using Newtonsoft.Json;
 
-namespace data_access.RawModels
+namespace SQE.Backend.DataAccess.RawModels
 {
 
     internal class ListScrollQueryResponse : IQueryResponse<ScrollVersion>

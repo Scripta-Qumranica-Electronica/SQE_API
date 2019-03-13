@@ -1,3 +1,4 @@
 .vstags
 bin/
 obj/
+.vs/

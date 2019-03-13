@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using data_access.Models;
+using SQE.Backend.DataAccess.Models;
 
-namespace data_access.RawModels
+namespace SQE.Backend.DataAccess.RawModels
 {
     internal interface IQueryResponse<T>
     {
