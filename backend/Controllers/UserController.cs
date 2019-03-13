@@ -25,24 +25,24 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")] // api/v1/user/login
-        public async Task<ActionResult<User>> AuthenticateAsync([FromBody]LoginRequest userParam)
+        public async Task<ActionResult<UserWithToken>> AuthenticateAsync([FromBody]LoginRequest userParam)
         {
-            User user = await _userService.AuthenticateAsync(userParam.userName, userParam.password);
+            var user = await _userService.AuthenticateAsync(userParam.userName, userParam.password);
             if (user == null)
                 return Unauthorized(new { message = "Username or password is incorrect", code = 3333}); // TODO: Add Error Code
 
-            return Ok(user);
+            return user;
         }
 
         [HttpGet] // api/v1/user
-        public ActionResult<LoginResponse> GetCurrentUser()
+        public ActionResult<UserWithToken> GetCurrentUser()
         {
-            User user = _userService.GetCurrentUser();
+            var user = _userService.GetCurrentUser();
 
             if (user == null)
                 return Unauthorized(new { message = "No current user", code =12345 }); // TODO: Add Error Code
 
-            return Ok(user);
+            return user;
         }
     }
 }

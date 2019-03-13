@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using SQE.Backend.DataAccess.Models;
 using SQE.Backend.Server.Helpers;
 using SQE.Backend.DataAccess;
 using SQE.Backend.Server.DTOs;
@@ -18,8 +17,8 @@ namespace SQE.Backend.Server.Services
 {
     public interface IUserService
     {
-        Task<User> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
-        User GetCurrentUser();
+        Task<UserWithToken> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
+        UserWithToken GetCurrentUser();
         int? GetCurrentUserId();
     }
 
@@ -40,16 +39,19 @@ namespace SQE.Backend.Server.Services
         }
 
 
-        public async Task<User> AuthenticateAsync(string username, string password)
+        public async Task<UserWithToken> AuthenticateAsync(string username, string password)
         {
             var result = await _repo.GetUserByPassword(username, password);
 
             if (result == null)
                 return null;
 
-            User user = new User { UserName = result.UserName, UserId = result.UserId };
-            user.Token = BuildUserToken(user.UserName, user.UserId).ToString();
-
+            var user = new UserWithToken
+            {
+                userName = result.UserName,
+                userId = result.UserId,
+                token = BuildUserToken(result.UserName, result.UserId).ToString(),
+            };   
             return user;
         }
 
@@ -73,22 +75,20 @@ namespace SQE.Backend.Server.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public User GetCurrentUser()
+        public UserWithToken GetCurrentUser()
         {
             // TODO: Check if ...User.Identity.Name exists. Return null if not.
-            var userName = _accessor.HttpContext.User.Identity.Name;
-            if (userName != null)
+            var currentUserName = _accessor.HttpContext.User.Identity.Name;
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserName != null && currentUserId.HasValue)
             {
-                User user = new User
+                var user = new UserWithToken
                 {
-                    UserName = _accessor.HttpContext.User.Identity.Name
+                    userName = currentUserName,
+                    userId = currentUserId.Value,
+                    token = BuildUserToken(currentUserName, currentUserId.Value).ToString(),
                 };
-                var userId = GetCurrentUserId();
-                if (userId != null)
-                {
-                    user.UserId = userId.Value;
-                }
-                user.Token = BuildUserToken(user.UserName, user.UserId).ToString();
 
                 return user;
             }
@@ -110,9 +110,9 @@ namespace SQE.Backend.Server.Services
             return null;
         }
 
-        internal static UserData UserModelToDTO(User model)
+        public static User UserModelToDTO(DataAccess.Models.User model)
         {
-            return new UserData
+            return new User
             {
                 userId = model.UserId,
                 userName = model.UserName,

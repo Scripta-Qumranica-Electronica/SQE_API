@@ -16,10 +16,14 @@ namespace SQE.Backend.Server.DTOs
         public string password { get; set; }
     }
 
-    public class LoginResponse
+    public class User
     {
-        public string userName { get; set; }
-        public string token { get; set; }
         public int userId { get; set; }
+        public string userName { get; set; }
+    }
+
+    public class UserWithToken: User
+    {
+        public string token { get; set; }
     }
 }

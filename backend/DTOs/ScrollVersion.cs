@@ -10,7 +10,7 @@ namespace SQE.Backend.Server.DTOs
         public int id { get; set; }
         public string name { get; set; }
         public Permission permission { get; set; }
-        public UserData owner { get; set; }
+        public User owner { get; set; }
         public string thumbnailUrl { get; set; }
         public List<Share> shares { get; set; }
         public bool locked { get; set; }
@@ -37,13 +37,7 @@ namespace SQE.Backend.Server.DTOs
 
     public class Share
     {
-        public UserData user { get; set; }
+        public User user { get; set; }
         public Permission permission { get; set; }
-    }
-
-    public class UserData
-    {
-        public int userId { get; set; }
-        public string userName { get; set; }
     }
 }
