@@ -67,9 +67,7 @@ namespace SQE.Backend.Server.Services
                 var groupList = new List<ScrollVersion>();
                 foreach(var scrollVersionId in groups[groupId])
                 {
-                    DataAccess.Models.ScrollVersion scrollVersion;
-
-                    if (scrollVersionDict.TryGetValue(scrollVersionId, out scrollVersion))
+                    if (scrollVersionDict.TryGetValue(scrollVersionId, out var scrollVersion))
                         groupList.Add(ScrollVersionModelToDTO(scrollVersion));
                 }
                 if (groupList.Count > 0)

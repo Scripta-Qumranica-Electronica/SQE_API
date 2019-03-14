@@ -24,9 +24,9 @@ namespace SQE.Backend.DataAccess
         public async Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> ids) //
         {
             var sql = ScrollVersionQuery.GetQuery(userId.HasValue, ids != null);
+            
             // We can't expand the ScrollIds parameters with MySql, as it is a list. We need to expand ourselves.
             // Since ids is a list of integers, SQL injection is quite impossible.
-
             if (ids != null)
             {
                 var idList = "(" + string.Join(", ", ids.Select(id => id.ToString())) + ")";
