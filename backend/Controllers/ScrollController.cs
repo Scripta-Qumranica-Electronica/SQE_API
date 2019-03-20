@@ -11,6 +11,7 @@ using SQE.Backend.Server.Services;
 
 namespace SQE.Backend.Server.Controllers
 {
+    
     [Authorize]
     [Route("api/v1/scroll-version")]
     [ApiController]
@@ -29,7 +30,7 @@ namespace SQE.Backend.Server.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ScrollVersionGroup>> GetScrollVersion(int id)
         {
-            var vg = await _scrollService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
+             var vg = await _scrollService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
 
             if(vg==null)
             {
@@ -45,6 +46,24 @@ namespace SQE.Backend.Server.Controllers
         {
             var groups = await _scrollService.ListScrollVersionsAsync(_userService.GetCurrentUserId());
             return Ok(groups);
+        }
+
+        [HttpPost("update/{id}")]
+        public async Task<ActionResult<ScrollVersion>> UpdateScrollVersion([FromBody] ScrollUpdateRequest request, int id)
+        {
+            try
+            {
+                var scroll = await _scrollService.UpdateScroll(id, request.name, _userService.GetCurrentUserId());
+                return scroll;
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch(ForbiddenException)
+            {
+                return Forbid();
+            }
         }
     }
 }

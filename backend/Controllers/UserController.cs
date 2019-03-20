@@ -29,7 +29,7 @@ namespace SQE.Backend.Server.Controllers
         {
             var user = await _userService.AuthenticateAsync(userParam.userName, userParam.password);
             if (user == null)
-                return Unauthorized(new { message = "Username or password is incorrect", code = 3333}); // TODO: Add Error Code
+                return Unauthorized(new { message = "Username or password is incorrect", code = 23456}); // TODO: Add Error Code
 
             return user;
         }

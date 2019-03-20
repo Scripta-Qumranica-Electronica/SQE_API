@@ -7,6 +7,10 @@ using SQE.Backend.DataAccess.Queries;
 using System.Linq;
 using SQE.Backend.DataAccess.Models;
 using Microsoft.Extensions.Configuration;
+using System.Transactions;
+using System.Data.SqlClient;
+using static SQE.Backend.DataAccess.Queries.ScrollVersionGroupQuery;
+using MySql.Data.MySqlClient;
 
 namespace SQE.Backend.DataAccess
 {
@@ -14,6 +18,8 @@ namespace SQE.Backend.DataAccess
     {
         Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> scrollIds);
         Task<Dictionary<int, List<int>>> GetScrollVersionGroups(int? scrollVersionId);
+        Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name);
+
         // Task<IEnumerable<Dictionary<int, List<Share>>>> GetScrollVersionShares(List<int> scrollIds);
     }
 
@@ -24,7 +30,7 @@ namespace SQE.Backend.DataAccess
         public async Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> ids) //
         {
             var sql = ScrollVersionQuery.GetQuery(userId.HasValue, ids != null);
-            
+
             // We can't expand the ScrollIds parameters with MySql, as it is a list. We need to expand ourselves.
             // Since ids is a list of integers, SQL injection is quite impossible.
             if (ids != null)
@@ -104,6 +110,76 @@ namespace SQE.Backend.DataAccess
                 return dictionary;
             }
         }
+
+        public async Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name)
+        {
+            using (var transactionScope = new TransactionScope())
+            {
+                using (var connection = OpenConnection() as MySqlConnection)
+                {
+
+                    // First, see if there's a ScrollData with this name
+                    // Create a function that returns the scroll_data_id of a name - either an existing one or a new one
+                    var scrollDataId = await GetScrollDataId(name, sv.Id);
+
+                    await connection.OpenAsync();
+                    //update scroll data owner
+                    var cmd = new MySqlCommand(UpdateScrollNameQueries.UpdateScrollDataOwner(), connection);
+                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
+                    cmd.Parameters.AddWithValue("@ScrollDataId", scrollDataId);
+                    await cmd.ExecuteNonQueryAsync();
+
+                    //update main_action table
+                    cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
+                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
+                    await cmd.ExecuteNonQueryAsync();
+                    var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
+
+                    //update single_action table
+                  
+                    cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
+                    cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
+                    cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
+                    await cmd.ExecuteNonQueryAsync();
+
+                    transactionScope.Complete();
+                    await connection.CloseAsync();
+                }
+
+            }
+            return sv;
+        }
+
+        private async Task<int> GetScrollDataId(string name, int scrollVersionId)
+    {
+
+        using (var connection = OpenConnection() as MySqlConnection)
+        {
+            await connection.OpenAsync();
+
+            var cmd = new MySqlCommand(UpdateScrollNameQueries.CheckIfNameExists(), connection);
+            cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+            cmd.Parameters.AddWithValue("@Name", name);
+            var result = (int?)await cmd.ExecuteScalarAsync();
+            if (result != null)
+            {
+                return Convert.ToInt32(result);
+            }
+
+
+            //create new recored 
+            cmd = new MySqlCommand(UpdateScrollNameQueries.AddScrollName(), connection);
+            cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+            cmd.Parameters.AddWithValue("@Name", name);
+            await cmd.ExecuteNonQueryAsync();
+
+            await connection.CloseAsync();
+            return Convert.ToInt32(cmd.LastInsertedId);
+        }
     }
 }
+}
+
+
+
 

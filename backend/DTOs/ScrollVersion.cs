@@ -40,4 +40,10 @@ namespace SQE.Backend.Server.DTOs
         public User user { get; set; }
         public Permission permission { get; set; }
     }
+
+    public class ScrollUpdateRequest
+    {
+        // Currently only the name can be updated
+        public string name { get; set; }
+    }
 }

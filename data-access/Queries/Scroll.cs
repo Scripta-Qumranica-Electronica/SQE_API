@@ -86,5 +86,57 @@ JOIN scroll_version sv2 ON (svg2.scroll_version_group_id=sv2.scroll_version_grou
             public int group_id { get; set; }
             public int scroll_version_id { get; set; }
         }
+
+        internal class UpdateScrollNameQueries
+        {
+            private static string _updateMainAction = @"INSERT INTO main_action 
+          (scroll_version_id) VALUES (@ScrollVersionId)";
+
+            private static string _updateSingleAction = @"insert into single_action (main_action_id, action, `table`,id_in_table)
+Values (@MainActionId, ""add"", ""scroll_data"", @IdInTable)";
+
+            public static string _addScrollName = @"INSERT INTO scroll_data (scroll_id, name)
+VALUES (@ScrollVersionId, @Name)";
+
+            public static string _lastId = @"LAST_INSERTED_ID()";
+
+            public static string _checkIfNameExists = @"SELECT scroll_data_id FROM scroll_data WHERE name =@Name AND scroll_id =@ScrollVersionId";
+
+            public static string _updateScrollDataOwner = @"UPDATE scroll_data_owner
+set scroll_data_id = @ScrollDataId
+where scroll_version_id = @ScrollVersionId";
+
+            public static string AddScrollName()
+            {
+                return _addScrollName;
+            } 
+
+            public static string CheckIfNameExists()
+            {
+                return _checkIfNameExists;
+            }
+
+            public static string UpdateScrollDataOwner()
+            {
+                return _updateScrollDataOwner;
+            }
+
+            public static string AddMainAction()
+            {
+                return _updateMainAction;
+            }
+
+            public static string AddSingleAction()
+            {
+                return _updateSingleAction;
+            }
+
+            public static string LastId()
+            {
+                return _lastId;
+            }
+        }
     }
+
+
 }
