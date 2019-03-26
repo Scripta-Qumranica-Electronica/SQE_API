@@ -12,8 +12,9 @@ using SQE.Backend.Server.Services;
 namespace SQE.Backend.Server.Controllers
 {
 
+    [Produces("application/json")]
     [Authorize]
-    [Route("api/v1/image")]
+    [Route("v1/image")]
     [ApiController]
     public class ImageController : ControllerBase
     {
@@ -56,6 +57,9 @@ namespace SQE.Backend.Server.Controllers
             return Ok(images);
         }
 
+        /// <summary>
+        /// Provides a list of all institutional image providers.
+        /// </summary>
         [AllowAnonymous]
         [HttpGet("institution/list")]
         public async Task<ActionResult<ImageInstitutionList>> ListImageInstitutions()

@@ -11,9 +11,10 @@ using SQE.Backend.Server.Services;
 
 namespace SQE.Backend.Server.Controllers
 {
-    
+
+    [Produces("application/json")]
     [Authorize]
-    [Route("api/v1/scroll-version")]
+    [Route("v1/scroll-version")]
     [ApiController]
     public class ScrollController : ControllerBase
     {

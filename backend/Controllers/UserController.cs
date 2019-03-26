@@ -11,8 +11,10 @@ using SQE.Backend.Server.DTOs;
 
 namespace SQE.Backend.Server.Controllers
 {
+
+    [Produces("application/json")]
     [Authorize]
-    [Route("api/v1/user")]
+    [Route("v1/user")]
     [ApiController]
     public class UserController : ControllerBase
     {
