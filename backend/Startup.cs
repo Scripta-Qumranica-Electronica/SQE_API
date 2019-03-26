@@ -1,23 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using System.Text;
 using SQE.Backend.Server.Services;
-using SQE.Backend.Server.Controllers;
 using SQE.Backend.DataAccess;
 using Microsoft.AspNetCore.Http;
 using SQE.Backend.Server.Helpers;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace SQE.Backend.Server
 {
@@ -38,9 +32,11 @@ namespace SQE.Backend.Server
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IScrollService, ScrollService>();
+            services.AddScoped<IImageService, ImageService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IScrollRepository, ScrollRepository>();
+            services.AddTransient<IImageRepository, ImageRepository>();
 
 
             // configure strongly typed settings objects
@@ -77,6 +73,11 @@ namespace SQE.Backend.Server
                 options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
 
             });
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info { Title = "SQE API", Version = "v1" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -86,6 +87,16 @@ namespace SQE.Backend.Server
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            // Enable middleware to serve generated Swagger as a JSON endpoint.
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
+            // specifying the Swagger JSON endpoint.
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "SQE API v1");
+            });
 
             app.UseMvc();
         }

@@ -30,7 +30,7 @@ namespace SQE.Backend.Server.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ScrollVersionGroup>> GetScrollVersion(int id)
         {
-             var vg = await _scrollService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
+            var vg = await _scrollService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
 
             if(vg==null)
             {

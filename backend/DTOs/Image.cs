@@ -8,8 +8,8 @@ namespace SQE.Backend.Server.DTOs
     public class Image
     {
         public string url { get; set; }
-        public ligthing ligthingType { get; set; }
-        public direction ligthingDirection { get; set; }
+        public lighting lightingType { get; set; }
+        public direction lightingDirection { get; set; }
         public double waveLength { get; set; }
         public string type { get; set; }
         public Polygon regionInMaster { get; set; }
@@ -17,7 +17,54 @@ namespace SQE.Backend.Server.DTOs
         public int transformToMaster { get; set; }
         
 
-        public enum ligthing {direct, raking }
+        public enum lighting {direct, raking }
         public enum direction { left, right, top}
+    }
+
+    public class ImageGroup
+    {
+        public int Id { get; set; }
+        public string Institution { get; set; }
+        public string CatalogNumber1 { get; set; }
+        public string CatalogNumber2 { get; set; }
+        public int CatalogSide { get; set; }
+        public List<Image> Images { get; set; }
+
+        public ImageGroup(int id, string institution, string catalogNumber1, string catalogNumber2, int catalogString, List<Image> images)
+        {
+            Id = id;
+            Institution = institution;
+            CatalogNumber1 = catalogNumber1;
+            CatalogNumber2 = catalogNumber2;
+            CatalogSide = catalogString;
+            Images = images;
+        }
+    }
+
+    public class ImageGroupList
+    {
+        public List<ImageGroup> ImageGroup { get; set; }
+        public ImageGroupList(List<ImageGroup> imageGroup)
+        {
+            ImageGroup = imageGroup;
+        }
+    }
+
+    public class ImageInstitution
+    {
+        public string Name { get; set; }
+        public ImageInstitution(string name)
+        {
+            Name = name;
+        }
+    }
+
+    public class ImageInstitutionList
+    {
+        public List<ImageInstitution> Institutions { get; set; }
+        public ImageInstitutionList(List<ImageInstitution> institutions)
+        {
+            Institutions = institutions;
+        }
     }
 }
