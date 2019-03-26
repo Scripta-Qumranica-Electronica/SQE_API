@@ -19,11 +19,14 @@ namespace SQE.Backend.Server.Controllers
     {
         private IScrollService _scrollService;
         private IUserService _userService;
+        private IImagedFragmentsService _imagedFragmentService;
 
-        public ScrollController(IScrollService scrollService, IUserService userService)
+
+        public ScrollController(IScrollService scrollService, IUserService userService, IImagedFragmentsService imagedFragmentService)
         {
             this._scrollService = scrollService;
             this._userService = userService;
+            _imagedFragmentService = imagedFragmentService;
         }
 
         [AllowAnonymous]
@@ -63,6 +66,39 @@ namespace SQE.Backend.Server.Controllers
             catch(ForbiddenException)
             {
                 return Forbid();
+            }
+        }
+
+        [HttpPost("copy/{id}")]
+        public async Task<ActionResult<ScrollVersion>> CopyScrollVersion([FromBody] ScrollUpdateRequest request, int id)
+        {
+            try
+            {
+                var scroll = await _scrollService.CopyScroll(id, request.name, _userService.GetCurrentUserId());
+                return scroll;
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ForbiddenException)
+            {
+                return Forbid();
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{scrollVersionId}/imaged-fragments")]
+        public async Task<ActionResult<ImagedFragmentList>> GetImagedFragments(int scrollVersionId)
+        {
+            try
+            {
+                var imagedFragment = await _imagedFragmentService.GetImagedFragments(_userService.GetCurrentUserId(), scrollVersionId);
+                return imagedFragment;
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
             }
         }
     }

@@ -11,9 +11,10 @@ namespace SQE.Backend.Server.Services
 {
     public interface IScrollService
     {
-        Task<ScrollVersionGroup> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts=false, bool fragments=false);
+        Task<ScrollVersionGroup> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts = false, bool fragments = false);
         Task<ScrollVersionList> ListScrollVersionsAsync(int? userId);
         Task<ScrollVersion> UpdateScroll(int scrollId, string name, int? userId);
+        Task<ScrollVersion> CopyScroll(int scrollId, string name, int? userId);
     }
 
     public class ScrollService : IScrollService
@@ -131,14 +132,14 @@ namespace SQE.Backend.Server.Services
         {
             return new DataAccess.Models.Permission
             {
-                 CanAdmin= permission.canAdmin,
+                CanAdmin = permission.canAdmin,
                 CanWrite = permission.canWrite
             };
         }
 
         public async Task<ScrollVersion> UpdateScroll(int scrollId, string name, int? userId)
         {
-            List<int> scrollID = new List<int>(new int[] {scrollId});
+            List<int> scrollID = new List<int>(new int[] { scrollId });
 
             var scroll = await _repo.ListScrollVersions(userId, scrollID);
             var sv = scroll.First();
@@ -148,17 +149,41 @@ namespace SQE.Backend.Server.Services
                 throw new NotFoundException(scrollId);
             }
 
-            if(sv.Permission.CanWrite == false)
+            if (sv.Permission.CanWrite == false)
             {
                 throw new ForbiddenException(scrollId);
             }
-            if(name != sv.Name ) { //there is sv, but the name is diffrent and have permission of write
+            if (name != sv.Name)
+            { //there is sv, but the name is diffrent and have permission of write
                 await _repo.ChangeScrollVersionName(sv, name);
                 var updatedScroll = await _repo.ListScrollVersions(userId, scrollID);
                 return ScrollVersionModelToDTO(updatedScroll.First());
             }
             return ScrollVersionModelToDTO(sv);
 
+        }
+
+        public async Task<ScrollVersion> CopyScroll(int scrollId, string name, int? userId)
+        {
+            List<int> scrollID = new List<int>(new int[] { scrollId });
+
+            var scroll = await _repo.ListScrollVersions(userId, scrollID);
+            var sv = scroll.First();
+
+            if (sv == null)
+            {
+                throw new NotFoundException(scrollId);
+            }
+            var canRead = await _repo.CanRead(scrollId, userId);
+
+            if (canRead == false)
+            {
+                throw new ForbiddenException(scrollId);
+            }
+            var updatedScroll = await _repo.CopyScrollVersion(sv, name, userId);
+
+            var Scroll = await _repo.ListScrollVersions(userId, scrollID);
+            return ScrollVersionModelToDTO(Scroll.First());
         }
     }
 }
