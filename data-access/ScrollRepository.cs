@@ -19,10 +19,9 @@ namespace SQE.Backend.DataAccess
         Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> scrollIds);
         Task<Dictionary<int, List<int>>> GetScrollVersionGroups(int? scrollVersionId);
         Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name);
-        Task<bool> CanRead(int sv, int? userId);
         Task<ScrollVersion> CopyScrollVersion(ScrollVersion sv, string name, int? userId);
         //Task<List<string>> GetOwnerTables();
-        Task<bool> UpdateOwnerTables(int olvd, int svid);
+        // Task<bool> UpdateOwnerTables(int olvd, int svid);
         //Task<int> UpdateAction(int scrollDataId, int oldScrollDataId, int scrollVersionId);
         // Task<IEnumerable<Dictionary<int, List<Share>>>> GetScrollVersionShares(List<int> scrollIds);
     }
@@ -117,6 +116,7 @@ namespace SQE.Backend.DataAccess
 
         public async Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name) //not working well, Help please!
         {
+            // BRONSON
             /**
             using (var transactionScope = new TransactionScope())
             {
@@ -216,31 +216,9 @@ namespace SQE.Backend.DataAccess
             }
         }
 
-        public async Task<bool> CanRead(int scrollVersionId, int? userId)
-        {
-            if (userId == null)
-            {
-                return false;
-            }
-            using (var connection = OpenConnection() as MySqlConnection)
-            {
-                await connection.OpenAsync();
-
-                var cmd = new MySqlCommand(CopyScrollVersionQueries.CheckPermission(), connection);
-                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
-                var result = await cmd.ExecuteScalarAsync();
-                int userID = Convert.ToInt32(result);
-                if (userID == 1 || userID == userId)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         public async Task<ScrollVersion> CopyScrollVersion(ScrollVersion sv, string name, int? userId) //not working well, Help please!
         {
+            // BRONSON
             /**
             //the user have permissions to copy scrollVersion
 
@@ -308,6 +286,7 @@ namespace SQE.Backend.DataAccess
             return sv;
         }
 
+        /*
         public async Task<bool> UpdateOwnerTables(int olvId, int svid)
         {
             using (var connection = OpenConnection() as MySqlConnection)
@@ -325,9 +304,7 @@ namespace SQE.Backend.DataAccess
             }
             return true;
         }
-
-
-       
+        */
 
     }
 }

@@ -138,11 +138,13 @@ namespace SQE.Backend.Server.Services
             {
                 throw new ForbiddenException(scrollId);
             }
-            if (name != sv.Name) //there is sv, but the name is diffrent and have permission of write
-            { /**
+            if (name != sv.Name) 
+            {
                 await _repo.ChangeScrollVersionName(sv, name);
-                var updatedScroll = await _repo.ListScrollVersions(userId, scrollID);
-                return ScrollVersionModelToDTO(updatedScroll.First());**/
+
+                // We may just change the name in sv and return it, without accessing the database again
+                var updatedScroll = await _repo.ListScrollVersions(userId, scrollID); 
+                return ScrollVersionModelToDTO(updatedScroll.First());
             }
             return ScrollVersionModelToDTO(sv); //need to chane to update scroll
 
@@ -157,13 +159,7 @@ namespace SQE.Backend.Server.Services
 
             if (sv == null)
             {
-                throw new NotFoundException(scrollId);
-            }
-            var canRead = await _repo.CanRead(scrollId, userId);
-
-            if (canRead == false)
-            {
-                throw new ForbiddenException(scrollId);
+                throw new NotFoundException(scrollId); 
             }
             /**
             var updatedScroll = await _repo.CopyScrollVersion(sv, name, userId);
