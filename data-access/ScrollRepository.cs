@@ -19,7 +19,10 @@ namespace SQE.Backend.DataAccess
         Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> scrollIds);
         Task<Dictionary<int, List<int>>> GetScrollVersionGroups(int? scrollVersionId);
         Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name);
-
+        Task<ScrollVersion> CopyScrollVersion(ScrollVersion sv, string name, int? userId);
+        //Task<List<string>> GetOwnerTables();
+        // Task<bool> UpdateOwnerTables(int olvd, int svid);
+        //Task<int> UpdateAction(int scrollDataId, int oldScrollDataId, int scrollVersionId);
         // Task<IEnumerable<Dictionary<int, List<Share>>>> GetScrollVersionShares(List<int> scrollIds);
     }
 
@@ -111,15 +114,14 @@ namespace SQE.Backend.DataAccess
             }
         }
 
-        public async Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name)
+        public async Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name) //not working well, Help please!
         {
+            // BRONSON
+            /**
             using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection() as MySqlConnection)
                 {
-
-                    // First, see if there's a ScrollData with this name
-                    // Create a function that returns the scroll_data_id of a name - either an existing one or a new one
                     var scrollDataId = await GetScrollDataId(name, sv.Id);
 
                     await connection.OpenAsync();
@@ -136,48 +138,175 @@ namespace SQE.Backend.DataAccess
                     var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
 
                     //update single_action table
-                  
+
                     cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
                     cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
                     cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
+                    cmd.Parameters.AddWithValue("@Action", "add");
+
+
+
                     await cmd.ExecuteNonQueryAsync();
 
                     transactionScope.Complete();
                     await connection.CloseAsync();
                 }
 
+            }**/
+            return sv;
+        }
+        /**
+        public async Task<int> UpdateAction(int scrollDataId, int oldScrollDataId, int scrollVersionId)
+        {
+            using (var connection = OpenConnection() as MySqlConnection)
+            {
+                await connection.OpenAsync();
+
+                //update main_action table
+                var cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
+                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+                await cmd.ExecuteNonQueryAsync();
+                var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
+
+                //update single_action table - add with new scroll data id
+
+                cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
+                cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
+                cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
+                cmd.Parameters.AddWithValue("@Action", "add");
+                await cmd.ExecuteNonQueryAsync();
+
+                //delete previous scroll data id
+                cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
+                cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
+                cmd.Parameters.AddWithValue("@IdInTable", oldScrollDataId);
+                cmd.Parameters.AddWithValue("@Action", "delete");
+                await cmd.ExecuteNonQueryAsync();
+
+                await connection.CloseAsync();
             }
+            return scrollDataId;
+        }**/
+
+        private async Task<int> GetScrollDataId(string name, int scrollVersionId)
+        {
+
+            using (var connection = OpenConnection() as MySqlConnection)
+            {
+                await connection.OpenAsync();
+
+                var cmd = new MySqlCommand(UpdateScrollNameQueries.CheckIfNameExists(), connection);
+                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+                cmd.Parameters.AddWithValue("@Name", name);
+                var result = await cmd.ExecuteScalarAsync();
+                if (result != null)
+                {
+                    //no need in new recored, return reference to scrollDataID
+                    return Convert.ToInt32(result);
+                }
+
+                //create new recored 
+                cmd = new MySqlCommand(UpdateScrollNameQueries.AddScrollName(), connection);
+                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+                cmd.Parameters.AddWithValue("@Name", name);
+                await cmd.ExecuteNonQueryAsync();
+
+                await connection.CloseAsync();
+                return Convert.ToInt32(cmd.LastInsertedId);
+            }
+        }
+
+        public async Task<ScrollVersion> CopyScrollVersion(ScrollVersion sv, string name, int? userId) //not working well, Help please!
+        {
+            // BRONSON
+            /**
+            //the user have permissions to copy scrollVersion
+
+            using (var transactionScope = new TransactionScope())
+            {
+                using (var connection = OpenConnection() as MySqlConnection)
+                {
+                    var scrollDataId = await GetScrollDataId(name, sv.Id);
+
+                    await connection.OpenAsync();
+
+                    //update scroll_version_group --NEED TO CHECK THE SCROLL ID!!!!
+                    //var cmd = new MySqlCommand(CopyScrollVersionQueries.InsertIntoScrollVersionGroup(), connection);
+                    //cmd.Parameters.AddWithValue("@ScrollID", sv.Id);
+                    //await cmd.ExecuteNonQueryAsync();
+                    //var scrollVersionGroupId = cmd.LastInsertedId;
+
+                    //getScrollVersionGroupId
+                    var cmd = new MySqlCommand(CopyScrollVersionQueries.GetScrollVersionGroupId(), connection);
+                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
+                    var scrollVersionGroupId = await cmd.ExecuteScalarAsync();
+
+
+                    //update scroll_version
+                    cmd = new MySqlCommand(CopyScrollVersionQueries.InsertIntoScrollVersion(), connection);
+                    cmd.Parameters.AddWithValue("@UserId", userId);
+                    cmd.Parameters.AddWithValue("@ScrollVersionGroupId", Convert.ToInt32(scrollVersionGroupId));
+                    await cmd.ExecuteNonQueryAsync();
+                    var svid = cmd.LastInsertedId; //new scroll version id
+
+
+                    //insert into scroll_data
+                    cmd = new MySqlCommand(CopyScrollVersionQueries.InsertIntoScrollData(), connection);
+                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
+                    cmd.Parameters.AddWithValue("@Name", name);
+                    await cmd.ExecuteNonQueryAsync();
+                    var scrollData = cmd.LastInsertedId;
+
+                    await connection.CloseAsync();
+                    //update all owner tables
+                    await UpdateOwnerTables(sv.Id, Convert.ToInt32(svid));
+
+                    await connection.OpenAsync();
+
+                    //if the name was change, update main_action and single action
+
+                    //update main_action table
+                    cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
+                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
+                    await cmd.ExecuteNonQueryAsync();
+                    var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
+
+                    //update single_action table
+
+                    cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
+                    cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
+                    cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
+                    cmd.Parameters.AddWithValue("@Action", "add");
+
+                    transactionScope.Complete();
+                }
+
+            }**/
+
             return sv;
         }
 
-        private async Task<int> GetScrollDataId(string name, int scrollVersionId)
-    {
-
-        using (var connection = OpenConnection() as MySqlConnection)
+        /*
+        public async Task<bool> UpdateOwnerTables(int olvId, int svid)
         {
-            await connection.OpenAsync();
-
-            var cmd = new MySqlCommand(UpdateScrollNameQueries.CheckIfNameExists(), connection);
-            cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
-            cmd.Parameters.AddWithValue("@Name", name);
-            var result = (int?)await cmd.ExecuteScalarAsync();
-            if (result != null)
+            using (var connection = OpenConnection() as MySqlConnection)
             {
-                return Convert.ToInt32(result);
+                await connection.OpenAsync();
+                List<string> ownerList = CopyScrollVersionQueries.GetOwnerList();
+                foreach (var ownerTable in ownerList)
+                {
+                    var cmd = new MySqlCommand(ownerTable, connection);
+                    cmd.Parameters.AddWithValue("@SVID", svid);
+                    cmd.Parameters.AddWithValue("@OLDSVID", olvId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                await connection.CloseAsync();
             }
-
-
-            //create new recored 
-            cmd = new MySqlCommand(UpdateScrollNameQueries.AddScrollName(), connection);
-            cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
-            cmd.Parameters.AddWithValue("@Name", name);
-            await cmd.ExecuteNonQueryAsync();
-
-            await connection.CloseAsync();
-            return Convert.ToInt32(cmd.LastInsertedId);
+            return true;
         }
+        */
+
     }
-}
 }
 
 

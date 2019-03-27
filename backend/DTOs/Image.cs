@@ -12,13 +12,20 @@ namespace SQE.Backend.Server.DTOs
         public direction lightingDirection { get; set; }
         public double waveLength { get; set; }
         public string type { get; set; }
+        public string side { get; set; }
         public Polygon regionInMaster { get; set; }
         public Polygon regionOfMaster { get; set; }
-        public int transformToMaster { get; set; }
-        
+        public string transformToMaster { get; set; }
+        public int master { get; set; }
+        public int catalog_number { get; set; }
 
         public enum lighting {direct, raking }
         public enum direction { left, right, top}
+    }
+
+    public class ImageList
+    {
+        public List<Image> ImagesList { get; set; }
     }
 
     public class ImageGroup

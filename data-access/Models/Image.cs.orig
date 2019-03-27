@@ -1,4 +1,9 @@
+<<<<<<< HEAD
+﻿using Newtonsoft.Json;
+using System;
+=======
 ﻿using System;
+>>>>>>> master
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,6 +11,21 @@ namespace SQE.Backend.DataAccess.Models
 {
     public class Image
     {
+<<<<<<< HEAD
+        public int Id { get; set; }
+        public string URL { get; set; }
+        public int DPI { get; set; }
+        public int Type { get; set; }
+        public int WavelengthStart { get; set; }
+        public int WavelengthEnd { get; set; }
+        public bool IsMaster { get; set; }
+    }
+
+    public class ImageInstitution
+    {
+        public string Name { get; set; }
+    }
+=======
         public string URL { get; set; }
         public string[] WaveLength { set; get; }
         public int Type { set; get; }
@@ -19,9 +39,5 @@ namespace SQE.Backend.DataAccess.Models
         public string Catalog2 { set; get; }
         public int Master { set; get; }
    }
-
-public class ImageInstitution
-    {
-        public string Name { get; set; }
-    }
+>>>>>>> master
 }

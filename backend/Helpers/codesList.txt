@@ -1,1 +1,3 @@
-﻿
+﻿UserController:
+600 - user name or password incorrect 
+601 - no current user 
