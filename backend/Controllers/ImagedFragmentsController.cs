@@ -28,12 +28,12 @@ namespace backend.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("{scrollVersionId}")]
-        public async Task<ActionResult<ImagedFragmentList>> GetImagedFragments(int scrollVersionId)
+        [HttpGet("{scrollVersionId}/{fragmentId}")]
+        public async Task<ActionResult<ImagedFragment>> GetImagedFragment(int scrollVersionId, string fragmentId)
         {
             try
             {
-                var imagedFragment = await _imagedFragmentService.GetImagedFragments(_userService.GetCurrentUserId(), scrollVersionId);
+                var imagedFragment = await _imagedFragmentService.GetImagedFragment(_userService.GetCurrentUserId(), scrollVersionId, fragmentId);
                 return imagedFragment;
             }
             catch (NotFoundException)

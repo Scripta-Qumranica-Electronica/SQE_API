@@ -104,21 +104,6 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        internal static DataAccess.Models.ScrollVersion ScrollVersionDtoToModel(ScrollVersion sv)
-        {
-            return new DataAccess.Models.ScrollVersion
-            {
-                Id = sv.id,
-                Name = sv.name,
-                Thumbnail = sv.thumbnailUrl,
-                Locked = sv.locked,
-                IsPublic = sv.isPublic,
-                LastEdit = sv.lastEdit,
-                Permission = PermissionDtoTOModel(sv.permission),
-                Owner = OwnerToModel(sv.owner)
-            };
-        }
-
         internal static DataAccess.Models.User OwnerToModel(User user)
         {
             return new DataAccess.Models.User
@@ -141,7 +126,7 @@ namespace SQE.Backend.Server.Services
         {
             List<int> scrollID = new List<int>(new int[] { scrollId });
 
-            var scroll = await _repo.ListScrollVersions(userId, scrollID);
+            var scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by scroll id
             var sv = scroll.First();
 
             if (sv == null)
@@ -153,13 +138,13 @@ namespace SQE.Backend.Server.Services
             {
                 throw new ForbiddenException(scrollId);
             }
-            if (name != sv.Name)
-            { //there is sv, but the name is diffrent and have permission of write
+            if (name != sv.Name) //there is sv, but the name is diffrent and have permission of write
+            { /**
                 await _repo.ChangeScrollVersionName(sv, name);
                 var updatedScroll = await _repo.ListScrollVersions(userId, scrollID);
-                return ScrollVersionModelToDTO(updatedScroll.First());
+                return ScrollVersionModelToDTO(updatedScroll.First());**/
             }
-            return ScrollVersionModelToDTO(sv);
+            return ScrollVersionModelToDTO(sv); //need to chane to update scroll
 
         }
 
@@ -167,7 +152,7 @@ namespace SQE.Backend.Server.Services
         {
             List<int> scrollID = new List<int>(new int[] { scrollId });
 
-            var scroll = await _repo.ListScrollVersions(userId, scrollID);
+            var scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by id
             var sv = scroll.First();
 
             if (sv == null)
@@ -180,10 +165,13 @@ namespace SQE.Backend.Server.Services
             {
                 throw new ForbiddenException(scrollId);
             }
+            /**
             var updatedScroll = await _repo.CopyScrollVersion(sv, name, userId);
 
             var Scroll = await _repo.ListScrollVersions(userId, scrollID);
-            return ScrollVersionModelToDTO(Scroll.First());
+            return ScrollVersionModelToDTO(Scroll.First());**/
+
+            return null; //need to return the updated scroll
         }
     }
 }

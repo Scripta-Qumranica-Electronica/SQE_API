@@ -19,9 +19,15 @@ where scroll_version.scroll_version_id = @ScrollVersionId
 and (scroll_version.user_id =1 OR scroll_version.user_id =@UserId) and edition_catalog.edition_side =0
 "; 
 
-        public static string GetFragmentsQuery()
+        public static string GetFragmentsQuery(bool fragmentId)
         {
-            return _getFragments;
+            if(!fragmentId)
+                return _getFragments;
+            StringBuilder str = new StringBuilder(_getFragments);
+            str.Append(" and image_catalog.institution=@Institution");
+            str.Append(" and image_catalog.catalog_number_1=@Catalog1");
+            str.Append(" and image_catalog.catalog_number_2=@Catalog2");
+            return str.ToString();
         }
 
         internal class Result

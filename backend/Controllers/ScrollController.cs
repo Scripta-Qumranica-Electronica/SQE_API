@@ -51,7 +51,7 @@ namespace SQE.Backend.Server.Controllers
             return Ok(groups);
         }
 
-        [HttpPost("update/{id}")]
+        [HttpPost("update/{id}")] //not working well..
         public async Task<ActionResult<ScrollVersion>> UpdateScrollVersion([FromBody] ScrollUpdateRequest request, int id)
         {
             try
@@ -69,7 +69,7 @@ namespace SQE.Backend.Server.Controllers
             }
         }
 
-        [HttpPost("copy/{id}")]
+        [HttpPost("copy/{id}")] //not working well..
         public async Task<ActionResult<ScrollVersion>> CopyScrollVersion([FromBody] ScrollUpdateRequest request, int id)
         {
             try

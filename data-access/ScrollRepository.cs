@@ -115,8 +115,9 @@ namespace SQE.Backend.DataAccess
             }
         }
 
-        public async Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name)
+        public async Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name) //not working well, Help please!
         {
+            /**
             using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection() as MySqlConnection)
@@ -151,7 +152,7 @@ namespace SQE.Backend.DataAccess
                     await connection.CloseAsync();
                 }
 
-            }
+            }**/
             return sv;
         }
         /**
@@ -238,9 +239,9 @@ namespace SQE.Backend.DataAccess
             return false;
         }
 
-        public async Task<ScrollVersion> CopyScrollVersion(ScrollVersion sv, string name, int? userId)
+        public async Task<ScrollVersion> CopyScrollVersion(ScrollVersion sv, string name, int? userId) //not working well, Help please!
         {
-
+            /**
             //the user have permissions to copy scrollVersion
 
             using (var transactionScope = new TransactionScope())
@@ -252,10 +253,10 @@ namespace SQE.Backend.DataAccess
                     await connection.OpenAsync();
 
                     //update scroll_version_group --NEED TO CHECK THE SCROLL ID!!!!
-                    /**var cmd = new MySqlCommand(CopyScrollVersionQueries.InsertIntoScrollVersionGroup(), connection);
-                    cmd.Parameters.AddWithValue("@ScrollID", sv.Id);
-                    await cmd.ExecuteNonQueryAsync();
-                    var scrollVersionGroupId = cmd.LastInsertedId;**/
+                    //var cmd = new MySqlCommand(CopyScrollVersionQueries.InsertIntoScrollVersionGroup(), connection);
+                    //cmd.Parameters.AddWithValue("@ScrollID", sv.Id);
+                    //await cmd.ExecuteNonQueryAsync();
+                    //var scrollVersionGroupId = cmd.LastInsertedId;
 
                     //getScrollVersionGroupId
                     var cmd = new MySqlCommand(CopyScrollVersionQueries.GetScrollVersionGroupId(), connection);
@@ -302,7 +303,7 @@ namespace SQE.Backend.DataAccess
                     transactionScope.Complete();
                 }
 
-            }
+            }**/
 
             return sv;
         }

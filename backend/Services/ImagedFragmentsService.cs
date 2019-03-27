@@ -9,8 +9,8 @@ namespace SQE.Backend.Server.Services
 {
     public interface IImagedFragmentsService
     {
-        Task <ImagedFragmentList> GetImagedFragments(int? userId, int scrollId);
-        
+        Task<ImagedFragmentList> GetImagedFragments(int? userId, int scrollId);
+        Task<ImagedFragment> GetImagedFragment(int? userId, int scrollVersionId, string fragmentId);
     }
     public class ImagedFragmentsService : IImagedFragmentsService
     {
@@ -27,7 +27,7 @@ namespace SQE.Backend.Server.Services
 
         async public Task<ImagedFragmentList> GetImagedFragments(int? userId, int scrollVersionId)
         {
-            var imagedFragments =  await _repo.GetImagedFragments(userId, scrollVersionId);
+            var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, null);
 
             if (imagedFragments == null)
             {
@@ -55,7 +55,7 @@ namespace SQE.Backend.Server.Services
                 if (imageDict.TryGetValue(i.Id, out var imagedFragment))
                     result.ImagedFragments.Add(ImagedFragmentModelToDTO(i, imagedFragment));
             }
-            
+
             return result;
         }
         private string getFragmentId(DataAccess.Models.Image image)
@@ -75,14 +75,14 @@ namespace SQE.Backend.Server.Services
         private static ImageStack getRecto(List<Image> images)
         {
             List<Image> img = new List<Image>();
-            foreach(var image in images)
+            foreach (var image in images)
             {
                 if (image.side == "recto")
                 {
                     img.Add(image);
                 }
             }
-            if(img.Count == 0)
+            if (img.Count == 0)
             {
                 return null;
             }
@@ -118,6 +118,21 @@ namespace SQE.Backend.Server.Services
                 masterIndex = masterIndex,
                 images = img
             };
+        }
+
+        async public Task<ImagedFragment> GetImagedFragment(int? userId, int scrollVersionId, string fragmentId)
+        {
+            var images = await _imageRepo.GetImages(userId, scrollVersionId, fragmentId); //send imagedFragment from here 
+            var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, fragmentId); //should be onky one!
+            List<Image> img = new List<Image>();
+            foreach (var image in images)
+            {
+                img.Add(_imageService.ImageToDTO(image));
+                //var fragmentId = getFragmentId(image);
+            }
+            var result = ImagedFragmentModelToDTO(imagedFragments.First(), img);
+
+            return result;
         }
     }
 }
