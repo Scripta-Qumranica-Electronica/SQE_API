@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 
 namespace SQE.Backend.Server.DTOs
 {
-    public class ImagedFragment
+    public class ImagedFragmentDTO
     {
         public string id { get; set; }
-        public ImageStack recto { get; set; } // TODO: Change to ImageStack
-        public ImageStack verso { get; set; } // TODO: Change to ImageStack
-        public List<Artefact> Artefacts { get; set; }
+        public ImageStackDTO recto { get; set; } // TODO: Change to ImageStack
+        public ImageStackDTO verso { get; set; } // TODO: Change to ImageStack
+        public List<ArtefactDTO> Artefacts { get; set; }
 
     }
-    public class ImagedFragmentList
+    public class ImagedFragmentListDTO
     {
-        public List<ImagedFragment> ImagedFragments { get; set; }
+        public List<ImagedFragmentDTO> ImagedFragments { get; set; }
     };
 }

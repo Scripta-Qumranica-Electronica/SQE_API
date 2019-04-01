@@ -17,8 +17,8 @@ namespace SQE.Backend.Server.Services
 {
     public interface IUserService
     {
-        Task<UserWithToken> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
-        UserWithToken GetCurrentUser();
+        Task<UserWithTokenDTO> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
+        UserWithTokenDTO GetCurrentUser();
         int? GetCurrentUserId();
     }
 
@@ -39,14 +39,14 @@ namespace SQE.Backend.Server.Services
         }
 
 
-        public async Task<UserWithToken> AuthenticateAsync(string username, string password)
+        public async Task<UserWithTokenDTO> AuthenticateAsync(string username, string password)
         {
             var result = await _repo.GetUserByPassword(username, password);
 
             if (result == null)
                 return null;
 
-            var user = new UserWithToken
+            var user = new UserWithTokenDTO
             {
                 userName = result.UserName,
                 userId = result.UserId,
@@ -75,7 +75,7 @@ namespace SQE.Backend.Server.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public UserWithToken GetCurrentUser()
+        public UserWithTokenDTO GetCurrentUser()
         {
             // TODO: Check if ...User.Identity.Name exists. Return null if not.
             var currentUserName = _accessor.HttpContext.User.Identity.Name;
@@ -83,7 +83,7 @@ namespace SQE.Backend.Server.Services
 
             if (currentUserName != null && currentUserId.HasValue)
             {
-                var user = new UserWithToken
+                var user = new UserWithTokenDTO
                 {
                     userName = currentUserName,
                     userId = currentUserId.Value,
@@ -110,9 +110,9 @@ namespace SQE.Backend.Server.Services
             return null;
         }
 
-        public static User UserModelToDTO(DataAccess.Models.User model)
+        public static UserDTO UserModelToDTO(DataAccess.Models.User model)
         {
-            return new User
+            return new UserDTO
             {
                 userId = model.UserId,
                 userName = model.UserName,

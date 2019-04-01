@@ -17,9 +17,13 @@ join artefact_data_owner using(artefact_data_id)
 join artefact_position using (artefact_id)
 where artefact.artefact_id = @artefactId";
 
-        public static string GetArtefact()
+        public static string GetArtefact(bool scrollVersionId)
         {
-            return _getArtefact;
+            if(!scrollVersionId)
+                return _getArtefact;
+            StringBuilder str = new StringBuilder(_getArtefact);
+            str.Append(" and artefact_data_owner.scroll_version_id=@ScrollVersionId");
+            return str.ToString();
         }
     }
 }

@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 
 namespace SQE.Backend.Server.DTOs
 {
-    public class ImageStack
+    public class ImageStackDTO
     {
         public int id { get; set; }
-        public List<Image> images {get; set;}
+        public List<ImageDTO> images {get; set;}
         public int masterIndex { get; set; }
     }
 }
