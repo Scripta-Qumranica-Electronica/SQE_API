@@ -29,7 +29,7 @@ namespace SQE.Backend.DataAccess.Helpers
     public class TrackMutationHelper : DBConnectionBase, ITrackMutationHelper
     {
         public class SingleAction
-            {
+        {
             private SingleAction(string value) { Value = value; }
 
             public string Value { get; private set; }
@@ -120,8 +120,11 @@ namespace SQE.Backend.DataAccess.Helpers
                             } else
                             {
                                 //break here, the user has no rights to alter this row
+                                // Bronson - do not call Complete if you raise an exception unless you actually mean it! Isn't it better to rollback?
                                 transactionScope.Complete();
                                 await connection.CloseAsync();
+                                // Bronson - don't use Exception, only use derived classes (in this case you can use InvalidOperationException
+                                // as this should clearly result in a 500 error to the user
                                 throw new Exception($"User does not have rights to alter this {mutation.TableName} or the scroll_version does not exist.");
                             }
                         }
@@ -151,8 +154,11 @@ namespace SQE.Backend.DataAccess.Helpers
                             {
                                 //we have a db mutation failure, throw an error.
                                 //but maybe you will have to clean things up before throwing the error.
+                                // Bronson - do not call Complete if you raise an exception unless you actually mean it! Isn't it better to rollback?
                                 transactionScope.Complete();
                                 await connection.CloseAsync();
+                                // Bronson - don't use Exception, only use derived classes (in this case you can use InvalidOperationException
+                                // as this should clearly result in a 500 error to the user
                                 throw new Exception($"Failed writing to {mutation.TableName}.");
                             }
                         }
@@ -160,6 +166,8 @@ namespace SQE.Backend.DataAccess.Helpers
                     success = true;
                     transactionScope.Complete();
                     await connection.CloseAsync();
+
+                    // Bronson - return the status, raise an exception in case of an error
                     return success; //How do I send a Status instead (e.g., Success/Error)
                 }
             }

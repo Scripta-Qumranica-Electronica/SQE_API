@@ -21,7 +21,7 @@ namespace SQE.Backend.DataAccess
     {
         Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> scrollIds);
         Task<Dictionary<int, List<int>>> GetScrollVersionGroups(int? scrollVersionId);
-        Task<string> ChangeScrollVersionName(uint scrollVersionId, string name, int userId);
+        Task ChangeScrollVersionName(uint scrollVersionId, string name, int userId);
         Task<uint> CopyScrollVersion(uint scrollVersionId, ushort userId);
         //Task<List<string>> GetOwnerTables();
         // Task<bool> UpdateOwnerTables(int olvd, int svid);
@@ -122,32 +122,39 @@ namespace SQE.Backend.DataAccess
             }
         }
 
-        public async Task<string> ChangeScrollVersionName(uint scrollVersionId, string name, int userId)
+        public async Task ChangeScrollVersionName(uint scrollVersionId, string name, int userId)
         {
             var sql = ScrollNameQuery.GetQuery();
-            var finishedName = "";
+
             using (var connection = OpenConnection())
             {
                 try
                 {
-                    var result = connection.QuerySingle(sql, new
+                    // Bronson:
+                    // We never ever use dynamic. Create a proper return type (see all the other Query classes - we have a Result class in them
+                    // Also, please use the Async version, which will scale infinitely better
+                    //var result = connection.QuerySingle(sql, new
+                    var result = await connection.QuerySingleAsync(sql, new
                     {
-                        scrollVersionId = scrollVersionId,
+                        scrollVersionId,
                         userId
                     });
+
+                    // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
+                    // As the code stands now, you return "".
 
                     SQENative.ScrollData scrollData = new SQENative.ScrollData((uint)result.scroll_data_id, (uint)result.scroll_id, name)
                     {
                         action = Helpers.Action.Update
                     };
                     var response = await _mutation.TrackMutation((ushort)userId, (uint)scrollVersionId, new List<SQENative.UserEditableTableTemplate>() { scrollData }, (uint)result.scroll_data_id);
-                    if (response)
-                    {
-                        finishedName = name;
-                    }
-                } catch(SqlException) { }
+                    // Bronson: Where isn't there a response?
+                }
+                catch (InvalidOperationException) // Bronson: The error QuerySingle throws if there's no result
+                {
+                    throw new NoPermissionException(userId, "change name", "scroll", (int)scrollVersionId);
+                }
             }
-            return finishedName;
         }
         /**
         public async Task<int> UpdateAction(int scrollDataId, int oldScrollDataId, int scrollVersionId)

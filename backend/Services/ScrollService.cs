@@ -1,4 +1,5 @@
 ﻿using SQE.Backend.DataAccess;
+using SQE.Backend.DataAccess.Helpers;
 using SQE.Backend.Server.DTOs;
 using System;
 using System.Collections.Generic;
@@ -126,23 +127,22 @@ namespace SQE.Backend.Server.Services
         {
             if (name != "") 
             {
-                //Note: the repo will tell you if you don't have permission to alter the name.
-                await _repo.ChangeScrollVersionName(scrollVersionId, name, userId);
-            }  //Need to handle error immediately when name is empty
+                // Bronson: Look how I handled the case of no permission
+                try
+                {
+                    await _repo.ChangeScrollVersionName(scrollVersionId, name, userId);
+                } 
+                catch(NoPermissionException)
+                {
+                    throw new NotFoundException((int)scrollVersionId);
+                }
+            }
             
             List<int> scrollID = new List<int>(new int[] { (int) scrollVersionId });
             var scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by scroll id
-            var sv = scroll.First();
-            
-            //I think we do not get this far if no records were found, `First` will, I think throw an error.
-            //Maybe we should more often make use of try/catch.
-            if (sv == null) 
-            {
-                throw new NotFoundException((int)scrollVersionId);
-            }
-            
-            return ScrollVersionModelToDTO(sv); //need to chane to update scroll
+            var sv = scroll.First();             // Bronson - here we do not expect a permission error, since the rename has already happened.
 
+            return ScrollVersionModelToDTO(sv);
         }
 
         async Task<ScrollVersion> IScrollService.CopyScroll(uint scrollVersionId, string name, int userId)
