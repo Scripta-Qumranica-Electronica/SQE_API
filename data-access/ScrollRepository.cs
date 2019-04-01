@@ -130,11 +130,9 @@ namespace SQE.Backend.DataAccess
             {
                 try
                 {
-                    // Bronson:
-                    // We never ever use dynamic. Create a proper return type (see all the other Query classes - we have a Result class in them
-                    // Also, please use the Async version, which will scale infinitely better
-                    //var result = connection.QuerySingle(sql, new
-                    var result = await connection.QuerySingleAsync(sql, new
+                    // Here we get the data from the original scroll_data field, we need the scroll_id,
+                    // which no one in the front end will generally have or care about.
+                    var result = await connection.QuerySingleAsync<ScrollNameQuery.Result>(sql, new
                     {
                         scrollVersionId,
                         userId
@@ -142,15 +140,20 @@ namespace SQE.Backend.DataAccess
 
                     // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
                     // As the code stands now, you return "".
-
-                    SQENative.ScrollData scrollData = new SQENative.ScrollData((uint)result.scroll_data_id, (uint)result.scroll_id, name)
+                    
+                    // Now we create the object to be inserted into the scroll_data table
+                    SQENative.ScrollData scrollData = new SQENative.ScrollData(result.scroll_data_id, result.scroll_id, name)
                     {
                         action = Helpers.Action.Update
                     };
-                    var response = await _mutation.TrackMutation((ushort)userId, (uint)scrollVersionId, new List<SQENative.UserEditableTableTemplate>() { scrollData }, (uint)result.scroll_data_id);
+                    
+                    // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
+                    // care of main_action and single_action.
+                    var response = await _mutation.TrackMutation((ushort)userId, scrollVersionId, new List<SQENative.UserEditableTableTemplate>() { scrollData });
                     // Bronson: Where isn't there a response?
+                    // Itay: the response is now an HTTP code, but what should I do with it?  Pass it back up or something?
                 }
-                catch (InvalidOperationException) // Bronson: The error QuerySingle throws if there's no result
+                catch (InvalidOperationException) // Bronson: The error QuerySingle throws if there's no result.  Itay: thanks!
                 {
                     throw new NoPermissionException(userId, "change name", "scroll", (int)scrollVersionId);
                 }
@@ -220,7 +223,7 @@ namespace SQE.Backend.DataAccess
         public async Task<uint> CopyScrollVersion(uint scrollVersionId, ushort userId) //not working well, Help please!
         {
             var copyToScrollVersionId = scrollVersionId;
-            // Check if scroll_version is locked, if not, return error.
+            // TODO Check if scroll_version is locked, if not, return error.
             // If we allowed copying of scrolls that are not locked, we would
             // have to block all transactions on all _owner tables in the DB
             // until the copy process was complete in order to guard against

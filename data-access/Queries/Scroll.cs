@@ -268,8 +268,8 @@ WHERE scroll_version.scroll_version_id = @scrollVersionId
 
         internal class Result
         {
-            public int scroll_data_id { get; set; }
-            public int scroll_id { get; set; }
+            public uint scroll_data_id { get; set; }
+            public uint scroll_id { get; set; }
             public string name { get; set; }
         }
     }

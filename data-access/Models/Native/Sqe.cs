@@ -12,12 +12,12 @@ namespace SQE.Backend.DataAccess.Models.Native
     {
         #region Abstract class definitions
 
+        // This is the basic class table for a table in the SQE database
         public abstract class TableTemplate
         {
             public string TableName { get; set; }
 
             public abstract ListDictionary ColumsAndValues();
-
 
             private string Snake(string str)
             {
@@ -25,36 +25,49 @@ namespace SQE.Backend.DataAccess.Models.Native
             }
         }
 
+        // These tables cannot be updated by the API.
+        // I wanted to do something to force that to be the case.
         public abstract class NonEditableTableTemplate : TableTemplate
         {
             //What should I do, if anything to make this immutable?
         }
 
+        // This is a superclass for tables that can be edited by the API.
         public abstract class EditableTableTemplate : TableTemplate
         {
             public string PrimaryKey { get; set; }
         }
 
+        // This subclass is for tables that users can edit.
         public abstract class UserEditableTableTemplate : EditableTableTemplate
         {
             public Helpers.Action action { get; set; }
+            
+            public abstract uint PrimaryKeyValue();
         }
 
+        // Itay: for owner and author in relation to functionality
+        // see TrackMutationHelper.
+        
+        // All tables in this class have a corresponding "owner" table.
         public abstract class OwnedTableTemplate : UserEditableTableTemplate
         {
             public string OwnerTable { get; set; }
         }
 
+        // All tables in this class are "owner" tables.
         public abstract class OwnerTableTemplate : EditableTableTemplate
         {
             public string OwnedTable { get; set; }
         }
 
+        // All tables in this class have a corresponding "author" table.
         public abstract class AuthoredTableTemplate : UserEditableTableTemplate
         {
             public string AuthorTable { get; set; }
         }
 
+        // All tables in this class are "author" tables.
         public abstract class AuthorTableTemplate : EditableTableTemplate
         {
             public string AuthoredTable { get; set; }
@@ -77,7 +90,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ImageCatalogId { get; set; }
             public bool? IsRecto { get; set; }
 
-            public SqeImage(uint? sqe_image_id, uint? image_urls_id, string filename, uint? native_width, uint? native_height, uint? dpi, bool? type, ushort? wavelength_start, ushort? wavelength_end, bool? is_master, uint? image_catalog_id, bool? is_recto)
+            public SqeImage ( uint? sqe_image_id, uint? image_urls_id, string filename, uint? native_width, uint? native_height, uint? dpi, bool? type, ushort? wavelength_start, ushort? wavelength_end, bool? is_master, uint? image_catalog_id, bool? is_recto )
             {
                 TableName = "SQE_image";
                 AuthorTable = "SQE_image_author";
@@ -99,21 +112,22 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sqe_image_id", SqeImageId },
-            {"image_urls_id", ImageUrlsId},
-            {"filename", Filename},
-            {"native_width", NativeWidth},
-            {"native_height", NativeHeight},
-            {"dpi", Dpi},
-            {"type", Type},
-            {"wavelength_start", WavelengthStart},
-            {"wavelength_end", WavelengthEnd},
-            {"is_master", IsMaster},
-            {"image_catalog_id", ImageCatalogId},
-            {"is_recto", IsRecto},
-        };
+                    {"sqe_image_id", SqeImageId},
+                    {"image_urls_id", ImageUrlsId},
+                    {"filename", Filename},
+                    {"native_width", NativeWidth},
+                    {"native_height", NativeHeight},
+                    {"dpi", Dpi},
+                    {"type", Type},
+                    {"wavelength_start", WavelengthStart},
+                    {"wavelength_end", WavelengthEnd},
+                    {"is_master", IsMaster},
+                    {"image_catalog_id", ImageCatalogId},
+                    {"is_recto", IsRecto},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => SqeImageId ?? 0;
         }
 
         public class SqeImageAuthor : AuthorTableTemplate
@@ -121,7 +135,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? SqeImageId { get; set; }
             public ushort? UserId { get; set; }
 
-            public SqeImageAuthor(uint? sqe_image_id, ushort? user_id)
+            public SqeImageAuthor ( uint? sqe_image_id, ushort? user_id )
             {
                 TableName = "SQE_image_author";
                 AuthoredTable = "SQE_image";
@@ -132,9 +146,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sqe_image_id", SqeImageId},
-            {"user_id", UserId},
-        };
+                    {"sqe_image_id", SqeImageId},
+                    {"user_id", UserId},
+                };
                 return dict;
             }
         }
@@ -147,7 +161,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string Commentary { get; set; }
             public bool? ZIndex { get; set; }
 
-            public AreaGroup(uint? area_group_id, uint? area_id, string name, string commentary, bool? z_index)
+            public AreaGroup ( uint? area_group_id, uint? area_id, string name, string commentary, bool? z_index )
             {
                 TableName = "area_group";
                 OwnerTable = "area_group_owner";
@@ -162,14 +176,15 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"area_group_id", AreaGroupId},
-            {"area_id", AreaId},
-            {"name", Name},
-            {"commentary", Commentary},
-            {"z_index", ZIndex},
-        };
+                    {"area_group_id", AreaGroupId},
+                    {"area_id", AreaId},
+                    {"name", Name},
+                    {"commentary", Commentary},
+                    {"z_index", ZIndex},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => AreaGroupId ?? 0;
         }
 
         public class AreaGroupMember : NonEditableTableTemplate
@@ -178,7 +193,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public int? AreaId { get; set; }
             public string AreaType { get; set; }
 
-            public AreaGroupMember(uint? area_group_id, int? area_id, string area_type)
+            public AreaGroupMember ( uint? area_group_id, int? area_id, string area_type )
             {
                 TableName = "area_group_member";
                 AreaGroupId = area_group_id;
@@ -189,10 +204,10 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"area_group_id", AreaGroupId},
-            {"area_id", AreaId},
-            {"area_type", AreaType},
-        };
+                    {"area_group_id", AreaGroupId},
+                    {"area_id", AreaId},
+                    {"area_type", AreaType},
+                };
                 return dict;
             }
         }
@@ -202,7 +217,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? AreaGroupId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public AreaGroupOwner(uint? area_group_id, uint? scroll_version_id)
+            public AreaGroupOwner ( uint? area_group_id, uint? scroll_version_id )
             {
                 TableName = "area_group_owner";
                 OwnedTable = "area_group";
@@ -213,9 +228,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"area_group_id", AreaGroupId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"area_group_id", AreaGroupId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -224,7 +239,7 @@ namespace SQE.Backend.DataAccess.Models.Native
         {
             public uint? ArtefactId { get; set; }
 
-            public Artefact(uint? artefact_id)
+            public Artefact ( uint? artefact_id )
             {
                 TableName = "artefact";
                 ArtefactId = artefact_id;
@@ -233,8 +248,8 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_id", ArtefactId},
-        };
+                    {"artefact_id", ArtefactId},
+                };
                 return dict;
             }
         }
@@ -245,7 +260,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ArtefactId { get; set; }
             public string Name { get; set; }
 
-            public ArtefactData(uint? artefact_data_id, uint? artefact_id, string name)
+            public ArtefactData ( uint? artefact_data_id, uint? artefact_id, string name )
             {
                 TableName = "artefact_data";
                 OwnerTable = "artefact_data_owner";
@@ -258,12 +273,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_data_id", ArtefactDataId},
-            {"artefact_id", ArtefactId},
-            {"name", Name},
-        };
+                    {"artefact_data_id", ArtefactDataId},
+                    {"artefact_id", ArtefactId},
+                    {"name", Name},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ArtefactDataId ?? 0;
         }
 
         public class ArtefactDataOwner : OwnerTableTemplate
@@ -271,7 +287,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ArtefactDataId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ArtefactDataOwner(uint? artefact_data_id, uint? scroll_version_id)
+            public ArtefactDataOwner ( uint? artefact_data_id, uint? scroll_version_id )
             {
                 TableName = "artefact_data_owner";
                 OwnedTable = "artefact_data";
@@ -282,9 +298,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_data_id", ArtefactDataId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"artefact_data_id", ArtefactDataId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -296,7 +312,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string TransformMatrix { get; set; }
             public bool? ZIndex { get; set; }
 
-            public ArtefactPosition(uint? artefact_position_id, uint? artefact_id, string transform_matrix, bool? z_index)
+            public ArtefactPosition ( uint? artefact_position_id, uint? artefact_id, string transform_matrix, bool? z_index )
             {
                 TableName = "artefact_position";
                 OwnerTable = "artefact_position_owner";
@@ -310,13 +326,14 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_position_id", ArtefactPositionId},
-            {"artefact_id", ArtefactId},
-            {"transform_matrix", TransformMatrix},
-            {"z_index", ZIndex},
-        };
+                    {"artefact_position_id", ArtefactPositionId},
+                    {"artefact_id", ArtefactId},
+                    {"transform_matrix", TransformMatrix},
+                    {"z_index", ZIndex},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ArtefactPositionId ?? 0;
         }
 
         public class ArtefactPositionOwner : OwnerTableTemplate
@@ -324,7 +341,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ArtefactPositionId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ArtefactPositionOwner(uint? artefact_position_id, uint? scroll_version_id)
+            public ArtefactPositionOwner ( uint? artefact_position_id, uint? scroll_version_id )
             {
                 TableName = "artefact_position_owner";
                 OwnedTable = "artefact_position";
@@ -335,9 +352,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_position_id", ArtefactPositionId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"artefact_position_id", ArtefactPositionId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -349,7 +366,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? IdOfSqeImage { get; set; }
             public List<byte> RegionInSqeImage { get; set; }
 
-            public ArtefactShape(uint? artefact_shape_id, uint? artefact_id, uint? id_of_sqe_image, List<byte> region_in_sqe_image)
+            public ArtefactShape ( uint? artefact_shape_id, uint? artefact_id, uint? id_of_sqe_image, List<byte> region_in_sqe_image )
             {
                 TableName = "artefact_shape";
                 OwnerTable = "artefact_shape_owner";
@@ -363,13 +380,14 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_shape_id", ArtefactShapeId},
-            {"artefact_id", ArtefactId},
-            {"id_of_sqe_image", IdOfSqeImage},
-            {"region_in_sqe_image", RegionInSqeImage},
-        };
+                    {"artefact_shape_id", ArtefactShapeId},
+                    {"artefact_id", ArtefactId},
+                    {"id_of_sqe_image", IdOfSqeImage},
+                    {"region_in_sqe_image", RegionInSqeImage},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ArtefactShapeId ?? 0;
         }
 
         public class ArtefactShapeOwner : OwnerTableTemplate
@@ -377,7 +395,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ArtefactShapeId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ArtefactShapeOwner(uint? artefact_shape_id, uint? scroll_version_id)
+            public ArtefactShapeOwner ( uint? artefact_shape_id, uint? scroll_version_id )
             {
                 TableName = "artefact_shape_owner";
                 OwnedTable = "artefact_shape";
@@ -388,9 +406,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_shape_id", ArtefactShapeId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"artefact_shape_id", ArtefactShapeId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -406,7 +424,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public bool? BIsVerso { get; set; }
             public bool? Shared { get; set; }
 
-            public ArtefactStack(uint? artefact_stack_id, uint? artefact_A_id, uint? artefact_B_id, bool? layer_A, bool? layer_B, bool? A_is_verso, bool? B_is_verso, bool? shared)
+            public ArtefactStack ( uint? artefact_stack_id, uint? artefact_A_id, uint? artefact_B_id, bool? layer_A, bool? layer_B, bool? A_is_verso, bool? B_is_verso, bool? shared )
             {
                 TableName = "artefact_stack";
                 OwnerTable = "artefact_stack_owner";
@@ -424,17 +442,18 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_stack_id", ArtefactStackId},
-            {"artefact_A_id", ArtefactAId},
-            {"artefact_B_id", ArtefactBId},
-            {"layer_A", LayerA},
-            {"layer_B", LayerB},
-            {"A_is_verso", AIsVerso},
-            {"B_is_verso", BIsVerso},
-            {"shared", Shared},
-        };
+                    {"artefact_stack_id", ArtefactStackId},
+                    {"artefact_A_id", ArtefactAId},
+                    {"artefact_B_id", ArtefactBId},
+                    {"layer_A", LayerA},
+                    {"layer_B", LayerB},
+                    {"A_is_verso", AIsVerso},
+                    {"B_is_verso", BIsVerso},
+                    {"shared", Shared},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ArtefactStackId ?? 0;
         }
 
         public class ArtefactStackOwner : OwnerTableTemplate
@@ -442,7 +461,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ArtefactStackId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ArtefactStackOwner(uint? artefact_stack_id, uint? scroll_version_id)
+            public ArtefactStackOwner ( uint? artefact_stack_id, uint? scroll_version_id )
             {
                 TableName = "artefact_stack_owner";
                 OwnedTable = "artefact_stack";
@@ -453,9 +472,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"artefact_stack_id", ArtefactStackId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"artefact_stack_id", ArtefactStackId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -466,7 +485,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string Name { get; set; }
             public string Description { get; set; }
 
-            public Attribute(uint? attribute_id, string name, string description)
+            public Attribute ( uint? attribute_id, string name, string description )
             {
                 TableName = "attribute";
                 AttributeId = attribute_id;
@@ -477,10 +496,10 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"attribute_id", AttributeId},
-            {"name", Name},
-            {"description", Description},
-        };
+                    {"attribute_id", AttributeId},
+                    {"name", Name},
+                    {"description", Description},
+                };
                 return dict;
             }
         }
@@ -490,7 +509,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? SignCharAttributeId { get; set; }
             public float? Value { get; set; }
 
-            public AttributeNumeric(uint? sign_char_attribute_id, float? value)
+            public AttributeNumeric ( uint? sign_char_attribute_id, float? value )
             {
                 TableName = "attribute_numeric";
                 SignCharAttributeId = sign_char_attribute_id;
@@ -500,9 +519,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_char_attribute_id", SignCharAttributeId},
-            {"value", Value},
-        };
+                    {"sign_char_attribute_id", SignCharAttributeId},
+                    {"value", Value},
+                };
                 return dict;
             }
         }
@@ -514,7 +533,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string StringValue { get; set; }
             public string Description { get; set; }
 
-            public AttributeValue(uint? attribute_value_id, uint? attribute_id, string string_value, string description)
+            public AttributeValue ( uint? attribute_value_id, uint? attribute_id, string string_value, string description )
             {
                 TableName = "attribute_value";
                 AttributeValueId = attribute_value_id;
@@ -526,11 +545,11 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"attribute_value_id", AttributeValueId},
-            {"attribute_id", AttributeId},
-            {"string_value", StringValue},
-            {"description", Description},
-        };
+                    {"attribute_value_id", AttributeValueId},
+                    {"attribute_id", AttributeId},
+                    {"string_value", StringValue},
+                    {"description", Description},
+                };
                 return dict;
             }
         }
@@ -541,7 +560,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? AttributeValueId { get; set; }
             public string Css { get; set; }
 
-            public AttributeValueCss(uint? attribute_value_css_id, uint? attribute_value_id, string css)
+            public AttributeValueCss ( uint? attribute_value_css_id, uint? attribute_value_id, string css )
             {
                 TableName = "attribute_value_css";
                 AttributeValueCssId = attribute_value_css_id;
@@ -552,10 +571,10 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"attribute_value_css_id", AttributeValueCssId},
-            {"attribute_value_id", AttributeValueId},
-            {"css", Css},
-        };
+                    {"attribute_value_css_id", AttributeValueCssId},
+                    {"attribute_value_id", AttributeValueId},
+                    {"css", Css},
+                };
                 return dict;
             }
         }
@@ -567,7 +586,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string UnicodeChar { get; set; }
             public short? LineOffset { get; set; }
 
-            public CharOfWriting(uint? char_of_writing_id, uint? form_of_writing_id, string unicode_char, short? line_offset)
+            public CharOfWriting ( uint? char_of_writing_id, uint? form_of_writing_id, string unicode_char, short? line_offset )
             {
                 TableName = "char_of_writing";
                 OwnerTable = "char_of_writing_owner";
@@ -581,13 +600,14 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"char_of_writing_id", CharOfWritingId},
-            {"form_of_writing_id", FormOfWritingId},
-            {"unicode_char", UnicodeChar},
-            {"line_offset", LineOffset},
-        };
+                    {"char_of_writing_id", CharOfWritingId},
+                    {"form_of_writing_id", FormOfWritingId},
+                    {"unicode_char", UnicodeChar},
+                    {"line_offset", LineOffset},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => CharOfWritingId ?? 0;
         }
 
         public class CharOfWritingOwner : OwnerTableTemplate
@@ -595,7 +615,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? CharOfWritingId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public CharOfWritingOwner(uint? char_of_writing_id, uint? scroll_version_id)
+            public CharOfWritingOwner ( uint? char_of_writing_id, uint? scroll_version_id )
             {
                 TableName = "char_of_writing_owner";
                 OwnedTable = "char_of_writing";
@@ -606,9 +626,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"char_of_writing_id", CharOfWritingId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"char_of_writing_id", CharOfWritingId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -617,7 +637,7 @@ namespace SQE.Backend.DataAccess.Models.Native
         {
             public uint? ColId { get; set; }
 
-            public Col(uint? col_id)
+            public Col ( uint? col_id )
             {
                 TableName = "col";
                 ColId = col_id;
@@ -626,8 +646,8 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"col_id", ColId},
-        };
+                    {"col_id", ColId},
+                };
                 return dict;
             }
         }
@@ -638,7 +658,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ColId { get; set; }
             public string Name { get; set; }
 
-            public ColData(uint? col_data_id, uint? col_id, string name)
+            public ColData ( uint? col_data_id, uint? col_id, string name )
             {
                 TableName = "col_data";
                 OwnerTable = "col_data_owner";
@@ -651,12 +671,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"col_data_id", ColDataId},
-            {"col_id", ColId},
-            {"name", Name},
-        };
+                    {"col_data_id", ColDataId},
+                    {"col_id", ColId},
+                    {"name", Name},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ColDataId ?? 0;
         }
 
         public class ColDataOwner : OwnerTableTemplate
@@ -664,7 +685,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ColDataId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ColDataOwner(uint? col_data_id, uint? scroll_version_id)
+            public ColDataOwner ( uint? col_data_id, uint? scroll_version_id )
             {
                 TableName = "col_data_owner";
                 OwnedTable = "col_data";
@@ -675,9 +696,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"col_data_id", ColDataId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"col_data_id", ColDataId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -688,7 +709,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ColId { get; set; }
             public ushort? Position { get; set; }
 
-            public ColSequence(uint? col_sequence_id, uint? col_id, ushort? position)
+            public ColSequence ( uint? col_sequence_id, uint? col_id, ushort? position )
             {
                 TableName = "col_sequence";
                 OwnerTable = "col_sequence_owner";
@@ -701,12 +722,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"col_sequence_id", ColSequenceId},
-            {"col_id", ColId},
-            {"position", Position},
-        };
+                    {"col_sequence_id", ColSequenceId},
+                    {"col_id", ColId},
+                    {"position", Position},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ColSequenceId ?? 0;
         }
 
         public class ColSequenceOwner : OwnerTableTemplate
@@ -714,7 +736,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ColSequenceId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ColSequenceOwner(uint? col_sequence_id, uint? scroll_version_id)
+            public ColSequenceOwner ( uint? col_sequence_id, uint? scroll_version_id )
             {
                 TableName = "col_sequence_owner";
                 OwnedTable = "col_sequence";
@@ -725,9 +747,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"col_sequence_id", ColSequenceId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"col_sequence_id", ColSequenceId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -738,7 +760,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ColId { get; set; }
             public uint? LineId { get; set; }
 
-            public ColToLine(uint? col_to_line_id, uint? col_id, uint? line_id)
+            public ColToLine ( uint? col_to_line_id, uint? col_id, uint? line_id )
             {
                 TableName = "col_to_line";
                 OwnerTable = "col_to_line_owner";
@@ -751,12 +773,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"col_to_line_id", ColToLineId},
-            {"col_id", ColId},
-            {"line_id", LineId},
-        };
+                    {"col_to_line_id", ColToLineId},
+                    {"col_id", ColId},
+                    {"line_id", LineId},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ColToLineId ?? 0;
         }
 
         public class ColToLineOwner : OwnerTableTemplate
@@ -764,7 +787,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ColToLineId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ColToLineOwner(uint? col_to_line_id, uint? scroll_version_id)
+            public ColToLineOwner ( uint? col_to_line_id, uint? scroll_version_id )
             {
                 TableName = "col_to_line_owner";
                 OwnedTable = "col_to_line";
@@ -775,9 +798,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"col_to_line_id", ColToLineId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"col_to_line_id", ColToLineId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -794,7 +817,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScrollId { get; set; }
             public string Comment { get; set; }
 
-            public EditionCatalog(uint? edition_catalog_id, string manuscript, string edition_name, string edition_volume, string edition_location_1, string edition_location_2, bool? edition_side, uint? scroll_id, string comment)
+            public EditionCatalog ( uint? edition_catalog_id, string manuscript, string edition_name, string edition_volume, string edition_location_1, string edition_location_2, bool? edition_side, uint? scroll_id, string comment )
             {
                 TableName = "edition_catalog";
                 AuthorTable = "edition_catalog_author";
@@ -813,18 +836,19 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"edition_catalog_id", EditionCatalogId},
-            {"manuscript", Manuscript},
-            {"edition_name", EditionName},
-            {"edition_volume", EditionVolume},
-            {"edition_location_1", EditionLocation1},
-            {"edition_location_2", EditionLocation2},
-            {"edition_side", EditionSide},
-            {"scroll_id", ScrollId},
-            {"comment", Comment},
-        };
+                    {"edition_catalog_id", EditionCatalogId},
+                    {"manuscript", Manuscript},
+                    {"edition_name", EditionName},
+                    {"edition_volume", EditionVolume},
+                    {"edition_location_1", EditionLocation1},
+                    {"edition_location_2", EditionLocation2},
+                    {"edition_side", EditionSide},
+                    {"scroll_id", ScrollId},
+                    {"comment", Comment},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => EditionCatalogId ?? 0;
         }
 
         public class EditionCatalogAuthor : AuthorTableTemplate
@@ -832,7 +856,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? EditionCatalogId { get; set; }
             public ushort? UserId { get; set; }
 
-            public EditionCatalogAuthor(uint? edition_catalog_id, ushort? user_id)
+            public EditionCatalogAuthor ( uint? edition_catalog_id, ushort? user_id )
             {
                 TableName = "edition_catalog_author";
                 AuthoredTable = "edition_catalog";
@@ -843,9 +867,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"edition_catalog_id", EditionCatalogId},
-            {"user_id", UserId},
-        };
+                    {"edition_catalog_id", EditionCatalogId},
+                    {"user_id", UserId},
+                };
                 return dict;
             }
         }
@@ -857,7 +881,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ColId { get; set; }
             public uint? UserId { get; set; }
 
-            public EditionCatalogToCol(uint? edition_catalog_to_col_id, uint? edition_catalog_id, uint? col_id, uint? user_id)
+            public EditionCatalogToCol ( uint? edition_catalog_to_col_id, uint? edition_catalog_id, uint? col_id, uint? user_id )
             {
                 TableName = "edition_catalog_to_col";
                 EditionCatalogToColId = edition_catalog_to_col_id;
@@ -869,11 +893,11 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"edition_catalog_to_col_id", EditionCatalogToColId},
-            {"edition_catalog_id", EditionCatalogId},
-            {"col_id", ColId},
-            {"user_id", UserId},
-        };
+                    {"edition_catalog_to_col_id", EditionCatalogToColId},
+                    {"edition_catalog_id", EditionCatalogId},
+                    {"col_id", ColId},
+                    {"user_id", UserId},
+                };
                 return dict;
             }
         }
@@ -885,7 +909,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public ushort? UserId { get; set; }
             public DateTime? Time { get; set; }
 
-            public EditionCatalogToColConfirmation(uint? edition_catalog_to_col_id, bool? confirmed, ushort? user_id, DateTime? time)
+            public EditionCatalogToColConfirmation ( uint? edition_catalog_to_col_id, bool? confirmed, ushort? user_id, DateTime? time )
             {
                 TableName = "edition_catalog_to_col_confirmation";
                 EditionCatalogToColId = edition_catalog_to_col_id;
@@ -897,11 +921,11 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"edition_catalog_to_col_id", EditionCatalogToColId},
-            {"confirmed", Confirmed},
-            {"user_id", UserId},
-            {"time", Time},
-        };
+                    {"edition_catalog_to_col_id", EditionCatalogToColId},
+                    {"confirmed", Confirmed},
+                    {"user_id", UserId},
+                    {"time", Time},
+                };
                 return dict;
             }
         }
@@ -911,7 +935,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ExternalFontId { get; set; }
             public string FontId { get; set; }
 
-            public ExternalFont(uint? external_font_id, string font_id)
+            public ExternalFont ( uint? external_font_id, string font_id )
             {
                 TableName = "external_font";
                 ExternalFontId = external_font_id;
@@ -921,9 +945,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"external_font_id", ExternalFontId},
-            {"font_id", FontId},
-        };
+                    {"external_font_id", ExternalFontId},
+                    {"font_id", FontId},
+                };
                 return dict;
             }
         }
@@ -937,7 +961,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public ushort? Width { get; set; }
             public ushort? Height { get; set; }
 
-            public ExternalFontGlyph(uint? external_font_glyph_id, uint? external_font_id, List<byte> unicode_char, List<byte> path, ushort? width, ushort? height)
+            public ExternalFontGlyph ( uint? external_font_glyph_id, uint? external_font_id, List<byte> unicode_char, List<byte> path, ushort? width, ushort? height )
             {
                 TableName = "external_font_glyph";
                 ExternalFontGlyphId = external_font_glyph_id;
@@ -951,13 +975,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"external_font_glyph_id", ExternalFontGlyphId},
-            {"external_font_id", ExternalFontId},
-            {"unicode_char", UnicodeChar},
-            {"path", Path},
-            {"width", Width},
-            {"height", Height},
-        };
+                    {"external_font_glyph_id", ExternalFontGlyphId},
+                    {"external_font_id", ExternalFontId},
+                    {"unicode_char", UnicodeChar},
+                    {"path", Path},
+                    {"width", Width},
+                    {"height", Height},
+                };
                 return dict;
             }
         }
@@ -970,7 +994,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public bool? Ink { get; set; }
             public uint? ScribalFontTypeId { get; set; }
 
-            public FormOfWriting(uint? form_of_writing_id, uint? scribes_scribe_id, bool? pen, bool? ink, uint? scribal_font_type_id)
+            public FormOfWriting ( uint? form_of_writing_id, uint? scribes_scribe_id, bool? pen, bool? ink, uint? scribal_font_type_id )
             {
                 TableName = "form_of_writing";
                 OwnerTable = "form_of_writing_owner";
@@ -985,14 +1009,15 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"form_of_writing_id", FormOfWritingId},
-            {"scribes_scribe_id", ScribesScribeId},
-            {"pen", Pen},
-            {"ink", Ink},
-            {"scribal_font_type_id", ScribalFontTypeId},
-        };
+                    {"form_of_writing_id", FormOfWritingId},
+                    {"scribes_scribe_id", ScribesScribeId},
+                    {"pen", Pen},
+                    {"ink", Ink},
+                    {"scribal_font_type_id", ScribalFontTypeId},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => FormOfWritingId ?? 0;
         }
 
         public class FormOfWritingOwner : OwnerTableTemplate
@@ -1000,7 +1025,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? FormOfWritingId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public FormOfWritingOwner(uint? form_of_writing_id, uint? scroll_version_id)
+            public FormOfWritingOwner ( uint? form_of_writing_id, uint? scroll_version_id )
             {
                 TableName = "form_of_writing_owner";
                 OwnedTable = "form_of_writing";
@@ -1011,9 +1036,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"form_of_writing_id", FormOfWritingId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"form_of_writing_id", FormOfWritingId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1026,7 +1051,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string CatalogNumber2 { get; set; }
             public bool? CatalogSide { get; set; }
 
-            public ImageCatalog(uint? image_catalog_id, string institution, string catalog_number_1, string catalog_number_2, bool? catalog_side)
+            public ImageCatalog ( uint? image_catalog_id, string institution, string catalog_number_1, string catalog_number_2, bool? catalog_side )
             {
                 TableName = "image_catalog";
                 AuthorTable = "image_catalog_author";
@@ -1041,14 +1066,15 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"image_catalog_id", ImageCatalogId},
-            {"institution", Institution},
-            {"catalog_number_1", CatalogNumber1},
-            {"catalog_number_2", CatalogNumber2},
-            {"catalog_side", CatalogSide},
-        };
+                    {"image_catalog_id", ImageCatalogId},
+                    {"institution", Institution},
+                    {"catalog_number_1", CatalogNumber1},
+                    {"catalog_number_2", CatalogNumber2},
+                    {"catalog_side", CatalogSide},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ImageCatalogId ?? 0;
         }
 
         public class ImageCatalogAuthor : AuthorTableTemplate
@@ -1056,7 +1082,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ImageCatalogId { get; set; }
             public ushort? UserId { get; set; }
 
-            public ImageCatalogAuthor(uint? image_catalog_id, ushort? user_id)
+            public ImageCatalogAuthor ( uint? image_catalog_id, ushort? user_id )
             {
                 TableName = "image_catalog_author";
                 AuthoredTable = "image_catalog";
@@ -1067,9 +1093,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"image_catalog_id", ImageCatalogId},
-            {"user_id", UserId},
-        };
+                    {"image_catalog_id", ImageCatalogId},
+                    {"user_id", UserId},
+                };
                 return dict;
             }
         }
@@ -1079,7 +1105,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? EditionCatalogId { get; set; }
             public uint? ImageCatalogId { get; set; }
 
-            public ImageToEditionCatalog(uint? edition_catalog_id, uint? image_catalog_id)
+            public ImageToEditionCatalog ( uint? edition_catalog_id, uint? image_catalog_id )
             {
                 TableName = "image_to_edition_catalog";
                 EditionCatalogId = edition_catalog_id;
@@ -1089,9 +1115,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"edition_catalog_id", EditionCatalogId},
-            {"image_catalog_id", ImageCatalogId},
-        };
+                    {"edition_catalog_id", EditionCatalogId},
+                    {"image_catalog_id", ImageCatalogId},
+                };
                 return dict;
             }
         }
@@ -1105,7 +1131,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public List<byte> RegionOnImage2 { get; set; }
             public double? Rotation { get; set; }
 
-            public ImageToImageMap(uint? image_to_image_map_id, uint? image1_id, uint? image2_id, List<byte> region_on_image1, List<byte> region_on_image2, double? rotation)
+            public ImageToImageMap ( uint? image_to_image_map_id, uint? image1_id, uint? image2_id, List<byte> region_on_image1, List<byte> region_on_image2, double? rotation )
             {
                 TableName = "image_to_image_map";
                 AuthorTable = "image_to_image_map_author";
@@ -1121,15 +1147,16 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"image_to_image_map_id", ImageToImageMapId},
-            {"image1_id", Image1Id},
-            {"image2_id", Image2Id},
-            {"region_on_image1", RegionOnImage1},
-            {"region_on_image2", RegionOnImage2},
-            {"rotation", Rotation},
-        };
+                    {"image_to_image_map_id", ImageToImageMapId},
+                    {"image1_id", Image1Id},
+                    {"image2_id", Image2Id},
+                    {"region_on_image1", RegionOnImage1},
+                    {"region_on_image2", RegionOnImage2},
+                    {"rotation", Rotation},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ImageToImageMapId ?? 0;
         }
 
         public class ImageToImageMapAuthor : AuthorTableTemplate
@@ -1137,7 +1164,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ImageToImageMapId { get; set; }
             public ushort? UserId { get; set; }
 
-            public ImageToImageMapAuthor(uint? image_to_image_map_id, ushort? user_id)
+            public ImageToImageMapAuthor ( uint? image_to_image_map_id, ushort? user_id )
             {
                 TableName = "image_to_image_map_author";
                 AuthoredTable = "image_to_image_map";
@@ -1148,9 +1175,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"image_to_image_map_id", ImageToImageMapId},
-            {"user_id", UserId},
-        };
+                    {"image_to_image_map_id", ImageToImageMapId},
+                    {"user_id", UserId},
+                };
                 return dict;
             }
         }
@@ -1163,7 +1190,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string Proxy { get; set; }
             public string License { get; set; }
 
-            public ImageUrls(uint? image_urls_id, string url, string suffix, string proxy, string license)
+            public ImageUrls ( uint? image_urls_id, string url, string suffix, string proxy, string license )
             {
                 TableName = "image_urls";
                 ImageUrlsId = image_urls_id;
@@ -1176,12 +1203,12 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"image_urls_id", ImageUrlsId},
-            {"url", Url},
-            {"suffix", Suffix},
-            {"proxy", Proxy},
-            {"license", License},
-        };
+                    {"image_urls_id", ImageUrlsId},
+                    {"url", Url},
+                    {"suffix", Suffix},
+                    {"proxy", Proxy},
+                    {"license", License},
+                };
                 return dict;
             }
         }
@@ -1192,7 +1219,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string PreviousChar { get; set; }
             public uint? CharsOfWritingCharOfWritingId { get; set; }
 
-            public KerningOfChar(short? kerning, string previous_char, uint? chars_of_writing_char_of_writing_id)
+            public KerningOfChar ( short? kerning, string previous_char, uint? chars_of_writing_char_of_writing_id )
             {
                 TableName = "kerning_of_char";
                 Kerning = kerning;
@@ -1203,10 +1230,10 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"kerning", Kerning},
-            {"previous_char", PreviousChar},
-            {"chars_of_writing_char_of_writing_id", CharsOfWritingCharOfWritingId},
-        };
+                    {"kerning", Kerning},
+                    {"previous_char", PreviousChar},
+                    {"chars_of_writing_char_of_writing_id", CharsOfWritingCharOfWritingId},
+                };
                 return dict;
             }
         }
@@ -1215,7 +1242,7 @@ namespace SQE.Backend.DataAccess.Models.Native
         {
             public uint? LineId { get; set; }
 
-            public Line(uint? line_id)
+            public Line ( uint? line_id )
             {
                 TableName = "line";
                 LineId = line_id;
@@ -1224,8 +1251,8 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"line_id", LineId},
-        };
+                    {"line_id", LineId},
+                };
                 return dict;
             }
         }
@@ -1236,7 +1263,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? LineId { get; set; }
             public string Name { get; set; }
 
-            public LineData(uint? line_data_id, uint? line_id, string name)
+            public LineData ( uint? line_data_id, uint? line_id, string name )
             {
                 TableName = "line_data";
                 OwnerTable = "line_data_owner";
@@ -1249,12 +1276,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"line_data_id", LineDataId},
-            {"line_id", LineId},
-            {"name", Name},
-        };
+                    {"line_data_id", LineDataId},
+                    {"line_id", LineId},
+                    {"name", Name},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => LineDataId ?? 0;
         }
 
         public class LineDataOwner : OwnerTableTemplate
@@ -1262,7 +1290,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? LineDataId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public LineDataOwner(uint? line_data_id, uint? scroll_version_id)
+            public LineDataOwner ( uint? line_data_id, uint? scroll_version_id )
             {
                 TableName = "line_data_owner";
                 OwnedTable = "line_data";
@@ -1273,9 +1301,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"line_data_id", LineDataId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"line_data_id", LineDataId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1286,7 +1314,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? SignId { get; set; }
             public uint? LineId { get; set; }
 
-            public LineToSign(uint? line_to_sign_id, uint? sign_id, uint? line_id)
+            public LineToSign ( uint? line_to_sign_id, uint? sign_id, uint? line_id )
             {
                 TableName = "line_to_sign";
                 OwnerTable = "line_to_sign_owner";
@@ -1299,12 +1327,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"line_to_sign_id", LineToSignId},
-            {"sign_id", SignId},
-            {"line_id", LineId},
-        };
+                    {"line_to_sign_id", LineToSignId},
+                    {"sign_id", SignId},
+                    {"line_id", LineId},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => LineToSignId ?? 0;
         }
 
         public class LineToSignOwner : OwnerTableTemplate
@@ -1312,7 +1341,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? LineToSignId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public LineToSignOwner(uint? line_to_sign_id, uint? scroll_version_id)
+            public LineToSignOwner ( uint? line_to_sign_id, uint? scroll_version_id )
             {
                 TableName = "line_to_sign_owner";
                 OwnedTable = "line_to_sign";
@@ -1323,9 +1352,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"line_to_sign_id", LineToSignId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"line_to_sign_id", LineToSignId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1337,7 +1366,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public bool? Rewinded { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public MainAction(uint? main_action_id, DateTime? time, bool? rewinded, uint? scroll_version_id)
+            public MainAction ( uint? main_action_id, DateTime? time, bool? rewinded, uint? scroll_version_id )
             {
                 TableName = "main_action";
                 MainActionId = main_action_id;
@@ -1349,11 +1378,11 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"main_action_id", MainActionId},
-            {"time", Time},
-            {"rewinded", Rewinded},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"main_action_id", MainActionId},
+                    {"time", Time},
+                    {"rewinded", Rewinded},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1362,7 +1391,7 @@ namespace SQE.Backend.DataAccess.Models.Native
         {
             public uint? ParallelGroupId { get; set; }
 
-            public ParallelGroup(uint? parallel_group_id)
+            public ParallelGroup ( uint? parallel_group_id )
             {
                 TableName = "parallel_group";
                 ParallelGroupId = parallel_group_id;
@@ -1371,8 +1400,8 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"parallel_group_id", ParallelGroupId},
-        };
+                    {"parallel_group_id", ParallelGroupId},
+                };
                 return dict;
             }
         }
@@ -1384,7 +1413,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ParallelGroupId { get; set; }
             public bool? SubGroup { get; set; }
 
-            public ParallelWord(uint? parallel_word_id, uint? word_id, uint? parallel_group_id, bool? sub_group)
+            public ParallelWord ( uint? parallel_word_id, uint? word_id, uint? parallel_group_id, bool? sub_group )
             {
                 TableName = "parallel_word";
                 OwnerTable = "parallel_word_owner";
@@ -1398,13 +1427,14 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"parallel_word_id", ParallelWordId},
-            {"word_id", WordId},
-            {"parallel_group_id", ParallelGroupId},
-            {"sub_group", SubGroup},
-        };
+                    {"parallel_word_id", ParallelWordId},
+                    {"word_id", WordId},
+                    {"parallel_group_id", ParallelGroupId},
+                    {"sub_group", SubGroup},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ParallelWordId ?? 0;
         }
 
         public class ParallelWordOwner : OwnerTableTemplate
@@ -1412,7 +1442,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ParallelWordId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ParallelWordOwner(uint? parallel_word_id, uint? scroll_version_id)
+            public ParallelWordOwner ( uint? parallel_word_id, uint? scroll_version_id )
             {
                 TableName = "parallel_word_owner";
                 OwnedTable = "parallel_word";
@@ -1423,9 +1453,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"parallel_word_id", ParallelWordId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"parallel_word_id", ParallelWordId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1435,7 +1465,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? PointToPointMapId { get; set; }
             public uint? ImageToImageMapId { get; set; }
 
-            public PointToPointMap(uint? point_to_point_map_id, uint? image_to_image_map_id)
+            public PointToPointMap ( uint? point_to_point_map_id, uint? image_to_image_map_id )
             {
                 TableName = "point_to_point_map";
                 PointToPointMapId = point_to_point_map_id;
@@ -1445,9 +1475,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"point_to_point_map_id", PointToPointMapId},
-            {"image_to_image_map_id", ImageToImageMapId},
-        };
+                    {"point_to_point_map_id", PointToPointMapId},
+                    {"image_to_image_map_id", ImageToImageMapId},
+                };
                 return dict;
             }
         }
@@ -1458,7 +1488,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? SignId { get; set; }
             public uint? NextSignId { get; set; }
 
-            public PositionInStream(uint? position_in_stream_id, uint? sign_id, uint? next_sign_id)
+            public PositionInStream ( uint? position_in_stream_id, uint? sign_id, uint? next_sign_id )
             {
                 TableName = "position_in_stream";
                 OwnerTable = "position_in_stream_owner";
@@ -1471,12 +1501,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"position_in_stream_id", PositionInStreamId},
-            {"sign_id", SignId},
-            {"next_sign_id", NextSignId},
-        };
+                    {"position_in_stream_id", PositionInStreamId},
+                    {"sign_id", SignId},
+                    {"next_sign_id", NextSignId},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => PositionInStreamId ?? 0;
         }
 
         public class PositionInStreamOwner : OwnerTableTemplate
@@ -1484,7 +1515,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? PositionInStreamId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public PositionInStreamOwner(uint? position_in_stream_id, uint? scroll_version_id)
+            public PositionInStreamOwner ( uint? position_in_stream_id, uint? scroll_version_id )
             {
                 TableName = "position_in_stream_owner";
                 OwnedTable = "position_in_stream";
@@ -1495,9 +1526,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"position_in_stream_id", PositionInStreamId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"position_in_stream_id", PositionInStreamId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1508,7 +1539,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? WordId { get; set; }
             public bool? PositionInWord { get; set; }
 
-            public PositionInStreamToWordRel(uint? position_in_stream_id, uint? word_id, bool? position_in_word)
+            public PositionInStreamToWordRel ( uint? position_in_stream_id, uint? word_id, bool? position_in_word )
             {
                 TableName = "position_in_stream_to_word_rel";
                 PositionInStreamId = position_in_stream_id;
@@ -1519,10 +1550,10 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"position_in_stream_id", PositionInStreamId},
-            {"word_id", WordId},
-            {"position_in_word", PositionInWord},
-        };
+                    {"position_in_stream_id", PositionInStreamId},
+                    {"word_id", WordId},
+                    {"position_in_word", PositionInWord},
+                };
                 return dict;
             }
         }
@@ -1532,7 +1563,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? QwbBiblioId { get; set; }
             public string BiblioShort { get; set; }
 
-            public QwbBiblio(uint? qwb_biblio_id, string biblio_short)
+            public QwbBiblio ( uint? qwb_biblio_id, string biblio_short )
             {
                 TableName = "qwb_biblio";
                 QwbBiblioId = qwb_biblio_id;
@@ -1542,9 +1573,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"qwb_biblio_id", QwbBiblioId},
-            {"biblio_short", BiblioShort},
-        };
+                    {"qwb_biblio_id", QwbBiblioId},
+                    {"biblio_short", BiblioShort},
+                };
                 return dict;
             }
         }
@@ -1555,7 +1586,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string RefText { get; set; }
             public ushort? BookPosition { get; set; }
 
-            public QwbRef(uint? qwb_ref_id, string ref_text, ushort? book_position)
+            public QwbRef ( uint? qwb_ref_id, string ref_text, ushort? book_position )
             {
                 TableName = "qwb_ref";
                 QwbRefId = qwb_ref_id;
@@ -1566,10 +1597,10 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"qwb_ref_id", QwbRefId},
-            {"ref_text", RefText},
-            {"book_position", BookPosition},
-        };
+                    {"qwb_ref_id", QwbRefId},
+                    {"ref_text", RefText},
+                    {"book_position", BookPosition},
+                };
                 return dict;
             }
         }
@@ -1584,7 +1615,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string Meaning { get; set; }
             public uint? QwbBiblioId { get; set; }
 
-            public QwbVariant(uint? qwb_variant_id, uint? qwd_word_data_id, string text, string lemma, string grammar, string meaning, uint? qwb_biblio_id)
+            public QwbVariant ( uint? qwb_variant_id, uint? qwd_word_data_id, string text, string lemma, string grammar, string meaning, uint? qwb_biblio_id )
             {
                 TableName = "qwb_variant";
                 OwnerTable = "qwb_variant_owner";
@@ -1601,16 +1632,17 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"qwb_variant_id", QwbVariantId},
-            {"qwd_word_data_id", QwdWordDataId},
-            {"text", Text},
-            {"lemma", Lemma},
-            {"grammar", Grammar},
-            {"meaning", Meaning},
-            {"qwb_biblio_id", QwbBiblioId},
-        };
+                    {"qwb_variant_id", QwbVariantId},
+                    {"qwd_word_data_id", QwdWordDataId},
+                    {"text", Text},
+                    {"lemma", Lemma},
+                    {"grammar", Grammar},
+                    {"meaning", Meaning},
+                    {"qwb_biblio_id", QwbBiblioId},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => QwbVariantId ?? 0;
         }
 
         public class QwbVariantOwner : OwnerTableTemplate
@@ -1618,7 +1650,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? QwbVariantId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public QwbVariantOwner(uint? qwb_variant_id, uint? scroll_version_id)
+            public QwbVariantOwner ( uint? qwb_variant_id, uint? scroll_version_id )
             {
                 TableName = "qwb_variant_owner";
                 OwnedTable = "qwb_variant";
@@ -1629,9 +1661,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"qwb_variant_id", QwbVariantId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"qwb_variant_id", QwbVariantId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1644,7 +1676,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? Position { get; set; }
             public uint? QwbRefId { get; set; }
 
-            public QwbWordData(uint? qwb_word_data_id, uint? qwb_word_id, string text, uint? position, uint? qwb_ref_id)
+            public QwbWordData ( uint? qwb_word_data_id, uint? qwb_word_id, string text, uint? position, uint? qwb_ref_id )
             {
                 TableName = "qwb_word_data";
                 OwnerTable = "qwb_word_data_owner";
@@ -1659,14 +1691,15 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"qwb_word_data_id", QwbWordDataId},
-            {"qwb_word_id", QwbWordId},
-            {"text", Text},
-            {"position", Position},
-            {"qwb_ref_id", QwbRefId},
-        };
+                    {"qwb_word_data_id", QwbWordDataId},
+                    {"qwb_word_id", QwbWordId},
+                    {"text", Text},
+                    {"position", Position},
+                    {"qwb_ref_id", QwbRefId},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => QwbWordDataId ?? 0;
         }
 
         public class QwbWordDataOwner : OwnerTableTemplate
@@ -1674,7 +1707,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? QwbWordDataId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public QwbWordDataOwner(uint? qwb_word_data_id, uint? scroll_version_id)
+            public QwbWordDataOwner ( uint? qwb_word_data_id, uint? scroll_version_id )
             {
                 TableName = "qwb_word_data_owner";
                 OwnedTable = "qwb_word_data";
@@ -1685,9 +1718,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"qwb_word_data_id", QwbWordDataId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"qwb_word_data_id", QwbWordDataId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1697,7 +1730,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? RoiPositionId { get; set; }
             public string TransformMatrix { get; set; }
 
-            public RoiPosition(uint? roi_position_id, string transform_matrix)
+            public RoiPosition ( uint? roi_position_id, string transform_matrix )
             {
                 TableName = "roi_position";
                 RoiPositionId = roi_position_id;
@@ -1707,9 +1740,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"roi_position_id", RoiPositionId},
-            {"transform_matrix", TransformMatrix},
-        };
+                    {"roi_position_id", RoiPositionId},
+                    {"transform_matrix", TransformMatrix},
+                };
                 return dict;
             }
         }
@@ -1719,7 +1752,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? RoiShapeId { get; set; }
             public List<byte> Path { get; set; }
 
-            public RoiShape(uint? roi_shape_id, List<byte> path)
+            public RoiShape ( uint? roi_shape_id, List<byte> path )
             {
                 TableName = "roi_shape";
                 RoiShapeId = roi_shape_id;
@@ -1729,9 +1762,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"roi_shape_id", RoiShapeId},
-            {"path", Path},
-        };
+                    {"roi_shape_id", RoiShapeId},
+                    {"path", Path},
+                };
                 return dict;
             }
         }
@@ -1741,7 +1774,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScribalFontTypeId { get; set; }
             public string FontName { get; set; }
 
-            public ScribalFontType(uint? scribal_font_type_id, string font_name)
+            public ScribalFontType ( uint? scribal_font_type_id, string font_name )
             {
                 TableName = "scribal_font_type";
                 OwnerTable = "scribal_font_type_owner";
@@ -1753,11 +1786,12 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scribal_font_type_id", ScribalFontTypeId},
-            {"font_name", FontName},
-        };
+                    {"scribal_font_type_id", ScribalFontTypeId},
+                    {"font_name", FontName},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ScribalFontTypeId ?? 0;
         }
 
         public class ScribalFontTypeOwner : OwnerTableTemplate
@@ -1765,7 +1799,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScribalFontTypeId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ScribalFontTypeOwner(uint? scribal_font_type_id, uint? scroll_version_id)
+            public ScribalFontTypeOwner ( uint? scribal_font_type_id, uint? scroll_version_id )
             {
                 TableName = "scribal_font_type_owner";
                 OwnedTable = "scribal_font_type";
@@ -1776,9 +1810,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scribal_font_type_id", ScribalFontTypeId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"scribal_font_type_id", ScribalFontTypeId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1788,7 +1822,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScribeId { get; set; }
             public string Description { get; set; }
 
-            public Scribe(uint? scribe_id, string description)
+            public Scribe ( uint? scribe_id, string description )
             {
                 TableName = "scribe";
                 OwnerTable = "scribe_owner";
@@ -1800,11 +1834,12 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scribe_id", ScribeId},
-            {"description", Description},
-        };
+                    {"scribe_id", ScribeId},
+                    {"description", Description},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ScribeId ?? 0;
         }
 
         public class ScribeOwner : OwnerTableTemplate
@@ -1812,7 +1847,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScribeId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ScribeOwner(uint? scribe_id, uint? scroll_version_id)
+            public ScribeOwner ( uint? scribe_id, uint? scroll_version_id )
             {
                 TableName = "scribe_owner";
                 OwnedTable = "scribe";
@@ -1823,9 +1858,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scribe_id", ScribeId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"scribe_id", ScribeId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1834,7 +1869,7 @@ namespace SQE.Backend.DataAccess.Models.Native
         {
             public uint? ScrollId { get; set; }
 
-            public Scroll(uint? scroll_id)
+            public Scroll ( uint? scroll_id )
             {
                 TableName = "scroll";
                 ScrollId = scroll_id;
@@ -1843,8 +1878,8 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scroll_id", ScrollId},
-        };
+                    {"scroll_id", ScrollId},
+                };
                 return dict;
             }
         }
@@ -1855,7 +1890,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScrollId { get; set; }
             public string Name { get; set; }
 
-            public ScrollData(uint? scroll_data_id, uint? scroll_id, string name)
+            public ScrollData ( uint? scroll_data_id, uint? scroll_id, string name )
             {
                 TableName = "scroll_data";
                 OwnerTable = "scroll_data_owner";
@@ -1868,12 +1903,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scroll_data_id", ScrollDataId},
-            {"scroll_id", ScrollId},
-            {"name", Name},
-        };
+                    {"scroll_data_id", ScrollDataId},
+                    {"scroll_id", ScrollId},
+                    {"name", Name},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ScrollDataId ?? 0;
         }
 
         public class ScrollDataOwner : OwnerTableTemplate
@@ -1881,7 +1917,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScrollDataId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ScrollDataOwner(uint? scroll_data_id, uint? scroll_version_id)
+            public ScrollDataOwner ( uint? scroll_data_id, uint? scroll_version_id )
             {
                 TableName = "scroll_data_owner";
                 OwnedTable = "scroll_data";
@@ -1892,9 +1928,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scroll_data_id", ScrollDataId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"scroll_data_id", ScrollDataId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1905,7 +1941,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScrollId { get; set; }
             public uint? ColId { get; set; }
 
-            public ScrollToCol(uint? scroll_to_col_id, uint? scroll_id, uint? col_id)
+            public ScrollToCol ( uint? scroll_to_col_id, uint? scroll_id, uint? col_id )
             {
                 TableName = "scroll_to_col";
                 OwnerTable = "scroll_to_col_owner";
@@ -1918,12 +1954,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scroll_to_col_id", ScrollToColId},
-            {"scroll_id", ScrollId},
-            {"col_id", ColId},
-        };
+                    {"scroll_to_col_id", ScrollToColId},
+                    {"scroll_id", ScrollId},
+                    {"col_id", ColId},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => ScrollToColId ?? 0;
         }
 
         public class ScrollToColOwner : OwnerTableTemplate
@@ -1931,7 +1968,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScrollToColId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public ScrollToColOwner(uint? scroll_to_col_id, uint? scroll_version_id)
+            public ScrollToColOwner ( uint? scroll_to_col_id, uint? scroll_version_id )
             {
                 TableName = "scroll_to_col_owner";
                 OwnedTable = "scroll_to_col";
@@ -1942,9 +1979,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scroll_to_col_id", ScrollToColId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"scroll_to_col_id", ScrollToColId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -1957,7 +1994,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public bool? MayWrite { get; set; }
             public bool? MayLock { get; set; }
 
-            public ScrollVersion(uint? scroll_version_id, ushort? user_id, uint? scroll_version_group_id, bool? may_write, bool? may_lock)
+            public ScrollVersion ( uint? scroll_version_id, ushort? user_id, uint? scroll_version_group_id, bool? may_write, bool? may_lock )
             {
                 TableName = "scroll_version";
                 ScrollVersionId = scroll_version_id;
@@ -1970,12 +2007,12 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scroll_version_id", ScrollVersionId},
-            {"user_id", UserId},
-            {"scroll_version_group_id", ScrollVersionGroupId},
-            {"may_write", MayWrite},
-            {"may_lock", MayLock},
-        };
+                    {"scroll_version_id", ScrollVersionId},
+                    {"user_id", UserId},
+                    {"scroll_version_group_id", ScrollVersionGroupId},
+                    {"may_write", MayWrite},
+                    {"may_lock", MayLock},
+                };
                 return dict;
             }
         }
@@ -1986,7 +2023,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScrollId { get; set; }
             public bool? Locked { get; set; }
 
-            public ScrollVersionGroup(uint? scroll_version_group_id, uint? scroll_id, bool? locked)
+            public ScrollVersionGroup ( uint? scroll_version_group_id, uint? scroll_id, bool? locked )
             {
                 TableName = "scroll_version_group";
                 ScrollVersionGroupId = scroll_version_group_id;
@@ -1997,10 +2034,10 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scroll_version_group_id", ScrollVersionGroupId},
-            {"scroll_id", ScrollId},
-            {"locked", Locked},
-        };
+                    {"scroll_version_group_id", ScrollVersionGroupId},
+                    {"scroll_id", ScrollId},
+                    {"locked", Locked},
+                };
                 return dict;
             }
         }
@@ -2010,7 +2047,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? ScrollVersionGroupId { get; set; }
             public ushort? UserId { get; set; }
 
-            public ScrollVersionGroupAdmin(uint? scroll_version_group_id, ushort? user_id)
+            public ScrollVersionGroupAdmin ( uint? scroll_version_group_id, ushort? user_id )
             {
                 TableName = "scroll_version_group_admin";
                 ScrollVersionGroupId = scroll_version_group_id;
@@ -2020,9 +2057,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"scroll_version_group_id", ScrollVersionGroupId},
-            {"user_id", UserId},
-        };
+                    {"scroll_version_group_id", ScrollVersionGroupId},
+                    {"user_id", UserId},
+                };
                 return dict;
             }
         }
@@ -2031,7 +2068,7 @@ namespace SQE.Backend.DataAccess.Models.Native
         {
             public uint? SignId { get; set; }
 
-            public Sign(uint? sign_id)
+            public Sign ( uint? sign_id )
             {
                 TableName = "sign";
                 SignId = sign_id;
@@ -2040,8 +2077,8 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_id", SignId},
-        };
+                    {"sign_id", SignId},
+                };
                 return dict;
             }
         }
@@ -2053,7 +2090,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public bool? IsVariant { get; set; }
             public string Sign { get; set; }
 
-            public SignChar(uint? sign_char_id, uint? sign_id, bool? is_variant, string sign)
+            public SignChar ( uint? sign_char_id, uint? sign_id, bool? is_variant, string sign )
             {
                 TableName = "sign_char";
                 SignCharId = sign_char_id;
@@ -2065,11 +2102,11 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_char_id", SignCharId},
-            {"sign_id", SignId},
-            {"is_variant", IsVariant},
-            {"sign", Sign},
-        };
+                    {"sign_char_id", SignCharId},
+                    {"sign_id", SignId},
+                    {"is_variant", IsVariant},
+                    {"sign", Sign},
+                };
                 return dict;
             }
         }
@@ -2081,7 +2118,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? AttributeValueId { get; set; }
             public bool? Sequence { get; set; }
 
-            public SignCharAttribute(uint? sign_char_attribute_id, uint? sign_char_id, uint? attribute_value_id, bool? sequence)
+            public SignCharAttribute ( uint? sign_char_attribute_id, uint? sign_char_id, uint? attribute_value_id, bool? sequence )
             {
                 TableName = "sign_char_attribute";
                 OwnerTable = "sign_char_attribute_owner";
@@ -2095,13 +2132,14 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_char_attribute_id", SignCharAttributeId},
-            {"sign_char_id", SignCharId},
-            {"attribute_value_id", AttributeValueId},
-            {"sequence", Sequence},
-        };
+                    {"sign_char_attribute_id", SignCharAttributeId},
+                    {"sign_char_id", SignCharId},
+                    {"attribute_value_id", AttributeValueId},
+                    {"sequence", Sequence},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => SignCharAttributeId ?? 0;
         }
 
         public class SignCharAttributeOwner : OwnerTableTemplate
@@ -2109,7 +2147,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? SignCharAttributeId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public SignCharAttributeOwner(uint? sign_char_attribute_id, uint? scroll_version_id)
+            public SignCharAttributeOwner ( uint? sign_char_attribute_id, uint? scroll_version_id )
             {
                 TableName = "sign_char_attribute_owner";
                 OwnedTable = "sign_char_attribute";
@@ -2120,9 +2158,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_char_attribute_id", SignCharAttributeId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"sign_char_attribute_id", SignCharAttributeId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -2134,7 +2172,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? AttributeId { get; set; }
             public string Commentary { get; set; }
 
-            public SignCharCommentary(uint? sign_char_commentary_id, uint? sign_char_id, uint? attribute_id, string commentary)
+            public SignCharCommentary ( uint? sign_char_commentary_id, uint? sign_char_id, uint? attribute_id, string commentary )
             {
                 TableName = "sign_char_commentary";
                 OwnerTable = "sign_char_commentary_owner";
@@ -2148,13 +2186,14 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_char_commentary_id", SignCharCommentaryId},
-            {"sign_char_id", SignCharId},
-            {"attribute_id", AttributeId},
-            {"commentary", Commentary},
-        };
+                    {"sign_char_commentary_id", SignCharCommentaryId},
+                    {"sign_char_id", SignCharId},
+                    {"attribute_id", AttributeId},
+                    {"commentary", Commentary},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => SignCharCommentaryId ?? 0;
         }
 
         public class SignCharCommentaryOwner : OwnerTableTemplate
@@ -2162,7 +2201,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? SignCharCommentaryId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public SignCharCommentaryOwner(uint? sign_char_commentary_id, uint? scroll_version_id)
+            public SignCharCommentaryOwner ( uint? sign_char_commentary_id, uint? scroll_version_id )
             {
                 TableName = "sign_char_commentary_owner";
                 OwnedTable = "sign_char_commentary";
@@ -2173,9 +2212,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_char_commentary_id", SignCharCommentaryId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"sign_char_commentary_id", SignCharCommentaryId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -2189,7 +2228,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public bool? ValuesSet { get; set; }
             public bool? Exceptional { get; set; }
 
-            public SignCharRoi(uint? sign_char_roi_id, uint? sign_char_id, uint? roi_shape_id, uint? roi_position_id, bool? values_set, bool? exceptional)
+            public SignCharRoi ( uint? sign_char_roi_id, uint? sign_char_id, uint? roi_shape_id, uint? roi_position_id, bool? values_set, bool? exceptional )
             {
                 TableName = "sign_char_roi";
                 OwnerTable = "sign_char_roi_owner";
@@ -2205,15 +2244,16 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_char_roi_id", SignCharRoiId},
-            {"sign_char_id", SignCharId},
-            {"roi_shape_id", RoiShapeId},
-            {"roi_position_id", RoiPositionId},
-            {"values_set", ValuesSet},
-            {"exceptional", Exceptional},
-        };
+                    {"sign_char_roi_id", SignCharRoiId},
+                    {"sign_char_id", SignCharId},
+                    {"roi_shape_id", RoiShapeId},
+                    {"roi_position_id", RoiPositionId},
+                    {"values_set", ValuesSet},
+                    {"exceptional", Exceptional},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => SignCharRoiId ?? 0;
         }
 
         public class SignCharRoiOwner : OwnerTableTemplate
@@ -2221,7 +2261,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? SignCharRoiId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public SignCharRoiOwner(uint? sign_char_roi_id, uint? scroll_version_id)
+            public SignCharRoiOwner ( uint? sign_char_roi_id, uint? scroll_version_id )
             {
                 TableName = "sign_char_roi_owner";
                 OwnedTable = "sign_char_roi";
@@ -2232,9 +2272,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sign_char_roi_id", SignCharRoiId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"sign_char_roi_id", SignCharRoiId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -2246,7 +2286,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string Table { get; set; }
             public uint? IdInTable { get; set; }
 
-            public SingleAction(ulong? single_action_id, uint? main_action_id, string table, uint? id_in_table)
+            public SingleAction ( ulong? single_action_id, uint? main_action_id, string table, uint? id_in_table )
             {
                 TableName = "single_action";
                 SingleActionId = single_action_id;
@@ -2258,11 +2298,11 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"single_action_id", SingleActionId},
-            {"main_action_id", MainActionId},
-            {"table", Table},
-            {"id_in_table", IdInTable},
-        };
+                    {"single_action_id", SingleActionId},
+                    {"main_action_id", MainActionId},
+                    {"table", Table},
+                    {"id_in_table", IdInTable},
+                };
                 return dict;
             }
         }
@@ -2276,7 +2316,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public DateTime? LastInternalSessionEnd { get; set; }
             public string Attributes { get; set; }
 
-            public SqeSession(string sqe_session_id, ushort? user_id, uint? scroll_version_id, DateTime? session_start, DateTime? last_internal_session_end, string attributes)
+            public SqeSession ( string sqe_session_id, ushort? user_id, uint? scroll_version_id, DateTime? session_start, DateTime? last_internal_session_end, string attributes )
             {
                 TableName = "sqe_session";
                 SqeSessionId = sqe_session_id;
@@ -2290,13 +2330,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"sqe_session_id", SqeSessionId},
-            {"user_id", UserId},
-            {"scroll_version_id", ScrollVersionId},
-            {"session_start", SessionStart},
-            {"last_internal_session_end", LastInternalSessionEnd},
-            {"attributes", Attributes},
-        };
+                    {"sqe_session_id", SqeSessionId},
+                    {"user_id", UserId},
+                    {"scroll_version_id", ScrollVersionId},
+                    {"session_start", SessionStart},
+                    {"last_internal_session_end", LastInternalSessionEnd},
+                    {"attributes", Attributes},
+                };
                 return dict;
             }
         }
@@ -2314,7 +2354,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string Settings { get; set; }
             public int? LastScrollVersionId { get; set; }
 
-            public User(ushort? user_id, string user_name, string pw, string forename, string surname, string organization, string email, DateTime? registration_date, string settings, int? last_scroll_version_id)
+            public User ( ushort? user_id, string user_name, string pw, string forename, string surname, string organization, string email, DateTime? registration_date, string settings, int? last_scroll_version_id )
             {
                 TableName = "user";
                 UserId = user_id;
@@ -2332,17 +2372,17 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"user_id", UserId},
-            {"user_name", UserName},
-            {"pw", Pw},
-            {"forename", Forename},
-            {"surname", Surname},
-            {"organization", Organization},
-            {"email", Email},
-            {"registration_date", RegistrationDate},
-            {"settings", Settings},
-            {"last_scroll_version_id", LastScrollVersionId},
-        };
+                    {"user_id", UserId},
+                    {"user_name", UserName},
+                    {"pw", Pw},
+                    {"forename", Forename},
+                    {"surname", Surname},
+                    {"organization", Organization},
+                    {"email", Email},
+                    {"registration_date", RegistrationDate},
+                    {"settings", Settings},
+                    {"last_scroll_version_id", LastScrollVersionId},
+                };
                 return dict;
             }
         }
@@ -2354,7 +2394,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string CommentText { get; set; }
             public DateTime? EntryTime { get; set; }
 
-            public UserComment(int? comment_id, ushort? user_id, string comment_text, DateTime? entry_time)
+            public UserComment ( int? comment_id, ushort? user_id, string comment_text, DateTime? entry_time )
             {
                 TableName = "user_comment";
                 CommentId = comment_id;
@@ -2366,11 +2406,11 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"comment_id", CommentId},
-            {"user_id", UserId},
-            {"comment_text", CommentText},
-            {"entry_time", EntryTime},
-        };
+                    {"comment_id", CommentId},
+                    {"user_id", UserId},
+                    {"comment_text", CommentText},
+                    {"entry_time", EntryTime},
+                };
                 return dict;
             }
         }
@@ -2382,7 +2422,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public string Contribution { get; set; }
             public DateTime? EntryTime { get; set; }
 
-            public UserContributions(uint? contribution_id, short? user_id, string contribution, DateTime? entry_time)
+            public UserContributions ( uint? contribution_id, short? user_id, string contribution, DateTime? entry_time )
             {
                 TableName = "user_contributions";
                 ContributionId = contribution_id;
@@ -2394,11 +2434,11 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"contribution_id", ContributionId},
-            {"user_id", UserId},
-            {"contribution", Contribution},
-            {"entry_time", EntryTime},
-        };
+                    {"contribution_id", ContributionId},
+                    {"user_id", UserId},
+                    {"contribution", Contribution},
+                    {"entry_time", EntryTime},
+                };
                 return dict;
             }
         }
@@ -2412,7 +2452,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public DateTime? SessionEnd { get; set; }
             public bool? Current { get; set; }
 
-            public UserSessions(int? session_id, ushort? user_id, string session_key, DateTime? session_start, DateTime? session_end, bool? current)
+            public UserSessions ( int? session_id, ushort? user_id, string session_key, DateTime? session_start, DateTime? session_end, bool? current )
             {
                 TableName = "user_sessions";
                 SessionId = session_id;
@@ -2426,13 +2466,13 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"session_id", SessionId},
-            {"user_id", UserId},
-            {"session_key", SessionKey},
-            {"session_start", SessionStart},
-            {"session_end", SessionEnd},
-            {"current", Current},
-        };
+                    {"session_id", SessionId},
+                    {"user_id", UserId},
+                    {"session_key", SessionKey},
+                    {"session_start", SessionStart},
+                    {"session_end", SessionEnd},
+                    {"current", Current},
+                };
                 return dict;
             }
         }
@@ -2442,7 +2482,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? WordId { get; set; }
             public uint? QwbWordId { get; set; }
 
-            public Word(uint? word_id, uint? qwb_word_id)
+            public Word ( uint? word_id, uint? qwb_word_id )
             {
                 TableName = "word";
                 OwnerTable = "word_owner";
@@ -2454,11 +2494,12 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"word_id", WordId},
-            {"qwb_word_id", QwbWordId},
-        };
+                    {"word_id", WordId},
+                    {"qwb_word_id", QwbWordId},
+                };
                 return dict;
             }
+            public override uint PrimaryKeyValue() => WordId ?? 0;
         }
 
         public class WordOwner : OwnerTableTemplate
@@ -2466,7 +2507,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public uint? WordId { get; set; }
             public uint? ScrollVersionId { get; set; }
 
-            public WordOwner(uint? word_id, uint? scroll_version_id)
+            public WordOwner ( uint? word_id, uint? scroll_version_id )
             {
                 TableName = "word_owner";
                 OwnedTable = "word";
@@ -2477,9 +2518,9 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-            {"word_id", WordId},
-            {"scroll_version_id", ScrollVersionId},
-        };
+                    {"word_id", WordId},
+                    {"scroll_version_id", ScrollVersionId},
+                };
                 return dict;
             }
         }

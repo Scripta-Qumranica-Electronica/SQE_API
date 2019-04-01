@@ -128,14 +128,19 @@ namespace SQE.Backend.Server.Services
             if (name != "") 
             {
                 // Bronson: Look how I handled the case of no permission
+                // Itay: Awesome, thanks.  That is nice.
                 try
                 {
                     await _repo.ChangeScrollVersionName(scrollVersionId, name, userId);
                 } 
-                catch(NoPermissionException)
+                catch(NoPermissionException err)
                 {
                     throw new NotFoundException((int)scrollVersionId);
                 }
+            }
+            else
+            {
+                throw new ImproperRequestException("change scroll name", "scroll name cannot be empty");
             }
             
             List<int> scrollID = new List<int>(new int[] { (int) scrollVersionId });

@@ -16,4 +16,11 @@ namespace SQE.Backend.DataAccess.Helpers
             base($"User ${userId?.ToString() ?? "anonymous"} can't perform ${operation} on ${entity} ${entityId?.ToString()}")
         { }
     }
+    
+    public class ImproperRequestException: RepositoryException
+    {
+        public ImproperRequestException(string operation, string requestError) : 
+            base($"Request ${operation} failed; ${requestError}")
+        { }
+    }
 }
