@@ -14,7 +14,7 @@ namespace SQE.Backend.Server.Controllers
 
     [Produces("application/json")]
     [Authorize]
-    [Route("v1/user")]
+    [Route("v1/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
     {

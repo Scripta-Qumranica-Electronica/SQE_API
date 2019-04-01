@@ -13,7 +13,7 @@ using SQE.Backend.Server.DTOs;
 namespace backend.Controllers
 {
     [Authorize]
-    [Route("api/imaged-fragments")]
+    [Route("v1/[controller]")]
     [ApiController]
     public class ImagedFragmentsController : ControllerBase
     {

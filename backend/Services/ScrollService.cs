@@ -13,8 +13,8 @@ namespace SQE.Backend.Server.Services
     {
         Task<ScrollVersionGroup> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts = false, bool fragments = false);
         Task<ScrollVersionList> ListScrollVersionsAsync(int? userId);
-        Task<ScrollVersion> UpdateScroll(int scrollId, string name, int? userId);
-        Task<ScrollVersion> CopyScroll(int scrollId, string name, int? userId);
+        Task<ScrollVersion> UpdateScroll(uint scrollVersionId, string name, int userId);
+        Task<ScrollVersion> CopyScroll(uint scrollVersionId, string name, int userId);
     }
 
     public class ScrollService : IScrollService
@@ -122,52 +122,62 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        public async Task<ScrollVersion> UpdateScroll(int scrollId, string name, int? userId)
+        public async Task<ScrollVersion> UpdateScroll(uint scrollVersionId, string name, int userId)
         {
-            List<int> scrollID = new List<int>(new int[] { scrollId });
-
+            if (name != "") 
+            {
+                //Note: the repo will tell you if you don't have permission to alter the name.
+                await _repo.ChangeScrollVersionName(scrollVersionId, name, userId);
+            }  //Need to handle error immediately when name is empty
+            
+            List<int> scrollID = new List<int>(new int[] { (int) scrollVersionId });
             var scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by scroll id
             var sv = scroll.First();
-
-            if (sv == null)
+            
+            //I think we do not get this far if no records were found, `First` will, I think throw an error.
+            //Maybe we should more often make use of try/catch.
+            if (sv == null) 
             {
-                throw new NotFoundException(scrollId);
+                throw new NotFoundException((int)scrollVersionId);
             }
-
-            if (sv.Permission.CanWrite == false)
-            {
-                throw new ForbiddenException(scrollId);
-            }
-            if (name != sv.Name) 
-            {
-                await _repo.ChangeScrollVersionName(sv, name);
-
-                // We may just change the name in sv and return it, without accessing the database again
-                var updatedScroll = await _repo.ListScrollVersions(userId, scrollID); 
-                return ScrollVersionModelToDTO(updatedScroll.First());
-            }
+            
             return ScrollVersionModelToDTO(sv); //need to chane to update scroll
 
         }
 
-        public async Task<ScrollVersion> CopyScroll(int scrollId, string name, int? userId)
+        async Task<ScrollVersion> IScrollService.CopyScroll(uint scrollVersionId, string name, int userId)
         {
-            List<int> scrollID = new List<int>(new int[] { scrollId });
-
-            var scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by id
-            var sv = scroll.First();
-
-            if (sv == null)
+            ScrollVersion sv;
+            // Clone scroll
+            var copyToScrollVersionId = await _repo.CopyScrollVersion(scrollVersionId, (ushort) userId);
+            if (scrollVersionId == copyToScrollVersionId)
             {
-                throw new NotFoundException(scrollId); 
+                // Check if is success is true, else throw error.
+                throw new System.Exception($"Failed to clone {scrollVersionId}.");
             }
-            /**
-            var updatedScroll = await _repo.CopyScrollVersion(sv, name, userId);
+                
+            scrollVersionId = copyToScrollVersionId;
+            
+            //Change the name, if a name has been passed
+            if (!String.IsNullOrEmpty(name))
+            {
+                sv = await UpdateScroll(scrollVersionId, name, userId);
+            }
+            else
+            {
+                List<int> scrollID = new List<int>(new int[] { (int) scrollVersionId });
 
-            var Scroll = await _repo.ListScrollVersions(userId, scrollID);
-            return ScrollVersionModelToDTO(Scroll.First());**/
-
-            return null; //need to return the updated scroll
+                IEnumerable<DataAccess.Models.ScrollVersion> scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by id
+                var unformattedSv = scroll.First();
+                //I think we do not get this far if no records were found, `First` will, I think throw an error.
+                //Maybe we should more often make use of try/catch.
+                if (unformattedSv == null)
+                {
+                    throw new NotFoundException((int) scrollVersionId);
+                }
+                sv = ScrollVersionModelToDTO(unformattedSv);
+            }
+            return sv; //need to return the updated scroll
         }
     }
 }

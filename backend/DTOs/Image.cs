@@ -10,7 +10,7 @@ namespace SQE.Backend.Server.DTOs
         public string url { get; set; }
         public lighting lightingType { get; set; }
         public direction lightingDirection { get; set; }
-        public double waveLength { get; set; }
+        public string[] waveLength { get; set; }
         public string type { get; set; }
         public string side { get; set; }
         public Polygon regionInMaster { get; set; }

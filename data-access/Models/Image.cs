@@ -18,9 +18,9 @@ namespace SQE.Backend.DataAccess.Models
         public string Catlog1 { set; get; }
         public string Catalog2 { set; get; }
         public int Master { set; get; }
-   }
+    }
 
-public class ImageInstitution
+    public class ImageInstitution
     {
         public string Name { get; set; }
     }

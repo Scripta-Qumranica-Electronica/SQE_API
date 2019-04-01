@@ -57,7 +57,7 @@ and edition_catalog.edition_side =0
         }
     }
 
-internal class ImageGroupQuery
+    internal class ImageGroupQuery
     {
         private static readonly string _baseQuery = @"
 SELECT  image_catalog.image_catalog_id, 
@@ -126,7 +126,7 @@ WHERE (scroll_version.user_id = @UserId OR scroll_version.user_id = (SELECT user
 
         internal class Result
         {
-            public string institution { get; set; }
+            public string Institution { get; set; }
         }
     }
 }

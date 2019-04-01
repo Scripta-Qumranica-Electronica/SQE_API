@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +14,7 @@ using System.Reflection;
 using System.IO;
 using SQE.Backend.Server.Services;
 using SQE.Backend.DataAccess;
+using SQE.Backend.DataAccess.Helpers;
 using Microsoft.AspNetCore.Http;
 using SQE.Backend.Server.Helpers;
 using Swashbuckle.AspNetCore.Swagger;
@@ -44,8 +46,13 @@ namespace SQE.Backend.Server
             services.AddTransient<IScrollRepository, ScrollRepository>();
             services.AddTransient<IImagedFragmentsRepository, ImagedFragmentsRepository>();
             services.AddTransient<IImageRepository, ImageRepository>();
-            
+            services.AddTransient<ITrackMutationHelper, TrackMutationHelper>();
 
+            // Configure routing.
+            services.Configure<RouteOptions>(options =>
+            {
+                options.LowercaseUrls = true;
+            });
 
             // configure strongly typed settings objects
             var appSettingsSection = Configuration.GetSection("AppSettings");

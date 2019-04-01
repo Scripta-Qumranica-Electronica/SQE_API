@@ -12,9 +12,8 @@ using SQE.Backend.Server.Services;
 namespace SQE.Backend.Server.Controllers
 {
 
-    [Produces("application/json")]
     [Authorize]
-    [Route("v1/image")]
+    [Route("v1/[controller]")]
     [ApiController]
     public class ImageController : ControllerBase
     {

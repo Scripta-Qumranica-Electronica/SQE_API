@@ -2,21 +2,9 @@
 using Microsoft.Extensions.Configuration;
 using SQE.Backend.DataAccess.Models;
 using SQE.Backend.DataAccess.Queries;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Dapper;
-using SQE.Backend.DataAccess.Queries;
-using System.Linq;
-using SQE.Backend.DataAccess.Models;
-using Microsoft.Extensions.Configuration;
-using System.Transactions;
-using System.Data.SqlClient;
-using static SQE.Backend.DataAccess.Queries.ImageGroupQuery;
-using static SQE.Backend.DataAccess.Queries.UserImageGroupQuery;
-using MySql.Data.MySqlClient;
 
 namespace SQE.Backend.DataAccess
 {
@@ -44,9 +32,9 @@ namespace SQE.Backend.DataAccess
                 {
                     UserId = userId ?? -1, // @UserId is not expanded if userId is null
                     ScrollVersionId = scrollVersionId,
-                    Catalog1 = fragment?.Catalog1,
-                    Catalog2 = fragment?.Catalog2,
-                    Institution = fragment?.Institution,
+                    fragment?.Catalog1,
+                    fragment?.Catalog2,
+                    fragment?.Institution,
                 });
 
                 var models = results.Select(result => CreateImage(result));
@@ -90,8 +78,8 @@ namespace SQE.Backend.DataAccess
             str[1] = end.ToString();
             return str;
         }
-        
-	public async Task<IEnumerable<ImageGroup>> ListImages(int? userId, List<int> scrollIds) //
+
+        public async Task<IEnumerable<ImageGroup>> ListImages(int? userId, List<int> scrollIds) //
         {
             string sql;
             if (userId.HasValue)
@@ -103,9 +91,6 @@ namespace SQE.Backend.DataAccess
                 sql = ImageGroupQuery.GetQuery(scrollIds.Count > 0);
             }
 
-
-             //We can't expand the ScrollIds parameters with MySql, as it is a list. We need to expand ourselves.
-             //Since ids is a list of integers, SQL injection is quite impossible.
             if (scrollIds != null)
             {
                 sql = sql.Replace("@ScrollVersionIds", $"({string.Join(",", scrollIds)})");
@@ -155,7 +140,7 @@ namespace SQE.Backend.DataAccess
         {
             var model = new ImageInstitution
             {
-                Name = result.institution,
+                Name = result.Institution,
             };
 
             return model;

@@ -89,73 +89,6 @@ JOIN scroll_version sv2 ON (svg2.scroll_version_group_id=sv2.scroll_version_grou
             public int scroll_version_id { get; set; }
         }
 
-        internal class UpdateScrollNameQueries
-        {
-            private static string _updateMainAction = @"INSERT INTO main_action 
-          (scroll_version_id) VALUES (@ScrollVersionId)";
-
-            private static string _updateSingleAction = @"insert into single_action (main_action_id, action, `table`,id_in_table)
-Values (@MainActionId, @Action, ""scroll_data"", @IdInTable)";
-
-            public static string _addScrollName = @"INSERT INTO scroll_data (scroll_id, name)
-VALUES (@ScrollVersionId, @Name)";
-
-            private static string _updateScrollData = @"
-update scroll_data
-set name =@Name
-where scroll_id = @ScrollVersionId;";
-
-            public static string _lastId = @"LAST_INSERTED_ID()";
-
-            public static string _checkIfNameExists = @"SELECT scroll_data_id FROM scroll_data WHERE name =@Name AND scroll_id =@ScrollVersionId";
-
-
-            public static string _updateScrollDataOwner = @"UPDATE scroll_data_owner
-set scroll_data_id = @ScrollDataId
-where scroll_version_id = @ScrollVersionId";
-
-            public static string _getScrollDataId = @"SELECT scroll_data_id from scroll_data where scroll_id = @ScrollVersionId";
-
-            public static string UpdateScrollData()
-            {
-                return _updateScrollData;
-            }
-            public static string GetScrollDataId ()
-            {
-                return _getScrollDataId;
-            }
-
-            public static string AddScrollName()
-            {
-                return _addScrollName;
-            } 
-
-            public static string CheckIfNameExists()
-            {
-                return _checkIfNameExists;
-            }
-
-            public static string UpdateScrollDataOwner()
-            {
-                return _updateScrollDataOwner;
-            }
-
-            public static string AddMainAction()
-            {
-                return _updateMainAction;
-            }
-
-            public static string AddSingleAction()
-            {
-                return _updateSingleAction;
-            }
-
-            public static string LastId()
-            {
-                return _lastId;
-            }
-        }
-
         internal class CopyScrollVersionQueries
         {
             private static string _checkPermissions = @"select user_id from scroll_version
@@ -317,4 +250,83 @@ where scroll_id = @ScrollVersionId";
         }
     }
 
+    internal class ScrollNameQuery
+    {
+        private static string _baseQuery = @"
+SELECT scroll_data_id, scroll_id, name
+FROM scroll_data
+JOIN scroll_data_owner USING(scroll_data_id)
+JOIN scroll_version USING(scroll_version_id)
+WHERE scroll_version.scroll_version_id = @scrollVersionId
+    AND scroll_version.user_id = @userId
+";
+
+        public static string GetQuery()
+        {
+            return _baseQuery;
+        }
+
+        internal class Result
+        {
+            public int scroll_data_id { get; set; }
+            public int scroll_id { get; set; }
+            public string name { get; set; }
+        }
+    }
+
+    internal static class ScrollVersionGroupLimit
+    {
+        // You must add a parameter `@scrollVersionId` to any query using this.
+        public static string LimitToScrollVersionGroup =>
+            @"scroll_version_id IN 
+            (SELECT sv2.scroll_version_id
+            FROM scroll_version sv1
+            JOIN scroll_version_group USING(scroll_version_group_id)
+            JOIN scroll_version sv2 ON sv2.scroll_version_group_id = scroll_version_group.scroll_version_group_id
+            WHERE sv1.scroll_version_id = @scrollVersionId)";
+    }
+
+    internal static class CreateScrollVersion
+    {
+        // You must add a parameter `@userId`, `@scrollVersionId`, and `@mayLock` (0 = false, 1 = true) to use this.
+        public const string GetQuery = 
+            @"INSERT INTO scroll_version (user_id, scroll_version_group_id, may_write, may_lock) 
+            VALUES (@userId, @scrollVersionGroupId, 1, @mayLock)";
+    }
+    
+    internal static class CreateScrollVersionGroup
+    {
+        // You must add a parameter `@scrollVersionId` to use this.
+        public const string GetQuery = 
+            @"INSERT INTO scroll_version_group (scroll_id, locked)  
+            (SELECT scroll_id, 0
+            FROM scroll_version
+            JOIN scroll_version_group USING(scroll_version_group_id)
+            WHERE scroll_version_id = @scrollVersionId)";
+    }
+    
+    internal static class CreateScrollVersionGroupAdmin
+    {
+        // You must add a parameter `@scrollVersionId` and `@userID` to use this.
+        public const string GetQuery = 
+            @"INSERT INTO scroll_version_group_admin (scroll_version_group_id, user_id)   
+            VALUES (@scrollVersionGroupId, @userId)";
+    }
+    
+    internal static class CopyScrollVersionDataForTable
+    {
+        // You must add a parameter `@scrollVersionId` and `@copyToScrollVersionId` to use this.
+        public static string GetQuery(string tableName, string tableIdColumn)
+        {
+            return $@"INSERT IGNORE INTO {tableName} ({tableIdColumn}, scroll_version_id) 
+            SELECT {tableIdColumn}, @copyToScrollVersionId 
+            FROM {tableName} 
+            WHERE scroll_version_id IN
+                  (SELECT sv2.scroll_version_id
+                   FROM scroll_version sv1
+                          JOIN scroll_version_group USING(scroll_version_group_id)
+                          JOIN scroll_version sv2 ON sv2.scroll_version_group_id = scroll_version_group.scroll_version_group_id
+                   WHERE sv1.scroll_version_id = @scrollVersionId)";
+        }
+    }
 }

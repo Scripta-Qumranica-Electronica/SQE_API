@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SQE.Backend.DataAccess;
 using SQE.Backend.Server.DTOs;
 using SQE.Backend.Server.Services;
@@ -12,9 +13,8 @@ using SQE.Backend.Server.Services;
 namespace SQE.Backend.Server.Controllers
 {
 
-    [Produces("application/json")]
     [Authorize]
-    [Route("v1/scroll-version")]
+    [Route("v1/[controller]")]
     [ApiController]
     public class ScrollController : ControllerBase
     {
@@ -52,12 +52,17 @@ namespace SQE.Backend.Server.Controllers
             return Ok(groups);
         }
 
-        [HttpPost("update/{id}")] //not working well..
-        public async Task<ActionResult<ScrollVersion>> UpdateScrollVersion([FromBody] ScrollUpdateRequest request, int id)
+        [HttpPost("update/{id}")]
+        public async Task<ActionResult<ScrollVersion>> UpdateScrollVersion([FromBody] ScrollUpdateRequest request, uint id)
         {
             try
             {
-                var scroll = await _scrollService.UpdateScroll(id, request.name, _userService.GetCurrentUserId());
+                var userId = _userService.GetCurrentUserId();
+                if (!userId.HasValue)
+                {
+                    throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
+                }
+                var scroll = await _scrollService.UpdateScroll(id, request.name, userId.Value);
                 return scroll;
             }
             catch (NotFoundException)
@@ -75,7 +80,12 @@ namespace SQE.Backend.Server.Controllers
         {
             try
             {
-                var scroll = await _scrollService.CopyScroll(id, request.name, _userService.GetCurrentUserId());
+                var userId = _userService.GetCurrentUserId();
+                if (!userId.HasValue)
+                {
+                    throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
+                }
+                var scroll = await _scrollService.CopyScroll((uint) id, request.name, userId.Value);
                 return scroll;
             }
             catch (NotFoundException)

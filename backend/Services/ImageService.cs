@@ -57,8 +57,8 @@ namespace SQE.Backend.Server.Services
                 type = GetType(model.Type),
                 regionInMaster = null,
                 regionOfMaster = null,
-                ligthingDirection = GetLigthingDirection(model.Type),
-                ligthingType = GetLigthingType(model.Type),
+                lightingDirection = GetLigthingDirection(model.Type),
+                lightingType = GetLightingType(model.Type),
                 side = model.Side,
                 transformToMaster = model.TransformMatrix,
                 catalog_number = model.ImageCatalogId,
@@ -78,13 +78,13 @@ namespace SQE.Backend.Server.Services
             return null;
 
         }
-        public Image.ligthing GetLigthingType(int type)
+        public Image.lighting GetLightingType(int type)
         {
             if (type ==2 || type == 3)
             {
-                return Image.ligthing.raking;
+                return Image.lighting.raking;
             }
-            return Image.ligthing.direct; // need to check..
+            return Image.lighting.direct; // need to check..
         }
 
         public Image.direction GetLigthingDirection(int type)
@@ -100,7 +100,7 @@ namespace SQE.Backend.Server.Services
             return Image.direction.top; // need to check..
         }
 
-	public async Task<ImageGroupList> GetImageAsync(int? userId, List<int> scrollVersionId)
+        public async Task<ImageGroupList> GetImageAsync(int? userId, List<int> scrollVersionId)
         {
             var images = await _repo.ListImages(userId, scrollVersionId);
 

@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Dapper;
+using System.Data.SqlClient;
 using SQE.Backend.DataAccess.Queries;
 using System.Linq;
 using SQE.Backend.DataAccess.Models;
+using SQE.Backend.DataAccess.Helpers;
+using static SQE.Backend.DataAccess.Helpers.TrackMutationHelper;
+using SQE.Backend.DataAccess.Models.Native;
 using Microsoft.Extensions.Configuration;
 using System.Transactions;
-using System.Data.SqlClient;
 using static SQE.Backend.DataAccess.Queries.ScrollVersionGroupQuery;
 using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI;
 
 namespace SQE.Backend.DataAccess
 {
@@ -18,8 +21,8 @@ namespace SQE.Backend.DataAccess
     {
         Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> scrollIds);
         Task<Dictionary<int, List<int>>> GetScrollVersionGroups(int? scrollVersionId);
-        Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name);
-        Task<ScrollVersion> CopyScrollVersion(ScrollVersion sv, string name, int? userId);
+        Task<string> ChangeScrollVersionName(uint scrollVersionId, string name, int userId);
+        Task<uint> CopyScrollVersion(uint scrollVersionId, ushort userId);
         //Task<List<string>> GetOwnerTables();
         // Task<bool> UpdateOwnerTables(int olvd, int svid);
         //Task<int> UpdateAction(int scrollDataId, int oldScrollDataId, int scrollVersionId);
@@ -28,7 +31,12 @@ namespace SQE.Backend.DataAccess
 
     public class ScrollRepository : DBConnectionBase, IScrollRepository
     {
-        public ScrollRepository(IConfiguration config) : base(config) { }
+        ITrackMutationHelper _mutation;
+
+        public ScrollRepository(IConfiguration config, ITrackMutationHelper mutationHelper) : base(config) 
+        {
+            _mutation = mutationHelper;
+        }
 
         public async Task<IEnumerable<ScrollVersion>> ListScrollVersions(int? userId, List<int> ids) //
         {
@@ -114,46 +122,32 @@ namespace SQE.Backend.DataAccess
             }
         }
 
-        public async Task<ScrollVersion> ChangeScrollVersionName(ScrollVersion sv, string name) //not working well, Help please!
+        public async Task<string> ChangeScrollVersionName(uint scrollVersionId, string name, int userId)
         {
-            // BRONSON
-            /**
-            using (var transactionScope = new TransactionScope())
+            var sql = ScrollNameQuery.GetQuery();
+            var finishedName = "";
+            using (var connection = OpenConnection())
             {
-                using (var connection = OpenConnection() as MySqlConnection)
+                try
                 {
-                    var scrollDataId = await GetScrollDataId(name, sv.Id);
+                    var result = connection.QuerySingle(sql, new
+                    {
+                        scrollVersionId = scrollVersionId,
+                        userId
+                    });
 
-                    await connection.OpenAsync();
-                    //update scroll data owner
-                    var cmd = new MySqlCommand(UpdateScrollNameQueries.UpdateScrollDataOwner(), connection);
-                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                    cmd.Parameters.AddWithValue("@ScrollDataId", scrollDataId);
-                    await cmd.ExecuteNonQueryAsync();
-
-                    //update main_action table
-                    cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
-                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                    await cmd.ExecuteNonQueryAsync();
-                    var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
-
-                    //update single_action table
-
-                    cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
-                    cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
-                    cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
-                    cmd.Parameters.AddWithValue("@Action", "add");
-
-
-
-                    await cmd.ExecuteNonQueryAsync();
-
-                    transactionScope.Complete();
-                    await connection.CloseAsync();
-                }
-
-            }**/
-            return sv;
+                    SQENative.ScrollData scrollData = new SQENative.ScrollData((uint)result.scroll_data_id, (uint)result.scroll_id, name)
+                    {
+                        action = Helpers.Action.Update
+                    };
+                    var response = await _mutation.TrackMutation((ushort)userId, (uint)scrollVersionId, new List<SQENative.UserEditableTableTemplate>() { scrollData }, (uint)result.scroll_data_id);
+                    if (response)
+                    {
+                        finishedName = name;
+                    }
+                } catch(SqlException) { }
+            }
+            return finishedName;
         }
         /**
         public async Task<int> UpdateAction(int scrollDataId, int oldScrollDataId, int scrollVersionId)
@@ -188,102 +182,101 @@ namespace SQE.Backend.DataAccess
             return scrollDataId;
         }**/
 
-        private async Task<int> GetScrollDataId(string name, int scrollVersionId)
+//        private async Task<int> GetScrollDataId(string name, int scrollVersionId)
+//        {
+//
+//            using (var connection = OpenConnection() as MySqlConnection)
+//            {
+//                await connection.OpenAsync();
+//
+//                var cmd = new MySqlCommand(UpdateScrollNameQueries.CheckIfNameExists(), connection);
+//                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+//                cmd.Parameters.AddWithValue("@Name", name);
+//                var result = await cmd.ExecuteScalarAsync();
+//                if (result != null)
+//                {
+//                    //no need in new recored, return reference to scrollDataID
+//                    return Convert.ToInt32(result);
+//                }
+//
+//                //create new recored 
+//                cmd = new MySqlCommand(UpdateScrollNameQueries.AddScrollName(), connection);
+//                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+//                cmd.Parameters.AddWithValue("@Name", name);
+//                await cmd.ExecuteNonQueryAsync();
+//
+//                await connection.CloseAsync();
+//                return Convert.ToInt32(cmd.LastInsertedId);
+//            }
+//        }
+
+        public async Task<uint> CopyScrollVersion(uint scrollVersionId, ushort userId) //not working well, Help please!
         {
-
-            using (var connection = OpenConnection() as MySqlConnection)
+            var copyToScrollVersionId = scrollVersionId;
+            // Check if scroll_version is locked, if not, return error.
+            // If we allowed copying of scrolls that are not locked, we would
+            // have to block all transactions on all _owner tables in the DB
+            // until the copy process was complete in order to guard against
+            // creating an inconsistent copy.
+            // What if someone unlocks the source scroll mid-copy?
+            using (TransactionScope transactionScope = new TransactionScope())
             {
-                await connection.OpenAsync();
-
-                var cmd = new MySqlCommand(UpdateScrollNameQueries.CheckIfNameExists(), connection);
-                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
-                cmd.Parameters.AddWithValue("@Name", name);
-                var result = await cmd.ExecuteScalarAsync();
-                if (result != null)
+                using (var connection = OpenConnection())
                 {
-                    //no need in new recored, return reference to scrollDataID
-                    return Convert.ToInt32(result);
-                }
+                    try
+                    {
+                        // Create a new scroll_version_group
+                        var results = connection.Execute(CreateScrollVersionGroup.GetQuery, 
+                            new{scrollVersionId});
+                        // Check that results == 1, else throw an error
+                        
+                        var scrollVersionGroupId = await connection.QuerySingleAsync<int>(LastInsertId.GetQuery);
+                        
+                        // Set scroll_version_group_admin to userId
+                        results = connection.Execute(CreateScrollVersionGroupAdmin.GetQuery, 
+                            new{scrollVersionGroupId, userId});
+                        // Check that results == 1, else throw an error
+                        
+                        // Create new scroll_version
+                        results = connection.Execute(Queries.CreateScrollVersion.GetQuery, 
+                            new
+                            {
+                                scrollVersionGroupId, 
+                                userId,
+                                mayLock = 1
+                            });
+                        // Check that results == 1, else throw an error
+                        
+                        copyToScrollVersionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
-                //create new recored 
-                cmd = new MySqlCommand(UpdateScrollNameQueries.AddScrollName(), connection);
-                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
-                cmd.Parameters.AddWithValue("@Name", name);
-                await cmd.ExecuteNonQueryAsync();
-
-                await connection.CloseAsync();
-                return Convert.ToInt32(cmd.LastInsertedId);
-            }
-        }
-
-        public async Task<ScrollVersion> CopyScrollVersion(ScrollVersion sv, string name, int? userId) //not working well, Help please!
-        {
-            // BRONSON
-            /**
-            //the user have permissions to copy scrollVersion
-
-            using (var transactionScope = new TransactionScope())
-            {
-                using (var connection = OpenConnection() as MySqlConnection)
-                {
-                    var scrollDataId = await GetScrollDataId(name, sv.Id);
-
-                    await connection.OpenAsync();
-
-                    //update scroll_version_group --NEED TO CHECK THE SCROLL ID!!!!
-                    //var cmd = new MySqlCommand(CopyScrollVersionQueries.InsertIntoScrollVersionGroup(), connection);
-                    //cmd.Parameters.AddWithValue("@ScrollID", sv.Id);
-                    //await cmd.ExecuteNonQueryAsync();
-                    //var scrollVersionGroupId = cmd.LastInsertedId;
-
-                    //getScrollVersionGroupId
-                    var cmd = new MySqlCommand(CopyScrollVersionQueries.GetScrollVersionGroupId(), connection);
-                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                    var scrollVersionGroupId = await cmd.ExecuteScalarAsync();
-
-
-                    //update scroll_version
-                    cmd = new MySqlCommand(CopyScrollVersionQueries.InsertIntoScrollVersion(), connection);
-                    cmd.Parameters.AddWithValue("@UserId", userId);
-                    cmd.Parameters.AddWithValue("@ScrollVersionGroupId", Convert.ToInt32(scrollVersionGroupId));
-                    await cmd.ExecuteNonQueryAsync();
-                    var svid = cmd.LastInsertedId; //new scroll version id
-
-
-                    //insert into scroll_data
-                    cmd = new MySqlCommand(CopyScrollVersionQueries.InsertIntoScrollData(), connection);
-                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                    cmd.Parameters.AddWithValue("@Name", name);
-                    await cmd.ExecuteNonQueryAsync();
-                    var scrollData = cmd.LastInsertedId;
-
-                    await connection.CloseAsync();
-                    //update all owner tables
-                    await UpdateOwnerTables(sv.Id, Convert.ToInt32(svid));
-
-                    await connection.OpenAsync();
-
-                    //if the name was change, update main_action and single action
-
-                    //update main_action table
-                    cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
-                    cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                    await cmd.ExecuteNonQueryAsync();
-                    var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
-
-                    //update single_action table
-
-                    cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
-                    cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
-                    cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
-                    cmd.Parameters.AddWithValue("@Action", "add");
-
+                        // Copy all owner table references from scroll_version_group of the requested
+                        // scroll_version_id to the newly created scroll_version_id (this is automated
+                        // and will work even if the database schema gets updated).
+                        const string otb = OwnerTables.GetQuery;
+                        var ownerTables = await connection.QueryAsync<OwnerTables.Result>(otb);
+                        foreach (var ownerTable in ownerTables)
+                        {
+                            var tableName = ownerTable.TableName;
+                            var tableIdColumn = tableName.Substring(0, tableName.Length-5) + "id";
+                            results = connection.Execute(
+                                CopyScrollVersionDataForTable.GetQuery(tableName, tableIdColumn),
+                                new
+                                {
+                                    scrollVersionId,
+                                    copyToScrollVersionId
+                                });
+                        }
+                    }
+                    catch
+                    {
+                        //Maybe we do something special with the errors?
+                    }
+                    //Cleanup
                     transactionScope.Complete();
+                    connection.Close();
+                    return copyToScrollVersionId;
                 }
-
-            }**/
-
-            return sv;
+            }
         }
 
         /*

@@ -17,6 +17,14 @@ namespace SQE.Backend.DataAccess.Models
         public User Owner { get; set; }
     }
 
+    public class ScrollName
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int ScrollId { get; set; }
+        public int ScrollDataId { get; set; }
+    }
+
     public class Permission
     {
         public bool CanWrite { get; set; }
