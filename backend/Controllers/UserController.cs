@@ -25,7 +25,7 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")] // api/v1/user/login
-        public async Task<ActionResult<UserWithToken>> AuthenticateAsync([FromBody]LoginRequest userParam)
+        public async Task<ActionResult<UserWithTokenDTO>> AuthenticateAsync([FromBody]LoginRequestDTO userParam)
         {
             var user = await _userService.AuthenticateAsync(userParam.userName, userParam.password);
             if (user == null)
@@ -35,7 +35,7 @@ namespace SQE.Backend.Server.Controllers
         }
 
         [HttpGet] // api/v1/user
-        public ActionResult<UserWithToken> GetCurrentUser()
+        public ActionResult<UserWithTokenDTO> GetCurrentUser()
         {
             var user = _userService.GetCurrentUser();
 

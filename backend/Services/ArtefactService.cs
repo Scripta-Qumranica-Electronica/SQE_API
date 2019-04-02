@@ -11,12 +11,12 @@ namespace SQE.Backend.Server.Services
 {
     public interface IArtefactService
     {
-        Task<Artefact> GetAtrefact(int? userId);
+        Task<ArtefactDTO> GetAtrefact(int? userId);
 
     }
     public class ArtefactService : IArtefactService
     {
-        public Task<Artefact> GetAtrefact(int? userId)
+        public Task<ArtefactDTO> GetAtrefact(int? userId)
         {
             throw new NotImplementedException();
         }

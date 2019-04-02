@@ -11,10 +11,10 @@ namespace SQE.Backend.Server.Services
 {
     public interface IScrollService
     {
-        Task<ScrollVersionGroup> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts = false, bool fragments = false);
-        Task<ScrollVersionList> ListScrollVersionsAsync(int? userId);
-        Task<ScrollVersion> UpdateScroll(int scrollId, string name, int? userId);
-        Task<ScrollVersion> CopyScroll(int scrollId, string name, int? userId);
+        Task<ScrollVersionGroupDTO> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts = false, bool fragments = false);
+        Task<ScrollVersionListDTO> ListScrollVersionsAsync(int? userId);
+        Task<ScrollVersionDTO> UpdateScroll(int scrollId, string name, int? userId);
+        Task<ScrollVersionDTO> CopyScroll(int scrollId, string name, int? userId);
     }
 
     public class ScrollService : IScrollService
@@ -26,7 +26,7 @@ namespace SQE.Backend.Server.Services
             _repo = repo;
         }
 
-        public async Task<ScrollVersionGroup> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts, bool fragments)
+        public async Task<ScrollVersionGroupDTO> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts, bool fragments)
         {
             var groups = await _repo.GetScrollVersionGroups(scrollId);
             if (groups.Count == 0)
@@ -42,7 +42,7 @@ namespace SQE.Backend.Server.Services
                 return null;
             var otherModels = scrollModels.Where(sv => sv.Id != scrollId).OrderBy(sv => sv.Id);
 
-            var svg = new ScrollVersionGroup
+            var svg = new ScrollVersionGroupDTO
             {
                 primary = ScrollVersionModelToDTO(primaryModel),
                 others = otherModels.Select(model => ScrollVersionModelToDTO(model)),
@@ -51,7 +51,7 @@ namespace SQE.Backend.Server.Services
             return svg;
         }
 
-        public async Task<ScrollVersionList> ListScrollVersionsAsync(int? userId)
+        public async Task<ScrollVersionListDTO> ListScrollVersionsAsync(int? userId)
         {
             var groups = await _repo.GetScrollVersionGroups(null);
             var scrollVersions = await _repo.ListScrollVersions(userId, null);
@@ -60,14 +60,14 @@ namespace SQE.Backend.Server.Services
             foreach (var sv in scrollVersions)
                 scrollVersionDict[sv.Id] = sv;
 
-            var result = new ScrollVersionList
+            var result = new ScrollVersionListDTO
             {
-                result = new List<List<ScrollVersion>>(),
+                result = new List<List<ScrollVersionDTO>>(),
             };
 
             foreach (var groupId in groups.Keys)
             {
-                var groupList = new List<ScrollVersion>();
+                var groupList = new List<ScrollVersionDTO>();
                 foreach (var scrollVersionId in groups[groupId])
                 {
                     if (scrollVersionDict.TryGetValue(scrollVersionId, out var scrollVersion))
@@ -80,9 +80,9 @@ namespace SQE.Backend.Server.Services
             return result;
         }
 
-        internal static ScrollVersion ScrollVersionModelToDTO(DataAccess.Models.ScrollVersion model)
+        internal static ScrollVersionDTO ScrollVersionModelToDTO(DataAccess.Models.ScrollVersion model)
         {
-            return new ScrollVersion
+            return new ScrollVersionDTO
             {
                 id = model.Id,
                 name = model.Name,
@@ -95,16 +95,16 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        internal static Permission PermissionModelToDTO(DataAccess.Models.Permission model)
+        internal static PermissionDTO PermissionModelToDTO(DataAccess.Models.Permission model)
         {
-            return new Permission
+            return new PermissionDTO
             {
                 canAdmin = model.CanAdmin,
                 canWrite = model.CanWrite,
             };
         }
 
-        internal static DataAccess.Models.User OwnerToModel(User user)
+        internal static DataAccess.Models.User OwnerToModel(UserDTO user)
         {
             return new DataAccess.Models.User
             {
@@ -113,7 +113,7 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        internal static DataAccess.Models.Permission PermissionDtoTOModel(Permission permission)
+        internal static DataAccess.Models.Permission PermissionDtoTOModel(PermissionDTO permission)
         {
             return new DataAccess.Models.Permission
             {
@@ -122,7 +122,7 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        public async Task<ScrollVersion> UpdateScroll(int scrollId, string name, int? userId)
+        public async Task<ScrollVersionDTO> UpdateScroll(int scrollId, string name, int? userId)
         {
             List<int> scrollID = new List<int>(new int[] { scrollId });
 
@@ -150,7 +150,7 @@ namespace SQE.Backend.Server.Services
 
         }
 
-        public async Task<ScrollVersion> CopyScroll(int scrollId, string name, int? userId)
+        public async Task<ScrollVersionDTO> CopyScroll(int scrollId, string name, int? userId)
         {
             List<int> scrollID = new List<int>(new int[] { scrollId });
 

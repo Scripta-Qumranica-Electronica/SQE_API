@@ -11,7 +11,7 @@ namespace SQE.Backend.Server.Services
     public interface IImageService
     {
         Task<ImageList> GetImages(int? userId, int scrollVersionId, string fragmentId = null);
-        Image ImageToDTO(DataAccess.Models.Image model);
+        ImageDTO ImageToDTO(DataAccess.Models.Image model);
 
     }
     public class ImageService : IImageService
@@ -32,7 +32,7 @@ namespace SQE.Backend.Server.Services
             }
             var result = new ImageList
             {
-                ImagesList = new List<Image>(),
+                ImagesList = new List<ImageDTO>(),
             };
 
 
@@ -44,10 +44,10 @@ namespace SQE.Backend.Server.Services
             return result;
         }
 
-        public Image ImageToDTO(DataAccess.Models.Image model)
+        public ImageDTO ImageToDTO(DataAccess.Models.Image model)
         {
 
-            return new Image
+            return new ImageDTO
             {
                 url = model.URL,
                 waveLength = model.WaveLength,
@@ -75,26 +75,26 @@ namespace SQE.Backend.Server.Services
             return null;
 
         }
-        public Image.ligthing GetLigthingType(int type)
+        public ImageDTO.ligthing GetLigthingType(int type)
         {
             if (type ==2 || type == 3)
             {
-                return Image.ligthing.raking;
+                return ImageDTO.ligthing.raking;
             }
-            return Image.ligthing.direct; // need to check..
+            return ImageDTO.ligthing.direct; // need to check..
         }
 
-        public Image.direction GetLigthingDirection(int type)
+        public ImageDTO.direction GetLigthingDirection(int type)
         {
             if (type == 2)
             {
-                return Image.direction.left;
+                return ImageDTO.direction.left;
             }
             if (type == 3)
             {
-                return Image.direction.right;
+                return ImageDTO.direction.right;
             }
-            return Image.direction.top; // need to check..
+            return ImageDTO.direction.top; // need to check..
         }
     }
 }

@@ -9,8 +9,8 @@ namespace SQE.Backend.Server.Services
 {
     public interface IImagedFragmentsService
     {
-        Task<ImagedFragmentList> GetImagedFragments(int? userId, int scrollId);
-        Task<ImagedFragment> GetImagedFragment(int? userId, int scrollVersionId, string fragmentId);
+        Task<ImagedFragmentListDTO> GetImagedFragments(int? userId, int scrollId);
+        Task<ImagedFragmentDTO> GetImagedFragment(int? userId, int scrollVersionId, string fragmentId);
     }
     public class ImagedFragmentsService : IImagedFragmentsService
     {
@@ -25,7 +25,7 @@ namespace SQE.Backend.Server.Services
             _imageService = imageService;
         }
 
-        async public Task<ImagedFragmentList> GetImagedFragments(int? userId, int scrollVersionId)
+        async public Task<ImagedFragmentListDTO> GetImagedFragments(int? userId, int scrollVersionId)
         {
             var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, null);
 
@@ -33,19 +33,19 @@ namespace SQE.Backend.Server.Services
             {
                 throw new NotFoundException(scrollVersionId);
             }
-            var result = new ImagedFragmentList
+            var result = new ImagedFragmentListDTO
             {
-                result = new List<ImagedFragment>(),
+                result = new List<ImagedFragmentDTO>(),
             };
             var images = await _imageRepo.GetImages(userId, scrollVersionId, null); //send imagedFragment from here 
 
-            Dictionary<string, List<Image>> imageDict = new Dictionary<string, List<Image>>();
+            Dictionary<string, List<ImageDTO>> imageDict = new Dictionary<string, List<ImageDTO>>();
             foreach (var image in images)
             {
                 var fragmentId = getFragmentId(image);
                 if (!imageDict.ContainsKey(fragmentId))
                 {
-                    imageDict[fragmentId] = new List<Image>();
+                    imageDict[fragmentId] = new List<ImageDTO>();
                 }
                 imageDict[fragmentId].Add(_imageService.ImageToDTO(image));
             }
@@ -62,19 +62,19 @@ namespace SQE.Backend.Server.Services
         {
             return image.Institution + "-" + image.Catlog1 + "-" + image.Catalog2;
         }
-        internal static ImagedFragment ImagedFragmentModelToDTO(DataAccess.Models.ImagedFragment model, List<Image> images)
+        internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedFragment model, List<ImageDTO> images)
         {
 
-            return new ImagedFragment
+            return new ImagedFragmentDTO
             {
                 id = model.Id.ToString(),
                 recto = getRecto(images),
                 verso = getVerso(images)
             };
         }
-        private static ImageStack getRecto(List<Image> images)
+        private static ImageStackDTO getRecto(List<ImageDTO> images)
         {
-            List<Image> img = new List<Image>();
+            List<ImageDTO> img = new List<ImageDTO>();
             foreach (var image in images)
             {
                 if (image.side == "recto")
@@ -88,7 +88,7 @@ namespace SQE.Backend.Server.Services
             }
             int masterIndex = img.FindIndex(i => i.master == 1);
             int catalog_id = img[0].catalog_number;
-            return new ImageStack
+            return new ImageStackDTO
             {
                 id = catalog_id,
                 masterIndex = masterIndex,
@@ -96,9 +96,9 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        private static ImageStack getVerso(List<Image> images)
+        private static ImageStackDTO getVerso(List<ImageDTO> images)
         {
-            List<Image> img = new List<Image>();
+            List<ImageDTO> img = new List<ImageDTO>();
             foreach (var image in images)
             {
                 if (image.side == "verso")
@@ -112,7 +112,7 @@ namespace SQE.Backend.Server.Services
             }
             int masterIndex = img.FindIndex(i => i.master == 1);
             int catalog_id = img[0].catalog_number;
-            return new ImageStack
+            return new ImageStackDTO
             {
                 id = catalog_id,
                 masterIndex = masterIndex,
@@ -120,11 +120,11 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        async public Task<ImagedFragment> GetImagedFragment(int? userId, int scrollVersionId, string fragmentId)
+        async public Task<ImagedFragmentDTO> GetImagedFragment(int? userId, int scrollVersionId, string fragmentId)
         {
             var images = await _imageRepo.GetImages(userId, scrollVersionId, fragmentId); //send imagedFragment from here 
             var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, fragmentId); //should be onky one!
-            List<Image> img = new List<Image>();
+            List<ImageDTO> img = new List<ImageDTO>();
             foreach (var image in images)
             {
                 img.Add(_imageService.ImageToDTO(image));

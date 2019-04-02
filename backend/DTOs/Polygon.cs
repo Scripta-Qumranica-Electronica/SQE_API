@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace SQE.Backend.Server.DTOs
 {
-    public class Polygon
+    public class PolygonDTO
     {
         public string matrix { get; set; } //CAN BE NULL
 

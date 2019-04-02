@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SQE.Backend.Server.DTOs
 {
-    public class LoginRequest 
+    public class LoginRequestDTO
     {
         [Required]
         public string userName { get; set; }
@@ -16,13 +16,13 @@ namespace SQE.Backend.Server.DTOs
         public string password { get; set; }
     }
 
-    public class User
+    public class UserDTO
     {
         public int userId { get; set; }
         public string userName { get; set; }
     }
 
-    public class UserWithToken: User
+    public class UserWithTokenDTO : UserDTO
     {
         public string token { get; set; }
     }

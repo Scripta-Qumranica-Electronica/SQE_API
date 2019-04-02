@@ -25,9 +25,9 @@ namespace backend.Controllers
 
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task<ActionResult<Artefact>> GetArtefact(int id)
+        public async Task<ActionResult<ArtefactDTO>> GetArtefact(int id)
         {
-            return new Artefact();
+            return new ArtefactDTO();
         }
     }
 }

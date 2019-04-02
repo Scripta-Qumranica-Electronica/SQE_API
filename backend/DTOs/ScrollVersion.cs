@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 
 namespace SQE.Backend.Server.DTOs
 {
-    public class ScrollVersion
+    public class ScrollVersionDTO
     {
         public int id { get; set; }
         public string name { get; set; }
-        public Permission permission { get; set; }
-        public User owner { get; set; }
+        public PermissionDTO permission { get; set; }
+        public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }
         public List<Share> shares { get; set; }
         public bool locked { get; set; }
@@ -18,18 +18,19 @@ namespace SQE.Backend.Server.DTOs
         public DateTime? lastEdit { set; get; }
     }
 
-    public class ScrollVersionGroup
+    public class ScrollVersionGroupDTO
     {
-        public ScrollVersion primary { get; set; }
-        public IEnumerable<ScrollVersion> others { get; set; }
+        public ScrollVersionDTO primary { get; set; }
+        public IEnumerable<ScrollVersionDTO> others { get; set; }
     };
 
-    public class ScrollVersionList
+    public class ScrollVersionListDTO
     {
-        public List<List<ScrollVersion>> result { get; set; }
+
+        public List<List<ScrollVersionDTO>> result { get; set; }
     };
 
-    public class Permission
+    public class PermissionDTO
     {
         public bool canWrite { get; set; }
         public bool canAdmin { get; set; }
@@ -37,11 +38,11 @@ namespace SQE.Backend.Server.DTOs
 
     public class Share
     {
-        public User user { get; set; }
-        public Permission permission { get; set; }
+        public UserDTO user { get; set; }
+        public PermissionDTO permission { get; set; }
     }
 
-    public class ScrollUpdateRequest
+    public class ScrollUpdateRequestDTO
     {
         // Currently only the name can be updated
         public string name { get; set; }
