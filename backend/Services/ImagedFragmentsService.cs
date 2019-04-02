@@ -35,7 +35,7 @@ namespace SQE.Backend.Server.Services
             }
             var result = new ImagedFragmentList
             {
-                ImagedFragments = new List<ImagedFragment>(),
+                result = new List<ImagedFragment>(),
             };
             var images = await _imageRepo.GetImages(userId, scrollVersionId, null); //send imagedFragment from here 
 
@@ -53,7 +53,7 @@ namespace SQE.Backend.Server.Services
             foreach (var i in imagedFragments)
             {
                 if (imageDict.TryGetValue(i.Id, out var imagedFragment))
-                    result.ImagedFragments.Add(ImagedFragmentModelToDTO(i, imagedFragment));
+                    result.result.Add(ImagedFragmentModelToDTO(i, imagedFragment));
             }
 
             return result;

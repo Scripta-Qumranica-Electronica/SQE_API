@@ -26,7 +26,7 @@ namespace SQE.Backend.Server.DTOs
 
     public class ScrollVersionList
     {
-        public List<List<ScrollVersion>> scrollVersions { get; set; }
+        public List<List<ScrollVersion>> result { get; set; }
     };
 
     public class Permission

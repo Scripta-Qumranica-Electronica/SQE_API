@@ -15,6 +15,6 @@ namespace SQE.Backend.Server.DTOs
     }
     public class ImagedFragmentList
     {
-        public List<ImagedFragment> ImagedFragments { get; set; }
+        public List<ImagedFragment> result { get; set; }
     };
 }

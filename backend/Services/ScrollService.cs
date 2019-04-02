@@ -62,7 +62,7 @@ namespace SQE.Backend.Server.Services
 
             var result = new ScrollVersionList
             {
-                scrollVersions = new List<List<ScrollVersion>>(),
+                result = new List<List<ScrollVersion>>(),
             };
 
             foreach (var groupId in groups.Keys)
@@ -74,7 +74,7 @@ namespace SQE.Backend.Server.Services
                         groupList.Add(ScrollVersionModelToDTO(scrollVersion));
                 }
                 if (groupList.Count > 0)
-                    result.scrollVersions.Add(groupList);
+                    result.result.Add(groupList);
             }
 
             return result;
