@@ -257,9 +257,7 @@ SELECT scroll_data_id, scroll_id, name
 FROM scroll_data
 JOIN scroll_data_owner USING(scroll_data_id)
 JOIN scroll_version USING(scroll_version_id)
-WHERE scroll_version.scroll_version_id = @scrollVersionId
-    AND scroll_version.user_id = @userId
-";
+WHERE " + ScrollVersionGroupLimit.LimitToScrollVersionGroupAndUser;
 
         public static string GetQuery()
         {
@@ -276,57 +274,60 @@ WHERE scroll_version.scroll_version_id = @scrollVersionId
 
     internal static class ScrollVersionGroupLimit
     {
-        // You must add a parameter `@scrollVersionId` to any query using this.
+        // You must add a parameter `@ScrollVersionId` to any query using this.
         public static string LimitToScrollVersionGroup =>
             @"scroll_version_id IN 
             (SELECT sv2.scroll_version_id
             FROM scroll_version sv1
             JOIN scroll_version_group USING(scroll_version_group_id)
             JOIN scroll_version sv2 ON sv2.scroll_version_group_id = scroll_version_group.scroll_version_group_id
-            WHERE sv1.scroll_version_id = @scrollVersionId)";
+            WHERE sv1.scroll_version_id = @ScrollVersionId) ";
+        public static string LimitToScrollVersionGroupAndUser =>
+            @"scroll_version_id IN 
+            (SELECT sv2.scroll_version_id
+            FROM scroll_version sv1
+            JOIN scroll_version_group USING(scroll_version_group_id)
+            JOIN scroll_version sv2 ON sv2.scroll_version_group_id = scroll_version_group.scroll_version_group_id
+            WHERE sv1.scroll_version_id = @ScrollVersionId 
+                AND sv1.user_id = @UserId)";
     }
 
     internal static class CreateScrollVersion
     {
-        // You must add a parameter `@userId`, `@scrollVersionId`, and `@mayLock` (0 = false, 1 = true) to use this.
+        // You must add a parameter `@UserId`, `@ScrollVersionId`, and `@MayLock` (0 = false, 1 = true) to use this.
         public const string GetQuery = 
             @"INSERT INTO scroll_version (user_id, scroll_version_group_id, may_write, may_lock) 
-            VALUES (@userId, @scrollVersionGroupId, 1, @mayLock)";
+            VALUES (@UserId, @ScrollVersionGroupId, 1, @MayLock)";
     }
     
     internal static class CreateScrollVersionGroup
     {
-        // You must add a parameter `@scrollVersionId` to use this.
+        // You must add a parameter `@ScrollVersionId` to use this.
         public const string GetQuery = 
             @"INSERT INTO scroll_version_group (scroll_id, locked)  
             (SELECT scroll_id, 0
             FROM scroll_version
             JOIN scroll_version_group USING(scroll_version_group_id)
-            WHERE scroll_version_id = @scrollVersionId)";
+            WHERE scroll_version_id = @ScrollVersionId)";
     }
     
     internal static class CreateScrollVersionGroupAdmin
     {
-        // You must add a parameter `@scrollVersionId` and `@userID` to use this.
+        // You must add a parameter `@ScrollVersionId` and `@UserID` to use this.
         public const string GetQuery = 
             @"INSERT INTO scroll_version_group_admin (scroll_version_group_id, user_id)   
-            VALUES (@scrollVersionGroupId, @userId)";
+            VALUES (@ScrollVersionGroupId, @UserId)";
     }
     
     internal static class CopyScrollVersionDataForTable
     {
-        // You must add a parameter `@scrollVersionId` and `@copyToScrollVersionId` to use this.
+        // You must add a parameter `@ScrollVersionId` and `@CopyToScrollVersionId` to use this.
         public static string GetQuery(string tableName, string tableIdColumn)
         {
             return $@"INSERT IGNORE INTO {tableName} ({tableIdColumn}, scroll_version_id) 
-            SELECT {tableIdColumn}, @copyToScrollVersionId 
+            SELECT {tableIdColumn}, @CopyToScrollVersionId 
             FROM {tableName} 
-            WHERE scroll_version_id IN
-                  (SELECT sv2.scroll_version_id
-                   FROM scroll_version sv1
-                          JOIN scroll_version_group USING(scroll_version_group_id)
-                          JOIN scroll_version sv2 ON sv2.scroll_version_group_id = scroll_version_group.scroll_version_group_id
-                   WHERE sv1.scroll_version_id = @scrollVersionId)";
+            WHERE " + ScrollVersionGroupLimit.LimitToScrollVersionGroup;
         }
     }
 }

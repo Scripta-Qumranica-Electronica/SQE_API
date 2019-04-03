@@ -1,30 +1,102 @@
-﻿using System;
-using System.Linq;
+using System;
 using System.Transactions;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Threading.Tasks;
-using SQE.Backend.DataAccess.Models.Native;
 using SQE.Backend.DataAccess.Queries;
-using System.Collections;
+using System.Data;
+using System.Linq;
 using Dapper;
-using System.Data.SqlClient;
-using System.Net;
 
 namespace SQE.Backend.DataAccess.Helpers
 {
-    public enum Action
+    /// <summary>
+    /// This enum sets a mutation request to one of the three types.
+    /// </summary>
+    public enum MutateType
     {
         Create,
         Update,
         Delete
     }
+    /// <summary>
+    /// This is an object containing all the necessary data for a single mutation in the database.
+    /// </summary>
+    public class MutationRequest
+    {
+        public MutateType Action { get; }
+        
+        public List<string> Columns { get; }
+        
+        public DynamicParameters Parameters { get; }
+        public string TableName { get; }
+        public uint? TablePkId { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:SQE.Backend.DataAccess.Helpers.MutationRequest"/> class.
+        /// </summary>
+        /// <param name="action">Set the mutate to Create, Update, or Delete.  For Update or Delete, the id for the record being updated or deleted must be passed in tablePkId.</param>
+        /// <param name="columns">The names of each column you want to alter.  These must have a corresponding @column_name entry in the parameters variable. For Delete actions this should be empty.</param>
+        /// <param name="parameters">These are the parameters that will be used in the SQL query. For Delete actions this should be empty.</param>
+        /// <param name="tableName">Name of the table you are altering.</param>
+        /// <param name="tablePkId">Id of the record being updated or deleted.  This will be null with an Insert action.</param>
+        public MutationRequest(MutateType action, List<string> columns, DynamicParameters parameters, string tableName, uint? tablePkId)
+        {
+            Action = action;
+            Columns = columns;
+            Parameters = parameters;
+            TableName = tableName;
+            TablePkId = tablePkId;
+            
+            // Fail creating the object if Parameters is missing a value for any Columns.
+            if (Parameters.ParameterNames.Intersect(Columns.Select(x => "@" + x)).Count() ==
+                Columns.Count())
+            {
+                throw new System.ArgumentException(
+                    "Not all members of Columns have a value in Parameters", 
+                    nameof(parameters)
+                    );
+            }
+
+            if((action == MutateType.Update || action == MutateType.Delete) && !tablePkId.HasValue)
+            {
+                throw new System.ArgumentException(
+                    "The primary key of the record is necessary for Update and Delete actions",
+                    nameof(tablePkId)
+                    );
+            } else
+            {
+                Parameters.Add("@OwnedTableId", tablePkId.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// This is a return type giving necessary information for each mutation.
+    /// </summary>
+    public class AlteredRecord
+    {
+        public string TableName { get; set; }
+        public uint? OldId { get; set; } 
+        public uint? NewId { get; set; }
+         
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:SQE.Backend.DataAccess.Helpers.AlteredRecord"/> class.
+        /// </summary>
+        /// <param name="tableName">Name of the table that was altered.</param>
+        /// <param name="oldId">Id of the record that was altered. Only present with update/delete.</param>
+        /// <param name="newId">Id of the new record that was created. Only present with update/create.</param>
+        public AlteredRecord(string tableName, uint? oldId, uint? newId)
+        {
+            TableName = tableName;
+            OldId = oldId;
+            NewId = newId;
+        }
+    }
 
     public interface ITrackMutationHelper
     {
-        Task<HttpStatusCode> TrackMutation(ushort userId, uint? scrollVersionId, IEnumerable<SQENative.UserEditableTableTemplate> mutations);
+        Task<List<AlteredRecord>> TrackMutation(uint scrollVersionId, ushort userId, List<MutationRequest> mutationRequests);
     }
 
     public class TrackMutationHelper : DBConnectionBase, ITrackMutationHelper
@@ -34,394 +106,219 @@ namespace SQE.Backend.DataAccess.Helpers
             public ushort may_write { get; set; }
             public ushort locked { get; set; }
         }
-        
+
+        /// <summary>
+        /// This is basically an Enum for strings, it protects us from typos when entering the action type in AddSingleAction.
+        /// </summary>
         public class SingleAction
         {
-            private SingleAction(string value) { Value = value; }
+            private SingleAction(string value)
+            {
+                Value = value;
+            }
 
             public string Value { get; private set; }
 
-            public static SingleAction Add { get { return new SingleAction("add"); } }
-            public static SingleAction Delete { get { return new SingleAction("delete"); } }
+            public static SingleAction Add
+            {
+                get { return new SingleAction("add"); }
+            }
+
+            public static SingleAction Delete
+            {
+                get { return new SingleAction("delete"); }
+            }
         }
 
-        public TrackMutationHelper(IConfiguration config) : base(config) { }
+        public TrackMutationHelper(IConfiguration config) : base(config) {}
 
-        public async Task<HttpStatusCode> TrackMutation(ushort userId, uint? scrollVersionId, IEnumerable<SQENative.UserEditableTableTemplate> mutations)
+        /// <summary>
+        /// Performs a list mutation requests for a single scroll version and user.
+        /// </summary>
+        /// <returns>A list of AlteredRecord objects containing the details of each mutation.
+        /// The order of the returned list or results matches the order of the list of mutation requests</returns>
+        /// <param name="scrollVersionId">Id of the scroll version where these mutations will be performed.</param>
+        /// <param name="userId">Id of the user performing the mutations.</param>
+        /// <param name="mutationRequests">List of mutation requests.</param>
+        public async Task<List<AlteredRecord>> TrackMutation(uint scrollVersionId, ushort userId, List<MutationRequest> mutationRequests)
         {
-            // Assume nothing worked with the status code NotModified.
-            HttpStatusCode response = HttpStatusCode.NotModified;
-            
+            List<AlteredRecord> AlteredRecords = new List<AlteredRecord>();
             // Grab a transaction scope, we roll back all changes if any transactions fail
+            // I could limit the transaction scope to each individual mutation request,
+            // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
             using (TransactionScope transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
             {
-                using (MySqlConnection connection = OpenConnection() as MySqlConnection)
+                // Check the permissions and throw if user has no rights to alter this scrollVersion
+                await CheckAccess(connection, scrollVersionId, userId);
+
+                foreach (var mutationRequest in mutationRequests)
                 {
-                    await connection.OpenAsync();
-                    
-                    // Now we iterate over every requested mutation (there might be many).
-                    // But they all must have the same scroll_version_id.  It doesn't make sense
-                    // to group mutation on more than one scroll_version in a single transaction.
-                    foreach (SQENative.UserEditableTableTemplate mutation in mutations)
+                    // Set the scrollVersionId for the mutation.
+                    // Though we accept a List of mutations, we have the restriction that
+                    // they all belong to the same scrollVersionId and userID.
+                    // This way, we only do one permission check for the whole batch.
+                    mutationRequest.Parameters.Add("@ScrollVersionId", scrollVersionId);
+                    try
                     {
-                        // Check the class of the mutation. Owned tables have an owner table (e.g., artefact_shape and
-                        // artefact_shape_owner).  In this case we must work with both those tables and
-                        // record that a change happened via main_action and single_action.
-                        if (mutation.GetType().IsSubclassOf(typeof(SQENative.OwnedTableTemplate)))
+                        await AddMainAction(connection, mutationRequest);
+                        switch (mutationRequest.Action)
                         {
-                            // Make sure we have a scroll_version and that the user can write to it.
-                            // TODO: Might we move this outside the for loop and do one check for all mutation objects?
-                            if (scrollVersionId.HasValue && await CheckAccess(scrollVersionId.Value, connection, userId))
-                            {
-                                // Cast the mutation to its proper subclass (we checked this a few lines above).
-                                SQENative.OwnedTableTemplate ownedMutation = (SQENative.OwnedTableTemplate)mutation;
+                            case (MutateType.Create):
+                                // Insert the record (or return the id of a preexisting record matching the unique constraints.
+                                var createInsertId = await InsertOwnedTable(connection, mutationRequest);
                                 
-                                // Register a main_action for this mutation
-                                MySqlCommand cmd = StartMainAction(connection, scrollVersionId.Value);
-                                _ = await cmd.ExecuteNonQueryAsync();
-                                long mainActionId = cmd.LastInsertedId;
-                                long insertId = 0;
+                                // Insert the link to the scrollVersionId in the owner table
+                                await InsertOwnerTable(connection, mutationRequest, createInsertId);
+
+                                // Record the insert
+                                await AddSingleAction(connection, mutationRequest, SingleAction.Add);
                                 
-                                // Assume we will be doing an Adding action, we can change this below if we need to.
-                                SingleAction singleAction = SingleAction.Add;
-
-                                // Now check the action type (Create/Update/Delete)
-                                switch (ownedMutation.action)
-                                {
-                                    case Action.Create:
-                                        // Create the record in the desired table.
-                                        // If the entry already exists, then "ON DUPLICATE KEY UPDATE"
-                                        // passes the id of that record back to us.
-                                        cmd = Create(mutation, connection);
-                                        _ = await cmd.ExecuteNonQueryAsync();
-                                        insertId = cmd.LastInsertedId;
-                                        
-                                        // Create the record in the "owner" table, which links the record
-                                        // we just created to our scroll version.
-                                        cmd = CreateOwner(ownedMutation, connection, insertId, scrollVersionId.Value);
-                                        _ = await cmd.ExecuteNonQueryAsync();
-                                        
-                                        // Set the success message
-                                        response = HttpStatusCode.Created;
-                                        break;
-                                    
-                                    case Action.Update:
-                                        // Verify that we have a real primary key value for the record
-                                        // to be updated.  If we don't, then CheckMutate throws and exception.
-                                        CheckMutate(mutation.PrimaryKeyValue());
-                                        
-                                        //TODO: Here we should run BeforeUpdate to coalesce the new row with the old one
-                                        //That would be a nice convenience
-                                        //BeforeUpdate(mutation, connection, tableId.Value);
-                                        
-                                        
-                                        // Update the record by creating a new record in the desired table.
-                                        // If a record with the same data already exists its id will be passed
-                                        // back by "ON DUPLICATE KEY UPDATE".
-                                        cmd = Create(mutation, connection);
-                                        _ = await cmd.ExecuteNonQueryAsync();
-                                        insertId = cmd.LastInsertedId;
-                                        
-                                        // Create the record in the "owner" table, which links the record
-                                        // we just created to our scroll version.
-                                        cmd = CreateOwner(ownedMutation, connection, insertId, scrollVersionId.Value);
-                                        _ = await cmd.ExecuteNonQueryAsync();
-
-                                        // Now we delete the old record from the owner table to accomplish this
-                                        // "update".  Note: and update is an insert and a delete operation on the
-                                        // owner table (thus unlinking the old data and linking the new).
-                                        // The original data is not deleted.
-                                        uint deleteID = mutation.PrimaryKeyValue();
-                                        cmd = Delete(ownedMutation, connection, deleteID, scrollVersionId.Value);
-                                        _ = await cmd.ExecuteNonQueryAsync();
-                                        
-                                        // Record our delete action first
-                                        singleAction = SingleAction.Delete;
-                                        cmd = CommitSingleAction(mutation, connection, singleAction, mainActionId, deleteID);
-                                        _ = await cmd.ExecuteNonQueryAsync();
-                                        
-                                        // Set it to record our add action
-                                        singleAction = SingleAction.Add;
-                                        response = HttpStatusCode.OK;
-                                        break;
-                                    
-                                    case Action.Delete:
-                                        // Verify that we have a real primary key value for the record
-                                        // to be updated.  If we don't, then CheckMutate throws and exception.
-                                        CheckMutate(mutation.PrimaryKeyValue());
-                                        
-                                        // Now we delete the old record from the owner table to accomplish this.
-                                        // Note: a delete operation simply unlinks the data from this scroll_version.
-                                        // The original data is not deleted.
-                                        cmd = Delete(ownedMutation, connection, mutation.PrimaryKeyValue(), scrollVersionId.Value);
-                                        _ = await cmd.ExecuteNonQueryAsync();
-                                        insertId = mutation.PrimaryKeyValue();
-                                        
-                                        // Set it to record our delete action.
-                                        singleAction = SingleAction.Delete;
-                                        response = HttpStatusCode.OK;
-                                        break;
-                                }
-
-                                // Whatever we did, it worked of insertId is not 0
-                                if (insertId != 0)
-                                {
-                                    // Commit the last single_action to the database
-                                    cmd = CommitSingleAction(mutation, connection, singleAction, mainActionId, insertId);
-                                    _ = await cmd.ExecuteNonQueryAsync();
-                                }
-                                else
-                                {
-                                    //we have a db mutation failure, throw an error.
-                                    await connection.CloseAsync();
-                                    //but maybe you will have to clean things up before throwing the error.
-                                    throw new Exception($"Failed writing to {mutation.TableName}.");
-                                }
-                            } else
-                            {
-                                //break here, the user has no rights to alter this row
-                                await connection.CloseAsync();
-                                // Bronson - don't use Exception, only use derived classes (in this case you can use InvalidOperationException
-                                // as this should clearly result in a 500 error to the user
-                                throw new Exception($"User does not have rights to alter this {mutation.TableName} or the scroll_version does not exist.");
-                            }
-                        }
-                        else if (mutation.GetType().IsSubclassOf(typeof(SQENative.AuthoredTableTemplate)))
-                        {
-                            // OK, so we don't have an "owned" table here, all of which are associated with a
-                            // scroll_version.  Instead we have an "authored" table which are connected directly
-                            // to a user id.  They do have a corresponding "authored" table, but do not get recorded
-                            // in main_action and single_action.  E.g., we will probably add the ability for users
-                            // to add images from other approved IIIF servers, thus there is the SQE_image table and
-                            // SQE_image_authored, which would allow that.
+                                // Add info to the return object
+                                AlteredRecords.Add(new AlteredRecord(mutationRequest.TableName, null, createInsertId));
+                                break;
                             
-                            // Cast the mutation to the proper class (we just checked it a few lines back).
-                            SQENative.AuthoredTableTemplate authoredMutation = (SQENative.AuthoredTableTemplate)mutation;
-                            long insertId = 0;
+                            case (MutateType.Update):
+                                // Delete the link between this scrollVersionID and the record from the owner table
+                                await DeleteOwnerTable(connection, mutationRequest);
+                                
+                                // Record the delete
+                                await AddSingleAction(connection, mutationRequest, SingleAction.Delete);
+                                
+                                // Insert the record (or return the id of a preexisting record matching the unique constraints.
+                                var updateInsertId = await InsertOwnedTable(connection, mutationRequest);
+                                
+                                // Insert the link to the scrollVersionId in the owner table
+                                await InsertOwnerTable(connection, mutationRequest, updateInsertId);
+                                
+                                // Record the insert
+                                await AddSingleAction(connection, mutationRequest, SingleAction.Add);
+                                
+                                // Add info to the return object
+                                AlteredRecords.Add(new AlteredRecord(mutationRequest.TableName, mutationRequest.TablePkId, updateInsertId));
+                                break;
                             
-                            // Now check the action type (Create/Update/Delete)
-                            switch (authoredMutation.action)
-                            {
-                                case Action.Create:
-                                    // Create the record in the desired table
-                                    MySqlCommand cmd = Create(mutation, connection);
-                                    _ = await cmd.ExecuteNonQueryAsync();
-                                    insertId = cmd.LastInsertedId;
-                                    
-                                    // Create the corresponding entry in the author table, so we know who made this
-                                    // addition.
-                                    cmd = CreateAuthor(authoredMutation, connection, insertId, userId);
-                                    _ = await cmd.ExecuteNonQueryAsync();
-                                    response = HttpStatusCode.Created;
-                                    break;
-                                case Action.Update:
-                                    CheckMutate(mutation.PrimaryKeyValue());
-                                    // TODO: add this functionality.
-                                    response = HttpStatusCode.OK;
-                                    break;
-                                case Action.Delete:
-                                    CheckMutate(mutation.PrimaryKeyValue());
-                                    // TODO: add this functionality.
-                                    response = HttpStatusCode.OK;
-                                    break;
-                            }
-                            
-                            // if the insertId is anything other than 0, everything worked.
-                            if (insertId == 0)
-                            {
-                                //we have a db mutation failure, throw an error.
-                                //but maybe you will have to clean things up before throwing the error.
-                                await connection.CloseAsync();
-                                // Bronson - don't use Exception, only use derived classes (in this case you can use InvalidOperationException
-                                // as this should clearly result in a 500 error to the user
-                                throw new InvalidOperationException($"Failed writing to {mutation.TableName}.");
-                            }
+                            case (MutateType.Delete):
+                                // Delete the link between this scrollVersionID and the record from the owner table
+                                await DeleteOwnerTable(connection, mutationRequest);
+                                
+                                // Record the delete
+                                await AddSingleAction(connection, mutationRequest, SingleAction.Delete);
+                                
+                                // Add info to the return object
+                                AlteredRecords.Add(new AlteredRecord(mutationRequest.TableName, mutationRequest.TablePkId, null));
+                                break;
                         }
                     }
-                    // Everything worked, so lock in all the transactions and close the connection.
-                    transactionScope.Complete();
-                    await connection.CloseAsync();
-
-                    // Bronson - return the status, raise an exception in case of an error
-                    // Itay - I guess my issue was that there this would have otherwise been simply `void`.
-                    // But I thought you weren't supposed to have void async functions.  I send now and HttpStatusCode.
-                    return response; //How do I send a Status instead (e.g., Success/Error)
+                    catch (InvalidOperationException)
+                    {
+                        throw;
+                    }
+                    
                 }
+                transactionScope.Complete();
             }
-        }
 
-        private static void CheckMutate(uint? tableId)
-        {
-            // See if we have an id here and that it isn't 0.
-            // We can't do Update or Delete unless we know what the record id is.
-            if (!tableId.HasValue || (tableId.HasValue && tableId.Value == 0))
-            {
-                throw new InvalidOperationException($"No primary key was provided for the transaction.");
-                //throw an error, you can't do update or delete without passing a tableId
-            }
-            else
-            {
-                return;
-            }
+            return AlteredRecords;
         }
-
-        private async Task<bool> CheckAccess(uint scrollVersionId, MySqlConnection connection, ushort userId)
+        
+        private async Task CheckAccess(IDbConnection connection, uint scrollVersionId, ushort userId)
         {
-            // Assume a fail.
-            bool access = false;
-            
             // Check if we can write to this scroll_version
-            string query = $"SELECT may_write, locked " +
-            	"FROM scroll_version_group " +
-            	"JOIN scroll_version USING(scroll_version_group_id) " +
-            	"WHERE scroll_version_id = @scrollVersionId AND user_id = @userId";
-
             try
             {
-                Permission result = await connection.QuerySingleAsync<Permission>(query, new
-                {
-                    scrollVersionId = scrollVersionId,
-                    userId = userId
-                });
-                // Examine the results and update access variable.
-                access = result.may_write == 1 && result.locked == 0;
+                Permission result = await connection.QuerySingleAsync<Permission>(
+                    PermissionCheck.GetQuery, 
+                    new {
+                        ScrollVersionId = scrollVersionId,
+                        UserId = userId
+                    });
+                //throw an error that the user not allowed to write to this scroll version
+                if (result.may_write != 1) {throw new NoPermissionException(userId, "alter", "scroll", (int)scrollVersionId);}
+                //throw an error that the scroll version is currently locked for this user
+                if (result.locked != 0) {throw new NoPermissionException(userId, "alter locked", "scroll", (int)scrollVersionId);}
             }
             catch(InvalidOperationException)
             {
                 // Throw on error, probably no rows were found.
-                throw new NoPermissionException(userId, "change name", "scroll", (int)scrollVersionId);
+                throw new NoPermissionException(userId, "access", "scroll", (int)scrollVersionId);
             }
-            //throw an error that the user does not have access to this scroll version
-            return access;
         }
 
-        private MySqlCommand StartMainAction( MySqlConnection connection, uint scrollVersionId)
+        private static async Task<uint> InsertOwnedTable(IDbConnection connection, MutationRequest mutationRequest)
         {
-            // Code to log main_action in DB.
-            string query = "INSERT INTO main_action (scroll_version_id) VALUES(@ScrollVersionId)";
-            MySqlCommand cmd = new MySqlCommand(query, connection);
-            cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
-            return cmd;
-        }
-
-        private MySqlCommand CommitSingleAction(SQENative.UserEditableTableTemplate mutation, MySqlConnection connection, SingleAction singleAction, long mainActionId, long insertId)
-        {
-            //Right now we use the logic of this API to make sure that the `table` field
-            //is actually an appropriate value.  I with there were some way to lock
-            //this down dynamically in the DB itself (I would prefer not to use an enum).
+            // Format query
+            var query = OwnedTableInsert.GetQuery;
+            query = query.Replace("@TableName", mutationRequest.TableName);
+            query = query.Replace("@Columns", String.Join(",", mutationRequest.Columns));
+            query = query.Replace(
+                "@Values", 
+                String.Join(",", mutationRequest.Columns.Select(x => "@" + x))
+                );
+            query = query.Replace("@PrimaryKeyName", mutationRequest.TableName + "_id");
             
-            const string query = "INSERT INTO single_action (`main_action_id`, `action`, `table`, `id_in_table`) VALUES(@MainActionId, @Action, @Table, @IdInTable)";
-            MySqlCommand cmd = new MySqlCommand(query, connection);
-            cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
-            cmd.Parameters.AddWithValue("@Action", singleAction.Value);
-            cmd.Parameters.AddWithValue("@Table", mutation.TableName);
-            cmd.Parameters.AddWithValue("@IdInTable", insertId);
-            return cmd;
-        }
-
-        private MySqlCommand Create(SQENative.UserEditableTableTemplate mutation, MySqlConnection connection)
-        {
-            // We insert a new record in the desired table.
-            // "ON DUPLICATE KEY UPDATE" ensures that if a record with the same data
-            // already exists, a duplicate is not created, instead the primary key
-            // of that record is returned.
-            string query = "INSERT INTO " + mutation.TableName + " (";
-            List<string> fieldValueParams = new List<string>();
-            List<string> fieldValueParamNames = new List<string>();
-            List<object> fieldValues = new List<object>();
-            IDictionary fields = mutation.ColumsAndValues();
+            // Execute query
+            await connection.ExecuteAsync(query, mutationRequest.Parameters);
             
-            // We loop over every column, which we find in the mutation object.
-            foreach (DictionaryEntry field in fields)
-            {
-                
-                // We add every one to the query except the primary key.
-                if (null != field.Value && field.Key.ToString() != mutation.PrimaryKey)
-                {
-                    fieldValueParams.Add(field.Key.ToString());
-                    fieldValueParamNames.Add("@" + field.Key.ToString());
-                    fieldValues.Add(field.Value);
-                }
-            }
-            query += string.Join(",", fieldValueParams) + ") VALUES(" 
-                + string.Join(",", fieldValueParamNames)
-                + ") ON DUPLICATE KEY UPDATE "
-                + mutation.PrimaryKey
-                + " = LAST_INSERT_ID("
-                + mutation.PrimaryKey
-                + ")";
-            MySqlCommand cmd = new MySqlCommand(query, connection);
+            // Get id of new record (or the record matching the unique constraints of this request).
+            var insertId = await LastInsertId(connection);
+            return insertId;
+        }
+        
+        private static async Task InsertOwnerTable(IDbConnection connection, MutationRequest mutationRequest,  uint insertId)
+        {
+            // Format query
+            var query = OwnerTableInsert.GetQuery;
+            query = query.Replace("@OwnerTableName", mutationRequest.TableName + "_owner");
+            query = query.Replace("@OwnedTablePkName", mutationRequest.TableName + "_id");
             
-            // Populate the parameters that we collected when looping through the columns above
-            // TODO: I could probably just do this in the loop above.  Why loop again?
-            for (int i = 0; i < fieldValueParams.Count && i < fieldValues.Count; i++)
-            {
-                cmd.Parameters.AddWithValue(fieldValueParamNames[i], fieldValues[i]);
-            }
-            return cmd;
+            // Insert the @OwnedTableId parameter
+            mutationRequest.Parameters.Add("@OwnedTableId", insertId);
+
+            // Execute query
+            var res = await connection.ExecuteAsync(query, mutationRequest.Parameters);
+        }
+        
+        private static async Task DeleteOwnerTable(IDbConnection connection, MutationRequest mutationRequest)
+        {
+            // Format query
+            var query = OwnerTableDelete.GetQuery;
+            query = query.Replace("@OwnerTableName", mutationRequest.TableName + "_owner");
+            query = query.Replace("@OwnedTablePkName", mutationRequest.TableName + "_id");
+            
+            // Execute query
+            await connection.ExecuteAsync(query, mutationRequest.Parameters);
         }
 
-        private MySqlCommand CreateOwner(SQENative.OwnedTableTemplate mutation, MySqlConnection connection, long insertId, uint scrollVersionId)
+        private static async Task<uint> LastInsertId(IDbConnection connection)
         {
-            // Here we find the name of the primary key column from the mutation object.
-            // We use that to build the query: INSERT IGNORE INTO x_owner (x_id, scroll_version_id) VALUES(@x_id, @scrollVersionId)
-            string query = "INSERT IGNORE INTO ";
-            query += mutation.OwnerTable;
-            string pkParam = "@" + mutation.PrimaryKey;
-            const string lvParam = "@ScrollVersionId";
-            query += " (" + mutation.PrimaryKey + ", scroll_version_id) VALUES(";
-            query += pkParam + ", " + lvParam + ")";
-            MySqlCommand cmd = new MySqlCommand(query, connection);
-            cmd.Parameters.AddWithValue(pkParam, insertId);
-            cmd.Parameters.AddWithValue(lvParam, scrollVersionId);
-            return cmd;
+            return await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
         }
-
-        private MySqlCommand CreateAuthor(SQENative.AuthoredTableTemplate mutation, MySqlConnection connection, long insertId, ushort userId)
+        
+        private static async Task AddMainAction(IDbConnection connection, MutationRequest mutationRequest)
         {
-            // Here we find the name of the primary key column from the mutation object.
-            // We use that to build the query: INSERT IGNORE INTO x_author (x_id, user_id) VALUES(@x_id, @userId)
-            string query = "INSERT IGNORE INTO ";
-            query += mutation.AuthorTable;
-            string pkParam = "@" + mutation.PrimaryKey;
-            const string lvParam = "@UserId";
-            query += " (" + mutation.PrimaryKey + ", user_id) VALUES(";
-            query += pkParam + ", " + lvParam + ")";
-            MySqlCommand cmd = new MySqlCommand(query, connection);
-            cmd.Parameters.AddWithValue(pkParam, insertId);
-            cmd.Parameters.AddWithValue(lvParam, userId);
-            return cmd;
+            // Format and execute the query
+            var query = MainActionInsert.GetQuery;
+            await connection.ExecuteAsync(query, mutationRequest.Parameters);
+            
+            // Get id of new record.
+            var insertId = await LastInsertId(connection);
+            
+            // Insert the @MainActionId into the mutation object's query parameters.
+            mutationRequest.Parameters.Add("@MainActionId", insertId);
         }
-
-        //This function does not work, I would like it to check the existing
-        //field before updating, and coalesce it with the replacement field.
-        // That would be very convenient.
-        // Itay: this is related to our most recent emails about coalescing records.
-        /**private void BeforeUpdate(SQENative.UserEditableTableTemplate mutation, MySqlConnection connection, uint tableId)
+        
+        private static async Task AddSingleAction(IDbConnection connection, MutationRequest mutationRequest, SingleAction action)
         {
-            try
-            {
-                var query = "SELECT * FROM " + mutation.TableName + " WHERE " + mutation.PrimaryKey + " = @PK";
-
-                var result = connection.QuerySingle(query, new
-                {
-                    PK = tableId,
-                });
-                var a = 1 + 1;
-            } catch(SqlException) { }
-        }*/
-
-        private static MySqlCommand Delete(SQENative.OwnedTableTemplate mutation, MySqlConnection connection, uint tableId, uint scrollVersionId)
-        {
-            // To delete something from a scroll version, we just remove the linking entry from the "owner" table.
-            // The mutation object knows the name of its owner table, and the title of its primary key.
-            string query = "DELETE FROM " + mutation.OwnerTable + " WHERE " 
-                + mutation.PrimaryKey + @" = @tableId 
-                AND " + ScrollVersionGroupLimit.LimitToScrollVersionGroup;
-            MySqlCommand cmd = new MySqlCommand(query, connection);
-            cmd.Parameters.AddWithValue("@tableId", tableId);
-            cmd.Parameters.AddWithValue("@scrollVersionId", scrollVersionId);
-            return cmd;
+            // Format query
+            var query = SingleActionInsert.GetQuery;
+            
+            // Add parameters
+            mutationRequest.Parameters.Add("@TableName", mutationRequest.TableName);
+            mutationRequest.Parameters.Add("@Action", action.Value);
+            
+            // Execute query
+            await connection.ExecuteAsync(query, mutationRequest.Parameters);
         }
     }
 }

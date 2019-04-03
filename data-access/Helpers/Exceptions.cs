@@ -23,4 +23,11 @@ namespace SQE.Backend.DataAccess.Helpers
             base($"Request ${operation} failed; ${requestError}")
         { }
     }
+    
+    public class DbFailedWrite: RepositoryException
+    {
+        public DbFailedWrite() : 
+            base($"Failed writing to DB.")
+        { }
+    }
 }

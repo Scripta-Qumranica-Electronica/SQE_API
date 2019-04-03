@@ -2,18 +2,12 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
-using System.Data.SqlClient;
 using SQE.Backend.DataAccess.Queries;
 using System.Linq;
 using SQE.Backend.DataAccess.Models;
 using SQE.Backend.DataAccess.Helpers;
-using static SQE.Backend.DataAccess.Helpers.TrackMutationHelper;
-using SQE.Backend.DataAccess.Models.Native;
 using Microsoft.Extensions.Configuration;
 using System.Transactions;
-using static SQE.Backend.DataAccess.Queries.ScrollVersionGroupQuery;
-using MySql.Data.MySqlClient;
-using MySqlX.XDevAPI;
 
 namespace SQE.Backend.DataAccess
 {
@@ -134,24 +128,36 @@ namespace SQE.Backend.DataAccess
                     // which no one in the front end will generally have or care about.
                     var result = await connection.QuerySingleAsync<ScrollNameQuery.Result>(sql, new
                     {
-                        scrollVersionId,
-                        userId
+                        ScrollVersionId = scrollVersionId,
+                        UserId = userId
                     });
 
                     // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
-                    // As the code stands now, you return "".
+                    // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
+                    // throws a NoPermissionException immediately.
                     
-                    // Now we create the object to be inserted into the scroll_data table
-                    SQENative.ScrollData scrollData = new SQENative.ScrollData(result.scroll_data_id, result.scroll_id, name)
-                    {
-                        action = Helpers.Action.Update
-                    };
+                    // Now we create the mutation object for the requested action
+                    // You will want to check the database to make sure you what you are doing.
+                    DynamicParameters nameChangeParams = new DynamicParameters();
+                    nameChangeParams.Add("@scroll_id", result.scroll_id);
+                    nameChangeParams.Add("@name", name);
+                    MutationRequest nameChangeRequest = new MutationRequest(
+                        MutateType.Update,
+                        new List<string>(new string[] {"scroll_id", "name"}),
+                        nameChangeParams,
+                        "scroll_data",
+                        result.scroll_data_id
+                        );
                     
                     // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
                     // care of main_action and single_action.
-                    var response = await _mutation.TrackMutation((ushort)userId, scrollVersionId, new List<SQENative.UserEditableTableTemplate>() { scrollData });
+                    var response = await _mutation.TrackMutation(scrollVersionId, (ushort) userId, new List<MutationRequest>() { nameChangeRequest });
                     // Bronson: Where isn't there a response?
-                    // Itay: the response is now an HTTP code, but what should I do with it?  Pass it back up or something?
+                    if (response.Count == 0 || response[0].NewId == result.scroll_id || response[0].NewId == 0)
+                    {
+                        throw new ImproperRequestException("change scroll name",
+                            "no change in name or failed to write to DB");
+                    }
                 }
                 catch (InvalidOperationException) // Bronson: The error QuerySingle throws if there's no result.  Itay: thanks!
                 {
@@ -237,25 +243,29 @@ namespace SQE.Backend.DataAccess
                     {
                         // Create a new scroll_version_group
                         var results = connection.Execute(CreateScrollVersionGroup.GetQuery, 
-                            new{scrollVersionId});
-                        // Check that results == 1, else throw an error
+                            new{ScrollVersionId = scrollVersionId});
+                        // TODO: Check that results == 1, else throw an error
                         
                         var scrollVersionGroupId = await connection.QuerySingleAsync<int>(LastInsertId.GetQuery);
                         
                         // Set scroll_version_group_admin to userId
                         results = connection.Execute(CreateScrollVersionGroupAdmin.GetQuery, 
-                            new{scrollVersionGroupId, userId});
-                        // Check that results == 1, else throw an error
+                            new
+                            {
+                                ScrollVersionGroupId = scrollVersionGroupId, 
+                                UserId = userId
+                            });
+                        // TODO: Check that results == 1, else throw an error
                         
                         // Create new scroll_version
                         results = connection.Execute(Queries.CreateScrollVersion.GetQuery, 
                             new
                             {
-                                scrollVersionGroupId, 
-                                userId,
-                                mayLock = 1
+                                ScrollVersionGroupId = scrollVersionGroupId, 
+                                UserId = userId,
+                                MayLock = 1
                             });
-                        // Check that results == 1, else throw an error
+                        // TODO: Check that results == 1, else throw an error
                         
                         copyToScrollVersionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
@@ -272,8 +282,8 @@ namespace SQE.Backend.DataAccess
                                 CopyScrollVersionDataForTable.GetQuery(tableName, tableIdColumn),
                                 new
                                 {
-                                    scrollVersionId,
-                                    copyToScrollVersionId
+                                    ScrollVersionId = scrollVersionId,
+                                    CopyToScrollVersionId = copyToScrollVersionId
                                 });
                         }
                     }
