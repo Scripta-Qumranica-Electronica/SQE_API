@@ -276,7 +276,7 @@ namespace SQE.Backend.DataAccess.Helpers
             mutationRequest.Parameters.Add("@OwnedTableId", insertId);
 
             // Execute query
-            var res = await connection.ExecuteAsync(query, mutationRequest.Parameters);
+            await connection.ExecuteAsync(query, mutationRequest.Parameters);
         }
         
         private static async Task DeleteOwnerTable(IDbConnection connection, MutationRequest mutationRequest)
