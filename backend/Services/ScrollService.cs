@@ -135,7 +135,7 @@ namespace SQE.Backend.Server.Services
                 } 
                 catch(NoPermissionException err)
                 {
-                    throw new NotFoundException((int)scrollVersionId);
+                    throw new NotFoundException(scrollVersionId);
                 }
             }
             else
@@ -178,7 +178,7 @@ namespace SQE.Backend.Server.Services
                 //Maybe we should more often make use of try/catch.
                 if (unformattedSv == null)
                 {
-                    throw new NotFoundException((int) scrollVersionId);
+                    throw new NotFoundException((uint) scrollVersionId);
                 }
                 sv = ScrollVersionModelToDTO(unformattedSv);
             }

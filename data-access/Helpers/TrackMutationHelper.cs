@@ -26,7 +26,7 @@ namespace SQE.Backend.DataAccess.Helpers
     {
         public MutateType Action { get; }
         
-        public List<string> Columns { get; }
+        public List<string> Columns { get; } // Bronson - we don't need this, we can get the columns from the parameter keys
         
         public DynamicParameters Parameters { get; }
         public string TableName { get; }
@@ -49,6 +49,7 @@ namespace SQE.Backend.DataAccess.Helpers
             TablePkId = tablePkId;
             
             // Fail creating the object if Parameters is missing a value for any Columns.
+            // Bronson - no need to test this if we get the columns from parameters - fewer bugs, fewer client code
             if (Parameters.ParameterNames.Intersect(Columns.Select(x => "@" + x)).Count() ==
                 Columns.Count())
             {
@@ -64,7 +65,8 @@ namespace SQE.Backend.DataAccess.Helpers
                     "The primary key of the record is necessary for Update and Delete actions",
                     nameof(tablePkId)
                     );
-            } else
+            }
+            else
             {
                 Parameters.Add("@OwnedTableId", tablePkId.Value);
             }
@@ -96,11 +98,17 @@ namespace SQE.Backend.DataAccess.Helpers
 
     public interface ITrackMutationHelper
     {
+        // Bronson - please name async methods with Async at the end. This is the Microsoft convention and
+        // I find it quite useful. https://docs.microsoft.com/en-us/dotnet/csharp/async
+        // We can decide not to do that, but that will most likely result in people getting confused.
+        //
+        // Note that you don't place the async modifier on interface methods, just on their implementation
         Task<List<AlteredRecord>> TrackMutation(uint scrollVersionId, ushort userId, List<MutationRequest> mutationRequests);
     }
 
     public class TrackMutationHelper : DBConnectionBase, ITrackMutationHelper
     {
+        // Bronson - move this to PermissionCheckQuery.Result, as we do with all queries.
         private class Permission
         {
             public ushort may_write { get; set; }
@@ -110,6 +118,34 @@ namespace SQE.Backend.DataAccess.Helpers
         /// <summary>
         /// This is basically an Enum for strings, it protects us from typos when entering the action type in AddSingleAction.
         /// </summary>
+        // Bronson: This is one way to do it. For only two values, it's fine. Do consider three alternatives, though, all 
+        // involving an actual enum:
+        //
+        // public enum SingleAction 
+        // {
+        //  Add,
+        //  Delete
+        // }
+        //
+        // 1. Use a method that converts the enum values to strings:
+        //    private string SingleActionToString(SingleAction action)
+        //    {
+        //         if(action==SingleAction.Add)
+        //           return "add";
+        //         ...and so on...
+        //    }
+        //
+        //    I think it's better than the singleton-only SingleAction class.
+        //
+        // 2. Use reflection and attributes. This makes sense for enums with more values.
+        //    See how it's done *very nicely* here:  https://stackoverflow.com/questions/1799370/getting-attributes-of-enums-value .
+        //    This is definitely overkill for our simple enum, and worse than your solution in our case, but still - nice to know.
+        //
+        // 3. Notice that you convert Add to add and Update to update, and simply use
+        //    var action = SingleAction.Add;
+        //    var stringAction = action.ToString().Lower();
+        //
+        //    I would definitely use this in our very simple case, no need to do anything more complicated
         public class SingleAction
         {
             private SingleAction(string value)
@@ -229,19 +265,24 @@ namespace SQE.Backend.DataAccess.Helpers
             {
                 Permission result = await connection.QuerySingleAsync<Permission>(
                     PermissionCheck.GetQuery, 
-                    new {
+                    new
+                    {
                         ScrollVersionId = scrollVersionId,
                         UserId = userId
                     });
+                // Bronson - please, one liners like this make me dizzy
                 //throw an error that the user not allowed to write to this scroll version
-                if (result.may_write != 1) {throw new NoPermissionException(userId, "alter", "scroll", (int)scrollVersionId);}
+                // if (result.may_write != 1) {throw new NoPermissionException(userId, "alter", "scroll", (int)scrollVersionId);}
+                if (result.may_write != 1)
+                    throw new NoPermissionException(userId, "alter", "scroll", scrollVersionId);
                 //throw an error that the scroll version is currently locked for this user
-                if (result.locked != 0) {throw new NoPermissionException(userId, "alter locked", "scroll", (int)scrollVersionId);}
+                if (result.locked != 0)
+                    throw new NoPermissionException(userId, "alter locked", "scroll", scrollVersionId);
             }
             catch(InvalidOperationException)
             {
                 // Throw on error, probably no rows were found.
-                throw new NoPermissionException(userId, "access", "scroll", (int)scrollVersionId);
+                throw new NoPermissionException(userId, "access", "scroll", scrollVersionId);
             }
         }
 

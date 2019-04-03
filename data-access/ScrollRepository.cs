@@ -161,7 +161,7 @@ namespace SQE.Backend.DataAccess
                 }
                 catch (InvalidOperationException) // Bronson: The error QuerySingle throws if there's no result.  Itay: thanks!
                 {
-                    throw new NoPermissionException(userId, "change name", "scroll", (int)scrollVersionId);
+                    throw new NoPermissionException(userId, "change name", "scroll", scrollVersionId);
                 }
             }
         }

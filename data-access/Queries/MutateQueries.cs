@@ -9,6 +9,8 @@ using Dapper;
 
 namespace SQE.Backend.DataAccess.Queries
 {
+    // Bronson - I'm not sure whether all the classes here need to have Query added to their names,
+    // as they are not  queries but rather update statements. What do you think?
     internal static class OwnedTableInsert
     {
         public static string GetQuery { get; } = @"
@@ -51,6 +53,7 @@ INSERT INTO single_action (`main_action_id`, `action`, `table`, `id_in_table`)
 VALUES(@MainActionId, @Action, @TableName, @OwnedTableId)";
     }
     
+    // Bronson - please call this PermissionCheckQuery and add  Result subclass
     internal static class PermissionCheck
     {
         public static string GetQuery { get; } = @"

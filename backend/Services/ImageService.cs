@@ -31,7 +31,7 @@ namespace SQE.Backend.Server.Services
 
             if (images == null)
             {
-                throw new NotFoundException(scrollVersionId);
+                throw new NotFoundException((uint)scrollVersionId);
             }
             var result = new ImageList
             {
