@@ -31,10 +31,10 @@ namespace SQE.Backend.Server.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ScrollVersionGroup>> GetScrollVersion(int id)
+        [HttpGet("{scrollVersionId}")]
+        public async Task<ActionResult<ScrollVersionGroup>> GetScrollVersion(uint scrollVersionId)
         {
-            var vg = await _scrollService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
+            var vg = await _scrollService.GetScrollVersionAsync(scrollVersionId, _userService.GetCurrentUserId(), false, false);
 
             if(vg==null)
             {
@@ -52,8 +52,8 @@ namespace SQE.Backend.Server.Controllers
             return Ok(groups);
         }
 
-        [HttpPost("update/{id}")]
-        public async Task<ActionResult<ScrollVersion>> UpdateScrollVersion([FromBody] ScrollUpdateRequest request, uint id)
+        [HttpPost("update/{scrollVersionId}")]
+        public async Task<ActionResult<ScrollVersion>> UpdateScrollVersion([FromBody] ScrollUpdateRequest request, uint scrollVersionId)
         {
             try
             {
@@ -62,7 +62,7 @@ namespace SQE.Backend.Server.Controllers
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
-                var scroll = await _scrollService.UpdateScroll(id, request.name, userId.Value);
+                var scroll = await _scrollService.UpdateScroll(scrollVersionId, request.name, userId.Value);
                 return scroll;
             }
             catch (NotFoundException)
@@ -75,8 +75,8 @@ namespace SQE.Backend.Server.Controllers
             }
         }
 
-        [HttpPost("copy/{id}")] //not working well..
-        public async Task<ActionResult<ScrollVersion>> CopyScrollVersion([FromBody] ScrollUpdateRequest request, int id)
+        [HttpPost("copy/{scrollVersionId}")] //not working well..
+        public async Task<ActionResult<ScrollVersion>> CopyScrollVersion([FromBody] ScrollUpdateRequest request, uint scrollVersionId)
         {
             try
             {
@@ -85,7 +85,7 @@ namespace SQE.Backend.Server.Controllers
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
-                var scroll = await _scrollService.CopyScroll((uint) id, request.name, userId.Value);
+                var scroll = await _scrollService.CopyScroll(scrollVersionId, request.name, userId.Value);
                 return scroll;
             }
             catch (NotFoundException)
@@ -100,7 +100,7 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}/imaged-fragments")]
-        public async Task<ActionResult<ImagedFragmentList>> GetImagedFragments(int scrollVersionId)
+        public async Task<ActionResult<ImagedFragmentList>> GetImagedFragments(uint scrollVersionId)
         {
             try
             {

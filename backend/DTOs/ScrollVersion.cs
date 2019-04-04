@@ -7,7 +7,7 @@ namespace SQE.Backend.Server.DTOs
 {
     public class ScrollVersion
     {
-        public int id { get; set; }
+        public uint id { get; set; }
         public string name { get; set; }
         public Permission permission { get; set; }
         public User owner { get; set; }

@@ -44,15 +44,15 @@ namespace SQE.Backend.Server.Controllers
         [HttpGet("list")]
         public async Task<ActionResult<ImageGroupList>> ListImageGroups()
         {
-            var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<int>());
+            var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>());
             return Ok(images);
         }
 
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task<ActionResult<ImageGroupList>> ListImageGroupsOfScroll(int id)
+        public async Task<ActionResult<ImageGroupList>> ListImageGroupsOfScroll(uint id)
         {
-            var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<int>(new int[] {id }));
+            var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {id }));
             return Ok(images);
         }
 

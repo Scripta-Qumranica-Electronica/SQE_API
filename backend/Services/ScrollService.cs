@@ -12,10 +12,10 @@ namespace SQE.Backend.Server.Services
 {
     public interface IScrollService
     {
-        Task<ScrollVersionGroup> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts = false, bool fragments = false);
-        Task<ScrollVersionList> ListScrollVersionsAsync(int? userId);
-        Task<ScrollVersion> UpdateScroll(uint scrollVersionId, string name, int userId);
-        Task<ScrollVersion> CopyScroll(uint scrollVersionId, string name, int userId);
+        Task<ScrollVersionGroup> GetScrollVersionAsync(uint scrollVersionId, uint? userId, bool artefacts = false, bool fragments = false);
+        Task<ScrollVersionList> ListScrollVersionsAsync(uint? userId);
+        Task<ScrollVersion> UpdateScroll(uint scrollVersionId, string name, uint userId);
+        Task<ScrollVersion> CopyScroll(uint scrollVersionId, string name, uint userId);
     }
 
     public class ScrollService : IScrollService
@@ -27,9 +27,9 @@ namespace SQE.Backend.Server.Services
             _repo = repo;
         }
 
-        public async Task<ScrollVersionGroup> GetScrollVersionAsync(int scrollId, int? userId, bool artefacts, bool fragments)
+        public async Task<ScrollVersionGroup> GetScrollVersionAsync(uint scrollVersionId, uint? userId, bool artefacts, bool fragments)
         {
-            var groups = await _repo.GetScrollVersionGroups(scrollId);
+            var groups = await _repo.GetScrollVersionGroups(scrollVersionId);
             if (groups.Count == 0)
                 return null;
             Debug.Assert(groups.Count == 1, "How come we got more than 1 group?!");
@@ -38,10 +38,10 @@ namespace SQE.Backend.Server.Services
 
             var scrollModels = await _repo.ListScrollVersions(userId, scrollIds);
 
-            var primaryModel = scrollModels.FirstOrDefault(sv => sv.Id == scrollId);
+            var primaryModel = scrollModels.FirstOrDefault(sv => sv.Id == scrollVersionId);
             if (primaryModel == null) // User is not allowed to see this scroll version
                 return null;
-            var otherModels = scrollModels.Where(sv => sv.Id != scrollId).OrderBy(sv => sv.Id);
+            var otherModels = scrollModels.Where(sv => sv.Id != scrollVersionId).OrderBy(sv => sv.Id);
 
             var svg = new ScrollVersionGroup
             {
@@ -52,12 +52,12 @@ namespace SQE.Backend.Server.Services
             return svg;
         }
 
-        public async Task<ScrollVersionList> ListScrollVersionsAsync(int? userId)
+        public async Task<ScrollVersionList> ListScrollVersionsAsync(uint? userId)
         {
             var groups = await _repo.GetScrollVersionGroups(null);
             var scrollVersions = await _repo.ListScrollVersions(userId, null);
 
-            var scrollVersionDict = new Dictionary<int, DataAccess.Models.ScrollVersion>();
+            var scrollVersionDict = new Dictionary<uint, DataAccess.Models.ScrollVersion>();
             foreach (var sv in scrollVersions)
                 scrollVersionDict[sv.Id] = sv;
 
@@ -123,7 +123,7 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        public async Task<ScrollVersion> UpdateScroll(uint scrollVersionId, string name, int userId)
+        public async Task<ScrollVersion> UpdateScroll(uint scrollVersionId, string name, uint userId)
         {
             if (name != "") 
             {
@@ -143,14 +143,14 @@ namespace SQE.Backend.Server.Services
                 throw new ImproperRequestException("change scroll name", "scroll name cannot be empty");
             }
             
-            List<int> scrollID = new List<int>(new int[] { (int) scrollVersionId });
+            var scrollID = new List<uint>(new uint[] { scrollVersionId });
             var scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by scroll id
             var sv = scroll.First();             // Bronson - here we do not expect a permission error, since the rename has already happened.
 
             return ScrollVersionModelToDTO(sv);
         }
 
-        async Task<ScrollVersion> IScrollService.CopyScroll(uint scrollVersionId, string name, int userId)
+        async Task<ScrollVersion> IScrollService.CopyScroll(uint scrollVersionId, string name, uint userId)
         {
             ScrollVersion sv;
             // Clone scroll
@@ -170,15 +170,15 @@ namespace SQE.Backend.Server.Services
             }
             else
             {
-                List<int> scrollID = new List<int>(new int[] { (int) scrollVersionId });
+                var scrollID = new List<uint>(new uint[] { scrollVersionId });
 
-                IEnumerable<DataAccess.Models.ScrollVersion> scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by id
+                var scroll = await _repo.ListScrollVersions(userId, scrollID); //get wanted scroll by id
                 var unformattedSv = scroll.First();
                 //I think we do not get this far if no records were found, `First` will, I think throw an error.
                 //Maybe we should more often make use of try/catch.
                 if (unformattedSv == null)
                 {
-                    throw new NotFoundException((uint) scrollVersionId);
+                    throw new NotFoundException(scrollVersionId);
                 }
                 sv = ScrollVersionModelToDTO(unformattedSv);
             }

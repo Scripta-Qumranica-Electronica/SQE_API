@@ -29,7 +29,7 @@ namespace backend.Controllers
 
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}/{fragmentId}")]
-        public async Task<ActionResult<ImagedFragment>> GetImagedFragment(int scrollVersionId, string fragmentId)
+        public async Task<ActionResult<ImagedFragment>> GetImagedFragment(uint scrollVersionId, string fragmentId)
         {
             try
             {

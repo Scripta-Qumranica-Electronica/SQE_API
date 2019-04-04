@@ -10,8 +10,8 @@ namespace SQE.Backend.DataAccess
 {
     public interface IImageRepository
     {
-        Task<IEnumerable<Image>> GetImages(int? userId, int scrollVersionId, string fragmentId);
-        Task<IEnumerable<ImageGroup>> ListImages(int? userId, List<int> scrollIds);
+        Task<IEnumerable<Image>> GetImages(uint? userId, uint scrollVersionId, string fragmentId);
+        Task<IEnumerable<ImageGroup>> ListImages(uint? userId, List<uint> scrollVersionIds);
         Task<IEnumerable<ImageInstitution>> ListImageInstitutions();
     }
 
@@ -19,7 +19,7 @@ namespace SQE.Backend.DataAccess
     {
         public ImageRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<Image>> GetImages(int? userId, int scrollVersionId, string fragmentId)
+        public async Task<IEnumerable<Image>> GetImages(uint? userId, uint scrollVersionId, string fragmentId)
         {
             var fragment = ImagedFragment.FromId(fragmentId);
 
@@ -30,7 +30,7 @@ namespace SQE.Backend.DataAccess
 
                 var results = await connection.QueryAsync<ImageQueries.Result>(sql, new
                 {
-                    UserId = userId ?? -1, // @UserId is not expanded if userId is null
+                    UserId = userId ?? 0, // @UserId is not expanded if userId is null
                     ScrollVersionId = scrollVersionId,
                     fragment?.Catalog1,
                     fragment?.Catalog2,
@@ -71,36 +71,36 @@ namespace SQE.Backend.DataAccess
             return type;
         }**/
 
-        private string [] GetWave(int start, int end)
+        private string [] GetWave(ushort start, ushort end)
         {
-            string[] str = new string[2];
+            var str = new string[2];
             str[0] = start.ToString();
             str[1] = end.ToString();
             return str;
         }
 
-        public async Task<IEnumerable<ImageGroup>> ListImages(int? userId, List<int> scrollIds) //
+        public async Task<IEnumerable<ImageGroup>> ListImages(uint? userId, List<uint> scrollVersionIds) //
         {
             string sql;
             if (userId.HasValue)
             {
-                sql = UserImageGroupQuery.GetQuery(scrollIds.Count > 0);
+                sql = UserImageGroupQuery.GetQuery(scrollVersionIds.Count > 0);
             }
             else
             {
-                sql = ImageGroupQuery.GetQuery(scrollIds.Count > 0);
+                sql = ImageGroupQuery.GetQuery(scrollVersionIds.Count > 0);
             }
 
-            if (scrollIds != null)
+            if (scrollVersionIds != null)
             {
-                sql = sql.Replace("@ScrollVersionIds", $"({string.Join(",", scrollIds)})");
+                sql = sql.Replace("@ScrollVersionIds", $"({string.Join(",", scrollVersionIds)})");
             }
 
             using (var connection = OpenConnection())
             {
                 var results = await connection.QueryAsync<ImageGroupQuery.Result>(sql, new
                 {
-                    UserId = userId ?? -1, // @UserId is not expanded if userId is null
+                    UserId = userId ?? 0, // @UserId is not expanded if userId is null
                 });
 
                 var models = results.Select(result => CreateImage(result));

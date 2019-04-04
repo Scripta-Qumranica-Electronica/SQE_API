@@ -33,7 +33,7 @@ and edition_catalog.edition_side =0
         {
             if (!filterFragment)
                 return _getImageQuery;
-            StringBuilder str = new StringBuilder(_getImageQuery);
+            var str = new StringBuilder(_getImageQuery);
             str.Append(" and image_catalog.institution=@Institution");
             str.Append(" and image_catalog.catalog_number_1=@Catalog1" );
             str.Append(" and image_catalog.catalog_number_2=@Catalog2");
@@ -44,12 +44,12 @@ and edition_catalog.edition_side =0
         {
             public string url { get; set; }
             public string proxy { get; set; }
-            public int image_catalog_id { get; set; }
-            public int img_type { get; set; }
-            public int side { get; set; }
-            public int master { get; set; }
-            public int wave_start { get; set; }
-            public int wave_end { get; set; }
+            public uint image_catalog_id { get; set; }
+            public byte img_type { get; set; }
+            public byte side { get; set; }
+            public bool master { get; set; }
+            public ushort wave_start { get; set; }
+            public ushort wave_end { get; set; }
             //public string transformMatrix { get; set; }
             public string institution { get; set; }
             public string catalog_1 { get; set; }
@@ -81,11 +81,11 @@ WHERE scroll_version.scroll_version_id IN @ScrollVersionIds
 
         internal class Result
         {
-            public int image_catalog_id { get; set; }
+            public uint image_catalog_id { get; set; }
             public string institution { get; set; }
             public string catalog_number_1 { get; set; }
             public string catalog_number_2 { get; set; }
-            public int catalog_side { get; set; }
+            public byte catalog_side { get; set; }
         }
     }
 

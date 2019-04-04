@@ -16,8 +16,8 @@ namespace SQE.Backend.Server.DTOs
         public Polygon regionInMaster { get; set; }
         public Polygon regionOfMaster { get; set; }
         public string transformToMaster { get; set; }
-        public int master { get; set; }
-        public int catalog_number { get; set; }
+        public bool master { get; set; }
+        public uint catalog_number { get; set; }
 
         public enum lighting {direct, raking }
         public enum direction { left, right, top}
@@ -30,20 +30,20 @@ namespace SQE.Backend.Server.DTOs
 
     public class ImageGroup
     {
-        public int Id { get; set; }
+        public uint Id { get; set; }
         public string Institution { get; set; }
         public string CatalogNumber1 { get; set; }
         public string CatalogNumber2 { get; set; }
-        public int CatalogSide { get; set; }
+        public byte CatalogSide { get; set; }
         public List<Image> Images { get; set; }
 
-        public ImageGroup(int id, string institution, string catalogNumber1, string catalogNumber2, int catalogString, List<Image> images)
+        public ImageGroup(uint id, string institution, string catalogNumber1, string catalogNumber2, byte catalogSide, List<Image> images)
         {
             Id = id;
             Institution = institution;
             CatalogNumber1 = catalogNumber1;
             CatalogNumber2 = catalogNumber2;
-            CatalogSide = catalogString;
+            CatalogSide = catalogSide;
             Images = images;
         }
     }

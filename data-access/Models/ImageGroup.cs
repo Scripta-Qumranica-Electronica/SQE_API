@@ -7,11 +7,11 @@ namespace SQE.Backend.DataAccess.Models
 {
     public class ImageGroup
     {
-        public int Id { get; set; }
+        public uint Id { get; set; }
         public string Institution { get; set; }
         public string CatalogNumber1 { get; set; }
         public string CatalogNumber2 { get; set; }
-        public int CatalogSide { get; set; }
+        public byte CatalogSide { get; set; }
         public List<Image> Images { get; set; }
     }
 }

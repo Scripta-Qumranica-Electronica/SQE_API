@@ -12,7 +12,7 @@ namespace SQE.Backend.DataAccess.Helpers
 
     public class NoPermissionException: RepositoryException
     {
-        public NoPermissionException(int? userId, string operation, string entity, uint? entityId) : 
+        public NoPermissionException(uint? userId, string operation, string entity, uint? entityId) : 
             base($"User ${userId?.ToString() ?? "anonymous"} can't perform ${operation} on ${entity} ${entityId?.ToString()}")
         { }
     }
@@ -20,7 +20,7 @@ namespace SQE.Backend.DataAccess.Helpers
     public class ImproperRequestException: RepositoryException
     {
         public ImproperRequestException(string operation, string requestError) : 
-            base($"Request ${operation} failed; ${requestError}")
+            base($"Request ${operation} failed; ${requestError}.")
         { }
     }
     

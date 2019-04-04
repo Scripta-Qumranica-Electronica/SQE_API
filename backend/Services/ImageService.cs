@@ -11,9 +11,9 @@ namespace SQE.Backend.Server.Services
 {
     public interface IImageService
     {
-        Task<ImageList> GetImages(int? userId, int scrollVersionId, string fragmentId = null);
+        Task<ImageList> GetImages(uint? userId, uint scrollVersionId, string fragmentId = null);
         Image ImageToDTO(DataAccess.Models.Image model);
-	Task<ImageGroupList> GetImageAsync(int? userId, List<int> scrollVersionId);
+	Task<ImageGroupList> GetImageAsync(uint? userId, List<uint> scrollVersionId);
         Task<ImageInstitutionList> GetImageInstitutionsAsync();
     
     }
@@ -25,7 +25,7 @@ namespace SQE.Backend.Server.Services
         {
             _repo = repo;
         }
-        async public Task<ImageList> GetImages(int? userId, int scrollVersionId, string fragmentId = null)
+        async public Task<ImageList> GetImages(uint? userId, uint scrollVersionId, string fragmentId = null)
         {
             var images = await _repo.GetImages(userId, scrollVersionId, fragmentId);
 
@@ -65,7 +65,7 @@ namespace SQE.Backend.Server.Services
                 master = model.Master
             };
         }
-        private string GetType(int type)
+        private string GetType(byte type)
         {
             if (type == 0)
                 return "color";
@@ -78,7 +78,7 @@ namespace SQE.Backend.Server.Services
             return null;
 
         }
-        public Image.lighting GetLightingType(int type)
+        public Image.lighting GetLightingType(byte type)
         {
             if (type ==2 || type == 3)
             {
@@ -87,7 +87,7 @@ namespace SQE.Backend.Server.Services
             return Image.lighting.direct; // need to check..
         }
 
-        public Image.direction GetLigthingDirection(int type)
+        public Image.direction GetLigthingDirection(byte type)
         {
             if (type == 2)
             {
@@ -100,7 +100,7 @@ namespace SQE.Backend.Server.Services
             return Image.direction.top; // need to check..
         }
 
-        public async Task<ImageGroupList> GetImageAsync(int? userId, List<int> scrollVersionId)
+        public async Task<ImageGroupList> GetImageAsync(uint? userId, List<uint> scrollVersionId)
         {
             var images = await _repo.ListImages(userId, scrollVersionId);
 

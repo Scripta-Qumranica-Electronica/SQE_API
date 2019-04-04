@@ -19,7 +19,7 @@ namespace SQE.Backend.Server.Services
     {
         Task<UserWithToken> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
         UserWithToken GetCurrentUser();
-        int? GetCurrentUserId();
+        uint? GetCurrentUserId();
     }
 
     public class UserService : IUserService
@@ -55,11 +55,11 @@ namespace SQE.Backend.Server.Services
             return user;
         }
 
-        private string BuildUserToken(string userName, int userId)
+        private string BuildUserToken(string userName, uint userId)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-            string s3 = Convert.ToBase64String(key);
+            var s3 = Convert.ToBase64String(key);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -95,16 +95,16 @@ namespace SQE.Backend.Server.Services
             return null;
         }
 
-        public int? GetCurrentUserId()
+        public uint? GetCurrentUserId()
         {
             var identity = (ClaimsIdentity)_accessor.HttpContext.User.Identity;
-            IEnumerable<Claim> claims = identity.Claims;
+            var claims = identity.Claims;
             foreach (var claim in claims)
             {
                 var splitted = claim.Type.Split("/");
                 if (splitted[splitted.Length - 1] == "nameidentifier")
                 {
-                    return Int32.Parse(claim.Value);
+                    return UInt32.Parse(claim.Value);
                 }
             }
             return null;

@@ -13,14 +13,14 @@ namespace SQE.Backend.DataAccess
 {
     public interface IImagedFragmentsRepository
     {
-        Task<IEnumerable<ImagedFragment>> GetImagedFragments(int? userId, int scrollVersionId, string fragmentId);
+        Task<IEnumerable<ImagedFragment>> GetImagedFragments(uint? userId, uint scrollVersionId, string fragmentId);
     }
 
     public class ImagedFragmentsRepository : DBConnectionBase, IImagedFragmentsRepository
     {
         public ImagedFragmentsRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<ImagedFragment>> GetImagedFragments(int? userId, int scrollVersionId, string fragmentId)
+        public async Task<IEnumerable<ImagedFragment>> GetImagedFragments(uint? userId, uint scrollVersionId, string fragmentId)
         {
             var fragment = ImagedFragment.FromId(fragmentId);
             var sql = ImagedFragemntQueries.GetFragmentsQuery(fragmentId!=null);

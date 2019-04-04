@@ -23,7 +23,7 @@ and (scroll_version.user_id =1 OR scroll_version.user_id =@UserId) and edition_c
         {
             if(!fragmentId)
                 return _getFragments;
-            StringBuilder str = new StringBuilder(_getFragments);
+            var str = new StringBuilder(_getFragments);
             str.Append(" and image_catalog.institution=@Institution");
             str.Append(" and image_catalog.catalog_number_1=@Catalog1");
             str.Append(" and image_catalog.catalog_number_2=@Catalog2");
