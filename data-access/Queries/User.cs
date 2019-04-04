@@ -8,7 +8,7 @@ namespace SQE.Backend.DataAccess.Queries
     internal class UserQueryResponse : IQueryResponse<User>
     {
         public string user_name { get; set; }
-        public int user_id { get; set; }
+        public uint user_id { get; set; }
 
         public User CreateModel()
         {

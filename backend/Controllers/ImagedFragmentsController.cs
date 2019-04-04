@@ -13,7 +13,7 @@ using SQE.Backend.Server.DTOs;
 namespace backend.Controllers
 {
     [Authorize]
-    [Route("api/imaged-fragments")]
+    [Route("v1/[controller]")]
     [ApiController]
     public class ImagedFragmentsController : ControllerBase
     {
@@ -29,7 +29,7 @@ namespace backend.Controllers
 
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}/{fragmentId}")]
-        public async Task<ActionResult<ImagedFragmentDTO>> GetImagedFragment(int scrollVersionId, string fragmentId)
+        public async Task<ActionResult<ImagedFragment>> GetImagedFragment(uint scrollVersionId, string fragmentId)
         {
             try
             {

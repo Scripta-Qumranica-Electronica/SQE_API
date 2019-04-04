@@ -23,7 +23,7 @@ namespace SQE.Backend.DataAccess.Models
                 return null;
             var tokens = id.Split("-");
 
-            ImagedFragment imagedFragment = new ImagedFragment
+            var imagedFragment = new ImagedFragment
             {
                 Institution = tokens[0],
                 Catalog1 = tokens[1],
@@ -37,7 +37,7 @@ namespace SQE.Backend.DataAccess.Models
 
     public class ImageStack
     {
-        public int Id { get; set; }
+        public uint Id { get; set; }
         public List<Image> Images { set; get; }
         public int MasterIndex { set; get; }
     }

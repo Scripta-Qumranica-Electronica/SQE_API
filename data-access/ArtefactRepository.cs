@@ -13,7 +13,7 @@ namespace SQE.Backend.DataAccess
 
     public interface IArtefactRepository
     {
-        Task<Artefact> GetArtefact(int? userId, int artefactId);
+        Task<Artefact> GetArtefact(uint? userId, uint artefactId);
 
     }
 
@@ -21,7 +21,7 @@ namespace SQE.Backend.DataAccess
     {
         public ArtefactRepository(IConfiguration config) : base(config) { }
 
-        public Task<Artefact> GetArtefact(int? userId, int artfactId)
+        public Task<Artefact> GetArtefact(uint? userId, uint artfactId)
         {
 
             /**  using (var connection = OpenConnection() as MySqlConnection)

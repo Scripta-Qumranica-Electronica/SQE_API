@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("v1/[controller]")]
     [ApiController]
     public class ArtefactController : ControllerBase
     {

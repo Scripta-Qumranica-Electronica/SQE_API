@@ -3,7 +3,7 @@
 namespace SQE.Backend.Server.Services
 {
     public class NotFoundException : Exception {
-        public NotFoundException(int id)
+        public NotFoundException(uint id)
             : base(String.Format("Scroll {0} not found", id))
         {
         }
@@ -11,7 +11,7 @@ namespace SQE.Backend.Server.Services
 
     public class ForbiddenException : Exception
     {
-        public ForbiddenException(int id)
+        public ForbiddenException(uint id)
             : base(String.Format("Scroll {0}: Forbidden access", id))
         {
         }

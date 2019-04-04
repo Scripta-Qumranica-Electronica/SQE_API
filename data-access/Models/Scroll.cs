@@ -7,7 +7,7 @@ namespace SQE.Backend.DataAccess.Models
 {
     public class ScrollVersion
     {
-        public int Id { get; set; }
+        public uint Id { get; set; }
         public string Name { get; set; }
         public Permission Permission { get; set; }
         public string Thumbnail { get; set; }
@@ -15,6 +15,14 @@ namespace SQE.Backend.DataAccess.Models
         public bool IsPublic {get; set;}
         public DateTime? LastEdit { get; set; }
         public User Owner { get; set; }
+    }
+
+    public class ScrollName
+    {
+        public uint Id { get; set; }
+        public string Name { get; set; }
+        public uint ScrollId { get; set; }
+        public uint ScrollDataId { get; set; }
     }
 
     public class Permission

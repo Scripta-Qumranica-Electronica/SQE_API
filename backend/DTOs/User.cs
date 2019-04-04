@@ -18,7 +18,7 @@ namespace SQE.Backend.Server.DTOs
 
     public class UserDTO
     {
-        public int userId { get; set; }
+        public uint userId { get; set; }
         public string userName { get; set; }
     }
 

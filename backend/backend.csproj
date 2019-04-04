@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.0.2105168" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,5 +22,10 @@
   <ItemGroup>
     <ProjectReference Include="..\data-access\data-access.csproj" />
   </ItemGroup>
+    
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
 
 </Project>

@@ -2,25 +2,24 @@
 using Microsoft.Extensions.Configuration;
 using SQE.Backend.DataAccess.Models;
 using SQE.Backend.DataAccess.Queries;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static SQE.Backend.DataAccess.Models.Image;
 
 namespace SQE.Backend.DataAccess
 {
     public interface IImageRepository
     {
-        Task<IEnumerable<Image>> GetImages(int? userId, int scrollVersionId, string fragmentId);
+        Task<IEnumerable<Image>> GetImages(uint? userId, uint scrollVersionId, string fragmentId);
+        Task<IEnumerable<ImageGroup>> ListImages(uint? userId, List<uint> scrollVersionIds);
+        Task<IEnumerable<ImageInstitution>> ListImageInstitutions();
     }
 
     public class ImageRepository : DBConnectionBase, IImageRepository
     {
         public ImageRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<Image>> GetImages(int? userId, int scrollVersionId, string fragmentId)
+        public async Task<IEnumerable<Image>> GetImages(uint? userId, uint scrollVersionId, string fragmentId)
         {
             var fragment = ImagedFragment.FromId(fragmentId);
 
@@ -31,11 +30,11 @@ namespace SQE.Backend.DataAccess
 
                 var results = await connection.QueryAsync<ImageQueries.Result>(sql, new
                 {
-                    UserId = userId ?? -1, // @UserId is not expanded if userId is null
+                    UserId = userId ?? 0, // @UserId is not expanded if userId is null
                     ScrollVersionId = scrollVersionId,
-                    Catalog1 = fragment?.Catalog1,
-                    Catalog2 = fragment?.Catalog2,
-                    Institution = fragment?.Institution,
+                    fragment?.Catalog1,
+                    fragment?.Catalog2,
+                    fragment?.Institution,
                 });
 
                 var models = results.Select(result => CreateImage(result));
@@ -72,13 +71,79 @@ namespace SQE.Backend.DataAccess
             return type;
         }**/
 
-        private string [] GetWave(int start, int end)
+        private string [] GetWave(ushort start, ushort end)
         {
-            string[] str = new string[2];
+            var str = new string[2];
             str[0] = start.ToString();
             str[1] = end.ToString();
             return str;
         }
-        
+
+        public async Task<IEnumerable<ImageGroup>> ListImages(uint? userId, List<uint> scrollVersionIds) //
+        {
+            string sql;
+            if (userId.HasValue)
+            {
+                sql = UserImageGroupQuery.GetQuery(scrollVersionIds.Count > 0);
+            }
+            else
+            {
+                sql = ImageGroupQuery.GetQuery(scrollVersionIds.Count > 0);
+            }
+
+            if (scrollVersionIds != null)
+            {
+                sql = sql.Replace("@ScrollVersionIds", $"({string.Join(",", scrollVersionIds)})");
+            }
+
+            using (var connection = OpenConnection())
+            {
+                var results = await connection.QueryAsync<ImageGroupQuery.Result>(sql, new
+                {
+                    UserId = userId ?? 0, // @UserId is not expanded if userId is null
+                });
+
+                var models = results.Select(result => CreateImage(result));
+                return models;
+            }
+        }
+
+        private ImageGroup CreateImage(ImageGroupQuery.Result result)
+        {
+            var model = new ImageGroup
+                {
+                    Id = result.image_catalog_id,
+                    Institution = result.institution,
+                    CatalogNumber1 = result.catalog_number_1,
+                    CatalogNumber2 = result.catalog_number_2,
+                    CatalogSide = result.catalog_side,
+                    Images = new List<Image>(),
+                };
+
+            return model;
+        }
+
+        public async Task<IEnumerable<ImageInstitution>> ListImageInstitutions()
+        {
+            var sql = ImageInstitutionQuery.GetQuery();
+
+            using (var connection = OpenConnection())
+            {
+                var results = await connection.QueryAsync<ImageInstitutionQuery.Result>(sql);
+
+                var models = results.Select(CreateInstitution);
+                return models;
+            }
+        }
+
+        private ImageInstitution CreateInstitution(ImageInstitutionQuery.Result result)
+        {
+            var model = new ImageInstitution
+            {
+                Name = result.Institution,
+            };
+
+            return model;
+        }
     }
 }
