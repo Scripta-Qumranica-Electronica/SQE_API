@@ -12,10 +12,10 @@ namespace SQE.Backend.Server.Services
 {
     public interface IScrollService
     {
-        Task<ScrollVersionGroup> GetScrollVersionAsync(uint scrollVersionId, uint? userId, bool artefacts = false, bool fragments = false);
-        Task<ScrollVersionList> ListScrollVersionsAsync(uint? userId);
-        Task<ScrollVersion> UpdateScroll(uint scrollVersionId, string name, uint userId);
-        Task<ScrollVersion> CopyScroll(uint scrollVersionId, string name, uint userId);
+        Task<ScrollVersionGroupDTO> GetScrollVersionAsync(uint scrollVersionId, uint? userId, bool artefacts = false, bool fragments = false);
+        Task<ScrollVersionListDTO> ListScrollVersionsAsync(uint? userId);
+        Task<ScrollVersionDTO> UpdateScroll(uint scrollVersionId, string name, uint userId);
+        Task<ScrollVersionDTO> CopyScroll(uint scrollVersionId, string name, uint userId);
     }
 
     public class ScrollService : IScrollService
@@ -27,7 +27,7 @@ namespace SQE.Backend.Server.Services
             _repo = repo;
         }
 
-        public async Task<ScrollVersionGroup> GetScrollVersionAsync(uint scrollVersionId, uint? userId, bool artefacts, bool fragments)
+        public async Task<ScrollVersionGroupDTO> GetScrollVersionAsync(uint scrollVersionId, uint? userId, bool artefacts, bool fragments)
         {
             var groups = await _repo.GetScrollVersionGroups(scrollVersionId);
             if (groups.Count == 0)
@@ -52,7 +52,7 @@ namespace SQE.Backend.Server.Services
             return svg;
         }
 
-        public async Task<ScrollVersionList> ListScrollVersionsAsync(uint? userId)
+        public async Task<ScrollVersionListDTO> ListScrollVersionsAsync(uint? userId)
         {
             var groups = await _repo.GetScrollVersionGroups(null);
             var scrollVersions = await _repo.ListScrollVersions(userId, null);
@@ -123,7 +123,7 @@ namespace SQE.Backend.Server.Services
             };
         }
 
-        public async Task<ScrollVersion> UpdateScroll(uint scrollVersionId, string name, uint userId)
+        public async Task<ScrollVersionDTO> UpdateScroll(uint scrollVersionId, string name, uint userId)
         {
             if (name != "") 
             {
@@ -150,9 +150,9 @@ namespace SQE.Backend.Server.Services
             return ScrollVersionModelToDTO(sv);
         }
 
-        async Task<ScrollVersion> IScrollService.CopyScroll(uint scrollVersionId, string name, uint userId)
+        async Task<ScrollVersionDTO> IScrollService.CopyScroll(uint scrollVersionId, string name, uint userId)
         {
-            ScrollVersion sv;
+            ScrollVersionDTO sv;
             // Clone scroll
             var copyToScrollVersionId = await _repo.CopyScrollVersion(scrollVersionId, (ushort) userId);
             if (scrollVersionId == copyToScrollVersionId)

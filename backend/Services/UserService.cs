@@ -17,8 +17,8 @@ namespace SQE.Backend.Server.Services
 {
     public interface IUserService
     {
-        Task<UserWithToken> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
-        UserWithToken GetCurrentUser();
+        Task<UserWithTokenDTO> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
+        UserWithTokenDTO GetCurrentUser();
         uint? GetCurrentUserId();
     }
 

@@ -23,21 +23,21 @@ namespace SQE.Backend.Server.DTOs
         public enum direction { left, right, top}
     }
 
-    public class ImageList
+    public class ImageListDTO
     {
         public List<ImageDTO> ImagesList { get; set; }
     }
 
-    public class ImageGroup
+    public class ImageGroupDTO
     {
         public uint Id { get; set; }
         public string Institution { get; set; }
         public string CatalogNumber1 { get; set; }
         public string CatalogNumber2 { get; set; }
         public byte CatalogSide { get; set; }
-        public List<Image> Images { get; set; }
+        public List<ImageDTO> Images { get; set; }
 
-        public ImageGroup(uint id, string institution, string catalogNumber1, string catalogNumber2, byte catalogSide, List<Image> images)
+        public ImageGroupDTO(uint id, string institution, string catalogNumber1, string catalogNumber2, byte catalogSide, List<ImageDTO> images)
         {
             Id = id;
             Institution = institution;
@@ -48,28 +48,28 @@ namespace SQE.Backend.Server.DTOs
         }
     }
 
-    public class ImageGroupList
+    public class ImageGroupListDTO
     {
-        public List<ImageGroup> ImageGroup { get; set; }
-        public ImageGroupList(List<ImageGroup> imageGroup)
+        public List<ImageGroupDTO> ImageGroup { get; set; }
+        public ImageGroupListDTO(List<ImageGroupDTO> imageGroup)
         {
             ImageGroup = imageGroup;
         }
     }
 
-    public class ImageInstitution
+    public class ImageInstitutionDTO
     {
         public string Name { get; set; }
-        public ImageInstitution(string name)
+        public ImageInstitutionDTO(string name)
         {
             Name = name;
         }
     }
 
-    public class ImageInstitutionList
+    public class ImageInstitutionListDTO
     {
-        public List<ImageInstitution> Institutions { get; set; }
-        public ImageInstitutionList(List<ImageInstitution> institutions)
+        public List<ImageInstitutionDTO> Institutions { get; set; }
+        public ImageInstitutionListDTO(List<ImageInstitutionDTO> institutions)
         {
             Institutions = institutions;
         }

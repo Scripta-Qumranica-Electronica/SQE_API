@@ -42,7 +42,7 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("list")]
-        public async Task<ActionResult<ImageGroupList>> ListImageGroups()
+        public async Task<ActionResult<ImageGroupListDTO>> ListImageGroups()
         {
             var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>());
             return Ok(images);
@@ -50,7 +50,7 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("{id}")]
-        public async Task<ActionResult<ImageGroupList>> ListImageGroupsOfScroll(uint id)
+        public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfScroll(uint id)
         {
             var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {id }));
             return Ok(images);
@@ -61,7 +61,7 @@ namespace SQE.Backend.Server.Controllers
         /// </summary>
         [AllowAnonymous]
         [HttpGet("institution/list")]
-        public async Task<ActionResult<ImageInstitutionList>> ListImageInstitutions()
+        public async Task<ActionResult<ImageInstitutionListDTO>> ListImageInstitutions()
         {
             var institutions = await _imageService.GetImageInstitutionsAsync();
             return Ok(institutions);

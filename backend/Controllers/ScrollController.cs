@@ -32,7 +32,7 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}")]
-        public async Task<ActionResult<ScrollVersionGroup>> GetScrollVersion(uint scrollVersionId)
+        public async Task<ActionResult<ScrollVersionGroupDTO>> GetScrollVersion(uint scrollVersionId)
         {
             var vg = await _scrollService.GetScrollVersionAsync(scrollVersionId, _userService.GetCurrentUserId(), false, false);
 
@@ -53,7 +53,7 @@ namespace SQE.Backend.Server.Controllers
         }
 
         [HttpPost("update/{scrollVersionId}")]
-        public async Task<ActionResult<ScrollVersion>> UpdateScrollVersion([FromBody] ScrollUpdateRequest request, uint scrollVersionId)
+        public async Task<ActionResult<ScrollVersionDTO>> UpdateScrollVersion([FromBody] ScrollUpdateRequestDTO request, uint scrollVersionId)
         {
             try
             {
@@ -76,7 +76,7 @@ namespace SQE.Backend.Server.Controllers
         }
 
         [HttpPost("copy/{scrollVersionId}")] //not working well..
-        public async Task<ActionResult<ScrollVersion>> CopyScrollVersion([FromBody] ScrollUpdateRequest request, uint scrollVersionId)
+        public async Task<ActionResult<ScrollVersionDTO>> CopyScrollVersion([FromBody] ScrollUpdateRequestDTO request, uint scrollVersionId)
         {
             try
             {
@@ -100,7 +100,7 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}/imaged-fragments")]
-        public async Task<ActionResult<ImagedFragmentList>> GetImagedFragments(uint scrollVersionId)
+        public async Task<ActionResult<ImagedFragmentListDTO>> GetImagedFragments(uint scrollVersionId)
         {
             try
             {

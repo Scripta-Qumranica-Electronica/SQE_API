@@ -11,10 +11,10 @@ namespace SQE.Backend.Server.Services
 {
     public interface IImageService
     {
-        Task<ImageList> GetImages(uint? userId, uint scrollVersionId, string fragmentId = null);
-        Image ImageToDTO(DataAccess.Models.Image model);
-	Task<ImageGroupList> GetImageAsync(uint? userId, List<uint> scrollVersionId);
-        Task<ImageInstitutionList> GetImageInstitutionsAsync();
+        Task<ImageListDTO> GetImages(uint? userId, uint scrollVersionId, string fragmentId = null);
+        ImageDTO ImageToDTO(DataAccess.Models.Image model);
+	Task<ImageGroupListDTO> GetImageAsync(uint? userId, List<uint> scrollVersionId);
+        Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
     
     }
     public class ImageService : IImageService
@@ -25,7 +25,7 @@ namespace SQE.Backend.Server.Services
         {
             _repo = repo;
         }
-        async public Task<ImageList> GetImages(uint? userId, uint scrollVersionId, string fragmentId = null)
+        async public Task<ImageListDTO> GetImages(uint? userId, uint scrollVersionId, string fragmentId = null)
         {
             var images = await _repo.GetImages(userId, scrollVersionId, fragmentId);
 
@@ -33,7 +33,7 @@ namespace SQE.Backend.Server.Services
             {
                 throw new NotFoundException((uint)scrollVersionId);
             }
-            var result = new ImageList
+            var result = new ImageListDTO
             {
                 ImagesList = new List<ImageDTO>(),
             };
@@ -78,16 +78,16 @@ namespace SQE.Backend.Server.Services
             return null;
 
         }
-        public Image.lighting GetLightingType(byte type)
+        public ImageDTO.lighting GetLightingType(byte type)
         {
             if (type ==2 || type == 3)
             {
-                return Image.lighting.raking;
+                return ImageDTO.lighting.raking;
             }
-            return Image.lighting.direct; // need to check..
+            return ImageDTO.lighting.direct; // need to check..
         }
 
-        public Image.direction GetLigthingDirection(byte type)
+        public ImageDTO.direction GetLigthingDirection(byte type)
         {
             if (type == 2)
             {
@@ -100,33 +100,33 @@ namespace SQE.Backend.Server.Services
             return ImageDTO.direction.top; // need to check..
         }
 
-        public async Task<ImageGroupList> GetImageAsync(uint? userId, List<uint> scrollVersionId)
+        public async Task<ImageGroupListDTO> GetImageAsync(uint? userId, List<uint> scrollVersionId)
         {
             var images = await _repo.ListImages(userId, scrollVersionId);
 
             return ImageToDTO(images);
         }
 
-        internal static ImageGroupList ImageToDTO(IEnumerable<DataAccess.Models.ImageGroup> imageGroups)
+        internal static ImageGroupListDTO ImageToDTO(IEnumerable<DataAccess.Models.ImageGroup> imageGroups)
         {
-            return new ImageGroupList(imageGroups.Select(imageGroup =>
+            return new ImageGroupListDTO(imageGroups.Select(imageGroup =>
             {
-                return new ImageGroup(imageGroup.Id, imageGroup.Institution, imageGroup.CatalogNumber1, imageGroup.CatalogNumber2, imageGroup.CatalogSide, new List<Image>());
+                return new ImageGroupDTO(imageGroup.Id, imageGroup.Institution, imageGroup.CatalogNumber1, imageGroup.CatalogNumber2, imageGroup.CatalogSide, new List<ImageDTO>());
             }).ToList());
         }
 
-        public async Task<ImageInstitutionList> GetImageInstitutionsAsync()
+        public async Task<ImageInstitutionListDTO> GetImageInstitutionsAsync()
         {
             var institutions = await _repo.ListImageInstitutions();
 
             return ImageInstitutionsToDTO(institutions);
         }
 
-        internal static ImageInstitutionList ImageInstitutionsToDTO(IEnumerable<DataAccess.Models.ImageInstitution> imageInstitutions)
+        internal static ImageInstitutionListDTO ImageInstitutionsToDTO(IEnumerable<DataAccess.Models.ImageInstitution> imageInstitutions)
         {
-            return new ImageInstitutionList(imageInstitutions.Select(imageInstitution =>
+            return new ImageInstitutionListDTO(imageInstitutions.Select(imageInstitution =>
             {
-                return new ImageInstitution(imageInstitution.Name);
+                return new ImageInstitutionDTO(imageInstitution.Name);
             }).ToList());
         }
     }
