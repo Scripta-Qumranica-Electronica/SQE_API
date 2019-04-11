@@ -50,8 +50,9 @@ namespace SQE.Backend.DataAccess.Helpers
             Parameters = parameters;
             TableName = tableName;
             TablePkId = tablePkId;
-            // The columns we are writing must all have values in the Parameters.  We pull these out and remove the initial
-            // `@`.  ColumnNames is used to build the insert statements: INSERT INTO table_x (...ColumnNames).
+            // The columns we are writing must all have values in the Parameters.  
+            // We pull these out of the parameters.  ColumnNames is used to build 
+            // the insert statements: INSERT INTO table_x (...ColumnNames).
             ColumnNames = Parameters.ParameterNames.ToList();
             
             // Fail creating the object if missing record id for update/delete.
@@ -62,7 +63,7 @@ namespace SQE.Backend.DataAccess.Helpers
                     nameof(tablePkId)
                     );
             }
-            else if(tablePkId.HasValue)
+            else if(tablePkId.HasValue) // Add the record id to the parameters.
             {
                 Parameters.Add("@OwnedTableId", tablePkId.Value);
             }

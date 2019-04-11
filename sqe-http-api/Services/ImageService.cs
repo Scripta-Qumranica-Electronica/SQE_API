@@ -57,7 +57,7 @@ namespace SQE.Backend.Server.Services
                 type = GetType(model.Type),
                 regionInMaster = null,
                 regionOfMaster = null,
-                lightingDirection = GetLigthingDirection(model.Type),
+                lightingDirection = GetLightingDirection(model.Type),
                 lightingType = GetLightingType(model.Type),
                 side = model.Side,
                 transformToMaster = model.TransformMatrix,
@@ -72,9 +72,9 @@ namespace SQE.Backend.Server.Services
             if (type == 1)
                 return "infrared";
             if (type == 2)
-                return "raking-left";
+                return "rakingLeft";
             if (type == 3)
-                return "raking-right";
+                return "rakingRight";
             return null;
 
         }
@@ -87,7 +87,7 @@ namespace SQE.Backend.Server.Services
             return ImageDTO.lighting.direct; // need to check..
         }
 
-        public ImageDTO.direction GetLigthingDirection(byte type)
+        public ImageDTO.direction GetLightingDirection(byte type)
         {
             if (type == 2)
             {

@@ -20,14 +20,13 @@ JOIN scroll_data_owner sdw USING(scroll_version_id)
 JOIN scroll_data sd USING(scroll_data_id)
 JOIN user USING(user_id)
 LEFT JOIN (SELECT scroll_version_id, MAX(time) AS last_edit FROM main_action GROUP BY time) AS last USING (scroll_version_id)
-LEFT JOIN (SELECT ec.scroll_id as scroll_id, MIN(CONCAT(proxy, url)) as thumbnail_url 
+LEFT JOIN (SELECT ec.scroll_id as scroll_id, MIN(CONCAT(proxy, url, SQE_image.filename)) as thumbnail_url 
 		   FROM edition_catalog ec
            JOIN image_to_edition_catalog USING (edition_catalog_id)
 		   JOIN SQE_image ON SQE_image.image_catalog_id = image_to_edition_catalog.image_catalog_id AND SQE_image.type = 0 
            JOIN image_urls USING(image_urls_id)
            WHERE ec.edition_side=0
            GROUP BY scroll_id) im ON (im.scroll_id=sd.scroll_id)
-
 ";
 
         public static string GetQuery(bool limitUser, bool limitScrolls)

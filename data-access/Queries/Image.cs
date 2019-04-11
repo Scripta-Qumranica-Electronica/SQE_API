@@ -9,8 +9,9 @@ namespace SQE.Backend.DataAccess.Queries
         private static string _getImageQuery = @"select image_urls.url as url,
 image_urls.proxy as proxy,
 image_catalog.image_catalog_id,
-SQE_image.type as type,
+SQE_image.type as img_type,
 image_catalog.catalog_side as side,
+SQE_image.filename as filename,
 SQE_image.is_master as master,
 SQE_image.wavelength_start as wave_start,
 SQE_image.wavelength_end as wave_end,
@@ -44,6 +45,7 @@ and edition_catalog.edition_side =0
         {
             public string url { get; set; }
             public string proxy { get; set; }
+            public string filename { get; set; }
             public uint image_catalog_id { get; set; }
             public byte img_type { get; set; }
             public byte side { get; set; }
