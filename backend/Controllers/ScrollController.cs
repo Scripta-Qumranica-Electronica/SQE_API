@@ -21,13 +21,15 @@ namespace SQE.Backend.Server.Controllers
         private IScrollService _scrollService;
         private IUserService _userService;
         private IImagedFragmentsService _imagedFragmentService;
+        private IArtefactService _artefactService;
 
 
-        public ScrollController(IScrollService scrollService, IUserService userService, IImagedFragmentsService imagedFragmentService)
+        public ScrollController(IScrollService scrollService, IUserService userService, IImagedFragmentsService imagedFragmentService, IArtefactService artefactService)
         {
             this._scrollService = scrollService;
             this._userService = userService;
             _imagedFragmentService = imagedFragmentService;
+            _artefactService = artefactService;
         }
 
         [AllowAnonymous]
@@ -112,5 +114,20 @@ namespace SQE.Backend.Server.Controllers
                 return NotFound();
             }
         }
-    }
+
+        [AllowAnonymous]
+        [HttpGet("{scrollVersionId}/artefacts")]
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(int scrollVersionId)
+        {
+            try
+            {
+                var artefacts = await _artefactService.GetAtrefactAsync(_userService.GetCurrentUserId(), null, scrollVersionId);
+                return artefacts;
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+}
 }

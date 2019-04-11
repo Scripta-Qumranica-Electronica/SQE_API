@@ -7,8 +7,8 @@ namespace SQE.Backend.Server.DTOs
 {
     public class ArtefactDTO
     {
-        public string id { get; set; }
-        public string scrollVersionId { get; set; }
+        public int id { get; set; }
+        public int scrollVersionId { get; set; }
         public string imageFragmentId {get; set;}
         public string name { get; set; }
         public PolygonDTO mask { get; set; }
@@ -17,5 +17,9 @@ namespace SQE.Backend.Server.DTOs
         public artSide side { get; set; }
 
         public enum artSide { recto, verso}
+    }
+    public class ArtefactListDTO
+    {
+        public List<ArtefactDTO> ArtefactList { get; set; }
     }
 }

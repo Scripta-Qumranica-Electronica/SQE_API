@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
+
+    [Authorize]
     [Route("v1/[controller]")]
     [ApiController]
     public class ArtefactController : ControllerBase
@@ -24,10 +26,18 @@ namespace backend.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ArtefactDTO>> GetArtefact(int id)
+        [HttpGet("{artefactId}")]
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefact(int artefactId)
         {
-            return new ArtefactDTO();
+            try
+            {
+                var artefacts = await _artefactService.GetAtrefactAsync(_userService.GetCurrentUserId(), artefactId, null);
+                return artefacts;
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
         }
     }
 }

@@ -46,6 +46,7 @@ namespace SQE.Backend.Server
             services.AddTransient<IScrollRepository, ScrollRepository>();
             services.AddTransient<IImagedFragmentsRepository, ImagedFragmentsRepository>();
             services.AddTransient<IImageRepository, ImageRepository>();
+            services.AddTransient<IArtefactRepository, ArtefactRepository>();
             services.AddTransient<IDatabaseWriter, DatabaseWriter>();
 
             // Configure routing.

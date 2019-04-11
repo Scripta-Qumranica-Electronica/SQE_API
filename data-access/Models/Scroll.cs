@@ -40,14 +40,14 @@ namespace SQE.Backend.DataAccess.Models
     
     public class Artefact
     {
-        public string Id { get; set; }
-        public string ScrollVersionId { get; set; }
+        public int Id { get; set; }
+        public int ScrollVersionId { get; set; }
         public string ImagedFragmentId { get; set; }
         public string Name { get; set; }
         public Polygon Mask { get; set; }
         public string TransformMatrix { get; set; }
         public string Zorder { get; set; }
-        public string Size { get; set; }
+        public string side { get; set; }
     }
 
     public class Polygon

@@ -11,14 +11,57 @@ namespace SQE.Backend.Server.Services
 {
     public interface IArtefactService
     {
-        Task<ArtefactDTO> GetAtrefact(int? userId);
+        Task<ArtefactListDTO> GetAtrefactAsync(uint? userId, int? artefactId, int? scrollVersionId);
 
     }
     public class ArtefactService : IArtefactService
     {
-        public Task<ArtefactDTO> GetAtrefact(int? userId)
+        IArtefactRepository _repo;
+
+        public ArtefactService(IArtefactRepository repo)
         {
-            throw new NotImplementedException();
+            _repo = repo;
         }
+
+        public async Task<ArtefactListDTO> GetAtrefactAsync(uint? userId, int? artefactId, int? scrollVersionId)
+        {
+
+            var artefacts = await _repo.GetArtefact(userId, artefactId, scrollVersionId);
+
+            if (artefacts == null)
+            {
+                throw new NotFoundException((uint)scrollVersionId);
+            }
+            var result = new ArtefactListDTO
+            {
+                ArtefactList = new List<ArtefactDTO>(),
+            };
+
+
+            foreach (var a in artefacts)
+            {
+                result.ArtefactList.Add(ArtefactToDTO(a));
+            }
+
+            return result;
+        }
+
+        public ArtefactDTO ArtefactToDTO(DataAccess.Models.Artefact model)
+        {
+
+            return new ArtefactDTO
+            {
+                id = model.Id,
+                imageFragmentId = model.ImagedFragmentId,
+                scrollVersionId = model.ScrollVersionId,
+                name = model.Name,
+                zOrder = model.Zorder,
+                side = ArtefactDTO.artSide.recto,
+                transformMatrix = model.TransformMatrix,
+                mask = new PolygonDTO()
+
+            };
+        }
+
     }
 }
