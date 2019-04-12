@@ -133,7 +133,17 @@ WHERE scroll_version_id = @ScrollVersionId";
             FROM scroll_version sv1
             JOIN scroll_version_group USING(scroll_version_group_id)
             JOIN scroll_version sv2 ON sv2.scroll_version_group_id = scroll_version_group.scroll_version_group_id
-            WHERE sv1.scroll_version_id = @ScrollVersionId) ";
+            WHERE sv1.scroll_version_id = @ScrollVersionId)";
+        // You must add a parameter `@ScrollVersionId` to any query using this.
+        public static string LimitToScrollVersionGroupNoAuth =>
+            @"scroll_version_id IN 
+            (SELECT sv2.scroll_version_id
+            FROM scroll_version sv1
+            JOIN scroll_version_group USING(scroll_version_group_id)
+            JOIN scroll_version sv2 ON sv2.scroll_version_group_id = scroll_version_group.scroll_version_group_id
+            WHERE sv1.scroll_version_id = @ScrollVersionId 
+                AND sv1.user_id = (SELECT user_id FROM user WHERE user_name = ""sqe_api""))";
+        // You must add the parameters `@ScrollVersionId` and `@UserId` to any query using this.
         public static string LimitToScrollVersionGroupAndUser =>
             @"scroll_version_id IN 
             (SELECT sv2.scroll_version_id
@@ -141,7 +151,7 @@ WHERE scroll_version_id = @ScrollVersionId";
             JOIN scroll_version_group USING(scroll_version_group_id)
             JOIN scroll_version sv2 ON sv2.scroll_version_group_id = scroll_version_group.scroll_version_group_id
             WHERE sv1.scroll_version_id = @ScrollVersionId 
-                AND sv1.user_id = @UserId)";
+                AND (sv1.user_id = @UserId OR sv1.user_id = (SELECT user_id FROM user WHERE user_name = ""sqe_api"")))";
     }
 
     internal static class CreateScrollVersionQuery

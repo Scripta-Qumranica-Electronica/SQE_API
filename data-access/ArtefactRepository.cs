@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using SQE.Backend.DataAccess.Models;
-
-
+using SQE.Backend.DataAccess.Queries;
+using Dapper;
+using System.Linq;
 
 namespace SQE.Backend.DataAccess
 {
@@ -14,10 +15,10 @@ namespace SQE.Backend.DataAccess
     public interface IArtefactRepository
     {
         Task<Artefact> GetArtefact(uint? userId, uint artefactId);
-
+        Task<IEnumerable<ScrollArtefactListQuery.Result>> GetScrollArtefactList(uint? userId, uint scrollVersionId);
     }
 
-    class ArtefactRepository : DBConnectionBase, IArtefactRepository
+    public class ArtefactRepository : DBConnectionBase, IArtefactRepository
     {
         public ArtefactRepository(IConfiguration config) : base(config) { }
 
@@ -59,5 +60,18 @@ namespace SQE.Backend.DataAccess
             return null;
         }
 
+        public async Task<IEnumerable<ScrollArtefactListQuery.Result>> GetScrollArtefactList(uint? userId, uint scrollVersionId)
+        {
+            var query = ScrollArtefactListQuery.GetQuery(userId);
+            using (var connection = OpenConnection())
+            {
+                return await connection.QueryAsync<ScrollArtefactListQuery.Result>(query,
+                    new
+                    {
+                        ScrollVersionId = scrollVersionId,
+                        UserId = userId ?? 0
+                    });
+            }
+        }
     }
 }

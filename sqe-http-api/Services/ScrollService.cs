@@ -133,7 +133,7 @@ namespace SQE.Backend.Server.Services
                 {
                     await _repo.ChangeScrollVersionName(scrollVersionId, name, userId);
                 } 
-                catch(NoPermissionException err)
+                catch(NoPermissionException)
                 {
                     throw new NotFoundException(scrollVersionId);
                 }

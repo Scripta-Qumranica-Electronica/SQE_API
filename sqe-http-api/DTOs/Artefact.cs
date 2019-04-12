@@ -18,4 +18,17 @@ namespace SQE.Backend.Server.DTOs
 
         public enum artSide { recto, verso}
     }
+
+    public class ArtefactDesignationDTO
+    {
+        public uint ArtefactId { get; set; }
+        public uint ImageCatalogId { get; set; }
+        public string Name { get; set; }
+        public string Side { get; set; }
+    }
+
+    public class ArtefactListDTO
+    {
+        public List<ArtefactDesignationDTO> result { get; set; }
+    }
 }

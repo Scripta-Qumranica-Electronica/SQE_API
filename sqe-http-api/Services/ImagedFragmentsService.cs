@@ -64,13 +64,58 @@ namespace SQE.Backend.Server.Services
         }
         internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedFragment model, List<ImageDTO> images)
         {
-
+            var sides = getSides(images);
             return new ImagedFragmentDTO
             {
                 id = model.Id.ToString(),
-                recto = getRecto(images),
-                verso = getVerso(images)
+                recto = sides.recto,
+                verso = sides.verso
+//                recto = getRecto(images),
+//                verso = getVerso(images)
             };
+        }
+
+        private static (ImageStackDTO recto, ImageStackDTO verso) getSides(List<ImageDTO> images)
+        {
+            var recto = new List<ImageDTO>();
+            var verso = new List<ImageDTO>();
+            foreach (var image in images)
+            {
+                switch (image.side)
+                {
+                    case "recto":
+                        recto.Add(image);
+                        break;
+                    case "verso":
+                        verso.Add(image);
+                        break;
+                }
+            }
+            if (recto.Count == 0)
+            {
+                recto = null;
+            }
+            if (verso.Count == 0)
+            {
+                verso = null;
+            }
+            var rectoMasterIndex = recto.FindIndex(i => i.master);
+            var rectoCatalog_id = recto[0].catalog_number;
+            var versoMasterIndex = verso.FindIndex(i => i.master);
+            var versoCatalog_id = verso[0].catalog_number;
+            return (new ImageStackDTO
+                    {
+                        id = rectoCatalog_id,
+                        masterIndex = rectoMasterIndex,
+                        images = recto
+                    },
+                    new ImageStackDTO
+                    {
+                        id = versoCatalog_id,
+                        masterIndex = versoMasterIndex,
+                        images = verso
+                    }
+                );
         }
         private static ImageStackDTO getRecto(List<ImageDTO> images)
         {

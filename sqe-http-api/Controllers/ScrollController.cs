@@ -21,13 +21,19 @@ namespace SQE.Backend.Server.Controllers
         private IScrollService _scrollService;
         private IUserService _userService;
         private IImagedFragmentsService _imagedFragmentService;
+        private IArtefactService _artefactService;
 
 
-        public ScrollController(IScrollService scrollService, IUserService userService, IImagedFragmentsService imagedFragmentService)
+        public ScrollController(
+            IScrollService scrollService, 
+            IUserService userService, 
+            IImagedFragmentsService imagedFragmentService,
+            IArtefactService artefactService)
         {
             this._scrollService = scrollService;
             this._userService = userService;
-            _imagedFragmentService = imagedFragmentService;
+            this._imagedFragmentService = imagedFragmentService;
+            this._artefactService = artefactService;
         }
 
         [AllowAnonymous]
@@ -106,6 +112,34 @@ namespace SQE.Backend.Server.Controllers
             {
                 var imagedFragment = await _imagedFragmentService.GetImagedFragments(_userService.GetCurrentUserId(), scrollVersionId);
                 return imagedFragment;
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{scrollVersionId}/artefacts")]
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(uint scrollVersionId)
+        {
+            try
+            {
+                return await _artefactService.GetScrollArtefactListings(_userService.GetCurrentUserId(), scrollVersionId);
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+        
+        [AllowAnonymous]
+        [HttpGet("{scrollVersionId}/artefacts/with-image-refs")]
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefactsWithImageRefs(uint scrollVersionId)
+        {
+            try
+            {
+                return await _artefactService.GetScrollArtefactListingsWithImages(_userService.GetCurrentUserId(), scrollVersionId);
             }
             catch (NotFoundException)
             {
