@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "backend", "backend.csproj", "{E47AC494-F0B3-47F5-981E-E4BCE614ED43}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-http-api", "sqe-http-api.csproj", "{E47AC494-F0B3-47F5-981E-E4BCE614ED43}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

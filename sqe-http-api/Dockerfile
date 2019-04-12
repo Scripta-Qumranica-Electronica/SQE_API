@@ -4,16 +4,16 @@ EXPOSE 80
 
 FROM microsoft/dotnet:2.2-sdk AS build
 WORKDIR /src
-COPY ["backend/backend.csproj", "backend/"]
-RUN dotnet restore "backend/backend.csproj"
+COPY ["sqe-http-api/sqe-http-api.csproj", "sqe-http-api/"]
+RUN dotnet restore "sqe-http-api/sqe-http-api.csproj"
 COPY . .
-WORKDIR "/src/backend"
-RUN dotnet build "backend.csproj" -c Release -o /app
+WORKDIR "/src/sqe-http-api"
+RUN dotnet build "sqe-http-api.csproj" -c Release -o /app
 
 FROM build AS publish
-RUN dotnet publish "backend.csproj" -c Release -o /app
+RUN dotnet publish "sqe-http-api.csproj" -c Release -o /app
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
-ENTRYPOINT ["dotnet", "backend.dll"]
+ENTRYPOINT ["dotnet", "sqe-http-api.dll"]
