@@ -1,6 +1,6 @@
 # SQE_API
 
-Asp.Net Core web API for the SQE project. 
+Asp.Net Core web API for the [SQE project](https://www.qumranica.org/). 
 
 ## Project structure
 
