@@ -14,6 +14,7 @@ image_catalog.catalog_side as side,
 SQE_image.is_master as master,
 SQE_image.wavelength_start as wave_start,
 SQE_image.wavelength_end as wave_end,
+SQE_image.filename as fileName,
 image_catalog.institution as institution,
 image_catalog.catalog_number_1 as catalog_1,
 image_catalog.catalog_number_2 as catalog_2
@@ -54,6 +55,7 @@ and edition_catalog.edition_side =0
             public string institution { get; set; }
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
+            public string fileName { get; set; }
         }
     }
 

@@ -46,7 +46,7 @@ namespace SQE.Backend.DataAccess
         {
             var model = new Image
             {
-                URL = image.proxy + image.url,
+                URL = image.proxy + image.url + image.fileName,
                 RegionInMaster = null,
                 RegionOfMaster = null,
                 Side = image.side == 0 ? "recto" : "verso",
