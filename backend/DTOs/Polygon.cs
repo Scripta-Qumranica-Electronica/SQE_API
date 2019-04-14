@@ -7,7 +7,7 @@ namespace SQE.Backend.Server.DTOs
 {
     public class PolygonDTO
     {
-        public string matrix { get; set; } //CAN BE NULL
+        public string svg { get; set; } //CAN BE NULL
 
     }
 }
