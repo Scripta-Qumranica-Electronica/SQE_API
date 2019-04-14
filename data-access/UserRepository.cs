@@ -30,10 +30,7 @@ namespace SQE.Backend.DataAccess
                 });
 
                 var firstUser = results.FirstOrDefault();
-                if (firstUser == null)
-                    return null;
-
-                return firstUser.CreateModel();
+                return firstUser?.CreateModel();
             }
         }
     }
