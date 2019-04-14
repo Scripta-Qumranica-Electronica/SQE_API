@@ -24,7 +24,7 @@ join scroll_version using (scroll_version_id)
 join image_catalog where image_catalog.image_catalog_id = (select SQE_image.image_catalog_id from SQE_image where artefact_shape.id_of_sqe_image = SQE_image.sqe_image_id)
 and scroll_version.user_id = @userID";
 
-        public static string GetArtefactQuery(int? scrollVersionId, int? artefactId)
+        public static string GetArtefactQuery(uint? scrollVersionId, int? artefactId, string fragmentId)
         {
             StringBuilder str = new StringBuilder(_getArtefact);
             if (scrollVersionId != null)
@@ -34,6 +34,10 @@ and scroll_version.user_id = @userID";
             if (artefactId != null)
             {
                 str.Append(" and artefact.artefact_id = @Id");
+            }
+            if(fragmentId != null) //TODO check with empty fragemnt id
+            {
+                str.Append(" and image_catalog.catalog_number_1 = @Catalog1 and image_catalog.catalog_number_2 = @Catalog2 and image_catalog.institution = @Institution");
             }
             return str.ToString();
         }

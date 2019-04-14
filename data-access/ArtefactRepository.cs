@@ -16,7 +16,7 @@ namespace SQE.Backend.DataAccess
 
     public interface IArtefactRepository
     {
-        Task<IEnumerable<Artefact>> GetArtefact(uint? userId, int? artefactId, int? scrollVersionId);
+        Task<IEnumerable<Artefact>> GetArtefact(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId);
 
     }
 
@@ -24,9 +24,11 @@ namespace SQE.Backend.DataAccess
     {
         public ArtefactRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<Artefact>> GetArtefact(uint? userId, int? artefactId, int? scrollVersionId)
+        public async Task<IEnumerable<Artefact>> GetArtefact(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId)
         {
-            var sql = ArtefactQueries.GetArtefactQuery(scrollVersionId, artefactId);
+            var fragment = ImagedFragment.FromId(fragmentId);
+
+            var sql = ArtefactQueries.GetArtefactQuery(scrollVersionId, artefactId, fragment.Id);
 
             using (var connection = OpenConnection() as MySqlConnection)
             {
@@ -34,7 +36,10 @@ namespace SQE.Backend.DataAccess
                 {
                     UserId = userId ?? 1, // @UserId is not expanded if userId is null
                     ScrollVersionId = scrollVersionId?? null,
-                    Id = artefactId?? null
+                    Id = artefactId?? null,
+                    Catalog1 = fragment?.Catalog1,
+                    Catalog2 = fragment?.Catalog2,
+                    Institution = fragment?.Institution
                 });
 
                 var models = results.Select(result => CreateArtefact(result));

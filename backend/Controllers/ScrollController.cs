@@ -117,11 +117,11 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}/artefacts")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(int scrollVersionId)
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(uint scrollVersionId)
         {
             try
             {
-                var artefacts = await _artefactService.GetAtrefactAsync(_userService.GetCurrentUserId(), null, scrollVersionId);
+                var artefacts = await _artefactService.GetAtrefactAsync(_userService.GetCurrentUserId(), null, scrollVersionId, null);
                 return artefacts;
             }
             catch (NotFoundException)

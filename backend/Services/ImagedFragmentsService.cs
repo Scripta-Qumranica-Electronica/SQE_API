@@ -17,12 +17,14 @@ namespace SQE.Backend.Server.Services
         IImagedFragmentsRepository _repo;
         IImageRepository _imageRepo;
         IImageService _imageService;
+        IArtefactService _artefactService;
 
-        public ImagedFragmentsService(IImagedFragmentsRepository repo, IImageRepository imageRepo, IImageService imageService)
+        public ImagedFragmentsService(IImagedFragmentsRepository repo, IImageRepository imageRepo, IImageService imageService, IArtefactService artefactService)
         {
             _repo = repo;
             _imageRepo = imageRepo;
             _imageService = imageService;
+            _artefactService = artefactService;
         }
 
         async public Task<ImagedFragmentListDTO> GetImagedFragments(uint? userId, uint scrollVersionId)
@@ -53,7 +55,7 @@ namespace SQE.Backend.Server.Services
             foreach (var i in imagedFragments)
             {
                 if (imageDict.TryGetValue(i.Id, out var imagedFragment))
-                    result.result.Add(ImagedFragmentModelToDTO(i, imagedFragment));
+                    result.result.Add(ImagedFragmentModelToDTO(i, imagedFragment, null));
             }
 
             return result;
@@ -62,14 +64,16 @@ namespace SQE.Backend.Server.Services
         {
             return image.Institution + "-" + image.Catlog1 + "-" + image.Catalog2;
         }
-        internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedFragment model, List<ImageDTO> images)
+        internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedFragment model, List<ImageDTO> images, ArtefactListDTO artefact)
         {
 
             return new ImagedFragmentDTO
             {
                 id = model.Id.ToString(),
                 recto = getRecto(images),
-                verso = getVerso(images)
+                verso = getVerso(images),
+                Artefacts = artefact
+           
             };
         }
         private static ImageStackDTO getRecto(List<ImageDTO> images)
@@ -124,13 +128,17 @@ namespace SQE.Backend.Server.Services
         {
             var images = await _imageRepo.GetImages(userId, scrollVersionId, fragmentId); //send imagedFragment from here 
             var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, fragmentId); //should be only one!
+            if(imagedFragments.Count() == 0){
+                throw new NotFoundException(scrollVersionId);
+            }
+            var artefacts = await _artefactService.GetAtrefactAsync(userId,null, scrollVersionId, fragmentId);
             var img = new List<ImageDTO>();
             foreach (var image in images)
             {
                 img.Add(_imageService.ImageToDTO(image));
                 //var fragmentId = getFragmentId(image);
             }
-            var result = ImagedFragmentModelToDTO(imagedFragments.First(), img);
+            var result = ImagedFragmentModelToDTO(imagedFragments.First(), img, artefacts);
 
             return result;
         }

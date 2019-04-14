@@ -31,7 +31,7 @@ namespace backend.Controllers
         {
             try
             {
-                var artefacts = await _artefactService.GetAtrefactAsync(_userService.GetCurrentUserId(), artefactId, null);
+                var artefacts = await _artefactService.GetAtrefactAsync(_userService.GetCurrentUserId(), artefactId, null, null);
                 return artefacts;
             }
             catch (NotFoundException)

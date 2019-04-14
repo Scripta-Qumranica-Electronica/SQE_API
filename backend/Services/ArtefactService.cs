@@ -11,7 +11,7 @@ namespace SQE.Backend.Server.Services
 {
     public interface IArtefactService
     {
-        Task<ArtefactListDTO> GetAtrefactAsync(uint? userId, int? artefactId, int? scrollVersionId);
+        Task<ArtefactListDTO> GetAtrefactAsync(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId);
 
     }
     public class ArtefactService : IArtefactService
@@ -23,10 +23,10 @@ namespace SQE.Backend.Server.Services
             _repo = repo;
         }
 
-        public async Task<ArtefactListDTO> GetAtrefactAsync(uint? userId, int? artefactId, int? scrollVersionId)
+        public async Task<ArtefactListDTO> GetAtrefactAsync(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId)
         {
 
-            var artefacts = await _repo.GetArtefact(userId, artefactId, scrollVersionId);
+            var artefacts = await _repo.GetArtefact(userId, artefactId, scrollVersionId, fragmentId);
 
             if (artefacts == null)
             {
