@@ -46,11 +46,11 @@ namespace SQE.Backend.DataAccess
         {
             var model = new Image
             {
-                URL = image.proxy + image.url + image.fileName,
+                URL = image.proxy + image.url + image,
                 RegionInMaster = null,
                 RegionOfMaster = null,
                 Side = image.side == 0 ? "recto" : "verso",
-                Type = image.img_type,
+                Type = image.type,
                 WaveLength = GetWave(image.wave_start, image.wave_end),
                 TransformMatrix = null,
                 Institution = image.institution,

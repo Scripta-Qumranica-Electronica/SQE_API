@@ -123,7 +123,7 @@ namespace SQE.Backend.Server.Services
         async public Task<ImagedFragmentDTO> GetImagedFragment(uint? userId, uint scrollVersionId, string fragmentId)
         {
             var images = await _imageRepo.GetImages(userId, scrollVersionId, fragmentId); //send imagedFragment from here 
-            var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, fragmentId); //should be onky one!
+            var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, fragmentId); //should be only one!
             var img = new List<ImageDTO>();
             foreach (var image in images)
             {

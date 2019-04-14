@@ -46,7 +46,7 @@ and edition_catalog.edition_side =0
             public string url { get; set; }
             public string proxy { get; set; }
             public uint image_catalog_id { get; set; }
-            public byte img_type { get; set; }
+            public byte type { get; set; }
             public byte side { get; set; }
             public bool master { get; set; }
             public ushort wave_start { get; set; }
