@@ -141,53 +141,33 @@ namespace SQE.Backend.DataAccess.Helpers
                     // Though we accept a List of mutations, we have the restriction that
                     // they all belong to the same scrollVersionId and userID.
                     // This way, we only do one permission check for the whole batch.
+                    // TODO: Move some of the checking logic to a User object for easier and more efficient verification.
                     mutationRequest.Parameters.Add("@ScrollVersionId", scrollVersionId);
                     await AddMainActionAsync(connection, mutationRequest);
                     switch (mutationRequest.Action)
                     {
                         case (MutateType.Create):
-                            // Insert the record (or return the id of a preexisting record matching the unique constraints.
-                            var createInsertId = await InsertOwnedTableAsync(connection, mutationRequest);
-                                
-                            // Insert the link to the scrollVersionId in the owner table
-                            await InsertOwnerTableAsync(connection, mutationRequest, createInsertId);
-
-                            // Record the insert
-                            await AddSingleActionAsync(connection, mutationRequest, SingleAction.Add);
-                                
-                            // Add info to the return object
-                            alteredRecords.Add(new AlteredRecord(mutationRequest.TableName, null, createInsertId));
+                            // Insert the record and add its response to the alteredRecords response.
+                            alteredRecords.Add(await InsertAsync(connection, mutationRequest));
                             break;
                             
-                        case (MutateType.Update):
-                            // Delete the link between this scrollVersionID and the record from the owner table
-                            await DeleteOwnerTableAsync(connection, mutationRequest);
-                                
-                            // Record the delete
-                            await AddSingleActionAsync(connection, mutationRequest, SingleAction.Delete);
-                                
-                            // Insert the record (or return the id of a preexisting record matching the unique constraints.
-                            var updateInsertId = await InsertOwnedTableAsync(connection, mutationRequest);
-                                
-                            // Insert the link to the scrollVersionId in the owner table
-                            await InsertOwnerTableAsync(connection, mutationRequest, updateInsertId);
-                                
-                            // Record the insert
-                            await AddSingleActionAsync(connection, mutationRequest, SingleAction.Add);
-                                
+                        case (MutateType.Update): // Update in our system is really Delete + Insert, the old record remains.
+                            // Delete the old record
+                            var deletedRecord = await DeleteAsync(connection, mutationRequest);
+                            
+                            // Insert the new record
+                            var insertedRecord = await InsertAsync(connection, mutationRequest);
+                            
+                            // Merge the request responses by copying the deleted Id to the insertRecord object
+                            insertedRecord.OldId = deletedRecord.OldId;
+                            
                             // Add info to the return object
-                            alteredRecords.Add(new AlteredRecord(mutationRequest.TableName, mutationRequest.TablePkId, updateInsertId));
+                            alteredRecords.Add(insertedRecord);
                             break;
                             
                         case (MutateType.Delete):
-                            // Delete the link between this scrollVersionID and the record from the owner table
-                            await DeleteOwnerTableAsync(connection, mutationRequest);
-                                
-                            // Record the delete
-                            await AddSingleActionAsync(connection, mutationRequest, SingleAction.Delete);
-                                
-                            // Add info to the return object
-                            alteredRecords.Add(new AlteredRecord(mutationRequest.TableName, mutationRequest.TablePkId, null));
+                            // Delete the record and add its response to the alteredRecords response.
+                            alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
                             break;
                     }
                 }
@@ -197,6 +177,16 @@ namespace SQE.Backend.DataAccess.Helpers
             return alteredRecords;
         }
         
+        /// <summary>
+        /// This function verifies that the current user is allowed to edit the requested scrollVersionId.
+        /// TODO: we should move this into the logic of the User object.
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction.</param>
+        /// <param name="scrollVersionId">The scrollVersionId to be altered</param>
+        /// <param name="userId">The userId of the person requesting the alterations</param>
+        /// <returns></returns>
+        /// <exception cref="NoPermissionException">If the user does not have access an invalid operation error
+        /// is thrown.</exception>
         private static async Task CheckAccessAsync(IDbConnection connection, uint scrollVersionId, ushort userId)
         {
             // Check if we can write to this scroll_version
@@ -224,7 +214,56 @@ namespace SQE.Backend.DataAccess.Helpers
                 throw new NoPermissionException(userId, "access", "scroll", scrollVersionId);
             }
         }
+        
+        /// <summary>
+        /// Insert record into table.  This takes care of writing the new record (if necessary) and makes the necessary
+        /// changes to the owner tables.  It also records the action in the database.
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction.</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <returns>The alteredRecord object to be added to the request response.</returns>
+        private static async Task<AlteredRecord> InsertAsync(IDbConnection connection, MutationRequest mutationRequest)
+        {
+            // Insert the record (or return the id of a preexisting record matching the unique constraints.
+            var createInsertId = await InsertOwnedTableAsync(connection, mutationRequest);
+                                
+            // Insert the link to the scrollVersionId in the owner table
+            await InsertOwnerTableAsync(connection, mutationRequest, createInsertId);
 
+            // Record the insert
+            await AddSingleActionAsync(connection, mutationRequest, SingleAction.Add);
+                                
+            // Create info for the request's return object
+            return new AlteredRecord(mutationRequest.TableName, null, createInsertId);
+        }
+        
+        /// <summary>
+        /// Delete record.  This takes care of deleting the record and by making the necessary
+        /// changes to the owner table.  It also records the action in the database.
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <returns>The alteredRecord object to be added to the request response.</returns>
+        private static async Task<AlteredRecord> DeleteAsync(IDbConnection connection, MutationRequest mutationRequest)
+        {
+            // Delete the link between this scrollVersionID and the record from the owner table
+            await DeleteOwnerTableAsync(connection, mutationRequest);
+                                
+            // Record the delete
+            await AddSingleActionAsync(connection, mutationRequest, SingleAction.Delete);
+                                
+            // Create info for the request's return object
+            return new AlteredRecord(mutationRequest.TableName, mutationRequest.TablePkId, null);
+        }
+
+        /// <summary>
+        /// This inserts the requested data into its table. If a record with the same data already exists, then the
+        /// Id of that record is used in place of creating a duplicate record.
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <returns>Returns the Id of the newly inserted record. If a record with the same data already existed,
+        /// then the Id of that record is returned.</returns>
         private static async Task<uint> InsertOwnedTableAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
             // Format query
@@ -237,20 +276,38 @@ namespace SQE.Backend.DataAccess.Helpers
                 );
             
             // Execute query
-            await connection.ExecuteAsync(query, mutationRequest.Parameters);
+            var alteredRecords = await connection.ExecuteAsync(query, mutationRequest.Parameters);
 
-            // Get id of new record (or the record matching the unique constraints of this request).
-            query = OwnedTableIdQuery.GetQuery;
-            query = query.Replace("@TableName", mutationRequest.TableName);
-            query = query.Replace("@Columns", string.Join(",", mutationRequest.ColumnNames));
-            query = query.Replace(
-                "@Values",
-                string.Join(",", mutationRequest.ColumnNames.Select(x => "@" + x))
+            uint insertId;
+            if (alteredRecords == 0) // Nothing was inserted because the exact record already existed.
+            {
+                // Get id of new record (or the record matching the unique constraints of this request).
+                query = OwnedTableIdQuery.GetQuery;
+                query = query.Replace("@TableName", mutationRequest.TableName);
+                query = query.Replace("@Columns", string.Join(",", mutationRequest.ColumnNames));
+                query = query.Replace(
+                    "@Values",
+                    string.Join(",", mutationRequest.ColumnNames.Select(x => "@" + x))
                 );
-            query = query.Replace("@PrimaryKeyName", mutationRequest.TableName + "_id");
-            return await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
+                query = query.Replace("@PrimaryKeyName", mutationRequest.TableName + "_id");
+                insertId = await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
+            }
+            else // A new record was inserted.
+            {
+                // Get the id of the newly inserted record.
+                insertId = await LastInsertIdAsync(connection);
+            }
+            
+            return insertId;
         }
         
+        /// <summary>
+        /// Creates an entry in the owner table linking the scrollVersionId to the record with the inserted data.
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="insertId">The primary key Id of the record that was just inserted.</param>
+        /// <returns></returns>
         private static async Task InsertOwnerTableAsync(IDbConnection connection, MutationRequest mutationRequest,  uint insertId)
         {
             // Format query
@@ -265,6 +322,12 @@ namespace SQE.Backend.DataAccess.Helpers
             await connection.ExecuteAsync(query, mutationRequest.Parameters);
         }
         
+        /// <summary>
+        /// Delete the entry in the owner table that links a particular record to a specific scrollVersionId
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <returns></returns>
         private static async Task DeleteOwnerTableAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
             // Format query
@@ -276,11 +339,23 @@ namespace SQE.Backend.DataAccess.Helpers
             await connection.ExecuteAsync(query, mutationRequest.Parameters);
         }
 
+        /// <summary>
+        /// Convenience function to get the last insert Id. Throws on error.
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <returns>Returns the Id of the last inserted record.</returns>
         private static async Task<uint> LastInsertIdAsync(IDbConnection connection)
         {
-            return await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
+            const string sql = "SELECT LAST_INSERT_ID()";
+            return await connection.QuerySingleAsync<uint>(sql);
         }
         
+        /// <summary>
+        /// Creates an entry in the main_action table for the current mutation request.
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <returns></returns>
         private static async Task AddMainActionAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
             // Format and execute the query
@@ -294,6 +369,13 @@ namespace SQE.Backend.DataAccess.Helpers
             mutationRequest.Parameters.Add("@MainActionId", insertId);
         }
         
+        /// <summary>
+        /// Creates and entry in the single_action table to record the mutation.
+        /// </summary>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="action"></param>
+        /// <returns></returns>
         private static async Task AddSingleActionAsync(IDbConnection connection, MutationRequest mutationRequest, SingleAction action)
         {
             // Format query
