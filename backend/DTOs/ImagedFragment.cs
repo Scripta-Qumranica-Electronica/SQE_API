@@ -10,7 +10,7 @@ namespace SQE.Backend.Server.DTOs
         public string id { get; set; }
         public ImageStackDTO recto { get; set; } 
         public ImageStackDTO verso { get; set; }
-        public ArtefactListDTO Artefacts { get; set; }
+        public List<ArtefactDTO> Artefacts { get; set; }
 
     }
     public class ImagedFragmentListDTO

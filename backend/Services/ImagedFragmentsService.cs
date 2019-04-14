@@ -64,7 +64,7 @@ namespace SQE.Backend.Server.Services
         {
             return image.Institution + "-" + image.Catlog1 + "-" + image.Catalog2;
         }
-        internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedFragment model, List<ImageDTO> images, ArtefactListDTO artefact)
+        internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedFragment model, List<ImageDTO> images, List<ArtefactDTO> artefact)
         {
 
             return new ImagedFragmentDTO

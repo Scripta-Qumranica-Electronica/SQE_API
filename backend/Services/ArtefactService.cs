@@ -11,7 +11,7 @@ namespace SQE.Backend.Server.Services
 {
     public interface IArtefactService
     {
-        Task<ArtefactListDTO> GetAtrefactAsync(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId);
+        Task<List<ArtefactDTO>> GetAtrefactAsync(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId);
 
     }
     public class ArtefactService : IArtefactService
@@ -23,7 +23,7 @@ namespace SQE.Backend.Server.Services
             _repo = repo;
         }
 
-        public async Task<ArtefactListDTO> GetAtrefactAsync(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId)
+        public async Task<List<ArtefactDTO>> GetAtrefactAsync(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId)
         {
 
             var artefacts = await _repo.GetArtefact(userId, artefactId, scrollVersionId, fragmentId);
@@ -32,15 +32,11 @@ namespace SQE.Backend.Server.Services
             {
                 throw new NotFoundException((uint)scrollVersionId);
             }
-            var result = new ArtefactListDTO
-            {
-                result = new List<ArtefactDTO>(),
-            };
-
+            var result = new List<ArtefactDTO>();
 
             foreach (var a in artefacts)
             {
-                result.result.Add(ArtefactToDTO(a));
+                result.Add(ArtefactToDTO(a));
             }
 
             return result;

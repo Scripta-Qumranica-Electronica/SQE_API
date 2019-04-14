@@ -27,7 +27,7 @@ namespace backend.Controllers
 
         [AllowAnonymous]
         [HttpGet("{artefactId}")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefact(int artefactId)
+        public async Task<ActionResult<List<ArtefactDTO>>> GetArtefact(int artefactId)
         {
             try
             {
@@ -36,7 +36,7 @@ namespace backend.Controllers
             }
             catch (NotFoundException)
             {
-                return NotFound();
+                return NotFound(); 
             }
         }
     }

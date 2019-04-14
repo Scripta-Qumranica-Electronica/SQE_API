@@ -117,7 +117,7 @@ namespace SQE.Backend.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}/artefacts")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(uint scrollVersionId)
+        public async Task<ActionResult<List<ArtefactDTO>>> GetArtefacts(uint scrollVersionId)
         {
             try
             {
