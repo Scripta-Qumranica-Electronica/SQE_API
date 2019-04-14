@@ -45,8 +45,10 @@ LEFT JOIN (SELECT ec.scroll_id as scroll_id, MIN(CONCAT(proxy, url, SQE_image.fi
             return _baseQuery + where.ToString();
         }
 
+
         internal class Result
         {
+            
             public uint id { get; set; }
             public string name { get; set; }
             public string thumbnail { get; set; }
@@ -127,7 +129,7 @@ WHERE scroll_version_id = @ScrollVersionId";
     internal static class ScrollVersionGroupLimitQuery
     {
         // You must add a parameter `@ScrollVersionId` to any query using this.
-        public static string LimitToScrollVersionGroup =>
+        public const string LimitToScrollVersionGroup =
             @"scroll_version_id IN 
             (SELECT sv2.scroll_version_id
             FROM scroll_version sv1
