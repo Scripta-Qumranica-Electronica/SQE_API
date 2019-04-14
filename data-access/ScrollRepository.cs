@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
-using SQE.Backend.DataAccess.Queries;
 using System.Linq;
-using SQE.Backend.DataAccess.Models;
-using SQE.Backend.DataAccess.Helpers;
 using Microsoft.Extensions.Configuration;
 using System.Transactions;
+using SQE.SqeHttpApi.DataAccess.Helpers;
+using SQE.SqeHttpApi.DataAccess.Models;
+using SQE.SqeHttpApi.DataAccess.Queries;
 
-namespace SQE.Backend.DataAccess
+namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IScrollRepository
     {

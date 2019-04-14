@@ -4,12 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using SQE.Backend.DataAccess.Models;
-using SQE.Backend.Server.Services;
-using SQE.Backend.Server.DTOs;
+using SQE.SqeHttpApi.DataAccess.Models;
+using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeHttpApi.Server.Services;
 
 
-namespace SQE.Backend.Server.Controllers
+namespace SQE.SqeHttpApi.Server.Controllers
 {
 
     [Produces("application/json")]

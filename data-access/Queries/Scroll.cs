@@ -2,7 +2,7 @@
 using System.Text;
 using System.Linq;
 
-namespace SQE.Backend.DataAccess.Queries
+namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     internal class ScrollVersionQuery
     {

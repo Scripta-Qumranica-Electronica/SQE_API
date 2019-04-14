@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SQE.Backend.DataAccess.Models;
+using SQE.SqeHttpApi.DataAccess.Models;
 
-namespace SQE.Backend.Server.DTOs
+namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class ListResult<T>
     {

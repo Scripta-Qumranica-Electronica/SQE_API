@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using SQE.Backend.DataAccess.Models;
+using SQE.SqeHttpApi.DataAccess.Models;
 
-namespace SQE.Backend.DataAccess.Queries
+namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     internal class UserQueryResponse : IQueryResponse<User>
     {

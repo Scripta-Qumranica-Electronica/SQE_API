@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
-using SQE.Backend.DataAccess.Models;
 using Dapper;
-using SQE.Backend.DataAccess.Queries;
 using Microsoft.Extensions.Configuration;
+using SQE.SqeHttpApi.DataAccess.Models;
+using SQE.SqeHttpApi.DataAccess.Queries;
 
-namespace SQE.Backend.DataAccess
+namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IUserRepository
     {

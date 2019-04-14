@@ -12,14 +12,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using System.IO;
-using SQE.Backend.Server.Services;
-using SQE.Backend.DataAccess;
-using SQE.Backend.DataAccess.Helpers;
 using Microsoft.AspNetCore.Http;
-using SQE.Backend.Server.Helpers;
+using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
+using SQE.SqeHttpApi.Server.Helpers;
+using SQE.SqeHttpApi.Server.Services;
 using Swashbuckle.AspNetCore.Swagger;
 
-namespace SQE.Backend.Server
+namespace SQE.SqeHttpApi.Server
 {
     public class Startup
     {

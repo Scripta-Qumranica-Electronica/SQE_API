@@ -1,12 +1,12 @@
 ﻿using Dapper;
 using Microsoft.Extensions.Configuration;
-using SQE.Backend.DataAccess.Models;
-using SQE.Backend.DataAccess.Queries;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SQE.SqeHttpApi.DataAccess.Models;
+using SQE.SqeHttpApi.DataAccess.Queries;
 
-namespace SQE.Backend.DataAccess
+namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IImageRepository
     {

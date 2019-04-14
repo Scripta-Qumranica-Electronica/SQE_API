@@ -4,12 +4,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
-using SQE.Backend.DataAccess.Models;
-using SQE.Backend.DataAccess.Queries;
 using Dapper;
 using System.Linq;
+using SQE.SqeHttpApi.DataAccess.Models;
+using SQE.SqeHttpApi.DataAccess.Queries;
 
-namespace SQE.Backend.DataAccess
+namespace SQE.SqeHttpApi.DataAccess
 {
 
     public interface IArtefactRepository

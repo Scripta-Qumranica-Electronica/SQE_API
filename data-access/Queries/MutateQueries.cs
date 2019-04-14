@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 
-namespace SQE.Backend.DataAccess.Queries
+namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     // Bronson - I'm not sure whether all the classes here need to have Query added to their names,
     // as they are not  queries but rather update statements. What do you think?

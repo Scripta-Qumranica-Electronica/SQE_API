@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SQE.Backend.Server.DTOs
+namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class ImagedFragmentDTO
     {

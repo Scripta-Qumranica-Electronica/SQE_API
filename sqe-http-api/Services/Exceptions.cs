@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SQE.Backend.Server.Services
+namespace SQE.SqeHttpApi.Server.Services
 {
     public class NotFoundException : Exception {
         public NotFoundException(uint id)

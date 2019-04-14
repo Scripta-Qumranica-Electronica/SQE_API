@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace SQE.Backend.DataAccess.Queries
+namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     public class AuthorshipQueries
     {

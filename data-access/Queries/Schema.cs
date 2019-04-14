@@ -3,7 +3,7 @@ using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace SQE.Backend.DataAccess.Queries
+namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     internal static class OwnerTables
     {

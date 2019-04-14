@@ -1,14 +1,14 @@
-﻿using SQE.Backend.DataAccess;
-using SQE.Backend.DataAccess.Helpers;
-using SQE.Backend.Server.DTOs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
+using SQE.SqeHttpApi.Server.DTOs;
 
 
-namespace SQE.Backend.Server.Services
+namespace SQE.SqeHttpApi.Server.Services
 {
     public interface IScrollService
     {

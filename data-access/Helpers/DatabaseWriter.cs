@@ -3,12 +3,12 @@ using System.Transactions;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using SQE.Backend.DataAccess.Queries;
 using System.Data;
 using System.Linq;
 using Dapper;
+using SQE.SqeHttpApi.DataAccess.Queries;
 
-namespace SQE.Backend.DataAccess.Helpers
+namespace SQE.SqeHttpApi.DataAccess.Helpers
 {
     /// <summary>
     /// This enum sets a mutation request to one of the three types.
@@ -35,7 +35,7 @@ namespace SQE.Backend.DataAccess.Helpers
         public uint? TablePkId { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:SQE.Backend.DataAccess.Helpers.MutationRequest"/> class.
+        /// Initializes a new instance of the <see cref="T:SQE.SqeHttpApi.DataAccess.Helpers.MutationRequest"/> class.
         /// </summary>
         /// <param name="action">Set the mutate to Create, Update, or Delete.
         /// For Update or Delete, the id for the record being updated or deleted must be passed in tablePkId.</param>
@@ -80,7 +80,7 @@ namespace SQE.Backend.DataAccess.Helpers
         public uint? NewId { get; set; }
          
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:SQE.Backend.DataAccess.Helpers.AlteredRecord"/> class.
+        /// Initializes a new instance of the <see cref="T:SQE.SqeHttpApi.DataAccess.Helpers.AlteredRecord"/> class.
         /// </summary>
         /// <param name="tableName">Name of the table that was altered.</param>
         /// <param name="oldId">Id of the record that was altered. Only present with update/delete.</param>

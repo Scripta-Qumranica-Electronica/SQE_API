@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SQE.Backend.DataAccess;
-using SQE.Backend.Server.DTOs;
-using SQE.Backend.Server.Services;
+using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeHttpApi.Server.Services;
 
-namespace SQE.Backend.Server.Controllers
+namespace SQE.SqeHttpApi.Server.Controllers
 {
 
     [Authorize]

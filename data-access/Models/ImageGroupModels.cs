@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SQE.Backend.DataAccess.Models
+namespace SQE.SqeHttpApi.DataAccess.Models
 {
     public class ImageGroup
     {

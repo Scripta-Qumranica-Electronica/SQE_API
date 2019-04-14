@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SQE.Backend.Server.Services;
-using SQE.Backend.Server.DTOs;
+using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.DTOs;
 
 
 

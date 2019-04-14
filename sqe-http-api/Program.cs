@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace SQE.Backend.Server
+namespace SQE.SqeHttpApi.Server
 {
     public class Program
     {

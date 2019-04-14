@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SQE.Backend.Server.Services;
-using SQE.Backend.Server.DTOs;
+using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.DTOs;
 using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers

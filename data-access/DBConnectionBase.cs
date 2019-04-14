@@ -6,7 +6,7 @@ using System.Data;
 
 
 
-namespace SQE.Backend.DataAccess
+namespace SQE.SqeHttpApi.DataAccess
 {
     public class DBConnectionBase
     {

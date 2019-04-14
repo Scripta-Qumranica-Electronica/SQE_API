@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SQE.Backend.DataAccess.Helpers
+namespace SQE.SqeHttpApi.DataAccess.Helpers
 {
     // TODO: Decide whether the controller is aware of these exceptions, or the service translates them
     public abstract class RepositoryException: Exception
