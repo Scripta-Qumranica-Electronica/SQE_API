@@ -20,6 +20,6 @@ namespace SQE.Backend.Server.DTOs
     }
     public class ArtefactListDTO
     {
-        public List<ArtefactDTO> ArtefactList { get; set; }
+        public List<ArtefactDTO> result { get; set; }
     }
 }

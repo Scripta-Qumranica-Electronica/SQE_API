@@ -34,13 +34,13 @@ namespace SQE.Backend.Server.Services
             }
             var result = new ArtefactListDTO
             {
-                ArtefactList = new List<ArtefactDTO>(),
+                result = new List<ArtefactDTO>(),
             };
 
 
             foreach (var a in artefacts)
             {
-                result.ArtefactList.Add(ArtefactToDTO(a));
+                result.result.Add(ArtefactToDTO(a));
             }
 
             return result;
