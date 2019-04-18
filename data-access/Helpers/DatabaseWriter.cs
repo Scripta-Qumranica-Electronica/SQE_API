@@ -268,10 +268,10 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         {
             // Format query
             var query = OwnedTableInsertQuery.GetQuery;
-            query = query.Replace("@TableName", mutationRequest.TableName);
-            query = query.Replace("@Columns", string.Join(",", mutationRequest.ColumnNames));
+            query = query.Replace("$TableName", mutationRequest.TableName);
+            query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
             query = query.Replace(
-                "@Values", 
+                "$Values", 
                 string.Join(",", mutationRequest.ColumnNames.Select(x => "@" + x))
                 );
             
@@ -283,13 +283,13 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             {
                 // Get id of new record (or the record matching the unique constraints of this request).
                 query = OwnedTableIdQuery.GetQuery;
-                query = query.Replace("@TableName", mutationRequest.TableName);
-                query = query.Replace("@Columns", string.Join(",", mutationRequest.ColumnNames));
+                query = query.Replace("$TableName", mutationRequest.TableName);
+                query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
                 query = query.Replace(
-                    "@Values",
+                    "$Values",
                     string.Join(",", mutationRequest.ColumnNames.Select(x => "@" + x))
                 );
-                query = query.Replace("@PrimaryKeyName", mutationRequest.TableName + "_id");
+                query = query.Replace("$PrimaryKeyName", mutationRequest.TableName + "_id");
                 insertId = await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
             }
             else // A new record was inserted.
@@ -312,8 +312,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         {
             // Format query
             var query = OwnerTableInsertQuery.GetQuery;
-            query = query.Replace("@OwnerTableName", mutationRequest.TableName + "_owner");
-            query = query.Replace("@OwnedTablePkName", mutationRequest.TableName + "_id");
+            query = query.Replace("$OwnerTableName", mutationRequest.TableName + "_owner");
+            query = query.Replace("$OwnedTablePkName", mutationRequest.TableName + "_id");
             
             // Insert the @OwnedTableId parameter
             mutationRequest.Parameters.Add("@OwnedTableId", insertId);
@@ -332,8 +332,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         {
             // Format query
             var query = OwnerTableDeleteQuery.GetQuery;
-            query = query.Replace("@OwnerTableName", mutationRequest.TableName + "_owner");
-            query = query.Replace("@OwnedTablePkName", mutationRequest.TableName + "_id");
+            query = query.Replace("$OwnerTableName", mutationRequest.TableName + "_owner");
+            query = query.Replace("$OwnedTablePkName", mutationRequest.TableName + "_id");
             
             // Execute query
             await connection.ExecuteAsync(query, mutationRequest.Parameters);

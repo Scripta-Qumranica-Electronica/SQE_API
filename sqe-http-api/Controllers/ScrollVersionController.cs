@@ -14,9 +14,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
 {
 
     [Authorize]
-    [Route("v1/[controller]")]
+    [Route("v1/scroll-version")]
     [ApiController]
-    public class ScrollController : ControllerBase
+    public class ScrollVersionController : ControllerBase
     {
         private IScrollService _scrollService;
         private IUserService _userService;
@@ -24,7 +24,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         private IArtefactService _artefactService;
 
 
-        public ScrollController(
+        public ScrollVersionController(
             IScrollService scrollService, 
             IUserService userService, 
             IImagedFragmentsService imagedFragmentService,

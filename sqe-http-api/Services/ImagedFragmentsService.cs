@@ -75,48 +75,68 @@ namespace SQE.SqeHttpApi.Server.Services
             };
         }
 
+        /// <summary>
+        /// Get a tuple of DTO's for the recto and verso image set from a flat list of ImageDTO's.
+        /// </summary>
+        /// <param name="images"></param>
+        /// <returns></returns>
+        // Daniella, it is probably better to do this all in one pass, rather than looping over the
+        // images twice, once in getRecto, and again in getVerso.
         private static (ImageStackDTO recto, ImageStackDTO verso) getSides(List<ImageDTO> images)
         {
             var recto = new List<ImageDTO>();
             var verso = new List<ImageDTO>();
+            int?  rectoMasterIndex = null;
+            uint? rectoCatalogId = null;
+            int?  versoMasterIndex = null;
+            uint? versoCatalogId = null;
+            
+            // One loop over all the images
             foreach (var image in images)
             {
+                // Build the recto and verso Lists based on the "side" value
                 switch (image.side)
                 {
                     case "recto":
                         recto.Add(image);
+                        rectoCatalogId = image.catalog_number;
+                        if (image.master)
+                            rectoMasterIndex = recto.Count() - 1;
                         break;
                     case "verso":
                         verso.Add(image);
+                        versoCatalogId = image.catalog_number;
+                        if (image.master)
+                            versoMasterIndex = verso.Count() - 1;
                         break;
                 }
             }
-            if (recto.Count == 0)
+            
+            // Null the objects if no images were found
+            if (!recto.Any())
             {
                 recto = null;
             }
-            if (verso.Count == 0)
+            if (!verso.Any())
             {
                 verso = null;
             }
-            var rectoMasterIndex = recto.FindIndex(i => i.master);
-            var rectoCatalog_id = recto[0].catalog_number;
-            var versoMasterIndex = verso.FindIndex(i => i.master);
-            var versoCatalog_id = verso[0].catalog_number;
+            
             return (new ImageStackDTO
                     {
-                        id = rectoCatalog_id,
+                        id = rectoCatalogId,
                         masterIndex = rectoMasterIndex,
                         images = recto
                     },
                     new ImageStackDTO
                     {
-                        id = versoCatalog_id,
+                        id = versoCatalogId,
                         masterIndex = versoMasterIndex,
                         images = verso
                     }
                 );
         }
+        
         private static ImageStackDTO getRecto(List<ImageDTO> images)
         {
             var img = new List<ImageDTO>();

@@ -22,13 +22,13 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     internal static class OwnedTableInsertQuery
     {
         public static string GetQuery { get; } = @"
-INSERT INTO @TableName (@Columns)
-SELECT @Values
+INSERT INTO $TableName ($Columns)
+SELECT $Values
 FROM dual
 WHERE NOT EXISTS
-  ( SELECT @Columns                 # This is basically an adhoc uniqueness constraint, which Itay wants to protect
-    FROM @TableName                 # against any database schema updates that fail to set a proper uniqueness
-    WHERE (@Columns) = (@Values)    # constraint.  It is very fast if the proper uniqueness constraint already exists.
+  ( SELECT $Columns                 # This is basically an adhoc uniqueness constraint, which Itay wants to protect
+    FROM $TableName                 # against any database schema updates that fail to set a proper uniqueness
+    WHERE ($Columns) = ($Values)    # constraint.  It is very fast if the proper uniqueness constraint already exists.
   ) LIMIT 1
 ";
     }
@@ -40,9 +40,9 @@ WHERE NOT EXISTS
     internal static class OwnedTableIdQuery
     {
         public static string GetQuery { get; } = @"
-SELECT @PrimaryKeyName
-FROM @TableName
-WHERE (@Columns) = (@Values)
+SELECT $PrimaryKeyName
+FROM $TableName
+WHERE ($Columns) = ($Values)
 LIMIT 1
 ";
     }
@@ -50,11 +50,11 @@ LIMIT 1
     internal static class OwnerTableInsertQuery
     {
         public static string GetQuery { get; } = @"
-INSERT INTO @OwnerTableName (@OwnedTablePkName, scroll_version_id)
-SELECT t.@OwnedTablePkName, COALESCE(sda.scroll_version_id, t.scroll_version_id)
-FROM (SELECT @OwnedTableId AS @OwnedTablePkName, @ScrollVersionId AS scroll_version_id) AS t
-LEFT JOIN @OwnerTableName AS sda
-  ON sda.@OwnedTablePkName = t.@OwnedTablePkName
+INSERT INTO $OwnerTableName ($OwnedTablePkName, scroll_version_id)
+SELECT t.$OwnedTablePkName, COALESCE(sda.scroll_version_id, t.scroll_version_id)
+FROM (SELECT @OwnedTableId AS $OwnedTablePkName, @ScrollVersionId AS scroll_version_id) AS t
+LEFT JOIN $OwnerTableName AS sda
+  ON sda.$OwnedTablePkName = t.$OwnedTablePkName
   AND sda." + ScrollVersionGroupLimitQuery.LimitToScrollVersionGroup;
         
         
@@ -63,8 +63,8 @@ LEFT JOIN @OwnerTableName AS sda
     internal static class OwnerTableDeleteQuery
     {
         public static string GetQuery { get; } = @"
-DELETE FROM @OwnerTableName 
-WHERE @OwnedTablePkName = @OwnedTableId
+DELETE FROM $OwnerTableName 
+WHERE $OwnedTablePkName = @OwnedTableId
   AND " + ScrollVersionGroupLimitQuery.LimitToScrollVersionGroup;
     }
     

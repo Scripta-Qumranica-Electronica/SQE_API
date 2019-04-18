@@ -103,7 +103,7 @@ FROM artefact_position
 JOIN artefact_position_owner USING(artefact_position_id)
 JOIN artefact_shape USING(artefact_id)
 JOIN artefact_shape_owner USING(artefact_shape_id)
-JOIN SQE_image ON SQE_image.sqe_image_id = artefact_shape.id_of_sqe_image
+JOIN SQE_image ON SQE_image.sqe_image_id = artefact_shape.sqe_image_id
 JOIN image_catalog USING(image_catalog_id)
 JOIN scroll_version ON scroll_version.scroll_version_id = artefact_position_owner.scroll_version_id
     AND scroll_version.scroll_version_id = artefact_shape_owner.scroll_version_id
