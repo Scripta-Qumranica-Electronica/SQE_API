@@ -8,8 +8,10 @@ namespace SQE.SqeHttpApi.Server.Services
 {
     public interface ITextRetrievingService
     {
-        Task<Scroll> GetLineById(uint scrollVersionGroupId, uint lineId);
-        Task<Scroll> GetFragmentById(uint scrollVersionGroupId, uint fragmentId);
+        Task<Scroll> GetLineById(uint lineId, uint editionId);
+        Task<Scroll> GetFragmentById(uint fragmentId, uint editionId);
+        Task<uint[]> GetLineIds(uint fragmentId, uint editionId);
+        Task<uint[]> GetFragmentIds(uint editionId);
     }
     public class TextRetrievingService : ITextRetrievingService
         {
@@ -23,16 +25,30 @@ namespace SQE.SqeHttpApi.Server.Services
 
             
             
-             public async Task<Scroll> GetLineById(uint scrollVersionGroupId, uint lineId)
+             public async Task<Scroll> GetLineById(uint lineId, uint editionId)
             {
-                var scroll = await _repo.GetLineById(scrollVersionGroupId, lineId);
+                var scroll = await _repo.GetLineById(lineId, editionId);
+                if (scroll.scrollId==0) throw new LineNotFoundException(lineId, editionId);
                 return scroll;
             }
 
-            public async Task<Scroll> GetFragmentById(uint scrollVersionGroupId, uint fragmentId)
+            public async Task<Scroll> GetFragmentById(uint fragmentId, uint editionId)
             {
-                var scroll = await _repo.GetFragmentById(scrollVersionGroupId, fragmentId);
+                var scroll = await _repo.GetFragmentById(fragmentId, editionId);
+                if (scroll.scrollId==0) throw new FragmentNotFoundException(fragmentId, editionId);
                 return scroll;
+            }
+
+            public async Task<uint[]> GetLineIds(uint fragmentId, uint editionId)
+            {
+                var lineIds = _repo.GetLineIds(fragmentId, editionId);
+                return lineIds.Result;
+            }
+
+            public async Task<uint[]> GetFragmentIds (uint editionId)
+            {
+                var fragmentIds = _repo.GetFragmentIds(editionId);
+                return fragmentIds.Result;
             }
         }
     }

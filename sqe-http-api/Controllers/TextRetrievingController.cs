@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.Services;
 
@@ -22,20 +23,62 @@ namespace SQE.SqeHttpApi.Server.Controllers
             _service = service;
         }
 
+        /// <summary>
+        /// Retrieves all signs and their data from the given line
+        /// </summary>
+        /// <param name="lineId">Id of the line</param>
+        /// <param name="editionId">Id of the edition</param>
+        /// <returns>A scroll object with includes the fragments and their lines
+        /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("line")]
-        public async Task<Scroll> RetrieveTextOfLineById(uint scrollVersionGroupId, uint lineId)
+        public async Task<ActionResult<Scroll>> RetrieveTextOfLineById(uint lineId, uint editionId)
         {
-            var scroll = await _service.GetLineById(scrollVersionGroupId, lineId);
+            var scroll = await _service.GetLineById( lineId, editionId);
             return scroll;
         }
    
+        /// <summary>
+        /// Retrieves all signs and their data from the given fragment
+        /// </summary>
+        /// <param name="fragmentId">Id of the fragment</param>
+        /// <param name="editionId">Id of the edition</param>
+        /// <returns>A scroll object with includes the fragment and its lines
+        /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("fragment")]
-        public async Task<Scroll> RetrieveTextOfFragmentById(uint scrollVersionGroupId, uint fragmentId)
+        public async Task<ActionResult<Scroll>> RetrieveTextOfFragmentById(uint fragmentId, uint editionId)
         {
-            var scroll = await _service.GetFragmentById(scrollVersionGroupId, fragmentId);
+            var scroll = await _service.GetFragmentById(fragmentId, editionId);
             return scroll;
+        }
+  
+        
+        /// <summary>
+        /// Retrieves the ids of all fragments in the given edition of a scroll
+        /// </summary>
+        /// <param name="editionId">Id of the edition</param>
+        /// <returns>An array of the ids in correct sequence</returns>
+        [AllowAnonymous]
+        [HttpGet("fragmentIds")]
+        public async Task<ActionResult<uint[]>> RetrieveFragmentIds(uint editionId)
+        {
+            var fragmentIds = await _service.GetFragmentIds(editionId);
+            return fragmentIds;
+        }
+ 
+        /// <summary>
+        /// Retrieves the ids of all lines in the given fragment
+        /// </summary>
+        /// <param name="fragmentId">Id of the fragment</param>
+        /// <param name="editionId">Id of the edition</param>
+        /// <returns>An array of the ids in the right sequence</returns>
+        [AllowAnonymous]
+        [HttpGet("lineIds")]
+        public async Task<ActionResult<uint[]>> RetrieveLineIds(uint fragmentId, uint editionId)
+        {
+            var lineIds = await _service.GetLineIds(fragmentId, editionId);
+            return lineIds;
         }
     }
 }
