@@ -10,6 +10,7 @@ namespace SQE.SqeHttpApi.Server.Services
     public interface IImagedObjectService
     {
         Task<ImagedObjectListDTO> GetImagedObjects(uint? userId, uint editionId);
+        Task<ImagedObjectListDTO> GetImagedObjectsWithArtefacts(uint? userId, uint editionId);
         Task<ImagedObjectDTO> GetImagedObject(uint? userId, uint editionId, string imagedObjectId);
         Task<ImagedObjectDTO> GetImagedFragment(uint? userId, uint scrollVersionId, string fragmentId);
     }
@@ -18,12 +19,18 @@ namespace SQE.SqeHttpApi.Server.Services
         private readonly IImagedObjectRepository _repo;
         private readonly IImageRepository _imageRepo;
         private readonly IImageService _imageService;
+        private readonly IArtefactRepository _artefactRepository;
 
-        public ImagedObjectService(IImagedObjectRepository repo, IImageRepository imageRepo, IImageService imageService)
+        public ImagedObjectService(
+            IImagedObjectRepository repo, 
+            IImageRepository imageRepo, 
+            IImageService imageService, 
+            IArtefactRepository artefactRepository)
         {
             _repo = repo;
             _imageRepo = imageRepo;
             _imageService = imageService;
+            _artefactRepository = artefactRepository;
         }
 
         async public Task<ImagedObjectListDTO> GetImagedObjects(uint? userId, uint editionId)
@@ -57,7 +64,37 @@ namespace SQE.SqeHttpApi.Server.Services
                     result.result.Add(ImagedFragmentModelToDTO(i, imagedFragment));
             }
 
-            return result;
+            return result; 
+        }
+        
+        async public Task<ImagedObjectListDTO> GetImagedObjectsWithArtefacts(uint? userId, uint editionId)
+        {
+            var result = await GetImagedObjects(userId, editionId);
+
+            var artefacts = (await _artefactRepository.GetEditionArtefactNameList(userId, editionId)).Select(x => new ArtefactDTO()
+            {
+                id = x.artefact_id,
+                editionId = editionId,
+                imageFragmentId = x.institution + "-" + x.catalog_number_1 + "-" + x.catalog_number_2,
+                name = x.name,
+                side = x.catalog_side == 0 ? ArtefactDTO.artSide.recto : ArtefactDTO.artSide.verso, 
+                zOrder = 0,
+                transformMatrix = "",
+            });
+
+            result.result = result.result.GroupJoin(
+                artefacts, 
+                arg => arg.id, 
+                arg => arg.imageFragmentId,
+                (imagedObject, artefactObjects) => new ImagedObjectDTO()
+                {
+                    id = imagedObject.id,
+                    recto = imagedObject.recto,
+                    verso = imagedObject.verso,
+                    Artefacts = artefactObjects.ToList()
+                }).ToList(); 
+
+            return result; 
         }
         
         // TODO: Make this less wasteful by retrieving only the desired imaged object

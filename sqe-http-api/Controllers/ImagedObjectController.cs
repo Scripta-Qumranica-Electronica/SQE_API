@@ -84,6 +84,24 @@ namespace backend.Controllers
         }
         
         /// <summary>
+        /// Provides a listing of imaged objects related to the specified edition, including artefacts.
+        /// </summary>
+        /// <param name="editionId">Unique id of the desired edition</param>
+        [AllowAnonymous]
+        [HttpGet("edition/{editionId}/imaged-object/list/with-artefacts")]
+        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts(uint editionId)
+        {
+            try
+            {
+                return Ok(await _imagedObjectService.GetImagedObjectsWithArtefacts(_userService.GetCurrentUserId(), editionId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+        
+        /// <summary>
         /// Provides a listing of imaged objects related to the specified edition
         /// </summary>
         /// <param name="editionId">Unique id of the desired edition</param>

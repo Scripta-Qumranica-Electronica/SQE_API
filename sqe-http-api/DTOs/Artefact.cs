@@ -7,13 +7,13 @@ namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class ArtefactDTO
     {
-        public string id { get; set; }
-        public string scrollVersionId { get; set; }
+        public uint id { get; set; }
+        public uint editionId { get; set; }
         public string imageFragmentId {get; set;}
         public string name { get; set; }
         public PolygonDTO mask { get; set; }
         public string transformMatrix { get; set; }
-        public string zOrder { get; set; }
+        public uint zOrder { get; set; }
         public artSide side { get; set; }
 
         public enum artSide { recto, verso}

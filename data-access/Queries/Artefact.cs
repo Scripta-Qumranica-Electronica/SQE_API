@@ -27,18 +27,25 @@ where artefact.artefact_id = @artefactId";
         }
     }
 
-    public class ScrollArtefactListQuery
+    public static class ArtefactNamesOfEditionQuery
     {
         private const string _getArtefact = @"
-SELECT DISTINCT artefact_data.artefact_id, artefact_data.name, image_catalog.catalog_side, image_catalog.image_catalog_id
-FROM artefact_data
-JOIN artefact_data_owner USING(artefact_data_id)
-JOIN edition USING(edition_id)
-JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
-JOIN artefact_shape USING(artefact_id)
-JOIN artefact_shape_owner USING(artefact_shape_id)
-JOIN SQE_image USING(sqe_image_id)
+SELECT artefact_data.name, 
+       artefact_shape.artefact_id, 
+       image_catalog.institution, 
+       image_catalog.catalog_number_1, 
+       image_catalog.catalog_number_2, 
+       image_catalog.catalog_side, 
+       SQE_image.image_catalog_id
+FROM SQE_image
 JOIN image_catalog USING(image_catalog_id)
+JOIN artefact_shape USING(sqe_image_id)
+JOIN artefact_shape_owner USING(artefact_shape_id)
+JOIN artefact_data USING(artefact_id)
+JOIN artefact_data_owner USING(artefact_data_id)
+JOIN edition ON edition.edition_id = artefact_shape_owner.edition_id
+    AND edition.edition_id = artefact_data_owner.edition_id
+JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
 WHERE edition.edition_id = @EditionId
   AND $Restriction
 ORDER BY image_catalog.catalog_number_1, image_catalog.catalog_number_2, image_catalog.catalog_side";
@@ -53,9 +60,12 @@ ORDER BY image_catalog.catalog_number_1, image_catalog.catalog_number_2, image_c
         public class Result
         {
             public  uint artefact_id { get; set; }
-            public uint image_catalog_id { get; set; }
             public string name { get; set; }
+            public string institution { get; set; }
+            public string catalog_number_1 { get; set; }
+            public string catalog_number_2 { get; set; }
             public byte catalog_side { get; set; }
+            public uint image_catalog_id { get; set; }
         }
     }
 }

@@ -32,7 +32,7 @@ namespace SQE.SqeHttpApi.Server.Services
 
         public async Task<ArtefactListDTO> GetEditionArtefactListings(uint? userId, uint scrollVersionId)
         {
-            var listings = await _artefactRepository.GetEditionArtefactList(userId, scrollVersionId);
+            var listings = await _artefactRepository.GetEditionArtefactNameList(userId, scrollVersionId);
             return new ArtefactListDTO { result = listings.Select(x => new ArtefactDesignationDTO { 
                 ArtefactId = x.artefact_id,
                 ImageCatalogId = x.image_catalog_id,
@@ -43,7 +43,7 @@ namespace SQE.SqeHttpApi.Server.Services
         
         public async Task<ArtefactListDTO> GetEditionArtefactListingsWithImages(uint? userId, uint editionId)
         {
-            var artefactListings = await _artefactRepository.GetEditionArtefactList(userId, editionId);
+            var artefactListings = await _artefactRepository.GetEditionArtefactNameList(userId, editionId);
             var imagedObjectIds = artefactListings.Select(x => x.image_catalog_id);
             
             
