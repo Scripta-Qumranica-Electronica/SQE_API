@@ -15,10 +15,10 @@ namespace SQE.SqeHttpApi.DataAccess
     public interface IArtefactRepository
     {
         Task<Artefact> GetArtefact(uint? userId, uint artefactId);
-        Task<IEnumerable<ScrollArtefactListQuery.Result>> GetScrollArtefactList(uint? userId, uint scrollVersionId);
+        Task<IEnumerable<ScrollArtefactListQuery.Result>> GetEditionArtefactList(uint? userId, uint editionId);
     }
 
-    public class ArtefactRepository : DBConnectionBase, IArtefactRepository
+    public class ArtefactRepository : DbConnectionBase, IArtefactRepository
     {
         public ArtefactRepository(IConfiguration config) : base(config) { }
 
@@ -60,7 +60,7 @@ namespace SQE.SqeHttpApi.DataAccess
             return null;
         }
 
-        public async Task<IEnumerable<ScrollArtefactListQuery.Result>> GetScrollArtefactList(uint? userId, uint scrollVersionId)
+        public async Task<IEnumerable<ScrollArtefactListQuery.Result>> GetEditionArtefactList(uint? userId, uint editionId)
         {
             var query = ScrollArtefactListQuery.GetQuery(userId);
             using (var connection = OpenConnection())
@@ -68,7 +68,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 return await connection.QueryAsync<ScrollArtefactListQuery.Result>(query,
                     new
                     {
-                        ScrollVersionId = scrollVersionId,
+                        EditionId = editionId,
                         UserId = userId ?? 0
                     });
             }

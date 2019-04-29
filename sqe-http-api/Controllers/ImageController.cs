@@ -28,9 +28,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
 
         //[AllowAnonymous]
         //[HttpGet("{id}")]
-        //public async Task<ActionResult<ScrollVersionGroup>> GetScrollVersion(int id)
+        //public async Task<ActionResult<ScrollVersionGroup>> GetEdition(int id)
         //{
-        //    var vg = await _imageService.GetScrollVersionAsync(id, _userService.GetCurrentUserId(), false, false);
+        //    var vg = await _imageService.GetEditionAsync(id, _userService.GetCurrentUserId(), false, false);
 
         //    if (vg == null)
         //    {

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SQE.SqeHttpApi.DataAccess.Models
 {
-    public class ImagedFragment
+    public class ImagedObject
     {
         public string Id
         {
@@ -17,20 +17,20 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public string Catalog1 { get; set; }
         public string Catalog2 { get; set; }
 
-        public static ImagedFragment FromId(string id)
+        public static ImagedObject FromId(string id)
         {
             if (id == null)
                 return null;
             var tokens = id.Split("-");
 
-            var imagedFragment = new ImagedFragment
+            var imagedFragment = new ImagedObject
             {
                 Institution = tokens[0],
                 Catalog1 = tokens[1],
                 Catalog2 = tokens[2]
             };
 
-            // TODO: Create an ImagedFragment model from the id
+            // TODO: Create an ImagedObject model from the id
             return imagedFragment;
         }
     }

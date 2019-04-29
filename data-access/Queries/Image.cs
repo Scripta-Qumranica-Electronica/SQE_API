@@ -6,38 +6,38 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     internal class ImageQueries
     {
-        private static string _getImageQuery = @"select image_urls.url as url,
-image_urls.proxy as proxy,
+        private const string _getImageQuery = @"
+SELECT image_urls.url AS url,
+image_urls.proxy AS proxy,
 image_catalog.image_catalog_id,
-SQE_image.type as img_type,
-image_catalog.catalog_side as side,
-SQE_image.filename as filename,
-SQE_image.is_master as master,
-SQE_image.wavelength_start as wave_start,
-SQE_image.wavelength_end as wave_end,
-image_catalog.institution as institution,
-image_catalog.catalog_number_1 as catalog_1,
-image_catalog.catalog_number_2 as catalog_2
-from edition_catalog
-join scroll_version_group using(scroll_id)
-join scroll_version using (scroll_version_group_id)
-join image_to_edition_catalog using (edition_catalog_id)
+SQE_image.type AS img_type,
+image_catalog.catalog_side AS side,
+SQE_image.filename AS filename,
+SQE_image.is_master AS master,
+SQE_image.wavelength_start AS wave_start,
+SQE_image.wavelength_end AS wave_end,
+image_catalog.institution AS institution,
+image_catalog.catalog_number_1 AS catalog_1,
+image_catalog.catalog_number_2 AS catalog_2
+FROM iaa_edition_catalog
+JOIN edition USING(scroll_id)
+JOIN edition_editor USING(edition_id)
+JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN image_catalog USING(image_catalog_id)
-join SQE_image using (image_catalog_id)
-join image_urls using (image_urls_id)
-where scroll_version.scroll_version_id = @ScrollVersionId
-and (scroll_version.user_id =1 OR scroll_version.user_id =@UserId)
-and edition_catalog.edition_side =0
-
+JOIN SQE_image USING(image_catalog_id)
+JOIN image_urls USING(image_urls_id)
+WHERE edition.edition_id = @EditionId
+AND (edition_editor.user_id =1 OR edition_editor.user_id =@UserId)
+AND iaa_edition_catalog.edition_side =0
 ";
         public static string GetImageQuery(bool filterFragment)
         {
             if (!filterFragment)
                 return _getImageQuery;
             var str = new StringBuilder(_getImageQuery);
-            str.Append(" and image_catalog.institution=@Institution");
-            str.Append(" and image_catalog.catalog_number_1=@Catalog1" );
-            str.Append(" and image_catalog.catalog_number_2=@Catalog2");
+            str.Append(" AND image_catalog.institution=@Institution");
+            str.Append(" AND image_catalog.catalog_number_1=@Catalog1" );
+            str.Append(" AND image_catalog.catalog_number_2=@Catalog2");
             return str.ToString();
         }
 
@@ -61,7 +61,7 @@ and edition_catalog.edition_side =0
 
     internal class ImageGroupQuery
     {
-        private static readonly string _baseQuery = @"
+        private const string _baseQuery = @"
 SELECT  image_catalog.image_catalog_id, 
         image_catalog.institution, 
         image_catalog.catalog_number_1, 
@@ -69,11 +69,11 @@ SELECT  image_catalog.image_catalog_id,
         image_catalog.catalog_side
 FROM image_catalog
 ";
-        private static readonly string _scrollLimit = @"JOIN image_to_edition_catalog USING(image_catalog_id)
-JOIN edition_catalog USING(edition_catalog_id)
-JOIN scroll_version_group USING(scroll_id)
-JOIN scroll_version USING(scroll_version_group_id)
-WHERE scroll_version.scroll_version_id IN @ScrollVersionIds
+        private const string _scrollLimit = @"
+JOIN image_to_iaa_edition_catalog USING(image_catalog_id)
+JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
+JOIN edition USING(scroll_id)
+WHERE edition.edition_is = @EditionId
 ";
 
         public static string GetQuery(bool limitScrolls)
@@ -93,7 +93,7 @@ WHERE scroll_version.scroll_version_id IN @ScrollVersionIds
 
     internal class UserImageGroupQuery
     {
-        private static readonly string _baseQuery = @"
+        private const string _baseQuery = @"
 SELECT  image_catalog.image_catalog_id, 
         image_catalog.institution, 
         image_catalog.catalog_number_1, 
@@ -105,13 +105,13 @@ JOIN artefact_shape USING(artefact_id)
 JOIN artefact_shape_owner USING(artefact_shape_id)
 JOIN SQE_image ON SQE_image.sqe_image_id = artefact_shape.sqe_image_id
 JOIN image_catalog USING(image_catalog_id)
-JOIN scroll_version ON scroll_version.scroll_version_id = artefact_position_owner.scroll_version_id
-    AND scroll_version.scroll_version_id = artefact_shape_owner.scroll_version_id
-WHERE (scroll_version.user_id = @UserId OR scroll_version.user_id = (SELECT user_id FROM user WHERE user_name = 'sqe_api'))
+JOIN edition ON edition.edition_id = artefact_position_owner.edition_id
+    AND edition.edition_id = artefact_shape_owner.edition_id
+JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
+WHERE (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
 ";
        
-        private static readonly string _scrollLimit = @"AND scroll_version.scroll_version_id IN @ScrollVersionIds
-";
+        private const string _scrollLimit = @"AND edition.edition_id = @EditionId";
 
         public static string GetQuery(bool limitScrolls)
         {

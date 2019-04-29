@@ -3,14 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "data-access", "data-access\data-access.csproj", "{260192E4-F9FE-4FD5-A478-558A6F611550}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4F9B458A-4566-4386-9253-0E0CDE844376}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "data-access", "data-access\data-access.csproj", "{260192E4-F9FE-4FD5-A478-558A6F611550}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-http-api", "sqe-http-api\sqe-http-api.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-signalr-api", "sqe-signalr-api\sqe-signalr-api.csproj", "{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,11 +28,17 @@ Global
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28758AAA-F471-4702-917C-C7D7D498BA0C}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 EndGlobal

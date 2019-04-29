@@ -13,7 +13,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public List<ArtefactDTO> Artefacts { get; set; }
 
     }
-    public class ImagedFragmentListDTO
+    public class ImagedObjectListDTO
     {
         public List<ImagedFragmentDTO> result { get; set; }
     };

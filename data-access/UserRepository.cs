@@ -13,8 +13,9 @@ namespace SQE.SqeHttpApi.DataAccess
     public interface IUserRepository
     {
         Task<User> GetUserByPassword(string userName, string password);
+        Task<UserEditionPermissions> GetUserEditionPermissions(uint userId, uint editionId);
     }
-    public class UserRepository: DBConnectionBase , IUserRepository
+    public class UserRepository: DbConnectionBase , IUserRepository
     {
         public UserRepository(IConfiguration config): base(config) { }
 
@@ -31,6 +32,19 @@ namespace SQE.SqeHttpApi.DataAccess
 
                 var firstUser = results.FirstOrDefault();
                 return firstUser?.CreateModel();
+            }
+        }
+        
+        public async Task<UserEditionPermissions> GetUserEditionPermissions(uint userId, uint editionId)
+        {
+            using (var connection = OpenConnection())
+            {
+                var results = await connection.QuerySingleAsync<UserEditionPermissions>(UserPermissionQuery.GetQuery, new
+                {
+                    EditionId = editionId,
+                    UserId = userId,
+                });
+                return results;
             }
         }
     }

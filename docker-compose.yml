@@ -1,0 +1,67 @@
+version: '3.7'
+
+services:
+    sqe-database:
+        image: qumranica/sqe-database:latest
+        container_name: SQE_Database
+        environment:
+            - MYSQL_ROOT_PASSWORD=none
+            - MYSQL_DATABASE=SQE_DEV
+        expose:
+            - "3306"
+        ports:
+            - "3307:3306"
+        networks:
+            - sqe_api
+
+    sqe-http:
+        container_name: SQE_HTTP_API
+        build: ./
+        restart: always
+        ports:
+            - 5000:5000
+        environment:
+            - MYSQL_ROOT_PASSWORD=none
+            - MYSQL_DATABASE=SQE_DEV
+            - MYSQL_HOST=sqe-database
+            - MYSQL_PORT=3306
+            - HTTP_SIGNALR_SECRET=secretconnection42947832
+            - SIGNALR_ADDRESS=http://sqe-signalr:5001
+            - DOTNET_CLI_TELEMETRY_OPTOUT=1
+        depends_on:
+            - sqe-database
+        networks:
+            - sqe_api
+
+    sqe-signalr:
+        container_name: SQE_SIGNALR_API
+        build: ./sqe-signalr-api
+        restart: always
+        ports:
+            - 5001:5001
+        environment:
+            - SQE_HTTP_API=sqe-http:5000
+            - REDIS_SERVER=sqe-redis
+            - REDIS_PASSWORD=sqesecret
+            - REDIS_PORT=6379
+            - USE_REDIS=false
+            - HTTP_SIGNALR_SECRET=secretconnection42947832
+            - DOTNET_CLI_TELEMETRY_OPTOUT=1
+        networks:
+            - sqe_api
+        depends_on:
+            - sqe-http
+            - sqe-redis
+    
+    sqe-redis:
+        image: redis
+        container_name: SQE_Redis_Backplane
+        ports:
+            - 6379:6379
+        networks:
+            - sqe_api
+        command: >
+            --requirepass sqesecret  
+
+networks:
+    sqe_api:

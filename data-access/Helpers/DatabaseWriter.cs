@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Data;
 using System.Linq;
 using Dapper;
+using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.DataAccess.Queries;
 
 namespace SQE.SqeHttpApi.DataAccess.Helpers
@@ -95,10 +96,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
     public interface IDatabaseWriter
     {
-        Task<List<AlteredRecord>> WriteToDatabaseAsync(uint scrollVersionId, ushort userId, List<MutationRequest> mutationRequests);
+        Task<List<AlteredRecord>> WriteToDatabaseAsync(uint editionId, UserInfo user,
+            List<MutationRequest> mutationRequests);
     }
 
-    public class DatabaseWriter : DBConnectionBase, IDatabaseWriter
+    public class DatabaseWriter : DbConnectionBase, IDatabaseWriter
     {
         /// <summary>
         /// Enum for allowed actions in the single_action database table.
@@ -116,10 +118,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// </summary>
         /// <returns>A list of AlteredRecord objects containing the details of each mutation.
         /// The order of the returned list or results matches the order of the list of mutation requests</returns>
-        /// <param name="scrollVersionId">Id of the scroll version where these mutations will be performed.</param>
-        /// <param name="userId">Id of the user performing the mutations.</param>
+        /// <param name="editionId"></param>
+        /// <param name="user"></param>
         /// <param name="mutationRequests">List of mutation requests.</param>
-        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(uint scrollVersionId, ushort userId, List<MutationRequest> mutationRequests)
+        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(uint editionId, UserInfo user,
+            List<MutationRequest> mutationRequests)
         {
             var alteredRecords = new List<AlteredRecord>();
             // Grab a transaction scope, we roll back all changes if any transactions fail
@@ -133,42 +136,44 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             using (var connection = OpenConnection())
             {
                 // Check the permissions and throw if user has no rights to alter this scrollVersion
-                await CheckAccessAsync(connection, scrollVersionId, userId);
-
-                foreach (var mutationRequest in mutationRequests)
+                if (await user.MayWrite() && (await user.EditionEditorId()).HasValue)
                 {
-                    // Set the scrollVersionId for the mutation.
-                    // Though we accept a List of mutations, we have the restriction that
-                    // they all belong to the same scrollVersionId and userID.
-                    // This way, we only do one permission check for the whole batch.
-                    // TODO: Move some of the checking logic to a User object for easier and more efficient verification.
-                    mutationRequest.Parameters.Add("@ScrollVersionId", scrollVersionId);
-                    await AddMainActionAsync(connection, mutationRequest);
-                    switch (mutationRequest.Action)
+                    foreach (var mutationRequest in mutationRequests)
                     {
-                        case (MutateType.Create):
-                            // Insert the record and add its response to the alteredRecords response.
-                            alteredRecords.Add(await InsertAsync(connection, mutationRequest));
-                            break;
-                            
-                        case (MutateType.Update): // Update in our system is really Delete + Insert, the old record remains.
-                            // Delete the old record
-                            var deletedRecord = await DeleteAsync(connection, mutationRequest);
-                            
-                            // Insert the new record
-                            var insertedRecord = await InsertAsync(connection, mutationRequest);
-                            
-                            // Merge the request responses by copying the deleted Id to the insertRecord object
-                            insertedRecord.OldId = deletedRecord.OldId;
-                            
-                            // Add info to the return object
-                            alteredRecords.Add(insertedRecord);
-                            break;
-                            
-                        case (MutateType.Delete):
-                            // Delete the record and add its response to the alteredRecords response.
-                            alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
-                            break;
+                        // Set the editionId for the mutation.
+                        // Though we accept a List of mutations, we have the restriction that
+                        // they all belong to the same editionId and userID.
+                        // This way, we only do one permission check for the whole batch.
+                        // TODO: Move some of the checking logic to a User object for easier and more efficient verification.
+                        mutationRequest.Parameters.Add("@EditionId", editionId);
+                        mutationRequest.Parameters.Add("@EditionEditorId", (await user.EditionEditorId()).Value);
+                        await AddMainActionAsync(connection, mutationRequest);
+                        switch (mutationRequest.Action)
+                        {
+                            case (MutateType.Create):
+                                // Insert the record and add its response to the alteredRecords response.
+                                alteredRecords.Add(await InsertAsync(connection, mutationRequest));
+                                break;
+                                
+                            case (MutateType.Update): // Update in our system is really Delete + Insert, the old record remains.
+                                // Delete the old record
+                                var deletedRecord = await DeleteAsync(connection, mutationRequest);
+                                
+                                // Insert the new record
+                                var insertedRecord = await InsertAsync(connection, mutationRequest);
+                                
+                                // Merge the request responses by copying the deleted Id to the insertRecord object
+                                insertedRecord.OldId = deletedRecord.OldId;
+                                
+                                // Add info to the return object
+                                alteredRecords.Add(insertedRecord);
+                                break;
+                                
+                            case (MutateType.Delete):
+                                // Delete the record and add its response to the alteredRecords response.
+                                alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
+                                break;
+                        }
                     }
                 }
                 transactionScope.Complete();
@@ -177,17 +182,18 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             return alteredRecords;
         }
         
+        /*
         /// <summary>
-        /// This function verifies that the current user is allowed to edit the requested scrollVersionId.
+        /// This function verifies that the current user is allowed to edit the requested editionId.
         /// TODO: we should move this into the logic of the User object.
         /// </summary>
         /// <param name="connection">An IDbConnection belonging to the current transaction.</param>
-        /// <param name="scrollVersionId">The scrollVersionId to be altered</param>
+        /// <param name="editionId">The editionId to be altered</param>
         /// <param name="userId">The userId of the person requesting the alterations</param>
         /// <returns></returns>
         /// <exception cref="NoPermissionException">If the user does not have access an invalid operation error
         /// is thrown.</exception>
-        private static async Task CheckAccessAsync(IDbConnection connection, uint scrollVersionId, ushort userId)
+        private static async Task CheckAccessAsync(IDbConnection connection, uint editionId, ushort userId)
         {
             // Check if we can write to this scroll_version
             // TODO: It would be cool if we could check this immediately when got
@@ -198,22 +204,23 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
                     PermissionCheckQuery.GetQuery, 
                     new
                     {
-                        ScrollVersionId = scrollVersionId,
+                        EditionId = editionId,
                         UserId = userId
                     });
                 //throw an error that the user not allowed to write to this scroll version
                 if (result.may_write != 1)
-                    throw new NoPermissionException(userId, "alter", "scroll", scrollVersionId);
+                    throw new NoPermissionException(userId, "alter", "scroll", editionId);
                 //throw an error that the scroll version is currently locked for this user
                 if (result.locked != 0)
-                    throw new NoPermissionException(userId, "alter locked", "scroll", scrollVersionId);
+                    throw new NoPermissionException(userId, "alter locked", "scroll", editionId);
             }
             catch(InvalidOperationException)
             {
                 // Throw on error, probably no rows were found.
-                throw new NoPermissionException(userId, "access", "scroll", scrollVersionId);
+                throw new NoPermissionException(userId, "access", "scroll", editionId);
             }
         }
+        */
         
         /// <summary>
         /// Insert record into table.  This takes care of writing the new record (if necessary) and makes the necessary
@@ -227,7 +234,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             // Insert the record (or return the id of a preexisting record matching the unique constraints.
             var createInsertId = await InsertOwnedTableAsync(connection, mutationRequest);
                                 
-            // Insert the link to the scrollVersionId in the owner table
+            // Insert the link to the editionId in the owner table
             await InsertOwnerTableAsync(connection, mutationRequest, createInsertId);
 
             // Record the insert
@@ -302,7 +309,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         }
         
         /// <summary>
-        /// Creates an entry in the owner table linking the scrollVersionId to the record with the inserted data.
+        /// Creates an entry in the owner table linking the editionId to the record with the inserted data.
         /// </summary>
         /// <param name="connection">An IDbConnection belonging to the current transaction</param>
         /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
@@ -323,7 +330,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         }
         
         /// <summary>
-        /// Delete the entry in the owner table that links a particular record to a specific scrollVersionId
+        /// Delete the entry in the owner table that links a particular record to a specific editionId
         /// </summary>
         /// <param name="connection">An IDbConnection belonging to the current transaction</param>
         /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>

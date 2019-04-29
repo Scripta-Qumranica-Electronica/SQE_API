@@ -49,28 +49,28 @@ LIMIT 1
 
     internal static class OwnerTableInsertQuery
     {
-        public static string GetQuery { get; } = @"
-INSERT INTO $OwnerTableName ($OwnedTablePkName, scroll_version_id)
-SELECT t.$OwnedTablePkName, COALESCE(sda.scroll_version_id, t.scroll_version_id)
-FROM (SELECT @OwnedTableId AS $OwnedTablePkName, @ScrollVersionId AS scroll_version_id) AS t
+        public const string GetQuery = @"
+INSERT INTO $OwnerTableName ($OwnedTablePkName, edition_editor_id, edition_id)
+SELECT t.$OwnedTablePkName, COALESCE(sda.edition_editor_id, t.edition_editor_id), @EditionId
+FROM (SELECT @OwnedTableId AS $OwnedTablePkName, @EditionEditorId AS edition_editor_id) AS t
 LEFT JOIN $OwnerTableName AS sda
   ON sda.$OwnedTablePkName = t.$OwnedTablePkName
-  AND sda." + ScrollVersionGroupLimitQuery.LimitToScrollVersionGroup;
-        
-        
+  AND sda.edition_id = @EditionId";
     }
     
     internal static class OwnerTableDeleteQuery
     {
-        public static string GetQuery { get; } = @"
+        public const string GetQuery = @"
 DELETE FROM $OwnerTableName 
 WHERE $OwnedTablePkName = @OwnedTableId
-  AND " + ScrollVersionGroupLimitQuery.LimitToScrollVersionGroup;
+  AND edition_id = @EditionId";
     }
     
     internal static class MainActionInsertQuery
     {
-        public static string GetQuery { get; } = @"INSERT INTO main_action (scroll_version_id) VALUES(@ScrollVersionId)";
+        public const string GetQuery = @"
+          INSERT INTO main_action (edition_id, edition_editor_id) 
+          VALUES(@EditionId, @EditionEditorId)";
     }
     
     internal static class SingleActionInsertQuery
@@ -84,9 +84,9 @@ VALUES(@MainActionId, @Action, @TableName, @OwnedTableId)";
     {
         public static string GetQuery { get; } = @"
 SELECT may_write, locked 
-FROM scroll_version_group 
-JOIN scroll_version USING(scroll_version_group_id) 
-WHERE scroll_version_id = @ScrollVersionId AND user_id = @UserId";
+FROM edition 
+JOIN edition_editor USING(edition_id) 
+WHERE edition_id = @EditionId AND user_id = @UserId";
         
         internal class Result 
         {

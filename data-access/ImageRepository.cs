@@ -10,20 +10,20 @@ namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IImageRepository
     {
-        Task<IEnumerable<Image>> GetImages(uint? userId, uint scrollVersionId, string fragmentId);
+        Task<IEnumerable<Image>> GetImages(uint? userId, uint editionId, string imagedObjectId);
         Task<IEnumerable<ImageGroup>> ListImages(uint? userId, List<uint> scrollVersionIds);
         Task<IEnumerable<ImageInstitution>> ListImageInstitutions();
     }
 
-    public class ImageRepository : DBConnectionBase, IImageRepository
+    public class ImageRepository : DbConnectionBase, IImageRepository
     {
         public ImageRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<Image>> GetImages(uint? userId, uint scrollVersionId, string fragmentId)
+        public async Task<IEnumerable<Image>> GetImages(uint? userId, uint editionId, string imagedObjectId)
         {
-            var fragment = ImagedFragment.FromId(fragmentId);
+            var imagedObject = ImagedObject.FromId(imagedObjectId);
 
-            var sql = ImageQueries.GetImageQuery(fragment != null);
+            var sql = ImageQueries.GetImageQuery(imagedObject != null);
 
             using (var connection = OpenConnection())
             {
@@ -31,10 +31,10 @@ namespace SQE.SqeHttpApi.DataAccess
                 var results = await connection.QueryAsync<ImageQueries.Result>(sql, new
                 {
                     UserId = userId ?? 0, // @UserId is not expanded if userId is null
-                    ScrollVersionId = scrollVersionId,
-                    fragment?.Catalog1,
-                    fragment?.Catalog2,
-                    fragment?.Institution,
+                    EditionId = editionId,
+                    imagedObject?.Catalog1,
+                    imagedObject?.Catalog2,
+                    imagedObject?.Institution,
                 });
 
                 var models = results.Select(result => CreateImage(result));

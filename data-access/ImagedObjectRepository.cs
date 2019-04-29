@@ -11,47 +11,47 @@ using SQE.SqeHttpApi.DataAccess.Queries;
 
 namespace SQE.SqeHttpApi.DataAccess
 {
-    public interface IImagedFragmentsRepository
+    public interface IImagedObjectRepository
     {
-        Task<IEnumerable<ImagedFragment>> GetImagedFragments(uint? userId, uint scrollVersionId, string fragmentId);
+        Task<IEnumerable<ImagedObject>> GetImagedObjects(uint? userId, uint editionId, string imagedObjectId);
     }
 
-    public class ImagedFragmentsRepository : DBConnectionBase, IImagedFragmentsRepository
+    public class ImagedObjectRepository : DbConnectionBase, IImagedObjectRepository
     {
-        public ImagedFragmentsRepository(IConfiguration config) : base(config) { }
+        public ImagedObjectRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<ImagedFragment>> GetImagedFragments(uint? userId, uint scrollVersionId, string fragmentId)
+        public async Task<IEnumerable<ImagedObject>> GetImagedObjects(uint? userId, uint editionId, string imagedObjectId)
         {
-            var fragment = ImagedFragment.FromId(fragmentId);
-            var sql = ImagedFragemntQueries.GetFragmentsQuery(fragmentId!=null);
+            var fragment = ImagedObject.FromId(imagedObjectId);
+            var sql = ImagedFragemntQueries.GetFragmentsQuery(imagedObjectId!=null);
 
             using (var connection = OpenConnection())
             {
                 var results = await connection.QueryAsync<ImagedFragemntQueries.Result>(sql, new
                 {
                     UserId = userId ?? 1, // @UserId is not expanded if userId is null
-                    ScrollVersionId = scrollVersionId,
+                    EditionId = editionId,
                     Catalog1 = fragment?.Catalog1,
                     Catalog2 = fragment?.Catalog2,
                     Institution = fragment?.Institution
 
                 });
 
-                var models = results.Select(result => CreateImagedFragment(result));
+                var models = results.Select(result => CreateImagedObject(result));
                 return models;
 
                 /**var imagedFragment = results.FirstOrDefault();
                 if (imagedFragment == null)
                     return null;
 
-                return CreateImagedFragment(imagedFragment);**/
+                return CreateImagedObject(imagedFragment);**/
             }
       
         }
 
-        private ImagedFragment CreateImagedFragment(ImagedFragemntQueries.Result imagedFragement) 
+        private ImagedObject CreateImagedObject(ImagedFragemntQueries.Result imagedFragement) 
         {
-            var model = new ImagedFragment
+            var model = new ImagedObject
             {
                 Institution = imagedFragement.institution,
                 Catalog1 = imagedFragement.catalog_1,

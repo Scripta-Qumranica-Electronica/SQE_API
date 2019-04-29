@@ -25,6 +25,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
             _userService = userServiceAuthenticate;
         }
 
+        /// <summary>
+        /// Provides a JWT bearer token for valid username and password
+        /// </summary>
+        /// <param name="userParam">JSON object with a username and password parameter</param>
         [AllowAnonymous]
         [HttpPost("login")] // api/v1/user/login
         public async Task<ActionResult<UserWithTokenDTO>> AuthenticateAsync([FromBody]LoginRequestDTO userParam)
@@ -36,6 +40,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
             return user;
         }
 
+        /// <summary>
+        /// Provides the user details for a user with valid JWT in the Authorize header
+        /// </summary>
         [HttpGet] // api/v1/user
         public ActionResult<UserWithTokenDTO> GetCurrentUser()
         {

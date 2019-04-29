@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using System.IO;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;
@@ -37,14 +38,15 @@ namespace SQE.SqeHttpApi.Server
 
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IScrollService, ScrollService>();
+            services.AddScoped<IEditionService, EditionService>();
             services.AddScoped<IImagedFragmentsService, ImagedFragmentsService>();
             services.AddScoped<IArtefactService, ArtefactService>();
             services.AddScoped<IImageService, ImageService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddSingleton<IBroadcastService, BroadcastService>();
             services.AddTransient<IUserRepository, UserRepository>();
-            services.AddTransient<IScrollRepository, ScrollRepository>();
-            services.AddTransient<IImagedFragmentsRepository, ImagedFragmentsRepository>();
+            services.AddTransient<IEditionRepository, EditionRepository>();
+            services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();
             services.AddTransient<IImageRepository, ImageRepository>();
             services.AddTransient<IArtefactRepository, ArtefactRepository>();
             services.AddTransient<IDatabaseWriter, DatabaseWriter>();

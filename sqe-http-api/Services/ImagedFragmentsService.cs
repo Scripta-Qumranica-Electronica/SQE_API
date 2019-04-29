@@ -9,31 +9,31 @@ namespace SQE.SqeHttpApi.Server.Services
 {
     public interface IImagedFragmentsService
     {
-        Task<ImagedFragmentListDTO> GetImagedFragments(uint? userId, uint scrollVersionId);
+        Task<ImagedObjectListDTO> GetImagedObjects(uint? userId, uint scrollVersionId);
         Task<ImagedFragmentDTO> GetImagedFragment(uint? userId, uint scrollVersionId, string fragmentId);
     }
     public class ImagedFragmentsService : IImagedFragmentsService
     {
-        IImagedFragmentsRepository _repo;
+        IImagedObjectRepository _repo;
         IImageRepository _imageRepo;
         IImageService _imageService;
 
-        public ImagedFragmentsService(IImagedFragmentsRepository repo, IImageRepository imageRepo, IImageService imageService)
+        public ImagedFragmentsService(IImagedObjectRepository repo, IImageRepository imageRepo, IImageService imageService)
         {
             _repo = repo;
             _imageRepo = imageRepo;
             _imageService = imageService;
         }
 
-        async public Task<ImagedFragmentListDTO> GetImagedFragments(uint? userId, uint scrollVersionId)
+        async public Task<ImagedObjectListDTO> GetImagedObjects(uint? userId, uint scrollVersionId)
         {
-            var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, null);
+            var imagedFragments = await _repo.GetImagedObjects(userId, scrollVersionId, null);
 
             if (imagedFragments == null)
             {
                 throw new NotFoundException((uint)scrollVersionId);
             }
-            var result = new ImagedFragmentListDTO
+            var result = new ImagedObjectListDTO
             {
                 result = new List<ImagedFragmentDTO>(),
             };
@@ -62,7 +62,7 @@ namespace SQE.SqeHttpApi.Server.Services
         {
             return image.Institution + "-" + image.Catlog1 + "-" + image.Catalog2;
         }
-        internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedFragment model, List<ImageDTO> images)
+        internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedObject model, List<ImageDTO> images)
         {
             var sides = getSides(images);
             return new ImagedFragmentDTO
@@ -188,7 +188,7 @@ namespace SQE.SqeHttpApi.Server.Services
         async public Task<ImagedFragmentDTO> GetImagedFragment(uint? userId, uint scrollVersionId, string fragmentId)
         {
             var images = await _imageRepo.GetImages(userId, scrollVersionId, fragmentId); //send imagedFragment from here 
-            var imagedFragments = await _repo.GetImagedFragments(userId, scrollVersionId, fragmentId); //should be onky one!
+            var imagedFragments = await _repo.GetImagedObjects(userId, scrollVersionId, fragmentId); //should be onky one!
             var img = new List<ImageDTO>();
             foreach (var image in images)
             {
