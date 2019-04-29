@@ -39,7 +39,7 @@ namespace SQE.SqeHttpApi.Server
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IEditionService, EditionService>();
-            services.AddScoped<IImagedFragmentsService, ImagedFragmentsService>();
+            services.AddScoped<IImagedObjectService, ImagedObjectService>();
             services.AddScoped<IArtefactService, ArtefactService>();
             services.AddScoped<IImageService, ImageService>();
             services.AddScoped<ITextRetrievingService, TextRetrievingService>();

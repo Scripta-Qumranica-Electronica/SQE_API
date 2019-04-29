@@ -21,7 +21,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
     {
         private readonly IEditionService _editionService;
         private readonly IUserService _userService;
-        private readonly IImagedFragmentsService _imagedObjectService;
+        private readonly IImagedObjectService _imagedObjectService;
         private readonly IArtefactService _artefactService;
         private readonly IBroadcastService _broadcastService;
 
@@ -29,7 +29,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public EditionController(
             IEditionService editionService, 
             IUserService userService, 
-            IImagedFragmentsService imagedObjectService,
+            IImagedObjectService imagedObjectService,
             IArtefactService artefactService,
             IBroadcastService broadcastService)
         {
@@ -125,61 +125,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
             catch (ForbiddenException)
             {
                 return Forbid();
-            }
-        }
-
-        /// <summary>
-        /// Provides a listing of imaged objects related to the specified edition
-        /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
-        [AllowAnonymous]
-        [HttpGet("{editionId}/imaged-objects")]
-        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjects(uint editionId)
-        {
-            try
-            {
-                return Ok(await _imagedObjectService.GetImagedObjects(_userService.GetCurrentUserId(), editionId));
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-        }
-
-        /// <summary>
-        /// Provides a listing of all artefacts that are part of the specified edition
-        /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
-        [AllowAnonymous]
-        [HttpGet("{editionId}/artefacts")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(uint editionId)
-        {
-            try
-            {
-                return Ok(await _artefactService.GetEditionArtefactListings(_userService.GetCurrentUserId(), editionId));
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-        }
-        
-        /// <summary>
-        /// Provides a listing of all artefacts that are part of the specified edition, including data about
-        /// the related images
-        /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
-        [AllowAnonymous]
-        [HttpGet("{editionId}/artefacts/with-image-refs")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefactsWithImageRefs(uint editionId)
-        {
-            try
-            {
-                return Ok(await _artefactService.GetEditionArtefactListingsWithImages(_userService.GetCurrentUserId(), editionId));
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
             }
         }
     }

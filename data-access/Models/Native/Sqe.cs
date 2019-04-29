@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using SQE.Backend.DataAccess.Helpers;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 
 // Bronson - add an explanation how this file was generated (which utility, what command line options)
 
-namespace SQE.Backend.DataAccess.Models.Native
+namespace SQE.SqeHttpApi.DataAccess.Models.Native
 {
     public class SQENative
     {

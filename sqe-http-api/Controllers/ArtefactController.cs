@@ -10,7 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
-    [Route("v1/[controller]")]
+    [Authorize]
+    [Route("v1")]
     [ApiController]
     public class ArtefactController : ControllerBase
     {
@@ -22,12 +23,42 @@ namespace backend.Controllers
             this._artefactService = artefactService;
             this._userService = userService;
         }
-
+        
+        /// <summary>
+        /// Provides a listing of all artefacts that are part of the specified edition
+        /// </summary>
+        /// <param name="editionId">Unique id of the desired edition</param>
         [AllowAnonymous]
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ArtefactDTO>> GetArtefact(int id)
+        [HttpGet("edition/{editionId}/artefact/list")]
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(uint editionId)
         {
-            return new ArtefactDTO();
+            try
+            {
+                return Ok(await _artefactService.GetEditionArtefactListings(_userService.GetCurrentUserId(), editionId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+        
+        /// <summary>
+        /// Provides a listing of all artefacts that are part of the specified edition, including data about
+        /// the related images
+        /// </summary>
+        /// <param name="editionId">Unique id of the desired edition</param>
+        [AllowAnonymous]
+        [HttpGet("edition/{editionId}/artefact/list/with-image-refs")]
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefactsWithImageRefs(uint editionId)
+        {
+            try
+            {
+                return Ok(await _artefactService.GetEditionArtefactListingsWithImages(_userService.GetCurrentUserId(), editionId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
         }
     }
 }

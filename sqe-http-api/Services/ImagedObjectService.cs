@@ -7,42 +7,43 @@ using SQE.SqeHttpApi.Server.DTOs;
 
 namespace SQE.SqeHttpApi.Server.Services
 {
-    public interface IImagedFragmentsService
+    public interface IImagedObjectService
     {
-        Task<ImagedObjectListDTO> GetImagedObjects(uint? userId, uint scrollVersionId);
-        Task<ImagedFragmentDTO> GetImagedFragment(uint? userId, uint scrollVersionId, string fragmentId);
+        Task<ImagedObjectListDTO> GetImagedObjects(uint? userId, uint editionId);
+        Task<ImagedObjectDTO> GetImagedObject(uint? userId, uint editionId, string imagedObjectId);
+        Task<ImagedObjectDTO> GetImagedFragment(uint? userId, uint scrollVersionId, string fragmentId);
     }
-    public class ImagedFragmentsService : IImagedFragmentsService
+    public class ImagedObjectService : IImagedObjectService
     {
-        IImagedObjectRepository _repo;
-        IImageRepository _imageRepo;
-        IImageService _imageService;
+        private readonly IImagedObjectRepository _repo;
+        private readonly IImageRepository _imageRepo;
+        private readonly IImageService _imageService;
 
-        public ImagedFragmentsService(IImagedObjectRepository repo, IImageRepository imageRepo, IImageService imageService)
+        public ImagedObjectService(IImagedObjectRepository repo, IImageRepository imageRepo, IImageService imageService)
         {
             _repo = repo;
             _imageRepo = imageRepo;
             _imageService = imageService;
         }
 
-        async public Task<ImagedObjectListDTO> GetImagedObjects(uint? userId, uint scrollVersionId)
+        async public Task<ImagedObjectListDTO> GetImagedObjects(uint? userId, uint editionId)
         {
-            var imagedFragments = await _repo.GetImagedObjects(userId, scrollVersionId, null);
+            var imagedFragments = await _repo.GetImagedObjects(userId, editionId, null);
 
             if (imagedFragments == null)
             {
-                throw new NotFoundException((uint)scrollVersionId);
+                throw new NotFoundException((uint)editionId);
             }
             var result = new ImagedObjectListDTO
             {
-                result = new List<ImagedFragmentDTO>(),
+                result = new List<ImagedObjectDTO>(),
             };
-            var images = await _imageRepo.GetImages(userId, scrollVersionId, null); //send imagedFragment from here 
+            var images = await _imageRepo.GetImages(userId, editionId, null); //send imagedFragment from here 
 
             var imageDict = new Dictionary<string, List<ImageDTO>>();
             foreach (var image in images)
             {
-                var fragmentId = getFragmentId(image);
+                var fragmentId = getImagedObjectId(image);
                 if (!imageDict.ContainsKey(fragmentId))
                 {
                     imageDict[fragmentId] = new List<ImageDTO>();
@@ -58,20 +59,25 @@ namespace SQE.SqeHttpApi.Server.Services
 
             return result;
         }
-        private string getFragmentId(DataAccess.Models.Image image)
+        
+        // TODO: Make this less wasteful by retrieving only the desired imaged object
+        async public Task<ImagedObjectDTO> GetImagedObject(uint? userId, uint editionId, string imagedObjectId)
+        {
+            return (await GetImagedObjects(userId, editionId)).result.First(x => x.id == imagedObjectId);
+        }
+        
+        private string getImagedObjectId(DataAccess.Models.Image image)
         {
             return image.Institution + "-" + image.Catlog1 + "-" + image.Catalog2;
         }
-        internal static ImagedFragmentDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedObject model, List<ImageDTO> images)
+        internal static ImagedObjectDTO ImagedFragmentModelToDTO(DataAccess.Models.ImagedObject model, List<ImageDTO> images)
         {
             var sides = getSides(images);
-            return new ImagedFragmentDTO
+            return new ImagedObjectDTO
             {
                 id = model.Id.ToString(),
                 recto = sides.recto,
                 verso = sides.verso
-//                recto = getRecto(images),
-//                verso = getVerso(images)
             };
         }
 
@@ -80,8 +86,6 @@ namespace SQE.SqeHttpApi.Server.Services
         /// </summary>
         /// <param name="images"></param>
         /// <returns></returns>
-        // Daniella, it is probably better to do this all in one pass, rather than looping over the
-        // images twice, once in getRecto, and again in getVerso.
         private static (ImageStackDTO recto, ImageStackDTO verso) getSides(List<ImageDTO> images)
         {
             var recto = new List<ImageDTO>();
@@ -137,6 +141,8 @@ namespace SQE.SqeHttpApi.Server.Services
                 );
         }
         
+        // Daniella, it is probably better to do this all in one pass (see `getSides()`, rather than looping over the
+        // images twice, once in getRecto, and again in getVerso.
         private static ImageStackDTO getRecto(List<ImageDTO> images)
         {
             var img = new List<ImageDTO>();
@@ -185,7 +191,7 @@ namespace SQE.SqeHttpApi.Server.Services
             };
         }
 
-        async public Task<ImagedFragmentDTO> GetImagedFragment(uint? userId, uint scrollVersionId, string fragmentId)
+        async public Task<ImagedObjectDTO> GetImagedFragment(uint? userId, uint scrollVersionId, string fragmentId)
         {
             var images = await _imageRepo.GetImages(userId, scrollVersionId, fragmentId); //send imagedFragment from here 
             var imagedFragments = await _repo.GetImagedObjects(userId, scrollVersionId, fragmentId); //should be onky one!
@@ -193,7 +199,7 @@ namespace SQE.SqeHttpApi.Server.Services
             foreach (var image in images)
             {
                 img.Add(_imageService.ImageToDTO(image));
-                //var fragmentId = getFragmentId(image);
+                //var fragmentId = getImagedObjectId(image);
             }
             var result = ImagedFragmentModelToDTO(imagedFragments.First(), img);
 

@@ -21,7 +21,7 @@ namespace SQE.SqeHttpApi.Server.Services
     public interface IUserService
     {
         Task<UserWithTokenDTO> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
-        UserWithTokenDTO GetCurrentUser();
+        UserDTO GetCurrentUser();
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject();
     }
@@ -79,7 +79,7 @@ namespace SQE.SqeHttpApi.Server.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public UserWithTokenDTO GetCurrentUser()
+        public UserDTO GetCurrentUser()
         {
             // TODO: Check if ...User.Identity.Name exists. Return null if not.
             var currentUserName = _accessor.HttpContext.User.Identity.Name;
@@ -87,11 +87,10 @@ namespace SQE.SqeHttpApi.Server.Services
 
             if (currentUserName != null && currentUserId.HasValue)
             {
-                var user = new UserWithTokenDTO
+                var user = new UserDTO
                 {
                     userName = currentUserName,
                     userId = currentUserId.Value,
-                    token = BuildUserToken(currentUserName, currentUserId.Value).ToString(),
                 };
 
                 return user;

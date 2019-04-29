@@ -44,7 +44,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Provides the user details for a user with valid JWT in the Authorize header
         /// </summary>
         [HttpGet] // api/v1/user
-        public ActionResult<UserWithTokenDTO> GetCurrentUser()
+        public ActionResult<UserDTO> GetCurrentUser()
         {
             var user = _userService.GetCurrentUser();
 
