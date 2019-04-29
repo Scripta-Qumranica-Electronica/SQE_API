@@ -42,6 +42,7 @@ namespace SQE.SqeHttpApi.Server
             services.AddScoped<IImagedFragmentsService, ImagedFragmentsService>();
             services.AddScoped<IArtefactService, ArtefactService>();
             services.AddScoped<IImageService, ImageService>();
+            services.AddScoped<ITextRetrievingService, TextRetrievingService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IBroadcastService, BroadcastService>();
             services.AddTransient<IUserRepository, UserRepository>();
@@ -50,6 +51,7 @@ namespace SQE.SqeHttpApi.Server
             services.AddTransient<IImageRepository, ImageRepository>();
             services.AddTransient<IArtefactRepository, ArtefactRepository>();
             services.AddTransient<IDatabaseWriter, DatabaseWriter>();
+            services.AddTransient<ITextRetrievalRepository, TextRetrievalRepository>();
 
             // Configure routing.
             services.Configure<RouteOptions>(options =>
