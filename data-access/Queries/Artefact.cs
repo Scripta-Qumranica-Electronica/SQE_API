@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SQE.Backend.DataAccess.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -24,7 +25,7 @@ join scroll_version using (scroll_version_id)
 join image_catalog where image_catalog.image_catalog_id = (select SQE_image.image_catalog_id from SQE_image where artefact_shape.id_of_sqe_image = SQE_image.sqe_image_id)
 and scroll_version.user_id = @userID";
 
-        public static string GetArtefactQuery(uint? scrollVersionId, int? artefactId, string fragmentId)
+        public static string GetArtefactQuery(uint? scrollVersionId, int? artefactId, ImagedFragment fragmentId)
         {
             StringBuilder str = new StringBuilder(_getArtefact);
             if (scrollVersionId != null)

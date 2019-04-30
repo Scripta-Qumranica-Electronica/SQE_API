@@ -28,7 +28,7 @@ namespace SQE.Backend.DataAccess
         {
             var fragment = ImagedFragment.FromId(fragmentId);
 
-            var sql = ArtefactQueries.GetArtefactQuery(scrollVersionId, artefactId, fragment.Id);
+            var sql = ArtefactQueries.GetArtefactQuery(scrollVersionId, artefactId, fragment);
 
             using (var connection = OpenConnection() as MySqlConnection)
             {
