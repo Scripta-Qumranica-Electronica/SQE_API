@@ -8,8 +8,8 @@ namespace SQE.SqeHttpApi.Server.DTOs
     public class ImagedFragmentDTO
     {
         public string id { get; set; }
-        public ImageStackDTO recto { get; set; } // TODO: Change to ImageStack
-        public ImageStackDTO verso { get; set; } // TODO: Change to ImageStack
+        public ImageStackDTO recto { get; set; } 
+        public ImageStackDTO verso { get; set; }
         public List<ArtefactDTO> Artefacts { get; set; }
 
     }

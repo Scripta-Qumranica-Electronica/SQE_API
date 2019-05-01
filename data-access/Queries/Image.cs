@@ -15,6 +15,7 @@ SQE_image.filename as filename,
 SQE_image.is_master as master,
 SQE_image.wavelength_start as wave_start,
 SQE_image.wavelength_end as wave_end,
+SQE_image.filename as fileName,
 image_catalog.institution as institution,
 image_catalog.catalog_number_1 as catalog_1,
 image_catalog.catalog_number_2 as catalog_2
@@ -47,7 +48,7 @@ and edition_catalog.edition_side =0
             public string proxy { get; set; }
             public string filename { get; set; }
             public uint image_catalog_id { get; set; }
-            public byte img_type { get; set; }
+            public byte type { get; set; }
             public byte side { get; set; }
             public bool master { get; set; }
             public ushort wave_start { get; set; }
@@ -56,6 +57,7 @@ and edition_catalog.edition_side =0
             public string institution { get; set; }
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
+            public string fileName { get; set; }
         }
     }
 

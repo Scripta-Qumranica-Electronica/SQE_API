@@ -31,7 +31,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             var user = await _userService.AuthenticateAsync(userParam.userName, userParam.password);
             if (user == null)
-                return Unauthorized(new { message = "Username or password is incorrect", code = 600}); // TODO: Add Error Code
+                return Unauthorized(new { message = "Username or password is incorrect", code = 600 }); // TODO: Add Error Code
 
             return user;
         }
@@ -42,7 +42,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             var user = _userService.GetCurrentUser();
 
             if (user == null)
-                return Unauthorized(new { message = "No current user", code =601 }); // TODO: Add Error Code
+                return Unauthorized(new { message = "No current user", code = 601 }); // TODO: Add Error Code
 
             return user;
         }

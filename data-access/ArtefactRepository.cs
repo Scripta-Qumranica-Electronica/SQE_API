@@ -1,77 +1,68 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
-using Dapper;
-using System.Linq;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.DataAccess.Queries;
+using SQE.Backend.DataAccess.Models;
+using SQE.Backend.DataAccess.Queries;
 
-namespace SQE.SqeHttpApi.DataAccess
+
+
+namespace SQE.Backend.DataAccess
 {
 
     public interface IArtefactRepository
     {
-        Task<Artefact> GetArtefact(uint? userId, uint artefactId);
-        Task<IEnumerable<ScrollArtefactListQuery.Result>> GetScrollArtefactList(uint? userId, uint scrollVersionId);
+        Task<IEnumerable<Artefact>> GetArtefact(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId);
+
     }
 
     public class ArtefactRepository : DBConnectionBase, IArtefactRepository
     {
         public ArtefactRepository(IConfiguration config) : base(config) { }
 
-        public Task<Artefact> GetArtefact(uint? userId, uint artfactId)
+        public async Task<IEnumerable<Artefact>> GetArtefact(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId)
         {
+            var fragment = ImagedFragment.FromId(fragmentId);
 
-            /**  using (var connection = OpenConnection() as MySqlConnection)
-              {
-               
-                  //update scroll data owner
-                  var cmd = new MySqlCommand(UpdateScrollNameQueries.UpdateScrollDataOwner(), connection);
-                  cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                  cmd.Parameters.AddWithValue("@ScrollDataId", scrollDataId);
-                  await cmd.ExecuteNonQueryAsync();
+            var sql = ArtefactQueries.GetArtefactQuery(scrollVersionId, artefactId, fragment);
 
-                  //update main_action table
-                  cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
-                  cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                  await cmd.ExecuteNonQueryAsync();
-                  var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
-
-                  //update single_action table
-
-                  cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
-                  cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
-                  cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
-                  cmd.Parameters.AddWithValue("@Action", "add");
-
-
-
-                  await cmd.ExecuteNonQueryAsync();
-
-                  transactionScope.Complete();
-                  await connection.CloseAsync();
-              }
-
-          }
-                  return sv;**/
-            return null;
-        }
-
-        public async Task<IEnumerable<ScrollArtefactListQuery.Result>> GetScrollArtefactList(uint? userId, uint scrollVersionId)
-        {
-            var query = ScrollArtefactListQuery.GetQuery(userId);
-            using (var connection = OpenConnection())
+            using (var connection = OpenConnection() as MySqlConnection)
             {
-                return await connection.QueryAsync<ScrollArtefactListQuery.Result>(query,
-                    new
-                    {
-                        ScrollVersionId = scrollVersionId,
-                        UserId = userId ?? 0
-                    });
+                var results = await connection.QueryAsync<ArtefactQueries.Result>(sql, new
+                {
+                    UserId = userId ?? 1, // @UserId is not expanded if userId is null
+                    ScrollVersionId = scrollVersionId?? null,
+                    Id = artefactId?? null,
+                    Catalog1 = fragment?.Catalog1,
+                    Catalog2 = fragment?.Catalog2,
+                    Institution = fragment?.Institution
+                });
+
+                var models = results.Select(result => CreateArtefact(result));
+                return models;
             }
         }
+
+        private Artefact CreateArtefact(ArtefactQueries.Result artefact)
+        {
+            var model = new Artefact
+            {
+                Id = artefact.Id,
+                TransformMatrix = artefact.transformMatrix,
+                ScrollVersionId = artefact.scrollVersionId,
+                Name = artefact.Name,
+                Zorder = artefact.zOrder,
+                ImagedFragmentId = artefact.institution + "-" + artefact.catalog_number_1 + "-" + artefact.catalog_number_2,
+                side = "recto",
+                Mask = new Polygon()
+
+            };
+            return model;
+        }
+
     }
 }

@@ -24,6 +24,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         private IArtefactService _artefactService;
 
 
+<<<<<<< HEAD:sqe-http-api/Controllers/ScrollVersionController.cs
         public ScrollVersionController(
             IScrollService scrollService, 
             IUserService userService, 
@@ -34,6 +35,14 @@ namespace SQE.SqeHttpApi.Server.Controllers
             this._userService = userService;
             this._imagedFragmentService = imagedFragmentService;
             this._artefactService = artefactService;
+=======
+        public ScrollController(IScrollService scrollService, IUserService userService, IImagedFragmentsService imagedFragmentService, IArtefactService artefactService)
+        {
+            this._scrollService = scrollService;
+            this._userService = userService;
+            _imagedFragmentService = imagedFragmentService;
+            _artefactService = artefactService;
+>>>>>>> 2e4abdd34cc531700dfdb472530c3e40d4e02e11:backend/Controllers/ScrollController.cs
         }
 
         [AllowAnonymous]
@@ -121,17 +130,27 @@ namespace SQE.SqeHttpApi.Server.Controllers
 
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}/artefacts")]
+<<<<<<< HEAD:sqe-http-api/Controllers/ScrollVersionController.cs
         public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(uint scrollVersionId)
         {
             try
             {
                 return await _artefactService.GetScrollArtefactListings(_userService.GetCurrentUserId(), scrollVersionId);
+=======
+        public async Task<ActionResult<List<ArtefactDTO>>> GetArtefacts(uint scrollVersionId)
+        {
+            try
+            {
+                var artefacts = await _artefactService.GetAtrefactAsync(_userService.GetCurrentUserId(), null, scrollVersionId, null);
+                return artefacts;
+>>>>>>> 2e4abdd34cc531700dfdb472530c3e40d4e02e11:backend/Controllers/ScrollController.cs
             }
             catch (NotFoundException)
             {
                 return NotFound();
             }
         }
+<<<<<<< HEAD:sqe-http-api/Controllers/ScrollVersionController.cs
         
         [AllowAnonymous]
         [HttpGet("{scrollVersionId}/artefacts/with-image-refs")]
@@ -147,4 +166,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             }
         }
     }
+=======
+}
+>>>>>>> 2e4abdd34cc531700dfdb472530c3e40d4e02e11:backend/Controllers/ScrollController.cs
 }
