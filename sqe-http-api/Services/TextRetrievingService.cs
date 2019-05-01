@@ -47,14 +47,14 @@ namespace SQE.SqeHttpApi.Server.Services
 
             public async Task<uint[]> GetLineIds(uint fragmentId, uint editionId)
             {
-                var lineIds = _repo.GetLineIds(fragmentId, editionId);
-                return lineIds.Result;
+                var lineIds = await _repo.GetLineIds(fragmentId, editionId);
+                return lineIds;
             }
 
             public async Task<uint[]> GetFragmentIds (uint editionId)
             {
-                var fragmentIds = _repo.GetFragmentIds(editionId);
-                return fragmentIds.Result;
+                var fragmentIds = await _repo.GetFragmentIds(editionId);
+                return fragmentIds;
             }
         }
     }

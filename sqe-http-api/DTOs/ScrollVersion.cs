@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
-    public class ScrollVersionDTO
+    public class EditionDTO
     {
         public uint id { get; set; }
         public string name { get; set; }
@@ -18,16 +18,16 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public DateTime? lastEdit { set; get; }
     }
 
-    public class ScrollVersionGroupDTO
+    public class EditionGroupDTO
     {
-        public ScrollVersionDTO primary { get; set; }
-        public IEnumerable<ScrollVersionDTO> others { get; set; }
+        public EditionDTO primary { get; set; }
+        public IEnumerable<EditionDTO> others { get; set; }
     };
 
-    public class ScrollVersionListDTO
+    public class EditionListDTO
     {
 
-        public List<List<ScrollVersionDTO>> result { get; set; }
+        public List<List<EditionDTO>> result { get; set; }
     };
 
     public class PermissionDTO

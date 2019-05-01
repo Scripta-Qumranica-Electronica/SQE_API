@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
-    public class ImagedFragmentDTO
+    public class ImagedObjectDTO
     {
         public string id { get; set; }
         public ImageStackDTO recto { get; set; } 
@@ -13,8 +13,8 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public List<ArtefactDTO> Artefacts { get; set; }
 
     }
-    public class ImagedFragmentListDTO
+    public class ImagedObjectListDTO
     {
-        public List<ImagedFragmentDTO> result { get; set; }
+        public List<ImagedObjectDTO> result { get; set; }
     };
 }

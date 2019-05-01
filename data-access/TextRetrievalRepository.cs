@@ -18,7 +18,7 @@ namespace SQE.SqeHttpApi.DataAccess
         Task<uint[]> GetFragmentIds(uint editionId);
     }
 
-    public class TextRetrievalRepository : DBConnectionBase, ITextRetrievalRepository
+    public class TextRetrievalRepository : DbConnectionBase, ITextRetrievalRepository
     {
         public TextRetrievalRepository(IConfiguration config) : base(config) { }
 

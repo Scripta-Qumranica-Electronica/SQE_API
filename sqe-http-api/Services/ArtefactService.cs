@@ -11,8 +11,8 @@ namespace SQE.SqeHttpApi.Server.Services
     public interface IArtefactService
     {
         Task<ArtefactDTO> GetArtefact(uint scrollVersionId);
-        Task<ArtefactListDTO> GetScrollArtefactListings(uint? userId, uint scrollVersionId);
-        Task<ArtefactListDTO> GetScrollArtefactListingsWithImages(uint? userId, uint scrollVersionId);
+        Task<ArtefactListDTO> GetEditionArtefactListings(uint? userId, uint scrollVersionId);
+        Task<ArtefactListDTO> GetEditionArtefactListingsWithImages(uint? userId, uint editionId);
     }
 
     public class ArtefactService : IArtefactService
@@ -30,9 +30,9 @@ namespace SQE.SqeHttpApi.Server.Services
             throw new NotImplementedException();
         }
 
-        public async Task<ArtefactListDTO> GetScrollArtefactListings(uint? userId, uint scrollVersionId)
+        public async Task<ArtefactListDTO> GetEditionArtefactListings(uint? userId, uint scrollVersionId)
         {
-            var listings = await _artefactRepository.GetScrollArtefactList(userId, scrollVersionId);
+            var listings = await _artefactRepository.GetEditionArtefactNameList(userId, scrollVersionId);
             return new ArtefactListDTO { result = listings.Select(x => new ArtefactDesignationDTO { 
                 ArtefactId = x.artefact_id,
                 ImageCatalogId = x.image_catalog_id,
@@ -41,13 +41,13 @@ namespace SQE.SqeHttpApi.Server.Services
             ).ToList() };
         }
         
-        public async Task<ArtefactListDTO> GetScrollArtefactListingsWithImages(uint? userId, uint scrollVersionId)
+        public async Task<ArtefactListDTO> GetEditionArtefactListingsWithImages(uint? userId, uint editionId)
         {
-            var listings = await _artefactRepository.GetScrollArtefactList(userId, scrollVersionId);
-            var imageCatalogIds = listings.Select(x => x.image_catalog_id);
+            var artefactListings = await _artefactRepository.GetEditionArtefactNameList(userId, editionId);
+            var imagedObjectIds = artefactListings.Select(x => x.image_catalog_id);
             
             
-            return new ArtefactListDTO { result = listings.Select(x => new ArtefactDesignationDTO { 
+            return new ArtefactListDTO { result = artefactListings.Select(x => new ArtefactDesignationDTO { 
                 ArtefactId = x.artefact_id,
                 ImageCatalogId = x.image_catalog_id,
                 Name = x.name,

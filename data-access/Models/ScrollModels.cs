@@ -5,9 +5,9 @@ using System.Text;
 
 namespace SQE.SqeHttpApi.DataAccess.Models
 {
-    public class ScrollVersion
+    public class Edition
     {
-        public uint Id { get; set; }
+        public uint EditionId { get; set; }
         public string Name { get; set; }
         public Permission Permission { get; set; }
         public string Thumbnail { get; set; }
@@ -28,6 +28,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     public class Permission
     {
         public bool CanWrite { get; set; }
+        public bool CanLock { get; set; }
         public bool CanAdmin { get; set; }
     }
 

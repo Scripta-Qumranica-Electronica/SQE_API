@@ -16,11 +16,16 @@ namespace SQE.Backend.DataAccess
 
     public interface IArtefactRepository
     {
+<<<<<<< HEAD
         Task<IEnumerable<Artefact>> GetArtefact(uint? userId, int? artefactId, uint? scrollVersionId, string fragmentId);
 
+=======
+        Task<Artefact> GetArtefact(uint? userId, uint artefactId);
+        Task<IEnumerable<ArtefactNamesOfEditionQuery.Result>> GetEditionArtefactNameList(uint? userId, uint editionId);
+>>>>>>> 6cc19a4187d1bfe5c70efc913e4adf5b324c1a4e
     }
 
-    public class ArtefactRepository : DBConnectionBase, IArtefactRepository
+    public class ArtefactRepository : DbConnectionBase, IArtefactRepository
     {
         public ArtefactRepository(IConfiguration config) : base(config) { }
 
@@ -47,6 +52,7 @@ namespace SQE.Backend.DataAccess
             }
         }
 
+<<<<<<< HEAD
         private Artefact CreateArtefact(ArtefactQueries.Result artefact)
         {
             var model = new Artefact
@@ -62,6 +68,19 @@ namespace SQE.Backend.DataAccess
 
             };
             return model;
+=======
+        public async Task<IEnumerable<ArtefactNamesOfEditionQuery.Result>> GetEditionArtefactNameList(uint? userId, uint editionId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return await connection.QueryAsync<ArtefactNamesOfEditionQuery.Result>(ArtefactNamesOfEditionQuery.GetQuery(userId),
+                    new
+                    {
+                        EditionId = editionId,
+                        UserId = userId ?? 0
+                    });
+            }
+>>>>>>> 6cc19a4187d1bfe5c70efc913e4adf5b324c1a4e
         }
 
     }

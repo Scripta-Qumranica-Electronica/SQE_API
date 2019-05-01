@@ -11,61 +11,53 @@ using SQE.SqeHttpApi.DataAccess.Queries;
 
 namespace SQE.SqeHttpApi.DataAccess
 {
-    public interface IScrollRepository
+    public interface IEditionRepository
     {
-        Task<IEnumerable<ScrollVersion>> ListScrollVersions(uint? userId, List<uint> scrollVersionIds);
-        Task<Dictionary<uint, List<uint>>> GetScrollVersionGroups(uint? scrollVersionId);
-        Task ChangeScrollVersionName(uint scrollVersionId, string name, uint userId);
-        Task<uint> CopyScrollVersion(uint scrollVersionId, ushort userId);
+        Task<IEnumerable<Edition>> ListEditions(uint? userId, uint? editionId);
+        Task<Dictionary<uint, List<uint>>> GetEditions(uint? editionId, uint? userId);
+        Task ChangeEditionName(uint editionId, string name, UserInfo user);
+        Task<uint> CopyEdition(uint editionId, UserInfo user);
         //Task<List<string>> GetOwnerTables();
         // Task<bool> UpdateOwnerTables(uint olvd, uint svid);
-        //Task<int> UpdateAction(uint scrollDataId, uint oldScrollDataId, uint scrollVersionId);
+        //Task<int> UpdateAction(uint scrollDataId, uint oldScrollDataId, uint editionId);
         // Task<IEnumerable<Dictionary<uint, List<Share>>>> GetScrollVersionShares(List<uint> scrollIds);
     }
 
-    public class ScrollRepository : DBConnectionBase, IScrollRepository
+    public class EditionRepository : DbConnectionBase, IEditionRepository
     {
         readonly IDatabaseWriter _databaseWriter;
 
-        public ScrollRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config) 
+        public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config) 
         {
             _databaseWriter = databaseWriter;
         }
 
-        public async Task<IEnumerable<ScrollVersion>> ListScrollVersions(uint? userId, List<uint> scrollVersionIds) //
+        public async Task<IEnumerable<Edition>> ListEditions(uint? userId, uint? editionId) //
         {
-            var sql = ScrollVersionQuery.GetQuery(userId.HasValue, scrollVersionIds != null);
-
-            // We can't expand the ScrollIds parameters with MySql, as it is a list. We need to expand ourselves.
-            // Since ids is a list of integers, SQL injection is quite impossible.
-            if (scrollVersionIds != null)
-            {
-                var idList = "(" + string.Join(", ", scrollVersionIds.Select(id => id.ToString())) + ")";
-                sql = sql.Replace("@ScrollVersionIds", idList);
-            }
-
             using (var connection = OpenConnection())
             {
-                var results = await connection.QueryAsync<ScrollVersionQuery.Result>(sql, new
-                {
-                    UserId = userId ?? 0, // @UserId is not expanded if userId is null
-                });
+                var results = await connection.QueryAsync<EditionGroupQuery.Result>(
+                    EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue), 
+                    new {
+                        UserId = userId ?? 0, // @UserId is not expanded if userId is null
+                        EditionId = editionId ?? 0,
+                    });
 
-                var models = results.Select(result => CreateScrollVersion(result, userId));
+                var models = results.Select(result => CreateEdition(result, userId));
                 return models;
             }
         }
 
-        private ScrollVersion CreateScrollVersion(ScrollVersionQuery.Result result, uint? currentUserId)
+        private static Edition CreateEdition(EditionGroupQuery.Result result, uint? currentUserId)
         {
-            var model = new ScrollVersion
+            var model = new Edition
             {
-                Id = result.id,
+                EditionId = result.edition_id,
                 Name = result.name,
                 Thumbnail = result.thumbnail,
                 Locked = result.locked,
                 LastEdit = result.last_edit,
-                IsPublic = result.user_name.ToUpper() == "SQE_API",
+                IsPublic = result.user_id == 1, // The default (public and uneditable) SQE data is associated with user_id 1.
                 Owner = new User
                 {
                     UserId = result.user_id,
@@ -73,12 +65,13 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
             };
 
-            if (currentUserId.HasValue && model.Owner.UserId == currentUserId.Value)
+            if (currentUserId.HasValue)
             {
                 model.Permission = new Permission
                 {
-                    CanAdmin = true,
-                    CanWrite = true,
+                    CanAdmin = model.Owner.UserId == currentUserId.Value && result.admin,
+                    CanWrite = model.Owner.UserId == currentUserId.Value && result.may_write,
+                    CanLock = model.Owner.UserId == currentUserId.Value && result.may_lock,
                 };
             }
             else
@@ -86,6 +79,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 model.Permission = new Permission
                 {
                     CanAdmin = false,
+                    CanLock = false,
                     CanWrite = false,
                 };
             }
@@ -93,43 +87,42 @@ namespace SQE.SqeHttpApi.DataAccess
             return model;
         }
 
-        public async Task<Dictionary<uint, List<uint>>> GetScrollVersionGroups(uint? scrollVersionId)
+        // TODO do we even need this?
+        public async Task<Dictionary<uint, List<uint>>> GetEditions(uint? editionId, uint? userId)
         {
-            var sql = ScrollVersionGroupQuery.GetQuery(scrollVersionId.HasValue);
+            var sql = ScrollVersionGroupQuery.GetQuery(editionId.HasValue, userId.HasValue);
 
             using (var connection = OpenConnection())
             {
                 var results = await connection.QueryAsync<ScrollVersionGroupQuery.Result>(sql, new
                 {
-                    ScrollVersionId = scrollVersionId ?? 0,
+                    EditionId = editionId ?? 0,
+                    UserId = userId ?? 0
                 });
 
                 var dictionary = new Dictionary<uint, List<uint>>();
                 foreach (var result in results)
                 {
-                    if (!dictionary.ContainsKey(result.group_id))
-                        dictionary[result.group_id] = new List<uint>();
-                    dictionary[result.group_id].Add(result.scroll_version_id);
+                    if (!dictionary.ContainsKey(result.scroll_id))
+                        dictionary[result.scroll_id] = new List<uint>();
+                    dictionary[result.scroll_id].Add(result.edition_id);
                 }
 
                 return dictionary;
             }
         }
 
-        public async Task ChangeScrollVersionName(uint scrollVersionId, string name, uint userId)
+        public async Task ChangeEditionName(uint editionId, string name, UserInfo user)
         {
-            var sql = ScrollNameQuery.GetQuery();
-
             using (var connection = OpenConnection())
             {
                 try
                 {
                     // Here we get the data from the original scroll_data field, we need the scroll_id,
                     // which no one in the front end will generally have or care about.
-                    var result = await connection.QuerySingleAsync<ScrollNameQuery.Result>(sql, new
-                    {
-                        ScrollVersionId = scrollVersionId,
-                        UserId = userId
+                    var result = await connection.QuerySingleAsync<EditionNameQuery.Result>(EditionNameQuery.GetQuery(), 
+                        new {
+                        EditionId = editionId
                     });
 
                     // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
@@ -150,9 +143,9 @@ namespace SQE.SqeHttpApi.DataAccess
                     
                     // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
                     // care of main_action and single_action.
-                    var response = await _databaseWriter.WriteToDatabaseAsync(scrollVersionId, (ushort) userId, new List<MutationRequest>() { nameChangeRequest });
+                    var response = await _databaseWriter.WriteToDatabaseAsync(editionId, user, new List<MutationRequest>() { nameChangeRequest });
                     // Bronson: Where isn't there a response?
-                    if (response.Count == 0 || response[0].NewId == result.scroll_id || response[0].NewId == 0)
+                    if (response.Count == 0 || !response[0].NewId.HasValue)
                     {
                         throw new ImproperRequestException("change scroll name",
                             "no change in name or failed to write to DB");
@@ -160,12 +153,12 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch (InvalidOperationException) // Bronson: The error QuerySingle throws if there's no result.  Itay: thanks!
                 {
-                    throw new NoPermissionException(userId, "change name", "scroll", scrollVersionId);
+                    throw new NoPermissionException(user.userId, "change name", "scroll", editionId);
                 }
             }
         }
         /**
-        public async Task<uint> UpdateAction(int scrollDataId, uint oldScrollDataId, uint scrollVersionId)
+        public async Task<uint> UpdateAction(int scrollDataId, uint oldScrollDataId, uint editionId)
         {
             using (var connection = OpenConnection() as MySqlConnection)
             {
@@ -173,7 +166,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
                 //update main_action table
                 var cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
-                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+                cmd.Parameters.AddWithValue("@ScrollVersionId", editionId);
                 await cmd.ExecuteNonQueryAsync();
                 var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
 
@@ -197,7 +190,7 @@ namespace SQE.SqeHttpApi.DataAccess
             return scrollDataId;
         }**/
 
-//        private async Task<uint> GetScrollDataId(string name, uint scrollVersionId)
+//        private async Task<uint> GetScrollDataId(string name, uint editionId)
 //        {
 //
 //            using (var connection = OpenConnection() as MySqlConnection)
@@ -205,7 +198,7 @@ namespace SQE.SqeHttpApi.DataAccess
 //                await connection.OpenAsync();
 //
 //                var cmd = new MySqlCommand(UpdateScrollNameQueries.CheckIfNameExists(), connection);
-//                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+//                cmd.Parameters.AddWithValue("@ScrollVersionId", editionId);
 //                cmd.Parameters.AddWithValue("@Name", name);
 //                var result = await cmd.ExecuteScalarAsync();
 //                if (result != null)
@@ -216,7 +209,7 @@ namespace SQE.SqeHttpApi.DataAccess
 //
 //                //create new recored 
 //                cmd = new MySqlCommand(UpdateScrollNameQueries.AddScrollName(), connection);
-//                cmd.Parameters.AddWithValue("@ScrollVersionId", scrollVersionId);
+//                cmd.Parameters.AddWithValue("@ScrollVersionId", editionId);
 //                cmd.Parameters.AddWithValue("@Name", name);
 //                await cmd.ExecuteNonQueryAsync();
 //
@@ -225,9 +218,9 @@ namespace SQE.SqeHttpApi.DataAccess
 //            }
 //        }
 
-        public async Task<uint> CopyScrollVersion(uint scrollVersionId, ushort userId)
+        public async Task<uint> CopyEdition(uint editionId, UserInfo user)
         {
-            uint copyToScrollVersionId;
+            uint toEditionId;
             
             // If we allowed copying of scrolls that are not locked, we would
             // have to block all transactions on all _owner tables in the DB
@@ -240,57 +233,50 @@ namespace SQE.SqeHttpApi.DataAccess
                 {
                     try
                     {
+                        // Check that edition is locked
                         var fromVersion =
-                            await connection.QuerySingleAsync<ScrollLockQuery.Result>(ScrollLockQuery.GetQuery,
-                                new {ScrollVersionId = scrollVersionId});
+                            await connection.QuerySingleAsync<EditionLockQuery.Result>(EditionLockQuery.GetQuery,
+                                new {EditionId = editionId});
                         if (!fromVersion.locked)
                             throw new ImproperRequestException("copy scroll", "scroll to be copied is not locked");
-                        // Create a new scroll_version_group
-                        var results = connection.Execute(CreateScrollVersionGroupQuery.GetQuery, 
-                            new{ScrollVersionId = scrollVersionId});
+                        
+                        // Create a new edition
+                        var results = connection.Execute(CreateEditionQuery.GetQuery, 
+                            new{EditionId = editionId});
                         if (results != 1)
                             throw new DbFailedWrite();
                         
-                        var scrollVersionGroupId = await connection.QuerySingleAsync<int>(LastInsertId.GetQuery);
+                        toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                         
-                        // Set scroll_version_group_admin to userId
-                        results = connection.Execute(CreateScrollVersionGroupAdminQuery.GetQuery, 
+                        // Create new edition_editor
+                        results = connection.Execute(Queries.CreateEditionEditorQuery.GetQuery, 
                             new
                             {
-                                ScrollVersionGroupId = scrollVersionGroupId, 
-                                UserId = userId
+                                EditionId = toEditionId, 
+                                UserId = user.userId,
+                                MayLock = 1,
+                                IsAdmin = 1
                             });
                         if (results != 1)
                             throw new DbFailedWrite();
                         
-                        // Create new scroll_version
-                        results = connection.Execute(Queries.CreateScrollVersionQuery.GetQuery, 
-                            new
-                            {
-                                ScrollVersionGroupId = scrollVersionGroupId, 
-                                UserId = userId,
-                                MayLock = 1
-                            });
-                        if (results != 1)
-                            throw new DbFailedWrite();
-                        
-                        copyToScrollVersionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                        var toEditionEditorId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
                         // Copy all owner table references from scroll_version_group of the requested
                         // scroll_version_id to the newly created scroll_version_id (this is automated
                         // and will work even if the database schema gets updated).
-                        const string otb = OwnerTables.GetQuery;
-                        var ownerTables = await connection.QueryAsync<OwnerTables.Result>(otb);
+                        var ownerTables = await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
                         foreach (var ownerTable in ownerTables)
                         {
                             var tableName = ownerTable.TableName;
                             var tableIdColumn = tableName.Substring(0, tableName.Length-5) + "id";
                             results = connection.Execute(
-                                CopyScrollVersionDataForTableQuery.GetQuery(tableName, tableIdColumn),
+                                CopyEditionDataForTableQuery.GetQuery(tableName, tableIdColumn),
                                 new
                                 {
-                                    ScrollVersionId = scrollVersionId,
-                                    CopyToScrollVersionId = copyToScrollVersionId
+                                    EditionId = editionId,
+                                    EditionEditorId = toEditionEditorId,
+                                    CopyToEditionId = toEditionId
                                 });
                         }
                     }
@@ -305,7 +291,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     connection.Close();
                 }
             }
-            return copyToScrollVersionId;
+            return toEditionId;
         }
 
         /*

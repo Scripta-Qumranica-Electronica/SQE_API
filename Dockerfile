@@ -4,10 +4,17 @@ EXPOSE 80
 
 FROM microsoft/dotnet:2.2-sdk AS build
 WORKDIR /src
-COPY ["sqe-http-api/sqe-http-api.csproj", "sqe-http-api/"]
+
+COPY ./sqe-http-api/sqe-http-api.csproj ./sqe-http-api/
+COPY ./data-access/data-access.csproj ./data-access/
+
 RUN dotnet restore "sqe-http-api/sqe-http-api.csproj"
-COPY . .
-WORKDIR "/src/sqe-http-api"
+
+WORKDIR /src/sqe-http-api
+
+COPY ./sqe-http-api /src/sqe-http-api
+COPY ./data-access /src/data-access
+
 RUN dotnet build "sqe-http-api.csproj" -c Release -o /app
 
 FROM build AS publish

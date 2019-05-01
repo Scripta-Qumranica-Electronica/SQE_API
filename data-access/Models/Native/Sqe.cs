@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using SQE.Backend.DataAccess.Helpers;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 
 // Bronson - add an explanation how this file was generated (which utility, what command line options)
 
-namespace SQE.Backend.DataAccess.Models.Native
+namespace SQE.SqeHttpApi.DataAccess.Models.Native
 {
     public class SQENative
     {
@@ -1986,20 +1986,20 @@ namespace SQE.Backend.DataAccess.Models.Native
             }
         }
 
-        public class ScrollVersion : NonEditableTableTemplate
+        public class Edition : NonEditableTableTemplate
         {
             public uint? ScrollVersionId { get; set; }
             public ushort? UserId { get; set; }
-            public uint? ScrollVersionGroupId { get; set; }
+            public uint? EditionId { get; set; }
             public bool? MayWrite { get; set; }
             public bool? MayLock { get; set; }
 
-            public ScrollVersion ( uint? scroll_version_id, ushort? user_id, uint? scroll_version_group_id, bool? may_write, bool? may_lock )
+            public Edition ( uint? scroll_version_id, ushort? user_id, uint? edition_id, bool? may_write, bool? may_lock )
             {
                 TableName = "scroll_version";
                 ScrollVersionId = scroll_version_id;
                 UserId = user_id;
-                ScrollVersionGroupId = scroll_version_group_id;
+                EditionId = edition_id;
                 MayWrite = may_write;
                 MayLock = may_lock;
             }
@@ -2009,7 +2009,7 @@ namespace SQE.Backend.DataAccess.Models.Native
                 ListDictionary dict = new ListDictionary {
                     {"scroll_version_id", ScrollVersionId},
                     {"user_id", UserId},
-                    {"scroll_version_group_id", ScrollVersionGroupId},
+                    {"edition_id", EditionId},
                     {"may_write", MayWrite},
                     {"may_lock", MayLock},
                 };
@@ -2019,14 +2019,14 @@ namespace SQE.Backend.DataAccess.Models.Native
 
         public class ScrollVersionGroup : NonEditableTableTemplate
         {
-            public uint? ScrollVersionGroupId { get; set; }
+            public uint? EditionId { get; set; }
             public uint? ScrollId { get; set; }
             public bool? Locked { get; set; }
 
-            public ScrollVersionGroup ( uint? scroll_version_group_id, uint? scroll_id, bool? locked )
+            public ScrollVersionGroup ( uint? edition_id, uint? scroll_id, bool? locked )
             {
                 TableName = "scroll_version_group";
-                ScrollVersionGroupId = scroll_version_group_id;
+                EditionId = edition_id;
                 ScrollId = scroll_id;
                 Locked = locked;
             }
@@ -2034,7 +2034,7 @@ namespace SQE.Backend.DataAccess.Models.Native
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-                    {"scroll_version_group_id", ScrollVersionGroupId},
+                    {"edition_id", EditionId},
                     {"scroll_id", ScrollId},
                     {"locked", Locked},
                 };
@@ -2044,20 +2044,20 @@ namespace SQE.Backend.DataAccess.Models.Native
 
         public class ScrollVersionGroupAdmin : NonEditableTableTemplate
         {
-            public uint? ScrollVersionGroupId { get; set; }
+            public uint? EditionId { get; set; }
             public ushort? UserId { get; set; }
 
-            public ScrollVersionGroupAdmin ( uint? scroll_version_group_id, ushort? user_id )
+            public ScrollVersionGroupAdmin ( uint? edition_id, ushort? user_id )
             {
                 TableName = "scroll_version_group_admin";
-                ScrollVersionGroupId = scroll_version_group_id;
+                EditionId = edition_id;
                 UserId = user_id;
             }
 
             public override ListDictionary ColumsAndValues()
             {
                 ListDictionary dict = new ListDictionary {
-                    {"scroll_version_group_id", ScrollVersionGroupId},
+                    {"edition_id", EditionId},
                     {"user_id", UserId},
                 };
                 return dict;
