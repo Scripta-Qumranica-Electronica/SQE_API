@@ -1,15 +1,18 @@
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 
 namespace SQE.SqeHttpApi.Server.Services
 {
     public interface ITextRetrievingService
     {
-        Task<Scroll> GetLineById(uint lineId, uint editionId);
-        Task<Scroll> GetFragmentById(uint fragmentId, uint editionId);
+        Task<Scroll> GetLineById(uint lineId, uint editionId, bool withLicence, bool verbose);
+        Task<Scroll> GetFragmentById(uint fragmentId, uint editionId, bool withLicence, bool verbose);
         Task<uint[]> GetLineIds(uint fragmentId, uint editionId);
         Task<uint[]> GetFragmentIds(uint editionId);
     }
@@ -25,17 +28,20 @@ namespace SQE.SqeHttpApi.Server.Services
 
             
             
-             public async Task<Scroll> GetLineById(uint lineId, uint editionId)
+             public async Task<Scroll> GetLineById(uint lineId, uint editionId,
+                 bool withLicence=false, bool verbose=true)
             {
-                var scroll = await _repo.GetLineById(lineId, editionId);
+                var scroll = await _repo.GetLineById(lineId, editionId, verbose);
                 if (scroll.scrollId==0) throw new LineNotFoundException(lineId, editionId);
-                return scroll;
+                if (withLicence) scroll.addLicence();
+                return  scroll ;
             }
 
-            public async Task<Scroll> GetFragmentById(uint fragmentId, uint editionId)
+            public async Task<Scroll> GetFragmentById(uint fragmentId, uint editionId, bool withLicence, bool verbose)
             {
-                var scroll = await _repo.GetFragmentById(fragmentId, editionId);
+                var scroll = await _repo.GetFragmentById(fragmentId, editionId, verbose);
                 if (scroll.scrollId==0) throw new FragmentNotFoundException(fragmentId, editionId);
+                if (withLicence) scroll.addLicence();
                 return scroll;
             }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -28,13 +29,17 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// </summary>
         /// <param name="lineId">Id of the line</param>
         /// <param name="editionId">Id of the edition</param>
+        /// <param name="withLicence">Optional (default: false); if true, then a licence text is added to the output</param>
+        /// <param name="verbose">Optional (default: true): if true all data are included, if false the attribute 1
+        /// (designing a letter simply as a letter) is skipped."</param>
         /// <returns>A scroll object with includes the fragments and their lines
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("line")]
-        public async Task<ActionResult<Scroll>> RetrieveTextOfLineById(uint lineId, uint editionId)
+        public async Task<ActionResult<Scroll>> RetrieveTextOfLineById(uint lineId, uint editionId ,
+            bool withLicence=false, bool verbose=true)
         {
-            var scroll = await _service.GetLineById( lineId, editionId);
+            var scroll = await _service.GetLineById( lineId, editionId, withLicence, verbose);
             return scroll;
         }
    
@@ -47,9 +52,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("fragment")]
-        public async Task<ActionResult<Scroll>> RetrieveTextOfFragmentById(uint fragmentId, uint editionId)
+        public async Task<ActionResult<Scroll>> RetrieveTextOfFragmentById(uint fragmentId, uint editionId,
+            bool withLicence=false, bool verbose=true)
         {
-            var scroll = await _service.GetFragmentById(fragmentId, editionId);
+            var scroll = await _service.GetFragmentById(fragmentId, editionId, withLicence,verbose);
             return scroll;
         }
   
