@@ -12,14 +12,14 @@ namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IUserRepository
     {
-        Task<User> GetUserByPassword(string userName, string password);
-        Task<UserEditionPermissions> GetUserEditionPermissions(uint userId, uint editionId);
+        Task<User> GetUserByPasswordAsync(string userName, string password);
+        Task<UserEditionPermissions> GetUserEditionPermissionsAsync(uint userId, uint editionId);
     }
     public class UserRepository: DbConnectionBase , IUserRepository
     {
         public UserRepository(IConfiguration config): base(config) { }
 
-        public async Task<User> GetUserByPassword(string userName, string password)
+        public async Task<User> GetUserByPasswordAsync(string userName, string password)
         {
             var sql = @"SELECT user_name, user_id FROM user WHERE user_name =@UserName AND pw = SHA2(@Password, 224)";
             using (var connection = OpenConnection())
@@ -35,7 +35,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
         
-        public async Task<UserEditionPermissions> GetUserEditionPermissions(uint userId, uint editionId)
+        public async Task<UserEditionPermissions> GetUserEditionPermissionsAsync(uint userId, uint editionId)
         {
             using (var connection = OpenConnection())
             {

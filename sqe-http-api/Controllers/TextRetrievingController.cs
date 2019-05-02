@@ -26,8 +26,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Retrieves all signs and their data from the given line
         /// </summary>
-        /// <param name="lineId">Id of the line</param>
-        /// <param name="editionId">Id of the edition</param>
+        /// <param Name="lineId">Id of the line</param>
+        /// <param Name="editionId">Id of the edition</param>
         /// <returns>A scroll object with includes the fragments and their lines
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
@@ -41,8 +41,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Retrieves all signs and their data from the given fragment
         /// </summary>
-        /// <param name="fragmentId">Id of the fragment</param>
-        /// <param name="editionId">Id of the edition</param>
+        /// <param Name="fragmentId">Id of the fragment</param>
+        /// <param Name="editionId">Id of the edition</param>
         /// <returns>A scroll object with includes the fragment and its lines
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
@@ -57,7 +57,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Retrieves the ids of all fragments in the given edition of a scroll
         /// </summary>
-        /// <param name="editionId">Id of the edition</param>
+        /// <param Name="editionId">Id of the edition</param>
         /// <returns>An array of the ids in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("fragmentIds")]
@@ -70,8 +70,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Retrieves the ids of all lines in the given fragment
         /// </summary>
-        /// <param name="fragmentId">Id of the fragment</param>
-        /// <param name="editionId">Id of the edition</param>
+        /// <param Name="fragmentId">Id of the fragment</param>
+        /// <param Name="editionId">Id of the edition</param>
         /// <returns>An array of the ids in the right sequence</returns>
         [AllowAnonymous]
         [HttpGet("lineIds")]

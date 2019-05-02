@@ -28,7 +28,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Provides a JWT bearer token for valid username and password
         /// </summary>
-        /// <param name="userParam">JSON object with a username and password parameter</param>
+        /// <param Name="userParam">JSON object with a username and password parameter</param>
         [AllowAnonymous]
         [HttpPost("login")] // api/v1/user/login
         public async Task<ActionResult<UserWithTokenDTO>> AuthenticateAsync([FromBody]LoginRequestDTO userParam)

@@ -44,11 +44,11 @@ namespace backend.Controllers
         /// <summary>
         /// Provides detailed information about a specific imaged object reference
         /// </summary>
-        /// <param name="imageReferenceId"></param>
+        /// <param Name="imageReferenceId"></param>
         /// <returns></returns>
         [AllowAnonymous]
         [HttpGet("imaged-object/{imageReferenceId}")]
-        public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfScroll(uint imageReferenceId)
+        public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfScroll([FromRoute] uint imageReferenceId)
         {
             var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {imageReferenceId }));
             return Ok(images);
@@ -66,34 +66,26 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// Provides a listing of imaged objects related to the specified edition
-        /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
-        [AllowAnonymous]
-        [HttpGet("edition/{editionId}/imaged-object/list")]
-        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjects(uint editionId)
-        {
-            try
-            {
-                return Ok(await _imagedObjectService.GetImagedObjects(_userService.GetCurrentUserId(), editionId));
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-        }
-        
-        /// <summary>
         /// Provides a listing of imaged objects related to the specified edition, including artefacts.
         /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param Name="artefacts">Set this to true to receive artefact data</param>
+        /// <param Name="withMask">Set this to true to receive the mask polygon data</param>
         [AllowAnonymous]
-        [HttpGet("edition/{editionId}/imaged-object/list/with-artefacts")]
-        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts(uint editionId)
+        [HttpGet("edition/{editionId}/imaged-object/list")]
+        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] string artefacts = "false", [FromQuery] string withMask = "false")
         {
             try
             {
-                return Ok(await _imagedObjectService.GetImagedObjectsWithArtefacts(_userService.GetCurrentUserId(), editionId));
+                return Ok( 
+                    artefacts.Equals("true", StringComparison.InvariantCultureIgnoreCase)
+                        ? await _imagedObjectService.GetImagedObjectsWithArtefactsAsync(
+                            _userService.GetCurrentUserId(), 
+                            editionId, 
+                            withMask.Equals("true", StringComparison.InvariantCultureIgnoreCase)
+                        )
+                        : await _imagedObjectService.GetImagedObjectsAsync(_userService.GetCurrentUserId(), editionId)
+                );
             }
             catch (NotFoundException)
             {
@@ -104,15 +96,15 @@ namespace backend.Controllers
         /// <summary>
         /// Provides a listing of imaged objects related to the specified edition
         /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
-        /// <param name="imagedObjectId">Unique id of the desired object from the imaging institution</param>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param Name="imagedObjectId">Unique Id of the desired object from the imaging institution</param>
         [AllowAnonymous]
         [HttpGet("edition/{editionId}/imaged-object/{imagedObjectId}")]
-        public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject(uint editionId, string imagedObjectId)
+        public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId)
         {
             try
             {
-                return Ok(await _imagedObjectService.GetImagedObject(_userService.GetCurrentUserId(), editionId, imagedObjectId));
+                return Ok(await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId));
             }
             catch (NotFoundException)
             {

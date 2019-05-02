@@ -7,14 +7,14 @@ namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class ArtefactDTO
     {
-        public uint id { get; set; }
-        public uint editionId { get; set; }
-        public string imageFragmentId {get; set;}
-        public string name { get; set; }
-        public PolygonDTO mask { get; set; }
-        public string transformMatrix { get; set; }
+        public uint Id { get; set; }
+        public uint EditionId { get; set; }
+        public string ImagedObjectId {get; set;}
+        public string Name { get; set; }
+        public PolygonDTO Mask { get; set; }
+        public string TransformMatrix { get; set; }
         public uint zOrder { get; set; }
-        public artSide side { get; set; }
+        public artSide Side { get; set; }
 
         public enum artSide { recto, verso}
     }
@@ -28,6 +28,11 @@ namespace SQE.SqeHttpApi.Server.DTOs
     }
 
     public class ArtefactListDTO
+    {
+        public List<ArtefactDTO> result { get; set; }
+    }
+    
+    public class ArtefactDesignationListDTO
     {
         public List<ArtefactDesignationDTO> result { get; set; }
     }

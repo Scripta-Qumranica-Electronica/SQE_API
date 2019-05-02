@@ -27,14 +27,44 @@ namespace backend.Controllers
         /// <summary>
         /// Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param Name="images">Defines whether image references should be included in the response</param>
         [AllowAnonymous]
         [HttpGet("edition/{editionId}/artefact/list")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(uint editionId)
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] string images = "false")
         {
             try
             {
-                return Ok(await _artefactService.GetEditionArtefactListings(_userService.GetCurrentUserId(), editionId));
+                return images.Equals("true", StringComparison.InvariantCultureIgnoreCase) 
+                    ? Ok(await _artefactService.GetEditionArtefactListingsWithImagesAsync(_userService.GetCurrentUserId(), editionId)) 
+                    : Ok(await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+        
+        /// <summary>
+        /// Updates the specified artefact
+        /// </summary>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
+        [HttpPut("edition/{editionId}/artefact/{artefactId}")]
+        public async Task<ActionResult<ArtefactListDTO>> UpdateArtefact(
+            [FromRoute] uint editionId, 
+            [FromRoute] uint artefactId, 
+            [FromBody] UpdateArtefactDTO payload
+            )
+        {
+            try
+            {
+                return Ok(await _artefactService.UpdateArtefact(
+                    _userService.GetCurrentUserObject(), 
+                    editionId, 
+                    artefactId, 
+                    payload.mask, 
+                    payload.name, 
+                    payload.position));
             }
             catch (NotFoundException)
             {
@@ -46,19 +76,47 @@ namespace backend.Controllers
         /// Provides a listing of all artefacts that are part of the specified edition, including data about
         /// the related images
         /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
-        [AllowAnonymous]
-        [HttpGet("edition/{editionId}/artefact/list/with-image-refs")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefactsWithImageRefs(uint editionId)
+        /// <param Name="editionId">Unique Id of the desired edition</param>
+        [HttpPost("edition/{editionId}/artefact")]
+        public async Task<ActionResult<ArtefactListDTO>> CreateArtefact(
+            [FromRoute] uint editionId, 
+            [FromRoute] uint artefactId, 
+            [FromBody] CreateArtefactDTO payload
+        )
         {
             try
             {
-                return Ok(await _artefactService.GetEditionArtefactListingsWithImages(_userService.GetCurrentUserId(), editionId));
+                return Ok(await _artefactService.CreateArtefact(
+                    _userService.GetCurrentUserObject(), 
+                    editionId, 
+                    payload.masterImageId, 
+                    payload.mask, 
+                    payload.name, 
+                    payload.position));
             }
             catch (NotFoundException)
             {
                 return NotFound();
             }
+        }
+
+        public class UpdateArtefactMask
+        {
+            public string mask { get; set; }
+        }
+
+        public class UpdateArtefactDTO
+        {
+            public string mask { get; set; }
+            public string name { get; set; }
+            public string position { get; set; }
+        }
+        public class CreateArtefactDTO
+        {
+            public uint masterImageId { get; set; }
+            public string mask { get; set; }
+            public string name { get; set; }
+            public string position { get; set; }
         }
     }
 }

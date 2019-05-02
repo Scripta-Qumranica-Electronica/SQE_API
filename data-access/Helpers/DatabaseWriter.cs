@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Data;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Dapper;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.DataAccess.Queries;
+using Wkx;
 
 namespace SQE.SqeHttpApi.DataAccess.Helpers
 {
@@ -20,6 +22,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         Update,
         Delete
     }
+    
     /// <summary>
     /// This is an object containing all the necessary data for a single mutation in the database.
     /// </summary>
@@ -28,7 +31,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         public MutateType Action { get; }
         public List<string> ColumnNames { get; } // Itay, we still need this, since we add more to the SQL parameters than
                                              // just the column names after this mutation request is created (e.g.
-                                             // @ScrollVersionId and maybe @OwnedTableId).  But now this is computed
+                                             // @EditionId and maybe @OwnedTableId).  But now this is computed
                                              // automatically from the Parameters in the constructor. So we no longer
                                              // need any safety checks in the constructor.
         public DynamicParameters Parameters { get; }
@@ -45,7 +48,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// For Delete actions this should be empty.</param>
         /// <param name="tableName">Name of the table you are altering.</param>
         /// <param name="tablePkId">Id of the record being updated or deleted.  This will be null with an Insert action.</param>
-        public MutationRequest(MutateType action, DynamicParameters parameters, string tableName, uint? tablePkId)
+        public MutationRequest(MutateType action, DynamicParameters parameters, string tableName, uint? tablePkId = null)
         {
             Action = action;
             Parameters = parameters;
@@ -69,6 +72,23 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
                 Parameters.Add("@OwnedTableId", tablePkId.Value);
             }
         }
+    }
+    
+    // This is used to know if we need to wrap the insert parameter in ST_GeomFromText()
+    // I don't love this.  Perhaps we can directly insert the binary blob, or maybe we can find
+    // a less computationally expensive way to do this.
+    public static class GeometryColumns
+    {
+        public static readonly List<string> columns = new List<string>()
+        {
+            "region_in_sqe_imageartefact_shape", 
+            "artefact_B_offsetartefact_stack",
+            "pathartefact_stack",
+            "region_on_image1image_to_image_map",
+            "point_on_image1point_to_point_map",
+            "point_on_image2point_to_point_map",
+            "pathroi_shape"
+        };
     }
 
     /// <summary>
@@ -279,8 +299,12 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
             query = query.Replace(
                 "$Values", 
-                string.Join(",", mutationRequest.ColumnNames.Select(x => "@" + x))
-                );
+                string.Join(",", mutationRequest.ColumnNames.Select(
+                    x => GeometryColumns.columns.IndexOf(x + mutationRequest.TableName) > -1 
+                        ? $"ST_GeomFromText(@{x})" 
+                        :  "@" + x)
+                )
+            );
             
             // Execute query
             var alteredRecords = await connection.ExecuteAsync(query, mutationRequest.Parameters);
@@ -293,8 +317,12 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
                 query = query.Replace("$TableName", mutationRequest.TableName);
                 query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
                 query = query.Replace(
-                    "$Values",
-                    string.Join(",", mutationRequest.ColumnNames.Select(x => "@" + x))
+                    "$Values", 
+                    string.Join(",", mutationRequest.ColumnNames.Select(
+                        x => GeometryColumns.columns.IndexOf(x + mutationRequest.TableName) > -1 
+                            ? $"ST_GeomFromText(@{x})" 
+                            :  "@" + x)
+                    )
                 );
                 query = query.Replace("$PrimaryKeyName", mutationRequest.TableName + "_id");
                 insertId = await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);

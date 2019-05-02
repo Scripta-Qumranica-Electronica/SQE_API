@@ -102,7 +102,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
             var completed = false;
             if (EditionId().HasValue && userId.HasValue)
             {
-                var permissions = await _userRepo.GetUserEditionPermissions(userId.Value, EditionId().Value);
+                var permissions = await _userRepo.GetUserEditionPermissionsAsync(userId.Value, EditionId().Value);
                 _mayWrite = permissions.may_write;
                 _mayLock = permissions.may_lock;
                 _isAdmin = permissions.is_admin;

@@ -44,7 +44,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class ScrollUpdateRequestDTO
     {
-        // Currently only the name can be updated
+        // Currently only the Name can be updated
         public string name { get; set; }
     }
 }

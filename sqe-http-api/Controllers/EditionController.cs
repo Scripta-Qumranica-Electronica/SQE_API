@@ -43,10 +43,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Provides details about the specified edition and all accessible alternate editions
         /// </summary>
-        /// <param name="editionId">Unique id of the desired edition</param>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
         [AllowAnonymous]
         [HttpGet("{editionId}")]
-        public async Task<ActionResult<EditionGroupDTO>> GetEdition(uint editionId)
+        public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
             var edition = await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(), false, false);
 
@@ -72,11 +72,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Updates data for the specified edition
         /// </summary>
-        /// <param name="request">JSON object with the attributes to be updated</param>
-        /// <param name="editionId">Unique id of the desired edition</param>
+        /// <param Name="request">JSON object with the attributes to be updated</param>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
         /// <exception cref="NullReferenceException"></exception>
         [HttpPut("{editionId}")]
-        public async Task<ActionResult<EditionDTO>> UpdateEdition([FromBody] ScrollUpdateRequestDTO request, uint editionId)
+        public async Task<ActionResult<EditionDTO>> UpdateEdition([FromBody] ScrollUpdateRequestDTO request, [FromRoute] uint editionId)
         {
             try
             {
@@ -85,8 +85,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
-                var edition = await _editionService.UpdateEdition(editionId, request.name, user);
-                //await _broadcastService.Broadcast(editionId, JsonConvert.SerializeObject(edition));
+                var edition = await _editionService.UpdateEditionAsync(editionId, request.name, user);
+                //await _broadcastService.Broadcast(EditionId, JsonConvert.SerializeObject(edition));
                 return Ok(edition);
             }
             catch (NotFoundException)
@@ -102,11 +102,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Creates a copy of the specified edition
         /// </summary>
-        /// <param name="request">JSON object with the attributes to be changed in the copied edition</param>
-        /// <param name="editionId">Unique id of the desired edition</param>
+        /// <param Name="request">JSON object with the attributes to be changed in the copied edition</param>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
         /// <exception cref="NullReferenceException"></exception>
         [HttpPost("{editionId}")]
-        public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] ScrollUpdateRequestDTO request, uint editionId)
+        public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] ScrollUpdateRequestDTO request, [FromRoute] uint editionId)
         {
             try
             {
@@ -115,7 +115,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
-                var edition = await _editionService.CopyEdition(editionId, request.name, user);
+                var edition = await _editionService.CopyEditionAsync(editionId, request.name, user);
                 return Ok(edition);
             }
             catch (NotFoundException)

@@ -13,10 +13,10 @@ namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IEditionRepository
     {
-        Task<IEnumerable<Edition>> ListEditions(uint? userId, uint? editionId);
-        Task<Dictionary<uint, List<uint>>> GetEditions(uint? editionId, uint? userId);
-        Task ChangeEditionName(uint editionId, string name, UserInfo user);
-        Task<uint> CopyEdition(uint editionId, UserInfo user);
+        Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
+        Task<Dictionary<uint, List<uint>>> GetEditionsAsync(uint? editionId, uint? userId);
+        Task ChangeEditionNameAsync(uint editionId, string name, UserInfo user);
+        Task<uint> CopyEditionAsync(uint editionId, UserInfo user);
         //Task<List<string>> GetOwnerTables();
         // Task<bool> UpdateOwnerTables(uint olvd, uint svid);
         //Task<int> UpdateAction(uint scrollDataId, uint oldScrollDataId, uint editionId);
@@ -32,7 +32,7 @@ namespace SQE.SqeHttpApi.DataAccess
             _databaseWriter = databaseWriter;
         }
 
-        public async Task<IEnumerable<Edition>> ListEditions(uint? userId, uint? editionId) //
+        public async Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId) //
         {
             using (var connection = OpenConnection())
             {
@@ -88,7 +88,7 @@ namespace SQE.SqeHttpApi.DataAccess
         }
 
         // TODO do we even need this?
-        public async Task<Dictionary<uint, List<uint>>> GetEditions(uint? editionId, uint? userId)
+        public async Task<Dictionary<uint, List<uint>>> GetEditionsAsync(uint? editionId, uint? userId)
         {
             var sql = ScrollVersionGroupQuery.GetQuery(editionId.HasValue, userId.HasValue);
 
@@ -112,7 +112,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        public async Task ChangeEditionName(uint editionId, string name, UserInfo user)
+        public async Task ChangeEditionNameAsync(uint editionId, string name, UserInfo user)
         {
             using (var connection = OpenConnection())
             {
@@ -218,7 +218,7 @@ namespace SQE.SqeHttpApi.DataAccess
 //            }
 //        }
 
-        public async Task<uint> CopyEdition(uint editionId, UserInfo user)
+        public async Task<uint> CopyEditionAsync(uint editionId, UserInfo user)
         {
             uint toEditionId;
             

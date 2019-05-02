@@ -45,7 +45,7 @@ namespace SQE.SqeHttpApi.Server.Services
 
         public async Task<UserWithTokenDTO> AuthenticateAsync(string username, string password)
         {
-            var result = await _repo.GetUserByPassword(username, password);
+            var result = await _repo.GetUserByPasswordAsync(username, password);
 
             if (result == null)
                 return null;
@@ -85,17 +85,13 @@ namespace SQE.SqeHttpApi.Server.Services
             var currentUserName = _accessor.HttpContext.User.Identity.Name;
             var currentUserId = GetCurrentUserId();
 
-            if (currentUserName != null && currentUserId.HasValue)
-            {
-                var user = new UserDTO
+           return (currentUserName == null || !currentUserId.HasValue) ?
+                null :
+                new UserDTO
                 {
                     userName = currentUserName,
                     userId = currentUserId.Value,
                 };
-
-                return user;
-            }
-            return null;
         }
 
         public uint? GetCurrentUserId()
@@ -104,10 +100,10 @@ namespace SQE.SqeHttpApi.Server.Services
             var claims = identity.Claims;
             foreach (var claim in claims)
             {
-                var splitted = claim.Type.Split("/");
-                if (splitted[splitted.Length - 1] == "nameidentifier")
+                var split = claim.Type.Split("/");
+                if (split[split.Length - 1] == "nameidentifier")
                 {
-                    return UInt32.Parse(claim.Value);
+                    return uint.Parse(claim.Value);
                 }
             }
             return null;
@@ -145,6 +141,4 @@ namespace SQE.SqeHttpApi.Server.Services
             };
         }
     }
-    
-    
 }

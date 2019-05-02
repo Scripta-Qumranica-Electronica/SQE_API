@@ -13,14 +13,14 @@ namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IImagedObjectRepository
     {
-        Task<IEnumerable<ImagedObject>> GetImagedObjects(uint? userId, uint editionId, string imagedObjectId);
+        Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(uint? userId, uint editionId, string imagedObjectId);
     }
 
     public class ImagedObjectRepository : DbConnectionBase, IImagedObjectRepository
     {
         public ImagedObjectRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<ImagedObject>> GetImagedObjects(uint? userId, uint editionId, string imagedObjectId)
+        public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(uint? userId, uint editionId, string imagedObjectId)
         {
             var fragment = ImagedObject.FromId(imagedObjectId);
             var sql = ImagedFragemntQueries.GetFragmentsQuery(imagedObjectId!=null);

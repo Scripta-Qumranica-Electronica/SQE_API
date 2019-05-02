@@ -10,16 +10,16 @@ namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IImageRepository
     {
-        Task<IEnumerable<Image>> GetImages(uint? userId, uint editionId, string imagedObjectId);
-        Task<IEnumerable<ImageGroup>> ListImages(uint? userId, List<uint> scrollVersionIds);
-        Task<IEnumerable<ImageInstitution>> ListImageInstitutions();
+        Task<IEnumerable<Image>> GetImagesAsync(uint? userId, uint editionId, string imagedObjectId);
+        Task<IEnumerable<ImageGroup>> ListImagesAsync(uint? userId, List<uint> scrollVersionIds);
+        Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync();
     }
 
     public class ImageRepository : DbConnectionBase, IImageRepository
     {
         public ImageRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<Image>> GetImages(uint? userId, uint editionId, string imagedObjectId)
+        public async Task<IEnumerable<Image>> GetImagesAsync(uint? userId, uint editionId, string imagedObjectId)
         {
             var imagedObject = ImagedObject.FromId(imagedObjectId);
 
@@ -79,7 +79,7 @@ namespace SQE.SqeHttpApi.DataAccess
             return str;
         }
 
-        public async Task<IEnumerable<ImageGroup>> ListImages(uint? userId, List<uint> scrollVersionIds) //
+        public async Task<IEnumerable<ImageGroup>> ListImagesAsync(uint? userId, List<uint> scrollVersionIds) //
         {
             string sql;
             if (userId.HasValue)
@@ -123,7 +123,7 @@ namespace SQE.SqeHttpApi.DataAccess
             return model;
         }
 
-        public async Task<IEnumerable<ImageInstitution>> ListImageInstitutions()
+        public async Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync()
         {
             var sql = ImageInstitutionQuery.GetQuery();
 
