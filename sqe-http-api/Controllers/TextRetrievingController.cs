@@ -11,7 +11,7 @@ using SQE.SqeHttpApi.Server.Services;
 namespace SQE.SqeHttpApi.Server.Controllers
 {
     [Authorize]
-    [Route("va/[controller]")]
+    [Route("v1/[controller]")]
     [ApiController]
     public class TextRetrievingController : ControllerBase
     {
