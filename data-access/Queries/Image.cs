@@ -10,6 +10,22 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
 SELECT image_urls.url AS url,
 image_urls.proxy AS proxy,
 image_catalog.image_catalog_id,
+<<<<<<< HEAD
+SQE_image.type as img_type,
+image_catalog.catalog_side as side,
+SQE_image.filename as filename,
+SQE_image.is_master as master,
+SQE_image.wavelength_start as wave_start,
+SQE_image.wavelength_end as wave_end,
+SQE_image.filename as fileName,
+image_catalog.institution as institution,
+image_catalog.catalog_number_1 as catalog_1,
+image_catalog.catalog_number_2 as catalog_2
+from edition_catalog
+join scroll_version_group using(scroll_id)
+join scroll_version using (scroll_version_group_id)
+join image_to_edition_catalog using (edition_catalog_id)
+=======
 SQE_image.type AS img_type,
 image_catalog.catalog_side AS side,
 SQE_image.filename AS filename,
@@ -23,6 +39,7 @@ FROM iaa_edition_catalog
 JOIN edition USING(scroll_id)
 JOIN edition_editor USING(edition_id)
 JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
+>>>>>>> 6cc19a4187d1bfe5c70efc913e4adf5b324c1a4e
 JOIN image_catalog USING(image_catalog_id)
 JOIN SQE_image USING(image_catalog_id)
 JOIN image_urls USING(image_urls_id)
@@ -47,7 +64,7 @@ AND iaa_edition_catalog.edition_side =0
             public string proxy { get; set; }
             public string filename { get; set; }
             public uint image_catalog_id { get; set; }
-            public byte img_type { get; set; }
+            public byte type { get; set; }
             public byte side { get; set; }
             public bool master { get; set; }
             public ushort wave_start { get; set; }
@@ -56,6 +73,7 @@ AND iaa_edition_catalog.edition_side =0
             public string institution { get; set; }
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
+            public string fileName { get; set; }
         }
     }
 

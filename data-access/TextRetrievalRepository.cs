@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -11,8 +12,8 @@ namespace SQE.SqeHttpApi.DataAccess
 
     public interface ITextRetrievalRepository
     {
-        Task<Scroll> GetLineById( uint lineId, uint editionId);
-        Task<Scroll> GetFragmentById( uint fragmentId, uint editionId);
+        Task<Scroll> GetLineById( uint lineId, uint editionId, bool verbose);
+        Task<Scroll> GetFragmentById( uint fragmentId, uint editionId, bool verbose);
         Task<uint[]> GetLineIds(uint fragmentId, uint editionId);
         Task<uint[]> GetFragmentIds(uint editionId);
     }
@@ -21,7 +22,7 @@ namespace SQE.SqeHttpApi.DataAccess
     {
         public TextRetrievalRepository(IConfiguration config) : base(config) { }
 
-        public async Task<Scroll> GetLineById( uint lineId, uint editionId)
+        public async Task<Scroll> GetLineById( uint lineId, uint editionId, bool verbose)
         {
             var terminators = _getTerminators(
                 TextRetrieval.GetLineTerminatorsQuery,
@@ -30,11 +31,11 @@ namespace SQE.SqeHttpApi.DataAccess
 
             if (terminators.Length!=2) return new Scroll();
 
-            return await _getEntityById(terminators[0], terminators[1], editionId);
+            return await _getEntityById(terminators[0], terminators[1], editionId, verbose);
             
         }
         
-        public async Task<Scroll> GetFragmentById(uint fragmentId, uint editionId)
+        public async Task<Scroll> GetFragmentById(uint fragmentId, uint editionId, bool verbose)
         {
             var terminators = _getTerminators(
                 TextRetrieval.GetFragmentTerminatorsQuery,
@@ -43,7 +44,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
             if (terminators.Length!=2) return new Scroll();
 
-           return await _getEntityById(terminators[0], terminators[1], editionId);
+           return await _getEntityById(terminators[0], terminators[1], editionId, verbose);
             
         }
 
@@ -90,7 +91,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
         }
         
-        private async Task<Scroll> _getEntityById(uint startId, uint endId, uint editionId)
+        private async Task<Scroll> _getEntityById(uint startId, uint endId, uint editionId, bool verbose)
         {
             Scroll lastScroll = null;
             Fragment lastFragment = null;
@@ -98,6 +99,8 @@ namespace SQE.SqeHttpApi.DataAccess
             Sign lastSign = null;
             SignChar lastChar = null;
             CharAttribute lastCharAttribute = null;
+
+            ;
             
             
             using (var connection = OpenConnection())
@@ -144,7 +147,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         }
 
                         lastCharAttribute = charAttribute;
-                        lastChar.attributes.Add(charAttribute);
+                        if (verbose || charAttribute.attributeValueId!=1) lastChar.attributes.Add(charAttribute);
 
 
                         return newScroll ? scroll : null;

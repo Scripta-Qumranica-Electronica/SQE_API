@@ -6,6 +6,30 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     internal class EditionGroupQuery
     {
+<<<<<<< HEAD
+        private static string _baseQuery = @"
+SELECT sv.scroll_version_id as id, 
+	   sd.name as name, 
+       im.thumbnail_url as thumbnail, 
+       svg.locked as locked, 
+       last.last_edit as last_edit, 
+       user_id as user_id, 
+       user_name as user_name 
+FROM scroll_version AS sv
+JOIN scroll_version_group svg USING (scroll_version_group_id)
+JOIN scroll_data_owner sdw USING(scroll_version_id)
+JOIN scroll_data sd USING(scroll_data_id)
+JOIN user USING(user_id)
+LEFT JOIN (SELECT scroll_version_id, MAX(time) AS last_edit FROM main_action GROUP BY time) AS last USING (scroll_version_id)
+<<<<<<< HEAD
+LEFT JOIN (SELECT ec.scroll_id as scroll_id, MIN(CONCAT(proxy, url, SQE_image.filename)) as thumbnail_url 
+=======
+LEFT JOIN (SELECT ec.scroll_id as scroll_id, MIN(CONCAT(proxy, url, filename)) as thumbnail_url 
+>>>>>>> 2e4abdd34cc531700dfdb472530c3e40d4e02e11
+		   FROM edition_catalog ec
+           JOIN image_to_edition_catalog USING (edition_catalog_id)
+		   JOIN SQE_image ON SQE_image.image_catalog_id = image_to_edition_catalog.image_catalog_id AND SQE_image.type = 0 
+=======
         private const string _baseQuery = @"
 SELECT ed2.edition_id AS edition_id,
        edition_editor.is_admin AS admin,
@@ -32,6 +56,7 @@ LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_imag
 		   JOIN iaa_edition_catalog USING(scroll_id)
            JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
 		   JOIN SQE_image ON SQE_image.image_catalog_id = image_to_iaa_edition_catalog.image_catalog_id AND SQE_image.type = 0 
+>>>>>>> 6cc19a4187d1bfe5c70efc913e4adf5b324c1a4e
            JOIN image_urls USING(image_urls_id)
            WHERE iaa_edition_catalog.edition_side = 0
            GROUP BY scroll_id) AS im ON im.scroll_id = ed2.scroll_id
