@@ -44,7 +44,6 @@ namespace SQE.SqeHttpApi.Server
             services.AddScoped<IImageService, ImageService>();
             services.AddScoped<ITextRetrievingService, TextRetrievingService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddSingleton<IBroadcastService, BroadcastService>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IEditionRepository, EditionRepository>();
             services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();

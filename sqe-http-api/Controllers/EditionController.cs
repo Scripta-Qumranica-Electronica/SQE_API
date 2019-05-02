@@ -23,21 +23,18 @@ namespace SQE.SqeHttpApi.Server.Controllers
         private readonly IUserService _userService;
         private readonly IImagedObjectService _imagedObjectService;
         private readonly IArtefactService _artefactService;
-        private readonly IBroadcastService _broadcastService;
 
 
         public EditionController(
             IEditionService editionService, 
             IUserService userService, 
             IImagedObjectService imagedObjectService,
-            IArtefactService artefactService,
-            IBroadcastService broadcastService)
+            IArtefactService artefactService)
         {
             _editionService = editionService;
             _userService = userService;
             _imagedObjectService = imagedObjectService;
             _artefactService = artefactService;
-            _broadcastService = broadcastService;
         }
 
         /// <summary>
