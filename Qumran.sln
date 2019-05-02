@@ -12,6 +12,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "data-access", "data-access\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-http-api", "sqe-http-api\sqe-http-api.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{2342F74C-D461-45E2-BA99-72BD0C84F64B}"
+	ProjectSection(SolutionItems) = preProject
+		docker\Dockerfile = docker\Dockerfile
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dev", "dev", "{645057D9-6167-4A7B-AF1C-4232A2CCAEC2}"
+	ProjectSection(SolutionItems) = preProject
+		docker\dev\docker-compose.yml = docker\dev\docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{39232745-6408-429E-8726-5F5D4A44EC72}"
+	ProjectSection(SolutionItems) = preProject
+		docker\deploy\docker-compose.yml = docker\deploy\docker-compose.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +44,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2342F74C-D461-45E2-BA99-72BD0C84F64B} = {4F9B458A-4566-4386-9253-0E0CDE844376}
+		{645057D9-6167-4A7B-AF1C-4232A2CCAEC2} = {2342F74C-D461-45E2-BA99-72BD0C84F64B}
+		{39232745-6408-429E-8726-5F5D4A44EC72} = {2342F74C-D461-45E2-BA99-72BD0C84F64B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28758AAA-F471-4702-917C-C7D7D498BA0C}

@@ -1,0 +1,20 @@
+# This is a docker-compose file for developing SQE_API
+# Start it up and you get all the services 
+version: '3.7'
+
+services:
+    sqe-database:
+        image: qumranica/sqe-database:latest
+        container_name: SQE_Database
+        environment:
+            - MYSQL_ROOT_PASSWORD=none
+            - MYSQL_DATABASE=SQE_DEV
+        expose:
+            - "3306"
+        ports:
+            - "3307:3306"
+        networks:
+            - sqe_api
+
+networks:
+    sqe_api:

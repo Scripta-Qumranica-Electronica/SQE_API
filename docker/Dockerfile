@@ -1,3 +1,5 @@
+# This Dockerfile builds the HTTP container.
+# Note that you need to supply .. as the build context when building an image
 FROM microsoft/dotnet:2.2-aspnetcore-runtime AS base
 WORKDIR /app
 EXPOSE 80
