@@ -90,6 +90,10 @@ namespace SQE.SqeHttpApi.Server.Services
                 TransformMatrix = "",
             });
 
+            // Bronson: This is *really* unclear, GroupJoin is not something people usually understand.
+            // A few comments are warranted here, or even better - dropping LINQ altogether here
+            // I spent a couple of minutes reading GroupJoin's documenation, and I'm not closer to figuring out 
+            // what is being grouped.
             result.result = result.result.GroupJoin(
                 artefacts, 
                 arg => arg.id, 

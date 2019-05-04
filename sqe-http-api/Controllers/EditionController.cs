@@ -15,7 +15,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
 {
 
     [Authorize]
-    [Route("v1/edition")]
+    [Route("v1/editions")]
     [ApiController]
     public class EditionController : ControllerBase
     {
@@ -52,18 +52,18 @@ namespace SQE.SqeHttpApi.Server.Controllers
                 return NotFound();
             }
 
-            return Ok(edition);
+            return edition;
         }
 
         /// <summary>
         /// Provides a listing of all editions accessible to the current user
         /// </summary>
         [AllowAnonymous]
-        [HttpGet("list")]
+        [HttpGet("")]
         public async Task<ActionResult<EditionListDTO>> ListEditions()
         {
             var groups = await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
-            return Ok(groups);
+            return groups;
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
                 }
                 var edition = await _editionService.UpdateEditionAsync(editionId, request.name, user);
                 //await _broadcastService.Broadcast(EditionId, JsonConvert.SerializeObject(edition));
-                return Ok(edition);
+                return edition;
             }
             catch (NotFoundException)
             {

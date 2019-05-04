@@ -28,17 +28,31 @@ namespace backend.Controllers
             this._userService = userService;
             this._imageService = imageService;
         }
-        
+
+        private void ParseOptionals(List<string> optionals, out bool artefacts, out bool masks)
+        {
+            if (optionals != null)
+            {
+                artefacts = optionals.Contains("artefacts");
+                masks = artefacts && optionals.Contains("masks");
+            }
+            else
+            {
+                artefacts = masks = false;
+            }
+        }
+
         /// <summary>
         /// Provides a list of all imaged objects in the system
         /// </summary>
         /// <returns></returns>
+        // Bronson: This endpoint is not documented
         [AllowAnonymous]
-        [HttpGet("imaged-object/list")]
+        [HttpGet("imaged-objects/list")]
         public async Task<ActionResult<ImageGroupListDTO>> ListImageGroups()
         {
             var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>());
-            return Ok(images);
+            return images;
         }
 
         /// <summary>
@@ -46,23 +60,27 @@ namespace backend.Controllers
         /// </summary>
         /// <param Name="imageReferenceId"></param>
         /// <returns></returns>
+        // Bronson: This endpoint is not documented
         [AllowAnonymous]
         [HttpGet("imaged-object/{imageReferenceId}")]
         public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfScroll([FromRoute] uint imageReferenceId)
         {
             var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {imageReferenceId }));
-            return Ok(images);
+            return images;
         }
 
         /// <summary>
         /// Provides a list of all institutional image providers.
         /// </summary>
+        // Bronson: This endpoint is not documented
         [AllowAnonymous]
         [HttpGet("imaged-object/institution/list")]
         public async Task<ActionResult<ImageInstitutionListDTO>> ListImageInstitutions()
         {
             var institutions = await _imageService.GetImageInstitutionsAsync();
-            return Ok(institutions);
+
+            // Bronson: Please stop using Ok.
+            return institutions;
         }
 
         /// <summary>
@@ -72,20 +90,24 @@ namespace backend.Controllers
         /// <param Name="artefacts">Set this to true to receive artefact data</param>
         /// <param Name="withMask">Set this to true to receive the mask polygon data</param>
         [AllowAnonymous]
-        [HttpGet("edition/{editionId}/imaged-object/list")]
-        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] string artefacts = "false", [FromQuery] string withMask = "false")
+        [HttpGet("editions/{editionId}/imaged-objects")]
+        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional = null)
         {
+            bool artefacts, masks;
+            ParseOptionals(optional, out artefacts, out masks);
+
             try
             {
-                return Ok( 
-                    artefacts.Equals("true", StringComparison.InvariantCultureIgnoreCase)
-                        ? await _imagedObjectService.GetImagedObjectsWithArtefactsAsync(
-                            _userService.GetCurrentUserId(), 
-                            editionId, 
-                            withMask.Equals("true", StringComparison.InvariantCultureIgnoreCase)
-                        )
-                        : await _imagedObjectService.GetImagedObjectsAsync(_userService.GetCurrentUserId(), editionId)
-                );
+                // Bronson: We have discussed not using the Ok function, it loses all type safety.
+                // Also, the following expression is just too long and unclear, I'll break it into a normal if.
+                if(artefacts)
+                {
+                    return await _imagedObjectService.GetImagedObjectsWithArtefactsAsync(_userService.GetCurrentUserId(), editionId, masks);
+                }
+                else
+                {
+                    return await _imagedObjectService.GetImagedObjectsAsync(_userService.GetCurrentUserId(), editionId);
+                }
             }
             catch (NotFoundException)
             {
@@ -98,13 +120,18 @@ namespace backend.Controllers
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
         /// <param Name="imagedObjectId">Unique Id of the desired object from the imaging institution</param>
+        // Bronson: Add support for optionals here, as well
         [AllowAnonymous]
-        [HttpGet("edition/{editionId}/imaged-object/{imagedObjectId}")]
-        public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId)
+        [HttpGet("editions/{editionId}/imaged-object/{imagedObjectId}")]
+        public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId, [FromQuery] List<string> optional)
         {
+            bool artefacts, masks;
+            ParseOptionals(optional, out artefacts, out masks);
+
             try
             {
-                return Ok(await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId));
+                // Bronson: Add support for artefacts and masks here
+                return await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId);
             }
             catch (NotFoundException)
             {
