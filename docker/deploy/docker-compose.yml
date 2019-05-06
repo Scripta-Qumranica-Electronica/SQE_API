@@ -18,7 +18,12 @@ services:
 
     sqe-http:
         container_name: SQE_HTTP_API
-        build: ./
+        build:
+            # Since the Dockerfile is no longer at the root, reset the context two folder higher from this docker-compose.yml
+            # It would provide a more optimized build if the context folder contained only "data-access" and "sqe-http-api".
+            context: ../../
+            # Provide the relative path from the context to the Dockerfile
+            dockerfile: docker/Dockerfile
         restart: always
         ports:
             - 5000:5000
