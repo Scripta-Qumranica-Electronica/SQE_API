@@ -19,8 +19,11 @@ namespace SQE.SqeHttpApi.DataAccess
     public interface IArtefactRepository
     {
         Task<Artefact> GetArtefact(uint? userId, uint artefactId);
+
+        // Bronson: Don't return query results, create a DataModel object and return that. The query results are internal
         Task<IEnumerable<ArtefactNamesOfEditionQuery.Result>> GetEditionArtefactNameListAsync(uint? userId, uint editionId);
         Task<IEnumerable<ArtefactNamesOfEditionQuery.Result>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false);
+
         Task<List<AlteredRecord>> UpdateArtefactShape(UserInfo user, uint editionId, uint artefactId, string shape);
         Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint editionId, uint artefactId, string name);
 

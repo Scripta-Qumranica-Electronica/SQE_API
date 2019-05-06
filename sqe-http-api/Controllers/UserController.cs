@@ -31,7 +31,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param Name="userParam">JSON object with a username and password parameter</param>
         [AllowAnonymous]
         [HttpPost("login")] // api/v1/user/login
-        public async Task<ActionResult<UserWithTokenDTO>> AuthenticateAsync([FromBody]LoginRequestDTO userParam)
+        public async Task<ActionResult<LoginResponseDTO>> AuthenticateAsync([FromBody]LoginRequestDTO userParam)
         {
             var user = await _userService.AuthenticateAsync(userParam.userName, userParam.password);
             if (user == null)

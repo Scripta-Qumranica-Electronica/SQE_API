@@ -22,7 +22,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string userName { get; set; }
     }
 
-    public class UserWithTokenDTO : UserDTO
+    public class LoginResponseDTO : UserDTO
     {
         public string token { get; set; }
     }

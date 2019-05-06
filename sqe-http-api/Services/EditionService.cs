@@ -64,7 +64,7 @@ namespace SQE.SqeHttpApi.Server.Services
 
             var result = new EditionListDTO
             {
-                result = new List<List<EditionDTO>>(),
+                editions = new List<List<EditionDTO>>(),
             };
 
             foreach (var groupId in groups.Keys)
@@ -76,7 +76,7 @@ namespace SQE.SqeHttpApi.Server.Services
                         groupList.Add(EditionModelToDTO(scrollVersion));
                 }
                 if (groupList.Count > 0)
-                    result.result.Add(groupList);
+                    result.editions.Add(groupList);
             }
 
             return result;

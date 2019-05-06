@@ -73,7 +73,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param Name="editionId">Unique Id of the desired edition</param>
         /// <exception cref="NullReferenceException"></exception>
         [HttpPut("{editionId}")]
-        public async Task<ActionResult<EditionDTO>> UpdateEdition([FromBody] ScrollUpdateRequestDTO request, [FromRoute] uint editionId)
+        public async Task<ActionResult<EditionDTO>> UpdateEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param Name="editionId">Unique Id of the desired edition</param>
         /// <exception cref="NullReferenceException"></exception>
         [HttpPost("{editionId}")]
-        public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] ScrollUpdateRequestDTO request, [FromRoute] uint editionId)
+        public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
         {
             try
             {

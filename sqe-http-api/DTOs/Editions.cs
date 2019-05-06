@@ -12,7 +12,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public PermissionDTO permission { get; set; }
         public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }
-        public List<Share> shares { get; set; }
+        public List<ShareDTO> shares { get; set; }
         public bool locked { get; set; }
         public bool isPublic { get; set; }
         public DateTime? lastEdit { set; get; }
@@ -26,8 +26,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class EditionListDTO
     {
-
-        public List<List<EditionDTO>> result { get; set; }
+        public List<List<EditionDTO>> editions { get; set; }
     };
 
     public class PermissionDTO
@@ -36,13 +35,13 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public bool canAdmin { get; set; }
     }
 
-    public class Share
+    public class ShareDTO
     {
         public UserDTO user { get; set; }
         public PermissionDTO permission { get; set; }
     }
 
-    public class ScrollUpdateRequestDTO
+    public class EditionUpdateRequestDTO
     {
         // Currently only the Name can be updated
         public string name { get; set; }

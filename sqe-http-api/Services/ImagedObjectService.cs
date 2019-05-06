@@ -15,6 +15,7 @@ namespace SQE.SqeHttpApi.Server.Services
         Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId);
         Task<ImagedObjectDTO> GetImagedFragmentAsync(uint? userId, uint scrollVersionId, string fragmentId);
     }
+
     public class ImagedObjectService : IImagedObjectService
     {
         private readonly IImagedObjectRepository _repo;
@@ -73,6 +74,7 @@ namespace SQE.SqeHttpApi.Server.Services
         {
             var result = await GetImagedObjectsAsync(userId, editionId);
 
+            // Bronson: the entire Select and lambda expression should move to a static function ArtefactModelToDTO (probably in the ArtefactService)
             var artefacts = (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask)).Select(x => new ArtefactDTO()
             {
                 Id = x.artefact_id,
@@ -81,9 +83,12 @@ namespace SQE.SqeHttpApi.Server.Services
                 {
                     mask = x.mask
                 },
+
+                // Bronson - I think we added a class that does this for you, and also parses the ID back into its components for querying
                 ImagedObjectId = x.institution + "-" 
                                                 + x.catalog_number_1 
                                                 + (string.IsNullOrEmpty(x.catalog_number_2) ? "" : "-" + x.catalog_number_2),
+
                 Name = x.name,
                 Side = x.catalog_side == 0 ? ArtefactDTO.artSide.recto : ArtefactDTO.artSide.verso, 
                 zOrder = 0,
@@ -103,7 +108,7 @@ namespace SQE.SqeHttpApi.Server.Services
                     id = imagedObject.id,
                     recto = imagedObject.recto,
                     verso = imagedObject.verso,
-                    Artefacts = artefactObjects.ToList()
+                    artefacts = artefactObjects.ToList()
                 }).ToList(); 
 
             return result; 

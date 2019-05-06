@@ -20,7 +20,7 @@ namespace SQE.SqeHttpApi.Server.Services
 {
     public interface IUserService
     {
-        Task<UserWithTokenDTO> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
+        Task<LoginResponseDTO> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
         UserDTO GetCurrentUser();
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject();
@@ -43,14 +43,14 @@ namespace SQE.SqeHttpApi.Server.Services
         }
 
 
-        public async Task<UserWithTokenDTO> AuthenticateAsync(string username, string password)
+        public async Task<LoginResponseDTO> AuthenticateAsync(string username, string password)
         {
             var result = await _repo.GetUserByPasswordAsync(username, password);
 
             if (result == null)
                 return null;
 
-            var user = new UserWithTokenDTO
+            var user = new LoginResponseDTO
             {
                 userName = result.UserName,
                 userId = result.UserId,
