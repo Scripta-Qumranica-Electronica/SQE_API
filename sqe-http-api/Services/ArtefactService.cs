@@ -42,19 +42,19 @@ namespace SQE.SqeHttpApi.Server.Services
             bool withMask = false)
         {
             var listings = await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask);
-            return new ArtefactListDTO { result = listings.Select(x => new ArtefactDTO { 
-                Id = x.artefact_id,
-                EditionId = editionId,
-                ImagedObjectId = x.institution + "-" + x.catalog_number_1 
+            return new ArtefactListDTO { artefacts = listings.Select(x => new ArtefactDTO { 
+                id = x.artefact_id,
+                editionId = editionId,
+                imagedObjectId = x.institution + "-" + x.catalog_number_1 
                                  + (String.IsNullOrEmpty(x.catalog_number_2) ? "" : x.catalog_number_2),
-                Mask = new PolygonDTO()
+                mask = new PolygonDTO()
                 {
                     mask = x.mask,
                 },
-                TransformMatrix = "",
+                transformMatrix = "",
                 zOrder = 0,
-                Name = x.name,
-                Side = x.catalog_side == 0 ? ArtefactDTO.artSide.recto : ArtefactDTO.artSide.verso}
+                name = x.name,
+                side = x.catalog_side == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso}
             ).ToList() };
         }
         
@@ -65,19 +65,19 @@ namespace SQE.SqeHttpApi.Server.Services
             var imagedObjectIds = artefactListings.Select(x => x.image_catalog_id);
             
             
-            return new ArtefactListDTO { result = artefactListings.Select(x => new ArtefactDTO { 
-                Id = x.artefact_id,
-                EditionId = editionId,
-                ImagedObjectId = x.institution + "-" + x.catalog_number_1 
+            return new ArtefactListDTO { artefacts = artefactListings.Select(x => new ArtefactDTO { 
+                id = x.artefact_id,
+                editionId = editionId,
+                imagedObjectId = x.institution + "-" + x.catalog_number_1 
                                  + (string.IsNullOrEmpty(x.catalog_number_2) ? "" : x.catalog_number_2),
-                Mask = new PolygonDTO()
+                mask = new PolygonDTO()
                 {
                     mask = x.mask,
                 },
-                TransformMatrix = "",
+                transformMatrix = "",
                 zOrder = 0,
-                Name = x.name,
-                Side = x.catalog_side == 0 ? ArtefactDTO.artSide.recto : ArtefactDTO.artSide.verso}
+                name = x.name,
+                side = x.catalog_side == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso}
             ).ToList() };
         }
 

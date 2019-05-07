@@ -9,6 +9,5 @@ namespace SQE.SqeHttpApi.Server.DTOs
     {
         public string mask { get; set; } 
         public string matrix { get; set; } //CAN BE NULL
-
     }
 }

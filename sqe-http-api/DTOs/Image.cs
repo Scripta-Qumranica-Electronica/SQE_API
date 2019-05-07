@@ -8,8 +8,8 @@ namespace SQE.SqeHttpApi.Server.DTOs
     public class ImageDTO
     {
         public string url { get; set; }
-        public lighting lightingType { get; set; }
-        public direction lightingDirection { get; set; }
+        public Lighting lightingType { get; set; }
+        public Direction lightingDirection { get; set; }
         public string[] waveLength { get; set; }
         public string type { get; set; }
         public string side { get; set; }
@@ -17,61 +17,61 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public PolygonDTO regionOfMaster { get; set; }
         public string transformToMaster { get; set; }
         public bool master { get; set; }
-        public uint catalog_number { get; set; }
+        public uint catalogNumber { get; set; }
 
-        public enum lighting {direct, raking }
-        public enum direction { left, right, top}
+        public enum Lighting { direct, raking }
+        public enum Direction { left, right, top }
     }
 
     public class ImageListDTO
     {
-        public List<ImageDTO> ImagesList { get; set; }
+        public List<ImageDTO> images { get; set; }
     }
 
     public class ImageGroupDTO
     {
-        public uint Id { get; set; }
-        public string Institution { get; set; }
-        public string CatalogNumber1 { get; set; }
-        public string CatalogNumber2 { get; set; }
-        public byte CatalogSide { get; set; }
-        public List<ImageDTO> Images { get; set; }
+        public uint id { get; set; }
+        public string institution { get; set; }
+        public string catalogNumber1 { get; set; }
+        public string catalogNumber2 { get; set; }
+        public byte catalogSide { get; set; }
+        public List<ImageDTO> images { get; set; }
 
         public ImageGroupDTO(uint id, string institution, string catalogNumber1, string catalogNumber2, byte catalogSide, List<ImageDTO> images)
         {
-            Id = id;
-            Institution = institution;
-            CatalogNumber1 = catalogNumber1;
-            CatalogNumber2 = catalogNumber2;
-            CatalogSide = catalogSide;
-            Images = images;
+            this.id = id;
+            this.institution = institution;
+            this.catalogNumber1 = catalogNumber1;
+            this.catalogNumber2 = catalogNumber2;
+            this.catalogSide = catalogSide;
+            this.images = images;
         }
     }
 
     public class ImageGroupListDTO
     {
-        public List<ImageGroupDTO> ImageGroup { get; set; }
-        public ImageGroupListDTO(List<ImageGroupDTO> imageGroup)
+        public List<ImageGroupDTO> imageGroups { get; set; }
+        public ImageGroupListDTO(List<ImageGroupDTO> groups)
         {
-            ImageGroup = imageGroup;
+            this.imageGroups = groups;
         }
     }
 
     public class ImageInstitutionDTO
     {
-        public string Name { get; set; }
+        public string name { get; set; }
         public ImageInstitutionDTO(string name)
         {
-            Name = name;
+            this.name = name;
         }
     }
 
     public class ImageInstitutionListDTO
     {
-        public List<ImageInstitutionDTO> Institutions { get; set; }
+        public List<ImageInstitutionDTO> institutions { get; set; }
         public ImageInstitutionListDTO(List<ImageInstitutionDTO> institutions)
         {
-            Institutions = institutions;
+            this.institutions = institutions;
         }
     }
 }

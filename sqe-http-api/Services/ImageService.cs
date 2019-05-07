@@ -35,13 +35,13 @@ namespace SQE.SqeHttpApi.Server.Services
             }
             var result = new ImageListDTO
             {
-                ImagesList = new List<ImageDTO>(),
+                images = new List<ImageDTO>(),
             };
 
 
             foreach (var i in images)
             {
-                result.ImagesList.Add(ImageToDTO(i));
+                result.images.Add(ImageToDTO(i));
             }
 
             return result;
@@ -61,7 +61,7 @@ namespace SQE.SqeHttpApi.Server.Services
                 lightingType = GetLightingType(model.Type),
                 side = model.Side,
                 transformToMaster = model.TransformMatrix,
-                catalog_number = model.ImageCatalogId,
+                catalogNumber = model.ImageCatalogId,
                 master = model.Master
             };
         }
@@ -79,26 +79,26 @@ namespace SQE.SqeHttpApi.Server.Services
 
         }
 
-        private static ImageDTO.lighting GetLightingType(byte type)
+        private static ImageDTO.Lighting GetLightingType(byte type)
         {
             if (type ==2 || type == 3)
             {
-                return ImageDTO.lighting.raking;
+                return ImageDTO.Lighting.raking;
             }
-            return ImageDTO.lighting.direct; // need to check..
+            return ImageDTO.Lighting.direct; // need to check..
         }
 
-        private static ImageDTO.direction GetLightingDirection(byte type)
+        private static ImageDTO.Direction GetLightingDirection(byte type)
         {
             if (type == 2)
             {
-                return ImageDTO.direction.left;
+                return ImageDTO.Direction.left;
             }
             if (type == 3)
             {
-                return ImageDTO.direction.right;
+                return ImageDTO.Direction.right;
             }
-            return ImageDTO.direction.top; // need to check..
+            return ImageDTO.Direction.top; // need to check..
         }
 
         public async Task<ImageGroupListDTO> GetImageAsync(uint? userId, List<uint> scrollVersionId)

@@ -77,22 +77,22 @@ namespace SQE.SqeHttpApi.Server.Services
             // Bronson: the entire Select and lambda expression should move to a static function ArtefactModelToDTO (probably in the ArtefactService)
             var artefacts = (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask)).Select(x => new ArtefactDTO()
             {
-                Id = x.artefact_id,
-                EditionId = editionId,
-                Mask = new PolygonDTO()
+                id = x.artefact_id,
+                editionId = editionId,
+                mask = new PolygonDTO()
                 {
                     mask = x.mask
                 },
 
                 // Bronson - I think we added a class that does this for you, and also parses the ID back into its components for querying
-                ImagedObjectId = x.institution + "-" 
+                imagedObjectId = x.institution + "-" 
                                                 + x.catalog_number_1 
                                                 + (string.IsNullOrEmpty(x.catalog_number_2) ? "" : "-" + x.catalog_number_2),
 
-                Name = x.name,
-                Side = x.catalog_side == 0 ? ArtefactDTO.artSide.recto : ArtefactDTO.artSide.verso, 
+                name = x.name,
+                side = x.catalog_side == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso, 
                 zOrder = 0,
-                TransformMatrix = "",
+                transformMatrix = "",
             });
 
             // Bronson: This is *really* unclear, GroupJoin is not something people usually understand.
@@ -102,7 +102,7 @@ namespace SQE.SqeHttpApi.Server.Services
             result.result = result.result.GroupJoin(
                 artefacts, 
                 arg => arg.id, 
-                arg => arg.ImagedObjectId,
+                arg => arg.imagedObjectId,
                 (imagedObject, artefactObjects) => new ImagedObjectDTO()
                 {
                     id = imagedObject.id,
@@ -160,13 +160,13 @@ namespace SQE.SqeHttpApi.Server.Services
                 {
                     case "recto":
                         recto.Add(image);
-                        rectoCatalogId = image.catalog_number;
+                        rectoCatalogId = image.catalogNumber;
                         if (image.master)
                             rectoMasterIndex = recto.Count() - 1;
                         break;
                     case "verso":
                         verso.Add(image);
-                        versoCatalogId = image.catalog_number;
+                        versoCatalogId = image.catalogNumber;
                         if (image.master)
                             versoMasterIndex = verso.Count() - 1;
                         break;
@@ -215,7 +215,7 @@ namespace SQE.SqeHttpApi.Server.Services
                 return null;
             }
             var masterIndex = img.FindIndex(i => i.master);
-            var catalog_id = img[0].catalog_number;
+            var catalog_id = img[0].catalogNumber;
             return new ImageStackDTO
             {
                 id = catalog_id,
@@ -239,7 +239,7 @@ namespace SQE.SqeHttpApi.Server.Services
                 return null;
             }
             var masterIndex = img.FindIndex(i => i.master);
-            var catalog_id = img[0].catalog_number;
+            var catalog_id = img[0].catalogNumber;
             return new ImageStackDTO
             {
                 id = catalog_id,
