@@ -12,7 +12,8 @@ namespace SQE.SqeHttpApi.Server.Services
         Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId);
         Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(uint? userId, uint editionId,
             bool withMask = false);
-        Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId);
+        Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId,
+            bool withArtefacts = false, bool withMasks = false);
         Task<ImagedObjectDTO> GetImagedFragmentAsync(uint? userId, uint scrollVersionId, string fragmentId);
     }
 
@@ -115,9 +116,43 @@ namespace SQE.SqeHttpApi.Server.Services
         }
         
         // TODO: Make this less wasteful by retrieving only the desired imaged object
-        public async Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId)
+        public async Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId,
+            bool withArtefacts = false, bool withMasks = false)
         {
-            return (await GetImagedObjectsAsync(userId, editionId)).imagedObjects.First(x => x.id == imagedObjectId);
+            var result = (await GetImagedObjectsAsync(userId, editionId)).imagedObjects.First(x => x.id == imagedObjectId);
+            if (withArtefacts)
+            {
+                // Bronson: the entire Select and lambda expression should move to a static function ArtefactModelToDTO (probably in the ArtefactService)
+                var artefacts = (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMasks)).Select(x => new ArtefactDTO()
+                {
+                    id = x.artefact_id,
+                    editionId = editionId,
+                    mask = new PolygonDTO()
+                    {
+                        mask = x.mask
+                    },
+
+                    // Bronson - I think we added a class that does this for you, and also parses the ID back into its components for querying
+                    imagedObjectId = x.institution + "-" 
+                                                   + x.catalog_number_1 
+                                                   + (string.IsNullOrEmpty(x.catalog_number_2) ? "" : "-" + x.catalog_number_2),
+
+                    name = x.name,
+                    side = x.catalog_side == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso, 
+                    zOrder = 0,
+                    transformMatrix = "",
+                });
+
+                foreach (var artefact in artefacts)
+                {
+                    if (result.artefacts == null)
+                        result.artefacts = new List<ArtefactDTO>();
+                    if (result.id == artefact.imagedObjectId)
+                        result.artefacts.Add(artefact);
+                }
+            }
+
+            return result; 
         }
         
         private static string getImagedObjectId(DataAccess.Models.Image image)

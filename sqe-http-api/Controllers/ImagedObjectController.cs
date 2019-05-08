@@ -31,15 +31,12 @@ namespace backend.Controllers
 
         private void ParseOptionals(List<string> optionals, out bool artefacts, out bool masks)
         {
-            if (optionals != null)
-            {
-                artefacts = optionals.Contains("artefacts");
-                masks = artefacts && optionals.Contains("masks");
-            }
-            else
-            {
-                artefacts = masks = false;
-            }
+            artefacts = masks = false;
+            if (optionals == null) return;
+            artefacts = optionals.Contains("artefacts");
+            if (!optionals.Contains("masks")) return;
+            masks = true;
+            artefacts = true;
         }
 
         /// <summary>
@@ -120,18 +117,19 @@ namespace backend.Controllers
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
         /// <param Name="imagedObjectId">Unique Id of the desired object from the imaging institution</param>
+        /// <param Name="optional">Optional data includes "artefacts" for a list of all artefacts in the object image
+        /// and "masks" to retrieve the polygon masks along with the artefacts.</param>
         // Bronson: Add support for optionals here, as well
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/imaged-objects/{imagedObjectId}")]
         public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId, [FromQuery] List<string> optional)
         {
-            bool artefacts, masks;
-            ParseOptionals(optional, out artefacts, out masks);
+            ParseOptionals(optional, out var artefacts, out var masks);
 
             try
             {
                 // Bronson: Add support for artefacts and masks here
-                return await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId);
+                return await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId, artefacts, masks);
             }
             catch (NotFoundException)
             {
