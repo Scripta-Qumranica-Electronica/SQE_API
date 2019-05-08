@@ -22,6 +22,6 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class ImagedObjectListDTO
     {
-        public List<ImagedObjectDTO> result { get; set; }
+        public List<ImagedObjectDTO> imagedObjects { get; set; }
     };
 }

@@ -62,7 +62,7 @@ namespace backend.Controllers
         /// <returns></returns>
         // Bronson: This endpoint is not documented
         [AllowAnonymous]
-        [HttpGet("imaged-object/{imageReferenceId}")]
+        [HttpGet("imaged-objects/{imageReferenceId}")]
         public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfScroll([FromRoute] uint imageReferenceId)
         {
             var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {imageReferenceId }));
@@ -74,7 +74,7 @@ namespace backend.Controllers
         /// </summary>
         // Bronson: This endpoint is not documented
         [AllowAnonymous]
-        [HttpGet("imaged-object/institution/list")]
+        [HttpGet("imaged-objects/institutions/list")]
         public async Task<ActionResult<ImageInstitutionListDTO>> ListImageInstitutions()
         {
             var institutions = await _imageService.GetImageInstitutionsAsync();
@@ -122,7 +122,7 @@ namespace backend.Controllers
         /// <param Name="imagedObjectId">Unique Id of the desired object from the imaging institution</param>
         // Bronson: Add support for optionals here, as well
         [AllowAnonymous]
-        [HttpGet("editions/{editionId}/imaged-object/{imagedObjectId}")]
+        [HttpGet("editions/{editionId}/imaged-objects/{imagedObjectId}")]
         public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId, [FromQuery] List<string> optional)
         {
             bool artefacts, masks;

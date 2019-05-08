@@ -45,7 +45,7 @@ namespace SQE.SqeHttpApi.Server.Services
             }
             var result = new ImagedObjectListDTO
             {
-                result = new List<ImagedObjectDTO>(),
+                imagedObjects = new List<ImagedObjectDTO>(),
             };
             var images = await _imageRepo.GetImagesAsync(userId, editionId, null); //send imagedFragment from here 
 
@@ -63,7 +63,7 @@ namespace SQE.SqeHttpApi.Server.Services
             foreach (var i in imagedFragments)
             {
                 if (imageDict.TryGetValue(i.Id, out var imagedFragment))
-                    result.result.Add(ImagedObjectModelToDTO(i, imagedFragment));
+                    result.imagedObjects.Add(ImagedObjectModelToDTO(i, imagedFragment));
             }
 
             return result; 
@@ -99,7 +99,7 @@ namespace SQE.SqeHttpApi.Server.Services
             // A few comments are warranted here, or even better - dropping LINQ altogether here
             // I spent a couple of minutes reading GroupJoin's documenation, and I'm not closer to figuring out 
             // what is being grouped.
-            result.result = result.result.GroupJoin(
+            result.imagedObjects = result.imagedObjects.GroupJoin(
                 artefacts, 
                 arg => arg.id, 
                 arg => arg.imagedObjectId,
@@ -117,7 +117,7 @@ namespace SQE.SqeHttpApi.Server.Services
         // TODO: Make this less wasteful by retrieving only the desired imaged object
         public async Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId)
         {
-            return (await GetImagedObjectsAsync(userId, editionId)).result.First(x => x.id == imagedObjectId);
+            return (await GetImagedObjectsAsync(userId, editionId)).imagedObjects.First(x => x.id == imagedObjectId);
         }
         
         private static string getImagedObjectId(DataAccess.Models.Image image)
