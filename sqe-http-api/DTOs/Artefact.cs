@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
+using SQE.SqeHttpApi.DataAccess.Queries;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
@@ -11,15 +13,45 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public uint editionId { get; set; }
         public string imagedObjectId {get; set;}
         public string name { get; set; }
-
-        // Bronson: PolygonDTO already has a mask and matrix. Are you sure this is correct?
         public PolygonDTO mask { get; set; }
-        public string transformMatrix { get; set; }
         public uint zOrder { get; set; }
         public ArtefactSide side { get; set; }
 
         public enum ArtefactSide { recto, verso}
     }
+
+    public static class ArtefactDTOTransform
+    {
+        public static ArtefactDTO QueryArtefactToArtefactDTO(ArtefactsOfEditionQuery.Result artefact, uint editionId)
+        {
+            return new ArtefactDTO()
+            {
+                id = artefact.artefact_id,
+                editionId = editionId,
+                mask = new PolygonDTO()
+                {
+                    mask = artefact.mask,
+                    transformMatrix = ""
+                },
+
+                imagedObjectId = ImagedObjectIdFormat.Serialize(artefact.institution, artefact.catalog_number_1, artefact.catalog_number_2),
+
+                name = artefact.name,
+                side = artefact.catalog_side == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso, 
+                zOrder = 0,
+            };
+        }
+        
+        public static ArtefactListDTO QueryArtefactListToArtefactListDTO(List<ArtefactsOfEditionQuery.Result> artefacts, uint editionId)
+        {
+            return new ArtefactListDTO()
+            {
+                artefacts = artefacts.Select(x => QueryArtefactToArtefactDTO(x, editionId)).ToList()
+            };
+        }
+    }
+
+    
 
     public class ArtefactDesignationDTO
     {

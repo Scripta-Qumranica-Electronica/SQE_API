@@ -128,8 +128,6 @@ namespace SQE.SqeHttpApi.Server.Services
         {
             if (!string.IsNullOrEmpty(name)) 
             {
-                // Bronson: Look how I handled the case of no permission
-                // Itay: Awesome, thanks.  That is nice.
                 try
                 {
                     await _repo.ChangeEditionNameAsync(editionId, name, user);

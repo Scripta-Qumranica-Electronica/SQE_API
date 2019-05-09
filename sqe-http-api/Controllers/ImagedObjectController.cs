@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SQE.SqeHttpApi.Server.Services;
 using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeHttpApi.Server.Services;
 
-
-
-namespace backend.Controllers
+namespace SQE.SqeHttpApi.Server.Controllers
 {
     [Authorize]
     [Route("v1")]
@@ -76,7 +71,6 @@ namespace backend.Controllers
         {
             var institutions = await _imageService.GetImageInstitutionsAsync();
 
-            // Bronson: Please stop using Ok.
             return institutions;
         }
 
@@ -95,8 +89,6 @@ namespace backend.Controllers
 
             try
             {
-                // Bronson: We have discussed not using the Ok function, it loses all type safety.
-                // Also, the following expression is just too long and unclear, I'll break it into a normal if.
                 if(artefacts)
                 {
                     return await _imagedObjectService.GetImagedObjectsWithArtefactsAsync(_userService.GetCurrentUserId(), editionId, masks);
@@ -119,7 +111,6 @@ namespace backend.Controllers
         /// <param Name="imagedObjectId">Unique Id of the desired object from the imaging institution</param>
         /// <param Name="optional">Optional data includes "artefacts" for a list of all artefacts in the object image
         /// and "masks" to retrieve the polygon masks along with the artefacts.</param>
-        // Bronson: Add support for optionals here, as well
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/imaged-objects/{imagedObjectId}")]
         public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId, [FromQuery] List<string> optional)

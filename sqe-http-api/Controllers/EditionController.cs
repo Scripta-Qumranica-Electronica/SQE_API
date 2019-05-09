@@ -113,7 +113,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
                 var edition = await _editionService.CopyEditionAsync(editionId, request.name, user);
-                return Ok(edition);
+                return edition;
             }
             catch (NotFoundException)
             {

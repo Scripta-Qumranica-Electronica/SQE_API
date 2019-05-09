@@ -51,7 +51,14 @@ namespace SQE.SqeHttpApi.DataAccess.Models
                 var scrollEditionMatch = scrollEditionTest.Match(_requestPath);
                 if (scrollEditionMatch.Groups.Count == 2)
                     _editionId = uint.TryParse(scrollEditionMatch.Groups[1].Value, out var i) ? i : 0;
-                else _editionId = 0;
+                else
+                {
+                    scrollEditionTest = new Regex(@"^.*/editions/(\d{1,32}).*$");
+                    scrollEditionMatch = scrollEditionTest.Match(_requestPath);
+                    if (scrollEditionMatch.Groups.Count == 2)
+                        _editionId = uint.TryParse(scrollEditionMatch.Groups[1].Value, out var i) ? i : 0;
+                    else _editionId = 0;
+                }
             }
             return _editionId.HasValue && _editionId.Value == 0 ? null : _editionId;
         }

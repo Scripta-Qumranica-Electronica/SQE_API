@@ -143,15 +143,17 @@ namespace SQE.SqeHttpApi.DataAccess
                     
                     // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
                     // care of main_action and single_action.
-                    var response = await _databaseWriter.WriteToDatabaseAsync(editionId, user, new List<MutationRequest>() { nameChangeRequest });
+                    var response = await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { nameChangeRequest });
                     // Bronson: Where isn't there a response?
+                    // Itay: You get no response when you try to change to the name that is already being used.
+                    // This can happen when, after the database write begins, someone else changed it to the same name first.
                     if (response.Count == 0 || !response[0].NewId.HasValue)
                     {
                         throw new ImproperRequestException("change scroll name",
                             "no change in name or failed to write to DB");
                     }
                 }
-                catch (InvalidOperationException) // Bronson: The error QuerySingle throws if there's no result.  Itay: thanks!
+                catch (InvalidOperationException)
                 {
                     throw new NoPermissionException(user.userId, "change name", "scroll", editionId);
                 }

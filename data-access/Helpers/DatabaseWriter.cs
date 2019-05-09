@@ -116,7 +116,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
     public interface IDatabaseWriter
     {
-        Task<List<AlteredRecord>> WriteToDatabaseAsync(uint editionId, UserInfo user,
+        Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
             List<MutationRequest> mutationRequests);
     }
 
@@ -138,10 +138,9 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// </summary>
         /// <returns>A list of AlteredRecord objects containing the details of each mutation.
         /// The order of the returned list or results matches the order of the list of mutation requests</returns>
-        /// <param name="editionId"></param>
         /// <param name="user"></param>
         /// <param name="mutationRequests">List of mutation requests.</param>
-        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(uint editionId, UserInfo user,
+        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
             List<MutationRequest> mutationRequests)
         {
             var alteredRecords = new List<AlteredRecord>();
@@ -164,8 +163,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
                         // Though we accept a List of mutations, we have the restriction that
                         // they all belong to the same editionId and userID.
                         // This way, we only do one permission check for the whole batch.
-                        // TODO: Move some of the checking logic to a User object for easier and more efficient verification.
-                        mutationRequest.Parameters.Add("@EditionId", editionId);
+                        mutationRequest.Parameters.Add("@EditionId", user.EditionId());
                         mutationRequest.Parameters.Add("@EditionEditorId", (await user.EditionEditorId()).Value);
                         await AddMainActionAsync(connection, mutationRequest);
                         switch (mutationRequest.Action)

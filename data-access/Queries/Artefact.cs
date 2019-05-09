@@ -1,33 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using MySqlX.XDevAPI.Common;
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-    internal class ArtefactQuery
+    public static class ArtefactOfEditionQuery
     {
-        private const string _getArtefact = @"select artefact.artefact_id As Id,
-artefact_data.name As Name,
-artefact_data_owner.scroll_version_id As scrollVersionId,
-artefact_position.transform_matrix As transformMatrix,
-artefact_position.z_index As zOrder
-from artefact 
-join artefact_data using(artefact_id)
-join artefact_data_owner using(artefact_data_id)
-join artefact_position using (artefact_id)
-where artefact.artefact_id = @artefactId";
-
-        public static string GetArtefact(bool scrollVersionId)
+        private const string _artefactIdRestriction = " AND artefact_shape.artefact_id = @ArtefactId";
+        public static string GetQuery(uint? userId, bool mask = false)
         {
-            if(!scrollVersionId)
-                return _getArtefact;
-            StringBuilder str = new StringBuilder(_getArtefact);
-            str.Append(" and artefact_data_owner.scroll_version_id=@ScrollVersionId");
-            return str.ToString();
+            return ArtefactsOfEditionQuery.GetQuery(userId, mask, ordered: false) + _artefactIdRestriction;
         }
+        
+        public class Result : ArtefactsOfEditionQuery.Result{}
     }
 
-    public static class ArtefactNamesOfEditionQuery
+    public static class ArtefactsOfEditionQuery
     {
         private const string _getArtefact = @"
 SELECT artefact_data.name, 
@@ -49,14 +38,21 @@ JOIN edition ON edition.edition_id = artefact_shape_owner.edition_id
 JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
 WHERE edition.edition_id = @EditionId
   AND $Restriction
-ORDER BY image_catalog.catalog_number_1, image_catalog.catalog_number_2, image_catalog.catalog_side";
+$Order";
 
-        public static string GetQuery(uint? userId, bool mask = false)
+        private const string _userRestriction = "(edition_editor.user_id = @UserID OR edition_editor.user_id = 1)";
+        private const string _publicRestriction = "edition_editor.user_id = 1";
+        private const string _mask = "ASTEXT(artefact_shape.region_in_sqe_image)";
+
+        private const string _order =
+            "ORDER BY image_catalog.catalog_number_1, image_catalog.catalog_number_2, image_catalog.catalog_side";
+
+        public static string GetQuery(uint? userId, bool mask = false, bool ordered = true)
         {
-            return _getArtefact.Replace("$Restriction", userId.HasValue 
-                ? "(edition_editor.user_id = @UserID OR edition_editor.user_id = 1)"
-                : "edition_editor.user_id = 1")
-                .Replace("$Mask", mask ? "ASTEXT(artefact_shape.region_in_sqe_image)" : "\"\"");
+            return _getArtefact
+                .Replace("$Restriction", userId.HasValue ? _userRestriction : _publicRestriction)
+                .Replace("$Mask", mask ? _mask : "\"\"")
+                .Replace("$Order", ordered ? _order : "");
         }
 
         public class Result

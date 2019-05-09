@@ -11,10 +11,9 @@ namespace SQE.SqeHttpApi.Server.Services
     {
         Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId);
         Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(uint? userId, uint editionId,
-            bool withMask = false);
+            bool withMasks = false);
         Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId,
             bool withArtefacts = false, bool withMasks = false);
-        Task<ImagedObjectDTO> GetImagedFragmentAsync(uint? userId, uint scrollVersionId, string fragmentId);
     }
 
     public class ImagedObjectService : IImagedObjectService
@@ -71,46 +70,30 @@ namespace SQE.SqeHttpApi.Server.Services
         }
         
         public async Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(uint? userId, uint editionId,
-            bool withMask = false)
+            bool withMasks = false)
         {
             var result = await GetImagedObjectsAsync(userId, editionId);
 
-            // Bronson: the entire Select and lambda expression should move to a static function ArtefactModelToDTO (probably in the ArtefactService)
-            var artefacts = (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask)).Select(x => new ArtefactDTO()
-            {
-                id = x.artefact_id,
-                editionId = editionId,
-                mask = new PolygonDTO()
-                {
-                    mask = x.mask
-                },
-
-                // Bronson - I think we added a class that does this for you, and also parses the ID back into its components for querying
-                imagedObjectId = x.institution + "-" 
-                                                + x.catalog_number_1 
-                                                + (string.IsNullOrEmpty(x.catalog_number_2) ? "" : "-" + x.catalog_number_2),
-
-                name = x.name,
-                side = x.catalog_side == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso, 
-                zOrder = 0,
-                transformMatrix = "",
-            });
+            var artefacts = ArtefactDTOTransform.QueryArtefactListToArtefactListDTO(
+                (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMasks)).ToList(), 
+                editionId
+            );
 
             // Bronson: This is *really* unclear, GroupJoin is not something people usually understand.
             // A few comments are warranted here, or even better - dropping LINQ altogether here
             // I spent a couple of minutes reading GroupJoin's documenation, and I'm not closer to figuring out 
             // what is being grouped.
             result.imagedObjects = result.imagedObjects.GroupJoin(
-                artefacts, 
-                arg => arg.id, 
-                arg => arg.imagedObjectId,
-                (imagedObject, artefactObjects) => new ImagedObjectDTO()
+                artefacts.artefacts, // Take two lists: result.imagedObjects and artefacts.artefacts.
+                arg => arg.id, // Group them together where the imagedObject.id
+                arg => arg.imagedObjectId, // == the artefactObject.imagedObjectId (a one-to-many relationship).
+                (imagedObject, artefactObjects) => new ImagedObjectDTO() // For each such grouping create an object that merges
                 {
-                    id = imagedObject.id,
+                    id = imagedObject.id, // the data from the imagedObject
                     recto = imagedObject.recto,
                     verso = imagedObject.verso,
-                    artefacts = artefactObjects.ToList()
-                }).ToList(); 
+                    artefacts = artefactObjects.ToList() // and the group of artefactObjects as a List.
+                }).ToList(); // Return the IEnumerable array as a List. 
 
             return result; 
         }
@@ -122,28 +105,12 @@ namespace SQE.SqeHttpApi.Server.Services
             var result = (await GetImagedObjectsAsync(userId, editionId)).imagedObjects.First(x => x.id == imagedObjectId);
             if (withArtefacts)
             {
-                // Bronson: the entire Select and lambda expression should move to a static function ArtefactModelToDTO (probably in the ArtefactService)
-                var artefacts = (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMasks)).Select(x => new ArtefactDTO()
-                {
-                    id = x.artefact_id,
-                    editionId = editionId,
-                    mask = new PolygonDTO()
-                    {
-                        mask = x.mask
-                    },
+                var artefacts = ArtefactDTOTransform.QueryArtefactListToArtefactListDTO(
+                    (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMasks)).ToList(), 
+                    editionId
+                    );
 
-                    // Bronson - I think we added a class that does this for you, and also parses the ID back into its components for querying
-                    imagedObjectId = x.institution + "-" 
-                                                   + x.catalog_number_1 
-                                                   + (string.IsNullOrEmpty(x.catalog_number_2) ? "" : "-" + x.catalog_number_2),
-
-                    name = x.name,
-                    side = x.catalog_side == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso, 
-                    zOrder = 0,
-                    transformMatrix = "",
-                });
-
-                foreach (var artefact in artefacts)
+                foreach (var artefact in artefacts.artefacts)
                 {
                     if (result.artefacts == null)
                         result.artefacts = new List<ArtefactDTO>();
@@ -231,67 +198,6 @@ namespace SQE.SqeHttpApi.Server.Services
                         images = verso
                     }
                 );
-        }
-        
-        // Daniella, it is probably better to do this all in one pass (see `getSides()`, rather than looping over the
-        // images twice, once in getRecto, and again in getVerso.
-        private static ImageStackDTO getRecto(List<ImageDTO> images)
-        {
-            var img = new List<ImageDTO>();
-            foreach (var image in images)
-            {
-                if (image.side == "recto")
-                {
-                    img.Add(image);
-                }
-            }
-            if (img.Count == 0)
-            {
-                return null;
-            }
-            var masterIndex = img.FindIndex(i => i.master);
-            var catalog_id = img[0].catalogNumber;
-            return new ImageStackDTO
-            {
-                id = catalog_id,
-                masterIndex = masterIndex,
-                images = img
-            };
-        }
-
-        private static ImageStackDTO getVerso(List<ImageDTO> images)
-        {
-            var img = new List<ImageDTO>();
-            foreach (var image in images)
-            {
-                if (image.side == "verso")
-                {
-                    img.Add(image);
-                }
-            }
-            if (img.Count == 0)
-            {
-                return null;
-            }
-            var masterIndex = img.FindIndex(i => i.master);
-            var catalog_id = img[0].catalogNumber;
-            return new ImageStackDTO
-            {
-                id = catalog_id,
-                masterIndex = masterIndex,
-                images = img
-            };
-        }
-
-        // TODO: check if this is used anywhere and perhaps remove.
-        public async Task<ImagedObjectDTO> GetImagedFragmentAsync(uint? userId, uint scrollVersionId, string fragmentId)
-        {
-            var images = await _imageRepo.GetImagesAsync(userId, scrollVersionId, fragmentId); //send imagedFragment from here 
-            var imagedFragments = await _repo.GetImagedObjectsAsync(userId, scrollVersionId, fragmentId); //should be only one!
-            var img = images.Select(image => _imageService.ImageToDTO(image)).ToList();
-            var result = ImagedObjectModelToDTO(imagedFragments.First(), img);
-
-            return result;
         }
     }
 }
