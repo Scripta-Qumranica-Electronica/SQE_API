@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
-
 
 namespace SQE.SqeHttpApi.Server.Services
 {
@@ -39,12 +36,13 @@ namespace SQE.SqeHttpApi.Server.Services
 
         public async Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask)
         {
-            if (!user.EditionId().HasValue) return null;
+            if (!user.editionId.HasValue) 
+                return null;
             var artefact = await _artefactRepository.GetEditionArtefactAsync(user, artefactId, withMask);
             return new ArtefactDTO()
             {
                 id = artefact.artefact_id,
-                editionId = user.EditionId().Value,
+                editionId = user.editionId.Value,
                 imagedObjectId = ImagedObjectIdFormat.Serialize(
                     artefact.institution,
                     artefact.catalog_number_1,

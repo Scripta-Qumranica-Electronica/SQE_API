@@ -5,11 +5,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Data;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Dapper;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.DataAccess.Queries;
-using Wkx;
 
 namespace SQE.SqeHttpApi.DataAccess.Helpers
 {
@@ -163,7 +161,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
                         // Though we accept a List of mutations, we have the restriction that
                         // they all belong to the same editionId and userID.
                         // This way, we only do one permission check for the whole batch.
-                        mutationRequest.Parameters.Add("@EditionId", user.EditionId());
+                        mutationRequest.Parameters.Add("@EditionId", user.editionId);
                         mutationRequest.Parameters.Add("@EditionEditorId", (await user.EditionEditorId()).Value);
                         await AddMainActionAsync(connection, mutationRequest);
                         switch (mutationRequest.Action)

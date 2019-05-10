@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MySqlX.XDevAPI.Common;
-
-namespace SQE.SqeHttpApi.DataAccess.Queries
+﻿namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     public static class ArtefactOfEditionQuery
     {

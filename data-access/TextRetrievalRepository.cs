@@ -28,7 +28,8 @@ namespace SQE.SqeHttpApi.DataAccess
                 lineId,
                 editionId);
 
-            if (terminators.Length!=2) return new Scroll();
+            if (terminators.Length!=2) 
+                return new Scroll();
 
             return await _getEntityById(terminators[0], terminators[1], editionId);
             
@@ -41,7 +42,8 @@ namespace SQE.SqeHttpApi.DataAccess
                 fragmentId,
                 editionId);
 
-            if (terminators.Length!=2) return new Scroll();
+            if (terminators.Length!=2) 
+                return new Scroll();
 
            return await _getEntityById(terminators[0], terminators[1], editionId);
             

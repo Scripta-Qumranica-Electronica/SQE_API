@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using SQE.SqeHttpApi.DataAccess.Models;
+﻿using System.Text;
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {

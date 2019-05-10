@@ -27,9 +27,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         private void ParseOptionals(List<string> optionals, out bool artefacts, out bool masks)
         {
             artefacts = masks = false;
-            if (optionals == null) return;
+            if (optionals == null) 
+                return;
             artefacts = optionals.Contains("artefacts");
-            if (!optionals.Contains("masks")) return;
+            if (!optionals.Contains("masks")) 
+                return;
             masks = true;
             artefacts = true;
         }
@@ -82,9 +84,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param Name="withMask">Set this to true to receive the mask polygon data</param>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/imaged-objects")]
-        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional = null)
+        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
             bool artefacts, masks;
+            ParseOptionals(optional, out artefacts, out masks);
             ParseOptionals(optional, out artefacts, out masks);
 
             try

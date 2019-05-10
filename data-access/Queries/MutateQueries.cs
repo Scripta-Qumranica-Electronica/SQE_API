@@ -1,12 +1,3 @@
-using System;
-using System.Text;
-using System.Linq;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading.Tasks;
-using System.Transactions;
-using Dapper;
-
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     // Bronson - I'm not sure whether all the classes here need to have Query added to their names,

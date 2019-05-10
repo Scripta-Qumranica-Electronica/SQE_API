@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Newtonsoft.Json;
-using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Services;
 
@@ -45,7 +39,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet("{editionId}")]
         public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
-            var edition = await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(), false, false);
+            var edition = await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(editionId), false, false);
 
             if(edition==null)
             {
@@ -77,7 +71,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             try
             {
-                var user = _userService.GetCurrentUserObject();
+                var user = _userService.GetCurrentUserObject(editionId);
                 if (!user.userId.HasValue && !(await user.EditionEditorId()).HasValue && !await user.MayWrite())
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
@@ -107,7 +101,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             try
             {
-                var user = _userService.GetCurrentUserObject();
+                var user = _userService.GetCurrentUserObject(editionId);
                 if (!user.userId.HasValue)
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?

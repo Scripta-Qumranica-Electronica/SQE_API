@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SQE.SqeHttpApi.DataAccess;
@@ -23,7 +18,7 @@ namespace SQE.SqeHttpApi.Server.Services
         Task<LoginResponseDTO> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
         UserDTO GetCurrentUser();
         uint? GetCurrentUserId();
-        UserInfo GetCurrentUserObject();
+        UserInfo GetCurrentUserObject(uint? editionId = null);
     }
 
     public class UserService : IUserService
@@ -108,27 +103,17 @@ namespace SQE.SqeHttpApi.Server.Services
             }
             return null;
         }
-        
+
         /// <summary>
         /// This returns a UserInfo object that will persist only for the life of the current
         /// HTTP request.  The UserInfo object can fetch the permissions if requested, and once
         /// the permissions have been requested, they are "cached" for the life of the object.
         /// </summary>
+        /// <param name="editionId"></param>
         /// <returns></returns>
-        public UserInfo GetCurrentUserObject()
+        public UserInfo GetCurrentUserObject(uint? editionId = null)
         {
-            var userObject = new UserInfo(_accessor.HttpContext.Request.Path.ToString(), _repo);
-            var identity = (ClaimsIdentity)_accessor.HttpContext.User.Identity;
-            var claims = identity.Claims;
-            foreach (var claim in claims)
-            {
-                var split = claim.Type.Split("/");
-                if (split[split.Length - 1] == "nameidentifier")
-                {
-                    userObject.userId = uint.TryParse(claim.Value, out var i) ? (uint?) i : null;
-                }
-            }
-            return userObject;
+            return new UserInfo(GetCurrentUserId(), editionId, _repo);
         }
 
 

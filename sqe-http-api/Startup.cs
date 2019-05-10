@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using System.IO;
-using System.Linq;
 using Microsoft.AspNetCore.Http;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;

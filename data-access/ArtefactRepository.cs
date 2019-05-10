@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
 using Dapper;
-using System.Linq;
 using System.Transactions;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.DataAccess.Queries;
-using Wkx;
-using Polygon = Wkx.Polygon;
 
 namespace SQE.SqeHttpApi.DataAccess
 {
@@ -51,7 +45,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 return await connection.QuerySingleAsync<ArtefactOfEditionQuery.Result>(ArtefactOfEditionQuery.GetQuery(user.userId, withMask),
                     new
                     {
-                        EditionId = user.EditionId() ?? 0,
+                        EditionId = user.editionId ?? 0,
                         UserId = user.userId ?? 0,
                         ArtefactId = artfactId
                     });
@@ -82,7 +76,7 @@ namespace SQE.SqeHttpApi.DataAccess
             var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
             const string tableName = "artefact_shape";
             var artefactShapeId = GetArtefactPk(user, artefactId, tableName);
-            var sqeImageId = GetArtefactShapeSqeImageId(user, user.EditionId().Value, artefactId);
+            var sqeImageId = GetArtefactShapeSqeImageId(user, user.editionId.Value, artefactId);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -253,7 +247,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     return await connection.QuerySingleAsync<uint>(FindArtefactComponentId.GetQuery(table),
                         new
                         {
-                            EditionId = user.EditionId().Value,
+                            EditionId = user.editionId.Value,
                             ArtefactId = artefactId
                         });
                 }

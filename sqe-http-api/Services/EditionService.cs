@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SQE.SqeHttpApi.DataAccess;
@@ -142,7 +140,7 @@ namespace SQE.SqeHttpApi.Server.Services
                 throw new ImproperRequestException("change scroll Name", "scroll Name cannot be empty");
             }
             
-            var editions = await _repo.ListEditionsAsync(user.userId, user.EditionId()); //get wanted edition by edition Id
+            var editions = await _repo.ListEditionsAsync(user.userId, user.editionId); //get wanted edition by edition Id
             
             return EditionModelToDTO(editions.First(x => x.EditionId == editionId));
         }

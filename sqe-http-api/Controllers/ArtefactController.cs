@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +24,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         private void ParseOptionals(List<string> optionals, out bool images, out bool masks)
         {
             images = masks = false;
-            if (optionals == null) return;
+            if (optionals == null) 
+                return;
             images = optionals.Contains("artefacts");
             masks = optionals.Contains("masks");
         }
@@ -38,12 +38,12 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param Name="images">Defines whether image references should be included in the response</param>
         [AllowAnonymous]
         [HttpGet("edition/{editionId}/artefact/{artefactId}")]
-        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional = null)
+        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
             try
             {
-                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(), artefactId, masks);
+                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
             }
             catch (NotFoundException)
             {
@@ -58,7 +58,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param Name="images">Defines whether image references should be included in the response</param>
         [AllowAnonymous]
         [HttpGet("edition/{editionId}/artefact/list")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional = null)
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
             try
@@ -85,7 +85,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             try
             {
                 return await _artefactService.UpdateArtefact(
-                    _userService.GetCurrentUserObject(), 
+                    _userService.GetCurrentUserObject(editionId), 
                     editionId, 
                     artefactId, 
                     payload.mask, 
@@ -112,7 +112,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             try
             {
                 return await _artefactService.CreateArtefact(
-                    _userService.GetCurrentUserObject(), 
+                    _userService.GetCurrentUserObject(editionId), 
                     editionId, 
                     payload.masterImageId, 
                     payload.mask, 

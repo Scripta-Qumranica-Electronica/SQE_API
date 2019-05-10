@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-using System.Linq;
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
