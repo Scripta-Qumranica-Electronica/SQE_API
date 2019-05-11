@@ -78,10 +78,14 @@ namespace SQE.SqeHttpApi.Server.Services
                 editionId
             );
 
-            // Bronson: This is *really* unclear, GroupJoin is not something people usually understand.
-            // A few comments are warranted here, or even better - dropping LINQ altogether here
-            // I spent a couple of minutes reading GroupJoin's documenation, and I'm not closer to figuring out 
-            // what is being grouped.
+            // The code below takes two lists: one `result.imagedObjects` has many imaged objects, but no artefact information;
+            // the second has a list of `artefacts.artefacts`, that need to be inserted into the imaged objects of `result.imagedObjects`.
+            // The GroupJoin looks at the id of each imaged object and creates a group of artefacts based on the
+            // agreement of `result.imagedObjects`.x.id = `artefacts.artefacts`.x.imagedObjectId (there may be several
+            // instances of `artefacts.artefacts`.x that belong to a single `result.imagedObjects`.x).  The single
+            // imaged object in the match is the first parameter of `(imagedObject, artefactObjects)` and the group of
+            // artefacts is the second parameter in that lambda. The lambda function `(imagedObject, artefactObjects) => ...`
+            // then creates an ImagedObjectDTO with the artefacts attribute populated from the grouped `artefactObjects`.
             result.imagedObjects = result.imagedObjects.GroupJoin(
                 artefacts.artefacts, // Take two lists: result.imagedObjects and artefacts.artefacts.
                 arg => arg.id, // Group them together where the imagedObject.id
