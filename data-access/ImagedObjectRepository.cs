@@ -20,11 +20,11 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(uint? userId, uint editionId, string imagedObjectId)
         {
             var fragment = ImagedObject.FromId(imagedObjectId);
-            var sql = ImagedFragemntQueries.GetFragmentsQuery(imagedObjectId!=null);
+            var sql = ImagedFragmentQueries.GetFragmentsQuery(imagedObjectId!=null);
 
             using (var connection = OpenConnection())
             {
-                var results = await connection.QueryAsync<ImagedFragemntQueries.Result>(sql, new
+                var results = await connection.QueryAsync<ImagedFragmentQueries.Result>(sql, new
                 {
                     UserId = userId ?? 1, // @UserId is not expanded if userId is null
                     EditionId = editionId,
@@ -36,23 +36,17 @@ namespace SQE.SqeHttpApi.DataAccess
 
                 var models = results.Select(result => CreateImagedObject(result));
                 return models;
-
-                /**var imagedFragment = results.FirstOrDefault();
-                if (imagedFragment == null)
-                    return null;
-
-                return CreateImagedObject(imagedFragment);**/
             }
       
         }
 
-        private ImagedObject CreateImagedObject(ImagedFragemntQueries.Result imagedFragement) 
+        private ImagedObject CreateImagedObject(ImagedFragmentQueries.Result imagedFragment) 
         {
             var model = new ImagedObject
             {
-                Institution = imagedFragement.institution,
-                Catalog1 = imagedFragement.catalog_1,
-                Catalog2 = imagedFragement.catalog_2,     
+                Institution = imagedFragment.institution,
+                Catalog1 = imagedFragment.catalog_1,
+                Catalog2 = imagedFragment.catalog_2,     
             };
             return model;
         }

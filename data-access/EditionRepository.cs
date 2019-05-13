@@ -15,12 +15,8 @@ namespace SQE.SqeHttpApi.DataAccess
     {
         Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
         Task<Dictionary<uint, List<uint>>> GetEditionsAsync(uint? editionId, uint? userId);
-        Task ChangeEditionNameAsync(uint editionId, string name, UserInfo user);
-        Task<uint> CopyEditionAsync(uint editionId, UserInfo user);
-        //Task<List<string>> GetOwnerTables();
-        // Task<bool> UpdateOwnerTables(uint olvd, uint svid);
-        //Task<int> UpdateAction(uint scrollDataId, uint oldScrollDataId, uint editionId);
-        // Task<IEnumerable<Dictionary<uint, List<Share>>>> GetScrollVersionShares(List<uint> scrollIds);
+        Task ChangeEditionNameAsync(UserInfo user, string name);
+        Task<uint> CopyEditionAsync(UserInfo user);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
@@ -112,7 +108,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        public async Task ChangeEditionNameAsync(uint editionId, string name, UserInfo user)
+        public async Task ChangeEditionNameAsync(UserInfo user, string name)
         {
             using (var connection = OpenConnection())
             {
@@ -122,7 +118,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     // which no one in the front end will generally have or care about.
                     var result = await connection.QuerySingleAsync<EditionNameQuery.Result>(EditionNameQuery.GetQuery(), 
                         new {
-                        EditionId = editionId
+                        EditionId = user.editionId ?? 0
                     });
 
                     // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
@@ -143,84 +139,25 @@ namespace SQE.SqeHttpApi.DataAccess
                     
                     // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
                     // care of main_action and single_action.
-                    var response = await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { nameChangeRequest });
-                    // Bronson: Where isn't there a response?
-                    // Itay: You get no response when you try to change to the name that is already being used.
-                    // This can happen when, after the database write begins, someone else changed it to the same name first.
-                    if (response.Count == 0 || !response[0].NewId.HasValue)
-                    {
-                        throw new ImproperRequestException("change scroll name",
-                            "no change in name or failed to write to DB");
-                    }
+                    await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { nameChangeRequest });
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new NoPermissionException(user.userId, "change name", "scroll", editionId);
+                    throw new NoPermissionException(user.userId, "change name", "scroll", user.editionId);
                 }
             }
         }
-        /**
-        public async Task<uint> UpdateAction(int scrollDataId, uint oldScrollDataId, uint editionId)
-        {
-            using (var connection = OpenConnection() as MySqlConnection)
-            {
-                await connection.OpenAsync();
 
-                //update main_action table
-                var cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
-                cmd.Parameters.AddWithValue("@ScrollVersionId", editionId);
-                await cmd.ExecuteNonQueryAsync();
-                var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
-
-                //update single_action table - add with new scroll data id
-
-                cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
-                cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
-                cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
-                cmd.Parameters.AddWithValue("@Action", "add");
-                await cmd.ExecuteNonQueryAsync();
-
-                //delete previous scroll data id
-                cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
-                cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
-                cmd.Parameters.AddWithValue("@IdInTable", oldScrollDataId);
-                cmd.Parameters.AddWithValue("@Action", "delete");
-                await cmd.ExecuteNonQueryAsync();
-
-                await connection.CloseAsync();
-            }
-            return scrollDataId;
-        }**/
-
-//        private async Task<uint> GetScrollDataId(string name, uint editionId)
-//        {
-//
-//            using (var connection = OpenConnection() as MySqlConnection)
-//            {
-//                await connection.OpenAsync();
-//
-//                var cmd = new MySqlCommand(UpdateScrollNameQueries.CheckIfNameExists(), connection);
-//                cmd.Parameters.AddWithValue("@ScrollVersionId", editionId);
-//                cmd.Parameters.AddWithValue("@Name", name);
-//                var result = await cmd.ExecuteScalarAsync();
-//                if (result != null)
-//                {
-//                    //no need in new recored, return reference to scrollDataID
-//                    return Convert.ToInt32(result);
-//                }
-//
-//                //create new recored 
-//                cmd = new MySqlCommand(UpdateScrollNameQueries.AddScrollName(), connection);
-//                cmd.Parameters.AddWithValue("@ScrollVersionId", editionId);
-//                cmd.Parameters.AddWithValue("@Name", name);
-//                await cmd.ExecuteNonQueryAsync();
-//
-//                await connection.CloseAsync();
-//                return Convert.ToInt32(cmd.LastInsertedId);
-//            }
-//        }
-
-        public async Task<uint> CopyEditionAsync(uint editionId, UserInfo user)
+        /// <summary>
+        /// This creates a new copy of the requested edition, which will be owned with full priveleges
+        /// by the requesting user.
+        /// </summary>
+        /// <param name="user">User info object contains the editionId that the user wishes to copy and
+        /// all user permissions related to it.</param>
+        /// <returns>The editionId of the newly created edition.</returns>
+        /// <exception cref="ImproperRequestException"></exception>
+        /// <exception cref="DbFailedWrite"></exception>
+        public async Task<uint> CopyEditionAsync(UserInfo user)
         {
             uint toEditionId;
             
@@ -238,13 +175,13 @@ namespace SQE.SqeHttpApi.DataAccess
                         // Check that edition is locked
                         var fromVersion =
                             await connection.QuerySingleAsync<EditionLockQuery.Result>(EditionLockQuery.GetQuery,
-                                new {EditionId = editionId});
+                                new {EditionId = user.editionId});
                         if (!fromVersion.locked)
                             throw new ImproperRequestException("copy scroll", "scroll to be copied is not locked");
                         
                         // Create a new edition
                         var results = connection.Execute(CreateEditionQuery.GetQuery, 
-                            new{EditionId = editionId});
+                            new{EditionId = user.editionId});
                         if (results != 1)
                             throw new DbFailedWrite();
                         
@@ -276,7 +213,7 @@ namespace SQE.SqeHttpApi.DataAccess
                                 CopyEditionDataForTableQuery.GetQuery(tableName, tableIdColumn),
                                 new
                                 {
-                                    EditionId = editionId,
+                                    EditionId = user.editionId,
                                     EditionEditorId = toEditionEditorId,
                                     CopyToEditionId = toEditionId
                                 });
@@ -295,27 +232,6 @@ namespace SQE.SqeHttpApi.DataAccess
             }
             return toEditionId;
         }
-
-        /*
-        public async Task<bool> UpdateOwnerTables(uint olvId, uint svid)
-        {
-            using (var connection = OpenConnection() as MySqlConnection)
-            {
-                await connection.OpenAsync();
-                List<string> ownerList = CopyScrollVersionQueries.GetOwnerList();
-                foreach (var ownerTable in ownerList)
-                {
-                    var cmd = new MySqlCommand(ownerTable, connection);
-                    cmd.Parameters.AddWithValue("@SVID", svid);
-                    cmd.Parameters.AddWithValue("@OLDSVID", olvId);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-                await connection.CloseAsync();
-            }
-            return true;
-        }
-        */
-
     }
 }
 

@@ -25,7 +25,7 @@ JOIN image_catalog USING(image_catalog_id)
 JOIN SQE_image USING(image_catalog_id)
 JOIN image_urls USING(image_urls_id)
 WHERE edition.edition_id = @EditionId
-AND (edition_editor.user_id =1 OR edition_editor.user_id =@UserId)
+AND (edition_editor.user_id = 1 OR edition_editor.user_id = @UserId)
 AND iaa_edition_catalog.edition_side =0
 ";
         public static string GetImageQuery(bool filterFragment)
@@ -34,8 +34,8 @@ AND iaa_edition_catalog.edition_side =0
                 return _getImageQuery;
             var str = new StringBuilder(_getImageQuery);
             str.Append(" AND image_catalog.institution=@Institution");
-            str.Append(" AND image_catalog.catalog_number_1=@Catalog1" );
-            str.Append(" AND image_catalog.catalog_number_2=@Catalog2");
+            str.Append(" AND image_catalog.catalogNumber1=@Catalog1" );
+            str.Append(" AND image_catalog.catalogNumber2=@Catalog2");
             return str.ToString();
         }
 
@@ -68,7 +68,7 @@ SELECT  image_catalog.image_catalog_id,
 FROM image_catalog
 ";
         private const string _scrollLimit = @"
-JOIN image_to_iaa_edition_catalog USING(image_catalog_id)
+JOIN image_to_iaa_edition_catalog USING(imageCatalogId)
 JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN edition USING(scroll_id)
 WHERE edition.edition_is = @EditionId

@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.Helpers;
 
 
 namespace SQE.SqeHttpApi.Server.Controllers
@@ -10,7 +10,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
 
     [Produces("application/json")]
     [Authorize]
-    [Route("v1/[controller]")]
+    [Route("v1/[controller]s")]
     [ApiController]
     public class UserController : ControllerBase
     {

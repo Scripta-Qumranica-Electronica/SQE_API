@@ -3,13 +3,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.Helpers;
 
 namespace SQE.SqeHttpApi.Server.Controllers
 {
 
     [Authorize]
-    [Route("v1/editions")]
+    [Route("v1/[controller]s")]
     [ApiController]
     public class EditionController : ControllerBase
     {
@@ -76,7 +76,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
-                var edition = await _editionService.UpdateEditionAsync(editionId, request.name, user);
+                var edition = await _editionService.UpdateEditionAsync(user, request.name);
                 //await _broadcastService.Broadcast(EditionId, JsonConvert.SerializeObject(edition));
                 return edition;
             }
@@ -106,7 +106,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
-                var edition = await _editionService.CopyEditionAsync(editionId, request.name, user);
+                var edition = await _editionService.CopyEditionAsync(user, request.name);
                 return edition;
             }
             catch (NotFoundException)

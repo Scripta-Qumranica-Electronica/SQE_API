@@ -2,7 +2,7 @@
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-    internal class ImagedFragemntQueries
+    internal class ImagedFragmentQueries
     {
         private const string _getFragments = @"
 SELECT image_catalog.institution AS institution,
@@ -25,8 +25,8 @@ WHERE edition.edition_id = @EditionId
                 return _getFragments;
             var str = new StringBuilder(_getFragments);
             str.Append(" AND image_catalog.institution=@Institution");
-            str.Append(" AND image_catalog.catalog_number_1=@Catalog1");
-            str.Append(" AND image_catalog.catalog_number_2=@Catalog2");
+            str.Append(" AND image_catalog.catalogNumber1=@Catalog1");
+            str.Append(" AND image_catalog.catalogNumber2=@Catalog2");
             return str.ToString();
         }
 

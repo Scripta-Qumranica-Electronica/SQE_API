@@ -12,14 +12,14 @@ namespace SQE.SqeHttpApi.DataAccess
 
     public interface IArtefactRepository
     {
-        Task<ArtefactOfEditionQuery.Result> GetEditionArtefactAsync(UserInfo user, uint artfactId, bool withMask = false);
+        Task<ArtefactModel> GetEditionArtefactAsync(UserInfo user, uint artfactId, bool withMask = false);
 
         // Bronson: Don't return query results, create a DataModel object and return that. The query results are internal
         // Itay: I would prefer not to go through three levels of serialization: query Result -> intermediary -> DTO.  The
         // service serializes the DTO and the repo serializes the queried data (two serialization operations, two object classes).
         // I would be ok with having some external model, and letting the repo tell Dapper serialize to that model instead
         // of the query result object, and using that as the function returns.
-        Task<IEnumerable<ArtefactsOfEditionQuery.Result>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false);
+        Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false);
 
         Task<List<AlteredRecord>> UpdateArtefactShape(UserInfo user, uint artefactId, string shape);
         Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint artefactId, string name);
@@ -38,11 +38,11 @@ namespace SQE.SqeHttpApi.DataAccess
             _databaseWriter = databaseWriter;
         }
 
-        public async Task<ArtefactOfEditionQuery.Result> GetEditionArtefactAsync(UserInfo user, uint artfactId, bool withMask = false)
+        public async Task<ArtefactModel> GetEditionArtefactAsync(UserInfo user, uint artfactId, bool withMask = false)
         {
             using (var connection = OpenConnection())
             {
-                return await connection.QuerySingleAsync<ArtefactOfEditionQuery.Result>(ArtefactOfEditionQuery.GetQuery(user.userId, withMask),
+                return await connection.QuerySingleAsync<ArtefactModel>(ArtefactOfEditionQuery.GetQuery(user.userId, withMask),
                     new
                     {
                         EditionId = user.editionId ?? 0,
@@ -52,11 +52,11 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        public async Task<IEnumerable<ArtefactsOfEditionQuery.Result>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false)
+        public async Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false)
         {
             using (var connection = OpenConnection())
             {
-                return await connection.QueryAsync<ArtefactsOfEditionQuery.Result>(ArtefactsOfEditionQuery.GetQuery(userId, withMask),
+                return await connection.QueryAsync<ArtefactModel>(ArtefactsOfEditionQuery.GetQuery(userId, withMask),
                     new
                     {
                         EditionId = editionId,
@@ -79,7 +79,7 @@ namespace SQE.SqeHttpApi.DataAccess
             var sqeImageId = GetArtefactShapeSqeImageId(user, user.editionId.Value, artefactId);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
-            artefactChangeParams.Add("@artefact_id", artefactId);
+            artefactChangeParams.Add("@artefactId", artefactId);
             artefactChangeParams.Add("@sqe_image_id", await sqeImageId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
@@ -97,7 +97,7 @@ namespace SQE.SqeHttpApi.DataAccess
             var artefactDataId = GetArtefactPk(user, artefactId, tableName);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@name", name);
-            artefactChangeParams.Add("@artefact_id", artefactId);
+            artefactChangeParams.Add("@artefactId", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
@@ -114,7 +114,7 @@ namespace SQE.SqeHttpApi.DataAccess
             var artefactPositionId = GetArtefactPk(user, artefactId, tableName);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@transform_matrix", position);
-            artefactChangeParams.Add("@artefact_id", artefactId);
+            artefactChangeParams.Add("@artefactId", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
@@ -139,7 +139,7 @@ namespace SQE.SqeHttpApi.DataAccess
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
             artefactChangeParams.Add("@sqe_image_id", masterImageId);
-            artefactChangeParams.Add("@artefact_id", artefactId);
+            artefactChangeParams.Add("@artefactId", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Create,
                 artefactChangeParams,
@@ -153,7 +153,7 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@name", name);
-            artefactChangeParams.Add("@artefact_id", artefactId);
+            artefactChangeParams.Add("@artefactId", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Create,
                 artefactChangeParams,
@@ -167,7 +167,7 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@name", position);
-            artefactChangeParams.Add("@artefact_id", artefactId);
+            artefactChangeParams.Add("@artefactId", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Create,
                 artefactChangeParams,

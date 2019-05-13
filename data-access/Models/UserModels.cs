@@ -21,7 +21,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     
     public class UserInfo
     {
-        public uint? userId { get; set; }
+        public readonly uint? userId;
         private readonly IUserRepository _userRepo;
         public uint? editionId;
         private uint? _editionEditorId;
@@ -39,9 +39,18 @@ namespace SQE.SqeHttpApi.DataAccess.Models
             _isAdmin = null;
         }
 
-        public void SetEditionId(uint editionId)
+        /// <summary>
+        /// Set the editionId of the user to a new editionID (the permissions are also
+        /// retrieved for the new editionId).
+        /// </summary>
+        /// <param name="editionId"></param>
+        public async void SetEditionId(uint editionId)
         {
-            this.editionId = editionId;
+            if (!this.editionId.HasValue || this.editionId.Value != editionId)
+            {
+                this.editionId = editionId;
+                await SetPermissions();
+            }
         }
 
         public async Task<uint?> EditionEditorId()

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.Server.DTOs;
 
-namespace SQE.SqeHttpApi.Server.Services
+namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IImagedObjectService
     {
@@ -73,7 +73,7 @@ namespace SQE.SqeHttpApi.Server.Services
         {
             var result = await GetImagedObjectsAsync(userId, editionId);
 
-            var artefacts = ArtefactDTOTransform.QueryArtefactListToArtefactListDTO(
+            var artefacts = ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
                 (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMasks)).ToList(), 
                 editionId
             );
@@ -108,7 +108,7 @@ namespace SQE.SqeHttpApi.Server.Services
             var result = (await GetImagedObjectsAsync(userId, editionId)).imagedObjects.First(x => x.id == imagedObjectId);
             if (withArtefacts)
             {
-                var artefacts = ArtefactDTOTransform.QueryArtefactListToArtefactListDTO(
+                var artefacts = ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
                     (await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMasks)).ToList(), 
                     editionId
                     );

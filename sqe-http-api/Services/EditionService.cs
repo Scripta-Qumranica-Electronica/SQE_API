@@ -7,14 +7,14 @@ using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 
 
-namespace SQE.SqeHttpApi.Server.Services
+namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IEditionService
     {
         Task<EditionGroupDTO> GetEditionAsync(uint editionId, UserInfo user, bool artefacts = false, bool fragments = false);
         Task<EditionListDTO> ListEditionsAsync(uint? userId);
-        Task<EditionDTO> UpdateEditionAsync(uint editionId, string name, UserInfo user);
-        Task<EditionDTO> CopyEditionAsync(uint editionId, string name, UserInfo user);
+        Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name);
+        Task<EditionDTO> CopyEditionAsync(UserInfo user, string name);
     }
 
     public class EditionService : IEditionService
@@ -28,13 +28,6 @@ namespace SQE.SqeHttpApi.Server.Services
 
         public async Task<EditionGroupDTO> GetEditionAsync(uint editionId, UserInfo user, bool artefacts, bool fragments)
         {
-//            var groups = await _repo.GetEditionsAsync(EditionId, user.userId);
-//            if (groups.Count == 0)
-//                return null;
-//            //Debug.Assert(groups.Count == 1, "How come we got more than 1 group?!");
-//
-//            var scrollVersionGroupIds = groups[groups.Keys.First()];
-
             var scrollModels = await _repo.ListEditionsAsync(user.userId, editionId);
 
             var primaryModel = scrollModels.FirstOrDefault(sv => sv.EditionId == editionId);
@@ -122,17 +115,17 @@ namespace SQE.SqeHttpApi.Server.Services
             };
         }
 
-        public async Task<EditionDTO> UpdateEditionAsync(uint editionId, string name, UserInfo user)
+        public async Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name)
         {
             if (!string.IsNullOrEmpty(name)) 
             {
                 try
                 {
-                    await _repo.ChangeEditionNameAsync(editionId, name, user);
+                    await _repo.ChangeEditionNameAsync(user, name);
                 } 
                 catch(NoPermissionException)
                 {
-                    throw new NotFoundException(editionId);
+                    throw new NotFoundException(user.editionId.Value);
                 }
             }
             else
@@ -142,37 +135,35 @@ namespace SQE.SqeHttpApi.Server.Services
             
             var editions = await _repo.ListEditionsAsync(user.userId, user.editionId); //get wanted edition by edition Id
             
-            return EditionModelToDTO(editions.First(x => x.EditionId == editionId));
+            return EditionModelToDTO(editions.First(x => x.EditionId == user.editionId));
         }
 
-        public async Task<EditionDTO> CopyEditionAsync(uint editionId, string name, UserInfo user)
+        public async Task<EditionDTO> CopyEditionAsync(UserInfo user, string name)
         {
             EditionDTO edition;
             // Clone edition
-            var copyToEditionId = await _repo.CopyEditionAsync(editionId, user);
-            if (editionId == copyToEditionId)
+            var copyToEditionId = await _repo.CopyEditionAsync(user);
+            if (user.editionId == copyToEditionId)
             {
                 // Check if is success is true, else throw error.
-                throw new System.Exception($"Failed to clone {editionId}.");
+                throw new System.Exception($"Failed to clone {user.editionId}.");
             }
-                
-            editionId = copyToEditionId;
-            user.SetEditionId(editionId);
+            user.SetEditionId(copyToEditionId); // Update user object for the new editionId
             
             //Change the Name, if a Name has been passed
             if (!string.IsNullOrEmpty(name))
             {
-                edition = await UpdateEditionAsync(editionId, name, user);
+                edition = await UpdateEditionAsync(user, name); // Change the name.
             }
             else
             {
-                var editions = await _repo.ListEditionsAsync(user.userId, editionId); //get wanted scroll by Id
-                var unformattedEdition = editions.First();
+                var editions = await _repo.ListEditionsAsync(user.userId, user.editionId); //get wanted scroll by Id
+                var unformattedEdition = editions.First(x => x.EditionId == user.editionId);
                 //I think we do not get this far if no records were found, `First` will, I think throw an error.
                 //Maybe we should more often make use of try/catch.
                 if (unformattedEdition == null)
                 {
-                    throw new NotFoundException(editionId);
+                    throw new NotFoundException(user.editionId.Value);
                 }
                 edition = EditionModelToDTO(unformattedEdition);
             }

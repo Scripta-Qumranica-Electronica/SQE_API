@@ -6,7 +6,7 @@ using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 
-namespace SQE.SqeHttpApi.Server.Services
+namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IArtefactService
     {
@@ -39,23 +39,7 @@ namespace SQE.SqeHttpApi.Server.Services
             if (!user.editionId.HasValue) 
                 return null;
             var artefact = await _artefactRepository.GetEditionArtefactAsync(user, artefactId, withMask);
-            return new ArtefactDTO()
-            {
-                id = artefact.artefact_id,
-                editionId = user.editionId.Value,
-                imagedObjectId = ImagedObjectIdFormat.Serialize(
-                    artefact.institution,
-                    artefact.catalog_number_1,
-                    artefact.catalog_number_2),
-                name = artefact.name,
-                zOrder = 0,
-                side = artefact.catalog_side == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso,
-                mask = new PolygonDTO()
-                {
-                    mask = artefact.mask,
-                    transformMatrix = ""
-                }
-            };
+            return ArtefactDTOTransformer.QueryArtefactToArtefactDTO(artefact, user.editionId.Value);
         }
 
         public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(uint? userId, uint editionId,
@@ -65,17 +49,17 @@ namespace SQE.SqeHttpApi.Server.Services
                 return await GetEditionArtefactListingsWithImagesAsync(userId, editionId, withMask);
             
             var listings = await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask);
-            return ArtefactDTOTransform.QueryArtefactListToArtefactListDTO(listings.ToList(), editionId);
+            return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(listings.ToList(), editionId);
         }
         
         public async Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(uint? userId, uint editionId,
             bool withMask = false)
         {
             var artefactListings = await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask);
-            var imagedObjectIds = artefactListings.Select(x => x.image_catalog_id);
+            var imagedObjectIds = artefactListings.Select(x => x.imageCatalogId);
             
             
-            return ArtefactDTOTransform.QueryArtefactListToArtefactListDTO(artefactListings.ToList(), editionId);
+            return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(artefactListings.ToList(), editionId);
         }
 
         public async Task<ArtefactDTO> UpdateArtefact(UserInfo user, uint editionId, uint artefactId, string mask = null,

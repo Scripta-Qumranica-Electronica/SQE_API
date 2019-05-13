@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.Helpers;
 
 namespace SQE.SqeHttpApi.Server.Controllers
 {
@@ -34,30 +34,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="artefactId">Unique Id of the desired artefact</param>
         /// <param Name="images">Defines whether image references should be included in the response</param>
         [AllowAnonymous]
-        [HttpGet("edition/{editionId}/artefact/{artefactId}")]
-        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
-        {
-            ParseOptionals(optional, out var images, out var masks);
-            try
-            {
-                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-        }
-        
-        /// <summary>
-        /// Provides a listing of all artefacts that are part of the specified edition
-        /// </summary>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="images">Defines whether image references should be included in the response</param>
-        [AllowAnonymous]
-        [HttpGet("edition/{editionId}/artefact/list")]
+        [HttpGet("editions/{editionId}/artefacts")]
         public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
@@ -72,10 +51,31 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
         
         /// <summary>
+        /// Provides a listing of all artefacts that are part of the specified edition
+        /// </summary>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param Name="artefactId">Unique Id of the desired artefact</param>
+        /// <param Name="images">Defines whether image references should be included in the response</param>
+        [AllowAnonymous]
+        [HttpGet("editions/{editionId}/artefacts/{artefactId}")]
+        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
+        {
+            ParseOptionals(optional, out var images, out var masks);
+            try
+            {
+                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+        
+        /// <summary>
         /// Updates the specified artefact
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
-        [HttpPut("edition/{editionId}/artefact/{artefactId}")]
+        [HttpPut("editions/{editionId}/artefacts/{artefactId}")]
         public async Task<ActionResult<ArtefactDTO>> UpdateArtefact(
             [FromRoute] uint editionId, 
             [FromRoute] uint artefactId, 
@@ -103,7 +103,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// the related images
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
-        [HttpPost("edition/{editionId}/artefact")]
+        [HttpPost("editions/{editionId}/artefacts")]
         public async Task<ActionResult<ArtefactDTO>> CreateArtefact(
             [FromRoute] uint editionId,
             [FromBody] CreateArtefactDTO payload

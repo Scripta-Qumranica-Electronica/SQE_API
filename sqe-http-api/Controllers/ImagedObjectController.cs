@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.Helpers;
 
 namespace SQE.SqeHttpApi.Server.Controllers
 {

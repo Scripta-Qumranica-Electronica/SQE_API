@@ -11,7 +11,7 @@ using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
 
-namespace SQE.SqeHttpApi.Server.Services
+namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IUserService
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SQE.SqeHttpApi.Server.Services
+namespace SQE.SqeHttpApi.Server.Helpers
 {
     
     // TODO Should be renamed to EditionNotFoundException

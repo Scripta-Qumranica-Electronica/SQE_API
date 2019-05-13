@@ -10,7 +10,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string imagedObjectId {get; set;}
         public string name { get; set; }
         public PolygonDTO mask { get; set; }
-        public uint zOrder { get; set; }
+        public short zOrder { get; set; }
         public ArtefactSide side { get; set; }
 
         public enum ArtefactSide { recto, verso}
