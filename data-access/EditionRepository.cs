@@ -48,16 +48,16 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             var model = new Edition
             {
-                EditionId = result.edition_id,
-                Name = result.name,
-                Thumbnail = result.thumbnail,
-                Locked = result.locked,
-                LastEdit = result.last_edit,
-                IsPublic = result.user_id == 1, // The default (public and uneditable) SQE data is associated with user_id 1.
+                EditionId = result.EditionId,
+                Name = result.Name,
+                Thumbnail = result.Thumbnail,
+                Locked = result.Locked,
+                LastEdit = result.LastEdit,
+                IsPublic = result.UserId == 1, // The default (public and uneditable) SQE data is associated with user_id 1.
                 Owner = new User
                 {
-                    UserId = result.user_id,
-                    UserName = result.user_name,
+                    UserId = result.UserId,
+                    UserName = result.UserName,
                 }
             };
 
@@ -65,9 +65,9 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 model.Permission = new Permission
                 {
-                    CanAdmin = model.Owner.UserId == currentUserId.Value && result.admin,
-                    CanWrite = model.Owner.UserId == currentUserId.Value && result.may_write,
-                    CanLock = model.Owner.UserId == currentUserId.Value && result.may_lock,
+                    CanAdmin = model.Owner.UserId == currentUserId.Value && result.Admin,
+                    CanWrite = model.Owner.UserId == currentUserId.Value && result.MayWrite,
+                    CanLock = model.Owner.UserId == currentUserId.Value && result.MayLock,
                 };
             }
             else
@@ -99,9 +99,9 @@ namespace SQE.SqeHttpApi.DataAccess
                 var dictionary = new Dictionary<uint, List<uint>>();
                 foreach (var result in results)
                 {
-                    if (!dictionary.ContainsKey(result.scroll_id))
-                        dictionary[result.scroll_id] = new List<uint>();
-                    dictionary[result.scroll_id].Add(result.edition_id);
+                    if (!dictionary.ContainsKey(result.ScrollId))
+                        dictionary[result.ScrollId] = new List<uint>();
+                    dictionary[result.ScrollId].Add(result.EditionId);
                 }
 
                 return dictionary;
@@ -128,13 +128,13 @@ namespace SQE.SqeHttpApi.DataAccess
                     // Now we create the mutation object for the requested action
                     // You will want to check the database to make sure you what you are doing.
                     var nameChangeParams = new DynamicParameters();
-                    nameChangeParams.Add("@scroll_id", result.scroll_id);
-                    nameChangeParams.Add("@name", name);
+                    nameChangeParams.Add("@scroll_id", result.ScrollId);
+                    nameChangeParams.Add("@Name", name);
                     var nameChangeRequest = new MutationRequest(
                         MutateType.Update,
                         nameChangeParams,
                         "scroll_data",
-                        result.scroll_data_id
+                        result.ScrollDataId
                         );
                     
                     // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
@@ -143,7 +143,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new NoPermissionException(user.userId, "change name", "scroll", user.editionId);
+                    throw new NoPermissionException(user.userId, "change Name", "scroll", user.editionId);
                 }
             }
         }
@@ -152,7 +152,7 @@ namespace SQE.SqeHttpApi.DataAccess
         /// This creates a new copy of the requested edition, which will be owned with full priveleges
         /// by the requesting user.
         /// </summary>
-        /// <param name="user">User info object contains the editionId that the user wishes to copy and
+        /// <param Name="user">User info object contains the editionId that the user wishes to copy and
         /// all user permissions related to it.</param>
         /// <returns>The editionId of the newly created edition.</returns>
         /// <exception cref="ImproperRequestException"></exception>
@@ -176,7 +176,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         var fromVersion =
                             await connection.QuerySingleAsync<EditionLockQuery.Result>(EditionLockQuery.GetQuery,
                                 new {EditionId = user.editionId});
-                        if (!fromVersion.locked)
+                        if (!fromVersion.Locked)
                             throw new ImproperRequestException("copy scroll", "scroll to be copied is not locked");
                         
                         // Create a new edition

@@ -2,10 +2,10 @@
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-    internal abstract class ImagedFragmentQueries
+    internal abstract class ImagedObjectQueries
     {
         private const string _getFragments = @"
-SELECT image_catalog.institution AS institution,
+SELECT image_catalog.institution AS Institution,
     image_catalog.catalog_number_1 AS catalog_1,
     image_catalog.catalog_number_2 AS catalog_2,
     image_catalog.object_id AS object_id
@@ -31,7 +31,7 @@ WHERE edition.edition_id = @EditionId
 
         internal class Result
         {
-            public string institution { get; set; }
+            public string Institution { get; set; }
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
             public string object_id { get; set; }

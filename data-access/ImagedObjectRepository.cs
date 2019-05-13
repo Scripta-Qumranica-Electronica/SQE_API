@@ -19,11 +19,11 @@ namespace SQE.SqeHttpApi.DataAccess
 
         public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(uint? userId, uint editionId, string imagedObjectId)
         {
-            var sql = ImagedFragmentQueries.GetQuery(imagedObjectId!=null);
+            var sql = ImagedObjectQueries.GetQuery(imagedObjectId!=null);
 
             using (var connection = OpenConnection())
             {
-                var results = await connection.QueryAsync<ImagedFragmentQueries.Result>(sql, new
+                var results = await connection.QueryAsync<ImagedObjectQueries.Result>(sql, new
                 {
                     UserId = userId ?? 1, // @UserId is not expanded if userId is null
                     EditionId = editionId,
@@ -36,12 +36,12 @@ namespace SQE.SqeHttpApi.DataAccess
       
         }
 
-        private ImagedObject CreateImagedObject(ImagedFragmentQueries.Result imagedFragment) 
+        private ImagedObject CreateImagedObject(ImagedObjectQueries.Result imagedFragment) 
         {
             var model = new ImagedObject
             {
                 Id = imagedFragment.object_id,
-                Institution = imagedFragment.institution,
+                Institution = imagedFragment.Institution,
                 Catalog1 = imagedFragment.catalog_1,
                 Catalog2 = imagedFragment.catalog_2,     
             };

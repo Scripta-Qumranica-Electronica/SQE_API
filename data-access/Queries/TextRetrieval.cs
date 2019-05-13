@@ -6,9 +6,9 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <summary>
     /// Retrieves all textual data for a chunk of text
     /// </summary>
-    /// <param name="startId">Id of the first sign</param>
-    /// <param name="endId">Id of the last sign</param>
-    /// <param name="editionId">Id of the edition the text is to be taken from</param>
+    /// <param Name="startId">Id of the first sign</param>
+    /// <param Name="endId">Id of the last sign</param>
+    /// <param Name="editionId">Id of the edition the text is to be taken from</param>
     public const string GetTextChunkQuery = @"
     WITH RECURSIVE sign_ids
     AS (
@@ -22,11 +22,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     )
     
     SELECT scroll_data.scroll_id AS scrollId,
-       scroll_data.name AS scroll,
+       scroll_data.Name AS scroll,
        col_data.col_id AS fragmentId,
-       col_data.name AS fragment,
+       col_data.Name AS fragment,
        line_data.line_id AS lineId,
-       line_data.name AS line,
+       line_data.Name AS line,
        signId,
        sign_char.sign_char_id as signCharId,
        sign_char.sign as signChar,
@@ -62,8 +62,8 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <summary>
     /// Retrieves the first and last sign of a line
     /// </summary>
-    /// <param name="entityId">Id of line</param>
-    /// <param name="editionId">d of the edition the line is to be taken from</param>
+    /// <param Name="entityId">Id of line</param>
+    /// <param Name="editionId">d of the edition the line is to be taken from</param>
     public const string GetLineTerminatorsQuery = @"
       SELECT sign_char.sign_id
       FROM  line_to_sign
@@ -79,8 +79,8 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <summary>
     /// Retrieves the first and last sign of a fragment
     /// </summary>
-    /// <param name="entityId">Id of line</param>
-    /// <param name="editionId">d of the edition the line is to be taken from</param>
+    /// <param Name="entityId">Id of line</param>
+    /// <param Name="editionId">d of the edition the line is to be taken from</param>
     public const string GetFragmentTerminatorsQuery = @"
       SELECT sign_char.sign_id
       FROM col_to_line

@@ -56,7 +56,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             bool withMask = false)
         {
             var artefactListings = await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask);
-            var imagedObjectIds = artefactListings.Select(x => x.imageCatalogId);
+            var imagedObjectIds = artefactListings.Select(x => x.ImageCatalogId);
             
             
             return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(artefactListings.ToList(), editionId);

@@ -153,7 +153,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             //Change the Name, if a Name has been passed
             if (!string.IsNullOrEmpty(name))
             {
-                edition = await UpdateEditionAsync(user, name); // Change the name.
+                edition = await UpdateEditionAsync(user, name); // Change the Name.
             }
             else
             {

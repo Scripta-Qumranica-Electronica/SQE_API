@@ -20,7 +20,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     internal static class UserPermissionQuery
     {
         public const string GetQuery = @"
-SELECT edition_editor_id, may_write, may_lock, may_read, is_admin
+SELECT edition_editor_id AS EditionEditionEditorId, 
+       may_write AS MayWrite, 
+       may_lock AS MayLock, 
+       may_read AS MayRead, 
+       is_admin AS IsAdmin
 FROM edition_editor
 WHERE edition_id = @EditionId AND user_id = @UserId";
 

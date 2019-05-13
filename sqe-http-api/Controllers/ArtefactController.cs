@@ -54,10 +54,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="artefactId">Unique Id of the desired artefact</param>
+        /// <param Name="ArtefactId">Unique Id of the desired artefact</param>
         /// <param Name="images">Defines whether image references should be included in the response</param>
         [AllowAnonymous]
-        [HttpGet("editions/{editionId}/artefacts/{artefactId}")]
+        [HttpGet("editions/{editionId}/artefacts/{ArtefactId}")]
         public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
@@ -75,7 +75,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Updates the specified artefact
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
-        [HttpPut("editions/{editionId}/artefacts/{artefactId}")]
+        [HttpPut("editions/{editionId}/artefacts/{ArtefactId}")]
         public async Task<ActionResult<ArtefactDTO>> UpdateArtefact(
             [FromRoute] uint editionId, 
             [FromRoute] uint artefactId, 

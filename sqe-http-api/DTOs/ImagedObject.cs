@@ -27,9 +27,9 @@ namespace SQE.SqeHttpApi.Server.DTOs
         /// <summary>
         /// Creates a properly formatted imagedObjectId from the input parameters
         /// </summary>
-        /// <param name="institution">Name of the institution that created the image</param>
-        /// <param name="catalogNumber1">Primary indexing number/identification</param>
-        /// <param name="catalogNumber2">Secondary indexing number/identification, if it exists</param>
+        /// <param Name="Institution">Name of the Institution that created the image</param>
+        /// <param Name="CatalogNumber1">Primary indexing number/identification</param>
+        /// <param Name="CatalogNumber2">Secondary indexing number/identification, if it exists</param>
         /// <returns></returns>
         public static string Serialize(string institution, string catalogNumber1, string catalogNumber2)
         {
@@ -41,14 +41,14 @@ namespace SQE.SqeHttpApi.Server.DTOs
         }
 
         // Warning: I like the idea to create a readable imagedObjectID from the object's cataloguing information.
-        // It should be noted that it is possible that Deserialization may fail. If there is a "-" in the institution 
-        // name, the catalogNumber1, or the catalogNumber2, this deserialize function will fail.
+        // It should be noted that it is possible that Deserialization may fail. If there is a "-" in the Institution 
+        // Name, the CatalogNumber1, or the CatalogNumber2, this deserialize function will fail.
         // TODO: Can we find a safer method to join/deconstruct this imagedObjectID
         
         /// <summary>
         /// Breaks an imagedObjectId into its constituent parts
         /// </summary>
-        /// <param name="imagedObjectId"></param>
+        /// <param Name="imagedObjectId"></param>
         /// <returns></returns>
         public static (string institution, string catalogNumber1, string catalogNumber2) Deserialize(
             string imagedObjectId)

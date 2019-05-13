@@ -11,19 +11,19 @@ namespace SQE.SqeHttpApi.Server.Helpers
         {
             return new ArtefactDTO()
             {
-                id = artefact.artefactId,
+                id = artefact.ArtefactId,
                 editionId = editionId,
                 mask = new PolygonDTO()
                 {
-                    mask = artefact.mask,
-                    transformMatrix = artefact.transformMatrix
+                    mask = artefact.Mask,
+                    transformMatrix = artefact.TransformMatrix
                 },
 
-                imagedObjectId = ImagedObjectIdFormat.Serialize(artefact.institution, artefact.catalogNumber1, artefact.catalogNumber2),
+                imagedObjectId = ImagedObjectIdFormat.Serialize(artefact.Institution, artefact.CatalogNumber1, artefact.CatalogNumber2),
 
-                name = artefact.name,
-                side = artefact.catalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso, 
-                zOrder = artefact.zIndex,
+                name = artefact.Name,
+                side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso, 
+                zOrder = artefact.ZIndex,
             };
         }
         

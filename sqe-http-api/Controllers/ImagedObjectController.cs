@@ -81,7 +81,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
         /// <param Name="artefacts">Set this to true to receive artefact data</param>
-        /// <param Name="withMask">Set this to true to receive the mask polygon data</param>
+        /// <param Name="withMask">Set this to true to receive the Mask polygon data</param>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/imaged-objects")]
         public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
@@ -110,7 +110,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Provides a listing of imaged objects related to the specified edition
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="imagedObjectId">Unique Id of the desired object from the imaging institution</param>
+        /// <param Name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
         /// <param Name="optional">Optional data includes "artefacts" for a list of all artefacts in the object image
         /// and "masks" to retrieve the polygon masks along with the artefacts.</param>
         [AllowAnonymous]

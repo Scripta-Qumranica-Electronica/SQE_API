@@ -7,23 +7,21 @@
         {
             return ArtefactsOfEditionQuery.GetQuery(userId, mask, ordered: false) + _artefactIdRestriction;
         }
-
-        public class Result : ArtefactsOfEditionQuery.Result{}
     }
 
     public static class ArtefactsOfEditionQuery
     {
         private const string _getArtefact = @"
-SELECT artefact_data.name, 
-       $Mask as mask,
-       artefact_shape.artefact_id AS artefactId,
-       artefact_position.transform_matrix AS transformMatrix,
-       artefact_position.z_index AS zIndex,
-       image_catalog.institution, 
-       image_catalog.catalog_number_1 AS catalogNumber1, 
-       image_catalog.catalog_number_2 AS catalogNumber2, 
-       image_catalog.catalog_side AS catalogSide, 
-       SQE_image.image_catalog_id AS imageCatalogId
+SELECT artefact_data.name AS Name, 
+       $Mask as Mask,
+       artefact_shape.artefact_id AS ArtefactId,
+       artefact_position.transform_matrix AS TransformMatrix,
+       artefact_position.z_index AS ZIndex,
+       image_catalog.institution AS Institution, 
+       image_catalog.catalog_number_1 AS CatalogNumber1, 
+       image_catalog.catalog_number_2 AS CatalogNumber2, 
+       image_catalog.catalog_side AS CatalogSide, 
+       SQE_image.image_catalog_id AS ImageCatalogId
 FROM SQE_image
 JOIN image_catalog USING(image_catalog_id)
 JOIN artefact_shape USING(sqe_image_id)
@@ -53,18 +51,6 @@ $Order";
                 .Replace("$Restriction", userId.HasValue ? _userRestriction : _publicRestriction)
                 .Replace("$Mask", mask ? _mask : "\"\"")
                 .Replace("$Order", ordered ? _order : "");
-        }
-
-        public class Result
-        {
-            public  uint artefactId { get; set; }
-            public string name { get; set; }
-            public string mask { get; set; }
-            public string institution { get; set; }
-            public string catalogNumber1 { get; set; }
-            public string catalogNumber2 { get; set; }
-            public byte catalogSide { get; set; }
-            public uint imageCatalogId { get; set; }
         }
     }
 

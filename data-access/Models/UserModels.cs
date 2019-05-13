@@ -12,11 +12,11 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     
     public class UserEditionPermissions
     {
-        public uint edition_editor_id { get; set; }
-        public bool may_write { get; set; }
-        public bool may_lock { get; set; }
-        public bool may_read { get; set; }
-        public bool is_admin { get; set; }
+        public uint EditionEditionEditorId { get; set; }
+        public bool MayWrite { get; set; }
+        public bool MayLock { get; set; }
+        public bool MayRead { get; set; }
+        public bool IsAdmin { get; set; }
     }
     
     public class UserInfo
@@ -43,7 +43,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         /// Set the editionId of the user to a new editionID (the permissions are also
         /// retrieved for the new editionId).
         /// </summary>
-        /// <param name="editionId"></param>
+        /// <param Name="editionId"></param>
         public async void SetEditionId(uint editionId)
         {
             if (!this.editionId.HasValue || this.editionId.Value != editionId)
@@ -95,10 +95,10 @@ namespace SQE.SqeHttpApi.DataAccess.Models
             if (editionId.HasValue && userId.HasValue)
             {
                 var permissions = await _userRepo.GetUserEditionPermissionsAsync(userId.Value, editionId.Value);
-                _mayWrite = permissions.may_write;
-                _mayLock = permissions.may_lock;
-                _isAdmin = permissions.is_admin;
-                _editionEditorId = permissions.edition_editor_id;
+                _mayWrite = permissions.MayWrite;
+                _mayLock = permissions.MayLock;
+                _isAdmin = permissions.IsAdmin;
+                _editionEditorId = permissions.EditionEditionEditorId;
                 completed = true;
             }
             return completed;

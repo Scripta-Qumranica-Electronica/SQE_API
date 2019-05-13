@@ -22,8 +22,8 @@ GROUP BY single_action.id_in_table
             /// This returns a query string that provides the original author for a list of
             /// Id's in a user editable table.
             /// </summary>
-            /// <param name="tableName">The table containing the Id's being audited.</param>
-            /// <param name="idList">The list of Id's to audit</param>
+            /// <param Name="tableName">The table containing the Id's being audited.</param>
+            /// <param Name="idList">The list of Id's to audit</param>
             /// <returns>A query string to be run with the database connector.</returns>
             public string GetQuery(string tableName, List<uint> idList)
             {
@@ -31,7 +31,7 @@ GROUP BY single_action.id_in_table
                 // Bronson was worried about performance when using a huge numbers of parameters.
                 // The idList for this query may conceivably have 50,000 items.  Should we be doing
                 // this some other way?
-                return _query.Replace("@TableName", tableName) // Insert the table name into the query.
+                return _query.Replace("@TableName", tableName) // Insert the table Name into the query.
                     .Replace("@IdList", string.Join(" || ", 
                         idList.Select(x => "single_action.id_in_table = " + x.ToString()) // Unwind the Id's into an || separated list
                         )                                                                 // and format the search string, e.g., single_action.id_in_table = 234.

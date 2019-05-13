@@ -14,7 +14,7 @@ SELECT image_urls.url AS url,
     SQE_image.is_master AS master,
     SQE_image.wavelength_start AS wave_start,
     SQE_image.wavelength_end AS wave_end,
-    image_catalog.institution AS institution,
+    image_catalog.Institution AS Institution,
     image_catalog.catalog_number_1 AS catalog_1,
     image_catalog.catalog_number_2 AS catalog_2,
     image_catalog.object_id AS object_id
@@ -49,7 +49,7 @@ WHERE edition.edition_id = @EditionId
             public bool master { get; set; }
             public ushort wave_start { get; set; }
             public ushort wave_end { get; set; }
-            //public string transformMatrix { get; set; }
+            //public string TransformMatrix { get; set; }
             public string institution { get; set; }
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
@@ -61,14 +61,14 @@ WHERE edition.edition_id = @EditionId
     {
         private const string _baseQuery = @"
 SELECT  image_catalog.image_catalog_id, 
-        image_catalog.institution, 
+        image_catalog.Institution, 
         image_catalog.catalog_number_1, 
         image_catalog.catalog_number_2, 
         image_catalog.catalog_side
 FROM image_catalog
 ";
         private const string _scrollLimit = @"
-JOIN image_to_iaa_edition_catalog USING(imageCatalogId)
+JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
 JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN edition USING(scroll_id)
 WHERE edition.edition_is = @EditionId
@@ -93,7 +93,7 @@ WHERE edition.edition_is = @EditionId
     {
         private const string _baseQuery = @"
 SELECT  image_catalog.image_catalog_id, 
-        image_catalog.institution, 
+        image_catalog.Institution, 
         image_catalog.catalog_number_1, 
         image_catalog.catalog_number_2, 
         image_catalog.catalog_side
@@ -121,7 +121,7 @@ WHERE (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
     {
         public static string GetQuery()
         {
-            return $"SELECT DISTINCT institution FROM image_catalog";
+            return $"SELECT DISTINCT Institution FROM image_catalog";
         }
 
         internal class Result

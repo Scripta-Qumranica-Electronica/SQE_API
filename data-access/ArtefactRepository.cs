@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Dapper;
@@ -73,13 +74,13 @@ namespace SQE.SqeHttpApi.DataAccess
              
             var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
             var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
             const string tableName = "artefact_shape";
             var artefactShapeId = GetArtefactPk(user, artefactId, tableName);
             var sqeImageId = GetArtefactShapeSqeImageId(user, user.editionId.Value, artefactId);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
-            artefactChangeParams.Add("@artefactId", artefactId);
+            artefactChangeParams.Add("@artefact_id", artefactId);
             artefactChangeParams.Add("@sqe_image_id", await sqeImageId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
@@ -96,8 +97,8 @@ namespace SQE.SqeHttpApi.DataAccess
             const string tableName = "artefact_data";
             var artefactDataId = GetArtefactPk(user, artefactId, tableName);
             var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@name", name);
-            artefactChangeParams.Add("@artefactId", artefactId);
+            artefactChangeParams.Add("@Name", name);
+            artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
@@ -114,7 +115,7 @@ namespace SQE.SqeHttpApi.DataAccess
             var artefactPositionId = GetArtefactPk(user, artefactId, tableName);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@transform_matrix", position);
-            artefactChangeParams.Add("@artefactId", artefactId);
+            artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
@@ -134,12 +135,12 @@ namespace SQE.SqeHttpApi.DataAccess
              
             var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
             var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
            
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
             artefactChangeParams.Add("@sqe_image_id", masterImageId);
-            artefactChangeParams.Add("@artefactId", artefactId);
+            artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Create,
                 artefactChangeParams,
@@ -153,7 +154,7 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@name", name);
-            artefactChangeParams.Add("@artefactId", artefactId);
+            artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Create,
                 artefactChangeParams,
@@ -166,8 +167,8 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<List<AlteredRecord>> InsertArtefactPosition(UserInfo user, uint artefactId, string position)
         {
             var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@name", position);
-            artefactChangeParams.Add("@artefactId", artefactId);
+            artefactChangeParams.Add("@transform_matrix", position);
+            artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Create,
                 artefactChangeParams,
@@ -200,9 +201,12 @@ namespace SQE.SqeHttpApi.DataAccess
              
             var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
             var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
            
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }
+            ))
             {
                 using (var connection = OpenConnection())
                 {

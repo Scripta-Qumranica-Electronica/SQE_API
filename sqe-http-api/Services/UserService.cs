@@ -109,7 +109,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// HTTP request.  The UserInfo object can fetch the permissions if requested, and once
         /// the permissions have been requested, they are "cached" for the life of the object.
         /// </summary>
-        /// <param name="editionId"></param>
+        /// <param Name="editionId"></param>
         /// <returns></returns>
         public UserInfo GetCurrentUserObject(uint? editionId = null)
         {

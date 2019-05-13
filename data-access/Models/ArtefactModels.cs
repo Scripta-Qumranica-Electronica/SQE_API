@@ -2,15 +2,15 @@
 {
     public class ArtefactModel
     {
-        public uint artefactId { get; set; }
-        public string name { get; set; }
-        public string mask { get; set; }
-        public string transformMatrix { get; set; }
-        public short zIndex { get; set; }
-        public string institution { get; set; }
-        public string catalogNumber1 { get; set; }
-        public string catalogNumber2 { get; set; }
-        public byte catalogSide { get; set; }
-        public uint imageCatalogId { get; set; }
+        public uint ArtefactId { get; set; }
+        public string Name { get; set; }
+        public string Mask { get; set; }
+        public string TransformMatrix { get; set; }
+        public short ZIndex { get; set; }
+        public string Institution { get; set; }
+        public string CatalogNumber1 { get; set; }
+        public string CatalogNumber2 { get; set; }
+        public byte CatalogSide { get; set; }
+        public uint ImageCatalogId { get; set; }
     }
 }
