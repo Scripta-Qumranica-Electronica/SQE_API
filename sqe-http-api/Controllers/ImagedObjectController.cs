@@ -88,7 +88,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             bool artefacts, masks;
             ParseOptionals(optional, out artefacts, out masks);
-            ParseOptionals(optional, out artefacts, out masks);
 
             try
             {

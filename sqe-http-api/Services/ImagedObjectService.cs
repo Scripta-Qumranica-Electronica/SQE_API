@@ -51,12 +51,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
             var imageDict = new Dictionary<string, List<ImageDTO>>();
             foreach (var image in images)
             {
-                var fragmentId = getImagedObjectId(image);
-                if (!imageDict.ContainsKey(fragmentId))
+                if (!imageDict.ContainsKey(image.ObjectId))
                 {
-                    imageDict[fragmentId] = new List<ImageDTO>();
+                    imageDict[image.ObjectId] = new List<ImageDTO>();
                 }
-                imageDict[fragmentId].Add(_imageService.ImageToDTO(image));
+                imageDict[image.ObjectId].Add(_imageService.ImageToDTO(image));
             }
 
             foreach (var i in imagedFragments)
@@ -124,20 +123,13 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
             return result; 
         }
-        
-        private static string getImagedObjectId(DataAccess.Models.Image image)
-        {
-            return image.Institution + "-" 
-                                     + image.Catlog1 
-                                     + (string.IsNullOrEmpty(image.Catalog2) ? "" : "-" + image.Catalog2);
-        }
 
         private static ImagedObjectDTO ImagedObjectModelToDTO(DataAccess.Models.ImagedObject model, List<ImageDTO> images)
         {
             var (recto, verso) = getSides(images);
             return new ImagedObjectDTO
             {
-                id = model.Id.ToString(),
+                id = model.Id,
                 recto = recto,
                 verso = verso
             };

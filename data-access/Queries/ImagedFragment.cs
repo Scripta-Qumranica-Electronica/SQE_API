@@ -2,12 +2,13 @@
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-    internal class ImagedFragmentQueries
+    internal abstract class ImagedFragmentQueries
     {
         private const string _getFragments = @"
 SELECT image_catalog.institution AS institution,
-image_catalog.catalog_number_1 AS catalog_1,
-image_catalog.catalog_number_2 AS catalog_2
+    image_catalog.catalog_number_1 AS catalog_1,
+    image_catalog.catalog_number_2 AS catalog_2,
+    image_catalog.object_id AS object_id
 FROM iaa_edition_catalog
 JOIN edition USING(scroll_id)
 JOIN edition_editor USING(edition_id)
@@ -19,14 +20,12 @@ WHERE edition.edition_id = @EditionId
   AND iaa_edition_catalog.edition_side =0
 "; 
 
-        public static string GetFragmentsQuery(bool fragmentId)
+        public static string GetQuery(bool fragmentId)
         {
             if(!fragmentId)
                 return _getFragments;
             var str = new StringBuilder(_getFragments);
-            str.Append(" AND image_catalog.institution=@Institution");
-            str.Append(" AND image_catalog.catalogNumber1=@Catalog1");
-            str.Append(" AND image_catalog.catalogNumber2=@Catalog2");
+            str.Append(" AND image_catalog.object_id=@ObjectId");
             return str.ToString();
         }
 
@@ -35,6 +34,7 @@ WHERE edition.edition_id = @EditionId
             public string institution { get; set; }
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
+            public string object_id { get; set; }
 
         }
     }

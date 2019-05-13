@@ -6,17 +6,18 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     {
         private const string _getImageQuery = @"
 SELECT image_urls.url AS url,
-image_urls.proxy AS proxy,
-image_catalog.image_catalog_id,
-SQE_image.type AS img_type,
-image_catalog.catalog_side AS side,
-SQE_image.filename AS filename,
-SQE_image.is_master AS master,
-SQE_image.wavelength_start AS wave_start,
-SQE_image.wavelength_end AS wave_end,
-image_catalog.institution AS institution,
-image_catalog.catalog_number_1 AS catalog_1,
-image_catalog.catalog_number_2 AS catalog_2
+    image_urls.proxy AS proxy,
+    image_catalog.image_catalog_id,
+    SQE_image.type AS img_type,
+    image_catalog.catalog_side AS side,
+    SQE_image.filename AS filename,
+    SQE_image.is_master AS master,
+    SQE_image.wavelength_start AS wave_start,
+    SQE_image.wavelength_end AS wave_end,
+    image_catalog.institution AS institution,
+    image_catalog.catalog_number_1 AS catalog_1,
+    image_catalog.catalog_number_2 AS catalog_2,
+    image_catalog.object_id AS object_id
 FROM iaa_edition_catalog
 JOIN edition USING(scroll_id)
 JOIN edition_editor USING(edition_id)
@@ -25,17 +26,15 @@ JOIN image_catalog USING(image_catalog_id)
 JOIN SQE_image USING(image_catalog_id)
 JOIN image_urls USING(image_urls_id)
 WHERE edition.edition_id = @EditionId
-AND (edition_editor.user_id = 1 OR edition_editor.user_id = @UserId)
-AND iaa_edition_catalog.edition_side =0
+    AND (edition_editor.user_id = 1 OR edition_editor.user_id = @UserId)
+    AND iaa_edition_catalog.edition_side =0
 ";
         public static string GetImageQuery(bool filterFragment)
         {
             if (!filterFragment)
                 return _getImageQuery;
             var str = new StringBuilder(_getImageQuery);
-            str.Append(" AND image_catalog.institution=@Institution");
-            str.Append(" AND image_catalog.catalogNumber1=@Catalog1" );
-            str.Append(" AND image_catalog.catalogNumber2=@Catalog2");
+            str.Append(" AND image_catalog.object_id=@ObjectId");
             return str.ToString();
         }
 
@@ -54,6 +53,7 @@ AND iaa_edition_catalog.edition_side =0
             public string institution { get; set; }
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
+            public string object_id { get; set; }
         }
     }
 

@@ -13,6 +13,7 @@
         public string Institution { set; get; }
         public string Catlog1 { set; get; }
         public string Catalog2 { set; get; }
+        public string ObjectId { set; get; }
         public bool Master { set; get; }
     }
 

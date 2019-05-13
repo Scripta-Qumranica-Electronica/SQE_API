@@ -21,9 +21,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
         public async Task<IEnumerable<Image>> GetImagesAsync(uint? userId, uint editionId, string imagedObjectId)
         {
-            var imagedObject = ImagedObject.FromId(imagedObjectId);
-
-            var sql = ImageQueries.GetImageQuery(imagedObject != null);
+            var sql = ImageQueries.GetImageQuery(!string.IsNullOrEmpty(imagedObjectId));
 
             using (var connection = OpenConnection())
             {
@@ -32,9 +30,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 {
                     UserId = userId ?? 0, // @UserId is not expanded if userId is null
                     EditionId = editionId,
-                    imagedObject?.Catalog1,
-                    imagedObject?.Catalog2,
-                    imagedObject?.Institution,
+                    ObjectId = imagedObjectId,
                 });
 
                 var models = results.Select(result => CreateImage(result));
@@ -57,6 +53,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 Catlog1 = image.catalog_1,
                 Catalog2 = image.catalog_2,
                 ImageCatalogId = image.image_catalog_id,
+                ObjectId = image.object_id,
                 Master = image.master
             };
             return model;
