@@ -27,7 +27,7 @@ JOIN user ON user.user_id = edition_editor.user_id
 LEFT JOIN (SELECT edition_id, MAX(time) AS last_edit 
            FROM edition_editor
            JOIN main_action USING(edition_id) 
-           GROUP BY time) AS last ON last.edition_id = ed2.edition_id
+           GROUP BY edition_id) AS last ON last.edition_id = ed2.edition_id
 LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_image.filename)) AS thumbnail_url 
 		   FROM edition
 		   JOIN iaa_edition_catalog USING(scroll_id)
