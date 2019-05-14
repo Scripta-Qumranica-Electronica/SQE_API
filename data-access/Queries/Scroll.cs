@@ -6,17 +6,18 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     internal class EditionGroupQuery
     {
         private const string _baseQuery = @"
-SELECT ed2.edition_id AS EditionId,
-       edition_editor.is_admin AS Admin,
-	   scroll_data.name AS Name, 
-       im.thumbnail_url AS Thumbnail, 
-       ed2.locked AS Locked,
-       edition_editor.may_lock AS MayLock,
-       edition_editor.may_write AS MayWrite, 
-       edition_editor.may_read AS MayRead,
-       last.last_edit AS LastEdit, 
-       user.user_id AS UserId, 
-       user.user_name AS UserName 
+SELECT DISTINCT ed2.edition_id AS EditionId,
+    edition_editor.is_admin AS Admin,
+    scroll_data.name AS Name, 
+    im.thumbnail_url AS Thumbnail, 
+    ed2.locked AS Locked,
+    ed2.scroll_id AS ScrollId,
+    edition_editor.may_lock AS MayLock,
+    edition_editor.may_write AS MayWrite, 
+    edition_editor.may_read AS MayRead,
+    last.last_edit AS LastEdit, 
+    user.user_id AS UserId, 
+    user.user_name AS UserName 
 FROM edition AS ed1
 JOIN edition AS ed2 ON ed1.scroll_id = ed2.scroll_id
 JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
@@ -59,6 +60,7 @@ LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_imag
             public uint EditionId { get; set; }
             public bool Admin { get; set; }
             public string Name { get; set; }
+            public string ScrollId { get; set; }
             public string Thumbnail { get; set; }
             public bool Locked { get; set; }
             public bool MayLock { get; set; }
