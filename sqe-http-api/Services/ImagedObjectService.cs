@@ -170,29 +170,23 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 }
             }
             
-            // Null the objects if no images were found
-            if (!recto.Any())
-            {
-                recto = null;
-            }
-            if (!verso.Any())
-            {
-                verso = null;
-            }
-            
-            return (new ImageStackDTO
-                    {
-                        id = rectoCatalogId,
-                        masterIndex = rectoMasterIndex,
-                        images = recto
-                    },
-                    new ImageStackDTO
-                    {
-                        id = versoCatalogId,
-                        masterIndex = versoMasterIndex,
-                        images = verso
-                    }
-                );
+            return (recto.Any() // Check if we have any recto images, and return a null if we don't
+                        ? new ImageStackDTO
+                        {
+                            id = rectoCatalogId,
+                            masterIndex = rectoMasterIndex,
+                            images = recto
+                        } 
+                        : null,
+                    verso.Any() // Check if we have any verso images, and return a null if we don't
+                        ? new ImageStackDTO
+                        {
+                            id = versoCatalogId,
+                            masterIndex = versoMasterIndex,
+                            images = verso
+                        } 
+                        : null
+                    );
         }
     }
 }

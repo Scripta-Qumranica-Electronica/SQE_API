@@ -46,31 +46,14 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
         public async Task<EditionListDTO> ListEditionsAsync(uint? userId)
         {
-            var groups = await _repo.GetEditionsAsync(null, null);
-            var editions = await _repo.ListEditionsAsync(userId, null);
-
-            var editionDict = new Dictionary<uint, DataAccess.Models.Edition>();
-            foreach (var edition in editions)
-                editionDict[edition.EditionId] = edition;
-
-            var result = new EditionListDTO
+            return new EditionListDTO()
             {
-                editions = new List<List<EditionDTO>>(),
+                editions = (await _repo.ListEditionsAsync(userId, null))
+                    .GroupBy(x => x.ScrollId) // Group the edition listings by scroll_id
+                    .Select(x => x.Select(EditionModelToDTO)) // Format each entry as an EditionDTO
+                    .Select(x => x.ToList()) // Convert the groups from IEnumerable to List
+                    .ToList() // Convert the list of groups from IEnumerable to List so we now have List<List<EditionDTO>>
             };
-
-            foreach (var groupId in groups.Keys)
-            {
-                var groupList = new List<EditionDTO>();
-                foreach (var editionId in groups[groupId])
-                {
-                    if (editionDict.TryGetValue(editionId, out var scrollVersion))
-                        groupList.Add(EditionModelToDTO(scrollVersion));
-                }
-                if (groupList.Count > 0)
-                    result.editions.Add(groupList);
-            }
-
-            return result;
         }
 
         private static EditionDTO EditionModelToDTO(DataAccess.Models.Edition model)

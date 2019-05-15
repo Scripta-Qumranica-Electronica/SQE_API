@@ -50,6 +50,7 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 EditionId = result.EditionId,
                 Name = result.Name,
+                ScrollId = result.ScrollId,
                 Thumbnail = result.Thumbnail,
                 Locked = result.Locked,
                 LastEdit = result.LastEdit,

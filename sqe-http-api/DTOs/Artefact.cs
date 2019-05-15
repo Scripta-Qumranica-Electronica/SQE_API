@@ -11,9 +11,13 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string name { get; set; }
         public PolygonDTO mask { get; set; }
         public short zOrder { get; set; }
-        public ArtefactSide side { get; set; }
+        public string side { get; set; }
 
-        public enum ArtefactSide { recto, verso}
+        public class ArtefactSide
+        {
+            public const string recto = "recto";
+            public const string verso = "verso";
+        }
     }
    
 
