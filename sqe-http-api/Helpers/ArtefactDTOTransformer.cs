@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.AspNetCore.Identity.UI.V4.Pages.Internal.Account.Manage;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 
