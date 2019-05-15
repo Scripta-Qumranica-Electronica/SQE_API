@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SQE.SqeHttpApi.DataAccess.Models
@@ -15,55 +12,50 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     
     public class UserEditionPermissions
     {
-        public uint edition_editor_id { get; set; }
-        public bool may_write { get; set; }
-        public bool may_lock { get; set; }
-        public bool may_read { get; set; }
-        public bool is_admin { get; set; }
+        public uint EditionEditionEditorId { get; set; }
+        public bool MayWrite { get; set; }
+        public bool MayLock { get; set; }
+        public bool MayRead { get; set; }
+        public bool IsAdmin { get; set; }
     }
     
     public class UserInfo
     {
-        public uint? userId { get; set; }
-        private string _requestPath { get; set; }
+        public readonly uint? userId;
         private readonly IUserRepository _userRepo;
-        private uint? _editionId;
+        public uint? editionId;
         private uint? _editionEditorId;
         private bool? _mayWrite;
         private bool? _mayLock;
         private bool? _isAdmin;
 
-        public UserInfo(string requestPath, IUserRepository userRepository)
+        public UserInfo(uint? userId, uint? editionId, IUserRepository userRepository)
         {
-            userId = null;
-            this._requestPath = requestPath;
+            this.editionId = editionId;
+            this.userId = userId;
             _userRepo = userRepository;
             _mayWrite = null;
             _mayLock = null;
             _isAdmin = null;
         }
-        
-        public uint? EditionId()
-        {
-            if (!_editionId.HasValue)
-            {
-                var scrollEditionTest = new Regex(@"^.*/edition/(\d{1,32}).*$");
-                var scrollEditionMatch = scrollEditionTest.Match(_requestPath);
-                if (scrollEditionMatch.Groups.Count == 2)
-                    _editionId = uint.TryParse(scrollEditionMatch.Groups[1].Value, out var i) ? i : 0;
-                else _editionId = 0;
-            }
-            return _editionId.HasValue && _editionId.Value == 0 ? null : _editionId;
-        }
 
-        public void SetEditionId(uint editionId)
+        /// <summary>
+        /// Set the editionId of the user to a new editionID (the permissions are also
+        /// retrieved for the new editionId).
+        /// </summary>
+        /// <param Name="editionId"></param>
+        public async void SetEditionId(uint editionId)
         {
-            _editionId = editionId;
+            if (!this.editionId.HasValue || this.editionId.Value != editionId)
+            {
+                this.editionId = editionId;
+                await SetPermissions();
+            }
         }
 
         public async Task<uint?> EditionEditorId()
         {
-            if (!_editionEditorId.HasValue && EditionId().HasValue)
+            if (!_editionEditorId.HasValue && editionId.HasValue)
             {
                 await SetPermissions();
             }
@@ -100,13 +92,13 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         private async Task<bool> SetPermissions()
         {
             var completed = false;
-            if (EditionId().HasValue && userId.HasValue)
+            if (editionId.HasValue && userId.HasValue)
             {
-                var permissions = await _userRepo.GetUserEditionPermissionsAsync(userId.Value, EditionId().Value);
-                _mayWrite = permissions.may_write;
-                _mayLock = permissions.may_lock;
-                _isAdmin = permissions.is_admin;
-                _editionEditorId = permissions.edition_editor_id;
+                var permissions = await _userRepo.GetUserEditionPermissionsAsync(userId.Value, editionId.Value);
+                _mayWrite = permissions.MayWrite;
+                _mayLock = permissions.MayLock;
+                _isAdmin = permissions.IsAdmin;
+                _editionEditorId = permissions.EditionEditionEditorId;
                 completed = true;
             }
             return completed;

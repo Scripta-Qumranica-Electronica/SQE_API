@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Text;
-using System.Linq;
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     internal class EditionGroupQuery
     {
         private const string _baseQuery = @"
-SELECT ed2.edition_id AS edition_id,
-       edition_editor.is_admin AS admin,
-	   scroll_data.name AS name, 
-       im.thumbnail_url AS thumbnail, 
-       ed2.locked AS locked,
-       edition_editor.may_lock AS may_lock,
-       edition_editor.may_lock AS may_write, 
-       last.last_edit AS last_edit, 
-       user.user_id AS user_id, 
-       user.user_name AS user_name 
+SELECT ed2.edition_id AS EditionId,
+       edition_editor.is_admin AS Admin,
+	   scroll_data.name AS Name, 
+       im.thumbnail_url AS Thumbnail, 
+       ed2.locked AS Locked,
+       edition_editor.may_lock AS MayLock,
+       edition_editor.may_write AS MayWrite, 
+       edition_editor.may_read AS MayRead,
+       last.last_edit AS LastEdit, 
+       user.user_id AS UserId, 
+       user.user_name AS UserName 
 FROM edition AS ed1
 JOIN edition AS ed2 ON ed1.scroll_id = ed2.scroll_id
 JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
@@ -56,29 +56,30 @@ LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_imag
 
         internal class Result
         {
-            public uint edition_id { get; set; }
-            public bool admin { get; set; }
-            public string name { get; set; }
-            public string thumbnail { get; set; }
-            public bool locked { get; set; }
-            public bool may_lock { get; set; }
-            public bool may_write { get; set; }
-            public DateTime? last_edit { get; set; }
-            public uint user_id { get; set; }
-            public string user_name { get; set; }
+            public uint EditionId { get; set; }
+            public bool Admin { get; set; }
+            public string Name { get; set; }
+            public string Thumbnail { get; set; }
+            public bool Locked { get; set; }
+            public bool MayLock { get; set; }
+            public bool MayWrite { get; set; }
+            public bool MayRead { get; set; }
+            public DateTime? LastEdit { get; set; }
+            public uint UserId { get; set; }
+            public string UserName { get; set; }
         }
     }
 
     internal class ScrollVersionGroupQuery
     {
         private const string _baseQuery = @"
-SELECT DISTINCT ed2.edition_id, ed2.scroll_id
+SELECT DISTINCT ed2.edition_id AS EditionId, ed2.scroll_id AS ScrollId
 FROM edition AS ed1
 JOIN edition AS ed2 ON ed2.scroll_id = ed1.scroll_id
 JOIN edition_editor ON ed2.edition_id = edition_editor.edition_id
 ";
         private const string _where = "WHERE ed1.edition_id = @EditionId \n AND \n";
-        private const string _orderBy = "\n ORDER BY scroll_id, edition_id";
+        private const string _orderBy = "\n ORDER BY ed2.scroll_id, ed2.edition_id";
 
         public static string GetQuery(bool limitScrollVersion, bool limitUser)
         {
@@ -101,15 +102,15 @@ JOIN edition_editor ON ed2.edition_id = edition_editor.edition_id
 
         internal class Result
         {
-            public uint scroll_id { get; set; }
-            public uint edition_id { get; set; }
+            public uint ScrollId { get; set; }
+            public uint EditionId { get; set; }
         }
     }
 
     internal class EditionNameQuery
     {
         private const string _baseQuery = @"
-SELECT scroll_data_id, scroll_id, name
+SELECT scroll_data_id AS ScrollDataId, scroll_id AS ScrollId, name AS Name
 FROM scroll_data
 JOIN scroll_data_owner USING(scroll_data_id)
 WHERE edition_id = @EditionId";
@@ -121,23 +122,23 @@ WHERE edition_id = @EditionId";
 
         internal class Result
         {
-            public uint scroll_data_id { get; set; }
-            public uint scroll_id { get; set; }
-            public string name { get; set; }
+            public uint ScrollDataId { get; set; }
+            public uint ScrollId { get; set; }
+            public string Name { get; set; }
         }
     }
     
     internal static class EditionLockQuery
     {
         public const string GetQuery = @"
-SELECT locked
+SELECT locked AS Locked
 FROM edition_editor
 JOIN edition USING(edition_id)
 WHERE edition_id = @EditionId";
 
         internal class Result
         {
-            public bool locked { get; set; }  // locked is TINYINT, which is 8-bit unsigned like C# bool.  Is it ok/safe?
+            public bool Locked { get; set; }  // locked is TINYINT, which is 8-bit unsigned like C# bool.  Is it ok/safe?
         }
     }
 

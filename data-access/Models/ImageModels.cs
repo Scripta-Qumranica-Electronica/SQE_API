@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SQE.SqeHttpApi.DataAccess.Models
+﻿namespace SQE.SqeHttpApi.DataAccess.Models
 {
     public class Image
     {
@@ -17,6 +13,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public string Institution { set; get; }
         public string Catlog1 { set; get; }
         public string Catalog2 { set; get; }
+        public string ObjectId { set; get; }
         public bool Master { set; get; }
     }
 

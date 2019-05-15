@@ -1,12 +1,3 @@
-using System;
-using System.Text;
-using System.Linq;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading.Tasks;
-using System.Transactions;
-using Dapper;
-
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     // Bronson - I'm not sure whether all the classes here need to have Query added to their names,
@@ -83,15 +74,15 @@ VALUES(@MainActionId, @Action, @TableName, @OwnedTableId)";
     internal static class PermissionCheckQuery
     {
         public static string GetQuery { get; } = @"
-SELECT may_write, locked 
+SELECT may_write AS MayWrite, locked AS Locked
 FROM edition 
 JOIN edition_editor USING(edition_id) 
 WHERE edition_id = @EditionId AND user_id = @UserId";
         
         internal class Result 
         {
-            public ushort may_write { get; set; }
-            public ushort locked { get; set; }
+            public ushort MayWrite { get; set; }
+            public ushort Locked { get; set; }
         }
     }
 }

@@ -1,12 +1,8 @@
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration.UserSecrets;
-using SQE.SqeHttpApi.DataAccess;
-using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.Helpers;
 
 namespace SQE.SqeHttpApi.Server.Controllers
 {

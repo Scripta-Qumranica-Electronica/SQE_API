@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
@@ -8,17 +6,18 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     {
         private const string _getImageQuery = @"
 SELECT image_urls.url AS url,
-image_urls.proxy AS proxy,
-image_catalog.image_catalog_id,
-SQE_image.type AS img_type,
-image_catalog.catalog_side AS side,
-SQE_image.filename AS filename,
-SQE_image.is_master AS master,
-SQE_image.wavelength_start AS wave_start,
-SQE_image.wavelength_end AS wave_end,
-image_catalog.institution AS institution,
-image_catalog.catalog_number_1 AS catalog_1,
-image_catalog.catalog_number_2 AS catalog_2
+    image_urls.proxy AS proxy,
+    image_catalog.image_catalog_id,
+    SQE_image.type AS img_type,
+    image_catalog.catalog_side AS side,
+    SQE_image.filename AS filename,
+    SQE_image.is_master AS master,
+    SQE_image.wavelength_start AS wave_start,
+    SQE_image.wavelength_end AS wave_end,
+    image_catalog.Institution AS Institution,
+    image_catalog.catalog_number_1 AS catalog_1,
+    image_catalog.catalog_number_2 AS catalog_2,
+    image_catalog.object_id AS object_id
 FROM iaa_edition_catalog
 JOIN edition USING(scroll_id)
 JOIN edition_editor USING(edition_id)
@@ -27,17 +26,15 @@ JOIN image_catalog USING(image_catalog_id)
 JOIN SQE_image USING(image_catalog_id)
 JOIN image_urls USING(image_urls_id)
 WHERE edition.edition_id = @EditionId
-AND (edition_editor.user_id =1 OR edition_editor.user_id =@UserId)
-AND iaa_edition_catalog.edition_side =0
+    AND (edition_editor.user_id = 1 OR edition_editor.user_id = @UserId)
+    AND iaa_edition_catalog.edition_side =0
 ";
         public static string GetImageQuery(bool filterFragment)
         {
             if (!filterFragment)
                 return _getImageQuery;
             var str = new StringBuilder(_getImageQuery);
-            str.Append(" AND image_catalog.institution=@Institution");
-            str.Append(" AND image_catalog.catalog_number_1=@Catalog1" );
-            str.Append(" AND image_catalog.catalog_number_2=@Catalog2");
+            str.Append(" AND image_catalog.object_id=@ObjectId");
             return str.ToString();
         }
 
@@ -52,10 +49,11 @@ AND iaa_edition_catalog.edition_side =0
             public bool master { get; set; }
             public ushort wave_start { get; set; }
             public ushort wave_end { get; set; }
-            //public string transformMatrix { get; set; }
+            //public string TransformMatrix { get; set; }
             public string institution { get; set; }
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
+            public string object_id { get; set; }
         }
     }
 
@@ -63,14 +61,14 @@ AND iaa_edition_catalog.edition_side =0
     {
         private const string _baseQuery = @"
 SELECT  image_catalog.image_catalog_id, 
-        image_catalog.institution, 
+        image_catalog.Institution, 
         image_catalog.catalog_number_1, 
         image_catalog.catalog_number_2, 
         image_catalog.catalog_side
 FROM image_catalog
 ";
         private const string _scrollLimit = @"
-JOIN image_to_iaa_edition_catalog USING(image_catalog_id)
+JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
 JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN edition USING(scroll_id)
 WHERE edition.edition_is = @EditionId
@@ -95,7 +93,7 @@ WHERE edition.edition_is = @EditionId
     {
         private const string _baseQuery = @"
 SELECT  image_catalog.image_catalog_id, 
-        image_catalog.institution, 
+        image_catalog.Institution, 
         image_catalog.catalog_number_1, 
         image_catalog.catalog_number_2, 
         image_catalog.catalog_side
@@ -123,7 +121,7 @@ WHERE (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
     {
         public static string GetQuery()
         {
-            return $"SELECT DISTINCT institution FROM image_catalog";
+            return $"SELECT DISTINCT Institution FROM image_catalog";
         }
 
         internal class Result

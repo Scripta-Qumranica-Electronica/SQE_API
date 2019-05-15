@@ -1,33 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
 using Dapper;
-using System.Linq;
 using System.Transactions;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.DataAccess.Queries;
-using Wkx;
-using Polygon = Wkx.Polygon;
 
 namespace SQE.SqeHttpApi.DataAccess
 {
 
     public interface IArtefactRepository
     {
-        Task<Artefact> GetArtefact(uint? userId, uint artefactId);
+        Task<ArtefactModel> GetEditionArtefactAsync(UserInfo user, uint artfactId, bool withMask = false);
 
         // Bronson: Don't return query results, create a DataModel object and return that. The query results are internal
-        Task<IEnumerable<ArtefactNamesOfEditionQuery.Result>> GetEditionArtefactNameListAsync(uint? userId, uint editionId);
-        Task<IEnumerable<ArtefactNamesOfEditionQuery.Result>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false);
+        // Itay: I would prefer not to go through three levels of serialization: query Result -> intermediary -> DTO.  The
+        // service serializes the DTO and the repo serializes the queried data (two serialization operations, two object classes).
+        // I would be ok with having some external model, and letting the repo tell Dapper serialize to that model instead
+        // of the query result object, and using that as the function returns.
+        Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false);
 
-        Task<List<AlteredRecord>> UpdateArtefactShape(UserInfo user, uint editionId, uint artefactId, string shape);
-        Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint editionId, uint artefactId, string name);
+        Task<List<AlteredRecord>> UpdateArtefactShape(UserInfo user, uint artefactId, string shape);
+        Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint artefactId, string name);
 
-        Task<List<AlteredRecord>> UpdateArtefactPosition(UserInfo user, uint editionId, uint artefactId,
+        Task<List<AlteredRecord>> UpdateArtefactPosition(UserInfo user, uint artefactId,
             string position);
         Task<uint> CreateNewArtefact(UserInfo user, uint editionId, uint masterImageId, string shape, string artefactName, string position = null);
     }
@@ -41,62 +39,25 @@ namespace SQE.SqeHttpApi.DataAccess
             _databaseWriter = databaseWriter;
         }
 
-        public async Task<IEnumerable<ArtefactNamesOfEditionQuery.Result>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false)
+        public async Task<ArtefactModel> GetEditionArtefactAsync(UserInfo user, uint artfactId, bool withMask = false)
         {
             using (var connection = OpenConnection())
             {
-                return await connection.QueryAsync<ArtefactNamesOfEditionQuery.Result>(ArtefactNamesOfEditionQuery.GetQuery(userId, withMask),
+                return await connection.QuerySingleAsync<ArtefactModel>(ArtefactOfEditionQuery.GetQuery(user.userId, withMask),
                     new
                     {
-                        EditionId = editionId,
-                        UserId = userId ?? 0
+                        EditionId = user.editionId ?? 0,
+                        UserId = user.userId ?? 0,
+                        ArtefactId = artfactId
                     });
             }
         }
-        
-        public Task<Artefact> GetArtefact(uint? userId, uint artfactId)
-        {
 
-            /**  using (var connection = OpenConnection() as MySqlConnection)
-              {
-               
-                  //update scroll data owner
-                  var cmd = new MySqlCommand(UpdateScrollNameQueries.UpdateScrollDataOwner(), connection);
-                  cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                  cmd.Parameters.AddWithValue("@ScrollDataId", scrollDataId);
-                  await cmd.ExecuteNonQueryAsync();
-
-                  //update main_action table
-                  cmd = new MySqlCommand(UpdateScrollNameQueries.AddMainAction(), connection);
-                  cmd.Parameters.AddWithValue("@ScrollVersionId", sv.Id);
-                  await cmd.ExecuteNonQueryAsync();
-                  var mainActionId = Convert.ToInt32(cmd.LastInsertedId);
-
-                  //update single_action table
-
-                  cmd = new MySqlCommand(UpdateScrollNameQueries.AddSingleAction(), connection);
-                  cmd.Parameters.AddWithValue("@MainActionId", mainActionId);
-                  cmd.Parameters.AddWithValue("@IdInTable", scrollDataId);
-                  cmd.Parameters.AddWithValue("@Action", "add");
-
-
-
-                  await cmd.ExecuteNonQueryAsync();
-
-                  transactionScope.Complete();
-                  await connection.CloseAsync();
-              }
-
-          }
-                  return sv;**/
-            return null;
-        }
-
-        public async Task<IEnumerable<ArtefactNamesOfEditionQuery.Result>> GetEditionArtefactNameListAsync(uint? userId, uint editionId)
+        public async Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false)
         {
             using (var connection = OpenConnection())
             {
-                return await connection.QueryAsync<ArtefactNamesOfEditionQuery.Result>(ArtefactNamesOfEditionQuery.GetQuery(userId),
+                return await connection.QueryAsync<ArtefactModel>(ArtefactsOfEditionQuery.GetQuery(userId, withMask),
                     new
                     {
                         EditionId = editionId,
@@ -105,8 +66,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        // TODO: the following six functions really should be written with a better DRY approach (add a single func they all call).
-        public async Task<List<AlteredRecord>> UpdateArtefactShape(UserInfo user, uint editionId, uint artefactId, string shape)
+        public async Task<List<AlteredRecord>> UpdateArtefactShape(UserInfo user, uint artefactId, string shape)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
              write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
@@ -114,9 +74,10 @@ namespace SQE.SqeHttpApi.DataAccess
              
             var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
             var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-            var artefactShapeId = GetArtefactPk(user, editionId, artefactId, "artefact_shape");
-            var sqeImageId = GetArtefactShapeSqeImageId(user, editionId, artefactId);
+            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+            const string tableName = "artefact_shape";
+            var artefactShapeId = GetArtefactPk(user, artefactId, tableName);
+            var sqeImageId = GetArtefactShapeSqeImageId(user, user.editionId.Value, artefactId);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -124,93 +85,49 @@ namespace SQE.SqeHttpApi.DataAccess
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
-                "artefact_shape",
+                tableName,
                 await artefactShapeId
             );
                     
-            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-            // care of main_action and single_action.
-            var response = await _databaseWriter.WriteToDatabaseAsync(editionId, user, new List<MutationRequest>() { artefactChangeRequest });
-                    
-            if (response.Count == 0 || !response[0].NewId.HasValue)
-            {
-                throw new ImproperRequestException("change artefact shape",
-                    "no change or failed to write to DB");
-            }
-
-            return response;
+            return await WriteArtefact(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint editionId, uint artefactId, string name)
+        public async Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint artefactId, string name)
         {
-            /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
-             write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
-             use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
-             
-            var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
-            var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-           
-            
-            var artefactNameId = GetArtefactPk(user, editionId, artefactId, "artefact_data");
+            const string tableName = "artefact_data";
+            var artefactDataId = GetArtefactPk(user, artefactId, tableName);
             var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@name", name);
+            artefactChangeParams.Add("@Name", name);
             artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
-                "artefact_data",
-                await artefactNameId
+                tableName,
+                await artefactDataId
             );
                     
-            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-            // care of main_action and single_action.
-            var response = await _databaseWriter.WriteToDatabaseAsync(editionId, user, new List<MutationRequest>() { artefactChangeRequest });
-                    
-            if (response.Count == 0 || !response[0].NewId.HasValue)
-            {
-                throw new ImproperRequestException("change artefact name",
-                    "no change or failed to write to DB");
-            }
-
-            return response;
+            return await WriteArtefact(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> UpdateArtefactPosition(UserInfo user, uint editionId, uint artefactId, string position)
+        public async Task<List<AlteredRecord>> UpdateArtefactPosition(UserInfo user, uint artefactId, string position)
         {
-            /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
-             write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
-             use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
-             
-            var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
-            var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-           
-            var artefactPositionId = GetArtefactPk(user, editionId, artefactId, "artefact_position");
+            const string tableName = "artefact_position";
+            var artefactPositionId = GetArtefactPk(user, artefactId, tableName);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@transform_matrix", position);
             artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
-                "artefact_position",
+                tableName,
                 await artefactPositionId
             );
                     
-            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-            // care of main_action and single_action.
-            var response = await _databaseWriter.WriteToDatabaseAsync(editionId, user, new List<MutationRequest>() { artefactChangeRequest });
-                    
-            if (response.Count == 0 || !response[0].NewId.HasValue)
-            {
-                throw new ImproperRequestException("change artefact position",
-                    "no change or failed to write to DB");
-            }
-
-            return response;
+            return await WriteArtefact(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> InsertArtefactShape(UserInfo user, uint editionId, uint artefactId, uint masterImageId, string shape)
+        public async Task<List<AlteredRecord>> InsertArtefactShape(UserInfo user, uint artefactId, uint masterImageId,
+            string shape)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
              write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
@@ -218,7 +135,7 @@ namespace SQE.SqeHttpApi.DataAccess
              
             var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
             var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
            
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
@@ -230,29 +147,11 @@ namespace SQE.SqeHttpApi.DataAccess
                 "artefact_shape"
             );
                     
-            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-            // care of main_action and single_action.
-            var response = await _databaseWriter.WriteToDatabaseAsync(editionId, user, new List<MutationRequest>() { artefactChangeRequest });
-                    
-            if (response.Count == 0 || !response[0].NewId.HasValue)
-            {
-                throw new ImproperRequestException("insert artefact shape",
-                    "no change or failed to write to DB");
-            }
-
-            return response;
+            return await WriteArtefact(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> InsertArtefactName(UserInfo user, uint editionId, uint artefactId, string name)
+        public async Task<List<AlteredRecord>> InsertArtefactName(UserInfo user, uint artefactId, string name)
         {
-            /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
-             write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
-             use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
-             
-            var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
-            var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-           
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@name", name);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -262,41 +161,28 @@ namespace SQE.SqeHttpApi.DataAccess
                 "artefact_data"
             );
                     
-            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-            // care of main_action and single_action.
-            var response = await _databaseWriter.WriteToDatabaseAsync(editionId, user, new List<MutationRequest>() { artefactChangeRequest });
-                    
-            if (response.Count == 0 || !response[0].NewId.HasValue)
-            {
-                throw new ImproperRequestException("insert artefact name",
-                    "no change or failed to write to DB");
-            }
-
-            return response;
+            return await WriteArtefact(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> InsertArtefactPosition(UserInfo user, uint editionId, uint artefactId, string position)
+        public async Task<List<AlteredRecord>> InsertArtefactPosition(UserInfo user, uint artefactId, string position)
         {
-            /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
-             write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
-             use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
-             
-            var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
-            var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-           
             var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@name", position);
+            artefactChangeParams.Add("@transform_matrix", position);
             artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Create,
                 artefactChangeParams,
                 "artefact_position"
             );
-                    
+
+            return await WriteArtefact(user, artefactChangeRequest);
+        }
+
+        public async Task<List<AlteredRecord>> WriteArtefact(UserInfo user, MutationRequest artefactChangeRequest)
+        {
             // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
             // care of main_action and single_action.
-            var response = await _databaseWriter.WriteToDatabaseAsync(editionId, user, new List<MutationRequest>() { artefactChangeRequest });
+            var response = await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { artefactChangeRequest });
                     
             if (response.Count == 0 || !response[0].NewId.HasValue)
             {
@@ -315,9 +201,12 @@ namespace SQE.SqeHttpApi.DataAccess
              
             var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
             var res = string.Join("", binaryMask);
-            var mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
            
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }
+            ))
             {
                 using (var connection = OpenConnection())
                 {
@@ -329,12 +218,11 @@ namespace SQE.SqeHttpApi.DataAccess
                             throw new DbFailedWrite();
                         
                         var artefactId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
-                        var newShape = InsertArtefactShape(user, editionId, artefactId, masterImageId, shape);
-                        var newName = InsertArtefactName(user, editionId, artefactId, artefactName);
+                        var newShape = InsertArtefactShape(user, artefactId, masterImageId, shape);
+                        var newName = InsertArtefactName(user, artefactId, artefactName);
                         // TODO: check virtual scroll for unused spot to place the artefact instead of putting it at the beginning.
                         var newPosition = InsertArtefactPosition(
                             user, 
-                            editionId, 
                             artefactId, 
                             string.IsNullOrEmpty(position) ? "{\"matrix\": [[1,0,0],[0,1,0]]}" : position);
                         await newShape;
@@ -354,7 +242,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        private async Task<uint> GetArtefactPk(UserInfo user, uint editionId, uint artefactId, string table)
+        private async Task<uint> GetArtefactPk(UserInfo user, uint artefactId, string table)
         {
             using (var connection = OpenConnection())
             {
@@ -363,7 +251,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     return await connection.QuerySingleAsync<uint>(FindArtefactComponentId.GetQuery(table),
                         new
                         {
-                            EditionId = editionId,
+                            EditionId = user.editionId.Value,
                             ArtefactId = artefactId
                         });
                 }

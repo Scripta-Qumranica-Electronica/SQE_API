@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using SQE.SqeHttpApi.Server.Services;
-using SQE.SqeHttpApi.Server.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeHttpApi.Server.Helpers;
 
-namespace backend.Controllers
+namespace SQE.SqeHttpApi.Server.Controllers
 {
     [Authorize]
     [Route("v1")]
@@ -24,20 +21,49 @@ namespace backend.Controllers
             this._userService = userService;
         }
         
+        private void ParseOptionals(List<string> optionals, out bool images, out bool masks)
+        {
+            images = masks = false;
+            if (optionals == null) 
+                return;
+            images = optionals.Contains("artefacts");
+            masks = optionals.Contains("masks");
+        }
+        
         /// <summary>
         /// Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
         /// <param Name="images">Defines whether image references should be included in the response</param>
         [AllowAnonymous]
-        [HttpGet("edition/{editionId}/artefact/list")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] string images = "false")
+        [HttpGet("editions/{editionId}/artefacts")]
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
+            ParseOptionals(optional, out var images, out var masks);
             try
             {
-                return images.Equals("true", StringComparison.InvariantCultureIgnoreCase) 
-                    ? Ok(await _artefactService.GetEditionArtefactListingsWithImagesAsync(_userService.GetCurrentUserId(), editionId)) 
-                    : Ok(await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId));
+                return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, masks, images);
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+        
+        /// <summary>
+        /// Provides a listing of all artefacts that are part of the specified edition
+        /// </summary>
+        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param Name="ArtefactId">Unique Id of the desired artefact</param>
+        /// <param Name="images">Defines whether image references should be included in the response</param>
+        [AllowAnonymous]
+        [HttpGet("editions/{editionId}/artefacts/{ArtefactId}")]
+        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
+        {
+            ParseOptionals(optional, out var images, out var masks);
+            try
+            {
+                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
             }
             catch (NotFoundException)
             {
@@ -49,8 +75,8 @@ namespace backend.Controllers
         /// Updates the specified artefact
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
-        [HttpPut("edition/{editionId}/artefact/{artefactId}")]
-        public async Task<ActionResult<ArtefactListDTO>> UpdateArtefact(
+        [HttpPut("editions/{editionId}/artefacts/{ArtefactId}")]
+        public async Task<ActionResult<ArtefactDTO>> UpdateArtefact(
             [FromRoute] uint editionId, 
             [FromRoute] uint artefactId, 
             [FromBody] UpdateArtefactDTO payload
@@ -58,13 +84,13 @@ namespace backend.Controllers
         {
             try
             {
-                return Ok(await _artefactService.UpdateArtefact(
-                    _userService.GetCurrentUserObject(), 
+                return await _artefactService.UpdateArtefact(
+                    _userService.GetCurrentUserObject(editionId), 
                     editionId, 
                     artefactId, 
                     payload.mask, 
                     payload.name, 
-                    payload.position));
+                    payload.position);
             }
             catch (NotFoundException)
             {
@@ -77,32 +103,26 @@ namespace backend.Controllers
         /// the related images
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
-        [HttpPost("edition/{editionId}/artefact")]
-        public async Task<ActionResult<ArtefactListDTO>> CreateArtefact(
-            [FromRoute] uint editionId, 
-            [FromRoute] uint artefactId, 
+        [HttpPost("editions/{editionId}/artefacts")]
+        public async Task<ActionResult<ArtefactDTO>> CreateArtefact(
+            [FromRoute] uint editionId,
             [FromBody] CreateArtefactDTO payload
         )
         {
             try
             {
-                return Ok(await _artefactService.CreateArtefact(
-                    _userService.GetCurrentUserObject(), 
+                return await _artefactService.CreateArtefact(
+                    _userService.GetCurrentUserObject(editionId), 
                     editionId, 
                     payload.masterImageId, 
                     payload.mask, 
                     payload.name, 
-                    payload.position));
+                    payload.position);
             }
             catch (NotFoundException)
             {
                 return NotFound();
             }
-        }
-
-        public class UpdateArtefactMask
-        {
-            public string mask { get; set; }
         }
 
         public class UpdateArtefactDTO

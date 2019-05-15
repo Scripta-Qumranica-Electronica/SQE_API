@@ -1,8 +1,3 @@
-using System;
-using System.Text;
-using System.Linq;
-using System.Collections.Generic;
-
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     internal static class OwnerTables

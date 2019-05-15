@@ -1,21 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Newtonsoft.Json;
-using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.Helpers;
 
 namespace SQE.SqeHttpApi.Server.Controllers
 {
 
     [Authorize]
-    [Route("v1/editions")]
+    [Route("v1/[controller]s")]
     [ApiController]
     public class EditionController : ControllerBase
     {
@@ -45,7 +39,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet("{editionId}")]
         public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
-            var edition = await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(), false, false);
+            var edition = await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(editionId), false, false);
 
             if(edition==null)
             {
@@ -77,12 +71,12 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             try
             {
-                var user = _userService.GetCurrentUserObject();
+                var user = _userService.GetCurrentUserObject(editionId);
                 if (!user.userId.HasValue && !(await user.EditionEditorId()).HasValue && !await user.MayWrite())
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
-                var edition = await _editionService.UpdateEditionAsync(editionId, request.name, user);
+                var edition = await _editionService.UpdateEditionAsync(user, request.name);
                 //await _broadcastService.Broadcast(EditionId, JsonConvert.SerializeObject(edition));
                 return edition;
             }
@@ -107,13 +101,13 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             try
             {
-                var user = _userService.GetCurrentUserObject();
+                var user = _userService.GetCurrentUserObject(editionId);
                 if (!user.userId.HasValue)
                 {
                     throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
                 }
-                var edition = await _editionService.CopyEditionAsync(editionId, request.name, user);
-                return Ok(edition);
+                var edition = await _editionService.CopyEditionAsync(user, request.name);
+                return edition;
             }
             catch (NotFoundException)
             {

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.SqeHttpApi.Server.Helpers;
 
 
 namespace SQE.SqeHttpApi.Server.Controllers
@@ -14,7 +10,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
 
     [Produces("application/json")]
     [Authorize]
-    [Route("v1/[controller]")]
+    [Route("v1/[controller]s")]
     [ApiController]
     public class UserController : ControllerBase
     {

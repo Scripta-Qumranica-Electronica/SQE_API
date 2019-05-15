@@ -12,12 +12,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using System.IO;
-using System.Linq;
 using Microsoft.AspNetCore.Http;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.Helpers;
-using SQE.SqeHttpApi.Server.Services;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace SQE.SqeHttpApi.Server
