@@ -17,9 +17,7 @@ SELECT artefact_data.name AS Name,
        artefact_shape.artefact_id AS ArtefactId,
        artefact_position.transform_matrix AS TransformMatrix,
        artefact_position.z_index AS ZIndex,
-       image_catalog.institution AS Institution, 
-       image_catalog.catalog_number_1 AS CatalogNumber1, 
-       image_catalog.catalog_number_2 AS CatalogNumber2, 
+       image_catalog.object_id AS ImagedObjectId,
        image_catalog.catalog_side AS CatalogSide, 
        SQE_image.image_catalog_id AS ImageCatalogId
 FROM SQE_image
