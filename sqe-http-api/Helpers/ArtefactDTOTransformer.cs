@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Identity.UI.V4.Pages.Internal.Account.Manage;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 
@@ -19,7 +20,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                     transformMatrix = artefact.TransformMatrix
                 },
 
-                imagedObjectId = ImagedObjectIdFormat.Serialize(artefact.Institution, artefact.CatalogNumber1, artefact.CatalogNumber2),
+                imagedObjectId = artefact.ImagedObjectId,
 
                 name = artefact.Name,
                 side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso, 
