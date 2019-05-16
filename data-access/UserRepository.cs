@@ -206,22 +206,15 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 using (var connection = OpenConnection())
                 {
-                    try
-                    {
-                        var confirmRegistration = await connection.ExecuteAsync(ConfirmNewUserAccount.GetQuery, new
-                            { Token = token});
-                        if (confirmRegistration != 1)
-                            throw new DbDetailedFailedWrite("Could not authenticate account.");
-                        var deleteToken = await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
-                            { Token = token});
-                        if (deleteToken != 1)
-                            throw new DbDetailedFailedWrite("Could not delete token.");
-                        transactionScope.Complete();
-                    }
-                    catch
-                    {
-                        throw new DbFailedWrite();
-                    }
+                    var confirmRegistration = await connection.ExecuteAsync(ConfirmNewUserAccount.GetQuery, new
+                        { Token = token});
+                    if (confirmRegistration != 1)
+                        throw new DbDetailedFailedWrite("Could not authenticate account.");
+                    var deleteToken = await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
+                        { Token = token});
+                    if (deleteToken != 1)
+                        throw new DbDetailedFailedWrite("Could not delete token.");
+                    transactionScope.Complete();
                 }
             }
         }
@@ -264,10 +257,14 @@ namespace SQE.SqeHttpApi.DataAccess
                 {
                     try
                     {
+                        // Get the user's details via the submitted email address
                         var userInfo = await connection.QuerySingleAsync<User>(UserByEmailQuery.GetQuery, new
                             { Email = email});
+                        
                         // Generate our secret token
                         var token = Guid.NewGuid().ToString();
+                        
+                        // Write the token to the database
                         var tokenEntry = await connection.ExecuteAsync(CreateUserEmailTokenQuery.GetQuery, new
                         {
                             Token = token,
@@ -276,11 +273,16 @@ namespace SQE.SqeHttpApi.DataAccess
                         });
                         if (tokenEntry != 1)
                             return null;
+                        
+                        // Cleanup
                         transactionScope.Complete();
+                        
+                        // Pass the token back in the user info object
                         userInfo.Token = token;
                         return userInfo;
                     }
-                    catch{} // Suppress errors here (we don't want people to fish for valid email addresses.)
+                    catch{} // Suppress errors here. We don't want to risk people fishing for valid email addresses,
+                            // though any errors are suppressed in the controller too.
                 }
             }
             return null;
@@ -300,24 +302,20 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 using (var connection = OpenConnection())
                 {
-                    try
+                    var resetPassword = await connection.ExecuteAsync(UpdatePasswordByToken.GetQuery, new
                     {
-                        var resetPassword = await connection.ExecuteAsync(UpdatePasswordByToken.GetQuery, new
-                        {
-                            Token = token,
-                            Password = password
-                        });
-                        if (resetPassword != 1)
-                            throw new DbFailedWrite();
-                        var cleanTokenTable = await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
-                        {
-                            Token = token
-                        });
-                        if (cleanTokenTable != 1)
-                            throw new DbFailedWrite();
-                        transactionScope.Complete();
-                    }
-                    catch{ throw new DbFailedWrite();} // Suppress errors here (we don't want people to fish for valid email addresses.)
+                        Token = token,
+                        Password = password
+                    });
+                    if (resetPassword != 1)
+                        throw new DbFailedWrite();
+                    var cleanTokenTable = await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
+                    {
+                        Token = token
+                    });
+                    if (cleanTokenTable != 1)
+                        throw new DbFailedWrite();
+                    transactionScope.Complete(); // Close the transaction
                 }
             }
         }
