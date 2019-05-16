@@ -19,9 +19,7 @@
     "backend": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "SQE_GMAIL_USERNAME": "qumranica",
-        "SQE_GMAIL_PASSWORD": "CxC-xga-0kn-JUr"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "http://localhost:5000"
     },
