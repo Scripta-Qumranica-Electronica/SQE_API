@@ -134,6 +134,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 newUserData.forename, newUserData.surname, newUserData.organization);
             
             // Email the user
+            // TODO: Add link to web endpoint when we know what that is. Can token be in URL query?
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
@@ -173,6 +174,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 return;
             
             // Email the user
+            // TODO: Add link to web endpoint when we know what that is. Can token be in URL query?
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
