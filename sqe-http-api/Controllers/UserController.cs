@@ -1,6 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
 
@@ -43,9 +46,36 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// username or email is already in use.</returns>
         [AllowAnonymous]
         [HttpPost]
-        public ActionResult<UserDTO> CreateNewUser([FromBody] NewUserDTO userInfo)
+        public async Task<ActionResult<UserDTO>> CreateNewUser([FromBody] NewUserDTO userInfo)
         {
-            return Conflict(new { message = "An account with the username or email address already exists " });
+            try
+            {
+                return await _userService.CreateNewUserAsync(userInfo);
+            }
+            catch(DbDetailedFailedWrite err)
+            {
+                return Conflict(new {message = err.Message}); // I would rather not tell which element is wrong (again someone might phish for valid emails), but maybe it is not a problem.
+            }
+        }
+        
+        /// <summary>
+        /// Confirms creation of new user account.
+        /// </summary>
+        /// <param name="payload">JSON object with token from user registration email.</param>
+        /// <returns>Returns success/failure.</returns>
+        [AllowAnonymous]
+        [HttpPost("/confirm-registration")]
+        public async Task<ActionResult<UserDTO>> ConfirmUserRegistration([FromBody] EmailTokenDTO payload)
+        {
+            try
+            {
+                await _userService.ConfirmUserRegistrationAsync(payload.token);
+                return Ok();
+            }
+            catch
+            {
+                return NotFound();
+            }
         }
 
         /// <summary>
@@ -62,34 +92,57 @@ namespace SQE.SqeHttpApi.Server.Controllers
 
             return user;
         }
-    }
-    
-    public class NewUserDTO
-    {
+        
         /// <summary>
-        /// An object containing all data necessary to create a new user account
+        /// Sends secret token to user's email to allow password reset.
         /// </summary>
-        /// <param name="userName">Short username for the new user account, must be unique</param>
-        /// <param name="email">Email address for the new user account, must be unique</param>
-        /// <param name="password">Password for the new user account</param>
-        /// <param name="organization">Name of affiliated organization (if any)</param>
-        /// <param name="forename">The user's given name (may be empty)</param>
-        /// <param name="surname">The user's family name (may be empty)</param>
-        public NewUserDTO(string userName, string email, string password, string organization, string forename, string surname)
+        /// <param name="payload">JSON object with the email address for the user who wants to reset a lost password.</param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpPost("forgot-password")]
+        public async Task<ActionResult> ForgotPassword([FromBody] ResetUserPasswordRequestDTO payload)
         {
-            this.userName = userName;
-            this.email = email;
-            this.password = password;
-            this.organization = organization;
-            this.forename = forename;
-            this.surname = surname;
+            await _userService.RequestResetLostPasswordAsync(payload.email);
+            return NoContent();
         }
-
-        public string userName { get; set; }
-        public string email { get; set; }
-        public string password { get; set; }
-        public string organization { get; set; }
-        public string forename { get; set; }
-        public string surname { get; set; }
+        
+        /// <summary>
+        /// Change the password for the currently logged in user.
+        /// </summary>
+        /// <param name="payload">A JSON object with the old password and the new password.</param>
+        /// <returns>Status 200 with a successful request or status 409 for an unsuccessful request</returns>
+        [HttpPost("change-password")]
+        public async Task<ActionResult> ResetForgottenPassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
+        {
+            try
+            {
+                await _userService.ChangePasswordAsync(_userService.GetCurrentUserObject(), payload.oldPassword, payload.newPassword);
+                return Ok();
+            }
+            catch
+            {
+                return Conflict();
+            }
+        }
+        
+        /// <summary>
+        /// Uses the secret token from /users/forgot-password to validate a reset of the user's password.
+        /// </summary>
+        /// <param name="payload">A JSON object with the secret token and the new password.</param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpPost("change-forgotten-password")]
+        public async Task<ActionResult> ResetForgottenPassword([FromBody] ResetForgottenUserPasswordDTO payload)
+        {
+            try
+            {
+                await _userService.ResetLostPasswordAsync(payload.token, payload.password);
+                return Ok();
+            }
+            catch
+            {
+                return NotFound();
+            }
+        }
     }
 }

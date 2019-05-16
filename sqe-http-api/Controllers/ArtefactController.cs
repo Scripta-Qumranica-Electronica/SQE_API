@@ -99,10 +99,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
         
         /// <summary>
-        /// Provides a listing of all artefacts that are part of the specified edition, including data about
-        /// the related images
+        /// Creates a new artefact with the provided data.
         /// </summary>
         /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param Name="payload">Data for the new artefact</param>
         [HttpPost("editions/{editionId}/artefacts")]
         public async Task<ActionResult<ArtefactDTO>> CreateArtefact(
             [FromRoute] uint editionId,
@@ -123,20 +123,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
             {
                 return NotFound();
             }
-        }
-
-        public class UpdateArtefactDTO
-        {
-            public string mask { get; set; }
-            public string name { get; set; }
-            public string position { get; set; }
-        }
-        public class CreateArtefactDTO
-        {
-            public uint masterImageId { get; set; }
-            public string mask { get; set; }
-            public string name { get; set; }
-            public string position { get; set; }
         }
     }
 }
