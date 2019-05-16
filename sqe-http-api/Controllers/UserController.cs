@@ -64,7 +64,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param name="payload">JSON object with token from user registration email.</param>
         /// <returns>Returns 200 for success and 404 for failure.</returns>
         [AllowAnonymous]
-        [HttpPost("/confirm-registration")]
+        [HttpPost("confirm-registration")]
         public async Task<ActionResult<UserDTO>> ConfirmUserRegistration([FromBody] EmailTokenDTO payload)
         {
             try
