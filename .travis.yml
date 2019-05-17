@@ -1,0 +1,15 @@
+language: csharp
+dist: bionic
+mono: none
+dotnet: 2.2.107
+services: docker
+
+before_install:
+- docker-compose -f docker/dev/docker-compose.yml up -d
+
+install:
+- dotnet restore
+
+script:
+- dotnet build
+- dotnet test
