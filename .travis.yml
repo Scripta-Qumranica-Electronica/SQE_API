@@ -1,7 +1,7 @@
 language: csharp
 dist: bionic
 mono: none
-dotnet: 2.2.107
+dotnet: 2.2
 services: docker
 
 before_install:
