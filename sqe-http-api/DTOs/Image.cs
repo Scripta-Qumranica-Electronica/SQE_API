@@ -4,6 +4,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class ImageDTO
     {
+        public string id { get; set; }
         public string url { get; set; }
         public Lighting lightingType { get; set; }
         public Direction lightingDirection { get; set; }

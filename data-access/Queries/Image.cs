@@ -10,6 +10,7 @@ SELECT image_urls.url AS url,
     image_catalog.image_catalog_id,
     SQE_image.type AS img_type,
     image_catalog.catalog_side AS side,
+    SQE_image.sqe_image_id AS sqe_image_id,
     SQE_image.filename AS filename,
     SQE_image.is_master AS master,
     SQE_image.wavelength_start AS wave_start,
@@ -17,17 +18,25 @@ SELECT image_urls.url AS url,
     image_catalog.Institution AS Institution,
     image_catalog.catalog_number_1 AS catalog_1,
     image_catalog.catalog_number_2 AS catalog_2,
-    image_catalog.object_id AS object_id
+    image_catalog.object_id AS object_id,
+    ASTEXT(image_to_image_map.region_on_image1) AS region_on_image1,
+    ASTEXT(image_to_image_map.region_on_image2) AS region_on_image2,
+    image_to_image_map.rotation AS rotation
 FROM iaa_edition_catalog
 JOIN edition USING(scroll_id)
 JOIN edition_editor USING(edition_id)
 JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN image_catalog USING(image_catalog_id)
 JOIN SQE_image USING(image_catalog_id)
-JOIN image_urls USING(image_urls_id)
+JOIN SQE_image AS master_image ON image_catalog.image_catalog_id = master_image.image_catalog_id 
+    AND master_image.is_master = 1
+LEFT JOIN image_to_image_map ON SQE_image.sqe_image_id = image_to_image_map.image2_id
+    AND image_to_image_map.image1_id = master_image.sqe_image_id 
+JOIN image_urls ON SQE_image.image_urls_id = image_urls.image_urls_id
 WHERE edition.edition_id = @EditionId
     AND (edition_editor.user_id = 1 OR edition_editor.user_id = @UserId)
-    AND iaa_edition_catalog.edition_side =0
+    AND iaa_edition_catalog.edition_side = 0 ## TODO: We should really remove this one condition in order to
+  ## get both recto and verso (everything in the API will work properly by removing this single condition from the query)
 ";
         public static string GetImageQuery(bool filterFragment)
         {
@@ -43,6 +52,7 @@ WHERE edition.edition_id = @EditionId
             public string url { get; set; }
             public string proxy { get; set; }
             public string filename { get; set; }
+            public string sqe_image_id { get; set; }
             public uint image_catalog_id { get; set; }
             public byte img_type { get; set; }
             public byte side { get; set; }
@@ -54,6 +64,9 @@ WHERE edition.edition_id = @EditionId
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
             public string object_id { get; set; }
+            public string region_on_image1 { get; set; }
+            public string region_on_image2 { get; set; }
+            public string rotation { get; set; }
         }
     }
 
