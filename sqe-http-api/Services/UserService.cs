@@ -19,7 +19,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         UserDTO GetCurrentUser();
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject(uint? editionId = null);
-        Task<UserDTO> CreateNewUserAsync(NewUserDTO newUserData);
+        Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
         Task ConfirmUserRegistrationAsync(string token);
         Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
         Task RequestResetLostPasswordAsync(string email);
@@ -127,7 +127,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// </summary>
         /// <param name="newUserData">All of the information for the new user.</param>
         /// <returns>Returns a UserDTO for the newly created user account.</returns>
-        public async Task<UserDTO> CreateNewUserAsync(NewUserDTO newUserData)
+        public async Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData)
         {
             // Ask the repo to create the new user
             var createdUser = await _userRepository.CreateNewUserAsync(newUserData.userName, newUserData.email, newUserData.password,
@@ -189,7 +189,6 @@ The Scripta Qumranica Electronica team</body></html>";
                 emailBody.Replace("$User", userInfo.UserName)
                     .Replace("$Token", userInfo.Token)
             );
-            return;
         }
 
         /// <summary>
@@ -213,7 +212,22 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <returns></returns>
         public async Task ResetLostPasswordAsync(string token, string password)
         {
-            await _userRepository.ResetForgottenPasswordAsync(token, password);
+            var userInfo = await _userRepository.ResetForgottenPasswordAsync(token, password);
+            
+            const string emailBody = @"
+<html><body>Dear $User,<br>
+<br>
+You have recently changed your password for Scripta Qumranica Electronica.  If you feel you have received this email
+in error, please contact the project administrator.<br>
+<br>
+Best wishes,<br>
+The Scripta Qumranica Electronica team</body></html>";
+            const string emailSubject = "Reset password for your Scripta Qumranica Electronica account";
+            await _emailSender.SendEmailAsync(
+                userInfo.Email,
+                emailSubject,
+                emailBody.Replace("$User", userInfo.UserName)
+            );
         }
 
         /// <summary>
@@ -229,7 +243,7 @@ The Scripta Qumranica Electronica team</body></html>";
         }
 
 
-        public static UserDTO UserModelToDTO(DataAccess.Models.User model)
+        public static UserDTO UserModelToDTO(DataAccess.Models.UserToken model)
         {
             return new UserDTO
             {

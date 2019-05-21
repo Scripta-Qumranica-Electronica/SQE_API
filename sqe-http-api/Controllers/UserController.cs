@@ -31,9 +31,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public ActionResult<UserDTO> GetCurrentUser()
         {
             var user = _userService.GetCurrentUser();
-
             if (user == null)
-                return Unauthorized(new { message = "No current user", code =601 }); // TODO: Add Error Code
+                return Unauthorized(new { message = "No current user", code =601 });
 
             return user;
         }
@@ -46,7 +45,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// username or email is already in use.</returns>
         [AllowAnonymous]
         [HttpPost]
-        public async Task<ActionResult<UserDTO>> CreateNewUser([FromBody] NewUserDTO userInfo)
+        public async Task<ActionResult<UserDTO>> CreateNewUser([FromBody] NewUserRequestDTO userInfo)
         {
             try
             {
@@ -62,7 +61,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Confirms creation of new user account.
         /// </summary>
         /// <param name="payload">JSON object with token from user registration email.</param>
-        /// <returns>Returns 200 for success and 404 for failure.</returns>
+        /// <returns>Returns 204 for success and 404 for failure.</returns>
         [AllowAnonymous]
         [HttpPost("confirm-registration")]
         public async Task<ActionResult<UserDTO>> ConfirmUserRegistration([FromBody] EmailTokenDTO payload)
@@ -70,7 +69,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             try
             {
                 await _userService.ConfirmUserRegistrationAsync(payload.token);
-                return Ok();
+                return NoContent();
             }
             catch
             {
@@ -110,14 +109,14 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Change the password for the currently logged in user.
         /// </summary>
         /// <param name="payload">A JSON object with the old password and the new password.</param>
-        /// <returns>Status 200 with a successful request or status 409 for an unsuccessful request</returns>
+        /// <returns>Status 204 with a successful request or status 409 for an unsuccessful request</returns>
         [HttpPost("change-password")]
         public async Task<ActionResult> ResetForgottenPassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
         {
             try
             {
                 await _userService.ChangePasswordAsync(_userService.GetCurrentUserObject(), payload.oldPassword, payload.newPassword);
-                return Ok();
+                return NoContent();
             }
             catch
             {

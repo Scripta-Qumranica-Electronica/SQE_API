@@ -80,9 +80,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
             };
         }
 
-        internal static DataAccess.Models.User OwnerToModel(UserDTO user)
+        internal static DataAccess.Models.UserToken OwnerToModel(UserDTO user)
         {
-            return new DataAccess.Models.User
+            return new DataAccess.Models.UserToken
             {
                 UserId = user.userId,
                 UserName = user.userName

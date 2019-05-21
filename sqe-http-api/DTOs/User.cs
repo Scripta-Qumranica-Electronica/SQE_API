@@ -23,7 +23,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string token { get; set; }
     }
     
-    public class NewUserDTO
+    public class NewUserRequestDTO
     {
         /// <summary>
         /// An object containing all data necessary to create a new user account
@@ -34,7 +34,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         /// <param name="organization">Name of affiliated organization (if any)</param>
         /// <param name="forename">The user's given name (may be empty)</param>
         /// <param name="surname">The user's family name (may be empty)</param>
-        public NewUserDTO(string userName, string email, string password, string organization, string forename, string surname)
+        public NewUserRequestDTO(string userName, string email, string password, string organization, string forename, string surname)
         {
             this.userName = userName;
             this.email = email;

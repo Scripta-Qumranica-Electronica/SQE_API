@@ -2,14 +2,14 @@
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-    internal class UserQueryResponse : IQueryResponse<User>
+    internal class UserQueryResponse : IQueryResponse<UserToken>
     {
         public string user_name { get; set; }
         public uint user_id { get; set; }
 
-        public User CreateModel()
+        public UserToken CreateModel()
         {
-            return new User
+            return new UserToken
             {
                 UserName = user_name,
                 UserId = user_id
@@ -42,38 +42,29 @@ SELECT edition_editor_id AS EditionEditionEditorId,
        is_admin AS IsAdmin
 FROM edition_editor
 WHERE edition_id = @EditionId AND user_id = @UserId";
-
-        public class Return
-        {
-            private uint edition_editor_id { get; set; }
-            private bool may_write { get; set; }
-            private bool may_lock { get; set; }
-            private bool may_read { get; set; }
-            private bool is_admin { get; set; }
-        }
     }
 
     /// <summary>
-    /// Checks whether an account with @Username or @Email exists and whether it is authenticated yet.
+    /// Checks whether an account with @Username or @Email exists and whether it is activated yet.
     /// </summary>
-    internal static class CheckUserAuthentication
+    internal static class CheckUserActivation
     {
         public const string GetQuery = @"
-SELECT user_id, authenticated, user_name, email
+SELECT user_id, activated, user_name, email
 FROM user
 WHERE user_name = @Username OR email = @Email";
 
-        public class Return
+        public class Result
         {
             public int user_id { get; set; } 
-            public bool authenticated { get; set; } 
+            public bool activated { get; set; } 
             public string user_name { get; set; }
             public string email { get; set; }
         }
     }
     
     /// <summary>
-    /// Creates a new unauthenticated user account for @Username, @Email, and @Password;
+    /// Creates a new user account for @Username, @Email, and @Password (the account is not activated);
     /// the fields @Forename, @Surname, and @Organization may be empty.
     /// </summary>
     internal static class CreateNewUserQuery
@@ -84,13 +75,13 @@ VALUES(@Username, @Email, SHA2(@Password, 224), @Forename, @Surname, @Organizati
     }
 
     /// <summary>
-    /// Deletes the user with id @UserId.  We can only ever delete accounts that have not been authenticated
+    /// Deletes the user with id @UserId.  We can only ever delete accounts that have not been activated
     /// (thus they never were able to create any data of their own).
     /// </summary>
     internal static class DeleteUserQuery
     {
         public const string GetQuery = @"
-DELETE FROM user WHERE user_id = @UserId AND authenticated = 0";
+DELETE FROM user WHERE user_id = @UserId AND activated = 0";
     }
 
     /// <summary>
@@ -103,22 +94,22 @@ UPDATE user
 SET pw = SHA2(@NewPassword, 224)
 WHERE user_id = @UserId
     AND pw = SHA2(@OldPassword, 224)
-    AND authenticated = 1 ## Only authenticated users may change their password.
+    AND activated = 1 ## Only activated users may change their password.
 ";
     }
 
     /// <summary>
-    /// Sets the user record to authenticated when provided with a valid token @Token.
+    /// Sets the user record to activated when provided with a valid token @Token.
     /// </summary>
     internal static class ConfirmNewUserAccount
     {
         public const string GetQuery = @"
 UPDATE user
 JOIN user_email_token USING(user_id)
-SET authenticated = 1
+SET activated = 1
 WHERE user_email_token.token = @Token 
     AND user_email_token.type = 'ACTIVATE_ACCOUNT' 
-    AND user.authenticated = 0 ## Only new users can authenticate an account
+    AND user.activated = 0 ## Only new users can activate an account
 ";
     }
     
@@ -130,7 +121,8 @@ WHERE user_email_token.token = @Token
     {
         public const string GetQuery = @"
 INSERT INTO user_email_token (user_id, token, type)
-VALUES(@UserId, @Token, @Type)";
+VALUES(@UserId, @Token, @Type)
+ON DUPLICATE KEY UPDATE token = @Token, date_created = NOW()";
 
         public const string Activate = "ACTIVATE_ACCOUNT";
         public const string ResetPassword = "RESET_PASSWORD";
@@ -161,6 +153,19 @@ WHERE email = @Email
     }
     
     /// <summary>
+    /// Returns the user info for the account with the user email token @Token.  Only use this if you know what you are doing!
+    /// </summary>
+    internal static class UserByTokenQuery
+    {
+        public const string GetQuery = @"
+SELECT user_name AS UserName, forename AS Forename, surname AS Surname, email AS Email
+FROM user
+JOIN user_email_token USING(user_id)
+WHERE user_email_token.token = @Token
+";
+    }
+    
+    /// <summary>
     /// Changes the password to @Password for the user who received the reset password token @Token.
     /// </summary>
     internal static class UpdatePasswordByToken
@@ -171,20 +176,7 @@ JOIN user_email_token USING(user_id)
 SET user.pw = SHA2(@Password, 224)
 WHERE user_email_token.token = @Token 
     AND user_email_token.type = 'RESET_PASSWORD' 
-    AND user.authenticated = 1 ## Only authenticated users can reset their password
-";
-    }
-    
-    /// <summary>
-    /// This is used to keep the user_email_token table clean and up-to-date.
-    /// It deletes records that are more than @Days old.
-    /// I could do this as a trigger in the database, and perhaps that would be better.
-    /// TODO: Decide whether to keep this or to use a trigger. Either way remove `date_expires` from the table.
-    /// </summary>
-    internal static class DeleteOldTokens
-    {
-        public const string GetQuery = @"
-DELETE FROM  user_email_token WHERE NOW() > date_created + interval @Days day
+    AND user.activated = 1 ## Only activated users can reset their password
 ";
     }
 }

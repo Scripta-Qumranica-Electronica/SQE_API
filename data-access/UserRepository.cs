@@ -13,15 +13,15 @@ namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IUserRepository
     {
-        Task<User> GetUserByPasswordAsync(string userName, string password);
+        Task<UserToken> GetUserByPasswordAsync(string userName, string password);
         Task<UserEditionPermissions> GetUserEditionPermissionsAsync(uint userId, uint editionId);
-        Task<User> CreateNewUserAsync(string username, string email, string password, string forename = null,
+        Task<UserToken> CreateNewUserAsync(string username, string email, string password, string forename = null,
             string surname = null, string organization = null);
 
         Task ConfirmAccountCreationAsync(string token);
         Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
-        Task<User> RequestResetForgottenPasswordAsync(string email);
-        Task ResetForgottenPasswordAsync(string token, string password);
+        Task<UserToken> RequestResetForgottenPasswordAsync(string email);
+        Task<UserEmail> ResetForgottenPasswordAsync(string token, string password);
     }
     public class UserRepository: DbConnectionBase , IUserRepository
     {
@@ -39,7 +39,7 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <param name="userName">The user's username</param>
         /// <param name="password">The user's password</param>
         /// <returns></returns>
-        public async Task<User> GetUserByPasswordAsync(string userName, string password)
+        public async Task<UserToken> GetUserByPasswordAsync(string userName, string password)
         {
             var sql = @"SELECT user_name, user_id FROM user WHERE user_name = @UserName AND pw = SHA2(@Password, 224) AND authenticated = 1";
             using (var connection = OpenConnection())
@@ -89,17 +89,16 @@ namespace SQE.SqeHttpApi.DataAccess
         /// from the User object, which can be returned as a DTO to the HTTP request.</returns>
         /// <exception cref="DbDetailedFailedWrite">The username or email is already in use by an authenticated user.</exception>
         /// <exception cref="DbFailedWrite">Some unexpected database write error has occured.</exception>
-        public async Task<User> CreateNewUserAsync(string username, string email, string password, string forename = null, 
+        public async Task<UserToken> CreateNewUserAsync(string username, string email, string password, string forename = null, 
             string surname = null, string organization = null)
         {
-            await CleanOldTokens(); // Always flush the expired tokens from the database first
             using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
                 {
                     // Find any users with either the same username of email address.
-                    var existingUser = (await connection.QueryAsync<CheckUserAuthentication.Return>(
-                        CheckUserAuthentication.GetQuery,
+                    var existingUser = (await connection.QueryAsync<CheckUserActivation.Result>(
+                        CheckUserActivation.GetQuery,
                         new
                         {
                             Username = username,
@@ -114,7 +113,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         {
                             if (record.user_name == username) // First check for duplicate username
                             {
-                                if (record.authenticated) // If this user record has been authenticated add info to error
+                                if (record.activated) // If this user record has been authenticated add info to error
                                     errors.Add("username");
                                 else // else delete the unauthenticated user record (that user should have been faster to authenticate!)
                                 {
@@ -127,7 +126,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
                             if (record.email == email) // Then check for duplicate email
                             {
-                                if (record.authenticated) // If this user record has been authenticated add info to error
+                                if (record.activated) // If this user record has been authenticated add info to error
                                     errors.Add("email");
                                 else // else delete the unauthenticated user record (that user should have been faster to authenticate!)
                                 {
@@ -159,7 +158,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         throw new DbFailedWrite();
 
                     // Confirm creation by getting the User object for the new user
-                    var newUserObject = await connection.QuerySingleAsync<User>(
+                    var newUserObject = await connection.QuerySingleAsync<UserToken>(
                         ConfirmUserCreateQuery.GetQuery,
                         new
                         {
@@ -192,7 +191,7 @@ namespace SQE.SqeHttpApi.DataAccess
         }
 
         /// <summary>
-        /// Writes confirmation of user account based on the secret token sent to the new user's email address.
+        /// Activates user account based on the secret token sent to the new user's email address.
         /// </summary>
         /// <param name="token">Secret token for user authentication</param>
         /// <returns></returns>
@@ -200,7 +199,6 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <exception cref="DbFailedWrite"></exception>
         public async Task ConfirmAccountCreationAsync(string token)
         {
-            await CleanOldTokens(); // Always flush the expired tokens from the database first
             using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
@@ -247,9 +245,8 @@ namespace SQE.SqeHttpApi.DataAccess
         /// </summary>
         /// <param name="email">Email address of the user who has forgotten the password</param>
         /// <returns>Returns user information and secret token that are used to format the reset password email</returns>
-        public async Task<User> RequestResetForgottenPasswordAsync(string email)
+        public async Task<UserToken> RequestResetForgottenPasswordAsync(string email)
         {
-            await CleanOldTokens(); // Always flush the expired tokens from the database first
             using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
@@ -257,7 +254,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     try
                     {
                         // Get the user's details via the submitted email address
-                        var userInfo = await connection.QuerySingleAsync<User>(UserByEmailQuery.GetQuery, new
+                        var userInfo = await connection.QuerySingleAsync<UserToken>(UserByEmailQuery.GetQuery, new
                             { Email = email});
                         
                         // Generate our secret token
@@ -294,13 +291,16 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <param name="password">New password for the user's account</param>
         /// <returns></returns>
         /// <exception cref="DbFailedWrite"></exception>
-        public async Task ResetForgottenPasswordAsync(string token, string password)
+        public async Task<UserEmail> ResetForgottenPasswordAsync(string token, string password)
         {
-            await CleanOldTokens(); // Always flush the expired tokens from the database first
             using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
                 {
+                    var userInfo = await connection.QuerySingleAsync<UserEmail>(UserByTokenQuery.GetQuery, new
+                    {
+                        Token = token
+                    });
                     var resetPassword = await connection.ExecuteAsync(UpdatePasswordByToken.GetQuery, new
                     {
                         Token = token,
@@ -315,19 +315,8 @@ namespace SQE.SqeHttpApi.DataAccess
                     if (cleanTokenTable != 1)
                         throw new DbFailedWrite();
                     transactionScope.Complete(); // Close the transaction
+                    return userInfo;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Clears out old tokens, but see the comments to DeleteOldTokens.
-        /// </summary>
-        /// <returns></returns>
-        private async Task CleanOldTokens()
-        {
-            using (var connection = OpenConnection())
-            {
-                await connection.ExecuteAsync(DeleteOldTokens.GetQuery, new { Days = _tokenValidDays });
             }
         }
     }

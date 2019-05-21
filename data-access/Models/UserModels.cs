@@ -7,7 +7,18 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     {
         public string UserName { get; set; }
         public uint UserId { get; set; }
+    }
+    
+    public class UserToken : User
+    {
         public string Token { get; set; }
+    }
+
+    public class UserEmail : User
+    {
+        public string Forename { get; set; }
+        public string Surname { get; set; }
+        public string Email { get; set; }
     }
     
     public class UserEditionPermissions
