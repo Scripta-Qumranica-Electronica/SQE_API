@@ -13,12 +13,20 @@ namespace SQE.SqeHttpApi.DataAccess
 {
     public interface IUserRepository
     {
-        Task<UserToken> GetUserByPasswordAsync(string userName, string password);
+        Task<UserLoginResponse> GetUserByPasswordAsync(string userName, string password);
+        Task<DetailedUserToken> GetDetailedUserById(UserInfo userInfo);
+        Task<DetailedUserToken> GetUserByEmailAsync(string email);
         Task<UserEditionPermissions> GetUserEditionPermissionsAsync(uint userId, uint editionId);
         Task<UserToken> CreateNewUserAsync(string username, string email, string password, string forename = null,
             string surname = null, string organization = null);
 
+        Task ResolveExistingUserConflictAsync(string username, string email);
+        Task UpdateUserAsync(UserInfo user, string username, string email, bool resetActivation,
+            string forename = null, string surname = null, string organization = null);
+
+        Task<DetailedUserToken> CreateUserActivateTokenAsync(string username, string email);
         Task ConfirmAccountCreationAsync(string token);
+        Task UpdateUnactivatedUserEmailAsync(string oldEmail, string newEmail);
         Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
         Task<UserToken> RequestResetForgottenPasswordAsync(string email);
         Task<UserEmail> ResetForgottenPasswordAsync(string token, string password);
@@ -39,19 +47,45 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <param name="userName">The user's username</param>
         /// <param name="password">The user's password</param>
         /// <returns></returns>
-        public async Task<UserToken> GetUserByPasswordAsync(string userName, string password)
+        public async Task<UserLoginResponse> GetUserByPasswordAsync(string userName, string password)
         {
-            var sql = @"SELECT user_name, user_id FROM user WHERE user_name = @UserName AND pw = SHA2(@Password, 224) AND authenticated = 1";
             using (var connection = OpenConnection())
             {
-                var results = await connection.QueryAsync<UserQueryResponse>(sql, new
+                return await connection.QuerySingleAsync<UserLoginResponse>(LoginQuery.GetQuery, new
                 {
                     UserName = userName,
                     Password = password
                 });
+            }
+        }
 
-                var firstUser = results.FirstOrDefault();
-                return firstUser?.CreateModel();
+        public async Task<DetailedUserToken> GetDetailedUserById(UserInfo userInfo)
+        {
+            using (var connection = OpenConnection())
+            {
+                var columns = new List<string>() { "user_id", "user_name", "forename", "surname", "organization", "email"};
+                var where = new List<string>() {"user_id"};
+                return await connection.QuerySingleAsync<DetailedUserToken>(UserDetails.GetQuery(columns, where), new
+                {
+                    UserId = userInfo.userId ?? 0
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets user details for the account with the provided email address.  Do not use this unless you
+        /// know what you are doing!
+        /// </summary>
+        /// <param name="email">Email address for the account details you want to retrieve</param>
+        /// <returns></returns>
+        public async Task<DetailedUserToken> GetUserByEmailAsync(string email)
+        {
+            using (var connection = OpenConnection())
+            {
+                return await connection.QuerySingleAsync<DetailedUserToken>(UserWithTokenByEmailQuery.GetQuery, new
+                {
+                    Email = email
+                });
             }
         }
         
@@ -97,51 +131,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 using (var connection = OpenConnection())
                 {
                     // Find any users with either the same username of email address.
-                    var existingUser = (await connection.QueryAsync<CheckUserActivation.Result>(
-                        CheckUserActivation.GetQuery,
-                        new
-                        {
-                            Username = username,
-                            Email = email
-                        })).ToList();
-
-                    // Check if we need to send error because username and/or email already exist.
-                    if (existingUser.Any())
-                    {
-                        var errors = new List<string>();
-                        foreach (var record in existingUser)
-                        {
-                            if (record.user_name == username) // First check for duplicate username
-                            {
-                                if (record.activated) // If this user record has been authenticated add info to error
-                                    errors.Add("username");
-                                else // else delete the unauthenticated user record (that user should have been faster to authenticate!)
-                                {
-                                    await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetUserIdQuery,
-                                        new {UserId = record.user_id});
-                                    await connection.ExecuteAsync(DeleteUserQuery.GetQuery,
-                                        new {UserId = record.user_id});
-                                }
-                            }
-
-                            if (record.email == email) // Then check for duplicate email
-                            {
-                                if (record.activated) // If this user record has been authenticated add info to error
-                                    errors.Add("email");
-                                else // else delete the unauthenticated user record (that user should have been faster to authenticate!)
-                                {
-                                    await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetUserIdQuery,
-                                        new {UserId = record.user_id});
-                                    await connection.ExecuteAsync(DeleteUserQuery.GetQuery,
-                                        new {UserId = record.user_id});
-                                }
-                            }
-                        }
-
-                        if (errors.Any()) // if we have any errors here, throw them back to the request
-                            throw new DbDetailedFailedWrite(
-                                $"The {string.Join(" and ", errors)} already exist{(errors.Count() == 1 ? "s" : "")}.");
-                    }
+                    await ResolveExistingUserConflictAsync(username, email);
 
                     // Ok, the input username and email are unique so create the record
                     var newUser = await connection.ExecuteAsync(CreateNewUserQuery.GetQuery,
@@ -157,36 +147,145 @@ namespace SQE.SqeHttpApi.DataAccess
                     if (newUser != 1) // Something strange must have gone wrong
                         throw new DbFailedWrite();
 
-                    // Confirm creation by getting the User object for the new user
-                    var newUserObject = await connection.QuerySingleAsync<UserToken>(
-                        ConfirmUserCreateQuery.GetQuery,
-                        new
-                        {
-                            Username = username,
-                            Email = email,
-                            Password = password,
-                        });
-
-                    // Generate our secret token
-                    var token = Guid.NewGuid().ToString();
-                    // Add the secret token to the database
-                    var userEmailConfirmation = await connection.ExecuteAsync(
-                        CreateUserEmailTokenQuery.GetQuery,
-                        new
-                        {
-                            UserId = newUserObject.UserId,
-                            Token = token,
-                            Type = CreateUserEmailTokenQuery.Activate
-                        });
-                    if (userEmailConfirmation != 1) // Something strange must have gone wrong
-                        throw new DbFailedWrite();
-
-                    // Everything went well, so add the token to the User object so the calling function
-                    // can email the new user.
-                    newUserObject.Token = token;
+                    // Everything went well, so create the email token so the
+                    // calling function can email the new user.
+                    var newUserObject = await CreateUserActivateTokenAsync(username, email);
                     transactionScope.Complete();
                     return newUserObject;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Note that this method may be destructive!  This method resolves any uniqueness constraints
+        /// on a username or email. It will throw if an activated user account already exists with the
+        /// username or email.  If an unactivated user account exists with the username or email, it
+        /// will be overwritten.
+        /// </summary>
+        /// <param name="username">Username to check for uniqueness</param>
+        /// <param name="email">Email to check for uniqueness</param>
+        /// <returns></returns>
+        /// <exception cref="DbDetailedFailedWrite">Returns details about whether the username and/or email
+        /// is already in use.</exception>
+        public async Task ResolveExistingUserConflictAsync(string username, string email)
+        {
+            using (var connection = OpenConnection())
+            {
+                // Find any users with either the same username of email address.
+                var existingUser = (await connection.QueryAsync<CheckUserActivation.Result>(
+                    CheckUserActivation.GetQuery,
+                    new
+                    {
+                        Username = username,
+                        Email = email
+                    })).ToList();
+
+                // Check if we need to send error because username and/or email already exist.
+                if (existingUser.Any())
+                {
+                    var errors = new List<string>();
+                    foreach (var record in existingUser)
+                    {
+                        if (record.user_name == username) // First check for duplicate username
+                        {
+                            if (record.activated) // If this user record has been authenticated add info to error
+                                errors.Add("username");
+                            else // else delete the unauthenticated user record (that user should have been faster to authenticate!)
+                            {
+                                await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetUserIdQuery,
+                                    new {UserId = record.user_id});
+                                await connection.ExecuteAsync(DeleteUserQuery.GetQuery,
+                                    new {UserId = record.user_id});
+                            }
+                        }
+
+                        if (record.email == email) // Then check for duplicate email
+                        {
+                            if (record.activated) // If this user record has been authenticated add info to error
+                                errors.Add("email");
+                            else // else delete the unauthenticated user record (that user should have been faster to authenticate!)
+                            {
+                                await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetUserIdQuery,
+                                    new {UserId = record.user_id});
+                                await connection.ExecuteAsync(DeleteUserQuery.GetQuery,
+                                    new {UserId = record.user_id});
+                            }
+                        }
+                    }
+
+                    if (errors.Any()) // if we have any errors here, throw them back to the request
+                        throw new DbDetailedFailedWrite(
+                            $"The {string.Join(" and ", errors)} already exist{(errors.Count() == 1 ? "s" : "")}.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the info for an existing user.  This cannot be used to reset a password, use ChangePasswordAsync
+        /// instead. You should probably have run ResolveExistingUserConflict before attempting this.
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="username">Username for the new account</param>
+        /// <param name="email">Email address for the new account (it will be verified)</param>
+        /// <param name="forename">Optional given name</param>
+        /// <param name="surname">Optional family name</param>
+        /// <param name="organization">Optional organizational affiliation</param>
+        /// <returns>Returns a User object with the details of the newly created user. This object contains
+        /// the secret confirmation token that should be emailed to the user and then likely stripped
+        /// from the User object, which can be returned as a DTO to the HTTP request.</returns>
+        /// <exception cref="DbDetailedFailedWrite">The username or email is already in use by an authenticated user.</exception>
+        /// <exception cref="DbFailedWrite">Some unexpected database write error has occured.</exception>
+        public async Task UpdateUserAsync(UserInfo user, string username, string email, bool resetActivation,
+            string forename = null, string surname = null, string organization = null)
+        {
+            using (var connection = OpenConnection())
+            {
+                var userUpdate = await connection.ExecuteAsync(UpdateUserInfo.GetQuery(resetActivation), new
+                {
+                    UserName = username, 
+                    Email = email, 
+                    Forename = forename, 
+                    Surname = surname, 
+                    Organization = organization,
+                    UserId = user.userId
+                });
+                
+                if (userUpdate != 1) // Something strange must have gone wrong
+                    throw new DbDetailedFailedWrite("Username or email already in use.");
+            }
+        }
+
+        public async Task<DetailedUserToken> CreateUserActivateTokenAsync(string username, string email)
+        {
+            using (var connection = OpenConnection())
+            {
+                // Confirm creation by getting the User object for the new user
+                var userObject = await connection.QuerySingleAsync<DetailedUserToken>(
+                    ConfirmUserCreateQuery.GetQuery,
+                    new
+                    {
+                        Username = username,
+                        Email = email,
+                    });
+
+                // Generate our secret token
+                var token = Guid.NewGuid().ToString();
+                // Add the secret token to the database
+                var userEmailConfirmation = await connection.ExecuteAsync(
+                    CreateUserEmailTokenQuery.GetQuery,
+                    new
+                    {
+                        UserId = userObject.UserId,
+                        Token = token,
+                        Type = CreateUserEmailTokenQuery.Activate
+                    });
+                if (userEmailConfirmation != 1) // Something strange must have gone wrong
+                    throw new DbFailedWrite();
+
+                // Everything went well, so add the token to the User object so the calling function
+                // can email the new user.
+                userObject.Token = token;
+                return userObject;
             }
         }
 
@@ -213,6 +312,24 @@ namespace SQE.SqeHttpApi.DataAccess
                         throw new DbDetailedFailedWrite("Could not delete token.");
                     transactionScope.Complete();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Updates the email address for an account that has not yet been activated
+        /// </summary>
+        /// <param name="oldEmail">Email address that was originally entered when creating the account</param>
+        /// <param name="newEmail">New email address to use for the account</param>
+        /// <returns></returns>
+        public async Task UpdateUnactivatedUserEmailAsync(string oldEmail, string newEmail)
+        {
+            using (var connection = OpenConnection())
+            {
+                await connection.ExecuteAsync(ChangeUnactivatedUserEmail.GetQuery, new
+                {
+                    OldEmail = oldEmail,
+                    NewEmail = newEmail
+                });
             }
         }
 

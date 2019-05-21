@@ -20,7 +20,8 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class LoginResponseDTO : UserDTO
     {
-        public string token { get; set; }
+        public string token { get; set; } // Used with successful login to activated account
+        public string email { get; set; } // Used with successful login to unactivated account
     }
     
     public class NewUserRequestDTO
@@ -50,6 +51,12 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string organization { get; set; }
         public string forename { get; set; }
         public string surname { get; set; }
+    }
+
+    public class UnactivatedEmailUpdateRequestDTO
+    {
+        public string oldEmail { get; set; }
+        public string newEmail { get; set; }
     }
 
     public class ResetUserPasswordRequestDTO

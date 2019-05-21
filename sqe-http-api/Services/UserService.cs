@@ -20,6 +20,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject(uint? editionId = null);
         Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
+        Task<UserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO newUserData);
+        Task UpdateUnactivatedAccountEmail(string oldEmail, string newEmail);
         Task ConfirmUserRegistrationAsync(string token);
         Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
         Task RequestResetLostPasswordAsync(string email);
@@ -49,7 +51,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// </summary>
         /// <param name="username">The user's username</param>
         /// <param name="password">The user's password</param>
-        /// <returns>Returns a response including a JWT for the user to use as a Bearer token</returns>
+        /// <returns>Returns a response including a JWT for the user to use as a Bearer token, or an email 
+        /// address if the user account has not yet been activated.</returns>
         public async Task<LoginResponseDTO> AuthenticateAsync(string username, string password)
         {
             var result = await _userRepository.GetUserByPasswordAsync(username, password);
@@ -57,13 +60,20 @@ namespace SQE.SqeHttpApi.Server.Helpers
             if (result == null)
                 return null;
 
-            var user = new LoginResponseDTO
-            {
-                userName = result.UserName,
-                userId = result.UserId,
-                token = BuildUserToken(result.UserName, result.UserId).ToString(),
-            };   
-            return user;
+            if (result.Activated == 1) // The user account is activated and a token should be returned
+                return new LoginResponseDTO
+                {
+                    userName = result.UserName,
+                    userId = result.UserId,
+                    token = BuildUserToken(result.UserName, result.UserId).ToString(),
+                };
+            else // The user account is not yet activated and an email address should be returned
+                return new LoginResponseDTO
+                {
+                    userName = result.UserName,
+                    userId = result.UserId,
+                    email = result.Email,
+                };
         }
 
         /// <summary>
@@ -134,6 +144,73 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 newUserData.forename, newUserData.surname, newUserData.organization);
             
             // Email the user
+            await SendAccountActivationEmail(new DetailedUserToken()
+            {
+                Forename = newUserData.forename,
+                Surname = newUserData.surname,
+                UserName = createdUser.UserName,
+                Token = createdUser.Token,
+                UserId = createdUser.UserId,
+                Email = newUserData.email
+            });
+            
+            return UserModelToDTO(createdUser);
+        }
+
+        /// <summary>
+        /// This will create a new user account in the database and email an authorization token to the user.
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="updatedUserData">All of the information for the new user.</param>
+        /// <returns>Returns a UserDTO for the newly created user account.</returns>
+        public async Task<UserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updatedUserData)
+        {
+            // Get current user data and merge with the new request
+            var originalUserInfo = await _userRepository.GetDetailedUserById(user);
+            var resetActivation = originalUserInfo.Email != updatedUserData.email;
+            if (resetActivation) // Make sure email is unique
+                await _userRepository.ResolveExistingUserConflictAsync("", updatedUserData.email);
+            if (originalUserInfo.UserName != updatedUserData.userName) // Make sure username is unique
+                await _userRepository.ResolveExistingUserConflictAsync(updatedUserData.userName, "");
+            // Ask the repo to update the user
+            await _userRepository.UpdateUserAsync(
+                user, 
+                updatedUserData.userName ?? originalUserInfo.UserName, 
+                updatedUserData.email ?? originalUserInfo.Email,
+                resetActivation,
+                updatedUserData.forename ?? originalUserInfo.Forename, 
+                updatedUserData.surname ?? originalUserInfo.Surname, 
+                updatedUserData.organization ?? originalUserInfo.Organization);
+            
+            // Get the updated user info
+            DetailedUserToken updatedUserInfo;
+
+            if (resetActivation) // Create activation token and send email notification
+            {
+                updatedUserInfo = await _userRepository.CreateUserActivateTokenAsync(
+                    updatedUserData.userName,
+                    updatedUserData.email);
+                // Email the user
+                await SendAccountActivationEmail(new DetailedUserToken()
+                {
+                    Forename = updatedUserData.forename,
+                    Surname = updatedUserData.surname,
+                    UserName = updatedUserData.userName,
+                    Token = updatedUserInfo.Token,
+                    UserId = updatedUserInfo.UserId,
+                    Email = updatedUserData.email
+                });
+            }
+            else // Collect the updated account info
+            {
+                updatedUserInfo = await _userRepository.GetDetailedUserById(user);
+            }
+            
+            return UserModelToDTO(updatedUserInfo);
+        }
+
+        private async Task SendAccountActivationEmail(DetailedUserToken userInfo)
+        {
             // TODO: Add link to web endpoint when we know what that is. Can token be in URL query?
             const string emailBody = @"
 <html><body>Dear $User,<br>
@@ -144,16 +221,15 @@ to activate your new account is: $Token.<br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
             const string emailSubject = "Activation of your Scripta Qumranica Electronica account";
-            var name = !string.IsNullOrEmpty(newUserData.forename) || !string.IsNullOrEmpty(newUserData.surname)
-                ? (newUserData.forename + " " + newUserData.surname).Trim() 
-                : newUserData.userName;
+            var name = !string.IsNullOrEmpty(userInfo.Forename) || !string.IsNullOrEmpty(userInfo.Surname)
+                ? (userInfo.Forename + " " + userInfo.Surname).Trim() 
+                : userInfo.UserName;
             await _emailSender.SendEmailAsync(
-                newUserData.email,
+                userInfo.Email,
                 emailSubject,
                 emailBody.Replace("$User", name)
-                    .Replace("$Token", createdUser.Token)
-                );
-            return UserModelToDTO(createdUser);
+                    .Replace("$Token", userInfo.Token)
+            );
         }
 
         /// <summary>
@@ -166,7 +242,25 @@ The Scripta Qumranica Electronica team</body></html>";
         {
             await _userRepository.ConfirmAccountCreationAsync(token);
         }
+
+        /// <summary>
+        /// Updates the email address for an account that has not yet been activated
+        /// </summary>
+        /// <param name="oldEmail">Email address that was originally entered when creating the account</param>
+        /// <param name="newEmail">New email address to use for the account</param>
+        /// <returns></returns>
+        public async Task UpdateUnactivatedAccountEmail(string oldEmail, string newEmail)
+        {
+            await _userRepository.UpdateUnactivatedUserEmailAsync(oldEmail, newEmail);
+            var userInfo = await _userRepository.GetUserByEmailAsync(newEmail);
+            await SendAccountActivationEmail(userInfo);
+        }
         
+        /// <summary>
+        /// Creates a token for validating a reset password request.  The token is emailed to the user.
+        /// </summary>
+        /// <param name="email">Email address of the user who has requested reset of a forgotten password</param>
+        /// <returns></returns>
         public async Task RequestResetLostPasswordAsync(string email)
         {
             var userInfo = await _userRepository.RequestResetForgottenPasswordAsync(email);

@@ -1,20 +1,53 @@
-﻿using SQE.SqeHttpApi.DataAccess.Models;
+﻿using System.Collections.Generic;
+using System.Linq;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-    internal class UserQueryResponse : IQueryResponse<UserToken>
+    internal static class LoginQuery
     {
-        public string user_name { get; set; }
-        public uint user_id { get; set; }
+        public const string GetQuery = @"
+SELECT user_name AS UserName, user_id AS UserId, email AS Email, activated AS Activated
+FROM user 
+WHERE user_name = @UserName AND pw = SHA2(@Password, 224)
+";
+    }
 
-        public UserToken CreateModel()
+    /// <summary>
+    /// An extensible User info query builder.
+    /// TODO: Upgrade all user queries to use this.
+    /// </summary>
+    internal static class UserDetails
+    {
+        private const string _query = @"
+SELECT $Columns
+FROM user
+WHERE $Where";
+
+        /// <summary>
+        /// Returns a formatted query on the user table
+        /// </summary>
+        /// <param name="columns">Names of the columns to be retrieved (in snake_case)</param>
+        /// <param name="where">Names of the where parameters (in snake_case)</param>
+        /// <returns></returns>
+        public static string GetQuery(List<string> columns, List<string> where)
         {
-            return new UserToken
-            {
-                UserName = user_name,
-                UserId = user_id
-            };
+            return _query.Replace( // Add the columns to the query
+                "$Columns", 
+                string.Join(",", columns.Select(x => $"{x} AS {StringFormatters.ToPascalCase(x)}")))
+                .Replace( // Add the where clause parameters to the query
+                    "$Where",
+                    string.Join(" AND ", where.Select(x => $"{x} = @{StringFormatters.ToPascalCase(x)}")))
+                .Replace("@Pw", "SHA2(@pw, 224)"); // Hash the password (if it is used)
         }
+    }
+
+    internal static class DetailedUserById
+    {
+        public const string GetQuery = @"
+SELECT user_id AS UserId, user_name AS UserName, forename AS Forename, surname AS Surname, organization AS Organization
+FROM user
+WHERE user_id = @UserId";
     }
 
     /// <summary>
@@ -23,9 +56,9 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     internal static class ConfirmUserCreateQuery
     {
         public const string GetQuery = @"
-SELECT user_id AS UserId, user_name AS UserName
+SELECT user_id AS UserId, user_name AS UserName, forename AS Forename, surname AS Surname, organization AS Organization
 FROM user
-WHERE user_name = @Username AND email = @Email AND pw = SHA2(@Password, 224)";
+WHERE user_name = @Username AND email = @Email";
     }
     
     /// <summary>
@@ -112,7 +145,7 @@ WHERE user_email_token.token = @Token
     AND user.activated = 0 ## Only new users can activate an account
 ";
     }
-    
+
     /// <summary>
     /// Creates an entry in the user_email_token table for @UserId with the token @Token for the request type @Type
     /// (CreateUserEmailTokenQuery.Activate or CreateUserEmailTokenQuery.ResetPassword).
@@ -127,9 +160,9 @@ ON DUPLICATE KEY UPDATE token = @Token, date_created = NOW()";
         public const string Activate = "ACTIVATE_ACCOUNT";
         public const string ResetPassword = "RESET_PASSWORD";
     }
-    
+
     /// <summary>
-    /// Delets the record from user_email_token for the @UserId (GetUserIdQuery) or @Token(GetTokenQuery)
+    /// Deletes the record from user_email_token for the @UserId (GetUserIdQuery) or @Token(GetTokenQuery)
     /// </summary>
     internal static class DeleteUserEmailTokenQuery
     {
@@ -149,6 +182,33 @@ DELETE FROM user_email_token WHERE token = @Token";
 SELECT user_name AS UserName, user_id AS UserId
 FROM user
 WHERE email = @Email
+";
+    }
+    
+    /// <summary>
+    /// Returns the user name and token for the account with the email address @Email.
+    /// This only works for unactivated accounts.
+    /// </summary>
+    internal static class UserWithTokenByEmailQuery
+    {
+        public const string GetQuery = @"
+SELECT user_name AS UserName, user_id AS UserId, forename AS Forename, surname AS Surname, token AS Token, email AS Email
+FROM user
+JOIN user_email_token USING(user_id)
+WHERE email = @Email and activated = 0
+";
+    }
+
+    /// <summary>
+    /// Updates the user account with the specified email address to a new email address.
+    /// Not that this only works with accounts that have not yet been activated.
+    /// </summary>
+    internal static class ChangeUnactivatedUserEmail
+    {
+        public const string GetQuery = @"
+UPDATE user
+SET email = @NewEmail
+WHERE email = @OldEmail AND activated = 0
 ";
     }
     
@@ -178,5 +238,19 @@ WHERE user_email_token.token = @Token
     AND user_email_token.type = 'RESET_PASSWORD' 
     AND user.activated = 1 ## Only activated users can reset their password
 ";
+    }
+
+    internal static class UpdateUserInfo
+    {
+        public const string _query = @"
+UPDATE user
+SET user_name = @UserName, email = @Email, forename = @Forename, surname = @Surname, organization = @Organization$Activated
+WHERE user_id = @UserId
+";
+
+        public static string GetQuery(bool resetActivation)
+        {
+            return _query.Replace("$Activated", resetActivation ? ", activated = 0" : "");
+        }
     }
 }

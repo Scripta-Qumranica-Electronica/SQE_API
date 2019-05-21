@@ -9,9 +9,23 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public uint UserId { get; set; }
     }
     
+    public class UserLoginResponse : User
+    {
+        public byte Activated { get; set; }
+        public string Email { get; set; }
+    }
+    
     public class UserToken : User
     {
         public string Token { get; set; }
+    }
+
+    public class DetailedUserToken : UserToken
+    {
+        public string Forename { get; set; }
+        public string Surname { get; set; }
+        public string Organization { get; set; }
+        public string Email { get; set; }
     }
 
     public class UserEmail : User

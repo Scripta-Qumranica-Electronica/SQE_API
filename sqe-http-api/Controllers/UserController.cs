@@ -3,6 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
@@ -53,12 +54,32 @@ namespace SQE.SqeHttpApi.Server.Controllers
             }
             catch(DbDetailedFailedWrite err)
             {
-                return Conflict(new {message = err.Message}); // I would rather not tell which element is wrong (again someone might phish for valid emails), but maybe it is not a problem.
+                return Conflict(new {message = err.Message});
             }
         }
         
         /// <summary>
-        /// Confirms creation of new user account.
+        /// Updates a user's registration details.  Note that the if the email address has changed,
+        /// the account will be set to inactive until the account is activated with the secret token.
+        /// </summary>
+        /// <param name="userInfo">A JSON object with all data necessary to update a user account</param>
+        /// <returns>Returns a UserDTO for the newly created account. Throws an HTTP 409 if the
+        /// username or email is already in use by someone else.</returns>
+        [HttpPut]
+        public async Task<ActionResult<UserDTO>> ChangeUserInfo([FromBody] NewUserRequestDTO userInfo)
+        {
+            try
+            {
+                return await _userService.UpdateUserAsync(_userService.GetCurrentUserObject(), userInfo);
+            }
+            catch(DbDetailedFailedWrite err)
+            {
+                return Conflict(new {message = err.Message});
+            }
+        }
+        
+        /// <summary>
+        /// Confirms registration of new user account.
         /// </summary>
         /// <param name="payload">JSON object with token from user registration email.</param>
         /// <returns>Returns 204 for success and 404 for failure.</returns>
@@ -93,7 +114,29 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
         
         /// <summary>
-        /// Sends secret token to user's email to allow password reset.
+        /// Allows a user who has not yet activated their account to change their email address.
+        /// This will not work if the user account associated with the email address has already been activated.
+        /// </summary>
+        /// <param Name="userParam">JSON object with a username and password parameter</param>
+        [AllowAnonymous]
+        [HttpPost("change-unactivated-email")]
+        public async Task<ActionResult> ChangeEmailOfUnactivatedUserAccount(
+            [FromBody]UnactivatedEmailUpdateRequestDTO emailDetails)
+        {
+            try
+            {
+                await _userService.UpdateUnactivatedAccountEmail(emailDetails.oldEmail, emailDetails.newEmail);
+                return NoContent();
+            }
+            catch
+            {
+                return NoContent(); // Returns no content no matter what
+            }
+            
+        }
+        
+        /// <summary>
+        /// Sends a secret token to the user's email to allow password reset.
         /// </summary>
         /// <param name="payload">JSON object with the email address for the user who wants to reset a lost password.</param>
         /// <returns></returns>
@@ -106,7 +149,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
         
         /// <summary>
-        /// Change the password for the currently logged in user.
+        /// Changes the password for the currently logged in user.
         /// </summary>
         /// <param name="payload">A JSON object with the old password and the new password.</param>
         /// <returns>Status 204 with a successful request or status 409 for an unsuccessful request</returns>
