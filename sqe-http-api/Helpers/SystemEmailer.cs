@@ -10,7 +10,10 @@ namespace SQE.SqeHttpApi.Server.Helpers
     public class DevEmailSender : IEmailSender
     {
         /// <summary>
-        /// Sends an email
+        /// Sends an email.  This relies on the environment variables SQE_GMAIL_USERNAME and SQE_GMAIL_PASSWORD.
+        /// If you do not set these, the function will error.
+        /// TODO: Figure out what email server we might use in production.  Alter this to be more flexible regarding
+        /// email provider and account.
         /// </summary>
         /// <param name="email">Email address to send the message to.</param>
         /// <param name="subject"></param>
@@ -19,7 +22,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
             try  
-            {  
+            {
                 var mimeMessage = new MimeMessage();  
                 mimeMessage.From.Add(new MailboxAddress  
                 ("SQE Webadmin",   
