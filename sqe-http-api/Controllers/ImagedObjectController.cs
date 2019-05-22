@@ -43,6 +43,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         // Bronson: This endpoint is not documented
         [AllowAnonymous]
         [HttpGet("imaged-objects/list")]
+        [ProducesResponseType(200)]
         public async Task<ActionResult<ImageGroupListDTO>> ListImageGroups()
         {
             var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>());
@@ -52,11 +53,12 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Provides detailed information about a specific imaged object reference
         /// </summary>
-        /// <param Name="imageReferenceId"></param>
+        /// <param name="imageReferenceId"></param>
         /// <returns></returns>
         // Bronson: This endpoint is not documented
         [AllowAnonymous]
         [HttpGet("imaged-objects/{imageReferenceId}")]
+        [ProducesResponseType(200)]
         public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfScroll([FromRoute] uint imageReferenceId)
         {
             var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {imageReferenceId }));
@@ -69,6 +71,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         // Bronson: This endpoint is not documented
         [AllowAnonymous]
         [HttpGet("imaged-objects/institutions/list")]
+        [ProducesResponseType(200)]
         public async Task<ActionResult<ImageInstitutionListDTO>> ListImageInstitutions()
         {
             var institutions = await _imageService.GetImageInstitutionsAsync();
@@ -79,11 +82,14 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Provides a listing of imaged objects related to the specified edition, including artefacts.
         /// </summary>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="artefacts">Set this to true to receive artefact data</param>
-        /// <param Name="withMask">Set this to true to receive the Mask polygon data</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="optional">Set "artefacts" to receive related artefact data and "masks" to include the artefact masks</param>
+        /// <response code="200">Imaged object(s) found and returned</response>
+        /// <response code="404">No imaged objects were found, perhaps an id was incorrect</response>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/imaged-objects")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
             bool artefacts, masks;
@@ -109,12 +115,15 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Provides a listing of imaged objects related to the specified edition
         /// </summary>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-        /// <param Name="optional">Optional data includes "artefacts" for a list of all artefacts in the object image
-        /// and "masks" to retrieve the polygon masks along with the artefacts.</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+        /// <param name="optional">Set "artefacts" to receive related artefact data and "masks" to include the artefact masks</param>
+        /// <response code="200">Imaged object(s) found and returned</response>
+        /// <response code="404">No imaged objects were found, perhaps an id was incorrect</response>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/imaged-objects/{imagedObjectId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var artefacts, out var masks);

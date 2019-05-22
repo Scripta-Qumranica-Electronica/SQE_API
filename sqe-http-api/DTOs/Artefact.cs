@@ -38,4 +38,19 @@ namespace SQE.SqeHttpApi.Server.DTOs
     {
         public List<ArtefactDesignationDTO> artefactDesignations { get; set; }
     }
+    
+    public class UpdateArtefactDTO
+    {
+        public string mask { get; set; }
+        public string name { get; set; }
+        public string position { get; set; }
+    }
+    
+    public class CreateArtefactDTO
+    {
+        public uint masterImageId { get; set; }
+        public string mask { get; set; }
+        public string name { get; set; }
+        public string position { get; set; }
+    }
 }

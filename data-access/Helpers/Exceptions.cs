@@ -28,4 +28,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             base($"Failed writing to DB.")
         { }
     }
+    
+    public class DbDetailedFailedWrite: RepositoryException
+    {
+        public DbDetailedFailedWrite(string msg) : 
+            base($"Failed writing to DB. {msg}")
+        { }
+    }
 }
