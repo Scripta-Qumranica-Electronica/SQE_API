@@ -26,17 +26,19 @@ namespace SQE.SqeHttpApi.Server.Controllers
             images = masks = false;
             if (optionals == null) 
                 return;
-            images = optionals.Contains("artefacts");
+            images = optionals.Contains("images");
             masks = optionals.Contains("masks");
         }
         
         /// <summary>
         /// Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="images">Defines whether image references should be included in the response</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/artefacts")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
@@ -53,11 +55,13 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="ArtefactId">Unique Id of the desired artefact</param>
-        /// <param Name="images">Defines whether image references should be included in the response</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactId">Unique Id of the desired artefact</param>
+        /// <param name="optional">Add "masks" to include artefact polygons</param>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/artefacts/{artefactId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
@@ -74,8 +78,13 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Updates the specified artefact
         /// </summary>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactId">Unique Id of the desired artefact</param>
+        /// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
         [HttpPut("editions/{editionId}/artefacts/{artefactId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<ArtefactDTO>> UpdateArtefact(
             [FromRoute] uint editionId, 
             [FromRoute] uint artefactId, 
@@ -101,9 +110,12 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Creates a new artefact with the provided data.
         /// </summary>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
-        /// <param Name="payload">Data for the new artefact</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="payload">A CreateArtefactDTO with the data for the new artefact</param>
         [HttpPost("editions/{editionId}/artefacts")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<ArtefactDTO>> CreateArtefact(
             [FromRoute] uint editionId,
             [FromBody] CreateArtefactDTO payload

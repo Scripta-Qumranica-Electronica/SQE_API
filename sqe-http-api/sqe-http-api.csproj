@@ -22,6 +22,10 @@
   <ItemGroup>
     <ProjectReference Include="..\data-access\data-access.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Templates\UserAccountEmail.cshtml" />
+  </ItemGroup>
     
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

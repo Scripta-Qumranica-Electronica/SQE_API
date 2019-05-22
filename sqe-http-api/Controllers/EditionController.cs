@@ -34,9 +34,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Provides details about the specified edition and all accessible alternate editions
         /// </summary>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
         [AllowAnonymous]
         [HttpGet("{editionId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
             var edition = await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(editionId), false, false);
@@ -54,6 +56,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// </summary>
         [AllowAnonymous]
         [HttpGet("")]
+        [ProducesResponseType(200)]
         public async Task<ActionResult<EditionListDTO>> ListEditions()
         {
             var groups = await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
@@ -63,10 +66,14 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Updates data for the specified edition
         /// </summary>
-        /// <param Name="request">JSON object with the attributes to be updated</param>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param name="request">JSON object with the attributes to be updated</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
         /// <exception cref="NullReferenceException"></exception>
         [HttpPut("{editionId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<EditionDTO>> UpdateEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
         {
             try
@@ -93,10 +100,14 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <summary>
         /// Creates a copy of the specified edition
         /// </summary>
-        /// <param Name="request">JSON object with the attributes to be changed in the copied edition</param>
-        /// <param Name="editionId">Unique Id of the desired edition</param>
+        /// <param name="request">JSON object with the attributes to be changed in the copied edition</param>
+        /// <param name="editionId">Unique Id of the desired edition</param>
         /// <exception cref="NullReferenceException"></exception>
         [HttpPost("{editionId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
         {
             try
