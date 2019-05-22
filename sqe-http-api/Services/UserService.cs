@@ -20,7 +20,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject(uint? editionId = null);
         Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
-        Task<UserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO newUserData);
+        Task<UserDTO> UpdateUserAsync(UserInfo user, UpdateUserRequestDTO updateUserData);
         Task UpdateUnactivatedAccountEmail(string oldEmail, string newEmail);
         Task ConfirmUserRegistrationAsync(string token);
         Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
@@ -60,7 +60,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             if (result == null)
                 return null;
 
-            if (result.Activated == 1) // The user account is activated and a token should be returned
+            if (result.Activated) // The user account is activated and a token should be returned
                 return new LoginResponseDTO
                 {
                     userName = result.UserName,
@@ -144,7 +144,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 newUserData.forename, newUserData.surname, newUserData.organization);
             
             // Email the user
-            await SendAccountActivationEmail(new DetailedUserToken()
+            await SendAccountActivationEmail(new DetailedUserWithToken()
             {
                 Forename = newUserData.forename,
                 Surname = newUserData.surname,
@@ -161,55 +161,56 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// This will create a new user account in the database and email an authorization token to the user.
         /// </summary>
         /// <param name="user"></param>
-        /// <param name="updatedUserData">All of the information for the new user.</param>
+        /// <param name="updateUserData">All of the information for the new user.</param>
         /// <returns>Returns a UserDTO for the newly created user account.</returns>
-        public async Task<UserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updatedUserData)
+        public async Task<UserDTO> UpdateUserAsync(UserInfo user, UpdateUserRequestDTO updateUserData)
         {
-            // Get current user data and merge with the new request
+            // Get current user data
             var originalUserInfo = await _userRepository.GetDetailedUserById(user);
-            var resetActivation = originalUserInfo.Email != updatedUserData.email;
+            var resetActivation = updateUserData.email != null && originalUserInfo.Email != updateUserData.email;
             if (resetActivation) // Make sure email is unique
-                await _userRepository.ResolveExistingUserConflictAsync("", updatedUserData.email);
-            if (originalUserInfo.UserName != updatedUserData.userName) // Make sure username is unique
-                await _userRepository.ResolveExistingUserConflictAsync(updatedUserData.userName, "");
-            // Ask the repo to update the user
+                await _userRepository.ResolveExistingUserConflictAsync("", updateUserData.email);
+            if (updateUserData.userName != null && originalUserInfo.UserName != updateUserData.userName) // Make sure username is unique
+                await _userRepository.ResolveExistingUserConflictAsync(updateUserData.userName, "");
+            
+            // Ask the repo to update the user (merge nul fields with the new request)
             await _userRepository.UpdateUserAsync(
                 user, 
-                updatedUserData.userName ?? originalUserInfo.UserName, 
-                updatedUserData.email ?? originalUserInfo.Email,
+                updateUserData.userName ?? originalUserInfo.UserName, 
+                updateUserData.email ?? originalUserInfo.Email,
                 resetActivation,
-                updatedUserData.forename ?? originalUserInfo.Forename, 
-                updatedUserData.surname ?? originalUserInfo.Surname, 
-                updatedUserData.organization ?? originalUserInfo.Organization);
+                updateUserData.forename ?? originalUserInfo.Forename, 
+                updateUserData.surname ?? originalUserInfo.Surname, 
+                updateUserData.organization ?? originalUserInfo.Organization);
             
             // Get the updated user info
-            DetailedUserToken updatedUserInfo;
+            DetailedUserWithToken updatedUserWithInfo;
 
             if (resetActivation) // Create activation token and send email notification
             {
-                updatedUserInfo = await _userRepository.CreateUserActivateTokenAsync(
-                    updatedUserData.userName,
-                    updatedUserData.email);
+                updatedUserWithInfo = await _userRepository.CreateUserActivateTokenAsync(
+                    updateUserData.userName,
+                    updateUserData.email);
                 // Email the user
-                await SendAccountActivationEmail(new DetailedUserToken()
+                await SendAccountActivationEmail(new DetailedUserWithToken()
                 {
-                    Forename = updatedUserData.forename,
-                    Surname = updatedUserData.surname,
-                    UserName = updatedUserData.userName,
-                    Token = updatedUserInfo.Token,
-                    UserId = updatedUserInfo.UserId,
-                    Email = updatedUserData.email
+                    Forename = updateUserData.forename,
+                    Surname = updateUserData.surname,
+                    UserName = updateUserData.userName,
+                    Token = updatedUserWithInfo.Token,
+                    UserId = updatedUserWithInfo.UserId,
+                    Email = updateUserData.email
                 });
             }
             else // Collect the updated account info
             {
-                updatedUserInfo = await _userRepository.GetDetailedUserById(user);
+                updatedUserWithInfo = await _userRepository.GetDetailedUserById(user);
             }
             
-            return UserModelToDTO(updatedUserInfo);
+            return UserModelToDTO(updatedUserWithInfo);
         }
 
-        private async Task SendAccountActivationEmail(DetailedUserToken userInfo)
+        private async Task SendAccountActivationEmail(DetailedUserWithToken userWithInfo)
         {
             // TODO: Add link to web endpoint when we know what that is. Can token be in URL query?
             const string emailBody = @"
@@ -221,14 +222,14 @@ to activate your new account is: $Token.<br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
             const string emailSubject = "Activation of your Scripta Qumranica Electronica account";
-            var name = !string.IsNullOrEmpty(userInfo.Forename) || !string.IsNullOrEmpty(userInfo.Surname)
-                ? (userInfo.Forename + " " + userInfo.Surname).Trim() 
-                : userInfo.UserName;
+            var name = !string.IsNullOrEmpty(userWithInfo.Forename) || !string.IsNullOrEmpty(userWithInfo.Surname)
+                ? (userWithInfo.Forename + " " + userWithInfo.Surname).Trim() 
+                : userWithInfo.UserName;
             await _emailSender.SendEmailAsync(
-                userInfo.Email,
+                userWithInfo.Email,
                 emailSubject,
                 emailBody.Replace("$User", name)
-                    .Replace("$Token", userInfo.Token)
+                    .Replace("$Token", userWithInfo.Token)
             );
         }
 
@@ -251,8 +252,12 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <returns></returns>
         public async Task UpdateUnactivatedAccountEmail(string oldEmail, string newEmail)
         {
+            // Check for a conflicting email address and resolve if possible
+            // await _userRepository.ResolveExistingUserConflictAsync("", newEmail);
+            // Change the account email
             await _userRepository.UpdateUnactivatedUserEmailAsync(oldEmail, newEmail);
-            var userInfo = await _userRepository.GetUserByEmailAsync(newEmail);
+            // Get the account info and send a new account activation email
+            var userInfo = await _userRepository.GetUnactivatedUserByEmailAsync(newEmail);
             await SendAccountActivationEmail(userInfo);
         }
         

@@ -11,7 +11,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     
     public class UserLoginResponse : User
     {
-        public byte Activated { get; set; }
+        public bool Activated { get; set; }
         public string Email { get; set; }
     }
     
@@ -20,7 +20,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public string Token { get; set; }
     }
 
-    public class DetailedUserToken : UserToken
+    public class DetailedUserWithToken : UserToken
     {
         public string Forename { get; set; }
         public string Surname { get; set; }

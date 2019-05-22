@@ -4,15 +4,6 @@ using SQE.SqeHttpApi.DataAccess.Helpers;
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-    internal static class LoginQuery
-    {
-        public const string GetQuery = @"
-SELECT user_name AS UserName, user_id AS UserId, email AS Email, activated AS Activated
-FROM user 
-WHERE user_name = @UserName AND pw = SHA2(@Password, 224)
-";
-    }
-
     /// <summary>
     /// An extensible User info query builder.
     /// TODO: Upgrade all user queries to use this.
@@ -22,45 +13,33 @@ WHERE user_name = @UserName AND pw = SHA2(@Password, 224)
         private const string _query = @"
 SELECT $Columns
 FROM user
+$Join
 WHERE $Where";
 
         /// <summary>
-        /// Returns a formatted query on the user table
+        /// Formats a query on the user table
         /// </summary>
         /// <param name="columns">Names of the columns to be retrieved (in snake_case)</param>
         /// <param name="where">Names of the where parameters (in snake_case)</param>
-        /// <returns></returns>
-        public static string GetQuery(List<string> columns, List<string> where)
+        /// <returns>Returns the formatted SQL query string</returns>
+        public static string GetQuery(List<string> columns, List<string> where, bool whereAnd = true)
         {
+            var join = "";
+            if (columns.Where(x => x == "token").Any())
+                join = "JOIN user_email_token USING(user_id)";
             return _query.Replace( // Add the columns to the query
                 "$Columns", 
                 string.Join(",", columns.Select(x => $"{x} AS {StringFormatters.ToPascalCase(x)}")))
                 .Replace( // Add the where clause parameters to the query
                     "$Where",
-                    string.Join(" AND ", where.Select(x => $"{x} = @{StringFormatters.ToPascalCase(x)}")))
-                .Replace("@Pw", "SHA2(@pw, 224)"); // Hash the password (if it is used)
+                    string.Join(
+                        $" {(whereAnd ? "AND" : "OR")} ", 
+                        where.Select(x => $"{x} = @{StringFormatters.ToPascalCase(x)}")))
+                .Replace("$Join", join)
+                .Replace("@Pw", "SHA2(@Pw, 224)"); // Hash the password (if it is used)
         }
     }
 
-    internal static class DetailedUserById
-    {
-        public const string GetQuery = @"
-SELECT user_id AS UserId, user_name AS UserName, forename AS Forename, surname AS Surname, organization AS Organization
-FROM user
-WHERE user_id = @UserId";
-    }
-
-    /// <summary>
-    /// Confirms whether the user account with @Username, @Email, and @Password exists.
-    /// </summary>
-    internal static class ConfirmUserCreateQuery
-    {
-        public const string GetQuery = @"
-SELECT user_id AS UserId, user_name AS UserName, forename AS Forename, surname AS Surname, organization AS Organization
-FROM user
-WHERE user_name = @Username AND email = @Email";
-    }
-    
     /// <summary>
     /// Retrieves the permission of @UserId for edition @EditionId.  This includes the ability to read, write, lock,
     /// and admin, as well as the unique editor id the user has for working on this edition.
@@ -78,33 +57,14 @@ WHERE edition_id = @EditionId AND user_id = @UserId";
     }
 
     /// <summary>
-    /// Checks whether an account with @Username or @Email exists and whether it is activated yet.
-    /// </summary>
-    internal static class CheckUserActivation
-    {
-        public const string GetQuery = @"
-SELECT user_id, activated, user_name, email
-FROM user
-WHERE user_name = @Username OR email = @Email";
-
-        public class Result
-        {
-            public int user_id { get; set; } 
-            public bool activated { get; set; } 
-            public string user_name { get; set; }
-            public string email { get; set; }
-        }
-    }
-    
-    /// <summary>
-    /// Creates a new user account for @Username, @Email, and @Password (the account is not activated);
+    /// Creates a new user account for @UserName, @Email, and @Password (the account is not activated);
     /// the fields @Forename, @Surname, and @Organization may be empty.
     /// </summary>
     internal static class CreateNewUserQuery
     {
         public const string GetQuery = @"
 INSERT INTO user (user_name, email, pw, forename, surname, organization)
-VALUES(@Username, @Email, SHA2(@Password, 224), @Forename, @Surname, @Organization)";
+VALUES(@UserName, @Email, SHA2(@Password, 224), @Forename, @Surname, @Organization)";
     }
 
     /// <summary>
@@ -171,32 +131,6 @@ DELETE FROM user_email_token WHERE user_id = @UserId";
         
         public const string GetTokenQuery = @"
 DELETE FROM user_email_token WHERE token = @Token";
-    }
-    
-    /// <summary>
-    /// Returns the user name and user id for the account with the email address @Email.
-    /// </summary>
-    internal static class UserByEmailQuery
-    {
-        public const string GetQuery = @"
-SELECT user_name AS UserName, user_id AS UserId
-FROM user
-WHERE email = @Email
-";
-    }
-    
-    /// <summary>
-    /// Returns the user name and token for the account with the email address @Email.
-    /// This only works for unactivated accounts.
-    /// </summary>
-    internal static class UserWithTokenByEmailQuery
-    {
-        public const string GetQuery = @"
-SELECT user_name AS UserName, user_id AS UserId, forename AS Forename, surname AS Surname, token AS Token, email AS Email
-FROM user
-JOIN user_email_token USING(user_id)
-WHERE email = @Email and activated = 0
-";
     }
 
     /// <summary>
