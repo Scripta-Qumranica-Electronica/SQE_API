@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace SQE.SqeHttpApi.DataAccess.Models
 {
@@ -30,8 +29,6 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 
     public class UserEmail : User
     {
-        public string Forename { get; set; }
-        public string Surname { get; set; }
         public string Email { get; set; }
     }
     
