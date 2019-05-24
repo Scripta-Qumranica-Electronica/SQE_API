@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
 
@@ -78,20 +79,21 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             try
             {
-                var user = _userService.GetCurrentUserObject(editionId);
-                if (!user.userId.HasValue && !(await user.EditionEditorId()).HasValue && !await user.MayWrite())
-                {
-                    throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
-                }
-                var edition = await _editionService.UpdateEditionAsync(user, request.name);
-                //await _broadcastService.Broadcast(EditionId, JsonConvert.SerializeObject(edition));
-                return edition;
+                return await _editionService.UpdateEditionAsync(
+                    _userService.GetCurrentUserObject(editionId), 
+                    request.name,
+                    request.copyrightHolder,
+                    request.collaborators);
             }
             catch (NotFoundException)
             {
                 return NotFound();
             }
             catch(ForbiddenException)
+            {
+                return Forbid();
+            }
+            catch(NoPermissionException)
             {
                 return Forbid();
             }
@@ -112,13 +114,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             try
             {
-                var user = _userService.GetCurrentUserObject(editionId);
-                if (!user.userId.HasValue)
-                {
-                    throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
-                }
-                var edition = await _editionService.CopyEditionAsync(user, request.name);
-                return edition;
+                return await _editionService.CopyEditionAsync(_userService.GetCurrentUserObject(editionId), request);
             }
             catch (NotFoundException)
             {

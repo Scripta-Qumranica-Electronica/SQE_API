@@ -138,12 +138,19 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             using (var connection = OpenConnection())
             {
-                var results = await connection.QuerySingleAsync<UserEditionPermissions>(UserPermissionQuery.GetQuery, new
+                try
                 {
-                    EditionId = editionId,
-                    UserId = userId,
-                });
-                return results;
+                    var results = await connection.QuerySingleAsync<UserEditionPermissions>(UserPermissionQuery.GetQuery, new
+                    {
+                        EditionId = editionId,
+                        UserId = userId,
+                    });
+                    return results;
+                }
+                catch
+                {
+                    throw new NoPermissionException(userId, "alter", "edition", editionId);
+                }
             }
         }
 

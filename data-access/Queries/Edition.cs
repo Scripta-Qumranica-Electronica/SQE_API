@@ -7,6 +7,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     {
         private const string _baseQuery = @"
 SELECT DISTINCT ed2.edition_id AS EditionId,
+    ed2.copyright_holder AS CopyrightHolder,
+    COALESCE(
+        ed2.collaborators, 
+        GROUP_CONCAT(DISTINCT CONCAT(user.forename, ' ', user.surname)
+        SEPARATOR ', ')) AS Collaborators,
     edition_editor.is_admin AS Admin,
     scroll_data.name AS Name, 
     im.thumbnail_url AS Thumbnail, 
@@ -36,6 +41,8 @@ LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_imag
            JOIN image_urls USING(image_urls_id)
            WHERE iaa_edition_catalog.edition_side = 0
            GROUP BY scroll_id) AS im ON im.scroll_id = ed2.scroll_id
+$Where
+GROUP BY ed2.edition_id
 ";
 
         public static string GetQuery(bool limitUser, bool limitScrolls)
@@ -51,7 +58,7 @@ LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_imag
             if (limitScrolls)
                 where.Append(" AND ed1.edition_id = @EditionId");
 
-            return _baseQuery + where.ToString();
+            return _baseQuery.Replace("$Where", where.ToString());
         }
 
 
@@ -69,6 +76,8 @@ LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_imag
             public DateTime? LastEdit { get; set; }
             public uint UserId { get; set; }
             public string Email { get; set; }
+            public string Collaborators { get; set; }
+            public string CopyrightHolder { get; set; }
         }
     }
 
@@ -182,12 +191,12 @@ WHERE edition_id = @EditionId";
             VALUES (@UserId, @EditionId, 1, @MayLock, @IsAdmin)";
     }
     
-    internal static class CreateEditionQuery
+    internal static class CopyEditionQuery
     {
-        // You must add a parameter `@EditionEditorId` to use this.
+        // You must add the parameter `@EditionId` to use this, the parameters `@CopyrightHolder`, `@Collaborators` are optional.
         public const string GetQuery = 
-            @"INSERT INTO edition (scroll_id, locked)  
-            (SELECT scroll_id, 0
+            @"INSERT INTO edition (scroll_id, locked, copyright_holder, collaborators)  
+            (SELECT scroll_id, 0, COALESCE(@CopyrightHolder, copyright_holder), @Collaborators
             FROM edition
             WHERE edition_id = @EditionId)";
     }
@@ -202,5 +211,15 @@ WHERE edition_id = @EditionId";
             FROM {tableName} 
             WHERE edition_id = @EditionId";
         }
+    }
+    
+    internal static class UpdateEditionLegalDetailsQuery
+    {
+        // You must add the parameter `@EditionId` and `@Collaborators` to use this, the parameter `@CopyrightHolder` is optional.
+        public const string GetQuery = @"
+UPDATE edition 
+SET copyright_holder = COALESCE(@CopyrightHolder, copyright_holder), 
+    collaborators = @Collaborators 
+WHERE edition_id = @EditionId";
     }
 }
