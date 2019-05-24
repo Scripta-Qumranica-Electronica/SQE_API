@@ -12,7 +12,10 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public bool Locked { get; set; }
         public bool IsPublic {get; set;}
         public DateTime? LastEdit { get; set; }
-        public UserToken Owner { get; set; }
+        public User Owner { get; set; }
+        public string Copyright { get; set; }
+        public string CopyrightHolder { get; set; }
+        public string Collaborators { get; set; }
     }
 
     public class ScrollName
@@ -51,6 +54,6 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 
     public class Polygon
     {
-        public string svg { get; set; }
+        public string wkt { get; set; }
     }
 }

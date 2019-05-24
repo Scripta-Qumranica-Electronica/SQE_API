@@ -14,23 +14,24 @@ namespace SQE.SqeHttpApi.DataAccess
     public interface IUserRepository
     {
         // Get user data
-        Task<UserLoginResponse> GetUserByPasswordAsync(string userName, string password);
-        Task<DetailedUserWithToken> GetDetailedUserById(UserInfo userInfo);
+        Task<DetailedUserWithToken> GetUserByPasswordAsync(string email, string password);
+        Task<DetailedUserWithToken> GetDetailedUserByIdAsync(UserInfo userInfo);
+        Task<DetailedUser> GetDetailedUsedByTokenAsync(string token);
         Task<DetailedUserWithToken> GetUnactivatedUserByEmailAsync(string email);
         Task<UserEditionPermissions> GetUserEditionPermissionsAsync(uint userId, uint editionId);
         
         // Create/update account data
-        Task<UserToken> CreateNewUserAsync(string username, string email, string password, string forename = null,
+        Task<DetailedUserWithToken> CreateNewUserAsync(string email, string password, string forename = null,
             string surname = null, string organization = null);
-        Task ResolveExistingUserConflictAsync(string username, string email);
-        Task UpdateUserAsync(UserInfo user, string username, string email, bool resetActivation,
+        Task ResolveExistingUserConflictAsync(string email);
+        Task UpdateUserAsync(UserInfo user, string password, string email, bool resetActivation,
             string forename = null, string surname = null, string organization = null);
-        Task<DetailedUserWithToken> CreateUserActivateTokenAsync(string username, string email);
+        Task<DetailedUserWithToken> CreateUserActivateTokenAsync(string email);
         Task ConfirmAccountCreationAsync(string token);
         Task UpdateUnactivatedUserEmailAsync(string oldEmail, string newEmail);
         Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
         Task<UserToken> RequestResetForgottenPasswordAsync(string email);
-        Task<UserEmail> ResetForgottenPasswordAsync(string token, string password);
+        Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password);
     }
     public class UserRepository: DbConnectionBase , IUserRepository
     {
@@ -45,35 +46,46 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <summary>
         /// Returns user information based on the submitted credentials.
         /// </summary>
-        /// <param name="userName">The user's username</param>
+        /// <param name="email"></param>
         /// <param name="password">The user's password</param>
         /// <returns></returns>
-        public async Task<UserLoginResponse> GetUserByPasswordAsync(string userName, string password)
+        public async Task<DetailedUserWithToken> GetUserByPasswordAsync(string email, string password)
         {
             using (var connection = OpenConnection())
             {
-                var columns = new List<string>() { "user_name", "user_id", "email", "activated" };
-                var where = new List<string>() { "user_name", "pw" };
-                return await connection.QuerySingleAsync<UserLoginResponse>(UserDetails.GetQuery(columns, where), 
+                var columns = new List<string>() { "user_id", "email", "activated", "forename", "surname", "organization" };
+                var where = new List<string>() { "email", "pw" };
+                return await connection.QuerySingleAsync<DetailedUserWithToken>(UserDetails.GetQuery(columns, where), 
                     new
                     {
-                        UserName = userName,
+                        Email = email,
                         Pw = password
                     });
             }
         }
 
-        public async Task<DetailedUserWithToken> GetDetailedUserById(UserInfo userInfo)
+        public async Task<DetailedUserWithToken> GetDetailedUserByIdAsync(UserInfo userInfo)
         {
             using (var connection = OpenConnection())
             {
                 var columns = new List<string>()
-                    {"user_id", "user_name", "forename", "surname", "organization", "email"};
+                    {"user_id", "email", "forename", "surname", "organization"};
                 var where = new List<string>() {"user_id"};
                 return await connection.QuerySingleAsync<DetailedUserWithToken>(
                     UserDetails.GetQuery(columns, where), new
                     {
                         UserId = userInfo.userId ?? 0
+                    });
+            }
+        }
+
+        public async Task<DetailedUser> GetDetailedUsedByTokenAsync(string token)
+        {
+            using (var connection = OpenConnection())
+            {
+                return await connection.QuerySingleAsync<DetailedUser>(UserByTokenQuery.GetQuery, new
+                    {
+                        Token = token
                     });
             }
         }
@@ -90,7 +102,17 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 try
                 {
-                    var columns = new List<string>() {"user_name", "user_id", "forename", "surname", "token", "email"};
+                    // Generate our new secret token
+                    var token = Guid.NewGuid().ToString();
+                    await connection.ExecuteAsync(CreateUserEmailTokenQuery.GetQuery(emailOnly: true), new
+                    {
+                        Email = email,
+                        Token = token,
+                        Type = CreateUserEmailTokenQuery.Activate,
+                    });
+                    
+                    // Get account details
+                    var columns = new List<string>() {"email", "user_id", "forename", "surname", "token"};
                     var where = new List<string>() {"email", "activated"};
                     return await connection.QuerySingleAsync<DetailedUserWithToken>(
                         UserDetails.GetQuery(columns, where), new
@@ -101,7 +123,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch
                 {
-                    throw new DbDetailedFailedWrite("User account not found for email address.");
+                    throw new DbDetailedFailedWrite("User account not found for email address, or account already activated.");
                 }
             }
         }
@@ -116,20 +138,26 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             using (var connection = OpenConnection())
             {
-                var results = await connection.QuerySingleAsync<UserEditionPermissions>(UserPermissionQuery.GetQuery, new
+                try
                 {
-                    EditionId = editionId,
-                    UserId = userId,
-                });
-                return results;
+                    var results = await connection.QuerySingleAsync<UserEditionPermissions>(UserPermissionQuery.GetQuery, new
+                    {
+                        EditionId = editionId,
+                        UserId = userId,
+                    });
+                    return results;
+                }
+                catch
+                {
+                    throw new NoPermissionException(userId, "alter", "edition", editionId);
+                }
             }
         }
 
         /// <summary>
         /// Create a new user in the database and create the email token record.  This method checks
-        /// for any conflicts with existing usernames and emails, and it will respond accordingly.
+        /// for any conflicts with existing emails, and it will respond accordingly.
         /// </summary>
-        /// <param name="username">Username for the new account</param>
         /// <param name="email">Email address for the new account (it will be verified)</param>
         /// <param name="password">Password for the new account (it is hashed in the database)</param>
         /// <param name="forename">Optional given name</param>
@@ -138,23 +166,22 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <returns>Returns a User object with the details of the newly created user. This object contains
         /// the secret confirmation token that should be emailed to the user and then likely stripped
         /// from the User object, which can be returned as a DTO to the HTTP request.</returns>
-        /// <exception cref="DbDetailedFailedWrite">The username or email is already in use by an authenticated user.</exception>
+        /// <exception cref="DbDetailedFailedWrite">The email is already in use by an authenticated user.</exception>
         /// <exception cref="DbFailedWrite">Some unexpected database write error has occured.</exception>
-        public async Task<UserToken> CreateNewUserAsync(string username, string email, string password, string forename = null, 
-            string surname = null, string organization = null)
+        public async Task<DetailedUserWithToken> CreateNewUserAsync(string email, string password,
+            string forename = null, string surname = null, string organization = null)
         {
             using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
                 {
-                    // Find any users with either the same username of email address.
-                    await ResolveExistingUserConflictAsync(username, email);
+                    // Find any users with either the same  email address.
+                    await ResolveExistingUserConflictAsync(email);
 
-                    // Ok, the input username and email are unique so create the record
+                    // Ok, the input email is unique so create the record
                     var newUser = await connection.ExecuteAsync(CreateNewUserQuery.GetQuery,
                         new
                         {
-                            UserName = username,
                             Email = email,
                             Password = password,
                             Forename = forename,
@@ -166,7 +193,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
                     // Everything went well, so create the email token so the
                     // calling function can email the new user.
-                    var newUserObject = await CreateUserActivateTokenAsync(username, email);
+                    var newUserObject = await CreateUserActivateTokenAsync(email);
                     transactionScope.Complete();
                     return newUserObject;
                 }
@@ -175,66 +202,39 @@ namespace SQE.SqeHttpApi.DataAccess
 
         /// <summary>
         /// Note that this method may be destructive!  This method resolves any uniqueness constraints
-        /// on a username or email. It will throw if an activated user account already exists with the
-        /// username or email.  If an unactivated user account exists with the username or email, it
-        /// will be overwritten.
+        /// on an email. It will throw if an activated user account already exists with the
+        /// email.  If an unactivated user account exists with the email, it will be overwritten.
         /// </summary>
-        /// <param name="username">Username to check for uniqueness</param>
         /// <param name="email">Email to check for uniqueness</param>
         /// <returns></returns>
-        /// <exception cref="DbDetailedFailedWrite">Returns details about whether the username and/or email
-        /// is already in use.</exception>
-        public async Task ResolveExistingUserConflictAsync(string username, string email)
+        /// <exception cref="DbDetailedFailedWrite">Returns details about whether the email is already in use.</exception>
+        public async Task ResolveExistingUserConflictAsync(string email)
         {
             using (var connection = OpenConnection())
             {
-                // Find any users with either the same username OR email address.
-                var columns = new List<string>() { "user_id", "activated", "user_name", "email" };
-                var where = new List<string>() { "user_name", "email"};
-                var existingUser = (await connection.QueryAsync<UserLoginResponse>(
-                    UserDetails.GetQuery(columns, where, false),
+                // Find any users with either the same email address.
+                var columns = new List<string>() { "user_id", "activated", "email" };
+                var where = new List<string>() { "email"};
+                var existingUser = (await connection.QueryAsync<DetailedUserWithToken>(
+                    UserDetails.GetQuery(columns, where),
                     new
                     {
-                        UserName = username,
                         Email = email
                     })).ToList();
 
-                // Check if we need to send error because username and/or email already exist.
+                // Check if we need to send error because email already exist.
                 if (existingUser.Any())
                 {
-                    var errors = new List<string>();
                     foreach (var record in existingUser)
                     {
-                        if (record.UserName == username) // First check for duplicate username
-                        {
-                            if (record.Activated) // If this user record has been authenticated add info to error
-                                errors.Add("username");
-                            else // else delete the unauthenticated user record (that user should have been faster to authenticate!)
-                            {
-                                await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetUserIdQuery,
-                                    new {UserId = record.UserId});
-                                await connection.ExecuteAsync(DeleteUserQuery.GetQuery,
-                                    new {UserId = record.UserId});
-                            }
-                        }
-
-                        if (record.Email == email) // Then check for duplicate email
-                        {
-                            if (record.Activated) // If this user record has been authenticated add info to error
-                                errors.Add("email address");
-                            else // else delete the unauthenticated user record (that user should have been faster to authenticate!)
-                            {
-                                await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetUserIdQuery,
-                                    new {UserId = record.UserId});
-                                await connection.ExecuteAsync(DeleteUserQuery.GetQuery,
-                                    new {UserId = record.UserId});
-                            }
-                        }
+                        if (record.Activated) // If this user record has been authenticated add info to error
+                                throw new DbDetailedFailedWrite("The email address is use by another account.");
+                            
+                        await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetUserIdQuery,
+                            new {UserId = record.UserId});
+                        await connection.ExecuteAsync(DeleteUserQuery.GetQuery,
+                            new {UserId = record.UserId});
                     }
-
-                    if (errors.Any()) // if we have any errors here, throw them back to the request
-                        throw new DbDetailedFailedWrite(
-                            $"The {string.Join(" and ", errors)} {(errors.Count() == 1 ? "is" : "are")} in use by another account.");
                 }
             }
         }
@@ -244,8 +244,9 @@ namespace SQE.SqeHttpApi.DataAccess
         /// instead. You should probably have run ResolveExistingUserConflict before attempting this.
         /// </summary>
         /// <param name="user"></param>
-        /// <param name="username">Username for the new account</param>
+        /// <param name="password"></param>
         /// <param name="email">Email address for the new account (it will be verified)</param>
+        /// <param name="resetActivation"></param>
         /// <param name="forename">Optional given name</param>
         /// <param name="surname">Optional family name</param>
         /// <param name="organization">Optional organizational affiliation</param>
@@ -253,14 +254,14 @@ namespace SQE.SqeHttpApi.DataAccess
         /// the secret confirmation token that should be emailed to the user and then likely stripped
         /// from the User object, which can be returned as a DTO to the HTTP request.</returns>
         /// <exception cref="DbFailedWrite">Some unexpected database write error has occured.</exception>
-        public async Task UpdateUserAsync(UserInfo user, string username, string email, bool resetActivation,
+        public async Task UpdateUserAsync(UserInfo user, string password, string email, bool resetActivation,
             string forename = null, string surname = null, string organization = null)
         {
             using (var connection = OpenConnection())
             {
                 var userUpdate = await connection.ExecuteAsync(UpdateUserInfo.GetQuery(resetActivation), new
-                {
-                    UserName = username, 
+                { 
+                    Pw = password,
                     Email = email, 
                     Forename = forename, 
                     Surname = surname, 
@@ -268,8 +269,8 @@ namespace SQE.SqeHttpApi.DataAccess
                     UserId = user.userId
                 });
                 
-                if (userUpdate != 1) // Something went wrong, probably you did not run ResolveExistingUserConflict first
-                    throw new DbFailedWrite();
+                if (userUpdate != 1) // Something went wrong, either you did not run ResolveExistingUserConflict first, or the password was wrong
+                    throw new DbDetailedFailedWrite("The password was incorrect.");
             }
         }
 
@@ -277,24 +278,22 @@ namespace SQE.SqeHttpApi.DataAccess
         /// Generates an activation token for the user account in the database.  This only works
         /// if the account is not yet activated.
         /// </summary>
-        /// <param name="username">Username of the unactivated account</param>
         /// <param name="email">Email address of the unactivated account</param>
         /// <returns>User details for the account with the activation token</returns>
         /// <exception cref="DbDetailedFailedWrite">Reason for token creation failure</exception>
-        public async Task<DetailedUserWithToken> CreateUserActivateTokenAsync(string username, string email)
+        public async Task<DetailedUserWithToken> CreateUserActivateTokenAsync(string email)
         {
             using (var connection = OpenConnection())
             {
                 try
                 {
                     // Confirm creation by getting the User object for the new user
-                    var columns = new List<string>() {"user_id", "user_name", "forename", "surname", "organization"};
-                    var where = new List<string>() {"user_name", "email"};
+                    var columns = new List<string>() {"user_id", "email", "forename", "surname", "organization"};
+                    var where = new List<string>() {"email"};
                     var userObject = await connection.QuerySingleAsync<DetailedUserWithToken>(
                         UserDetails.GetQuery(columns, where),
                         new
                         {
-                            UserName = username,
                             Email = email,
                         });
                     
@@ -302,7 +301,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     var token = Guid.NewGuid().ToString();
                     // Add the secret token to the database
                     var userEmailConfirmation = await connection.ExecuteAsync(
-                        CreateUserEmailTokenQuery.GetQuery,
+                        CreateUserEmailTokenQuery.GetQuery(),
                         new
                         {
                             UserId = userObject.UserId,
@@ -359,12 +358,13 @@ namespace SQE.SqeHttpApi.DataAccess
             using (var connection = OpenConnection())
             {
                 var newEmailEntry = await connection.ExecuteAsync(ChangeUnactivatedUserEmail.GetQuery, new
-                {
-                    OldEmail = oldEmail,
-                    NewEmail = newEmail
-                });
+                    {
+                        OldEmail = oldEmail,
+                        NewEmail = newEmail
+                    });
                 if (newEmailEntry != 1)
-                    throw new DbDetailedFailedWrite("Failed to update the email address. The new email address is probably in use by another user.");
+                    throw new DbDetailedFailedWrite(
+                        "Failed to update the email address. The new email address is probably in use by another user.");
             }
         }
 
@@ -406,7 +406,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     try
                     {
                         // Get the user's details via the submitted email address
-                        var columns = new List<string>() { "user_name", "user_id" };
+                        var columns = new List<string>() { "email", "user_id" };
                         var where = new List<string>() { "email" };
                         var userInfo = await connection.QuerySingleAsync<UserToken>(
                             UserDetails.GetQuery(columns, where), 
@@ -416,7 +416,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         var token = Guid.NewGuid().ToString();
                         
                         // Write the token to the database
-                        var tokenEntry = await connection.ExecuteAsync(CreateUserEmailTokenQuery.GetQuery, new
+                        var tokenEntry = await connection.ExecuteAsync(CreateUserEmailTokenQuery.GetQuery(), new
                         {
                             Token = token,
                             UserId = userInfo.UserId,
@@ -446,19 +446,16 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <param name="password">New password for the user's account</param>
         /// <returns></returns>
         /// <exception cref="DbFailedWrite"></exception>
-        public async Task<UserEmail> ResetForgottenPasswordAsync(string token, string password)
+        public async Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password)
         {
             using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
                 {
-                    UserEmail userInfo;
+                    DetailedUser detailedUserInfo;
                     try
                     {
-                        userInfo = await connection.QuerySingleAsync<UserEmail>(UserByTokenQuery.GetQuery, new
-                        {
-                            Token = token
-                        });
+                        detailedUserInfo = await GetDetailedUsedByTokenAsync(token);
                     }
                     catch
                     {
@@ -479,7 +476,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     });
                     
                     transactionScope.Complete(); // Close the transaction
-                    return userInfo;
+                    return detailedUserInfo;
                 }
             }
         }

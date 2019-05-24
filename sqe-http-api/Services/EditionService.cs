@@ -13,8 +13,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
     {
         Task<EditionGroupDTO> GetEditionAsync(uint editionId, UserInfo user, bool artefacts = false, bool fragments = false);
         Task<EditionListDTO> ListEditionsAsync(uint? userId);
-        Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name);
-        Task<EditionDTO> CopyEditionAsync(UserInfo user, string name);
+        Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
+            string collaborators = null);
+        Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionUpdateRequestDTO editionInfo);
     }
 
     public class EditionService : IEditionService
@@ -63,11 +64,12 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 id = model.EditionId,
                 name = model.Name,
                 permission = PermissionModelToDTO(model.Permission),
-                owner = UserService.UserModelToDTO(model.Owner),
+                owner = UserService.UserModelToDto(model.Owner),
                 thumbnailUrl = model.Thumbnail,
                 locked = model.Locked,
                 isPublic = model.IsPublic,
-                lastEdit = model.LastEdit
+                lastEdit = model.LastEdit,
+                copyright = model.Copyright
             };
         }
 
@@ -85,7 +87,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             return new DataAccess.Models.UserToken
             {
                 UserId = user.userId,
-                UserName = user.userName
+                Email = user.email
             };
         }
 
@@ -98,22 +100,27 @@ namespace SQE.SqeHttpApi.Server.Helpers
             };
         }
 
-        public async Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name)
+        public async Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
+            string collaborators = null)
         {
-            if (!string.IsNullOrEmpty(name)) 
+            Edition editionBeforeChanges;
+            try
             {
-                try
-                {
-                    await _repo.ChangeEditionNameAsync(user, name);
-                } 
-                catch(NoPermissionException)
-                {
-                    throw new NotFoundException(user.editionId.Value);
-                }
+                editionBeforeChanges = (await _repo.ListEditionsAsync(user.userId, user.editionId)).First();
+            } 
+            catch(NoPermissionException)
+            {
+                throw new NotFoundException(user.editionId.Value);
             }
-            else
+            
+            if (copyrightHolder != null || editionBeforeChanges.Collaborators != collaborators)
             {
-                throw new ImproperRequestException("change scroll Name", "scroll Name cannot be empty");
+                await _repo.ChangeEditionCopyrightAsync(user, copyrightHolder, collaborators);
+            }
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                await _repo.ChangeEditionNameAsync(user, name);
             }
             
             var editions = await _repo.ListEditionsAsync(user.userId, user.editionId); //get wanted edition by edition Id
@@ -121,11 +128,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
             return EditionModelToDTO(editions.First(x => x.EditionId == user.editionId));
         }
 
-        public async Task<EditionDTO> CopyEditionAsync(UserInfo user, string name)
+        public async Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionUpdateRequestDTO editionInfo)
         {
             EditionDTO edition;
             // Clone edition
-            var copyToEditionId = await _repo.CopyEditionAsync(user);
+            var copyToEditionId = await _repo.CopyEditionAsync(user, editionInfo.copyrightHolder, editionInfo.collaborators);
             if (user.editionId == copyToEditionId)
             {
                 // Check if is success is true, else throw error.
@@ -134,9 +141,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
             user.SetEditionId(copyToEditionId); // Update user object for the new editionId
             
             //Change the Name, if a Name has been passed
-            if (!string.IsNullOrEmpty(name))
+            if (!string.IsNullOrEmpty(editionInfo.name))
             {
-                edition = await UpdateEditionAsync(user, name); // Change the Name.
+                edition = await UpdateEditionAsync(user, editionInfo.name); // Change the Name.
             }
             else
             {

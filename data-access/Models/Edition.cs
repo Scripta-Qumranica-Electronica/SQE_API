@@ -8,6 +8,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     {
         public uint scrollId { get; set; }
         public string scroll { get; set; }
+        public string copyrightHolder { get; set; }
         public readonly List<Fragment> fragments = new List<Fragment>();
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -15,6 +16,8 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 
 
         // TODO We have to decide how to retrieve them: either on the fly for the real text chunk or should we use an "Author" field in the edition table?
+        // TODO If the collaborators field in the edition table is not null, then use that.  If it is null, then collect the
+        // names of all the edition editors.
         /// <summary>
         /// Gets all Contributors to the text chunk contained in the current instance
         /// </summary>
@@ -30,7 +33,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         /// </summary>
         public void addLicence()
         {
-            licence = Licence.printLicence(this);
+            licence = Licence.printLicence(copyrightHolder, getAuthors());
         }
     }
 
