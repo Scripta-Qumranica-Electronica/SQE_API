@@ -1,5 +1,3 @@
-using SQE.SqeHttpApi.DataAccess.Models;
-
 namespace SQE.SqeHttpApi.DataAccess.Helpers
 {
     // TODO We still have to find a final formulation.

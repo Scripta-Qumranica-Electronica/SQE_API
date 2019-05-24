@@ -21,7 +21,7 @@ SELECT image_urls.url AS url,
     image_catalog.object_id AS object_id,
     ASTEXT(image_to_image_map.region_on_image1) AS region_on_image1,
     ASTEXT(image_to_image_map.region_on_image2) AS region_on_image2,
-    image_to_image_map.rotation AS rotation
+    image_to_image_map.transform_matrix AS transform_matrix
 FROM iaa_edition_catalog
 JOIN edition USING(scroll_id)
 JOIN edition_editor USING(edition_id)
@@ -35,8 +35,6 @@ LEFT JOIN image_to_image_map ON SQE_image.sqe_image_id = image_to_image_map.imag
 JOIN image_urls ON SQE_image.image_urls_id = image_urls.image_urls_id
 WHERE edition.edition_id = @EditionId
     AND (edition_editor.user_id = 1 OR edition_editor.user_id = @UserId)
-    AND iaa_edition_catalog.edition_side = 0 ## TODO: We should really remove this one condition in order to
-  ## get both recto and verso (everything in the API will work properly by removing this single condition from the query)
 ";
         public static string GetImageQuery(bool filterFragment)
         {
@@ -66,7 +64,7 @@ WHERE edition.edition_id = @EditionId
             public string object_id { get; set; }
             public string region_on_image1 { get; set; }
             public string region_on_image2 { get; set; }
-            public string rotation { get; set; }
+            public string transform_matrix { get; set; }
         }
     }
 

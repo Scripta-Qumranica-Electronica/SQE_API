@@ -55,7 +55,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 Master = image.master,
                 RegionInMaster = image.region_on_image1,
                 RegionOfMaster = image.region_on_image2,
-                TransformMatrix = image.rotation
+                TransformMatrix = image.transform_matrix
             };
             return model;
         }
