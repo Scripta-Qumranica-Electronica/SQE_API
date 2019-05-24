@@ -54,6 +54,6 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 
     public class Polygon
     {
-        public string svg { get; set; }
+        public string wkt { get; set; }
     }
 }

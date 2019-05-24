@@ -50,11 +50,20 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
             return new ImageDTO
             {
+                id = model.Id,
                 url = model.URL,
                 waveLength = model.WaveLength,
                 type = GetType(model.Type),
-                regionInMaster = null,
-                regionOfMaster = null,
+                regionInMaster = new PolygonDTO()
+                {
+                    mask = model.RegionInMaster,
+                    transformMatrix = null
+                },
+                regionOfMaster = new PolygonDTO()
+                {
+                    mask = model.RegionOfMaster,
+                    transformMatrix = null
+                },
                 lightingDirection = GetLightingDirection(model.Type),
                 lightingType = GetLightingType(model.Type),
                 side = model.Side,

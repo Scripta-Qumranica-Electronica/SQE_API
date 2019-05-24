@@ -43,18 +43,19 @@ namespace SQE.SqeHttpApi.DataAccess
             var model = new Image
             {
                 URL = image.proxy + image.url + image.filename,
-                RegionInMaster = null,
-                RegionOfMaster = null,
+                Id = image.sqe_image_id,
                 Side = image.side == 0 ? "recto" : "verso",
                 Type = image.img_type,
                 WaveLength = GetWave(image.wave_start, image.wave_end),
-                TransformMatrix = null,
                 Institution = image.institution,
-                Catlog1 = image.catalog_1,
+                Catalog1 = image.catalog_1,
                 Catalog2 = image.catalog_2,
                 ImageCatalogId = image.image_catalog_id,
                 ObjectId = image.object_id,
-                Master = image.master
+                Master = image.master,
+                RegionInMaster = image.region_on_image1,
+                RegionOfMaster = image.region_on_image2,
+                TransformMatrix = image.rotation
             };
             return model;
         }
