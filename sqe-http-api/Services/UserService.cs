@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 
@@ -15,13 +17,14 @@ namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IUserService
     {
-        Task<LoginResponseDTO> AuthenticateAsync(string username, string password); // TODO: Return a User object, not a LoginResponse
+        Task<DetailedUserTokenDTO> AuthenticateAsync(string email, string password); // TODO: Return a User object, not a LoginResponse
         UserDTO GetCurrentUser();
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject(uint? editionId = null);
         Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
-        Task<UserDTO> UpdateUserAsync(UserInfo user, UpdateUserRequestDTO updateUserData);
-        Task UpdateUnactivatedAccountEmail(string oldEmail, string newEmail);
+        Task<UserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData);
+        Task UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
+        Task ResendActivationEmail(string email);
         Task ConfirmUserRegistrationAsync(string token);
         Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
         Task RequestResetLostPasswordAsync(string email);
@@ -49,40 +52,32 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <summary>
         /// Authenticate user by credentials and create a JWT for the user.
         /// </summary>
-        /// <param name="username">The user's username</param>
+        /// <param name="email"></param>
         /// <param name="password">The user's password</param>
         /// <returns>Returns a response including a JWT for the user to use as a Bearer token, or an email 
         /// address if the user account has not yet been activated.</returns>
-        public async Task<LoginResponseDTO> AuthenticateAsync(string username, string password)
+        public async Task<DetailedUserTokenDTO> AuthenticateAsync(string email, string password)
         {
-            var result = await _userRepository.GetUserByPasswordAsync(username, password);
+            var result = await _userRepository.GetUserByPasswordAsync(email, password);
 
             if (result == null)
                 return null;
 
-            if (result.Activated) // The user account is activated and a token should be returned
-                return new LoginResponseDTO
-                {
-                    userName = result.UserName,
-                    userId = result.UserId,
-                    token = BuildUserToken(result.UserName, result.UserId).ToString(),
-                };
-            else // The user account is not yet activated and an email address should be returned
-                return new LoginResponseDTO
-                {
-                    userName = result.UserName,
-                    userId = result.UserId,
-                    email = result.Email,
-                };
+            return new DetailedUserTokenDTO
+            {
+                email = result.Email,
+                userId = result.UserId,
+                token = result.Activated ? BuildUserToken(result.Email, result.UserId).ToString() : null,
+            };
         }
 
         /// <summary>
         /// Constructs a unique, encrypted JWT for a user account.
         /// </summary>
-        /// <param name="userName">The user's username</param>
+        /// <param name="email"></param>
         /// <param name="userId">The user's user id</param>
         /// <returns>Returns a JWT string</returns>
-        private string BuildUserToken(string userName, uint userId)
+        private string BuildUserToken(string email, uint userId)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
@@ -92,7 +87,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, userName),
+                    new Claim(ClaimTypes.Name, email),
                     new Claim(ClaimTypes.NameIdentifier, userId.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddDays(7),
@@ -105,14 +100,14 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public UserDTO GetCurrentUser()
         {
             // TODO: Check if ...User.Identity.Name exists. Return null if not.
-            var currentUserName = _accessor.HttpContext.User.Identity.Name;
+            var currentUserEmail = _accessor.HttpContext.User.Identity.Name;
             var currentUserId = GetCurrentUserId();
 
-           return (currentUserName == null || !currentUserId.HasValue) ?
+           return (currentUserEmail == null || !currentUserId.HasValue) ?
                 null :
                 new UserDTO
                 {
-                    userName = currentUserName,
+                    email = currentUserEmail,
                     userId = currentUserId.Value,
                 };
         }
@@ -140,21 +135,20 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData)
         {
             // Ask the repo to create the new user
-            var createdUser = await _userRepository.CreateNewUserAsync(newUserData.userName, newUserData.email, newUserData.password,
-                newUserData.forename, newUserData.surname, newUserData.organization);
+            var createdUser = await _userRepository.CreateNewUserAsync(newUserData.email, newUserData.password,
+                forename: newUserData.forename, surname: newUserData.surname,  organization: newUserData.organization);
             
             // Email the user
             await SendAccountActivationEmail(new DetailedUserWithToken()
             {
                 Forename = newUserData.forename,
                 Surname = newUserData.surname,
-                UserName = createdUser.UserName,
                 Token = createdUser.Token,
                 UserId = createdUser.UserId,
                 Email = newUserData.email
             });
             
-            return UserModelToDTO(createdUser);
+            return DetailedUserModelToDto(createdUser);
         }
 
         /// <summary>
@@ -163,40 +157,34 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <param name="user"></param>
         /// <param name="updateUserData">All of the information for the new user.</param>
         /// <returns>Returns a UserDTO for the newly created user account.</returns>
-        public async Task<UserDTO> UpdateUserAsync(UserInfo user, UpdateUserRequestDTO updateUserData)
+        public async Task<UserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData)
         {
             // Get current user data
-            var originalUserInfo = await _userRepository.GetDetailedUserById(user);
+            var originalUserInfo = await _userRepository.GetDetailedUserByIdAsync(user);
             var resetActivation = updateUserData.email != null && originalUserInfo.Email != updateUserData.email;
             if (resetActivation) // Make sure email is unique
-                await _userRepository.ResolveExistingUserConflictAsync("", updateUserData.email);
-            if (updateUserData.userName != null && originalUserInfo.UserName != updateUserData.userName) // Make sure username is unique
-                await _userRepository.ResolveExistingUserConflictAsync(updateUserData.userName, "");
+                await _userRepository.ResolveExistingUserConflictAsync(updateUserData.email);
             
             // Ask the repo to update the user (merge nul fields with the new request)
             await _userRepository.UpdateUserAsync(
-                user, 
-                updateUserData.userName ?? originalUserInfo.UserName, 
+                user, updateUserData.password, 
                 updateUserData.email ?? originalUserInfo.Email,
                 resetActivation,
-                updateUserData.forename ?? originalUserInfo.Forename, 
-                updateUserData.surname ?? originalUserInfo.Surname, 
-                updateUserData.organization ?? originalUserInfo.Organization);
+                forename: updateUserData.forename ?? originalUserInfo.Forename, 
+                surname: updateUserData.surname ?? originalUserInfo.Surname, 
+                organization: updateUserData.organization ?? originalUserInfo.Organization);
             
             // Get the updated user info
             DetailedUserWithToken updatedUserWithInfo;
 
             if (resetActivation) // Create activation token and send email notification
             {
-                updatedUserWithInfo = await _userRepository.CreateUserActivateTokenAsync(
-                    updateUserData.userName,
-                    updateUserData.email);
+                updatedUserWithInfo = await _userRepository.CreateUserActivateTokenAsync(updateUserData.email);
                 // Email the user
                 await SendAccountActivationEmail(new DetailedUserWithToken()
                 {
                     Forename = updateUserData.forename,
                     Surname = updateUserData.surname,
-                    UserName = updateUserData.userName,
                     Token = updatedUserWithInfo.Token,
                     UserId = updatedUserWithInfo.UserId,
                     Email = updateUserData.email
@@ -204,15 +192,15 @@ namespace SQE.SqeHttpApi.Server.Helpers
             }
             else // Collect the updated account info
             {
-                updatedUserWithInfo = await _userRepository.GetDetailedUserById(user);
+                updatedUserWithInfo = await _userRepository.GetDetailedUserByIdAsync(user);
             }
             
-            return UserModelToDTO(updatedUserWithInfo);
+            return DetailedUserModelToDto(updatedUserWithInfo);
         }
 
         private async Task SendAccountActivationEmail(DetailedUserWithToken userWithInfo)
         {
-            // TODO: Add link to web endpoint when we know what that is. Can token be in URL query?
+            // TODO: Add link to web endpoint when we know what that is. Use Razor to format this and ad organization name.
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
@@ -224,7 +212,7 @@ The Scripta Qumranica Electronica team</body></html>";
             const string emailSubject = "Activation of your Scripta Qumranica Electronica account";
             var name = !string.IsNullOrEmpty(userWithInfo.Forename) || !string.IsNullOrEmpty(userWithInfo.Surname)
                 ? (userWithInfo.Forename + " " + userWithInfo.Surname).Trim() 
-                : userWithInfo.UserName;
+                : userWithInfo.Email;
             await _emailSender.SendEmailAsync(
                 userWithInfo.Email,
                 emailSubject,
@@ -241,7 +229,23 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <returns></returns>
         public async Task ConfirmUserRegistrationAsync(string token)
         {
+            var userInfo = await _userRepository.GetDetailedUsedByTokenAsync(token);
             await _userRepository.ConfirmAccountCreationAsync(token);
+            
+            // TODO: Use Razor to format this and ad organization name.
+            const string emailBody = @"
+<html><body>Dear $User,<br>
+<br>
+Congratulations! You have activated your Scripta Qumranica Electronica account.  Login at https://www.qumranica.org/Scrollery 
+to begins using the system.<br>
+<br>
+Best wishes,<br>
+The Scripta Qumranica Electronica team</body></html>";
+            const string emailSubject = "Confirmation of your Scripta Qumranica Electronica account activation";
+            await _emailSender.SendEmailAsync(
+                userInfo.Email,
+                emailSubject,
+                emailBody.Replace("$User", userInfo.Email));
         }
 
         /// <summary>
@@ -250,14 +254,27 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <param name="oldEmail">Email address that was originally entered when creating the account</param>
         /// <param name="newEmail">New email address to use for the account</param>
         /// <returns></returns>
-        public async Task UpdateUnactivatedAccountEmail(string oldEmail, string newEmail)
+        public async Task UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail)
         {
+            // Check if account is already activated
+            await _userRepository.GetUnactivatedUserByEmailAsync(oldEmail); 
             // Check for a conflicting email address and resolve if possible
-            // await _userRepository.ResolveExistingUserConflictAsync("", newEmail);
-            // Change the account email
+            if (oldEmail != newEmail)
+                await _userRepository.ResolveExistingUserConflictAsync(newEmail);
             await _userRepository.UpdateUnactivatedUserEmailAsync(oldEmail, newEmail);
             // Get the account info and send a new account activation email
-            var userInfo = await _userRepository.GetUnactivatedUserByEmailAsync(newEmail);
+            await ResendActivationEmail(newEmail);
+        }
+
+        /// <summary>
+        /// Updates the email address for an account that has not yet been activated
+        /// </summary>
+        /// <param name="email">Email address that was originally entered when creating the account</param>
+        /// <returns></returns>
+        public async Task ResendActivationEmail(string email)
+        {
+            // Get the account info and send a new account activation email
+            var userInfo = await _userRepository.GetUnactivatedUserByEmailAsync(email);
             await SendAccountActivationEmail(userInfo);
         }
         
@@ -273,7 +290,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 return;
             
             // Email the user
-            // TODO: Add link to web endpoint when we know what that is. Can token be in URL query?
+            // TODO: Add link to web endpoint when we know what that is. Use Razor to format this and ad organization name.
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
@@ -285,7 +302,7 @@ The Scripta Qumranica Electronica team</body></html>";
             await _emailSender.SendEmailAsync(
                 email,
                 emailSubject,
-                emailBody.Replace("$User", userInfo.UserName)
+                emailBody.Replace("$User", userInfo.Email)
                     .Replace("$Token", userInfo.Token)
             );
         }
@@ -313,6 +330,7 @@ The Scripta Qumranica Electronica team</body></html>";
         {
             var userInfo = await _userRepository.ResetForgottenPasswordAsync(token, password);
             
+            // TODO: Use Razor to format this and ad organization name.
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
@@ -325,7 +343,7 @@ The Scripta Qumranica Electronica team</body></html>";
             await _emailSender.SendEmailAsync(
                 userInfo.Email,
                 emailSubject,
-                emailBody.Replace("$User", userInfo.UserName)
+                emailBody.Replace("$User", userInfo.Email)
             );
         }
 
@@ -342,12 +360,34 @@ The Scripta Qumranica Electronica team</body></html>";
         }
 
 
-        public static UserDTO UserModelToDTO(DataAccess.Models.UserToken model)
+        /// <summary>
+        /// Packages a DetailedUser as a DTO to send back to the client.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        private static DetailedUserDTO DetailedUserModelToDto(DataAccess.Models.DetailedUser model)
+        {
+            return new DetailedUserDTO
+            {
+                userId = model.UserId,
+                email = model.Email,
+                forename = model.Forename,
+                surname = model.Surname,
+                organization = model.Organization
+            };
+        }
+        
+        /// <summary>
+        /// Packages a DetailedUser as a DTO to send back to the client.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public static UserDTO UserModelToDto(DataAccess.Models.User model)
         {
             return new UserDTO
             {
                 userId = model.UserId,
-                userName = model.UserName,
+                email = model.Email,
             };
         }
     }

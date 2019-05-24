@@ -5,34 +5,26 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 {
     public class User
     {
-        public string UserName { get; set; }
-        public uint UserId { get; set; }
-    }
-    
-    public class UserLoginResponse : User
-    {
-        public bool Activated { get; set; }
         public string Email { get; set; }
+        public uint UserId { get; set; }
     }
     
     public class UserToken : User
     {
         public string Token { get; set; }
     }
-
-    public class DetailedUserWithToken : UserToken
+    
+    public class DetailedUser : User
     {
         public string Forename { get; set; }
         public string Surname { get; set; }
         public string Organization { get; set; }
-        public string Email { get; set; }
     }
 
-    public class UserEmail : User
+    public class DetailedUserWithToken : DetailedUser
     {
-        public string Forename { get; set; }
-        public string Surname { get; set; }
-        public string Email { get; set; }
+        public bool Activated { get; set; }
+        public string Token { get; set; }
     }
     
     public class UserEditionPermissions

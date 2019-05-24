@@ -8,7 +8,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
         internal class AuthorByTableId
         {
             private string _query = @"
-SELECT DISTINCT user_name
+SELECT DISTINCT email
 FROM single_action
 JOIN main_action USING(main_action_id)
 JOIN scroll_version USING(scroll_version_id)

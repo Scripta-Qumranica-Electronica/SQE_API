@@ -63,7 +63,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 id = model.EditionId,
                 name = model.Name,
                 permission = PermissionModelToDTO(model.Permission),
-                owner = UserService.UserModelToDTO(model.Owner),
+                owner = UserService.UserModelToDto(model.Owner),
                 thumbnailUrl = model.Thumbnail,
                 locked = model.Locked,
                 isPublic = model.IsPublic,
@@ -85,7 +85,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             return new DataAccess.Models.UserToken
             {
                 UserId = user.userId,
-                UserName = user.userName
+                Email = user.email
             };
         }
 

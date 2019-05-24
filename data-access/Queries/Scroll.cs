@@ -17,7 +17,7 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
     edition_editor.may_read AS MayRead,
     last.last_edit AS LastEdit, 
     user.user_id AS UserId, 
-    user.user_name AS UserName 
+    user.email AS Email 
 FROM edition AS ed1
 JOIN edition AS ed2 ON ed1.scroll_id = ed2.scroll_id
 JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
@@ -68,7 +68,7 @@ LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_imag
             public bool MayRead { get; set; }
             public DateTime? LastEdit { get; set; }
             public uint UserId { get; set; }
-            public string UserName { get; set; }
+            public string Email { get; set; }
         }
     }
 

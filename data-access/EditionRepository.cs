@@ -55,10 +55,10 @@ namespace SQE.SqeHttpApi.DataAccess
                 Locked = result.Locked,
                 LastEdit = result.LastEdit,
                 IsPublic = result.UserId == 1, // The default (public and uneditable) SQE data is associated with user_id 1.
-                Owner = new UserToken
+                Owner = new User()
                 {
                     UserId = result.UserId,
-                    UserName = result.UserName,
+                    Email = result.Email,
                 }
             };
 

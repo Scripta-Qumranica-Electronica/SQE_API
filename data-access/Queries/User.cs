@@ -5,9 +5,7 @@ using SQE.SqeHttpApi.DataAccess.Helpers;
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
     /// <summary>
-    /// An extensible User info query builder.
-    /// TODO: Upgrade all user queries to use this.
-    /// </summary>
+    /// An extensible Us
     internal static class UserDetails
     {
         private const string _query = @"
@@ -57,14 +55,14 @@ WHERE edition_id = @EditionId AND user_id = @UserId";
     }
 
     /// <summary>
-    /// Creates a new user account for @UserName, @Email, and @Password (the account is not activated);
+    /// Creates a new user account for @Email, and @Password (the account is not activated);
     /// the fields @Forename, @Surname, and @Organization may be empty.
     /// </summary>
     internal static class CreateNewUserQuery
     {
         public const string GetQuery = @"
-INSERT INTO user (user_name, email, pw, forename, surname, organization)
-VALUES(@UserName, @Email, SHA2(@Password, 224), @Forename, @Surname, @Organization)";
+INSERT INTO user (email, pw, forename, surname, organization)
+VALUES(@Email, SHA2(@Password, 224), @Forename, @Surname, @Organization)";
     }
 
     /// <summary>
@@ -83,7 +81,8 @@ DELETE FROM user WHERE user_id = @UserId AND activated = 0";
     internal static class ChangePasswordQuery
     {
         public const string GetQuery = @"
-UPDATE user
+UPDATE userer info query builder.
+    /// </summary>
 SET pw = SHA2(@NewPassword, 224)
 WHERE user_id = @UserId
     AND pw = SHA2(@OldPassword, 224)
@@ -112,10 +111,17 @@ WHERE user_email_token.token = @Token
     /// </summary>
     internal static class CreateUserEmailTokenQuery
     {
-        public const string GetQuery = @"
+        public const string _query = @"
 INSERT INTO user_email_token (user_id, token, type)
-VALUES(@UserId, @Token, @Type)
-ON DUPLICATE KEY UPDATE token = @Token, date_created = NOW()";
+$VALUES
+ON DUPLICATE KEY UPDATE `type` = @Type, date_created = NOW()";
+        
+        public static string GetQuery(bool emailOnly = false)
+        {
+            return _query.Replace("$VALUES", emailOnly 
+                ? "SELECT user_id, @Token, @Type FROM user WHERE email = @Email"
+                : "VALUES(@UserId, @Token, @Type)");
+        }
 
         public const string Activate = "ACTIVATE_ACCOUNT";
         public const string ResetPassword = "RESET_PASSWORD";
@@ -152,7 +158,7 @@ WHERE email = @OldEmail AND activated = 0
     internal static class UserByTokenQuery
     {
         public const string GetQuery = @"
-SELECT user_name AS UserName, forename AS Forename, surname AS Surname, email AS Email
+SELECT email AS Email, forename AS Forename, surname AS Surname
 FROM user
 JOIN user_email_token USING(user_id)
 WHERE user_email_token.token = @Token
@@ -178,8 +184,8 @@ WHERE user_email_token.token = @Token
     {
         public const string _query = @"
 UPDATE user
-SET user_name = @UserName, email = @Email, forename = @Forename, surname = @Surname, organization = @Organization$Activated
-WHERE user_id = @UserId
+SET email = @Email, forename = @Forename, surname = @Surname, organization = @Organization$Activated
+WHERE user_id = @UserId AND pw = SHA2(@Pw, 224)
 ";
 
         public static string GetQuery(bool resetActivation)
