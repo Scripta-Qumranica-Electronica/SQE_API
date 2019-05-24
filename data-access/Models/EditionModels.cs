@@ -13,6 +13,9 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public bool IsPublic {get; set;}
         public DateTime? LastEdit { get; set; }
         public User Owner { get; set; }
+        public string Copyright { get; set; }
+        public string CopyrightHolder { get; set; }
+        public string Collaborators { get; set; }
     }
 
     public class ScrollName
@@ -32,7 +35,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 
     public class Share
     {
-        public User User { get; set; }
+        public UserToken UserToken { get; set; }
         public Permission Permission { get; set; }
     }
 

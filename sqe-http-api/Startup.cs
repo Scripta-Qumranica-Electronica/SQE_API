@@ -13,6 +13,7 @@ using System.Text;
 using System.Reflection;
 using System.IO;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.Helpers;
@@ -42,6 +43,7 @@ namespace SQE.SqeHttpApi.Server
             services.AddScoped<IImageService, ImageService>();
             services.AddScoped<ITextRetrievingService, TextRetrievingService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddSingleton<IEmailSender, DevEmailSender>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IEditionRepository, EditionRepository>();
             services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();

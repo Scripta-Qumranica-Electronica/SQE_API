@@ -36,9 +36,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
         public async Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId)
         {
-            var imagedFragments = await _repo.GetImagedObjectsAsync(userId, editionId, null);
+            var imagedObjects = await _repo.GetImagedObjectsAsync(userId, editionId, null);
 
-            if (imagedFragments == null)
+            if (imagedObjects == null)
             {
                 throw new NotFoundException((uint)editionId);
             }
@@ -58,7 +58,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 imageDict[image.ObjectId].Add(_imageService.ImageToDTO(image));
             }
 
-            foreach (var i in imagedFragments)
+            foreach (var i in imagedObjects)
             {
                 if (imageDict.TryGetValue(i.Id, out var imagedFragment))
                     result.imagedObjects.Add(ImagedObjectModelToDTO(i, imagedFragment));

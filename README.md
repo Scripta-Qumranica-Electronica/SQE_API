@@ -13,31 +13,31 @@ We have used Dapper to simplify data access in the `repositories`.  It is benefi
 ### The data flow (and structure)
 
 |User|
-----
+|----|
 HTTP request (variables in path and JSON payload)
 
 |Controller|
-----
+|----|
 Controllers should route requests to `services` (passing necessary variables).  They should _not_ perform any other logic.
 
 |Service|
-----
+|----|
 Sends data requests to the low level database `repositories`.
 
 |Repository|
-----
+|----|
 Builds SQL queries from the `queries` string builders. Performs reads and writes and sends the data/status back to the `service`.
 
 |Service|
-----
+|----|
 Recieves data from the `repository` and packages it into a `DTO` for the `controller`.
 
 |Controller|
-----
+|----|
 Sends the `DTO` response back to the `user`.
 
 |User|
-----
+|----|
 Receives the `DTO` corresponding to the HTTP request.
 
 ## Security
