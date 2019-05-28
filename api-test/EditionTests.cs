@@ -72,7 +72,7 @@ namespace api_test
         {
             // ARRANGE
             const string url = "/v1/editions/1";
-            var payload = new EditionUpdateRequestDTO(){name = "none"};
+            var payload = new EditionUpdateRequestDTO("none", null, null);
             
             // Act (Create new scroll)
             var (response, _) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionListDTO>(
@@ -105,7 +105,7 @@ namespace api_test
             // ARRANGE (with name)
             const string url = "/v1/editions/1";
             const string name = "interesting-long-test name @3#ח";
-            var newScrollRequest = new EditionUpdateRequestDTO() {name = name};
+            var newScrollRequest = new EditionUpdateRequestDTO(name, null, null);
             
             //Act
             var (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
@@ -123,7 +123,7 @@ namespace api_test
             Assert.True(msg.id != 1);
             
             // ARRANGE (without name)
-            newScrollRequest = new EditionUpdateRequestDTO() {name = ""};
+            newScrollRequest = new EditionUpdateRequestDTO("", null, null);
             
             //Act
             (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
@@ -161,7 +161,7 @@ namespace api_test
             response.EnsureSuccessStatusCode();
             var oldName = msg.primary.name;
             const string name = "מגלה א";
-            var newScrollRequest = new EditionUpdateRequestDTO {name = name};
+            var newScrollRequest = new EditionUpdateRequestDTO(name, null, null);
             
             //Act
             var (response2, msg2) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(

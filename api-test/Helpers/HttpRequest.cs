@@ -64,15 +64,15 @@ namespace api_test.Helpers
         {
             const string name = "test";
             const string password = "asdf";
-            var login = new LoginRequestDTO(){ userName = name, password = password};
-            var (response, msg) = await SendAsync<LoginRequestDTO, LoginResponseDTO>(client, HttpMethod.Post, "/v1/users/login", login);
+            var login = new LoginRequestDTO(){ email = name, password = password};
+            var (response, msg) = await SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(client, HttpMethod.Post, "/v1/users/login", login);
             response.EnsureSuccessStatusCode();
             return msg.token;
         }
 
         public static async Task<uint> CreateNewEdition(HttpClient client)
         {
-            var newScrollRequest = new EditionUpdateRequestDTO() {name = "test-name"};
+            var newScrollRequest = new EditionUpdateRequestDTO("test-name", null, null);
             var (response, msg) = await SendAsync<EditionUpdateRequestDTO, EditionDTO>(client, HttpMethod.Post, "/v1/editions/1", newScrollRequest, await GetJWTAsync(client));
             response.EnsureSuccessStatusCode();
             return msg.id;
