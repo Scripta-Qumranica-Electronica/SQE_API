@@ -65,6 +65,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
             {
                 email = result.Email,
                 userId = result.UserId,
+                forename = result.Forename,
+                surname = result.Surname,
+                organization = result.Organization,
                 token = result.Activated ? BuildUserToken(result.Email, result.UserId).ToString() : null,
             };
         }
