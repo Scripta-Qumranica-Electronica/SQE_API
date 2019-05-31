@@ -8,14 +8,13 @@ namespace api_test
     /// <summary>
     /// Fires up the application and provides an HTTP Client to access its controller endpoints.
     /// </summary>
-    public class WebAppFactory : ICollectionFixture<WebApplicationFactory<Startup>>
+    public class WebControllerTest : IClassFixture<WebApplicationFactory<Startup>>
     {
-        public readonly HttpClient Client;
+        public readonly HttpClient _client;
 
-        public WebAppFactory()
+        public WebControllerTest(WebApplicationFactory<Startup> factory)
         {
-            var factory = new WebApplicationFactory<Startup>();
-            Client = factory.CreateClient();
+            _client = factory.CreateClient();
         }
     }
 }

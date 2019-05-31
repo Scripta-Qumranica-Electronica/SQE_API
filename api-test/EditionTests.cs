@@ -3,6 +3,8 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using api_test.Helpers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
@@ -11,12 +13,12 @@ namespace api_test
     /// <summary>
     /// This test suite tests all the current endpoints in the EditionController
     /// </summary>
-    public class EditionTests
+    public class EditionTests : WebControllerTest
     {
-        private readonly WebAppFactory _factory;
-        public EditionTests()
+        private readonly DatabaseQuery _db;
+        public EditionTests(WebApplicationFactory<Startup> factory) : base(factory)
         {
-            _factory = new WebAppFactory();
+            _db = new DatabaseQuery();
         }
 
         /// <summary>
@@ -30,7 +32,7 @@ namespace api_test
             const string url = "/v1/editions";
             
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, EditionListDTO>(_factory.Client, HttpMethod.Get, url, null);
+            var (response, msg) = await HttpRequest.SendAsync<string, EditionListDTO>(_client, HttpMethod.Get, url, null);
             response.EnsureSuccessStatusCode();
 
             // Assert
@@ -51,7 +53,7 @@ namespace api_test
             
             // Act
             var (response, msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Get, 
                 url, 
                 null);
@@ -76,7 +78,7 @@ namespace api_test
             
             // Act (Create new scroll)
             var (response, _) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionListDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Post, 
                 url, 
                 payload);
@@ -86,7 +88,7 @@ namespace api_test
             
             // Act (change scroll name)
             (response, _) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionListDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Put, 
                 url, 
                 payload);
@@ -109,11 +111,11 @@ namespace api_test
             
             //Act
             var (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Post, 
                 url, 
                 newScrollRequest,
-                await HttpRequest.GetJWTAsync(_factory.Client));
+                await HttpRequest.GetJWTAsync(_client));
             response.EnsureSuccessStatusCode();
 
             // Assert
@@ -127,11 +129,11 @@ namespace api_test
             
             //Act
             (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Post, 
                 url, 
                 newScrollRequest,
-                await HttpRequest.GetJWTAsync(_factory.Client));
+                await HttpRequest.GetJWTAsync(_client));
             response.EnsureSuccessStatusCode();
 
             // Assert
@@ -149,11 +151,11 @@ namespace api_test
         public async Task UpdateEdition()
         {
             // ARRANGE
-            var bearerToken = await HttpRequest.GetJWTAsync(_factory.Client);
-            var editionId = await HttpRequest.CreateNewEdition(_factory.Client);
+            var bearerToken = await HttpRequest.GetJWTAsync(_client);
+            var editionId = await HttpRequest.CreateNewEdition(_client);
             var url = "/v1/editions/" + editionId;
             var (response, msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Get, 
                 url, 
                 null,
@@ -165,7 +167,7 @@ namespace api_test
             
             //Act
             var (response2, msg2) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Put, 
                 url, 
                 newScrollRequest,
@@ -188,13 +190,13 @@ namespace api_test
         public async Task GetPrivateEditions()
         {
             // ARRANGE
-            var bearerToken = await HttpRequest.GetJWTAsync(_factory.Client);
-            var editionId = await HttpRequest.CreateNewEdition(_factory.Client);
+            var bearerToken = await HttpRequest.GetJWTAsync(_client);
+            var editionId = await HttpRequest.CreateNewEdition(_client);
             const string url = "/v1/editions";
             
             // Act (get listings with authentication)
             var (response, msg) = await HttpRequest.SendAsync<string, EditionListDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Get, 
                 url, 
                 null, 
@@ -210,7 +212,7 @@ namespace api_test
             
             // Act (get listings without authentication)
             (response, msg) = await HttpRequest.SendAsync<string, EditionListDTO>(
-                _factory.Client, 
+                _client, 
                 HttpMethod.Get, 
                 url, 
                 null);

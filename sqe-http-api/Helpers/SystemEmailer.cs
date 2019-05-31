@@ -21,37 +21,42 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <returns></returns>
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            try  
+            // Don't bother trying to send an email unless we have an email username and password
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SQE_GMAIL_USERNAME")) &&
+                string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SQE_GMAIL_PASSWORD")))
+                return;
+            
+            try
             {
-                var mimeMessage = new MimeMessage();  
-                mimeMessage.From.Add(new MailboxAddress  
-                ("SQE Webadmin",   
-                    Environment.GetEnvironmentVariable("SQE_GMAIL_USERNAME") + "@gmail.com"  
-                ));  
-                mimeMessage.To.Add(new MailboxAddress  
-                ("Microsoft ASP.NET Core",  
-                    email  
-                ));  
+                var mimeMessage = new MimeMessage();
+                mimeMessage.From.Add(new MailboxAddress
+                ("SQE Webadmin",
+                    Environment.GetEnvironmentVariable("SQE_GMAIL_USERNAME") + "@gmail.com"
+                ));
+                mimeMessage.To.Add(new MailboxAddress
+                ("Microsoft ASP.NET Core",
+                    email
+                ));
                 mimeMessage.Subject = subject; //Subject  
-                mimeMessage.Body = new TextPart("html")  
-                {  
-                    Text = htmlMessage  
-                };  
-  
-                using (var client = new SmtpClient())  
-                {  
-                    client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTlsWhenAvailable);  
-                    client.Authenticate(  
-                        Environment.GetEnvironmentVariable("SQE_GMAIL_USERNAME"),   
-                        Environment.GetEnvironmentVariable("SQE_GMAIL_PASSWORD")  
-                    );  
+                mimeMessage.Body = new TextPart("html")
+                {
+                    Text = htmlMessage
+                };
+
+                using (var client = new SmtpClient())
+                {
+                    client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTlsWhenAvailable);
+                    client.Authenticate(
+                        Environment.GetEnvironmentVariable("SQE_GMAIL_USERNAME"),
+                        Environment.GetEnvironmentVariable("SQE_GMAIL_PASSWORD")
+                    );
                     await client.SendAsync(mimeMessage);
                     await client.DisconnectAsync(true);
-                }  
-            }  
-            catch (Exception ex)  
-            {  
-                throw ex;  
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
         }
     }

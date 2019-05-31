@@ -19,7 +19,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
         private readonly IImagedObjectService _imagedObjectService;
         private readonly IArtefactService _artefactService;
 
-
         public EditionController(
             IEditionService editionService, 
             IUserService userService, 
