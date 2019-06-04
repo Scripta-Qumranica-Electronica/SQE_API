@@ -3,12 +3,14 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using api_test.Helpers;
+using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
+// TODO: write the "should fail" tests
 namespace api_test
 {
     /// <summary>
@@ -16,8 +18,11 @@ namespace api_test
     /// </summary>
     public class UserTest : WebControllerTest
     {
+        #region Setup and constructor
+        
         private readonly DatabaseQuery _db;
-
+        
+        private readonly Faker _faker = new Faker("en");
         private readonly NewUserRequestDTO normalUser = new NewUserRequestDTO("test@mymail.com",
             "test-pw", "My Organization", "Testing", "Tester");
         private readonly NewUserRequestDTO nullUser = new NewUserRequestDTO("nulltest@mymail.com",
@@ -28,22 +33,22 @@ namespace api_test
             "test-pw", "EmptyOrg", "EmptyFirst", "EmptyLast");
         private readonly NewUserRequestDTO conflictingUser = new NewUserRequestDTO("test@mymail.com",
             "test-pw", "My Organization", "Testing", "Tester");
+
+        private readonly string version = "v1";
+        private readonly string controller = "users";
         
         public UserTest(WebApplicationFactory<Startup> factory) : base(factory)
         {
             _db = new DatabaseQuery();
         }
+        #endregion Setup and constructor
         
-        /// <summary>
-        /// Make sure we cannot get user information unless authenticated
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task RejectUnauthenticatedUserRequest()
+        #region Batch theory tests
+        
+        [Theory]
+        [InlineData("/v1/users")]
+        public async Task RejectUnauthenticatedGetRequest(string url)
         {
-            // ARRANGE
-            const string url = "/v1/users";
-            
             // Act
             var (response, msg) =
                 await HttpRequest.SendAsync<string, DetailedUserDTO>(_client, HttpMethod.Get, url, null);
@@ -52,6 +57,38 @@ namespace api_test
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
+        [Theory]
+        [InlineData("/v1/users/change-password")]
+        public async Task RejectUnauthenticatedPostRequests(string url)
+        {
+            // Act
+            var (response, msg) =
+                await HttpRequest.SendAsync<string, DetailedUserDTO>(_client, HttpMethod.Post, url, null);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+        
+        [Theory]
+        [InlineData("/v1/users")]
+        public async Task RejectUnauthenticatedPutRequests(string url)
+        {
+            // Act
+            var (response, msg) =
+                await HttpRequest.SendAsync<string, DetailedUserDTO>(_client, HttpMethod.Put, url, null);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+        
+        #endregion Batch theory tests
+
+        #region Registration/activation should succeed
+        /// <summary>
+        /// Register for the account and activate it. Also tests that the activated user account receives
+        /// a bearer token upon login.
+        /// </summary>
+        /// <returns></returns>
         [Fact]
         public async Task CanRegisterUserAccount()
         {
@@ -87,6 +124,10 @@ namespace api_test
             await CleanupUserAccountAsync(newUser);
         }
         
+        /// <summary>
+        /// Register for a new user account and resend the activation email.
+        /// </summary>
+        /// <returns></returns>
         [Fact]
         public async Task CanResendAccountActivation()
         {
@@ -110,6 +151,7 @@ namespace api_test
             var payload = new ResendUserAccountActivationRequestDTO() {email = newUser.email};
             
             // Act (resend activation)
+            System.Threading.Thread.Sleep(1000); // The time resolution of the database date_created field is 1 second.
             var (response, msg) =
                 await HttpRequest.SendAsync<ResendUserAccountActivationRequestDTO, string>(_client, HttpMethod.Post, resendUrl,
                     payload);
@@ -118,12 +160,20 @@ namespace api_test
             response.EnsureSuccessStatusCode();
             Assert.Null(msg);
             var newTokenCreationTime = await _db.RunQuerySingleAsync<Token>(getTokenCreationSQL, checkForUserSQLParams);
+            // Make sure the token date was updated
             Assert.True(newTokenCreationTime.date_created > tokenCreationTime.date_created);
 
             // Cleanup (remove user)
             await CleanupUserAccountAsync(newUser);
         }
 
+        /// <summary>
+        /// Register for a new user account, and before activating the account try registering again
+        /// with the same email, but different credentials.
+        /// The first account will be overwritten with the new details and the old activation token
+        /// will be invalidated.  A new token is sent for the new account registration.
+        /// </summary>
+        /// <returns></returns>
         [Fact]
         public async Task CanUpdateDetailsBeforeActivation()
         {
@@ -143,6 +193,7 @@ namespace api_test
             
             
             // Act (update details)
+            System.Threading.Thread.Sleep(1000); // The time resolution of the database date_created field is 1 second.
             var (response, updatedUser) = await CreateUserAcountAsync(updateUser); // Asserts already in this function
             
             // Assert (resend activation)
@@ -155,6 +206,298 @@ namespace api_test
             await CleanupUserAccountAsync(updatedUser);
         }
 
+        /// <summary>
+        /// After registering for a new account, attempt to change email address before activating the account.
+        /// Email should be updated, the token should remain the same but with updated creation time.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task ChangeUnactivatedAccountEmail()
+        {
+            // Arrange
+            var originalUser = RandomUser();
+            const string checkForUserSQL = "SELECT * FROM user WHERE email = @Email";
+            var checkForOriginalUserSQLParams = new DynamicParameters();
+            checkForOriginalUserSQLParams.Add("@Email", originalUser.email);
+            const string getTokenCreationSQL = "SELECT date_created, token FROM user_email_token JOIN user USING(user_id) WHERE email = @Email";
+            
+            var (_, newUser) = await CreateUserAcountAsync(originalUser); // Asserts already in this function
+            var tokenCreationTime = await _db.RunQuerySingleAsync<Token>(getTokenCreationSQL, checkForOriginalUserSQLParams);
+
+            var newEmail = _faker.Internet.Email();
+            var checkForUpdatedUserSQLParams = new DynamicParameters();
+            checkForUpdatedUserSQLParams.Add("@Email", newEmail);
+            
+            // Act
+            System.Threading.Thread.Sleep(1000); // The time resolution of the database date_created field is 1 second.
+            var (response, msg) = await HttpRequest.SendAsync<UnactivatedEmailUpdateRequestDTO, string>(_client, 
+                HttpMethod.Post, $"/{version}/{controller}/change-unactivated-email", 
+                new UnactivatedEmailUpdateRequestDTO() {email = originalUser.email, newEmail = newEmail});
+            
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Null(msg);
+            
+            // Verify the new email is in the DB
+            var (lgResponse, lgMsg) =
+                await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(_client, HttpMethod.Post, 
+                    $"/{version}/{controller}/login", new LoginRequestDTO() {email = newEmail, password = originalUser.password});
+            lgResponse.EnsureSuccessStatusCode();
+            Assert.Equal(originalUser.forename, lgMsg.forename);
+            Assert.Equal(originalUser.surname, lgMsg.surname);
+            Assert.Equal(originalUser.organization, lgMsg.organization);
+            Assert.Null(lgMsg.token); // The account is not activated when the token is null.
+            
+            // Verify that the old email is not in DB
+            var origUserRecord = await _db.RunQueryAsync<UserObj>(checkForUserSQL, checkForOriginalUserSQLParams);
+            Assert.Empty(origUserRecord);
+            
+            // Verify we have a new token
+            var newTokenCreationTime = await _db.RunQuerySingleAsync<Token>(getTokenCreationSQL, checkForUpdatedUserSQLParams);
+            Assert.True(newTokenCreationTime.date_created > tokenCreationTime.date_created);
+            Assert.Equal(tokenCreationTime.token, newTokenCreationTime.token);
+            
+            // Cleanup (remove user)
+            await CleanupUserAccountAsync(lgMsg);
+        }
+        #endregion Registration/activation should succeed
+
+        #region Registration/activation should fail
+        
+        #endregion Registration/activation should fail
+        
+        #region Activated account interaction should succeed
+
+        /// <summary>
+        /// Make sure that authenticated users can change their password when logged in.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task ChangeActivatedAccountPassword()
+        {
+            // ARRANGE
+            var user = RandomUser();
+            var (_, newUser) = await CreateUserAcountAsync(user); // Asserts already in this function
+            await ActivatUserAccountAsync(newUser); // Asserts already in this function
+            
+            var userForLogin = new LoginRequestDTO() {email = user.email, password = user.password};
+            var (response, loggedInUser) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(loggedInUser.token);
+            
+            var newPassword = _faker.Internet.Password();
+            
+            // Act (change password)
+            var (cpResponse, cpMsg) = await HttpRequest.SendAsync<ResetLoggedInUserPasswordRequestDTO, string>(
+                _client, HttpMethod.Post, $"/{version}/{controller}/change-password", 
+                new ResetLoggedInUserPasswordRequestDTO(){oldPassword = user.password, newPassword = newPassword},
+                loggedInUser.token);
+            
+            // Assert (change password)
+            cpResponse.EnsureSuccessStatusCode();
+            Assert.Null(cpMsg);
+            
+            // Act (attempt login with old password)
+            var (opResponse, opMsg) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            
+            // Assert (attempt login with old password)
+            Assert.Equal(HttpStatusCode.Unauthorized, opResponse.StatusCode);
+            
+            // Act (attempt login with new password)
+            userForLogin.password = newPassword;
+            var (npResponse, npLoggedInUser) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            
+            // Assert (attempt login with new password)
+            npResponse.EnsureSuccessStatusCode();
+            Assert.Equal(loggedInUser.email, npLoggedInUser.email);
+            Assert.Equal(loggedInUser.forename, npLoggedInUser.forename);
+            Assert.Equal(loggedInUser.surname, npLoggedInUser.surname);
+            Assert.Equal(loggedInUser.organization, npLoggedInUser.organization);
+            Assert.NotNull(npLoggedInUser.token);
+
+            // Cleanup (remove user)
+            await CleanupUserAccountAsync(npLoggedInUser);
+        }
+        
+        /// <summary>
+        /// Make sure that activated accounts can request a password reset.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task ResetActivatedAccountPassword()
+        {
+            // ARRANGE
+            var user = RandomUser();
+            var (_, newUser) = await CreateUserAcountAsync(user); // Asserts already in this function
+            await ActivatUserAccountAsync(newUser); // Asserts already in this function
+            
+            var userForLogin = new LoginRequestDTO() {email = user.email, password = user.password};
+            var (response, loggedInUser) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(loggedInUser.token);
+            
+            // Act (request password reset)
+            var (rpResponse, rpMsg) = await HttpRequest.SendAsync<ResetUserPasswordRequestDTO, string>(
+                _client, HttpMethod.Post, $"/{version}/{controller}/forgot-password", 
+                new ResetUserPasswordRequestDTO(){email = user.email});
+            
+            // Assert (request password reset)
+            rpResponse.EnsureSuccessStatusCode();
+            Assert.Null(rpMsg);
+            const string getNewUserTokenSQL = "SELECT token FROM user_email_token JOIN user USING(user_id) WHERE email = @Email";
+            var checkForUserSQLParams = new DynamicParameters();
+            checkForUserSQLParams.Add("@Email", user.email);
+            var userToken = await _db.RunQuerySingleAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams); // Get token from DB
+            Assert.NotNull(userToken);
+            
+            // Act (attempt to reset password with token)
+            var newPassword = _faker.Internet.Password();
+            var (cpResponse, cpMsg) = await HttpRequest.SendAsync<ResetForgottenUserPasswordRequestDto, string>(
+                _client, HttpMethod.Post, $"/{version}/{controller}/change-forgotten-password", 
+                new ResetForgottenUserPasswordRequestDto(){token = userToken.token, password = newPassword});
+            
+            // Assert (attempt to reset password with token)
+            cpResponse.EnsureSuccessStatusCode();
+            Assert.Null(cpMsg);
+            
+            // Act (attempt login with new password)
+            userForLogin.password = newPassword;
+            var (npResponse, npLoggedInUser) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            
+            // Assert (attempt login with new password)
+            npResponse.EnsureSuccessStatusCode();
+            Assert.Equal(loggedInUser.email, npLoggedInUser.email);
+            Assert.Equal(loggedInUser.forename, npLoggedInUser.forename);
+            Assert.Equal(loggedInUser.surname, npLoggedInUser.surname);
+            Assert.Equal(loggedInUser.organization, npLoggedInUser.organization);
+            Assert.NotNull(npLoggedInUser.token);
+            // Make sure the token was not left behind in the database.
+            var emailTokens = await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams); // Get token from DB
+            Assert.Empty(emailTokens);
+
+            // Cleanup (remove user)
+            await CleanupUserAccountAsync(npLoggedInUser);
+        }
+        
+        /// <summary>
+        /// Make sure that authenticated users can change their account details,including changing the email.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task ChangeActivatedAccountUserDetails()
+        {
+            // ARRANGE
+            var user = RandomUser();
+            var (_, newUser) = await CreateUserAcountAsync(user); // Asserts already in this function
+            await ActivatUserAccountAsync(newUser); // Asserts already in this function
+            
+            var userForLogin = new LoginRequestDTO() {email = user.email, password = user.password};
+            var (response, loggedInUser) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(loggedInUser.token);
+            
+            var updatedUser = RandomUser();
+            updatedUser.password = user.password;
+            
+            // Act (change user details)
+            var (cdResponse, cdMsg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
+                _client, HttpMethod.Put, $"/{version}/{controller}", updatedUser,
+                loggedInUser.token);
+            
+            // Assert (change user details)
+            cdResponse.EnsureSuccessStatusCode();
+            Assert.Equal(updatedUser.email, cdMsg.email);
+            Assert.Equal(updatedUser.forename, cdMsg.forename);
+            Assert.Equal(updatedUser.surname, cdMsg.surname);
+            Assert.Equal(updatedUser.organization, cdMsg.organization);
+            
+            // Act (attempt login for new details)
+            userForLogin.email = updatedUser.email;
+            var (upResponse, upMsg) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            
+            // Assert (attempt login for new details)
+            upResponse.EnsureSuccessStatusCode();
+            Assert.Equal(updatedUser.email, upMsg.email);
+            Assert.Equal(updatedUser.forename, upMsg.forename);
+            Assert.Equal(updatedUser.surname, upMsg.surname);
+            Assert.Equal(updatedUser.organization, upMsg.organization);
+            Assert.Null(upMsg.token); // The account should not be activated yet.
+            
+            // ACT (activate account and login)
+            await ActivatUserAccountAsync(upMsg);
+            var (upActResponse, upActMsg) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            
+            // Assert (activate account and login)
+            upActResponse.EnsureSuccessStatusCode();
+            Assert.NotNull(upActMsg.token);
+
+            // Cleanup (remove user)
+            await CleanupUserAccountAsync(upActMsg);
+        }
+        
+        /// <summary>
+        /// Make sure that authenticated users can change their account details, without changing the email.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task ChangeActivatedAccountUserDetailsWithoutEmail()
+        {
+            // ARRANGE
+            var user = RandomUser();
+            var (_, newUser) = await CreateUserAcountAsync(user); // Asserts already in this function
+            await ActivatUserAccountAsync(newUser); // Asserts already in this function
+            
+            var userForLogin = new LoginRequestDTO() {email = user.email, password = user.password};
+            var (response, loggedInUser) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(loggedInUser.token);
+            
+            var updatedUser = RandomUser();
+            updatedUser.email = null;
+            updatedUser.password = user.password;
+            
+            // Act (change user details)
+            var (cdResponse, cdMsg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
+                _client, HttpMethod.Put, $"/{version}/{controller}", updatedUser,
+                loggedInUser.token);
+            
+            // Assert (change user details)
+            cdResponse.EnsureSuccessStatusCode();
+            Assert.Equal(updatedUser.forename, cdMsg.forename);
+            Assert.Equal(updatedUser.surname, cdMsg.surname);
+            Assert.Equal(updatedUser.organization, cdMsg.organization);
+            
+            // Act (attempt login for new details)
+            updatedUser.email = user.email;
+            var (upResponse, upMsg) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+                _client, HttpMethod.Post, "/v1/users/login", userForLogin);
+            
+            // Assert (attempt login for new details)
+            upResponse.EnsureSuccessStatusCode();
+            Assert.Equal(updatedUser.email, upMsg.email);
+            Assert.Equal(updatedUser.forename, upMsg.forename);
+            Assert.Equal(updatedUser.surname, upMsg.surname);
+            Assert.Equal(updatedUser.organization, upMsg.organization);
+            Assert.NotNull(upMsg.token);
+
+            // Cleanup (remove user)
+            await CleanupUserAccountAsync(upMsg);
+        }
+        #endregion Activated account interaction should succeed
+        
+        #region Activated account interaction should fail
+        #endregion Activated account interaction should fail
+        
+        #region Helper functions
         private async Task<(HttpResponseMessage response, DetailedUserDTO msg)> CreateUserAcountAsync(NewUserRequestDTO user)
         {
             const string url = "/v1/users";
@@ -216,6 +559,17 @@ namespace api_test
             await _db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
             await _db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
         }
+
+        private NewUserRequestDTO RandomUser(string locale = null)
+        {
+            var faker = string.IsNullOrEmpty(locale) ? _faker : new Faker(locale);
+            return new NewUserRequestDTO(
+                faker.Internet.Email(),
+                faker.Internet.Password(), 
+                faker.Company.CompanyName(), 
+                faker.Name.FirstName(),
+                faker.Name.LastName());
+        }
         
         private class UserObj
         {
@@ -233,5 +587,6 @@ namespace api_test
             public string token { get; set; }
             public DateTime date_created { get; set; }
         }
+        #endregion Helper functions
     }
 }

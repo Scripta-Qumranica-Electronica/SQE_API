@@ -76,7 +76,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(409)]
-        public async Task<ActionResult<UserDTO>> ChangeUserInfo([FromBody] NewUserRequestDTO payload)
+        public async Task<ActionResult<DetailedUserDTO>> ChangeUserInfo([FromBody] NewUserRequestDTO payload)
         {
             try
             {
@@ -221,7 +221,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpPost("change-password")]
         [ProducesResponseType(204)]
         [ProducesResponseType(401)]
-        public async Task<ActionResult> ResetForgottenPassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
+        public async Task<ActionResult> ChangePassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
         {
             try
             {
@@ -246,7 +246,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpPost("change-forgotten-password")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult> ResetForgottenPassword([FromBody] ResetForgottenUserPasswordRequestDto payload)
+        public async Task<ActionResult> ChangeForgottenPassword([FromBody] ResetForgottenUserPasswordRequestDto payload)
         {
             try
             {

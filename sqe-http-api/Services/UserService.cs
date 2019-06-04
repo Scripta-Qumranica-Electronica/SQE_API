@@ -20,7 +20,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject(uint? editionId = null);
         Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
-        Task<UserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData);
+        Task<DetailedUserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData);
         Task UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
         Task ResendActivationEmail(string email);
         Task ConfirmUserRegistrationAsync(string token);
@@ -158,7 +158,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <param name="user"></param>
         /// <param name="updateUserData">All of the information for the new user.</param>
         /// <returns>Returns a UserDTO for the newly created user account.</returns>
-        public async Task<UserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData)
+        public async Task<DetailedUserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData)
         {
             // Get current user data
             var originalUserInfo = await _userRepository.GetDetailedUserByIdAsync(user);

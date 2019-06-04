@@ -81,8 +81,7 @@ DELETE FROM user WHERE user_id = @UserId AND activated = 0";
     internal static class ChangePasswordQuery
     {
         public const string GetQuery = @"
-UPDATE userer info query builder.
-    /// </summary>
+UPDATE user
 SET pw = SHA2(@NewPassword, 224)
 WHERE user_id = @UserId
     AND pw = SHA2(@OldPassword, 224)
