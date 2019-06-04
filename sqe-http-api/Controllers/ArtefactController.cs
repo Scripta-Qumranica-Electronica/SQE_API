@@ -34,17 +34,20 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="simplify">Request artefact masks to be simplified by the desired max-distance.
+        /// This only works when "optional" includes "masks".  0 or non-negative values are ignored.</param>
         /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/artefacts")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
+        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, 
+            [FromQuery] List<string> optional, [FromQuery] double simplify = 0)
         {
             ParseOptionals(optional, out var images, out var masks);
             try
             {
-                return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, masks, images);
+                return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, masks, images, simplify);
             }
             catch (NotFoundException)
             {
@@ -53,21 +56,24 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
         
         /// <summary>
-        /// Provides a listing of all artefacts that are part of the specified edition
+        /// Provides a information for the specified artefact in the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="optional">Add "masks" to include artefact polygons</param>
+        /// <param name="simplify">Request artefact masks to be simplified by the desired max-distance.
+        /// This only works when "optional" includes "masks".  0 or non-negative values are ignored.</param>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/artefacts/{artefactId}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
+        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, 
+            [FromQuery] List<string> optional, [FromQuery] double simplify = 0)
         {
             ParseOptionals(optional, out var images, out var masks);
             try
             {
-                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
+                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks, simplify);
             }
             catch (NotFoundException)
             {

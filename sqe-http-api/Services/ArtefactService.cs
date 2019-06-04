@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using NetTopologySuite.IO;
+using NetTopologySuite.Simplify;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
@@ -10,9 +12,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IArtefactService
     {
-        Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask);
+        Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask, double simplify = 0);
         Task<ArtefactListDTO> GetEditionArtefactListingsAsync(uint? userId, uint editionId, bool withMask = false,
-            bool withImages = false);
+            bool withImages = false, double simplify = 0);
 
         Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(uint? userId, uint editionId,
             bool withMask = false);
@@ -27,28 +29,43 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
     public class ArtefactService : IArtefactService
     {
-        IArtefactRepository _artefactRepository;
+        private readonly IArtefactRepository _artefactRepository;
+        private readonly WKTReader _wktReader;
 
         public ArtefactService(IArtefactRepository artefactRepository)
         {
             _artefactRepository = artefactRepository;
+            _wktReader = new WKTReader();
         }
 
-        public async Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask)
+        public async Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask,
+            double simplify = 0)
         {
             if (!user.editionId.HasValue) 
                 return null;
             var artefact = await _artefactRepository.GetEditionArtefactAsync(user, artefactId, withMask);
+            if (withMask && simplify > 0)
+            {
+                artefact.Mask = TopologyPreservingSimplifier.Simplify(_wktReader.Read(artefact.Mask), simplify).AsText();
+            }
+
             return ArtefactDTOTransformer.QueryArtefactToArtefactDTO(artefact, user.editionId.Value);
         }
 
         public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(uint? userId, uint editionId,
-            bool withMask = false, bool withImages = false)
+            bool withMask = false, bool withImages = false, double simplify = 0)
         {
             if (withImages)
                 return await GetEditionArtefactListingsWithImagesAsync(userId, editionId, withMask);
             
             var listings = await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask);
+            if (withMask && simplify > 0)
+            {
+                foreach (var listing in listings)
+                {
+                    listing.Mask = TopologyPreservingSimplifier.Simplify(_wktReader.Read(listing.Mask), simplify).AsText();
+                }
+            }
             return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(listings.ToList(), editionId);
         }
         
