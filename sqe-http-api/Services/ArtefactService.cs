@@ -46,6 +46,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             var artefact = await _artefactRepository.GetEditionArtefactAsync(user, artefactId, withMask);
             if (withMask && simplify > 0)
             {
+                // We use TopologyPreservingSimplifier instead of the faster DouglasPeuckerSimplifier just to be safe.
                 artefact.Mask = TopologyPreservingSimplifier.Simplify(_wktReader.Read(artefact.Mask), simplify).AsText();
             }
 
@@ -63,6 +64,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             {
                 foreach (var listing in listings)
                 {
+                    // We use TopologyPreservingSimplifier instead of the faster DouglasPeuckerSimplifier just to be safe.
                     listing.Mask = TopologyPreservingSimplifier.Simplify(_wktReader.Read(listing.Mask), simplify).AsText();
                 }
             }
