@@ -17,7 +17,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             bool withImages = false, double simplify = 0);
 
         Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(uint? userId, uint editionId,
-            bool withMask = false);
+            bool withMask = false, double simplify = 0);
 
         Task<ArtefactDTO> UpdateArtefact(UserInfo user, uint editionId, uint artefactId, string mask = null,
             string name = null,
@@ -72,12 +72,20 @@ namespace SQE.SqeHttpApi.Server.Helpers
         }
         
         public async Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(uint? userId, uint editionId,
-            bool withMask = false)
+            bool withMask = false, double simplify = 0)
         {
             var artefactListings = await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask);
             var imagedObjectIds = artefactListings.Select(x => x.ImageCatalogId);
-            
-            
+            if (withMask && simplify > 0)
+            {
+                foreach (var listing in artefactListings)
+                {
+                    // We use TopologyPreservingSimplifier instead of the faster DouglasPeuckerSimplifier just to be safe.
+                    listing.Mask = TopologyPreservingSimplifier.Simplify(_wktReader.Read(listing.Mask), simplify)
+                        .AsText();
+                }
+            }
+
             return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(artefactListings.ToList(), editionId);
         }
 
@@ -99,8 +107,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
                     resultList.AddRange(await _artefactRepository.UpdateArtefactPosition(user, artefactId, position));
             }
             
-            
-
             return await GetEditionArtefactAsync(user, artefactId, withMask);
         }
         
