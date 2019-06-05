@@ -5,11 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SQE.SqeHttpApi.DataAccess;
-using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 
@@ -37,9 +36,12 @@ namespace SQE.SqeHttpApi.Server.Helpers
         private readonly IUserRepository _userRepository;
         private readonly IHttpContextAccessor _accessor;
         private readonly IEmailSender _emailSender;
+        private readonly IConfiguration _config;
+        private readonly string webServer;
 
 
-        public UserService(IOptions<AppSettings> appSettings, IUserRepository userRepository, IHttpContextAccessor accessor, IEmailSender emailSender)
+        public UserService(IOptions<AppSettings> appSettings, IUserRepository userRepository, 
+                IHttpContextAccessor accessor, IEmailSender emailSender, IConfiguration config)
 
         // http://jasonwatmore.com/post/2018/08/14/aspnet-core-21-jwt-authentication-tutorial-with-example-api
         {
@@ -47,6 +49,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
             _appSettings = appSettings.Value; // For the secret key
             _accessor = accessor;
             _emailSender = emailSender;
+            _config = config;
+            //webServer = Environment.GetEnvironmentVariable("WEBSERVER");
+            webServer = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSERVER")) 
+                ? _config.GetConnectionString("WebsiteHost")
+                : Environment.GetEnvironmentVariable("WEBSERVER");
         }
 
         /// <summary>
@@ -205,7 +212,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 <html><body>Dear $User,<br>
 <br>
 Thank you for registering with the Scripta Qumranica Electronica research platform.  
-<a href=""http://localhost:9090/activateUser/token/$Token"">Click here</a> to activate your new account.<br>
+<a href=""$WebServer/activateUser/token/$Token"">Click here</a> to activate your new account.<br>
 <br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
@@ -217,6 +224,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 userWithInfo.Email,
                 emailSubject,
                 emailBody.Replace("$User", name)
+                    .Replace("$WebServer", webServer)
                     .Replace("$Token", userWithInfo.Token)
             );
         }
@@ -236,7 +244,7 @@ The Scripta Qumranica Electronica team</body></html>";
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
-Congratulations! You have activated your Scripta Qumranica Electronica account.  Login at https://www.qumranica.org/Scrollery 
+Congratulations! You have activated your Scripta Qumranica Electronica account.  Login <a href=""$WebServer"">here</a> 
 to begins using the system.<br>
 <br>
 Best wishes,<br>
@@ -245,7 +253,8 @@ The Scripta Qumranica Electronica team</body></html>";
             await _emailSender.SendEmailAsync(
                 userInfo.Email,
                 emailSubject,
-                emailBody.Replace("$User", userInfo.Email));
+                emailBody.Replace("$User", userInfo.Email)
+                    .Replace("$WebServer", webServer));
         }
 
         /// <summary>
@@ -290,12 +299,12 @@ The Scripta Qumranica Electronica team</body></html>";
                 return;
             
             // Email the user
-            // TODO: Add link to web endpoint when we know what that is. Use Razor to format this and ad organization name.
+            // TODO: Use Razor to format this and ad organization name.
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
 Sorry to hear that you have lost your password for Scripta Qumranica Electronica.  You may reset your password 
-<a href=""http://localhost:9090/changeForgottenPassword/token/:$Token"">by clicking here</a>.<br>
+<a href=""$WebServer/changeForgottenPassword/token/:$Token"">by clicking here</a>.<br>
 <br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
@@ -305,6 +314,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 emailSubject,
                 emailBody.Replace("$User", userInfo.Email)
                     .Replace("$Token", userInfo.Token)
+                    .Replace("$WebServer", webServer)
             );
         }
 
