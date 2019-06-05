@@ -10,7 +10,6 @@ using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
-// TODO: write the "should fail" tests
 namespace api_test
 {
     /// <summary>
