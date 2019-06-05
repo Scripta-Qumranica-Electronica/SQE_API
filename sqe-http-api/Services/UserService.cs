@@ -204,8 +204,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
-Thank you for registering with the Scripta Qumranica Electronica research platform.  The token
-to activate your new account is: $Token.<br>
+Thank you for registering with the Scripta Qumranica Electronica research platform.  
+<a href=""http://localhost:9090/activateUser/token/$Token"">Click here</a> to activate your new account.<br>
 <br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
@@ -294,7 +294,8 @@ The Scripta Qumranica Electronica team</body></html>";
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
-Sorry to hear that you have lost your password for Scripta Qumranica Electronica.  You may reset your password with the token: $Token.<br>
+Sorry to hear that you have lost your password for Scripta Qumranica Electronica.  You may reset your password 
+<a href=""http://localhost:9090/changeForgottenPassword/token/:$Token"">by clicking here</a>.<br>
 <br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
