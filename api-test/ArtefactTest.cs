@@ -53,11 +53,13 @@ namespace api_test
         private async Task<ArtefactListDTO> GetRandomEditionWithArtefacts(string jwt = null)
         {
             ArtefactListDTO artefactResponse = new ArtefactListDTO();
-            while (!artefactResponse.artefacts.Any())
+            var count = 0;
+            while (!artefactResponse.artefacts.Any() || count > 2000) // We have a cutoff, just in case
             {
                 var url = $"/{version}/edition/{_faker.Random.Int(1, 1000)}/{controller}";
                 (_, artefactResponse) = await HttpRequest.SendAsync<string, ArtefactListDTO>(_client,
                     HttpMethod.Get, url, null, jwt);
+                count++;
             }
 
             return artefactResponse;
