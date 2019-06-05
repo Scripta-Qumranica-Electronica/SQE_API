@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -49,7 +50,8 @@ namespace api_test.Helpers
                     // Make the request and capture the response and http status message.
                     response = await client.SendAsync(requestMessage);
                     var responseBody = await response.Content.ReadAsStringAsync();
-                    parsedClass = JsonConvert.DeserializeObject<T2>(responseBody);
+                    if (response.StatusCode == HttpStatusCode.OK)
+                        parsedClass = JsonConvert.DeserializeObject<T2>(responseBody);
                 }  
                 catch (HttpRequestException e)
                 {
