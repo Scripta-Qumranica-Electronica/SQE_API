@@ -93,15 +93,12 @@ namespace api_test
         public async Task CanRegisterUserAccount()
         {
             // ARRANGE
-            const string checkForUserSQL = "SELECT * FROM user WHERE email = @Email";
-            var checkForUserSQLParams = new DynamicParameters();
-            checkForUserSQLParams.Add("@Email", normalUser.email);
             
             // Act (register user)
-            var (_, newUser) = await CreateUserAcountAsync(normalUser); // Asserts already in this function
+            var (_, newUser) = await CreateUserAccountAsync(normalUser); // Asserts already in this function
             
             // Assert
-            var createdUser = await _db.RunQuerySingleAsync<UserObj>(checkForUserSQL, checkForUserSQLParams); // Get user from DB
+            var createdUser = await GetUserByEmail(normalUser.email); // Get user from DB
             Assert.False(createdUser.activated);
             
             // Act (activate user)
@@ -137,7 +134,7 @@ namespace api_test
             checkForUserSQLParams.Add("@Email", normalUser.email);
             
             // Act (register user)
-            var (_, newUser) = await CreateUserAcountAsync(normalUser); // Asserts already in this function
+            var (_, newUser) = await CreateUserAccountAsync(normalUser); // Asserts already in this function
             
             // Assert
             var createdUser = await _db.RunQuerySingleAsync<UserObj>(checkForUserSQL, checkForUserSQLParams); // Get user from DB
@@ -184,7 +181,7 @@ namespace api_test
             const string getTokenCreationSQL = "SELECT date_created, token FROM user_email_token JOIN user USING(user_id) WHERE email = @Email";
             
             // Act
-            var (_, newUser) = await CreateUserAcountAsync(emptyUser); // Asserts already in this function
+            var (_, newUser) = await CreateUserAccountAsync(emptyUser); // Asserts already in this function
             var tokenCreationTime = await _db.RunQuerySingleAsync<Token>(getTokenCreationSQL, checkForUserSQLParams);
             
             // Assert
@@ -194,7 +191,7 @@ namespace api_test
             
             // Act (update details)
             System.Threading.Thread.Sleep(1000); // The time resolution of the database date_created field is 1 second.
-            var (response, updatedUser) = await CreateUserAcountAsync(updateUser); // Asserts already in this function
+            var (response, updatedUser) = await CreateUserAccountAsync(updateUser); // Asserts already in this function
             
             // Assert (resend activation)
             response.EnsureSuccessStatusCode();
@@ -221,7 +218,7 @@ namespace api_test
             checkForOriginalUserSQLParams.Add("@Email", originalUser.email);
             const string getTokenCreationSQL = "SELECT date_created, token FROM user_email_token JOIN user USING(user_id) WHERE email = @Email";
             
-            var (_, newUser) = await CreateUserAcountAsync(originalUser); // Asserts already in this function
+            var (_, newUser) = await CreateUserAccountAsync(originalUser); // Asserts already in this function
             var tokenCreationTime = await _db.RunQuerySingleAsync<Token>(getTokenCreationSQL, checkForOriginalUserSQLParams);
 
             var newEmail = _faker.Internet.Email();
@@ -277,7 +274,7 @@ namespace api_test
         {
             // ARRANGE
             var user = RandomUser();
-            var (_, newUser) = await CreateUserAcountAsync(user); // Asserts already in this function
+            var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
             await ActivatUserAccountAsync(newUser); // Asserts already in this function
             
             var userForLogin = new LoginRequestDTO() {email = user.email, password = user.password};
@@ -331,7 +328,7 @@ namespace api_test
         {
             // ARRANGE
             var user = RandomUser();
-            var (_, newUser) = await CreateUserAcountAsync(user); // Asserts already in this function
+            var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
             await ActivatUserAccountAsync(newUser); // Asserts already in this function
             
             var userForLogin = new LoginRequestDTO() {email = user.email, password = user.password};
@@ -393,7 +390,7 @@ namespace api_test
         {
             // ARRANGE
             var user = RandomUser();
-            var (_, newUser) = await CreateUserAcountAsync(user); // Asserts already in this function
+            var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
             await ActivatUserAccountAsync(newUser); // Asserts already in this function
             
             var userForLogin = new LoginRequestDTO() {email = user.email, password = user.password};
@@ -452,7 +449,7 @@ namespace api_test
         {
             // ARRANGE
             var user = RandomUser();
-            var (_, newUser) = await CreateUserAcountAsync(user); // Asserts already in this function
+            var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
             await ActivatUserAccountAsync(newUser); // Asserts already in this function
             
             var userForLogin = new LoginRequestDTO() {email = user.email, password = user.password};
@@ -498,31 +495,32 @@ namespace api_test
         #endregion Activated account interaction should fail
         
         #region Helper functions
-        private async Task<(HttpResponseMessage response, DetailedUserDTO msg)> CreateUserAcountAsync(NewUserRequestDTO user)
+        private async Task<(HttpResponseMessage response, DetailedUserDTO msg)> CreateUserAccountAsync(
+            NewUserRequestDTO user, bool shouldSucceed = true)
         {
-            const string url = "/v1/users";
             var (response, msg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(_client, 
-                HttpMethod.Post, url, user);
-            
+                HttpMethod.Post, $"/{version}/{controller}", user);
+
             // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.Equal(user.email, msg.email);
-            Assert.Equal(user.forename, msg.forename);
-            Assert.Equal(user.surname, msg.surname);
-            Assert.Equal(user.organization, msg.organization);
+            if (shouldSucceed)
+            {
+                response.EnsureSuccessStatusCode();
+                Assert.Equal(user.email, msg.email);
+                Assert.Equal(user.forename, msg.forename);
+                Assert.Equal(user.surname, msg.surname);
+                Assert.Equal(user.organization, msg.organization);
+            }
+            else
+            {
+                Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            }
             return (response, msg);
         }
 
-        private async Task ActivatUserAccountAsync(DetailedUserDTO user)
+        private async Task ActivatUserAccountAsync(DetailedUserDTO user, bool shouldSucceed = true)
         {
-            const string checkForUserSQL = "SELECT * FROM user WHERE email = @Email";
-            const string getNewUserTokenSQL = "SELECT token FROM user_email_token JOIN user USING(user_id) WHERE email = @Email";
-            const string confirmRegistrationUrl = "/v1/users/confirm-registration";
-            
-            var checkForUserSQLParams = new DynamicParameters();
-            checkForUserSQLParams.Add("@Email", user.email);
-            
-            var userToken = await _db.RunQuerySingleAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams); // Get  token from DB
+            var confirmRegistrationUrl = $"/{version}/{controller}/confirm-registration";
+            var userToken = await GetToken(user.email); // Get  token from DB
             var payload = new AccountActivationRequestDTO() {token = userToken.token};
             
             var (response, msg) =
@@ -530,18 +528,52 @@ namespace api_test
                     payload);
             
             // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-            var confirmedUser = await _db.RunQuerySingleAsync<UserObj>(checkForUserSQL, checkForUserSQLParams);
-            Assert.Equal(confirmedUser.email, user.email);
-            Assert.True(confirmedUser.activated);
+            if (shouldSucceed)
+            {
+                response.EnsureSuccessStatusCode();
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+                var confirmedUser = await GetUserByEmail(user.email);
+                Assert.Equal(user.email, confirmedUser.email);
+                Assert.True(confirmedUser.activated);
+            }
+            else
+            {
+                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            }
         }
 
-        private async Task<DetailedUserDTO> CreateActivatedUserAsync(NewUserRequestDTO user)
+        private async Task<Token> GetToken(string email)
         {
-            var (_, newUser) = await CreateUserAcountAsync(normalUser); // Asserts already in this function
-            await ActivatUserAccountAsync(newUser); // Asserts already in this function
-            return newUser;
+            const string getNewUserTokenSQL = "SELECT token FROM user_email_token JOIN user USING(user_id) WHERE email = @Email";
+            
+            var checkForUserSQLParams = new DynamicParameters();
+            checkForUserSQLParams.Add("@Email", email);
+            
+            return await _db.RunQuerySingleAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams); // Get  token from DB
+        }
+        
+        private async Task<UserObj> GetUserByEmail(string email)
+        {
+            const string checkForUserSQL = "SELECT * FROM user WHERE email = @Email";
+            
+            var checkForUserSQLParams = new DynamicParameters();
+            checkForUserSQLParams.Add("@Email", email);
+            
+            return await _db.RunQuerySingleAsync<UserObj>(checkForUserSQL, checkForUserSQLParams); // Get user from DB
+        }
+
+        private async Task CreateActivatedUserAsync(NewUserRequestDTO user, bool shouldSucceed = true)
+        {
+            var (_, newUser) = await CreateUserAccountAsync(user, shouldSucceed); // Asserts already in this function
+            await ActivatUserAccountAsync(newUser, shouldSucceed); // Asserts already in this function
+            return;
+        }
+        
+        private async Task<NewUserRequestDTO> CreateRandomActivatedUserAsync(bool shouldSucceed = true)
+        {
+            var user = RandomUser(); 
+            await CreateActivatedUserAsync(user, shouldSucceed); // Asserts already in sub functions.
+            return user;
         }
 
         /// <summary>
