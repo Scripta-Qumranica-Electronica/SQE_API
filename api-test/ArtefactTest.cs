@@ -28,25 +28,7 @@ namespace api_test
         }
         
 
-        /// <summary>
-        /// Check if we can get artefacts when unauthenticated
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task GetAllEditionsUnauthenticated()
-        {
-            // ARRANGE
-            const string url = "/v1/editions";
-            
-            // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, EditionListDTO>(_client, HttpMethod.Get, url, null);
-            response.EnsureSuccessStatusCode();
-
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("application/json; charset=utf-8",response.Content.Headers.ContentType.ToString());
-            Assert.True(msg.editions.Count > 0);
-        }
+        
         
         #region Helpers
 
