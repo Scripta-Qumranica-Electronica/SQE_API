@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.AspNetCore.Mvc;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
 
@@ -95,16 +96,24 @@ namespace SQE.SqeHttpApi.Server.Controllers
             try
             {
                 return await _artefactService.UpdateArtefact(
-                    _userService.GetCurrentUserObject(editionId), 
-                    editionId, 
-                    artefactId, 
-                    payload.mask, 
-                    payload.name, 
+                    _userService.GetCurrentUserObject(editionId),
+                    editionId,
+                    artefactId,
+                    payload.mask,
+                    payload.name,
                     payload.position);
             }
             catch (NotFoundException)
             {
                 return NotFound();
+            }
+            catch (ImproperRequestException e)
+            {
+                return BadRequest(new {msg = e});
+            }
+            catch (DbDetailedFailedWrite e)
+            {
+                return BadRequest(new {msg = e});
             }
         }
         

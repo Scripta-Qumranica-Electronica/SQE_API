@@ -12,6 +12,7 @@ using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
+// TODO: It would be nice to be able to generate random polygons for these testing purposes.
 namespace api_test
 {
     /// <summary>
@@ -30,7 +31,7 @@ namespace api_test
             _db = new DatabaseQuery();
         }
         
-        #region Access artefacts
+        #region Access artefacts (should succeed)
 
         /// <summary>
         /// Check that at least some edition has a valid artefact.
@@ -55,7 +56,7 @@ namespace api_test
         }
         
         /// <summary>
-        /// Ensure that a new artefact can be created.
+        /// Ensure that a new artefact can be created (and then deleted).
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -120,8 +121,225 @@ namespace api_test
                 await HttpRequest.GetJWTAsync(_client));
             Assert.Equal(HttpStatusCode.NotFound, delResponse.StatusCode);
         }
-        #endregion Access artefacts
         
+        /// <summary>
+        /// Ensure that a existing artefact can be updated.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanUpdateArtefacts()
+        {
+            // Arrange
+            var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+            var artefact = allArtefacts.First();
+            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newArtefactName = _faker.Random.Words(5);
+            var newArtefactPosition = RandomPosition();
+            const string newArtefactShape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
+            
+            // Act (update name)
+            var (nameResponse, updatedNameArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,
+                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", new UpdateArtefactDTO
+                {
+                    mask = null,
+                    position = null,
+                    name = newArtefactName
+                }, 
+                await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert (update name)
+            nameResponse.EnsureSuccessStatusCode();
+            Assert.Equal(artefact.mask.transformMatrix, updatedNameArtefact.mask.transformMatrix);
+            Assert.NotEqual(artefact.name, updatedNameArtefact.name);
+            Assert.Equal(newArtefactName, updatedNameArtefact.name);
+            
+            // Act (update position)
+            var (positionResponse, updatedPositionArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,
+                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", new UpdateArtefactDTO
+                {
+                    mask = null,
+                    position = newArtefactPosition,
+                    name = null
+                }, 
+                await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert (update position)
+            positionResponse.EnsureSuccessStatusCode();
+            Assert.NotEqual(artefact.mask.transformMatrix, updatedPositionArtefact.mask.transformMatrix);
+            Assert.Equal(newArtefactPosition, updatedPositionArtefact.mask.transformMatrix);
+            Assert.Equal(newArtefactName, updatedPositionArtefact.name);
+            
+            // Act (update shape)
+            var (shapeResponse, updatedShapeArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,
+                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", new UpdateArtefactDTO
+                {
+                    mask = newArtefactShape,
+                    position = null,
+                    name = null
+                }, 
+                await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert (update shape)
+            shapeResponse.EnsureSuccessStatusCode();
+            Assert.NotEqual(artefact.mask.mask, updatedShapeArtefact.mask.mask);
+            Assert.Equal(newArtefactShape, updatedShapeArtefact.mask.mask);
+            Assert.Equal(newArtefactPosition, updatedShapeArtefact.mask.transformMatrix);
+            Assert.Equal(newArtefactName, updatedShapeArtefact.name);
+            
+            // Act (update all)
+            var (allResponse, updatedAllArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,
+                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", new UpdateArtefactDTO
+                {
+                    mask = artefact.mask.mask,
+                    position = artefact.mask.transformMatrix,
+                    name = artefact.name
+                }, 
+                await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert (update all)
+            allResponse.EnsureSuccessStatusCode();
+            Assert.Equal(artefact.mask.mask, updatedAllArtefact.mask.mask);
+            Assert.Equal(artefact.mask.transformMatrix, updatedAllArtefact.mask.transformMatrix);
+            Assert.Equal(artefact.name, updatedAllArtefact.name);
+        }
+
+        #endregion Access artefacts (should succeed)
+        
+        #region Access artefacts (should fail)
+        /// <summary>
+        /// Ensure that a new artefact cannot be created in an edition not owned by the current user.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CannotCreateArtefactsOnUnownedEdition()
+        {
+            // Arrange
+            var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+            var newEdition = await HttpRequest.CreateNewEdition(_client, allArtefacts.First().editionId); // Clone it
+
+            const string masterImageSQL = "SELECT sqe_image_id FROM SQE_image WHERE type = 0 ORDER BY RAND() LIMIT 1";
+            var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
+            const string newArtefactShape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
+            var newTransform = RandomPosition();
+            var newName = _faker.Lorem.Sentence(5);
+            var newArtefact = new CreateArtefactDTO()
+            {
+                mask = newArtefactShape,
+                position = newTransform,
+                name = newName,
+                masterImageId = masterImageId
+            };
+            
+            // Act
+            var (response, _) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Post,
+                $"/{version}/editions/{newEdition}/{controller}", newArtefact);
+            
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+        
+        /// <summary>
+        /// Ensure that a existing artefact cannot be deleted by a use who does not have access to it.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CannotDeleteUnownedArtefacts()
+        {
+            // Arrange
+            var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+            var artefact = allArtefacts.First();
+            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            
+            // Act
+            var (response, _) = await HttpRequest.SendAsync<string, string>(_client, HttpMethod.Delete,
+                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", null);
+            
+            // Assert
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+        
+        /// <summary>
+        /// Ensure that a existing artefact cannot be updated by a user who does not have access.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CannotUpdateUnownedArtefacts()
+        {
+            // Arrange
+            var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+            var artefact = allArtefacts.First();
+            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newArtefactName = _faker.Random.Words(5);
+            var newArtefactPosition = RandomPosition();
+            const string newArtefactShape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
+            
+            // Act (update name)
+            var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,
+                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", new UpdateArtefactDTO
+                {
+                    mask = null,
+                    position = null,
+                    name = newArtefactName
+                });
+            
+            // Assert (update name)
+            Assert.Equal(HttpStatusCode.Unauthorized, nameResponse.StatusCode);
+        }
+        
+        /// <summary>
+        /// Ensure that improperly formatted artefact WKT masks are rejected.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task RejectsUpdateToImproperArtefactShape()
+        {
+            // Arrange
+            var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+            var artefact = allArtefacts.First();
+            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            const string newArtefactShape = "POLYGON(0 0,0 200,200 200,0 200,0 0),5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
+            
+            // Act (update name)
+            var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,
+                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", new UpdateArtefactDTO
+                {
+                    mask = newArtefactShape,
+                    position = null,
+                    name = null
+                },
+            await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert (update name)
+            Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
+        }
+        
+        /// <summary>
+        /// Ensure that improperly formatted artefact position transform matrices are rejected.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task RejectsUpdateToImproperArtefactPosition()
+        {
+            // Arrange
+            var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+            var artefact = allArtefacts.First();
+            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newArtefactMatrix = RandomPosition(properlyFormatted: false);
+            
+            // Act (update name)
+            var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,
+                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", new UpdateArtefactDTO
+                {
+                    mask = null,
+                    position = newArtefactMatrix,
+                    name = null
+                },
+                await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert (update name)
+            Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
+        }
+        #endregion Access artefacts (should fail)
         
         #region Helpers
 
@@ -164,6 +382,14 @@ WHERE user_id = @UserId";
                 $"/{version}/editions/{editionId}/{controller}/{ArtefactId}", null, 
                 await HttpRequest.GetJWTAsync(_client));
             response.EnsureSuccessStatusCode();
+        }
+        
+        
+        private string RandomPosition(bool properlyFormatted = true)
+        {
+            return properlyFormatted 
+                ? $"{{\"matrix\":[[{_faker.Random.Double(-1, 1)},{_faker.Random.Double(-1, 1)},{_faker.Random.Int()}],[{_faker.Random.Double(-1, 1)},{_faker.Random.Double(-1, 1)},{_faker.Random.Int()}]]}}"
+                : "{\"matrix\":[[1,0,0],[0,1,0,0]]}";
         }
         #endregion Helpers
     }
