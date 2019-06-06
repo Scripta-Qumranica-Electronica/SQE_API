@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Dapper;
@@ -27,6 +28,7 @@ namespace SQE.SqeHttpApi.DataAccess
         Task<List<AlteredRecord>> UpdateArtefactPosition(UserInfo user, uint artefactId,
             string position);
         Task<uint> CreateNewArtefact(UserInfo user, uint editionId, uint masterImageId, string shape, string artefactName, string position = null);
+        Task DeleteArtefact(UserInfo user, uint artefactId);
     }
 
     public class ArtefactRepository : DbConnectionBase, IArtefactRepository
@@ -241,13 +243,37 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
+        public async Task DeleteArtefact(UserInfo user, uint artefactId)
+        {
+            List<MutationRequest> mutations = new List<MutationRequest>();
+            foreach (var table in artefactTableNames.All())
+            {
+                if (table != artefactTableNames.stack)
+                {
+                    var pk = await GetArtefactPk(user, artefactId, table);
+                    mutations.Add(new MutationRequest(MutateType.Delete, new DynamicParameters(), table, pk));
+                }
+                else
+                {
+                    var pks = await GetArtefactStackPks(user, artefactId, table);
+                    foreach (var pk in pks)
+                    {
+                        mutations.Add(new MutationRequest(MutateType.Delete, new DynamicParameters(), table, pk));
+                    }
+                }
+            }
+
+            var status = _databaseWriter.WriteToDatabaseAsync(user, mutations);
+        }
+
         private async Task<uint> GetArtefactPk(UserInfo user, uint artefactId, string table)
         {
             using (var connection = OpenConnection())
             {
                 try
                 {
-                    return await connection.QuerySingleAsync<uint>(FindArtefactComponentId.GetQuery(table),
+                    return await connection.QuerySingleAsync<uint>(
+                        FindArtefactComponentId.GetQuery(table),
                         new
                         {
                             EditionId = user.editionId.Value,
@@ -256,7 +282,28 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch
                 {
-                    throw new ImproperRequestException("artefact update",
+                    throw new ImproperRequestException("artefact mutate",
+                        "could not find existing record in DB");
+                }
+            }
+        }
+        private async Task<List<uint>> GetArtefactStackPks(UserInfo user, uint artefactId, string table)
+        {
+            using (var connection = OpenConnection())
+            {
+                try
+                {
+                    return (await connection.QueryAsync<uint>(
+                        FindArtefactComponentId.GetQuery(table, stack: true),
+                        new
+                        {
+                            EditionId = user.editionId.Value,
+                            ArtefactId = artefactId
+                        })).ToList();
+                }
+                catch
+                {
+                    throw new ImproperRequestException("artefact mutate",
                         "could not find existing record in DB");
                 }
             }
@@ -280,6 +327,19 @@ namespace SQE.SqeHttpApi.DataAccess
                     throw new ImproperRequestException("artefact update",
                         "could not find existing record in DB");
                 }
+            }
+        }
+
+        private static class artefactTableNames
+        {
+            public const string data = "artefact_data";
+            public const string shape = "artefact_shape";
+            public const string position = "artefact_position";
+            public const string stack = "artefact_stack";
+
+            public static List<string> All()
+            {
+                return new List<string>(){data, shape, position, stack};
             }
         }
     }

@@ -162,7 +162,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
         }
 
         /// <summary>
-        /// This will create a new user account in the database and email an authorization token to the user.
+        /// This will update a user account in the database and email an authorization token to the user
+        /// if the email has changed.
         /// </summary>
         /// <param name="user"></param>
         /// <param name="updateUserData">All of the information for the new user.</param>
@@ -372,7 +373,6 @@ The Scripta Qumranica Electronica team</body></html>";
         {
             return new UserInfo(GetCurrentUserId(), editionId, _userRepository);
         }
-
 
         /// <summary>
         /// Packages a DetailedUser as a DTO to send back to the client.

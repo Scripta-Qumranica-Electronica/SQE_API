@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using api_test.Helpers;
 using Bogus;
 using Dapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
+using HttpRequest = api_test.Helpers.HttpRequest;
 
 namespace api_test
 {
@@ -296,6 +298,81 @@ namespace api_test
             // Act
             var loggedInUser = await Login(user, shouldSucceed: false); // Asserts already in method.
         }
+
+        // Note: I had implemented an email tester
+        // https://docs.microsoft.com/en-us/dotnet/standard/base-types/how-to-verify-that-strings-are-in-valid-email-format,
+        // which rejected patterns that it should not have.
+        // Unfortunately, this made some false rejections, so I removed it. Maybe we add something special
+        // when we go to production, then we could use these tests again (perhaps https://emailregex.com/).
+        /* 
+        /// <summary>
+        /// Make sure that the API immediately rejects improperly formatted email addresses.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task ShouldNotCreateAccountWithBadEmail()
+        {
+            // Arrange
+            var user = RandomUser();
+            user.email = _faker.Random.Word(); // This will not be a valid email
+            
+            // Act
+            await CreateUserAccountAsync(user, shouldSucceed: false); // Asserts in method
+        }
+        
+        /// <summary>
+        /// Make sure that the API immediately rejects improperly formatted email addresses when
+        /// requesting update of unactivated account details.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task ShouldNotUpdateUnactivatedAccountWithBadEmail()
+        {
+            // Arrange
+            var user = RandomUser();
+            var (_, newUser) = await CreateUserAccountAsync(user);
+            var newEmail = _faker.Random.Word(); // This will not be a valid email
+            
+            // Act
+            var (response, msg) = await HttpRequest.SendAsync<UnactivatedEmailUpdateRequestDTO, string>(_client,
+                HttpMethod.Post, changeUnactivatedEmail, new UnactivatedEmailUpdateRequestDTO()
+                {
+                    email = user.email,
+                    newEmail = newEmail
+                });
+            
+            // Assert
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            
+            // Cleanup
+            await CleanupUserAccountAsync(newUser);
+        }
+        
+        /// <summary>
+        /// Make sure that the API immediately rejects improperly formatted email addresses when
+        /// requesting update of activated account details.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task ShouldNotUpdateActivatedAccountWithBadEmail()
+        {
+            // Arrange
+            var user = RandomUser();
+            await CreateActivatedUserAsync(user);
+            var newUser = await Login(user);
+            var newEmail = _faker.Random.Word(); // This will not be a valid email
+            
+            // Act
+            var (response, msg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(_client,
+                HttpMethod.Put, baseUrl, new NewUserRequestDTO(newEmail, user.password, user.organization, user.forename, user.surname), 
+                newUser.token);
+            
+            // Assert
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            
+            // Cleanup
+            await CleanupUserAccountAsync(newUser);
+        }*/
         
         #endregion Registration/activation should fail
         

@@ -71,10 +71,10 @@ namespace api_test.Helpers
             return msg.token;
         }
 
-        public static async Task<uint> CreateNewEdition(HttpClient client)
+        public static async Task<uint> CreateNewEdition(HttpClient client, uint editionId = 1)
         {
             var newScrollRequest = new EditionUpdateRequestDTO("test-name", null, null);
-            var (response, msg) = await SendAsync<EditionUpdateRequestDTO, EditionDTO>(client, HttpMethod.Post, "/v1/editions/1", newScrollRequest, await GetJWTAsync(client));
+            var (response, msg) = await SendAsync<EditionUpdateRequestDTO, EditionDTO>(client, HttpMethod.Post, $"/v1/editions/{editionId}", newScrollRequest, await GetJWTAsync(client));
             response.EnsureSuccessStatusCode();
             return msg.id;
         }

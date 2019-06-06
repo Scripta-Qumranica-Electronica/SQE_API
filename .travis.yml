@@ -11,7 +11,9 @@ before_install:
 
 install:
 - dotnet restore
+- dotnet tool install -g coveralls.net --version 1.0.0
 
 script:
 - dotnet build
-- dotnet test
+- dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput='../coverage.xml'
+- csmacnz.Coveralls --opencover -i ./coverage.xml --useRelativePaths

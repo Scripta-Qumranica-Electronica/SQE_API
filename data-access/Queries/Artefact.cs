@@ -58,13 +58,17 @@ $Order";
             SELECT $Table_id
             FROM $Table
             JOIN $Table_owner USING($Table_id)
-            WHERE $Table.artefact_id = @ArtefactId
+            WHERE $Where
                 AND $Table_owner.edition_id = @EditionId
             ";
 
-        public static string GetQuery(string table)
+        private const string _normalArt = "$Table.artefact_id = @ArtefactId";
+        private const string _artStack = "$Table.artefact_A_id = @ArtefactId OR $Table.artefact_B_id = @ArtefactId";
+
+        public static string GetQuery(string table, bool stack = false)
         {
-            return _getQuery.Replace("$Table", table);
+            return _getQuery.Replace("$Where", stack ? _artStack : _normalArt)
+                .Replace("$Table", table);
         }
     }
 

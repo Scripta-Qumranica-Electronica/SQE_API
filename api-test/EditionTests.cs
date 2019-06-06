@@ -1,8 +1,11 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using api_test.Helpers;
+using Bogus;
+using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
@@ -15,7 +18,11 @@ namespace api_test
     /// </summary>
     public class EditionTests : WebControllerTest
     {
+        private readonly Faker _faker = new Faker("en");
         private readonly DatabaseQuery _db;
+        private const string version = "v1";
+        private const string controller = "editions";
+        
         public EditionTests(WebApplicationFactory<Startup> factory) : base(factory)
         {
             _db = new DatabaseQuery();
@@ -225,5 +232,37 @@ namespace api_test
             Assert.True(msg.editions.Count > 0);
             Assert.DoesNotContain(msg.editions.SelectMany(x => x), x => x.id == editionId);
         }
+        
+        
+        
+        #region Helpers
+        
+        
+        /// <summary>
+        /// Searches randomly for an edition and returns it.
+        /// </summary>
+        /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
+        /// <param name="jwt">A JWT can be added the request to access private editions.</param>
+        /// <returns></returns>
+        private async Task<EditionListDTO> GetRandomEdition(uint userId = 1, string jwt = null)
+        {
+            const string sql = @"
+SELECT edition_id 
+FROM edition 
+JOIN edition_editor USING(edition_id)
+WHERE user_id = @UserId";
+            var parameters = new DynamicParameters();
+            parameters.Add("@UserId", userId);
+            var allUserEditions = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
+            
+            var randomEdition = allUserEditions[_faker.Random.Int(0, allUserEditions.Count - 1)];
+            var url = $"/{version}/editions/{randomEdition}";
+            var (response, editionResponse) = await HttpRequest.SendAsync<string, EditionListDTO>(_client,
+                HttpMethod.Get, url, null, jwt);
+            response.EnsureSuccessStatusCode();
+
+            return editionResponse;
+        }
+        #endregion Helpers
     }
 }

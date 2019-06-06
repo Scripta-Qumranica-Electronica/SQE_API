@@ -23,6 +23,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
         Task<ArtefactDTO> CreateArtefact(UserInfo user, uint editionId, uint masterImageId, string mask = null,
             string name = null, string position = null);
+
+        Task DeleteArtefact(UserInfo user, uint artefactId);
     }
 
     public class ArtefactService : IArtefactService
@@ -97,6 +99,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
             return newArtefactId != 0 
                 ? await GetEditionArtefactAsync(user, newArtefactId, mask != null)
                 : null;
+        }
+
+        public async Task DeleteArtefact(UserInfo user, uint artefactId)
+        {
+            await _artefactRepository.DeleteArtefact(user, artefactId);
         }
     }
 }

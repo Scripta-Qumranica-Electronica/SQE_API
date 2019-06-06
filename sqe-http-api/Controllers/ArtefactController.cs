@@ -70,7 +70,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             {
                 return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
             }
-            catch (NotFoundException)
+            catch
             {
                 return NotFound();
             }
@@ -101,6 +101,31 @@ namespace SQE.SqeHttpApi.Server.Controllers
                     payload.mask, 
                     payload.name, 
                     payload.position);
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+        
+        /// <summary>
+        /// Deletes the specified artefact
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactId">Unique Id of the desired artefact</param>
+        [HttpDelete("editions/{editionId}/artefacts/{artefactId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult> DeleteArtefact(
+            [FromRoute] uint editionId, 
+            [FromRoute] uint artefactId
+        )
+        {
+            try
+            {
+                await _artefactService.DeleteArtefact(_userService.GetCurrentUserObject(editionId), artefactId);
+                return NoContent();
             }
             catch (NotFoundException)
             {
