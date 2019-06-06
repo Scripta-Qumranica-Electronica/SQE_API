@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Scripta-Qumranica-Electronica/SQE_API.svg?branch=integration-tests)](https://travis-ci.org/Scripta-Qumranica-Electronica/SQE_API)
 [![Coverage Status](https://coveralls.io/repos/github/Scripta-Qumranica-Electronica/SQE_API/badge.svg?branch=)](https://coveralls.io/github/Scripta-Qumranica-Electronica/SQE_API?branch=)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Scripta-Qumranica-Electronica/SQE_API/blob/master/LICENSE.txt)
 
 Asp.Net Core web API for the [SQE project](https://www.qumranica.org/). 
 
