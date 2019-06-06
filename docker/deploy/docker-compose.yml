@@ -34,8 +34,9 @@ services:
             - MYSQL_PORT=3306
             - DOTNET_CLI_TELEMETRY_OPTOUT=1
             # For system emails to work you need to add credentials (using gmail for simplicity right now)
-            - SQE_GMAIL_USERNAME=your_gmail_username_here_without_@.gmail.com
-            - SQE_GMAIL_PASSWORD=your_gmail_password_here
+            #- SQE_GMAIL_USERNAME=your_gmail_username_here_without_@.gmail.com
+            #- SQE_GMAIL_PASSWORD=your_gmail_password_here
+            #- WEBSERVER=http://my.webserver.com
         depends_on:
             - sqe-database
         networks:

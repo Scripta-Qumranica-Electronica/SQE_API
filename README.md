@@ -2,6 +2,30 @@
 
 Asp.Net Core web API for the [SQE project](https://www.qumranica.org/). 
 
+## Usage
+
+This project is generally intended to be run from docker images.  As such it uses several environment variables to configure
+several variable settings.
+
+Database connection settings:
+
+*   MYSQL_ROOT_PASSWORD=none
+*   MYSQL_DATABASE=SQE_DEV
+*   MYSQL_HOST=sqe-database
+*   MYSQL_PORT=3306
+
+Opt out of dotnet telemetry:
+
+*   DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+Setup for user management emails:
+
+*   SQE_GMAIL_USERNAME=your_gmail_username_here_without_@.gmail.com # The username of the gmail account to mail from
+*   SQE_GMAIL_PASSWORD=your_gmail_password_here # The password of the gmail account to mail from
+*   WEBSERVER=http://my.webserver.com # the url of the current running instance of [ScrollEditor](https://github.com/Scripta-Qumranica-Electronica/ScrollEditor).
+
+All of these settings have internal defaults, so in many cases the user need not worry about them.
+
 ## Project structure
 
 The overall project (or solution) uses several distinct components in two separate cs projects to process web requests.  The `sqe-http-api` project houses the `controllers`, which receive HTTP requests and route them to the `services`, which are responsible for managing the data access task and formatting the response using a `DTO`.  We still need to add a project with the `sqe-signalr-api`.
