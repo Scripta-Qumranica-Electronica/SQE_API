@@ -270,8 +270,6 @@ namespace api_test
             var artefact = allArtefacts.First();
             var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
             var newArtefactName = _faker.Random.Words(5);
-            var newArtefactPosition = RandomPosition();
-            const string newArtefactShape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
             
             // Act (update name)
             var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,

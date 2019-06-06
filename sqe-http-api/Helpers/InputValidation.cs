@@ -63,7 +63,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                     return false;
                 if (row[1] < -1 && row[1] > 1)
                     return false;
-                return (int)row[1] == row[1];
+                return (int)row[2] == row[2];
             }
         }
     }
