@@ -34,6 +34,7 @@ namespace SQE.SqeHttpApi.Server
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddCors();
 
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
@@ -120,6 +121,10 @@ namespace SQE.SqeHttpApi.Server
             {
                 app.UseDeveloperExceptionPage();
             }
+            
+            app.UseCors(
+                options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+            );
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
