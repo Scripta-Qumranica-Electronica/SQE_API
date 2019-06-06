@@ -30,7 +30,7 @@ namespace SQE.SqeHttpApi.DataAccess
         Task ConfirmAccountCreationAsync(string token);
         Task UpdateUnactivatedUserEmailAsync(string oldEmail, string newEmail);
         Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
-        Task<UserToken> RequestResetForgottenPasswordAsync(string email);
+        Task<DetailedUserWithToken> RequestResetForgottenPasswordAsync(string email);
         Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password);
     }
     public class UserRepository: DbConnectionBase , IUserRepository
@@ -397,7 +397,7 @@ namespace SQE.SqeHttpApi.DataAccess
         /// </summary>
         /// <param name="email">Email address of the user who has forgotten the password</param>
         /// <returns>Returns user information and secret token that are used to format the reset password email</returns>
-        public async Task<UserToken> RequestResetForgottenPasswordAsync(string email)
+        public async Task<DetailedUserWithToken> RequestResetForgottenPasswordAsync(string email)
         {
             using (var transactionScope = new TransactionScope())
             {
@@ -406,9 +406,9 @@ namespace SQE.SqeHttpApi.DataAccess
                     try
                     {
                         // Get the user's details via the submitted email address
-                        var columns = new List<string>() { "email", "user_id" };
+                        var columns = new List<string>() { "email", "user_id", "forename", "surname", "organization" };
                         var where = new List<string>() { "email" };
-                        var userInfo = await connection.QuerySingleAsync<UserToken>(
+                        var userInfo = await connection.QuerySingleAsync<DetailedUserWithToken>(
                             UserDetails.GetQuery(columns, where), 
                             new { Email = email});
                         

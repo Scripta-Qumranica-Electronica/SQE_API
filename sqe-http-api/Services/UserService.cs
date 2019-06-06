@@ -254,10 +254,13 @@ to begins using the system.<br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
             const string emailSubject = "Confirmation of your Scripta Qumranica Electronica account activation";
+            var name = !string.IsNullOrEmpty(userInfo.Forename) || !string.IsNullOrEmpty(userInfo.Surname)
+                ? (userInfo.Forename + " " + userInfo.Surname).Trim() 
+                : userInfo.Email;
             await _emailSender.SendEmailAsync(
                 userInfo.Email,
                 emailSubject,
-                emailBody.Replace("$User", userInfo.Email)
+                emailBody.Replace("$User", name)
                     .Replace("$WebServer", webServer));
         }
 
@@ -308,15 +311,18 @@ The Scripta Qumranica Electronica team</body></html>";
 <html><body>Dear $User,<br>
 <br>
 Sorry to hear that you have lost your password for Scripta Qumranica Electronica.  You may reset your password 
-<a href=""$WebServer/changeForgottenPassword/token/:$Token"">by clicking here</a>.<br>
+<a href=""$WebServer/changeForgottenPassword/token/$Token"">by clicking here</a>.<br>
 <br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
             const string emailSubject = "Lost password for your Scripta Qumranica Electronica account";
+            var name = !string.IsNullOrEmpty(userInfo.Forename) || !string.IsNullOrEmpty(userInfo.Surname)
+                ? (userInfo.Forename + " " + userInfo.Surname).Trim() 
+                : userInfo.Email;
             await _emailSender.SendEmailAsync(
                 email,
                 emailSubject,
-                emailBody.Replace("$User", userInfo.Email)
+                emailBody.Replace("$User", name)
                     .Replace("$Token", userInfo.Token)
                     .Replace("$WebServer", webServer)
             );
@@ -355,10 +361,13 @@ in error, please contact the project administrator.<br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
             const string emailSubject = "Reset password for your Scripta Qumranica Electronica account";
+            var name = !string.IsNullOrEmpty(userInfo.Forename) || !string.IsNullOrEmpty(userInfo.Surname)
+                ? (userInfo.Forename + " " + userInfo.Surname).Trim() 
+                : userInfo.Email;
             await _emailSender.SendEmailAsync(
                 userInfo.Email,
                 emailSubject,
-                emailBody.Replace("$User", userInfo.Email)
+                emailBody.Replace("$User", name)
             );
         }
 
