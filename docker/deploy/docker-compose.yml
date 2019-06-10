@@ -8,7 +8,9 @@ services:
         container_name: SQE_Database
         environment:
             - MYSQL_ROOT_PASSWORD=none
-            - MYSQL_DATABASE=SQE_DEV
+            - MYSQL_DATABASE=SQE
+            - MYSQL_USER=sqe_user
+            - MYSQL_PASSWORD=mysecretpw
         expose:
             - "3306"
         ports:
@@ -28,15 +30,26 @@ services:
         ports:
             - 5000:5000
         environment:
-            - MYSQL_ROOT_PASSWORD=none
-            - MYSQL_DATABASE=SQE_DEV
-            - MYSQL_HOST=sqe-database
+            ## Database settings (must match the settings for sqe-database above)
+            - MYSQL_HOST=sqe-database # in docker-compose a service name can be used as a hostname (it will route to that container)
             - MYSQL_PORT=3306
+            - MYSQL_USER=sqe_user
+            - MYSQL_PASSWORD=mysecretpw
+            - MYSQL_DATABASE=SQE
+            
+            ## Email settings (account that mails user registration information)
+            #- MAILER_EMAIL_ADDRESS=
+            #- MAILER_EMAIL_USERNAME=
+            #- MAILER_EMAIL_PASSWORD=
+            #- MAILER_EMAIL_SMTP_URL=
+            #- MAILER_EMAIL_SMTP_PORT=
+            #- MAILER_EMAIL_SMTP_SECURITY=
+            
+            ## Partner website settings (website that calls the user registration functions)
+            #- WEBSITE_HOST=
+              
+            ## Dotnet telemetry optout
             - DOTNET_CLI_TELEMETRY_OPTOUT=1
-            # For system emails to work you need to add credentials (using gmail for simplicity right now)
-            #- SQE_GMAIL_USERNAME=your_gmail_username_here_without_@gmail.com
-            #- SQE_GMAIL_PASSWORD=your_gmail_password_here
-            #- WEBSERVER=http://my.webserver.com (address where the website accessing this API is located)
         depends_on:
             - sqe-database
         networks:

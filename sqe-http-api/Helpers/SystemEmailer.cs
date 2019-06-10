@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using MailKit.Security;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.Configuration;
 using MimeKit;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
@@ -9,11 +10,20 @@ namespace SQE.SqeHttpApi.Server.Helpers
 {
     public class DevEmailSender : IEmailSender
     {
+        private readonly IConfiguration _config;
+
+        protected DevEmailSender(IConfiguration config)
+        {
+            _config = config;
+        }
+        
         /// <summary>
-        /// Sends an email.  This relies on the environment variables SQE_GMAIL_USERNAME and SQE_GMAIL_PASSWORD.
-        /// If you do not set these, the function will error.
-        /// TODO: Figure out what email server we might use in production.  Alter this to be more flexible regarding
-        /// email provider and account.
+        /// Sends an email.  This uses the settings in appsettings.json to send the email via an external SMTP server.
+        /// When this program is run in its docker container, the environment variables can be used to provide custom
+        /// settings on container start (automatically done via startup.sh).  The environment variables are:
+        /// MAILER_EMAIL_ADDRESS, MAILER_EMAIL_USERNAME, MAILER_EMAIL_PASSWORD, MAILER_EMAIL_SMTP_URL,
+        /// MAILER_EMAIL_SMTP_PORT, MAILER_EMAIL_SMTP_SECURITY (this should be a string corresponding to one of the
+        /// options in the SecureSocketOptions enum).
         /// </summary>
         /// <param name="email">Email address to send the message to.</param>
         /// <param name="subject"></param>
@@ -22,16 +32,30 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
             // Don't bother trying to send an email unless we have an email username and password
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SQE_GMAIL_USERNAME")) &&
-                string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SQE_GMAIL_PASSWORD")))
+            
+            if (string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailAddress"))
+                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailUsername"))
+                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailPassword"))
+                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpUrl"))
+                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpPort"))
+                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpSecurity"))
+                )
                 return;
             
             try
             {
+                var senderEmail = _config.GetConnectionString("MailerEmailAddress");
+                var user = _config.GetConnectionString("MailerEmailUsername");
+                var pwd = _config.GetConnectionString("MailerEmailPassword");
+                var smtp = _config.GetConnectionString("MailerEmailSmtpUrl");
+                var port = _config.GetConnectionString("MailerEmailSmtpPort");
+                var security = _config.GetConnectionString("MailerEmailSmtpSecurity");
+                var securityEnum = (SecureSocketOptions)Enum.Parse(typeof(SecureSocketOptions), security);
+                
                 var mimeMessage = new MimeMessage();
                 mimeMessage.From.Add(new MailboxAddress
                 ("SQE Webadmin",
-                    Environment.GetEnvironmentVariable("SQE_GMAIL_USERNAME") + "@gmail.com"
+                    senderEmail
                 ));
                 mimeMessage.To.Add(new MailboxAddress
                 ("Microsoft ASP.NET Core",
@@ -45,11 +69,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
                 using (var client = new SmtpClient())
                 {
-                    client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTlsWhenAvailable);
-                    client.Authenticate(
-                        Environment.GetEnvironmentVariable("SQE_GMAIL_USERNAME"),
-                        Environment.GetEnvironmentVariable("SQE_GMAIL_PASSWORD")
-                    );
+                    client.Connect(
+                        smtp, 
+                        int.TryParse(port, out var intValue) ? intValue : 0, 
+                        securityEnum);
+                    client.Authenticate(user, pwd);
                     await client.SendAsync(mimeMessage);
                     await client.DisconnectAsync(true);
                 }

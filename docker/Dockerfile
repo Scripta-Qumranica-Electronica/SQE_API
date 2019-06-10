@@ -25,4 +25,5 @@ RUN dotnet publish "sqe-http-api.csproj" -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
+COPY ./startup.sh .
 ENTRYPOINT ["dotnet", "sqe-http-api.dll"]
