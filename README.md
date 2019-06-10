@@ -27,7 +27,8 @@ Setup for user management emails:
 *   SQE_GMAIL_USERNAME=your_gmail_username_here_without_@.gmail.com # The username of the gmail account to mail from
 *   SQE_GMAIL_PASSWORD=your_gmail_password_here # The password of the gmail account to mail from
 *   WEBSERVER=http://my.webserver.com # the url of the current running instance of [ScrollEditor](https://github.com/Scripta-Qumranica-Electronica/ScrollEditor).
-
+TODO: info about other docker options and appsettings.json
+The possibilities are "None", "Auto", "SslOnConnect", "StartTls", and "StartTlsWhenAvailable".  We default to "StartTlsWhenAvailable".
 All of these settings have internal defaults, so in many cases the user need not worry about them.
 
 ## Project structure

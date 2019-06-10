@@ -25,6 +25,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 var port = _config.GetConnectionString("MysqlPort");
                 var user = _config.GetConnectionString("MysqlUsername");
                 var pwd = _config.GetConnectionString("MysqlPassword");
+                Console.WriteLine($"server={host};port={port};database={db};username={user};password={pwd};");
                 return $"server={host};port={port};database={db};username={user};password={pwd};";
             }
         }

@@ -4,7 +4,7 @@ using MailKit.Security;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
-using SmtpClient = MailKit.Net.Smtp.SmtpClient;
+using MailKit.Net.Smtp;
 
 namespace SQE.SqeHttpApi.Server.Helpers
 {
@@ -12,7 +12,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
     {
         private readonly IConfiguration _config;
 
-        protected DevEmailSender(IConfiguration config)
+        public DevEmailSender(IConfiguration config)
         {
             _config = config;
         }

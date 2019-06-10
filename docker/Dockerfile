@@ -26,4 +26,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
 COPY ./startup.sh .
-ENTRYPOINT ["dotnet", "sqe-http-api.dll"]
+ENTRYPOINT ["/app/startup.sh", "dotnet", "sqe-http-api.dll"]

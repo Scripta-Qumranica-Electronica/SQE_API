@@ -50,10 +50,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             _accessor = accessor;
             _emailSender = emailSender;
             _config = config;
-            //webServer = Environment.GetEnvironmentVariable("WEBSERVER");
-            webServer = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSERVER")) 
-                ? _config.GetConnectionString("WebsiteHost")
-                : Environment.GetEnvironmentVariable("WEBSERVER");
+            webServer = _config.GetConnectionString("WebsiteHost");
         }
 
         /// <summary>

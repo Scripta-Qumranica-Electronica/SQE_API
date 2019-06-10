@@ -19,12 +19,15 @@ declare -A SETTINGS=(
     
     ## Partner website settings
     [WebsiteHost]=${WEBSITE_HOST}
+    
+    ## Secret for API JWT generation
+    [Secret]=${SQE_API_SECRET}
 )
 
-## Iterate over each setting and update appsettings.json if it has a value
+## Iterate over each setting and update appsettings.json if the environment variable has a value
 for K in "${!SETTINGS[@]}"; do 
-    if [ ! -z "${SETTINGS[$K]}" ]; then
-        sed -i 's/\"'"${K}"'\":[ ]*\".*,/\"'"${K}"'\": \"'"${SETTINGS[$K]}"'\",/' appsettings.json
+    if [[ ! -z "${SETTINGS[$K]}" ]]; then
+        sed -i 's/\"'"${K}"'\":[ ]*\".*\"/\"'"${K}"'\": \"'"${SETTINGS[$K]//\//\\/}"'\"/' appsettings.json
     fi
 done
 
