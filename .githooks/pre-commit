@@ -4,7 +4,7 @@
 
 function check_docker_vars
 {
-    grep -n '[[:space:]]\-[[:space:]]'"${1}"'=.*$' ../docker/deploy/docker-compose.yml
+    grep -n '[[:space:]]\-[[:space:]]'"${1}"'=.*$' docker/deploy/docker-compose.yml
     if [[ "$?" == 0 ]]; then 
         echo "Please remove the custom settings for ${1} from docker/deploy/docker-compose.yml"
         echo "The line should be:"
@@ -16,7 +16,7 @@ function check_docker_vars
 function check_appsettings_vars
 {
     #TODO: Switch this to look for improper lines, rather than proper ones.
-    grep -n '"'"${1}"'"[ ]*:[ ]*""[ ]*,' ../sqe-http-api/appsettings.json > /dev/null 2>&1
+    grep -n '"'"${1}"'"[ ]*:[ ]*""[ ]*,' sqe-http-api/appsettings.json > /dev/null 2>&1
     if [[ $? == 1 ]]; then 
         echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.json"
         echo "The line should be:"
