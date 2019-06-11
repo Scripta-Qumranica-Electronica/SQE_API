@@ -8,8 +8,8 @@ Asp.Net Core web API for the [SQE project](https://www.qumranica.org/).
 
 ## Usage
 
-This project is generally intended to be run from docker images.  As such it uses several environment variables to configure
-several variable settings.
+This project is generally intended to be run from docker images. As such it uses several environment variables to configure
+project settings.  You can set these as environment variables using the -e switch and docker run, or within a docker-compose file (see the example [docker-compose.yml](https://github.com/Scripta-Qumranica-Electronica/SQE_API/blob/integration-tests/docker/deploy/docker-compose.yml)).
 
 Database connection settings:
 
@@ -24,12 +24,19 @@ Opt out of dotnet telemetry if you wish:
 
 Setup for user management emails:
 
-*   SQE_GMAIL_USERNAME=your_gmail_username_here_without_@.gmail.com # The username of the gmail account to mail from
-*   SQE_GMAIL_PASSWORD=your_gmail_password_here # The password of the gmail account to mail from
-*   WEBSERVER=http://my.webserver.com # the url of the current running instance of [ScrollEditor](https://github.com/Scripta-Qumranica-Electronica/ScrollEditor).
-TODO: info about other docker options and appsettings.json
-The possibilities are "None", "Auto", "SslOnConnect", "StartTls", and "StartTlsWhenAvailable".  We default to "StartTlsWhenAvailable".
-All of these settings have internal defaults, so in many cases the user need not worry about them.
+*   MAILER_EMAIL_ADDRESS
+*   MAILER_EMAIL_USERNAME
+*   MAILER_EMAIL_PASSWORD
+*   MAILER_EMAIL_SMTP_URL
+*   MAILER_EMAIL_SMTP_PORT
+*   MAILER_EMAIL_SMTP_SECURITY (The options are "None", "Auto", "SslOnConnect", "StartTls", and "StartTlsWhenAvailable", the default setting is "StartTlsWhenAvailable")
+*   WEBSITE_HOST (the url of the current running instance of [ScrollEditor](https://github.com/Scripta-Qumranica-Electronica/ScrollEditor))
+
+Provide some random string as a secret that is used to generate the JWT's
+
+*   SQE_API_SECRET
+
+These environment variables automatically rewrite the settings `sqe-http-api/appsettings.json` when starting up the docker container.  If you are running the API directly, probably for development purposes, then you can insert your settings in sqe-http-api/appsettings.json before running the project (the `.githooks/pre-commit` script will check for sensitive information in the `docker-compose.yml`and `sqe-http-api/appsettings.json` files before allowing you to commit changes with git and thus accidentally push sensitive data to GitHub).
 
 ## Project structure
 
@@ -86,7 +93,7 @@ Users with an invalid JWT are immediately sent 401 `Error: Unauthorized`.  The `
 
 ## Dependency injection
 
-Things fail silently when you don't properly setup dependency injections.  If you create a new `repository`, for instance, you must register it in `Startup.cs` under the function `ConfigureServices(IServiceCollection services)`.  Then you can inject it into your `service` classes with:
+Things fail silently when you don't properly setup dependency injections.  If you create a new `repository`, for instance, you must register it in `Startup.cs` under the method `ConfigureServices(IServiceCollection services)`.  Then you can inject it into your `service` classes with:
 
 ```C#
 public interface IArtefactService

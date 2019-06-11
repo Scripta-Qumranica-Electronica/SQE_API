@@ -6,6 +6,7 @@ services:
     sqe-database:
         image: qumranica/sqe-database:0.10.1
         container_name: SQE_Database
+        # These environment variables match the default db connection settings for the project.
         environment:
             - MYSQL_ROOT_PASSWORD=none
             - MYSQL_USER=sqe_user

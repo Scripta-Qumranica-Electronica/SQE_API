@@ -25,5 +25,8 @@ RUN dotnet publish "sqe-http-api.csproj" -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
+
+# startup.sh picks up settings in environment variables and inserts them
+# into appsettings.json before the program runs.
 COPY ./startup.sh .
 ENTRYPOINT ["/app/startup.sh", "dotnet", "sqe-http-api.dll"]

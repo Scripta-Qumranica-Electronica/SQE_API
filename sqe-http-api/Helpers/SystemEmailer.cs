@@ -31,8 +31,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <returns></returns>
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            // Don't bother trying to send an email unless we have an email username and password
-            
+            // Don't bother trying to send an email unless we have al the necessary email settings
+            // TODO: Should we throw an error for this, or even kill the whole program?
             if (string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailAddress"))
                 || string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailUsername"))
                 || string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailPassword"))

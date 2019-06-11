@@ -38,20 +38,20 @@ services:
             - MYSQL_DATABASE=SQE
             
             ## Email settings (account that mails user registration information)
-            #- MAILER_EMAIL_ADDRESS=qumranica@gmail.com
-            #- MAILER_EMAIL_USERNAME=qumranica
+            #- MAILER_EMAIL_ADDRESS=
+            #- MAILER_EMAIL_USERNAME=
             #- MAILER_EMAIL_PASSWORD=
-            #- MAILER_EMAIL_SMTP_URL=smtp.gmail.com
-            #- MAILER_EMAIL_SMTP_PORT=587
+            #- MAILER_EMAIL_SMTP_URL=
+            #- MAILER_EMAIL_SMTP_PORT=
             #- MAILER_EMAIL_SMTP_SECURITY=StartTlsWhenAvailable #The options are "None", "Auto", "SslOnConnect", "StartTls", and "StartTlsWhenAvailable"
             
             ## Partner website settings (website that calls the user registration functions)
-            #- WEBSITE_HOST=https://9090.digitalbibleonline.org
+            #- WEBSITE_HOST=
               
             ## Dotnet telemetry optout
             - DOTNET_CLI_TELEMETRY_OPTOUT=1
               
-            ## Secret for API JWT generation (the API will error if this is too short)
+            ## Secret string for API JWT generation (the API will error if this is too short)
             #- SQE_API_SECRET=
         depends_on:
             - sqe-database
