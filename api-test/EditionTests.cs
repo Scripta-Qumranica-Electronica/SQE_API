@@ -7,6 +7,7 @@ using api_test.Helpers;
 using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;

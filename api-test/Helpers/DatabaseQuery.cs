@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 
 namespace api_test.Helpers
 {
@@ -14,47 +17,28 @@ namespace api_test.Helpers
     /// </summary>
     public class DatabaseQuery
     {
-        const string _connection = "server=localhost;port=3307;database=SQE_DEV;username=root;password=none;charset=utf8;";
-        public DatabaseQuery(){}
-        
-        private static string ConnectionString
+        private readonly string _connection;
+        public DatabaseQuery()
         {
-            get
+            // TODO: Find a better way to get these settings.
+            string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName;
+            using (StreamReader r = new StreamReader(projectDirectory + "/../../sqe-http-api/appsettings.json"))
             {
-                var defaultConnection = _connection;
-                
-                // Read the environment variables for custom database settings defined at runtime.
-                var rootPassword = Environment.GetEnvironmentVariable("MYSQL_ROOT_PASSWORD");
-                if (rootPassword != null)
-                {
-                    defaultConnection = Regex.Replace(defaultConnection,@"(.*password=).*?(;.*)$", @"${1}"+ rootPassword +"${2}");
-                }
-                
-                var db = Environment.GetEnvironmentVariable("MYSQL_DATABASE");
-                if (db != null)
-                {
-                    defaultConnection = Regex.Replace(defaultConnection,@"(.*database=).*?(;.*)$", @"${1}"+ db +"${2}");
-                }
-                
-                var port = Environment.GetEnvironmentVariable("MYSQL_PORT");
-                if (port != null)
-                {
-                    defaultConnection = Regex.Replace(defaultConnection,@"(.*port=).*?(;.*)$", @"${1}"+ port +"${2}");
-                }
-                
-                var host = Environment.GetEnvironmentVariable("MYSQL_HOST");
-                if (host != null)
-                {
-                    defaultConnection = Regex.Replace(defaultConnection,@"(.*server=).*?(;.*)$", @"${1}"+ host +"${2}");
-                }
-                
-                return defaultConnection;
+                var json = r.ReadToEnd();
+                dynamic settings = JsonConvert.DeserializeObject(json);
+                var db = settings.ConnectionStrings.MysqlDatabase;
+                var host = settings.ConnectionStrings.MysqlHost;
+                var port = settings.ConnectionStrings.MysqlPort;
+                var user = settings.ConnectionStrings.MysqlUsername;
+                var pwd = settings.ConnectionStrings.MysqlPassword;
+                _connection = $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8;";
             }
+            
         }
 
-        private static IDbConnection OpenConnection()
+        private IDbConnection OpenConnection()
         {
-            return new MySqlConnection(ConnectionString);
+            return new MySqlConnection(_connection);
         }
 
         public async Task<IEnumerable<T>> RunQueryAsync<T>(string sql, DynamicParameters parameters)

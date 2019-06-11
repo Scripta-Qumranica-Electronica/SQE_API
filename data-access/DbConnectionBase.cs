@@ -1,8 +1,6 @@
-﻿using System;
-using MySql.Data.MySqlClient;
+﻿using MySql.Data.MySqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;
-using System.Text.RegularExpressions;
 
 
 namespace SQE.SqeHttpApi.DataAccess
@@ -25,8 +23,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 var port = _config.GetConnectionString("MysqlPort");
                 var user = _config.GetConnectionString("MysqlUsername");
                 var pwd = _config.GetConnectionString("MysqlPassword");
-                Console.WriteLine($"server={host};port={port};database={db};username={user};password={pwd};");
-                return $"server={host};port={port};database={db};username={user};password={pwd};";
+                return $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8;";
             }
         }
 

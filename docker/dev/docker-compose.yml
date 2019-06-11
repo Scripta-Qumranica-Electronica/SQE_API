@@ -8,6 +8,8 @@ services:
         container_name: SQE_Database
         environment:
             - MYSQL_ROOT_PASSWORD=none
+            - MYSQL_USER=sqe_user
+            - MYSQL_PASSWORD=mysecretpw
             - MYSQL_DATABASE=SQE
         expose:
             - "3306"

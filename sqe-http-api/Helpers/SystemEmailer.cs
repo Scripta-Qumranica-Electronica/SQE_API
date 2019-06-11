@@ -34,11 +34,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
             // Don't bother trying to send an email unless we have an email username and password
             
             if (string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailAddress"))
-                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailUsername"))
-                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailPassword"))
-                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpUrl"))
-                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpPort"))
-                && string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpSecurity"))
+                || string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailUsername"))
+                || string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailPassword"))
+                || string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpUrl"))
+                || string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpPort"))
+                || string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailSmtpSecurity"))
                 )
                 return;
             
