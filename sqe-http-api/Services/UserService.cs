@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 
@@ -107,6 +110,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         
         public UserDTO GetCurrentUser()
         {
+            throw StandardErrors.BadRequest;
             // TODO: Check if ...User.Identity.Name exists. Return null if not.
             var currentUserEmail = _accessor.HttpContext.User.Identity.Name;
             var currentUserId = GetCurrentUserId();

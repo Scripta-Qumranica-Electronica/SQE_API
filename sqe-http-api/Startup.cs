@@ -135,6 +135,8 @@ namespace SQE.SqeHttpApi.Server
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "SQE API v1");
             });
+            
+            app.UseHttpException();
 
             app.UseMvc();
         }
