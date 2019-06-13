@@ -115,6 +115,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string forename { get; set; }
         public string surname { get; set; }
         public string organization { get; set; }
+        public bool activated { get; set; }
     }
     
     // A user may only receive his or her own DetailedUserTokenDTO

@@ -20,8 +20,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
         UserDTO GetCurrentUser();
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject(uint? editionId = null);
-        Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
-        Task<DetailedUserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData);
+        Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
+        Task<DetailedUserTokenDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData);
         Task UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
         Task ResendActivationEmail(string email);
         Task ConfirmUserRegistrationAsync(string token);
@@ -75,6 +75,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 surname = result.Surname,
                 organization = result.Organization,
                 token = result.Activated ? BuildUserToken(result.Email, result.UserId).ToString() : null,
+                activated = result.Activated
             };
         }
 
@@ -139,7 +140,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// </summary>
         /// <param name="newUserData">All of the information for the new user.</param>
         /// <returns>Returns a UserDTO for the newly created user account.</returns>
-        public async Task<UserDTO> CreateNewUserAsync(NewUserRequestDTO newUserData)
+        public async Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData)
         {
             // Ask the repo to create the new user
             var createdUser = await _userRepository.CreateNewUserAsync(newUserData.email, newUserData.password,
@@ -165,7 +166,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <param name="user"></param>
         /// <param name="updateUserData">All of the information for the new user.</param>
         /// <returns>Returns a UserDTO for the newly created user account.</returns>
-        public async Task<DetailedUserDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData)
+        public async Task<DetailedUserTokenDTO> UpdateUserAsync(UserInfo user, NewUserRequestDTO updateUserData)
         {
             // Get current user data
             var originalUserInfo = await _userRepository.GetDetailedUserByIdAsync(user);
@@ -385,15 +386,16 @@ The Scripta Qumranica Electronica team</body></html>";
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        private static DetailedUserDTO DetailedUserModelToDto(DataAccess.Models.DetailedUser model)
+        private static DetailedUserTokenDTO DetailedUserModelToDto(DataAccess.Models.DetailedUserWithToken model)
         {
-            return new DetailedUserDTO
+            return new DetailedUserTokenDTO
             {
                 userId = model.UserId,
                 email = model.Email,
                 forename = model.Forename,
                 surname = model.Surname,
-                organization = model.Organization
+                organization = model.Organization,
+                activated = model.Activated
             };
         }
         
