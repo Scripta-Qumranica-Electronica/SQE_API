@@ -153,45 +153,46 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             using (var connection = OpenConnection())
             {
                 // Check the permissions and throw if user has no rights to alter this scrollVersion
-                if (await user.MayWrite() && (await user.EditionEditorId()).HasValue)
+                if (!(await user.MayWrite()) || !(await user.EditionEditorId()).HasValue)
+                    throw StandardErrors.NoPermissionException(user.userId, "alter", "edition", user.editionId);
+                
+                foreach (var mutationRequest in mutationRequests)
                 {
-                    foreach (var mutationRequest in mutationRequests)
+                    // Set the editionId for the mutation.
+                    // Though we accept a List of mutations, we have the restriction that
+                    // they all belong to the same editionId and userID.
+                    // This way, we only do one permission check for the whole batch.
+                    mutationRequest.Parameters.Add("@EditionId", user.editionId);
+                    mutationRequest.Parameters.Add("@EditionEditorId", (await user.EditionEditorId()).Value);
+                    await AddMainActionAsync(connection, mutationRequest);
+                    switch (mutationRequest.Action)
                     {
-                        // Set the editionId for the mutation.
-                        // Though we accept a List of mutations, we have the restriction that
-                        // they all belong to the same editionId and userID.
-                        // This way, we only do one permission check for the whole batch.
-                        mutationRequest.Parameters.Add("@EditionId", user.editionId);
-                        mutationRequest.Parameters.Add("@EditionEditorId", (await user.EditionEditorId()).Value);
-                        await AddMainActionAsync(connection, mutationRequest);
-                        switch (mutationRequest.Action)
-                        {
-                            case (MutateType.Create):
-                                // Insert the record and add its response to the alteredRecords response.
-                                alteredRecords.Add(await InsertAsync(connection, mutationRequest));
-                                break;
-                                
-                            case (MutateType.Update): // Update in our system is really Delete + Insert, the old record remains.
-                                // Delete the old record
-                                var deletedRecord = await DeleteAsync(connection, mutationRequest);
-                                
-                                // Insert the new record
-                                var insertedRecord = await InsertAsync(connection, mutationRequest);
-                                
-                                // Merge the request responses by copying the deleted Id to the insertRecord object
-                                insertedRecord.OldId = deletedRecord.OldId;
-                                
-                                // Add info to the return object
-                                alteredRecords.Add(insertedRecord);
-                                break;
-                                
-                            case (MutateType.Delete):
-                                // Delete the record and add its response to the alteredRecords response.
-                                alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
-                                break;
-                        }
+                        case (MutateType.Create):
+                            // Insert the record and add its response to the alteredRecords response.
+                            alteredRecords.Add(await InsertAsync(connection, mutationRequest));
+                            break;
+                            
+                        case (MutateType.Update): // Update in our system is really Delete + Insert, the old record remains.
+                            // Delete the old record
+                            var deletedRecord = await DeleteAsync(connection, mutationRequest);
+                            
+                            // Insert the new record
+                            var insertedRecord = await InsertAsync(connection, mutationRequest);
+                            
+                            // Merge the request responses by copying the deleted Id to the insertRecord object
+                            insertedRecord.OldId = deletedRecord.OldId;
+                            
+                            // Add info to the return object
+                            alteredRecords.Add(insertedRecord);
+                            break;
+                            
+                        case (MutateType.Delete):
+                            // Delete the record and add its response to the alteredRecords response.
+                            alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
+                            break;
                     }
                 }
+                
                 transactionScope.Complete();
             }
 

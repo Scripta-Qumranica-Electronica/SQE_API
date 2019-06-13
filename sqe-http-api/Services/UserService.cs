@@ -110,7 +110,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
         
         public UserDTO GetCurrentUser()
         {
-            throw StandardErrors.BadRequest;
             // TODO: Check if ...User.Identity.Name exists. Return null if not.
             var currentUserEmail = _accessor.HttpContext.User.Identity.Name;
             var currentUserId = GetCurrentUserId();

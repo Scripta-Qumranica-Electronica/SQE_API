@@ -91,11 +91,11 @@ namespace SQE.SqeHttpApi.DataAccess
         // TODO do we even need this?
         public async Task<Dictionary<uint, List<uint>>> GetEditionsAsync(uint? editionId, uint? userId)
         {
-            var sql = ScrollVersionGroupQuery.GetQuery(editionId.HasValue, userId.HasValue);
+            var sql = EditionQuery.GetQuery(editionId.HasValue, userId.HasValue);
 
             using (var connection = OpenConnection())
             {
-                var results = await connection.QueryAsync<ScrollVersionGroupQuery.Result>(sql, new
+                var results = await connection.QueryAsync<EditionQuery.Result>(sql, new
                 {
                     EditionId = editionId ?? 0,
                     UserId = userId ?? 0
@@ -117,39 +117,37 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             using (var connection = OpenConnection())
             {
+                EditionNameQuery.Result result;
                 try
                 {
                     // Here we get the data from the original scroll_data field, we need the scroll_id,
                     // which no one in the front end will generally have or care about.
-                    var result = await connection.QuerySingleAsync<EditionNameQuery.Result>(EditionNameQuery.GetQuery(), 
-                        new {
-                        EditionId = user.editionId ?? 0
-                    });
-
-                    // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
-                    // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
-                    // throws a NoPermissionException immediately.
-                    
-                    // Now we create the mutation object for the requested action
-                    // You will want to check the database to make sure you what you are doing.
-                    var nameChangeParams = new DynamicParameters();
-                    nameChangeParams.Add("@scroll_id", result.ScrollId);
-                    nameChangeParams.Add("@Name", name);
-                    var nameChangeRequest = new MutationRequest(
-                        MutateType.Update,
-                        nameChangeParams,
-                        "scroll_data",
-                        result.ScrollDataId
-                        );
-                    
-                    // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-                    // care of main_action and single_action.
-                    await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { nameChangeRequest });
+                    result = await connection.QuerySingleAsync<EditionNameQuery.Result>(EditionNameQuery.GetQuery(),
+                        new
+                        {
+                            EditionId = user.editionId ?? 0
+                        });
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new NoPermissionException(user.userId, "change Name", "scroll", user.editionId);
+                    throw StandardErrors.NoPermissionException(user.userId, "change Name", "scroll", user.editionId);
                 }
+
+                // Now we create the mutation object for the requested action
+                // You will want to check the database to make sure you what you are doing.
+                var nameChangeParams = new DynamicParameters();
+                nameChangeParams.Add("@scroll_id", result.ScrollId);
+                nameChangeParams.Add("@Name", name);
+                var nameChangeRequest = new MutationRequest(
+                    MutateType.Update,
+                    nameChangeParams,
+                    "scroll_data",
+                    result.ScrollDataId
+                    );
+                
+                // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
+                // care of main_action and single_action. It will throw any errors it encounters.
+                await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { nameChangeRequest });
             }
         }
 

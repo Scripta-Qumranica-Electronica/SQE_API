@@ -78,7 +78,9 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
     // and an internal project error code with accompanying message in English.
     public static class StandardErrors
     {
-        public static readonly HttpException BadRequest =
-            new HttpException(HttpStatusCode.BadRequest, 600, "You did a very bad thing");
+        public static HttpException NoPermissionException(uint? userId, string operation, string entity, uint? entityId)
+        {
+            return new HttpException(HttpStatusCode.Forbidden, 600, $"User ${userId?.ToString() ?? "anonymous"} can't perform ${operation} on ${entity}, id ${entityId?.ToString()}.");
+        }
     }
 }

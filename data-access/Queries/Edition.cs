@@ -81,7 +81,7 @@ GROUP BY ed2.edition_id
         }
     }
 
-    internal class ScrollVersionGroupQuery
+    internal class EditionQuery
     {
         private const string _baseQuery = @"
 SELECT DISTINCT ed2.edition_id AS EditionId, ed2.scroll_id AS ScrollId
