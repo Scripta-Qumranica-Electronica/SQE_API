@@ -53,7 +53,6 @@ namespace api_test
             Assert.NotNull(artefact.imagedObjectId);
             Assert.NotNull(artefact.side);
             Assert.NotNull(artefact.mask.mask);
-            Assert.NotNull(artefact.mask.transformMatrix);
         }
         
         /// <summary>
@@ -187,12 +186,14 @@ namespace api_test
             Assert.Equal(newArtefactPosition, updatedShapeArtefact.mask.transformMatrix);
             Assert.Equal(newArtefactName, updatedShapeArtefact.name);
             
+            // Arrange (update all)
+            var otherTransform = RandomPosition();
             // Act (update all)
             var (allResponse, updatedAllArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Put,
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", new UpdateArtefactDTO
                 {
                     mask = artefact.mask.mask,
-                    position = artefact.mask.transformMatrix,
+                    position = otherTransform,
                     name = artefact.name
                 }, 
                 await HttpRequest.GetJWTAsync(_client));
@@ -200,7 +201,7 @@ namespace api_test
             // Assert (update all)
             allResponse.EnsureSuccessStatusCode();
             Assert.Equal(artefact.mask.mask, updatedAllArtefact.mask.mask);
-            Assert.Equal(artefact.mask.transformMatrix, updatedAllArtefact.mask.transformMatrix);
+            Assert.Equal(otherTransform, updatedAllArtefact.mask.transformMatrix);
             Assert.Equal(artefact.name, updatedAllArtefact.name);
         }
 

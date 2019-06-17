@@ -82,7 +82,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                     await client.DisconnectAsync(true);
                 }
             }
-            catch (MailKit.CommandException ex)
+            catch (MailKit.CommandException)
             {
                 // Throw a less revealing error when running in production
                 if (_env.IsProduction())

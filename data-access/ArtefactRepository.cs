@@ -53,8 +53,8 @@ namespace SQE.SqeHttpApi.DataAccess
                         UserId = user.userId ?? 0,
                         ArtefactId = artefactId
                     });
-                if (artefacts.Count() != 1)
-                    throw StandardErrors.DataNotFound("artefact", artefactId);
+//                if (artefacts.Count() != 1)
+//                    throw StandardErrors.DataNotFound("artefact", artefactId);
                 return artefacts.First();
             }
         }
@@ -115,8 +115,6 @@ namespace SQE.SqeHttpApi.DataAccess
                 
                 throw;
             }
-                    
-            
         }
         
         public async Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint artefactId, string name)
@@ -142,9 +140,10 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             const string tableName = "artefact_position";
             var artefactPositionId = await GetArtefactPk(user, artefactId, tableName);
-            // It is not necessary for every artefact to have a position (they may get positioning via artefact stack)
+            // It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
+            // If no artefact_position already exists we need to create a new entry here.
             if (artefactPositionId == 0)
-                return new List<AlteredRecord>();
+                return await InsertArtefactPosition(user, artefactId, position);
             
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@transform_matrix", position);

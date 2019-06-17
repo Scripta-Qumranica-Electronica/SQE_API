@@ -86,7 +86,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
                 if (!string.IsNullOrEmpty(name))
                     resultList.AddRange(await _artefactRepository.UpdateArtefactName(user, artefactId, name));
-                if (!string.IsNullOrEmpty(position))
+                if (!string.IsNullOrEmpty(position)) // TODO: we should allow for null here, which would mean we need to delete the position from the adition
                 {
                     if (!GeometryValidation.ValidateTransformMatrix(position))
                         throw StandardErrors.ImproperInputData("artefact_position");

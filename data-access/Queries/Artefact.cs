@@ -26,10 +26,10 @@ JOIN artefact_shape USING(sqe_image_id)
 JOIN artefact_shape_owner USING(artefact_shape_id)
 JOIN artefact_data USING(artefact_id)
 JOIN artefact_data_owner USING(artefact_data_id)
-JOIN artefact_position USING(artefact_id)
-JOIN artefact_position_owner USING(artefact_position_id)
 JOIN edition ON edition.edition_id = artefact_shape_owner.edition_id
     AND edition.edition_id = artefact_data_owner.edition_id
+LEFT JOIN artefact_position USING(artefact_id)
+LEFT JOIN artefact_position_owner ON artefact_position_owner.artefact_position_id = artefact_position.artefact_position_id
     AND edition.edition_id = artefact_position_owner.edition_id
 JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
 WHERE edition.edition_id = @EditionId
