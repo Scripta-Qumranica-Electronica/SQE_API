@@ -48,11 +48,16 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(uint? userId, uint editionId,
             bool withMask = false, bool withImages = false)
         {
+            ArtefactListDTO artefacts;
             if (withImages)
-                return await GetEditionArtefactListingsWithImagesAsync(userId, editionId, withMask);
+                artefacts = await GetEditionArtefactListingsWithImagesAsync(userId, editionId, withMask);
+            else
+            {
+                var listings = await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask);
+                artefacts = ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(listings.ToList(), editionId);
+            }
             
-            var listings = await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMask);
-            return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(listings.ToList(), editionId);
+            return artefacts;
         }
         
         public async Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(uint? userId, uint editionId,
@@ -69,30 +74,25 @@ namespace SQE.SqeHttpApi.Server.Helpers
             string name = null, string position = null)
         {
             var withMask = false;
-            try
+            var resultList = new List<AlteredRecord>();
+            if (user.userId.HasValue)
             {
-                var resultList = new List<AlteredRecord>();
-                if (user.userId.HasValue)
+                if (!string.IsNullOrEmpty(mask))
                 {
-                    if (!string.IsNullOrEmpty(mask))
-                    {
-                        resultList.AddRange(await _artefactRepository.UpdateArtefactShape(user, artefactId, mask));
-                        withMask = true;
-                    }
-
-                    if (!string.IsNullOrEmpty(name))
-                        resultList.AddRange(await _artefactRepository.UpdateArtefactName(user, artefactId, name));
-                    if (!string.IsNullOrEmpty(position))
-                        if (!GeometryValidation.ValidateTransformMatrix(position))
-                            throw new ImproperRequestException("update artefact", "improperly formatted transform matrix");
-                        resultList.AddRange(
-                            await _artefactRepository.UpdateArtefactPosition(user, artefactId, position));
+                    // UpdateArtefactShape will inform us if the WKT mask is in an invalid format
+                    resultList.AddRange(await _artefactRepository.UpdateArtefactShape(user, artefactId, mask));
+                    withMask = true;
                 }
-            }
-            catch (SystemException err)
-            {
-                if (err.Message == "Column 'region_in_sqe_image' cannot be null")
-                    throw new DbDetailedFailedWrite("The mask is not a valid WKT string.");
+
+                if (!string.IsNullOrEmpty(name))
+                    resultList.AddRange(await _artefactRepository.UpdateArtefactName(user, artefactId, name));
+                if (!string.IsNullOrEmpty(position))
+                {
+                    if (!GeometryValidation.ValidateTransformMatrix(position))
+                        throw StandardErrors.ImproperInputData("artefact_position");
+                    resultList.AddRange(
+                        await _artefactRepository.UpdateArtefactPosition(user, artefactId, position));
+                }  
             }
             
             return await GetEditionArtefactAsync(user, artefactId, withMask);

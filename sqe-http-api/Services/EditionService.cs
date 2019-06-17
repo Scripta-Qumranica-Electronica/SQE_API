@@ -103,15 +103,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
             string collaborators = null)
         {
-            Edition editionBeforeChanges;
-            try
-            {
-                editionBeforeChanges = (await _repo.ListEditionsAsync(user.userId, user.editionId)).First();
-            } 
-            catch(NoPermissionException)
-            {
-                throw new NotFoundException(user.editionId.Value);
-            }
+            var editionBeforeChanges = (await _repo.ListEditionsAsync(user.userId, user.editionId)).First();
             
             if (copyrightHolder != null || editionBeforeChanges.Collaborators != collaborators)
             {

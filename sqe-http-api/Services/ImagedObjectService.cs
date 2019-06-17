@@ -8,7 +8,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IImagedObjectService
     {
-        Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId);
+        Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId, bool artefacts = false,
+            bool masks = false);
         Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(uint? userId, uint editionId,
             bool withMasks = false);
         Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId,
@@ -34,8 +35,13 @@ namespace SQE.SqeHttpApi.Server.Helpers
             _artefactRepository = artefactRepository;
         }
 
-        public async Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId)
+        // TODO: Fix this and GetImagedObjectsWithArtefactsAsync up to be more DRY and efficient.
+        public async Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId,
+            bool artefacts = false, bool masks = false)
         {
+            if (artefacts)
+                return await GetImagedObjectsWithArtefactsAsync(userId, editionId, masks);
+            
             var imagedObjects = await _repo.GetImagedObjectsAsync(userId, editionId, null);
 
             if (imagedObjects == null)

@@ -46,8 +46,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         public async Task<ActionResult<ImageGroupListDTO>> ListImageGroups()
         {
-            var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>());
-            return images;
+            return await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>());
         }
 
         /// <summary>
@@ -61,8 +60,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfScroll([FromRoute] uint imageReferenceId)
         {
-            var images = await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {imageReferenceId }));
-            return images;
+            return await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {imageReferenceId }));
         }
 
         /// <summary>
@@ -74,9 +72,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         public async Task<ActionResult<ImageInstitutionListDTO>> ListImageInstitutions()
         {
-            var institutions = await _imageService.GetImageInstitutionsAsync();
-
-            return institutions;
+            return await _imageService.GetImageInstitutionsAsync();
         }
 
         /// <summary>
@@ -92,24 +88,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
-            bool artefacts, masks;
-            ParseOptionals(optional, out artefacts, out masks);
+            ParseOptionals(optional, out var artefacts, out var masks);
 
-            try
-            {
-                if(artefacts)
-                {
-                    return await _imagedObjectService.GetImagedObjectsWithArtefactsAsync(_userService.GetCurrentUserId(), editionId, masks);
-                }
-                else
-                {
-                    return await _imagedObjectService.GetImagedObjectsAsync(_userService.GetCurrentUserId(), editionId);
-                }
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            return await _imagedObjectService.GetImagedObjectsAsync(_userService.GetCurrentUserId(), editionId, artefacts, masks);
         }
         
         /// <summary>
@@ -127,16 +108,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var artefacts, out var masks);
-
-            try
-            {
-                // Bronson: Add support for artefacts and masks here
-                return await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId, artefacts, masks);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            return await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId, artefacts, masks);
         }
     }
 }

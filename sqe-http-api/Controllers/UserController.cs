@@ -53,14 +53,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(409)]
         public async Task<ActionResult<UserDTO>> CreateNewUser([FromBody] NewUserRequestDTO payload)
         {
-            try
-            {
-                return await _userService.CreateNewUserAsync(payload);
-            }
-            catch(DbDetailedFailedWrite err)
-            {
-                return Conflict(new {message = err.Message});
-            }
+            return await _userService.CreateNewUserAsync(payload);
         }
         
         /// <summary>
@@ -78,14 +71,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(409)]
         public async Task<ActionResult<DetailedUserDTO>> ChangeUserInfo([FromBody] NewUserRequestDTO payload)
         {
-            try
-            {
-                return await _userService.UpdateUserAsync(_userService.GetCurrentUserObject(), payload);
-            }
-            catch(DbDetailedFailedWrite err)
-            {
-                return Conflict(new {message = err.Message});
-            }
+            return await _userService.UpdateUserAsync(_userService.GetCurrentUserObject(), payload);
         }
         
         /// <summary>
@@ -101,15 +87,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<UserDTO>> ConfirmUserRegistration([FromBody] AccountActivationRequestDTO payload)
         {
-            try
-            {
-                await _userService.ConfirmUserRegistrationAsync(payload.token);
-                return NoContent();
-            }
-            catch
-            {
-                return NotFound();
-            }
+            await _userService.ConfirmUserRegistrationAsync(payload.token);
+            return NoContent();
         }
 
         /// <summary>
@@ -125,15 +104,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(401)]
         public async Task<ActionResult<DetailedUserTokenDTO>> AuthenticateAsync([FromBody]LoginRequestDTO payload)
         {
-            try
-            {
-                var user = await _userService.AuthenticateAsync(payload.email, payload.password);
-                return user;
-            }
-            catch
-            {
-                return Unauthorized(new {message = "Email or password is incorrect ", code = 600});
-            }
+            return await _userService.AuthenticateAsync(payload.email, payload.password);
         }
         
         /// <summary>
@@ -151,15 +122,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public async Task<ActionResult> ChangeEmailOfUnactivatedUserAccount(
             [FromBody]UnactivatedEmailUpdateRequestDTO payload)
         {
-            try
-            {
-                await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail);
-                return NoContent();
-            }
-            catch (DbDetailedFailedWrite err)
-            {
-                return Conflict(new {message = err.Message});
-            }
+            await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail);
+            return NoContent();
             
         }
         
@@ -176,16 +140,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public async Task<ActionResult> ResendUserAccountActivationEmail(
             [FromBody]ResendUserAccountActivationRequestDTO payload)
         {
-            try
-            {
-                await _userService.ResendActivationEmail(payload.email);
-                return NoContent();
-            }
-            catch //(DbDetailedFailedWrite err)
-            {
-                return NoContent(); // Let's suppress these errors for now until we decide what if anything might be safe.
-                //return Conflict(new {message = err.Message});
-            }
+            await _userService.ResendActivationEmail(payload.email);
+            return NoContent();
             
         }
         
@@ -200,15 +156,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(204)]
         public async Task<ActionResult> ForgotPassword([FromBody] ResetUserPasswordRequestDTO payload)
         {
-            try
-            {
-                await _userService.RequestResetLostPasswordAsync(payload.email);
-                return NoContent();
-            }
-            catch
-            {
-                return NoContent(); // Suppress any errors
-            }
+            await _userService.RequestResetLostPasswordAsync(payload.email);
+            return NoContent();
         }
         
         /// <summary>
@@ -223,16 +172,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(401)]
         public async Task<ActionResult> ChangePassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
         {
-            try
-            {
-                await _userService.ChangePasswordAsync(_userService.GetCurrentUserObject(), payload.oldPassword,
-                    payload.newPassword);
-                return NoContent();
-            }
-            catch
-            {
-                return Unauthorized(new {message = "Incorrect password", error = 600});
-            }
+            await _userService.ChangePasswordAsync(_userService.GetCurrentUserObject(), payload.oldPassword,
+                payload.newPassword);
+            return NoContent();
         }
         
         /// <summary>
@@ -248,15 +190,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult> ChangeForgottenPassword([FromBody] ResetForgottenUserPasswordRequestDto payload)
         {
-            try
-            {
-                await _userService.ResetLostPasswordAsync(payload.token, payload.password);
-                return NoContent();
-            }
-            catch
-            {
-                return NotFound(new {message = "Token not found", error = 602});
-            }
+            await _userService.ResetLostPasswordAsync(payload.token, payload.password);
+            return NoContent();
         }
     }
 }

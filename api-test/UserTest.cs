@@ -591,7 +591,7 @@ namespace api_test
                 HttpMethod.Put, baseUrl, newDetails, loginDetails.token);
             
             // Assert
-            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
             
             // Cleanup
             await CleanupUserAccountAsync(loginDetails);

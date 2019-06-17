@@ -30,8 +30,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet("line")]
         public async Task<ActionResult<Scroll>> RetrieveTextOfLineById(uint lineId, uint editionId)
         {
-            var scroll = await _service.GetLineById( lineId, editionId);
-            return scroll;
+            return await _service.GetLineById( lineId, editionId);
         }
    
         /// <summary>
@@ -45,8 +44,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet("fragment")]
         public async Task<ActionResult<Scroll>> RetrieveTextOfFragmentById(uint fragmentId, uint editionId)
         {
-            var scroll = await _service.GetFragmentById(fragmentId, editionId);
-            return scroll;
+            return await _service.GetFragmentById(fragmentId, editionId);
         }
   
         
@@ -59,8 +57,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet("fragmentIds")]
         public async Task<ActionResult<uint[]>> RetrieveFragmentIds(uint editionId)
         {
-            var fragmentIds = await _service.GetFragmentIds(editionId);
-            return fragmentIds;
+            return await _service.GetFragmentIds(editionId);
         }
  
         /// <summary>
@@ -73,8 +70,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet("lineIds")]
         public async Task<ActionResult<uint[]>> RetrieveLineIds(uint fragmentId, uint editionId)
         {
-            var lineIds = await _service.GetLineIds(fragmentId, editionId);
-            return lineIds;
+            return await _service.GetLineIds(fragmentId, editionId);
         }
     }
 }

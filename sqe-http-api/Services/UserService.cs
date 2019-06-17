@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
@@ -40,11 +41,12 @@ namespace SQE.SqeHttpApi.Server.Helpers
         private readonly IHttpContextAccessor _accessor;
         private readonly IEmailSender _emailSender;
         private readonly IConfiguration _config;
+        private readonly IHostingEnvironment _env;
         private readonly string webServer;
 
 
         public UserService(IOptions<AppSettings> appSettings, IUserRepository userRepository, 
-                IHttpContextAccessor accessor, IEmailSender emailSender, IConfiguration config)
+                IHttpContextAccessor accessor, IEmailSender emailSender, IConfiguration config, IHostingEnvironment env)
 
         // http://jasonwatmore.com/post/2018/08/14/aspnet-core-21-jwt-authentication-tutorial-with-example-api
         {
@@ -53,6 +55,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             _accessor = accessor;
             _emailSender = emailSender;
             _config = config;
+            _env = env;
             webServer = _config.GetConnectionString("WebsiteHost");
         }
 
@@ -66,9 +69,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task<DetailedUserTokenDTO> AuthenticateAsync(string email, string password)
         {
             var result = await _userRepository.GetUserByPasswordAsync(email, password);
-
-            if (result == null)
-                return null;
 
             return new DetailedUserTokenDTO
             {
@@ -110,7 +110,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
         
         public UserDTO GetCurrentUser()
         {
-            throw StandardErrors.BadRequest;
             // TODO: Check if ...User.Identity.Name exists. Return null if not.
             var currentUserEmail = _accessor.HttpContext.User.Identity.Name;
             var currentUserId = GetCurrentUserId();
@@ -175,12 +174,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
             // Get current user data
             var originalUserInfo = await _userRepository.GetDetailedUserByIdAsync(user);
             var resetActivation = updateUserData.email != null && originalUserInfo.Email != updateUserData.email;
-            if (resetActivation) // Make sure email is unique
-                await _userRepository.ResolveExistingUserConflictAsync(updateUserData.email);
             
             // Ask the repo to update the user (merge nul fields with the new request)
             await _userRepository.UpdateUserAsync(
-                user, updateUserData.password, 
+                user, 
+                updateUserData.password, 
                 updateUserData.email ?? originalUserInfo.Email,
                 resetActivation,
                 forename: updateUserData.forename ?? originalUserInfo.Forename, 
@@ -291,9 +289,18 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <returns></returns>
         public async Task ResendActivationEmail(string email)
         {
-            // Get the account info and send a new account activation email
-            var userInfo = await _userRepository.GetUnactivatedUserByEmailAsync(email);
-            await SendAccountActivationEmail(userInfo);
+            try
+            {
+                // Get the account info and send a new account activation email
+                var userInfo = await _userRepository.GetUnactivatedUserByEmailAsync(email);
+                await SendAccountActivationEmail(userInfo);
+            }
+            catch
+            {
+                // Rethrow error in development, otherwise the error is swallowed in production for security reasons.
+                if (_env.IsDevelopment()) 
+                    throw;
+            }
         }
         
         /// <summary>
@@ -303,13 +310,15 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <returns></returns>
         public async Task RequestResetLostPasswordAsync(string email)
         {
-            var userInfo = await _userRepository.RequestResetForgottenPasswordAsync(email);
-            if (userInfo == null) // Silently return on error
-                return;
+            try
+            {
+                var userInfo = await _userRepository.RequestResetForgottenPasswordAsync(email);
+                if (userInfo == null) // Silently return on error
+                    return;
             
-            // Email the user
-            // TODO: Use Razor to format this and ad organization name.
-            const string emailBody = @"
+                // Email the user
+                // TODO: Use Razor to format this and ad organization name.
+                const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
 Sorry to hear that you have lost your password for Scripta Qumranica Electronica.  You may reset your password 
@@ -317,17 +326,24 @@ Sorry to hear that you have lost your password for Scripta Qumranica Electronica
 <br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
-            const string emailSubject = "Lost password for your Scripta Qumranica Electronica account";
-            var name = !string.IsNullOrEmpty(userInfo.Forename) || !string.IsNullOrEmpty(userInfo.Surname)
-                ? (userInfo.Forename + " " + userInfo.Surname).Trim() 
-                : userInfo.Email;
-            await _emailSender.SendEmailAsync(
-                email,
-                emailSubject,
-                emailBody.Replace("$User", name)
-                    .Replace("$Token", userInfo.Token)
-                    .Replace("$WebServer", webServer)
-            );
+                const string emailSubject = "Lost password for your Scripta Qumranica Electronica account";
+                var name = !string.IsNullOrEmpty(userInfo.Forename) || !string.IsNullOrEmpty(userInfo.Surname)
+                    ? (userInfo.Forename + " " + userInfo.Surname).Trim() 
+                    : userInfo.Email;
+                await _emailSender.SendEmailAsync(
+                    email,
+                    emailSubject,
+                    emailBody.Replace("$User", name)
+                        .Replace("$Token", userInfo.Token)
+                        .Replace("$WebServer", webServer)
+                );
+            }
+            catch
+            {
+                // Rethrow error in development, otherwise the error is swallowed in production for security reasons.
+                if (_env.IsDevelopment())
+                    throw;
+            }
         }
 
         /// <summary>

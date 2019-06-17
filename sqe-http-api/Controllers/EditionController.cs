@@ -41,14 +41,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
-            var edition = await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(editionId), false, false);
-
-            if(edition==null)
-            {
-                return NotFound();
-            }
-
-            return edition;
+            return await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(editionId), false, false);
         }
 
         /// <summary>
@@ -59,8 +52,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         public async Task<ActionResult<EditionListDTO>> ListEditions()
         {
-            var groups = await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
-            return groups;
+            return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
         }
 
         /// <summary>
@@ -76,26 +68,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<EditionDTO>> UpdateEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
         {
-            try
-            {
-                return await _editionService.UpdateEditionAsync(
-                    _userService.GetCurrentUserObject(editionId), 
-                    request.name,
-                    request.copyrightHolder,
-                    request.collaborators);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-            catch(ForbiddenException)
-            {
-                return Forbid();
-            }
-            catch(NoPermissionException)
-            {
-                return Forbid();
-            }
+            return await _editionService.UpdateEditionAsync(
+                _userService.GetCurrentUserObject(editionId), 
+                request.name,
+                request.copyrightHolder,
+                request.collaborators);
         }
 
         /// <summary>
@@ -111,18 +88,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
         {
-            try
-            {
-                return await _editionService.CopyEditionAsync(_userService.GetCurrentUserObject(editionId), request);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-            catch (ForbiddenException)
-            {
-                return Forbid();
-            }
+            return await _editionService.CopyEditionAsync(_userService.GetCurrentUserObject(editionId), request);
         }
         
         // TODO: delete edition.

@@ -44,14 +44,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
-            try
-            {
-                return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, masks, images);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, masks, images);
         }
         
         /// <summary>
@@ -67,14 +60,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
-            try
-            {
-                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
-            }
-            catch
-            {
-                return NotFound();
-            }
+            return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
         }
         
         /// <summary>
@@ -93,28 +79,13 @@ namespace SQE.SqeHttpApi.Server.Controllers
             [FromBody] UpdateArtefactDTO payload
             )
         {
-            try
-            {
-                return await _artefactService.UpdateArtefact(
-                    _userService.GetCurrentUserObject(editionId),
-                    editionId,
-                    artefactId,
-                    payload.mask,
-                    payload.name,
-                    payload.position);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-            catch (ImproperRequestException e)
-            {
-                return BadRequest(new {msg = e});
-            }
-            catch (DbDetailedFailedWrite e)
-            {
-                return BadRequest(new {msg = e});
-            }
+            return await _artefactService.UpdateArtefact(
+                _userService.GetCurrentUserObject(editionId),
+                editionId,
+                artefactId,
+                payload.mask,
+                payload.name,
+                payload.position);
         }
         
         /// <summary>
@@ -131,15 +102,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
             [FromRoute] uint artefactId
         )
         {
-            try
-            {
-                await _artefactService.DeleteArtefact(_userService.GetCurrentUserObject(editionId), artefactId);
-                return NoContent();
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            await _artefactService.DeleteArtefact(_userService.GetCurrentUserObject(editionId), artefactId);
+            return NoContent();
         }
         
         /// <summary>
@@ -156,20 +120,13 @@ namespace SQE.SqeHttpApi.Server.Controllers
             [FromBody] CreateArtefactDTO payload
         )
         {
-            try
-            {
-                return await _artefactService.CreateArtefact(
-                    _userService.GetCurrentUserObject(editionId), 
-                    editionId, 
-                    payload.masterImageId, 
-                    payload.mask, 
-                    payload.name, 
-                    payload.position);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            return await _artefactService.CreateArtefact(
+                _userService.GetCurrentUserObject(editionId), 
+                editionId, 
+                payload.masterImageId, 
+                payload.mask, 
+                payload.name, 
+                payload.position);
         }
     }
 }

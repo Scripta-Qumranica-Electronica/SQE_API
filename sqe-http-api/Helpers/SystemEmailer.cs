@@ -5,16 +5,20 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
 using MailKit.Net.Smtp;
+using Microsoft.AspNetCore.Hosting;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 
 namespace SQE.SqeHttpApi.Server.Helpers
 {
     public class DevEmailSender : IEmailSender
     {
         private readonly IConfiguration _config;
+        private readonly IHostingEnvironment _env;
 
-        public DevEmailSender(IConfiguration config)
+        public DevEmailSender(IConfiguration config, IHostingEnvironment env)
         {
             _config = config;
+            _env = env;
         }
         
         /// <summary>
@@ -31,7 +35,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <returns></returns>
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            // Don't bother trying to send an email unless we have al the necessary email settings
+            // Don't bother trying to send an email unless we have all the necessary email settings
             // TODO: Should we throw an error for this, or even kill the whole program?
             if (string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailAddress"))
                 || string.IsNullOrEmpty(_config.GetConnectionString("MailerEmailUsername"))
@@ -78,9 +82,13 @@ namespace SQE.SqeHttpApi.Server.Helpers
                     await client.DisconnectAsync(true);
                 }
             }
-            catch (Exception ex)
+            catch (MailKit.CommandException ex)
             {
-                throw ex;
+                // Throw a less revealing error when running in production
+                if (_env.IsProduction())
+                    throw StandardErrors.EmailNotSent(email);
+                
+                throw;
             }
         }
     }

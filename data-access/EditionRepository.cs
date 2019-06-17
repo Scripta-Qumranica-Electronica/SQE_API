@@ -117,39 +117,41 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             using (var connection = OpenConnection())
             {
+                EditionNameQuery.Result result;
+                
                 try
                 {
                     // Here we get the data from the original scroll_data field, we need the scroll_id,
                     // which no one in the front end will generally have or care about.
-                    var result = await connection.QuerySingleAsync<EditionNameQuery.Result>(EditionNameQuery.GetQuery(), 
+                    result = await connection.QuerySingleAsync<EditionNameQuery.Result>(EditionNameQuery.GetQuery(), 
                         new {
                         EditionId = user.editionId ?? 0
                     });
-
-                    // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
-                    // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
-                    // throws a NoPermissionException immediately.
-                    
-                    // Now we create the mutation object for the requested action
-                    // You will want to check the database to make sure you what you are doing.
-                    var nameChangeParams = new DynamicParameters();
-                    nameChangeParams.Add("@scroll_id", result.ScrollId);
-                    nameChangeParams.Add("@Name", name);
-                    var nameChangeRequest = new MutationRequest(
-                        MutateType.Update,
-                        nameChangeParams,
-                        "scroll_data",
-                        result.ScrollDataId
-                        );
-                    
-                    // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-                    // care of main_action and single_action.
-                    await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { nameChangeRequest });
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new NoPermissionException(user.userId, "change Name", "scroll", user.editionId);
+                    throw StandardErrors.DataNotFound("edition", user.editionId ?? 0);
                 }
+
+                // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
+                // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
+                // throws a NoPermissionException immediately.
+                
+                // Now we create the mutation object for the requested action
+                // You will want to check the database to make sure you what you are doing.
+                var nameChangeParams = new DynamicParameters();
+                nameChangeParams.Add("@scroll_id", result.ScrollId);
+                nameChangeParams.Add("@Name", name);
+                var nameChangeRequest = new MutationRequest(
+                    MutateType.Update,
+                    nameChangeParams,
+                    "scroll_data",
+                    result.ScrollDataId
+                    );
+                
+                // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
+                // care of main_action and single_action.
+                await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { nameChangeRequest });
             }
         }
 
@@ -163,8 +165,6 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <param Name="user">User info object contains the editionId that the user wishes to copy and
         /// all user permissions related to it.</param>
         /// <returns>The editionId of the newly created edition.</returns>
-        /// <exception cref="ImproperRequestException"></exception>
-        /// <exception cref="DbFailedWrite"></exception>
         public async Task<uint> CopyEditionAsync(UserInfo user, string copyrightHolder = null,
             string collaborators = null)
         {
@@ -179,65 +179,56 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 using (var connection = OpenConnection())
                 {
-                    try
+                    // Check that edition is locked
+                    var fromVersion =
+                        await connection.QuerySingleAsync<EditionLockQuery.Result>(EditionLockQuery.GetQuery,
+                            new {EditionId = user.editionId});
+                    if (!fromVersion.Locked)
+                        throw StandardErrors.EditionCopyLockProtection(user);
+                    
+                    // Create a new edition
+                    connection.Execute(CopyEditionQuery.GetQuery, 
+                        new
+                        {
+                            EditionId = user.editionId,
+                            CopyrightHolder = copyrightHolder,
+                            Collaborators = collaborators,
+                        });
+                    
+                    toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                    if (toEditionId == 0)
+                        throw StandardErrors.DataNotWritten("create edition");
+                    
+                    // Create new edition_editor
+                    connection.Execute(Queries.CreateEditionEditorQuery.GetQuery, 
+                        new
+                        {
+                            EditionId = toEditionId, 
+                            UserId = user.userId,
+                            MayLock = 1,
+                            IsAdmin = 1
+                        });
+
+                    uint toEditionEditorId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                    if (toEditionEditorId == 0)
+                        throw StandardErrors.DataNotWritten("create edition_editor");
+
+                    // Copy all owner table references from scroll_version_group of the requested
+                    // scroll_version_id to the newly created scroll_version_id (this is automated
+                    // and will work even if the database schema gets updated).
+                    var ownerTables = await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
+                    foreach (var ownerTable in ownerTables)
                     {
-                        // Check that edition is locked
-                        var fromVersion =
-                            await connection.QuerySingleAsync<EditionLockQuery.Result>(EditionLockQuery.GetQuery,
-                                new {EditionId = user.editionId});
-                        if (!fromVersion.Locked)
-                            throw new ImproperRequestException("copy scroll", "scroll to be copied is not locked");
-                        
-                        // Create a new edition
-                        var results = connection.Execute(CopyEditionQuery.GetQuery, 
+                        var tableName = ownerTable.TableName;
+                        var tableIdColumn = tableName.Substring(0, tableName.Length-5) + "id";
+                        connection.Execute(
+                            CopyEditionDataForTableQuery.GetQuery(tableName, tableIdColumn),
                             new
                             {
                                 EditionId = user.editionId,
-                                CopyrightHolder = copyrightHolder,
-                                Collaborators = collaborators,
+                                EditionEditorId = toEditionEditorId,
+                                CopyToEditionId = toEditionId
                             });
-                        if (results != 1)
-                            throw new DbFailedWrite();
-                        
-                        toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
-                        
-                        // Create new edition_editor
-                        results = connection.Execute(Queries.CreateEditionEditorQuery.GetQuery, 
-                            new
-                            {
-                                EditionId = toEditionId, 
-                                UserId = user.userId,
-                                MayLock = 1,
-                                IsAdmin = 1
-                            });
-                        if (results != 1)
-                            throw new DbFailedWrite();
-                        
-                        var toEditionEditorId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
-
-                        // Copy all owner table references from scroll_version_group of the requested
-                        // scroll_version_id to the newly created scroll_version_id (this is automated
-                        // and will work even if the database schema gets updated).
-                        var ownerTables = await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
-                        foreach (var ownerTable in ownerTables)
-                        {
-                            var tableName = ownerTable.TableName;
-                            var tableIdColumn = tableName.Substring(0, tableName.Length-5) + "id";
-                            results = connection.Execute(
-                                CopyEditionDataForTableQuery.GetQuery(tableName, tableIdColumn),
-                                new
-                                {
-                                    EditionId = user.editionId,
-                                    EditionEditorId = toEditionEditorId,
-                                    CopyToEditionId = toEditionId
-                                });
-                        }
-                    }
-                    catch
-                    {
-                        connection.Close();
-                        //Maybe we do something special with the errors?
-                        throw new DbFailedWrite();
                     }
                     //Cleanup
                     transactionScope.Complete();
@@ -259,7 +250,7 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             // Let's only allow admins to change these legal details.
             if (!(await user.IsAdmin()))
-                throw new NoPermissionException(user.userId, "change legal details", "edition", user.editionId);
+                throw StandardErrors.NoAdminPermissions(user);
             using (var connection = OpenConnection())
             {
                 await connection.ExecuteAsync(UpdateEditionLegalDetailsQuery.GetQuery,

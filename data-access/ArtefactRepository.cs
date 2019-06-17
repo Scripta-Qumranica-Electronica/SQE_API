@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Dapper;
 using System.Transactions;
+using MySql.Data.MySqlClient;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.DataAccess.Queries;
@@ -13,7 +15,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
     public interface IArtefactRepository
     {
-        Task<ArtefactModel> GetEditionArtefactAsync(UserInfo user, uint artfactId, bool withMask = false);
+        Task<ArtefactModel> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask = false);
 
         // Bronson: Don't return query results, create a DataModel object and return that. The query results are internal
         // Itay: I would prefer not to go through three levels of serialization: query Result -> intermediary -> DTO.  The
@@ -40,20 +42,30 @@ namespace SQE.SqeHttpApi.DataAccess
             _databaseWriter = databaseWriter;
         }
 
-        public async Task<ArtefactModel> GetEditionArtefactAsync(UserInfo user, uint artfactId, bool withMask = false)
+        public async Task<ArtefactModel> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask = false)
         {
             using (var connection = OpenConnection())
             {
-                return await connection.QuerySingleAsync<ArtefactModel>(ArtefactOfEditionQuery.GetQuery(user.userId, withMask),
+                var artefacts = await connection.QueryAsync<ArtefactModel>(ArtefactOfEditionQuery.GetQuery(user.userId, withMask),
                     new
                     {
                         EditionId = user.editionId ?? 0,
                         UserId = user.userId ?? 0,
-                        ArtefactId = artfactId
+                        ArtefactId = artefactId
                     });
+                if (artefacts.Count() != 1)
+                    throw StandardErrors.DataNotFound("artefact", artefactId);
+                return artefacts.First();
             }
         }
 
+        /// <summary>
+        /// Returns artefact details for all artefacts belonging to the specified edition.
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="editionId"></param>
+        /// <param name="withMask">Optionally include the mask data for the artefacts</param>
+        /// <returns></returns>
         public async Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false)
         {
             using (var connection = OpenConnection())
@@ -77,7 +89,9 @@ namespace SQE.SqeHttpApi.DataAccess
             var res = string.Join("", binaryMask);
             var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
             const string tableName = "artefact_shape";
-            var artefactShapeId = GetArtefactPk(user, artefactId, tableName);
+            var artefactShapeId = await GetArtefactPk(user, artefactId, tableName);
+            if (artefactShapeId == 0)
+                throw StandardErrors.DataNotFound("artefact mask", artefactId);
             var sqeImageId = GetArtefactShapeSqeImageId(user, user.editionId.Value, artefactId);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
@@ -87,16 +101,30 @@ namespace SQE.SqeHttpApi.DataAccess
                 MutateType.Update,
                 artefactChangeParams,
                 tableName,
-                await artefactShapeId
+                artefactShapeId
             );
+            try
+            {
+                return await WriteArtefact(user, artefactChangeRequest);
+            }
+            catch (MySqlException e)
+            {
+                // Capture any errors caused by improperly formatted WKT shapes, which become null in this query.
+                if (e.Message.IndexOf("Column 'region_in_sqe_image' cannot be null") > -1)
+                    throw StandardErrors.ImproperInputData("mask");
+                
+                throw;
+            }
                     
-            return await WriteArtefact(user, artefactChangeRequest);
+            
         }
         
         public async Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint artefactId, string name)
         {
             const string tableName = "artefact_data";
-            var artefactDataId = GetArtefactPk(user, artefactId, tableName);
+            var artefactDataId = await GetArtefactPk(user, artefactId, tableName);
+            if (artefactDataId == 0)
+                throw StandardErrors.DataNotFound("artefact name", artefactId);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@Name", name);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -104,7 +132,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 MutateType.Update,
                 artefactChangeParams,
                 tableName,
-                await artefactDataId
+                artefactDataId
             );
                     
             return await WriteArtefact(user, artefactChangeRequest);
@@ -113,7 +141,11 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<List<AlteredRecord>> UpdateArtefactPosition(UserInfo user, uint artefactId, string position)
         {
             const string tableName = "artefact_position";
-            var artefactPositionId = GetArtefactPk(user, artefactId, tableName);
+            var artefactPositionId = await GetArtefactPk(user, artefactId, tableName);
+            // It is not necessary for every artefact to have a position (they may get positioning via artefact stack)
+            if (artefactPositionId == 0)
+                return new List<AlteredRecord>();
+            
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@transform_matrix", position);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -121,7 +153,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 MutateType.Update,
                 artefactChangeParams,
                 tableName,
-                await artefactPositionId
+                artefactPositionId
             );
                     
             return await WriteArtefact(user, artefactChangeRequest);
@@ -183,15 +215,7 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
             // care of main_action and single_action.
-            var response = await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { artefactChangeRequest });
-                    
-            if (response.Count == 0 || !response[0].NewId.HasValue)
-            {
-                throw new ImproperRequestException("insert artefact position",
-                    "no change or failed to write to DB");
-            }
-
-            return response;
+           return await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { artefactChangeRequest });
         }
         
         public async Task<uint> CreateNewArtefact(UserInfo user, uint editionId, uint masterImageId, string shape, string artefactName, string position = null)
@@ -206,39 +230,32 @@ namespace SQE.SqeHttpApi.DataAccess
            
             using (var transactionScope = new TransactionScope(
                 TransactionScopeOption.Required,
-                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }
-            ))
+                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }))
             {
                 using (var connection = OpenConnection())
                 {
-                    try
-                    {
-                        // Create a new edition
-                        var results = await connection.ExecuteAsync("INSERT INTO artefact () VALUES()");
-                        if (results != 1)
-                            throw new DbFailedWrite();
+                    // Create a new edition
+                    await connection.ExecuteAsync("INSERT INTO artefact () VALUES()");
                         
-                        var artefactId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
-                        var newShape = InsertArtefactShape(user, artefactId, masterImageId, shape);
-                        var newName = InsertArtefactName(user, artefactId, artefactName);
-                        // TODO: check virtual scroll for unused spot to place the artefact instead of putting it at the beginning.
-                        var newPosition = InsertArtefactPosition(
-                            user, 
-                            artefactId, 
-                            string.IsNullOrEmpty(position) ? "{\"matrix\": [[1,0,0],[0,1,0]]}" : position);
-                        await newShape;
-                        await newName;
-                        await newPosition;
-                        //Cleanup
-                        transactionScope.Complete();
+                    var artefactId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                    if (artefactId == 0)
+                        throw StandardErrors.DataNotWritten("create artefact");
+                    
+                    var newShape = InsertArtefactShape(user, artefactId, masterImageId, shape);
+                    var newName = InsertArtefactName(user, artefactId, artefactName);
+                    // TODO: check virtual scroll for unused spot to place the artefact instead of putting it at the beginning.
+                    var newPosition = InsertArtefactPosition(
+                        user, 
+                        artefactId, 
+                        string.IsNullOrEmpty(position) ? "{\"matrix\": [[1,0,0],[0,1,0]]}" : position);
+                    await newShape;
+                    await newName;
+                    await newPosition;
+                    //Cleanup
+                    transactionScope.Complete();
+                    connection.Close();
                         
-                        return artefactId;
-                    }
-                    catch
-                    {
-                        //Maybe we do something special with the errors?
-                        throw new DbFailedWrite();
-                    }
+                    return artefactId;
                 }
             }
         }
@@ -251,7 +268,8 @@ namespace SQE.SqeHttpApi.DataAccess
                 if (table != artefactTableNames.stack)
                 {
                     var pk = await GetArtefactPk(user, artefactId, table);
-                    mutations.Add(new MutationRequest(MutateType.Delete, new DynamicParameters(), table, pk));
+                    if (pk != 0)
+                        mutations.Add(new MutationRequest(MutateType.Delete, new DynamicParameters(), table, pk));
                 }
                 else
                 {
@@ -270,42 +288,28 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             using (var connection = OpenConnection())
             {
-                try
-                {
-                    return await connection.QuerySingleAsync<uint>(
-                        FindArtefactComponentId.GetQuery(table),
-                        new
-                        {
-                            EditionId = user.editionId.Value,
-                            ArtefactId = artefactId
-                        });
-                }
-                catch
-                {
-                    throw new ImproperRequestException("artefact mutate",
-                        "could not find existing record in DB");
-                }
+                return await connection.QueryFirstOrDefaultAsync<uint>(
+                    FindArtefactComponentId.GetQuery(table),
+                    new
+                    {
+                        EditionId = user.editionId.Value,
+                        ArtefactId = artefactId
+                    });
             }
         }
         private async Task<List<uint>> GetArtefactStackPks(UserInfo user, uint artefactId, string table)
         {
             using (var connection = OpenConnection())
             {
-                try
-                {
-                    return (await connection.QueryAsync<uint>(
-                        FindArtefactComponentId.GetQuery(table, stack: true),
-                        new
-                        {
-                            EditionId = user.editionId.Value,
-                            ArtefactId = artefactId
-                        })).ToList();
-                }
-                catch
-                {
-                    throw new ImproperRequestException("artefact mutate",
-                        "could not find existing record in DB");
-                }
+                var stacks = (await connection.QueryAsync<uint>(
+                    FindArtefactComponentId.GetQuery(table, stack: true),
+                    new
+                    {
+                        EditionId = user.editionId.Value,
+                        ArtefactId = artefactId
+                    })).ToList();
+
+                return stacks;
             }
         }
         
@@ -322,10 +326,9 @@ namespace SQE.SqeHttpApi.DataAccess
                             ArtefactId = artefactId
                         });
                 }
-                catch
+                catch (InvalidOperationException)
                 {
-                    throw new ImproperRequestException("artefact update",
-                        "could not find existing record in DB");
+                    throw StandardErrors.DataNotFound("SQE_image", artefactId, "artefact_id");
                 }
             }
         }
