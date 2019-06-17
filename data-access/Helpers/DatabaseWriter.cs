@@ -191,6 +191,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
                             break;
                     }
                 }
+                
                 transactionScope.Complete();
             }
 

@@ -11,12 +11,14 @@ Asp.Net Core web API for the [SQE project](https://www.qumranica.org/).
 This project is generally intended to be run from docker images. As such it uses several environment variables to configure
 project settings.  You can set these as environment variables using the -e switch and docker run, or within a docker-compose file (see the example [docker-compose.yml](https://github.com/Scripta-Qumranica-Electronica/SQE_API/blob/integration-tests/docker/deploy/docker-compose.yml)).
 
-Database connection settings:
+Database connection settings (with default values):
 
 *   MYSQL_ROOT_PASSWORD=none
 *   MYSQL_DATABASE=SQE_DEV
 *   MYSQL_HOST=sqe-database
 *   MYSQL_PORT=3306
+*   MYSQL_USER=sqe_user
+*   MYSQL_PASSWORD=mysecretpw
 
 Opt out of dotnet telemetry if you wish:
 

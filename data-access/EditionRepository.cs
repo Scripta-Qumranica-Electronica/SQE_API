@@ -91,11 +91,11 @@ namespace SQE.SqeHttpApi.DataAccess
         // TODO do we even need this?
         public async Task<Dictionary<uint, List<uint>>> GetEditionsAsync(uint? editionId, uint? userId)
         {
-            var sql = ScrollVersionGroupQuery.GetQuery(editionId.HasValue, userId.HasValue);
+            var sql = EditionQuery.GetQuery(editionId.HasValue, userId.HasValue);
 
             using (var connection = OpenConnection())
             {
-                var results = await connection.QueryAsync<ScrollVersionGroupQuery.Result>(sql, new
+                var results = await connection.QueryAsync<EditionQuery.Result>(sql, new
                 {
                     EditionId = editionId ?? 0,
                     UserId = userId ?? 0
