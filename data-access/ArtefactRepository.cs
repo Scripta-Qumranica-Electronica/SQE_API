@@ -53,8 +53,8 @@ namespace SQE.SqeHttpApi.DataAccess
                         UserId = user.userId ?? 0,
                         ArtefactId = artefactId
                     });
-//                if (artefacts.Count() != 1)
-//                    throw StandardErrors.DataNotFound("artefact", artefactId);
+                if (artefacts.Count() != 1)
+                    throw StandardErrors.DataNotFound("artefact", artefactId);
                 return artefacts.First();
             }
         }

@@ -49,9 +49,12 @@ namespace api_test.Helpers
                     
                     // Make the request and capture the response and http status message.
                     response = await client.SendAsync(requestMessage);
-                    var responseBody = await response.Content.ReadAsStringAsync();
-                    if (response.StatusCode == HttpStatusCode.OK)
-                        parsedClass = JsonConvert.DeserializeObject<T2>(responseBody);
+                    if (typeof(T2) != typeof(string))
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        if (response.StatusCode == HttpStatusCode.OK)
+                            parsedClass = JsonConvert.DeserializeObject<T2>(responseBody);
+                    }
                 }  
                 catch (HttpRequestException e)
                 {
