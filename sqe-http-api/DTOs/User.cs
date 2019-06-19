@@ -41,6 +41,13 @@ namespace SQE.SqeHttpApi.Server.DTOs
             this.surname = surname;
         }
     }
+
+    public class UserUpdateRequestDTO : NewUserRequestDTO
+    {
+        public UserUpdateRequestDTO(string email, string password, string organization, string forename, string surname) : base(email, password, organization, forename, surname)
+        {
+        }
+    }
     #endregion Account update and registration DTO's
     
     

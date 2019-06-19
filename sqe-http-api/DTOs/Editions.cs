@@ -62,4 +62,12 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }
     }
+
+    public class EditionCopyDTO : EditionUpdateRequestDTO
+    {
+        public EditionCopyDTO(string name, string copyrightHolder, string collaborators) : base(name, copyrightHolder,
+            collaborators)
+        {
+        }
+    }
 }

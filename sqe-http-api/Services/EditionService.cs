@@ -15,7 +15,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         Task<EditionListDTO> ListEditionsAsync(uint? userId);
         Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
             string collaborators = null);
-        Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionUpdateRequestDTO editionInfo);
+        Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo);
     }
 
     public class EditionService : IEditionService
@@ -120,7 +120,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             return EditionModelToDTO(editions.First(x => x.EditionId == user.editionId));
         }
 
-        public async Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionUpdateRequestDTO editionInfo)
+        public async Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo)
         {
             EditionDTO edition;
             // Clone edition

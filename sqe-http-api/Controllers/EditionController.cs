@@ -86,7 +86,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
+        public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] EditionCopyDTO request, [FromRoute] uint editionId)
         {
             return await _editionService.CopyEditionAsync(_userService.GetCurrentUserObject(editionId), request);
         }

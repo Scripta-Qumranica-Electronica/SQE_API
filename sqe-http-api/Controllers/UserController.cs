@@ -69,7 +69,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(409)]
-        public async Task<ActionResult<DetailedUserDTO>> ChangeUserInfo([FromBody] NewUserRequestDTO payload)
+        public async Task<ActionResult<DetailedUserDTO>> ChangeUserInfo([FromBody] UserUpdateRequestDTO payload)
         {
             return await _userService.UpdateUserAsync(_userService.GetCurrentUserObject(), payload);
         }
