@@ -1,14 +1,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 
 namespace SQE.SqeHttpApi.Server.Helpers
 {
-    public static class InputValidation
-    {
-        
-    }
-
     public static class GeometryValidation
     {
         public static bool ValidateTransformMatrix(string transformMatrix)
@@ -32,9 +28,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
             public transformMatrix(double[][] matrix)
             {
                 if (!IsValidRows(matrix))
-                    throw new SystemException("Improper number of rows or columns.");
+                    throw StandardErrors.ImproperInputData("position");
                 if (!IsValidValues(matrix[0]) || !IsValidValues(matrix[1]))
-                    throw new SystemException("Invalid numerical values");
+                    throw StandardErrors.ImproperInputData("position");
             }
             
             bool IsValidRows(double[][] mat)

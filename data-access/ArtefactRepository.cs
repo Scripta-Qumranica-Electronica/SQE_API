@@ -239,17 +239,17 @@ namespace SQE.SqeHttpApi.DataAccess
                     var artefactId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (artefactId == 0)
                         throw StandardErrors.DataNotWritten("create artefact");
-                    
+
+                    shape = string.IsNullOrEmpty(shape) ? "POLYGON((0 0))" : shape;
                     var newShape = InsertArtefactShapeAsync(user, artefactId, masterImageId, shape);
-                    var newName = InsertArtefactNameAsync(user, artefactId, artefactName);
-                    // TODO: check virtual scroll for unused spot to place the artefact instead of putting it at the beginning.
-                    var newPosition = InsertArtefactPositionAsync(
-                        user, 
-                        artefactId, 
-                        string.IsNullOrEmpty(position) ? "{\"matrix\": [[1,0,0],[0,1,0]]}" : position);
+                    var newName = InsertArtefactNameAsync(user, artefactId, artefactName ?? "");
+                    if (!string.IsNullOrEmpty(position))
+                    {
+                        await InsertArtefactPositionAsync(user, artefactId, position);
+                    }
+                    
                     await newShape;
                     await newName;
-                    await newPosition;
                     //Cleanup
                     transactionScope.Complete();
                     connection.Close();
