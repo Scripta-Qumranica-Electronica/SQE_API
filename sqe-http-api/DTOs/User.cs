@@ -14,27 +14,6 @@ namespace SQE.SqeHttpApi.Server.DTOs
     }
     
     #region Account update and registration DTO's
-    public class UpdateUserRequestDTO
-    {
-        /// <summary>
-        /// An object containing all data necessary to create a new user account
-        /// </summary>
-        /// <param name="email">Email address for the new user account, must be unique</param>
-        /// <param name="organization">Name of affiliated organization (if any)</param>
-        /// <param name="forename">The user's given name (may be empty)</param>
-        /// <param name="surname">The user's family name (may be empty)</param>
-        public UpdateUserRequestDTO(string email, string organization, string forename, string surname)
-        {
-            this.email = email;
-            this.organization = organization;
-            this.forename = forename;
-            this.surname = surname;
-        }
-        public string email { get; set; }
-        public string organization { get; set; }
-        public string forename { get; set; }
-        public string surname { get; set; }
-    }
     
     public class NewUserRequestDTO
     {
@@ -45,7 +24,8 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string surname { get; set; }
 
         /// <summary>
-        /// An object containing all data necessary to create a new user account
+        /// An object containing all data necessary to create a new user account. This is also used
+        /// when updating existing user account details, since we need to verify the password in such instances.
         /// </summary>
         /// <param name="email">Email address for the new user account, must be unique</param>
         /// <param name="password">Password for the new user account</param>

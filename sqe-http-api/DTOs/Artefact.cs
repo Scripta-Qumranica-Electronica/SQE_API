@@ -19,24 +19,10 @@ namespace SQE.SqeHttpApi.Server.DTOs
             public const string verso = "verso";
         }
     }
-   
-
-    public class ArtefactDesignationDTO
-    {
-        public uint artefactId { get; set; }
-        public uint imageCatalogId { get; set; }
-        public string name { get; set; }
-        public string side { get; set; }
-    }
 
     public class ArtefactListDTO
     {
         public List<ArtefactDTO> artefacts { get; set; }
-    }
-    
-    public class ArtefactDesignationListDTO
-    {
-        public List<ArtefactDesignationDTO> artefactDesignations { get; set; }
     }
     
     public class UpdateArtefactDTO

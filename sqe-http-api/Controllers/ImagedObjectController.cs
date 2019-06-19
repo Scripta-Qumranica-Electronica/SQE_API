@@ -45,7 +45,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [AllowAnonymous]
         [HttpGet("imaged-objects")]
         [ProducesResponseType(200)]
-        public async Task<ActionResult<ImageGroupListDTO>> ListImageGroups()
+        public async Task<ActionResult> ListImageGroups()
         {
             return StatusCode(501);
         }
@@ -59,7 +59,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [AllowAnonymous]
         [HttpGet("imaged-objects/{imageReferenceId}")]
         [ProducesResponseType(200)]
-        public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfImagedObject([FromRoute] uint imageReferenceId)
+        public async Task<ActionResult> ListImageGroupsOfImagedObject([FromRoute] uint imageReferenceId)
         {
             return StatusCode(501);
         }

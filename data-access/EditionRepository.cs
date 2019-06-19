@@ -14,7 +14,6 @@ namespace SQE.SqeHttpApi.DataAccess
     public interface IEditionRepository
     {
         Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
-        Task<Dictionary<uint, List<uint>>> GetEditionsAsync(uint? editionId, uint? userId);
         Task ChangeEditionNameAsync(UserInfo user, string name);
         Task<uint> CopyEditionAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
         Task ChangeEditionCopyrightAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
@@ -86,31 +85,6 @@ namespace SQE.SqeHttpApi.DataAccess
             }
 
             return model;
-        }
-
-        // TODO do we even need this?
-        public async Task<Dictionary<uint, List<uint>>> GetEditionsAsync(uint? editionId, uint? userId)
-        {
-            var sql = EditionQuery.GetQuery(editionId.HasValue, userId.HasValue);
-
-            using (var connection = OpenConnection())
-            {
-                var results = await connection.QueryAsync<EditionQuery.Result>(sql, new
-                {
-                    EditionId = editionId ?? 0,
-                    UserId = userId ?? 0
-                });
-
-                var dictionary = new Dictionary<uint, List<uint>>();
-                foreach (var result in results)
-                {
-                    if (!dictionary.ContainsKey(result.ScrollId))
-                        dictionary[result.ScrollId] = new List<uint>();
-                    dictionary[result.ScrollId].Add(result.EditionId);
-                }
-
-                return dictionary;
-            }
         }
 
         public async Task ChangeEditionNameAsync(UserInfo user, string name)

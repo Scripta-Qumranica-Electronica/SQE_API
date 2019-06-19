@@ -9,7 +9,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IImageService
     {
-        Task<ImageListDTO> GetImagesAsync(uint? userId, uint scrollVersionId, string fragmentId = null);
         ImageDTO ImageToDTO(DataAccess.Models.Image model);
         Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
     
@@ -21,27 +20,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public ImageService(IImageRepository repo)
         {
             _repo = repo;
-        }
-        public async Task<ImageListDTO> GetImagesAsync(uint? userId, uint scrollVersionId, string fragmentId = null)
-        {
-            var images = await _repo.GetImagesAsync(userId, scrollVersionId, fragmentId);
-
-            if (images == null)
-            {
-                throw new NotFoundException((uint)scrollVersionId);
-            }
-            var result = new ImageListDTO
-            {
-                images = new List<ImageDTO>(),
-            };
-
-
-            foreach (var i in images)
-            {
-                result.images.Add(ImageToDTO(i));
-            }
-
-            return result;
         }
 
         public ImageDTO ImageToDTO(DataAccess.Models.Image model)
@@ -105,21 +83,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 return ImageDTO.Direction.right;
             }
             return ImageDTO.Direction.top; // need to check..
-        }
-
-        private static ImageGroupListDTO ImageToDTO(IEnumerable<DataAccess.Models.ImageGroup> imageGroups)
-        {
-            return new ImageGroupListDTO(imageGroups.Select(
-                imageGroup => new ImageGroupDTO(
-                    imageGroup.Id, 
-                    imageGroup.Institution, 
-                    imageGroup.CatalogNumber1, 
-                    imageGroup.CatalogNumber2, 
-                    imageGroup.CatalogSide, 
-                    new List<ImageDTO>()
-                    )
-                ).ToList()
-            );
         }
 
         public async Task<ImageInstitutionListDTO> GetImageInstitutionsAsync()

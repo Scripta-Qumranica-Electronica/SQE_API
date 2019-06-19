@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 
 namespace SQE.SqeHttpApi.Server.Helpers
@@ -46,7 +47,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
             if (imagedObjects == null)
             {
-                throw new NotFoundException((uint)editionId);
+                throw StandardErrors.DataNotFound("imaged object", editionId, "edition");
             }
             var result = new ImagedObjectListDTO
             {

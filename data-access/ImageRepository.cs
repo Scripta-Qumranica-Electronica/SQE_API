@@ -67,21 +67,6 @@ namespace SQE.SqeHttpApi.DataAccess
             return str;
         }
 
-        private ImageGroup CreateImage(ImageGroupQuery.Result result)
-        {
-            var model = new ImageGroup
-                {
-                    Id = result.image_catalog_id,
-                    Institution = result.institution,
-                    CatalogNumber1 = result.catalog_number_1,
-                    CatalogNumber2 = result.catalog_number_2,
-                    CatalogSide = result.catalog_side,
-                    Images = new List<Image>(),
-                };
-
-            return model;
-        }
-
         public async Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync()
         {
             var sql = ImageInstitutionQuery.GetQuery();

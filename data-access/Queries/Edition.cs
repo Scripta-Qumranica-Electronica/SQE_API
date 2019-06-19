@@ -81,43 +81,6 @@ GROUP BY ed2.edition_id
         }
     }
 
-    internal class EditionQuery
-    {
-        private const string _baseQuery = @"
-SELECT DISTINCT ed2.edition_id AS EditionId, ed2.scroll_id AS ScrollId
-FROM edition AS ed1
-JOIN edition AS ed2 ON ed2.scroll_id = ed1.scroll_id
-JOIN edition_editor ON ed2.edition_id = edition_editor.edition_id
-";
-        private const string _where = "WHERE ed1.edition_id = @EditionId \n AND \n";
-        private const string _orderBy = "\n ORDER BY ed2.scroll_id, ed2.edition_id";
-
-        public static string GetQuery(bool limitScrollVersion, bool limitUser)
-        {
-            var sql = new StringBuilder(_baseQuery);
-            if (limitScrollVersion)
-            {
-                sql.Append(_where);
-            }
-            else
-            {
-                sql.Append(" WHERE ");
-            }
-            
-            sql.Append($@" ({(limitUser 
-                ? "edition_editor.user_id = @UserId" 
-                :  "edition_editor.user_id = @UserId OR edition_editor.user_id = 1")}) " + _orderBy);
-
-            return sql.ToString();
-        }
-
-        internal class Result
-        {
-            public uint ScrollId { get; set; }
-            public uint EditionId { get; set; }
-        }
-    }
-
     internal class EditionNameQuery
     {
         private const string _baseQuery = @"

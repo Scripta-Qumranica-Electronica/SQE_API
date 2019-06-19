@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using NetTopologySuite.IO;
 using Newtonsoft.Json;
 
 namespace SQE.SqeHttpApi.Server.Helpers
@@ -13,13 +11,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
     public static class GeometryValidation
     {
-        private static readonly WKTReader _wktReader = new WKTReader();
-
-        public static bool ValidateWktPolygon(string polygon)
-        {
-            return _wktReader.Read(polygon).IsValid;
-        }
-
         public static bool ValidateTransformMatrix(string transformMatrix)
         {
             try

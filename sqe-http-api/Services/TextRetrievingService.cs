@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 
 namespace SQE.SqeHttpApi.Server.Helpers
@@ -26,14 +27,14 @@ namespace SQE.SqeHttpApi.Server.Helpers
              public async Task<Scroll> GetLineById(uint lineId, uint editionId)
             {
                 var scroll = await _repo.GetLineById(lineId, editionId);
-                if (scroll.scrollId==0) throw new LineNotFoundException(lineId, editionId);
+                if (scroll.scrollId==0) throw StandardErrors.DataNotFound("line", lineId);
                 return scroll;
             }
 
             public async Task<Scroll> GetFragmentById(uint fragmentId, uint editionId)
             {
                 var scroll = await _repo.GetFragmentById(fragmentId, editionId);
-                if (scroll.scrollId==0) throw new FragmentNotFoundException(fragmentId, editionId);
+                if (scroll.scrollId==0) throw StandardErrors.DataNotFound("fragment", fragmentId); // TODO: describe missing data better here.
                 return scroll;
             }
 

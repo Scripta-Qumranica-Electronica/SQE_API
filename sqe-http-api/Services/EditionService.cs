@@ -145,7 +145,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 //Maybe we should more often make use of try/catch.
                 if (unformattedEdition == null)
                 {
-                    throw new NotFoundException(user.editionId.Value);
+                    throw StandardErrors.DataNotFound("edition", user.editionId ?? 0);
                 }
                 edition = EditionModelToDTO(unformattedEdition);
             }
