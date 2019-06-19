@@ -100,34 +100,6 @@ WHERE edition.edition_is = @EditionId
         }
     }
 
-    internal class UserImageGroupQuery
-    {
-        private const string _baseQuery = @"
-SELECT  image_catalog.image_catalog_id, 
-        image_catalog.Institution, 
-        image_catalog.catalog_number_1, 
-        image_catalog.catalog_number_2, 
-        image_catalog.catalog_side
-FROM artefact_position
-JOIN artefact_position_owner USING(artefact_position_id)
-JOIN artefact_shape USING(artefact_id)
-JOIN artefact_shape_owner USING(artefact_shape_id)
-JOIN SQE_image ON SQE_image.sqe_image_id = artefact_shape.sqe_image_id
-JOIN image_catalog USING(image_catalog_id)
-JOIN edition ON edition.edition_id = artefact_position_owner.edition_id
-    AND edition.edition_id = artefact_shape_owner.edition_id
-JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
-WHERE (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
-";
-       
-        private const string _scrollLimit = @"AND edition.edition_id = @EditionId";
-
-        public static string GetQuery(bool limitScrolls)
-        {
-            return limitScrolls ? _baseQuery + _scrollLimit : _baseQuery;
-        }
-    }
-
     internal static class ImageInstitutionQuery
     {
         public static string GetQuery()

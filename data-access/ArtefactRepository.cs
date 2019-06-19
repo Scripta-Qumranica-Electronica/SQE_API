@@ -24,13 +24,13 @@ namespace SQE.SqeHttpApi.DataAccess
         // of the query result object, and using that as the function returns.
         Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(uint? userId, uint editionId, bool withMask = false);
 
-        Task<List<AlteredRecord>> UpdateArtefactShape(UserInfo user, uint artefactId, string shape);
-        Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint artefactId, string name);
+        Task<List<AlteredRecord>> UpdateArtefactShapeAsync(UserInfo user, uint artefactId, string shape);
+        Task<List<AlteredRecord>> UpdateArtefactNameAsync(UserInfo user, uint artefactId, string name);
 
-        Task<List<AlteredRecord>> UpdateArtefactPosition(UserInfo user, uint artefactId,
+        Task<List<AlteredRecord>> UpdateArtefactPositionAsync(UserInfo user, uint artefactId,
             string position);
-        Task<uint> CreateNewArtefact(UserInfo user, uint editionId, uint masterImageId, string shape, string artefactName, string position = null);
-        Task DeleteArtefact(UserInfo user, uint artefactId);
+        Task<uint> CreateNewArtefactAsync(UserInfo user, uint editionId, uint masterImageId, string shape, string artefactName, string position = null);
+        Task DeleteArtefactAsync(UserInfo user, uint artefactId);
     }
 
     public class ArtefactRepository : DbConnectionBase, IArtefactRepository
@@ -79,7 +79,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        public async Task<List<AlteredRecord>> UpdateArtefactShape(UserInfo user, uint artefactId, string shape)
+        public async Task<List<AlteredRecord>> UpdateArtefactShapeAsync(UserInfo user, uint artefactId, string shape)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
              write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
@@ -89,10 +89,10 @@ namespace SQE.SqeHttpApi.DataAccess
             var res = string.Join("", binaryMask);
             var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
             const string tableName = "artefact_shape";
-            var artefactShapeId = await GetArtefactPk(user, artefactId, tableName);
+            var artefactShapeId = await GetArtefactPkAsync(user, artefactId, tableName);
             if (artefactShapeId == 0)
                 throw StandardErrors.DataNotFound("artefact mask", artefactId);
-            var sqeImageId = GetArtefactShapeSqeImageId(user, user.editionId.Value, artefactId);
+            var sqeImageId = GetArtefactShapeSqeImageIdAsync(user, user.editionId.Value, artefactId);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -105,7 +105,7 @@ namespace SQE.SqeHttpApi.DataAccess
             );
             try
             {
-                return await WriteArtefact(user, artefactChangeRequest);
+                return await WriteArtefactAsync(user, artefactChangeRequest);
             }
             catch (MySqlException e)
             {
@@ -117,10 +117,10 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
         
-        public async Task<List<AlteredRecord>> UpdateArtefactName(UserInfo user, uint artefactId, string name)
+        public async Task<List<AlteredRecord>> UpdateArtefactNameAsync(UserInfo user, uint artefactId, string name)
         {
             const string tableName = "artefact_data";
-            var artefactDataId = await GetArtefactPk(user, artefactId, tableName);
+            var artefactDataId = await GetArtefactPkAsync(user, artefactId, tableName);
             if (artefactDataId == 0)
                 throw StandardErrors.DataNotFound("artefact name", artefactId);
             var artefactChangeParams = new DynamicParameters();
@@ -133,17 +133,17 @@ namespace SQE.SqeHttpApi.DataAccess
                 artefactDataId
             );
                     
-            return await WriteArtefact(user, artefactChangeRequest);
+            return await WriteArtefactAsync(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> UpdateArtefactPosition(UserInfo user, uint artefactId, string position)
+        public async Task<List<AlteredRecord>> UpdateArtefactPositionAsync(UserInfo user, uint artefactId, string position)
         {
             const string tableName = "artefact_position";
-            var artefactPositionId = await GetArtefactPk(user, artefactId, tableName);
+            var artefactPositionId = await GetArtefactPkAsync(user, artefactId, tableName);
             // It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
             // If no artefact_position already exists we need to create a new entry here.
             if (artefactPositionId == 0)
-                return await InsertArtefactPosition(user, artefactId, position);
+                return await InsertArtefactPositionAsync(user, artefactId, position);
             
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@transform_matrix", position);
@@ -155,10 +155,10 @@ namespace SQE.SqeHttpApi.DataAccess
                 artefactPositionId
             );
                     
-            return await WriteArtefact(user, artefactChangeRequest);
+            return await WriteArtefactAsync(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> InsertArtefactShape(UserInfo user, uint artefactId, uint masterImageId,
+        public async Task<List<AlteredRecord>> InsertArtefactShapeAsync(UserInfo user, uint artefactId, uint masterImageId,
             string shape)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
@@ -179,10 +179,10 @@ namespace SQE.SqeHttpApi.DataAccess
                 "artefact_shape"
             );
                     
-            return await WriteArtefact(user, artefactChangeRequest);
+            return await WriteArtefactAsync(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> InsertArtefactName(UserInfo user, uint artefactId, string name)
+        public async Task<List<AlteredRecord>> InsertArtefactNameAsync(UserInfo user, uint artefactId, string name)
         {
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@name", name);
@@ -193,10 +193,10 @@ namespace SQE.SqeHttpApi.DataAccess
                 "artefact_data"
             );
                     
-            return await WriteArtefact(user, artefactChangeRequest);
+            return await WriteArtefactAsync(user, artefactChangeRequest);
         }
         
-        public async Task<List<AlteredRecord>> InsertArtefactPosition(UserInfo user, uint artefactId, string position)
+        public async Task<List<AlteredRecord>> InsertArtefactPositionAsync(UserInfo user, uint artefactId, string position)
         {
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@transform_matrix", position);
@@ -207,17 +207,17 @@ namespace SQE.SqeHttpApi.DataAccess
                 "artefact_position"
             );
 
-            return await WriteArtefact(user, artefactChangeRequest);
+            return await WriteArtefactAsync(user, artefactChangeRequest);
         }
 
-        public async Task<List<AlteredRecord>> WriteArtefact(UserInfo user, MutationRequest artefactChangeRequest)
+        public async Task<List<AlteredRecord>> WriteArtefactAsync(UserInfo user, MutationRequest artefactChangeRequest)
         {
             // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
             // care of main_action and single_action.
            return await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { artefactChangeRequest });
         }
         
-        public async Task<uint> CreateNewArtefact(UserInfo user, uint editionId, uint masterImageId, string shape, string artefactName, string position = null)
+        public async Task<uint> CreateNewArtefactAsync(UserInfo user, uint editionId, uint masterImageId, string shape, string artefactName, string position = null)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
              write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
@@ -240,10 +240,10 @@ namespace SQE.SqeHttpApi.DataAccess
                     if (artefactId == 0)
                         throw StandardErrors.DataNotWritten("create artefact");
                     
-                    var newShape = InsertArtefactShape(user, artefactId, masterImageId, shape);
-                    var newName = InsertArtefactName(user, artefactId, artefactName);
+                    var newShape = InsertArtefactShapeAsync(user, artefactId, masterImageId, shape);
+                    var newName = InsertArtefactNameAsync(user, artefactId, artefactName);
                     // TODO: check virtual scroll for unused spot to place the artefact instead of putting it at the beginning.
-                    var newPosition = InsertArtefactPosition(
+                    var newPosition = InsertArtefactPositionAsync(
                         user, 
                         artefactId, 
                         string.IsNullOrEmpty(position) ? "{\"matrix\": [[1,0,0],[0,1,0]]}" : position);
@@ -259,20 +259,20 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        public async Task DeleteArtefact(UserInfo user, uint artefactId)
+        public async Task DeleteArtefactAsync(UserInfo user, uint artefactId)
         {
             List<MutationRequest> mutations = new List<MutationRequest>();
             foreach (var table in artefactTableNames.All())
             {
                 if (table != artefactTableNames.stack)
                 {
-                    var pk = await GetArtefactPk(user, artefactId, table);
+                    var pk = await GetArtefactPkAsync(user, artefactId, table);
                     if (pk != 0)
                         mutations.Add(new MutationRequest(MutateType.Delete, new DynamicParameters(), table, pk));
                 }
                 else
                 {
-                    var pks = await GetArtefactStackPks(user, artefactId, table);
+                    var pks = await GetArtefactStackPksAsync(user, artefactId, table);
                     foreach (var pk in pks)
                     {
                         mutations.Add(new MutationRequest(MutateType.Delete, new DynamicParameters(), table, pk));
@@ -280,10 +280,10 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
             }
 
-            var status = _databaseWriter.WriteToDatabaseAsync(user, mutations);
+            var _ = await _databaseWriter.WriteToDatabaseAsync(user, mutations);
         }
 
-        private async Task<uint> GetArtefactPk(UserInfo user, uint artefactId, string table)
+        private async Task<uint> GetArtefactPkAsync(UserInfo user, uint artefactId, string table)
         {
             using (var connection = OpenConnection())
             {
@@ -296,7 +296,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     });
             }
         }
-        private async Task<List<uint>> GetArtefactStackPks(UserInfo user, uint artefactId, string table)
+        private async Task<List<uint>> GetArtefactStackPksAsync(UserInfo user, uint artefactId, string table)
         {
             using (var connection = OpenConnection())
             {
@@ -312,7 +312,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
         
-        private async Task<uint> GetArtefactShapeSqeImageId(UserInfo user, uint editionId, uint artefactId)
+        private async Task<uint> GetArtefactShapeSqeImageIdAsync(UserInfo user, uint editionId, uint artefactId)
         {
             using (var connection = OpenConnection())
             {

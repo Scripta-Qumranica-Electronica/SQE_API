@@ -60,7 +60,7 @@ $Order";
     public static class FindArtefactComponentId
     {
         private const string _getQuery = @"
-            SELECT $Table_id
+            SELECT DISTINCT $Table_id
             FROM $Table
             JOIN $Table_owner USING($Table_id)
             WHERE $Where

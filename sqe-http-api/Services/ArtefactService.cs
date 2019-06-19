@@ -18,14 +18,14 @@ namespace SQE.SqeHttpApi.Server.Helpers
         Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(uint? userId, uint editionId,
             bool withMask = false);
 
-        Task<ArtefactDTO> UpdateArtefact(UserInfo user, uint editionId, uint artefactId, string mask = null,
+        Task<ArtefactDTO> UpdateArtefactAsync(UserInfo user, uint editionId, uint artefactId, string mask = null,
             string name = null,
             string position = null);
 
-        Task<ArtefactDTO> CreateArtefact(UserInfo user, uint editionId, uint masterImageId, string mask = null,
+        Task<ArtefactDTO> CreateArtefactAsync(UserInfo user, uint editionId, uint masterImageId, string mask = null,
             string name = null, string position = null);
 
-        Task DeleteArtefact(UserInfo user, uint artefactId);
+        Task DeleteArtefactAsync(UserInfo user, uint artefactId);
     }
 
     public class ArtefactService : IArtefactService
@@ -70,7 +70,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(artefactListings.ToList(), editionId);
         }
 
-        public async Task<ArtefactDTO> UpdateArtefact(UserInfo user, uint editionId, uint artefactId, string mask = null,
+        public async Task<ArtefactDTO> UpdateArtefactAsync(UserInfo user, uint editionId, uint artefactId, string mask = null,
             string name = null, string position = null)
         {
             var withMask = false;
@@ -79,33 +79,33 @@ namespace SQE.SqeHttpApi.Server.Helpers
             {
                 if (!string.IsNullOrEmpty(mask))
                 {
-                    // UpdateArtefactShape will inform us if the WKT mask is in an invalid format
-                    resultList.AddRange(await _artefactRepository.UpdateArtefactShape(user, artefactId, mask));
+                    // UpdateArtefactShapeAsync will inform us if the WKT mask is in an invalid format
+                    resultList.AddRange(await _artefactRepository.UpdateArtefactShapeAsync(user, artefactId, mask));
                     withMask = true;
                 }
 
                 if (!string.IsNullOrEmpty(name))
-                    resultList.AddRange(await _artefactRepository.UpdateArtefactName(user, artefactId, name));
+                    resultList.AddRange(await _artefactRepository.UpdateArtefactNameAsync(user, artefactId, name));
                 
                 if (!string.IsNullOrEmpty(position)) // TODO: we should allow for null here, which would mean we need to delete the position from the edition
                 {
                     if (!GeometryValidation.ValidateTransformMatrix(position))
                         throw StandardErrors.ImproperInputData("artefact_position");
                     resultList.AddRange(
-                        await _artefactRepository.UpdateArtefactPosition(user, artefactId, position));
+                        await _artefactRepository.UpdateArtefactPositionAsync(user, artefactId, position));
                 }  
             }
             
             return await GetEditionArtefactAsync(user, artefactId, withMask);
         }
         
-        public async Task<ArtefactDTO> CreateArtefact(UserInfo user, uint editionId, uint masterImageId, string mask = null,
+        public async Task<ArtefactDTO> CreateArtefactAsync(UserInfo user, uint editionId, uint masterImageId, string mask = null,
             string name = null, string position = null)
         {
             uint newArtefactId = 0;
             if (user.userId.HasValue)
             {
-                newArtefactId = await _artefactRepository.CreateNewArtefact(user, editionId, masterImageId, mask, name, position);
+                newArtefactId = await _artefactRepository.CreateNewArtefactAsync(user, editionId, masterImageId, mask, name, position);
             }
 
             return newArtefactId != 0 
@@ -113,9 +113,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 : null;
         }
 
-        public async Task DeleteArtefact(UserInfo user, uint artefactId)
+        public async Task DeleteArtefactAsync(UserInfo user, uint artefactId)
         {
-            await _artefactRepository.DeleteArtefact(user, artefactId);
+            await _artefactRepository.DeleteArtefactAsync(user, artefactId);
         }
     }
 }

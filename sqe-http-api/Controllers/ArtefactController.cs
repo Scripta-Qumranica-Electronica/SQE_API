@@ -79,7 +79,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             [FromBody] UpdateArtefactDTO payload
             )
         {
-            return await _artefactService.UpdateArtefact(
+            return await _artefactService.UpdateArtefactAsync(
                 _userService.GetCurrentUserObject(editionId),
                 editionId,
                 artefactId,
@@ -102,7 +102,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             [FromRoute] uint artefactId
         )
         {
-            await _artefactService.DeleteArtefact(_userService.GetCurrentUserObject(editionId), artefactId);
+            await _artefactService.DeleteArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId);
             return NoContent();
         }
         
@@ -120,7 +120,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
             [FromBody] CreateArtefactDTO payload
         )
         {
-            return await _artefactService.CreateArtefact(
+            return await _artefactService.CreateArtefactAsync(
                 _userService.GetCurrentUserObject(editionId), 
                 editionId, 
                 payload.masterImageId, 

@@ -11,7 +11,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
     {
         Task<ImageListDTO> GetImagesAsync(uint? userId, uint scrollVersionId, string fragmentId = null);
         ImageDTO ImageToDTO(DataAccess.Models.Image model);
-	Task<ImageGroupListDTO> GetImageAsync(uint? userId, List<uint> scrollVersionId);
         Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
     
     }
@@ -106,13 +105,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 return ImageDTO.Direction.right;
             }
             return ImageDTO.Direction.top; // need to check..
-        }
-
-        public async Task<ImageGroupListDTO> GetImageAsync(uint? userId, List<uint> scrollVersionId)
-        {
-            var images = await _repo.ListImagesAsync(userId, scrollVersionId);
-
-            return ImageToDTO(images);
         }
 
         private static ImageGroupListDTO ImageToDTO(IEnumerable<DataAccess.Models.ImageGroup> imageGroups)

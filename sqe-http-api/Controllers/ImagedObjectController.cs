@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,11 +43,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <returns></returns>
         // Bronson: This endpoint is not documented
         [AllowAnonymous]
-        [HttpGet("imaged-objects/list")]
+        [HttpGet("imaged-objects")]
         [ProducesResponseType(200)]
         public async Task<ActionResult<ImageGroupListDTO>> ListImageGroups()
         {
-            return await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>());
+            return StatusCode(501);
         }
 
         /// <summary>
@@ -58,9 +59,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [AllowAnonymous]
         [HttpGet("imaged-objects/{imageReferenceId}")]
         [ProducesResponseType(200)]
-        public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfScroll([FromRoute] uint imageReferenceId)
+        public async Task<ActionResult<ImageGroupListDTO>> ListImageGroupsOfImagedObject([FromRoute] uint imageReferenceId)
         {
-            return await _imageService.GetImageAsync(_userService.GetCurrentUserId(), new List<uint>(new uint[] {imageReferenceId }));
+            return StatusCode(501);
         }
 
         /// <summary>
@@ -68,7 +69,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// </summary>
         // Bronson: This endpoint is not documented
         [AllowAnonymous]
-        [HttpGet("imaged-objects/institutions/list")]
+        [HttpGet("imaged-objects/institutions")]
         [ProducesResponseType(200)]
         public async Task<ActionResult<ImageInstitutionListDTO>> ListImageInstitutions()
         {
@@ -76,7 +77,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
 
         /// <summary>
-        /// Provides a listing of imaged objects related to the specified edition, including artefacts.
+        /// Provides a listing of imaged objects related to the specified edition, can include
+        /// images and also their masks with optional.
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Set "artefacts" to receive related artefact data and "masks" to include the artefact masks</param>
@@ -86,7 +88,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet("editions/{editionId}/imaged-objects")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjectsWithArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
+        public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjects([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var artefacts, out var masks);
 
@@ -94,7 +96,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
         
         /// <summary>
-        /// Provides a listing of imaged objects related to the specified edition
+        /// Provides information for the specified imaged object related to the specified edition, can include
+        /// images and also their masks with optional.
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
