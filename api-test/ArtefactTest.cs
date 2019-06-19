@@ -69,12 +69,12 @@ namespace api_test
             const string masterImageSQL = "SELECT sqe_image_id FROM SQE_image WHERE type = 0 ORDER BY RAND() LIMIT 1";
             var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
             const string newArtefactShape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
-            const string newTransform = null;
+            var newTransform = RandomPosition();
             var newName = _faker.Lorem.Sentence(5);
             var newArtefact = new CreateArtefactDTO()
             {
                 mask = newArtefactShape,
-                position = newTransform,
+                position = null,
                 name = newName,
                 masterImageId = masterImageId
             };
@@ -87,6 +87,56 @@ namespace api_test
             response.EnsureSuccessStatusCode();
             Assert.Equal(newEdition, writtenArtefact.editionId);
             Assert.Equal(newArtefact.mask, writtenArtefact.mask.mask);
+            Assert.Null(writtenArtefact.mask.transformMatrix);
+            Assert.Equal(newArtefact.name, writtenArtefact.name);
+            
+            // Cleanup
+            await DeleteArtefact(newEdition, writtenArtefact.id);
+            
+            // Arrange
+            newName = null;
+            
+            newArtefact = new CreateArtefactDTO()
+            {
+                mask = newArtefactShape,
+                position = newTransform,
+                name = newName,
+                masterImageId = masterImageId
+            };
+            
+            // Act
+            (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Post,
+                $"/{version}/editions/{newEdition}/{controller}", newArtefact, await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(newEdition, writtenArtefact.editionId);
+            Assert.Equal(newArtefact.mask, writtenArtefact.mask.mask);
+            Assert.Equal(newTransform, writtenArtefact.mask.transformMatrix);
+            Assert.Equal("", writtenArtefact.name);
+            
+            // Cleanup
+            await DeleteArtefact(newEdition, writtenArtefact.id);
+            
+            // Arrange
+            newName = _faker.Lorem.Sentence(5);
+            
+            newArtefact = new CreateArtefactDTO()
+            {
+                mask = null,
+                position = newTransform,
+                name = newName,
+                masterImageId = masterImageId
+            };
+            
+            // Act
+            (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Post,
+                $"/{version}/editions/{newEdition}/{controller}", newArtefact, await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(newEdition, writtenArtefact.editionId);
+            Assert.Equal("", writtenArtefact.mask.mask);
             Assert.Equal(newTransform, writtenArtefact.mask.transformMatrix);
             Assert.Equal(newArtefact.name, writtenArtefact.name);
             
