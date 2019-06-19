@@ -87,7 +87,7 @@ namespace api_test
             response.EnsureSuccessStatusCode();
             Assert.Equal(newEdition, writtenArtefact.editionId);
             Assert.Equal(newArtefact.mask, writtenArtefact.mask.mask);
-            Assert.NotNull(writtenArtefact.mask.transformMatrix);
+            Assert.Equal(newTransform, writtenArtefact.mask.transformMatrix);
             Assert.Equal(newArtefact.name, writtenArtefact.name);
             
             // Cleanup
