@@ -1,11 +1,12 @@
 using System.IO;
 using System.Net.Http;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using SQE.SqeHttpApi.Server;
 using Xunit;
 
-namespace api_test
+namespace SQE.ApiTest
 {
     /// <summary>
     /// Fires up the application and provides an HTTP Client to access its controller endpoints.
@@ -22,6 +23,8 @@ namespace api_test
  
             _factory = factory.WithWebHostBuilder(builder =>
             {
+                // Setting the environment to IntegrationTests will turn off the emailer code.
+                builder.UseEnvironment("IntegrationTests"); 
                 builder.ConfigureAppConfiguration((context,conf) =>
                 {
                     conf.AddJsonFile(configPath);

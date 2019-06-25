@@ -11,7 +11,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IEditionService
     {
-        Task<EditionGroupDTO> GetEditionAsync(uint editionId, UserInfo user, bool artefacts = false, bool fragments = false);
+        Task<EditionGroupDTO> GetEditionAsync(UserInfo user, bool artefacts = false, bool fragments = false);
         Task<EditionListDTO> ListEditionsAsync(uint? userId);
         Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
             string collaborators = null);
@@ -27,14 +27,15 @@ namespace SQE.SqeHttpApi.Server.Helpers
             _repo = repo;
         }
 
-        public async Task<EditionGroupDTO> GetEditionAsync(uint editionId, UserInfo user, bool artefacts, bool fragments)
+        public async Task<EditionGroupDTO> GetEditionAsync(UserInfo user, bool artefacts = false,
+            bool fragments = false)
         {
-            var scrollModels = await _repo.ListEditionsAsync(user.userId, editionId);
+            var scrollModels = await _repo.ListEditionsAsync(user.userId, user.editionId);
 
-            var primaryModel = scrollModels.FirstOrDefault(sv => sv.EditionId == editionId);
+            var primaryModel = scrollModels.FirstOrDefault(sv => sv.EditionId == user.editionId);
             if (primaryModel == null) // User is not allowed to see this scroll version
                 return null;
-            var otherModels = scrollModels.Where(sv => sv.EditionId != editionId).OrderBy(sv => sv.EditionId);
+            var otherModels = scrollModels.Where(sv => sv.EditionId != user.editionId).OrderBy(sv => sv.EditionId);
 
             var svg = new EditionGroupDTO
             {
@@ -145,7 +146,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 //Maybe we should more often make use of try/catch.
                 if (unformattedEdition == null)
                 {
-                    throw StandardErrors.DataNotFound("edition", user.editionId ?? 0);
+                    throw new StandardErrors.DataNotFound("edition", user.editionId ?? 0);
                 }
                 edition = EditionModelToDTO(unformattedEdition);
             }

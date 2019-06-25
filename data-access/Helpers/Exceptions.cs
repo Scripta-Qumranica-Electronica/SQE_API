@@ -1,151 +1,271 @@
-﻿using System;
+using System;
 using System.Net;
-using Newtonsoft.Json;
 using SQE.SqeHttpApi.DataAccess.Models;
 
 namespace SQE.SqeHttpApi.DataAccess.Helpers
 {
+    #region Exception Base Class 
     // Exceptions of this class will be caught by the middleware and thrown back to HTTP requests with the proper
     // response codes.  This enables a RESTful experience regardless of whether a request is made via HTTP or by
-    // websocket.  In either case the HTTP router or the Hub will catch a child of the HttpException class
+    // websocket.  In either case the HTTP router or the Hub will catch a child of the ApiException class
     // and return that information to the user.
     // Errors should be thrown properly at the lowest levels of code, this will reduce boiler-plate in higher
     // level functions like the Services and ensure more consistent responses.
-    public class HttpException : Exception
+    public abstract class ApiException : Exception
     {
-        private readonly int httpStatusCode;
-
-        public HttpException(HttpStatusCode httpStatusCode, HttpExceptionMessage msg) : base(JsonConvert.SerializeObject(msg))
+        public readonly HttpStatusCode StatusCode;
+        public string Error;
+        
+        protected ApiException(HttpStatusCode httpStatusCode)
         {
-            this.httpStatusCode = (int)httpStatusCode;
+            StatusCode = httpStatusCode;
         }
         
-        public HttpException(HttpStatusCode httpStatusCode, uint internalErrorCode, string msg = null) 
-            : base(JsonConvert.SerializeObject(new HttpExceptionMessage(internalErrorCode, msg)))
+        protected ApiException(HttpStatusCode httpStatusCode, string error) : this(httpStatusCode)
         {
-            this.httpStatusCode = (int)httpStatusCode;
+            Error = error;
         }
-
-        public int StatusCode { get { return this.httpStatusCode; } }
     }
+    
+    #endregion Exception Base Class
 
-    public class HttpExceptionMessage
+    #region Exception Main Subclasses
+    public abstract class ForbiddenDataAccessException : ApiException
     {
-        public uint internalErrorCode { get; set; }
-        public string message { get; set; }
-        
-        public HttpExceptionMessage(uint internalErrorCode, string message = null)
-        {
-            this.internalErrorCode = internalErrorCode;
-            this.message = message;
-        }
-
+        private const HttpStatusCode httpStatusCode = HttpStatusCode.Forbidden;
+        protected ForbiddenDataAccessException() : base(httpStatusCode) {}
     }
+    
+    public abstract class LockedDataException : ApiException
+    {
+        private const HttpStatusCode httpStatusCode = HttpStatusCode.Locked;
+        protected LockedDataException() : base(httpStatusCode) {}
+    }
+    
+    public abstract class UnauthorizedException : ApiException
+    {
+        private const HttpStatusCode httpStatusCode = HttpStatusCode.Unauthorized;
+        protected UnauthorizedException() : base(httpStatusCode) {}
+    }
+    
+    public abstract class DataNotFoundException : ApiException
+    {
+        private const HttpStatusCode httpStatusCode = HttpStatusCode.NotFound;
+        protected DataNotFoundException() : base(httpStatusCode) {}
+    }
+    
+    public abstract class BadInputException : ApiException
+    {
+        private const HttpStatusCode httpStatusCode = HttpStatusCode.BadRequest;
+        protected BadInputException() : base(httpStatusCode) {}
+    }
+    
+    public abstract class ConflictingInputException : ApiException
+    {
+        private const HttpStatusCode httpStatusCode = HttpStatusCode.Conflict;
+        protected ConflictingInputException() : base(httpStatusCode) {}
+    }
+    
+    public abstract class ServerErrorException : ApiException
+    {
+        private const HttpStatusCode httpStatusCode = HttpStatusCode.InternalServerError;
+        protected ServerErrorException() : base(httpStatusCode) {}
+    }
+    #endregion Exception Main Subclasses
     
     // This is a collection of ready-made errors that can be thrown. They include a standard HTTP status error code
     // and an internal project error code with accompanying message in English.
     public static class StandardErrors
     {
-
         #region Permissions errors
-        public static HttpException NoPermissions(uint userId, uint editionId)
+        public class NoPermissions : ForbiddenDataAccessException
         {
-            return new HttpException(HttpStatusCode.Forbidden, 620, 
-                $"User {userId} has no permissions associated with edition {editionId}.");
-        }
-        public static HttpException NoReadPermissions(UserInfo user)
-        {
-            return new HttpException(HttpStatusCode.Forbidden, 621, 
-                $"User {user.userId} does not have read access to edition {user.editionId}.");
-        }
-        
-        public static HttpException NoWritePermissions(UserInfo user)
-        {
-            return new HttpException(HttpStatusCode.Forbidden, 622, 
-                $"User {user.userId} does not have write access to edition {user.editionId}.");
+            private const string customMsg = "User $UserId has no permissions associated with edition $EditionId.";
+            public NoPermissions(UserInfo user)
+            {
+                this.Error = customMsg
+                    .Replace("$UserId", user.userId.ToString())
+                    .Replace("$EditionId", user.editionId.ToString());
+            }
         }
         
-        public static HttpException NoLockPermissions(UserInfo user)
+        public class NoReadPermissions : ForbiddenDataAccessException
         {
-            return new HttpException(HttpStatusCode.Forbidden, 623, 
-                $"User {user.userId} is not allowed to lock edition {user.editionId}.");
+            private const string customMsg = "User $UserId does not have read access to edition $EditionId.";
+            public NoReadPermissions(UserInfo user)
+            {
+                this.Error = customMsg
+                    .Replace("$UserId", user.userId.ToString())
+                    .Replace("$EditionId", user.editionId.ToString());
+            }
         }
         
-        public static HttpException NoAdminPermissions(UserInfo user)
+        public class NoWritePermissions : ForbiddenDataAccessException
         {
-            return new HttpException(HttpStatusCode.Forbidden, 624, 
-                $"User {user.userId} does not have admin privilege for edition {user.editionId}.");
+            private const string customMsg = "User $UserId does not have write access to edition $EditionId.";
+            public NoWritePermissions(UserInfo user)
+            {
+                this.Error = customMsg
+                    .Replace("$UserId", user.userId.ToString())
+                    .Replace("$EditionId", user.editionId.ToString());
+            }
         }
         
-        public static HttpException EditionLocked(UserInfo user)
+        public class NoLockPermissions : ForbiddenDataAccessException
         {
-            var unlockPermission = $"User {user.userId} {(user.IsAdmin().Result ? "has" : "does not have")} permission to unlock the edition.";
-            
-            return new HttpException(HttpStatusCode.Locked, 625, 
-                $"The edition {user.editionId} is currently locked. {unlockPermission}");
+            private const string customMsg = "User $UserId is not allowed to lock edition $EditionId.";
+            public NoLockPermissions(UserInfo user)
+            {
+                this.Error = customMsg
+                    .Replace("$UserId", user.userId.ToString())
+                    .Replace("$EditionId", user.editionId.ToString());
+            }
         }
         
-        public static HttpException BadLogin(string email)
+        public class NoAdminPermissions : ForbiddenDataAccessException
         {
-            return new HttpException(HttpStatusCode.Unauthorized, 626, 
-                $"Failed login for {email}.");
+            private const string customMsg = "User $UserId does not have admin privilege for edition $EditionId.";
+            public NoAdminPermissions(UserInfo user)
+            {
+                this.Error = customMsg
+                    .Replace("$UserId", user.userId.ToString())
+                    .Replace("$EditionId", user.editionId.ToString());
+            }
+        }
+        
+        public class LockedData : LockedDataException
+        {
+            private const string customMsg = "Edition $EditionId is locked. User $UserId $Permission admin privilege to unlock it.";
+            public LockedData(UserInfo user)
+            {
+                this.Error = customMsg
+                    .Replace("$UserId", user.userId.ToString())
+                    .Replace("$EditionId", user.editionId.ToString())
+                    .Replace("$Permission", user.IsAdmin().Result ? "has" : "does not have");
+            }
+        }
+        
+        public class BadLogin : UnauthorizedException
+        {
+            private const string customMsg = "Failed login for $Email.";
+            public BadLogin(string email)
+            {
+                this.Error = customMsg.Replace("$Email", email);
+            }
         }
         
         // Do not use this for login related errors, it is only for actions that require an authenticated user
         // to resubmit their password.
-        public static HttpException WrongPassword()
+        public class WrongPassword : UnauthorizedException
         {
-            const string msg = "The password is incorrect.";
-            return new HttpException(HttpStatusCode.Unauthorized, 626, msg);
+            private const string customMsg = "The password is incorrect.";
+            public WrongPassword()
+            {
+                this.Error = customMsg;
+            }
         }
         #endregion Permissions errors
 
         #region Data errors
 
-        public static HttpException DataNotFound(string datatype = null, uint id = 0, string searchEntity = null)
+        public class DataNotFound : DataNotFoundException
         {
-            if (!string.IsNullOrEmpty(datatype) && string.IsNullOrEmpty(searchEntity))
-                searchEntity = datatype;
-            var info = !string.IsNullOrEmpty(datatype) || id == 0;
-            return new HttpException(HttpStatusCode.NotFound, 640, 
-                $"Data not found{(info ? "" : $" for {datatype} using {searchEntity} with id {id}")}.");
+            private const string customMsg = "Data not found. ";
+
+            private const string reason =
+                "No entries could be found for $DataType, when searching on $SearchEntity with id $Id.";
+            public DataNotFound(string datatype = null, string id = "0", string searchEntity = null)
+            {
+                if (!string.IsNullOrEmpty(datatype) && string.IsNullOrEmpty(searchEntity))
+                    searchEntity = datatype;
+
+                var fullMsg = string.IsNullOrEmpty(datatype) || id == "0"
+                    ? ""
+                    : reason.Replace("$DataType", datatype)
+                        .Replace("$SearchEntity", searchEntity)
+                        .Replace("$Id", id);
+                
+                this.Error = customMsg + fullMsg;
+            }
+            
+            public DataNotFound(string datatype = null, uint id = 0, string searchEntity = null) 
+                : this(datatype, id.ToString(), searchEntity){}
         }
         
         // This exception should be used sparingly. It is usually better to throw the actual database error.
-        public static HttpException DataNotWritten(string operation = null)
+        public class DataNotWritten : ServerErrorException
         {
-            return new HttpException(HttpStatusCode.InternalServerError, 641, 
-                $"System failed while trying to {(!string.IsNullOrEmpty(operation) ? operation : "") }.");
+            private const string customMsg = "System failed while trying to $Operation.";
+            public DataNotWritten(string operation)
+            {
+                this.Error = customMsg.Replace("$Operation", operation);
+            }
         }
         
-        public static HttpException ImproperInputData(string datatype)
+        public class ImproperInputData : BadInputException
         {
-            return new HttpException(HttpStatusCode.BadRequest, 642, 
-                $"The input data for {datatype} is incorrect or out of date.");
+            private const string customMsg = "The input data for $DataType is incorrect or out of date.";
+            public ImproperInputData(string datatype)
+            {
+                this.Error = customMsg.Replace("$DataType", datatype);
+            }
         }
         
-        public static HttpException ConflictingData(string datatype)
+        public class ConflictingData : ConflictingInputException
         {
-            return new HttpException(HttpStatusCode.Conflict, 643, 
-                $"The submitted {datatype} conflicts with data already existing in the system");
+            private const string customMsg = "The submitted $DataType conflicts with data already existing in the system.";
+            public ConflictingData(string datatype)
+            {
+                this.Error = customMsg.Replace("$DataType", datatype);
+            }
         }
         
-        public static HttpException EditionCopyLockProtection(UserInfo user)
+        public class EditionCopyLockProtection : ForbiddenDataAccessException
         {
-            var unlockPermission = $"User {user.userId} {(user.IsAdmin().Result ? "has" : "does not have")} permission to lock the edition.";
-            
-            return new HttpException(HttpStatusCode.Forbidden, 644, 
-                $"The edition {user.editionId} must be locked before it can be copied. {unlockPermission}");
+            private const string customMsg = "The edition $EditionId must be locked before attempting to copy it. User $UserId $Permission admin privilege to unlock it.";
+            public EditionCopyLockProtection(UserInfo user)
+            {
+                this.Error = customMsg
+                    .Replace("$UserId", user.userId.ToString())
+                    .Replace("$EditionId", user.editionId.ToString())
+                    .Replace("$Permission", user.IsAdmin().Result ? "has" : "does not have");
+            }
+        }
+        
+        public class EmailAddressImproperlyFormatted : BadInputException
+        {
+            private const string customMsg = "The email address $Email could not be parsed by the system as a valid.";
+            public EmailAddressImproperlyFormatted(string email)
+            {
+                this.Error = customMsg
+                    .Replace("$Email", email);
+            }
+        }
+        
+        public class EmailAddressUndeliverable : BadInputException
+        {
+            private const string customMsg = "The email address $Email could not be reached by the system. The email address is almost certainly incorrect.";
+            public EmailAddressUndeliverable(string email)
+            {
+                this.Error = customMsg
+                    .Replace("$Email", email);
+            }
         }
 
         #endregion Data errors
         
         #region System errors
-        public static HttpException EmailNotSent(string email)
+        
+        public class EmailNotSent : ServerErrorException
         {
-            return new HttpException(HttpStatusCode.InternalServerError, 660, 
-                $"Failed sending email to {email}. The email address is probably incorrect.");
+            private const string customMsg = "Failed sending email to $Email. This is probably a server error and should be reported to the webmaster.";
+            public EmailNotSent(string email)
+            {
+                this.Error = customMsg
+                    .Replace("$Email", email);
+            }
         }
+       
         #endregion System errors
     }
 }

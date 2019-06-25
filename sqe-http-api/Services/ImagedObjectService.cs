@@ -47,7 +47,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
             if (imagedObjects == null)
             {
-                throw StandardErrors.DataNotFound("imaged object", editionId, "edition");
+                throw new StandardErrors.DataNotFound("imaged object", editionId, "edition");
             }
             var result = new ImagedObjectListDTO
             {

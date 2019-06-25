@@ -18,7 +18,7 @@ namespace SQE.SqeHttpApi.DataAccess
         Task<DetailedUserWithToken> GetDetailedUserByIdAsync(UserInfo userInfo);
         Task<DetailedUser> GetDetailedUsedByTokenAsync(string token);
         Task<DetailedUserWithToken> GetUnactivatedUserByEmailAsync(string email);
-        Task<UserEditionPermissions> GetUserEditionPermissionsAsync(uint userId, uint editionId);
+        Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo user);
         
         // Create/update account data
         Task<DetailedUserWithToken> CreateNewUserAsync(string email, string password, string forename = null,
@@ -66,7 +66,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw StandardErrors.BadLogin(email);
+                    throw new StandardErrors.BadLogin(email);
                 }
             }
         }
@@ -99,7 +99,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw StandardErrors.DataNotFound("user", 0, "token");
+                    throw new StandardErrors.DataNotFound("user", token, "token");
                 }
                 
             }
@@ -139,18 +139,17 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw StandardErrors.DataNotFound("user", 0, email);
+                    throw new StandardErrors.DataNotFound("user", email, email);
                 }
             }
         }
-        
+
         /// <summary>
         /// Retrieves the current users permissions for a specific edition.
         /// </summary>
-        /// <param name="userId">The users id</param>
-        /// <param name="editionId">The id of the edition the user is accessing</param>
+        /// <param name="user"></param>
         /// <returns>Returns the user's rights to read, write, and admin the edition and the users editor id for the edition</returns>
-        public async Task<UserEditionPermissions> GetUserEditionPermissionsAsync(uint userId, uint editionId)
+        public async Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo user)
         {
             using (var connection = OpenConnection())
             {
@@ -158,14 +157,14 @@ namespace SQE.SqeHttpApi.DataAccess
                 {
                     var results = await connection.QuerySingleAsync<UserEditionPermissions>(UserPermissionQuery.GetQuery, new
                     {
-                        EditionId = editionId,
-                        UserId = userId,
+                        EditionId = user.editionId,
+                        UserId = user.userId,
                     });
                     return results;
                 }
                 catch (InvalidOperationException)
                 {
-                    throw StandardErrors.NoPermissions(userId, editionId);
+                    throw new StandardErrors.NoPermissions(user);
                 }
             }
         }
@@ -203,7 +202,7 @@ namespace SQE.SqeHttpApi.DataAccess
                             Organization = organization
                         });
                     if (newUser != 1) // Something strange must have gone wrong
-                        throw StandardErrors.DataNotWritten("create user");
+                        throw new StandardErrors.DataNotWritten("create user");
 
                     // Everything went well, so create the email token so the
                     // calling function can email the new user.
@@ -241,7 +240,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     foreach (var record in existingUser)
                     {
                         if (record.Activated) // If this user record has been authenticated throw a conflict error
-                            throw StandardErrors.ConflictingData("email");
+                            throw new StandardErrors.ConflictingData("email");
                             
                         await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetUserIdQuery,
                             new {UserId = record.UserId});
@@ -285,7 +284,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 });
 
                 if (userUpdate != 1) // The password was wrong
-                    throw StandardErrors.WrongPassword();
+                    throw new StandardErrors.WrongPassword();
             }
         }
 
@@ -321,7 +320,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         Type = CreateUserEmailTokenQuery.Activate
                     });
                 if (userEmailConfirmation != 1) // Something strange must have gone wrong
-                    throw StandardErrors.DataNotWritten("create confirmation token");
+                    throw new StandardErrors.DataNotWritten("create confirmation token");
 
                 // Everything went well, so add the token to the User object so the calling function
                 // can email the new user.
@@ -344,7 +343,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     var confirmRegistration = await connection.ExecuteAsync(ConfirmNewUserAccount.GetQuery, new
                         { Token = token});
                     if (confirmRegistration != 1)
-                        throw StandardErrors.ImproperInputData("user account activation token");
+                        throw new StandardErrors.ImproperInputData("user account activation token");
                     await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
                         { Token = token});
                     transactionScope.Complete();
@@ -369,7 +368,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         NewEmail = newEmail
                     });
                 if (newEmailEntry != 1)
-                    throw StandardErrors.DataNotWritten("update email");
+                    throw new StandardErrors.DataNotWritten("update email");
             }
         }
 
@@ -392,7 +391,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 });
 
                 if (changePassword != 1)
-                    throw StandardErrors.WrongPassword();
+                    throw new StandardErrors.WrongPassword();
             }
         }
         
@@ -463,7 +462,7 @@ namespace SQE.SqeHttpApi.DataAccess
                             Password = password
                         });
                     if (resetPassword != 1)
-                        throw StandardErrors.DataNotWritten("reset password");
+                        throw new StandardErrors.DataNotWritten("reset password");
 
                     await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
                     {

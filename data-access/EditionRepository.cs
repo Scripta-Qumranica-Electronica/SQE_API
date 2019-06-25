@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
@@ -104,7 +104,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw StandardErrors.DataNotFound("edition", user.editionId ?? 0);
+                    throw new StandardErrors.DataNotFound("edition", user.editionId ?? 0);
                 }
 
                 // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
@@ -158,7 +158,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         await connection.QuerySingleAsync<EditionLockQuery.Result>(EditionLockQuery.GetQuery,
                             new {EditionId = user.editionId});
                     if (!fromVersion.Locked)
-                        throw StandardErrors.EditionCopyLockProtection(user);
+                        throw new StandardErrors.EditionCopyLockProtection(user);
                     
                     // Create a new edition
                     connection.Execute(CopyEditionQuery.GetQuery, 
@@ -171,7 +171,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     
                     toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (toEditionId == 0)
-                        throw StandardErrors.DataNotWritten("create edition");
+                        throw new StandardErrors.DataNotWritten("create edition");
                     
                     // Create new edition_editor
                     connection.Execute(Queries.CreateEditionEditorQuery.GetQuery, 
@@ -185,7 +185,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
                     uint toEditionEditorId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (toEditionEditorId == 0)
-                        throw StandardErrors.DataNotWritten("create edition_editor");
+                        throw new StandardErrors.DataNotWritten("create edition_editor");
 
                     // Copy all owner table references from scroll_version_group of the requested
                     // scroll_version_id to the newly created scroll_version_id (this is automated
@@ -224,7 +224,7 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             // Let's only allow admins to change these legal details.
             if (!(await user.IsAdmin()))
-                throw StandardErrors.NoAdminPermissions(user);
+                throw new StandardErrors.NoAdminPermissions(user);
             using (var connection = OpenConnection())
             {
                 await connection.ExecuteAsync(UpdateEditionLegalDetailsQuery.GetQuery,

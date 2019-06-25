@@ -47,6 +47,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         public async Task<ActionResult> ListImageGroups()
         {
+            await Task.CompletedTask;
             return StatusCode(501);
         }
 
@@ -61,6 +62,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         public async Task<ActionResult> ListImageGroupsOfImagedObject([FromRoute] uint imageReferenceId)
         {
+            await Task.CompletedTask;
             return StatusCode(501);
         }
 

@@ -1,56 +1,27 @@
-using System;
-using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
-using SQE.SqeHttpApi.DataAccess.Helpers;
+using SQE.SqeHttpApi.DataAccess.Models;
 
 namespace SQE.SqeHttpApi.Server.Helpers
 {
     public static class GeometryValidation
     {
+        /// <summary>
+        /// The validator checks that the transformMatrix is indeed valid JSON that can be successfully
+        /// parsed into the SQE.SqeHttpApi.DataAccess.Models.TransformMatrix class.
+        /// </summary>
+        /// <param name="transformMatrix">A JSON string with a transform matrix object.</param>
+        /// <returns></returns>
         public static bool ValidateTransformMatrix(string transformMatrix)
         {
             try
             {
-                _ = JsonConvert.DeserializeObject<transformMatrix>(transformMatrix);
+                // Test that the string is valid JSON that can be parsed into a valid instance of the TransformMatrix class.
+                _ = JsonConvert.DeserializeObject<TransformMatrix>(transformMatrix);
                 return true;
             }
             catch
             {
                 return false;
-            }
-        }
-
-        private class transformMatrix
-        {
-            [Required]
-            public double[][] matrix { get; set; }
-            
-            public transformMatrix(double[][] matrix)
-            {
-                if (!IsValidRows(matrix))
-                    throw StandardErrors.ImproperInputData("position");
-                if (!IsValidValues(matrix[0]) || !IsValidValues(matrix[1]))
-                    throw StandardErrors.ImproperInputData("position");
-            }
-            
-            bool IsValidRows(double[][] mat)
-            {
-                if (mat.Length != 2)
-                    return false;
-                if (mat[0].Length != 3)
-                    return false;
-                if (mat[1].Length != 3)
-                    return false;
-                return true;
-            }
-
-            bool IsValidValues(double[] row)
-            {
-                if (row[0] < -1 && row[0] > 1)
-                    return false;
-                if (row[1] < -1 && row[1] > 1)
-                    return false;
-                return (int)row[2] == row[2];
             }
         }
     }

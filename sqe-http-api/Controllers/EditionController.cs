@@ -41,7 +41,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
-            return await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(editionId), false, false);
+            return await _editionService.GetEditionAsync(_userService.GetCurrentUserObject(editionId), fragments: false, artefacts: false);
         }
 
         /// <summary>

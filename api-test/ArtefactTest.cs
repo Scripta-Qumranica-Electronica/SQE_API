@@ -3,18 +3,16 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using api_test.Helpers;
 using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.Extensions.Configuration;
+using SQE.ApiTest.Helpers;
 using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
 // TODO: It would be nice to be able to generate random polygons for these testing purposes.
-namespace api_test
+namespace SQE.ApiTest
 {
     /// <summary>
     /// This test suite tests all the current endpoints in the ArtefactController

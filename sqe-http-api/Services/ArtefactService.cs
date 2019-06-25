@@ -90,7 +90,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 if (!string.IsNullOrEmpty(position)) // TODO: we should allow for null here, which would mean we need to delete the position from the edition
                 {
                     if (!GeometryValidation.ValidateTransformMatrix(position))
-                        throw StandardErrors.ImproperInputData("artefact position");
+                        throw new StandardErrors.ImproperInputData("artefact position");
                     resultList.AddRange(
                         await _artefactRepository.UpdateArtefactPositionAsync(user, artefactId, position));
                 }  
@@ -106,7 +106,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             if (user.userId.HasValue)
             {
                 if (!string.IsNullOrEmpty(position) && !GeometryValidation.ValidateTransformMatrix(position))
-                    throw StandardErrors.ImproperInputData("artefact position");
+                    throw new StandardErrors.ImproperInputData("artefact position");
                 newArtefactId = await _artefactRepository.CreateNewArtefactAsync(user, editionId, masterImageId, mask, name, position);
             }
 

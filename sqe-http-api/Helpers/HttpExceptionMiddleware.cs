@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using SQE.SqeHttpApi.DataAccess.Helpers;
+using Newtonsoft.Json;
 
 namespace SQE.SqeHttpApi.Server.Helpers
 {
@@ -29,11 +29,25 @@ namespace SQE.SqeHttpApi.Server.Helpers
             {
                 await this.next.Invoke(context);
             }
-            catch (HttpException httpException)
+            catch (ApiException httpException)
             {
-                context.Response.StatusCode = httpException.StatusCode;
+                context.Response.StatusCode = (int) httpException.StatusCode;
                 context.Response.ContentType = "application/json; charset=utf-8";
-                await context.Response.WriteAsync(httpException.Message); 
+                await context.Response.WriteAsync(
+                    JsonConvert.SerializeObject(
+                        new ApiExceptionError(nameof(httpException), httpException.Error))); 
+            }
+        }
+
+        private class ApiExceptionError
+        {
+            public string internalErrorName { get; set; }
+            public string msg { get; set; }
+
+            public ApiExceptionError(string internalErrorName, string msg)
+            {
+                this.internalErrorName = internalErrorName;
+                this.msg = msg;
             }
         }
     }

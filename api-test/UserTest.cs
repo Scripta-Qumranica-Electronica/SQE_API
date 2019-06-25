@@ -2,18 +2,15 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using api_test.Helpers;
 using Bogus;
 using Dapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
+using SQE.ApiTest.Helpers;
 using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
-using HttpRequest = api_test.Helpers.HttpRequest;
 
-namespace api_test
+namespace SQE.ApiTest
 {
     /// <summary>
     /// This a suite of integration tests for the users controller.

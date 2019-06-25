@@ -2,15 +2,15 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using api_test.Helpers;
 using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
+using SQE.ApiTest.Helpers;
 using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
-namespace api_test
+namespace SQE.ApiTest
 {
     /// <summary>
     /// This test suite tests all the current endpoints in the EditionController

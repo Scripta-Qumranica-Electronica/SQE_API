@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using SQE.SqeHttpApi.Server.DTOs;
 
-namespace api_test.Helpers
+namespace SQE.ApiTest.Helpers
 { 
     public static class HttpRequest
     {

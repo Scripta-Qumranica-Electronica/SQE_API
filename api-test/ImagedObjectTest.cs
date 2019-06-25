@@ -1,15 +1,15 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Net.Http;
-using api_test.Helpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.SqeHttpApi.Server;
 using Bogus;
 using Dapper;
+using SQE.ApiTest.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
-namespace api_test
+namespace SQE.ApiTest
 {
     public class ImagedObjectTest : WebControllerTest
     {

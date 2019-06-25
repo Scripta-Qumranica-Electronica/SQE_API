@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 
-namespace api_test.Helpers
+namespace SQE.ApiTest.Helpers
 {
     /// <summary>
     /// In general you should avoid using this in the tests.  It is mainly used to access/check the user_email_token

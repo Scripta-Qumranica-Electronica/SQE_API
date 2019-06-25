@@ -154,7 +154,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             {
                 // Check the permissions and throw if user has no rights to alter this scrollVersion
                 if (!(await user.MayWrite()) && !(await user.EditionEditorId()).HasValue)
-                    throw StandardErrors.NoWritePermissions(user);
+                    throw new StandardErrors.NoWritePermissions(user);
                 foreach (var mutationRequest in mutationRequests)
                 {
                     // Set the editionId for the mutation.
@@ -331,7 +331,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             
             // If nothing was changed, then the data was not found, so throw an error.
             if (results < 1)
-                throw StandardErrors.DataNotFound(mutationRequest.TableName, mutationRequest.TablePkId ?? 0);
+                throw new StandardErrors.DataNotFound(mutationRequest.TableName, mutationRequest.TablePkId ?? 0);
         }
 
         /// <summary>

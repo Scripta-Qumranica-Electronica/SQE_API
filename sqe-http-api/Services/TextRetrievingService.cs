@@ -27,14 +27,16 @@ namespace SQE.SqeHttpApi.Server.Helpers
              public async Task<Scroll> GetLineById(uint lineId, uint editionId)
             {
                 var scroll = await _repo.GetLineById(lineId, editionId);
-                if (scroll.scrollId==0) throw StandardErrors.DataNotFound("line", lineId);
+                if (scroll.scrollId==0) 
+                    throw new StandardErrors.DataNotFound("line", lineId, "line_id");
                 return scroll;
             }
 
             public async Task<Scroll> GetFragmentById(uint fragmentId, uint editionId)
             {
                 var scroll = await _repo.GetFragmentById(fragmentId, editionId);
-                if (scroll.scrollId==0) throw StandardErrors.DataNotFound("fragment", fragmentId); // TODO: describe missing data better here.
+                if (scroll.scrollId==0) // TODO: describe missing data better here.
+                    throw new StandardErrors.DataNotFound("text fragment", fragmentId, "col_id");
                 return scroll;
             }
 

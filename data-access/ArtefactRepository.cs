@@ -54,7 +54,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         ArtefactId = artefactId
                     });
                 if (artefacts.Count() != 1)
-                    throw StandardErrors.DataNotFound("artefact", artefactId);
+                    throw new StandardErrors.DataNotFound("artefact", artefactId, "artefact_id");
                 return artefacts.First();
             }
         }
@@ -91,7 +91,7 @@ namespace SQE.SqeHttpApi.DataAccess
             const string tableName = "artefact_shape";
             var artefactShapeId = await GetArtefactPkAsync(user, artefactId, tableName);
             if (artefactShapeId == 0)
-                throw StandardErrors.DataNotFound("artefact mask", artefactId);
+                throw new StandardErrors.DataNotFound("artefact mask", artefactId, "artefact_id");
             var sqeImageId = GetArtefactShapeSqeImageIdAsync(user, user.editionId.Value, artefactId);
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
@@ -111,7 +111,7 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 // Capture any errors caused by improperly formatted WKT shapes, which become null in this query.
                 if (e.Message.IndexOf("Column 'region_in_sqe_image' cannot be null") > -1)
-                    throw StandardErrors.ImproperInputData("mask");
+                    throw new StandardErrors.ImproperInputData("mask");
                 
                 throw;
             }
@@ -122,7 +122,7 @@ namespace SQE.SqeHttpApi.DataAccess
             const string tableName = "artefact_data";
             var artefactDataId = await GetArtefactPkAsync(user, artefactId, tableName);
             if (artefactDataId == 0)
-                throw StandardErrors.DataNotFound("artefact name", artefactId);
+                throw new StandardErrors.DataNotFound("artefact name", artefactId, "artefact_id");
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@Name", name);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -238,7 +238,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         
                     var artefactId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (artefactId == 0)
-                        throw StandardErrors.DataNotWritten("create artefact");
+                        throw new StandardErrors.DataNotWritten("create artefact");
 
                     shape = string.IsNullOrEmpty(shape) ? "POLYGON((0 0))" : shape;
                     var newShape = InsertArtefactShapeAsync(user, artefactId, masterImageId, shape);
@@ -327,7 +327,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw StandardErrors.DataNotFound("SQE_image", artefactId, "artefact_id");
+                    throw new StandardErrors.DataNotFound("SQE_image", artefactId, "artefact_id");
                 }
             }
         }
