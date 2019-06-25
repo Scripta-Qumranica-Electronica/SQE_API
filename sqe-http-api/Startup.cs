@@ -59,7 +59,6 @@ namespace SQE.SqeHttpApi.Server
             
             // When running integration tests, we do not actually send out emails. This checks ASPNETCORE_ENVIRONMENT
             // and if it is "IntegrationTests", then a Fake for IEmailSender is used instead of the real one.
-            Console.WriteLine(Environment.EnvironmentName);
             if (Environment.IsEnvironment("IntegrationTests"))
                 services.AddSingleton<IEmailSender, FakeEmailSender>();
             else
