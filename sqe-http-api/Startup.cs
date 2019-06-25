@@ -134,9 +134,9 @@ namespace SQE.SqeHttpApi.Server
                 app.UseDeveloperExceptionPage();
             }
             
-//            app.UseCors(
-//                options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
-//            );
+            app.UseCors(
+                options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+            );
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
