@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore;
+﻿using System.Net.Mime;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
 namespace SQE.SqeHttpApi.Server
@@ -7,7 +8,7 @@ namespace SQE.SqeHttpApi.Server
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build().Run();
+           CreateWebHostBuilder(args).Build().Run();
         }
 
         private static IWebHostBuilder CreateWebHostBuilder(string[] args) =>

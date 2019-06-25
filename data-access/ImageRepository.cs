@@ -11,7 +11,6 @@ namespace SQE.SqeHttpApi.DataAccess
     public interface IImageRepository
     {
         Task<IEnumerable<Image>> GetImagesAsync(uint? userId, uint editionId, string imagedObjectId);
-        Task<IEnumerable<ImageGroup>> ListImagesAsync(uint? userId, List<uint> scrollVersionIds);
         Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync();
     }
 
@@ -43,30 +42,22 @@ namespace SQE.SqeHttpApi.DataAccess
             var model = new Image
             {
                 URL = image.proxy + image.url + image.filename,
-                RegionInMaster = null,
-                RegionOfMaster = null,
+                Id = image.sqe_image_id,
                 Side = image.side == 0 ? "recto" : "verso",
                 Type = image.img_type,
                 WaveLength = GetWave(image.wave_start, image.wave_end),
-                TransformMatrix = null,
                 Institution = image.institution,
-                Catlog1 = image.catalog_1,
+                Catalog1 = image.catalog_1,
                 Catalog2 = image.catalog_2,
                 ImageCatalogId = image.image_catalog_id,
                 ObjectId = image.object_id,
-                Master = image.master
+                Master = image.master,
+                RegionInMaster = image.region_on_image1,
+                RegionOfMaster = image.region_on_image2,
+                TransformMatrix = image.transform_matrix
             };
             return model;
         }
-
-        /**private string GetType(int type)
-        {
-            if (type == 0)
-                return "color";
-            if (type == 1)
-                return "infrared";
-            return type;
-        }**/
 
         private string [] GetWave(ushort start, ushort end)
         {
@@ -74,50 +65,6 @@ namespace SQE.SqeHttpApi.DataAccess
             str[0] = start.ToString();
             str[1] = end.ToString();
             return str;
-        }
-
-        public async Task<IEnumerable<ImageGroup>> ListImagesAsync(uint? userId, List<uint> scrollVersionIds) //
-        {
-            string sql;
-            if (userId.HasValue)
-            {
-                sql = UserImageGroupQuery.GetQuery(scrollVersionIds.Count > 0);
-            }
-            else
-            {
-                sql = ImageGroupQuery.GetQuery(scrollVersionIds.Count > 0);
-            }
-
-            if (scrollVersionIds != null)
-            {
-                sql = sql.Replace("@ScrollVersionIds", $"({string.Join(",", scrollVersionIds)})");
-            }
-
-            using (var connection = OpenConnection())
-            {
-                var results = await connection.QueryAsync<ImageGroupQuery.Result>(sql, new
-                {
-                    UserId = userId ?? 0, // @UserId is not expanded if userId is null
-                });
-
-                var models = results.Select(result => CreateImage(result));
-                return models;
-            }
-        }
-
-        private ImageGroup CreateImage(ImageGroupQuery.Result result)
-        {
-            var model = new ImageGroup
-                {
-                    Id = result.image_catalog_id,
-                    Institution = result.institution,
-                    CatalogNumber1 = result.catalog_number_1,
-                    CatalogNumber2 = result.catalog_number_2,
-                    CatalogSide = result.catalog_side,
-                    Images = new List<Image>(),
-                };
-
-            return model;
         }
 
         public async Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync()

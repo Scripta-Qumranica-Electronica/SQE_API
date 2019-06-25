@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# We check here that private settings have not accidentally been left in appsettings.json,
+# or in docker-compose.yml.
+
+function check_docker_vars
+{
+    grep -n '\-[[:space:]]'"${1}"'=[^$]' docker/deploy/docker-compose.yml
+    if [[ "$?" == 0 ]]; then 
+        echo "Please remove the custom settings for ${1} from docker/deploy/docker-compose.yml"
+        echo "The line should be:"
+        echo "#- ${1}="
+        exit 1
+    fi
+}
+
+function check_appsettings_vars
+{
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-http-api/appsettings.json 
+    if [[ "$?" == 0 ]]; then 
+        echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.json"
+        echo "The line should be:"
+        echo "\"${1}\": \"\","
+        exit 1
+    fi
+    
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-http-api/appsettings.Development.json 
+    if [[ "$?" == 0 ]]; then 
+        echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.Development.json"
+        echo "The line should be:"
+        echo "\"${1}\": \"\","
+        exit 1
+    fi
+}
+
+## Checking for custom settings in docker/deploy/docker-compose.yml
+check_docker_vars "MAILER_EMAIL_ADDRESS"
+check_docker_vars "MAILER_EMAIL_USERNAME"
+check_docker_vars "MAILER_EMAIL_PASSWORD"
+check_docker_vars "MAILER_EMAIL_SMTP_URL"
+check_docker_vars "MAILER_EMAIL_SMTP_PORT"
+check_docker_vars "WEBSITE_HOST"
+
+## Checking for custom settings in sqe-http-api/appsettings.json
+check_appsettings_vars "MailerEmailAddress"
+check_appsettings_vars "MailerEmailUsername"
+check_appsettings_vars "MailerEmailPassword"
+check_appsettings_vars "MailerEmailSmtpUrl"
+check_appsettings_vars "MailerEmailSmtpPort"
+

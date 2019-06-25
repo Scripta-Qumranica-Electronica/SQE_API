@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
 
@@ -17,7 +18,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
         private readonly IUserService _userService;
         private readonly IImagedObjectService _imagedObjectService;
         private readonly IArtefactService _artefactService;
-
 
         public EditionController(
             IEditionService editionService, 
@@ -41,14 +41,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
-            var edition = await _editionService.GetEditionAsync(editionId, _userService.GetCurrentUserObject(editionId), false, false);
-
-            if(edition==null)
-            {
-                return NotFound();
-            }
-
-            return edition;
+            return await _editionService.GetEditionAsync(_userService.GetCurrentUserObject(editionId), fragments: false, artefacts: false);
         }
 
         /// <summary>
@@ -59,8 +52,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(200)]
         public async Task<ActionResult<EditionListDTO>> ListEditions()
         {
-            var groups = await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
-            return groups;
+            return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
         }
 
         /// <summary>
@@ -76,25 +68,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<EditionDTO>> UpdateEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
         {
-            try
-            {
-                var user = _userService.GetCurrentUserObject(editionId);
-                if (!user.userId.HasValue && !(await user.EditionEditorId()).HasValue && !await user.MayWrite())
-                {
-                    throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
-                }
-                var edition = await _editionService.UpdateEditionAsync(user, request.name);
-                //await _broadcastService.Broadcast(EditionId, JsonConvert.SerializeObject(edition));
-                return edition;
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-            catch(ForbiddenException)
-            {
-                return Forbid();
-            }
+            return await _editionService.UpdateEditionAsync(
+                _userService.GetCurrentUserObject(editionId), 
+                request.name,
+                request.copyrightHolder,
+                request.collaborators);
         }
 
         /// <summary>
@@ -108,26 +86,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] EditionUpdateRequestDTO request, [FromRoute] uint editionId)
+        public async Task<ActionResult<EditionDTO>> CopyEdition([FromBody] EditionCopyDTO request, [FromRoute] uint editionId)
         {
-            try
-            {
-                var user = _userService.GetCurrentUserObject(editionId);
-                if (!user.userId.HasValue)
-                {
-                    throw new System.NullReferenceException("No userId found"); // Do we have a central way to pass these exceptions?
-                }
-                var edition = await _editionService.CopyEditionAsync(user, request.name);
-                return edition;
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-            catch (ForbiddenException)
-            {
-                return Forbid();
-            }
+            return await _editionService.CopyEditionAsync(_userService.GetCurrentUserObject(editionId), request);
         }
+        
+        // TODO: delete edition.
     }
 }

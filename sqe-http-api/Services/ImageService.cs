@@ -9,9 +9,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IImageService
     {
-        Task<ImageListDTO> GetImagesAsync(uint? userId, uint scrollVersionId, string fragmentId = null);
         ImageDTO ImageToDTO(DataAccess.Models.Image model);
-	Task<ImageGroupListDTO> GetImageAsync(uint? userId, List<uint> scrollVersionId);
         Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
     
     }
@@ -23,38 +21,26 @@ namespace SQE.SqeHttpApi.Server.Helpers
         {
             _repo = repo;
         }
-        public async Task<ImageListDTO> GetImagesAsync(uint? userId, uint scrollVersionId, string fragmentId = null)
-        {
-            var images = await _repo.GetImagesAsync(userId, scrollVersionId, fragmentId);
-
-            if (images == null)
-            {
-                throw new NotFoundException((uint)scrollVersionId);
-            }
-            var result = new ImageListDTO
-            {
-                images = new List<ImageDTO>(),
-            };
-
-
-            foreach (var i in images)
-            {
-                result.images.Add(ImageToDTO(i));
-            }
-
-            return result;
-        }
 
         public ImageDTO ImageToDTO(DataAccess.Models.Image model)
         {
 
             return new ImageDTO
             {
+                id = model.Id,
                 url = model.URL,
                 waveLength = model.WaveLength,
                 type = GetType(model.Type),
-                regionInMaster = null,
-                regionOfMaster = null,
+                regionInMaster = new PolygonDTO()
+                {
+                    mask = model.RegionInMaster,
+                    transformMatrix = null
+                },
+                regionOfMaster = new PolygonDTO()
+                {
+                    mask = model.RegionOfMaster,
+                    transformMatrix = null
+                },
                 lightingDirection = GetLightingDirection(model.Type),
                 lightingType = GetLightingType(model.Type),
                 side = model.Side,
@@ -97,28 +83,6 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 return ImageDTO.Direction.right;
             }
             return ImageDTO.Direction.top; // need to check..
-        }
-
-        public async Task<ImageGroupListDTO> GetImageAsync(uint? userId, List<uint> scrollVersionId)
-        {
-            var images = await _repo.ListImagesAsync(userId, scrollVersionId);
-
-            return ImageToDTO(images);
-        }
-
-        private static ImageGroupListDTO ImageToDTO(IEnumerable<DataAccess.Models.ImageGroup> imageGroups)
-        {
-            return new ImageGroupListDTO(imageGroups.Select(
-                imageGroup => new ImageGroupDTO(
-                    imageGroup.Id, 
-                    imageGroup.Institution, 
-                    imageGroup.CatalogNumber1, 
-                    imageGroup.CatalogNumber2, 
-                    imageGroup.CatalogSide, 
-                    new List<ImageDTO>()
-                    )
-                ).ToList()
-            );
         }
 
         public async Task<ImageInstitutionListDTO> GetImageInstitutionsAsync()

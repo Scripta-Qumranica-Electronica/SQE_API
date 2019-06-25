@@ -23,17 +23,23 @@ namespace SQE.SqeHttpApi.Server
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IHostingEnvironment env)
         {
             Configuration = configuration;
+            Environment = env;
+            
+            // Run the startup checks to ensure all necessary external services are available.
+            StartupChecks.RunAllChecks(configuration, env);
         }
 
-        public IConfiguration Configuration { get; }
+        private IConfiguration Configuration { get; }
+        private IHostingEnvironment Environment { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddCors();
 
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
@@ -43,7 +49,6 @@ namespace SQE.SqeHttpApi.Server
             services.AddScoped<IImageService, ImageService>();
             services.AddScoped<ITextRetrievingService, TextRetrievingService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddSingleton<IEmailSender, DevEmailSender>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IEditionRepository, EditionRepository>();
             services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();
@@ -51,6 +56,14 @@ namespace SQE.SqeHttpApi.Server
             services.AddTransient<IArtefactRepository, ArtefactRepository>();
             services.AddTransient<IDatabaseWriter, DatabaseWriter>();
             services.AddTransient<ITextRetrievalRepository, TextRetrievalRepository>();
+            
+            // When running integration tests, we do not actually send out emails. This checks ASPNETCORE_ENVIRONMENT
+            // and if it is "IntegrationTests", then a Fake for IEmailSender is used instead of the real one.
+            Console.WriteLine(Environment.EnvironmentName);
+            if (Environment.IsEnvironment("IntegrationTests"))
+                services.AddSingleton<IEmailSender, FakeEmailSender>();
+            else
+                services.AddSingleton<IEmailSender, EmailSender>();
 
             // Configure routing.
             services.Configure<RouteOptions>(options =>
@@ -114,12 +127,16 @@ namespace SQE.SqeHttpApi.Server
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
-            if (env.IsDevelopment())
+            if (Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
+            
+            app.UseCors(
+                options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+            );
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
@@ -130,6 +147,8 @@ namespace SQE.SqeHttpApi.Server
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "SQE API v1");
             });
+            
+            app.UseHttpException();
 
             app.UseMvc();
         }

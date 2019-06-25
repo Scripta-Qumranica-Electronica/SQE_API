@@ -70,19 +70,4 @@ WHERE $OwnedTablePkName = @OwnedTableId
 INSERT INTO single_action (`main_action_id`, `action`, `table`, `id_in_table`) 
 VALUES(@MainActionId, @Action, @TableName, @OwnedTableId)";
     }
-    
-    internal static class PermissionCheckQuery
-    {
-        public static string GetQuery { get; } = @"
-SELECT may_write AS MayWrite, locked AS Locked
-FROM edition 
-JOIN edition_editor USING(edition_id) 
-WHERE edition_id = @EditionId AND user_id = @UserId";
-        
-        internal class Result 
-        {
-            public ushort MayWrite { get; set; }
-            public ushort Locked { get; set; }
-        }
-    }
 }

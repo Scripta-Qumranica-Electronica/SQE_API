@@ -20,19 +20,24 @@ SELECT artefact_data.name AS Name,
        image_catalog.object_id AS ImagedObjectId,
        image_catalog.catalog_side AS CatalogSide, 
        SQE_image.image_catalog_id AS ImageCatalogId
-FROM SQE_image
-JOIN image_catalog USING(image_catalog_id)
-JOIN artefact_shape USING(sqe_image_id)
-JOIN artefact_shape_owner USING(artefact_shape_id)
-JOIN artefact_data USING(artefact_id)
-JOIN artefact_data_owner USING(artefact_data_id)
-JOIN artefact_position USING(artefact_id)
-JOIN artefact_position_owner USING(artefact_position_id)
-JOIN edition ON edition.edition_id = artefact_shape_owner.edition_id
-    AND edition.edition_id = artefact_data_owner.edition_id
+FROM edition
+JOIN edition_editor USING(edition_id)
+JOIN artefact_shape_owner USING(edition_id)
+JOIN artefact_shape USING(artefact_shape_id)
+LEFT JOIN artefact_position USING(artefact_id)
+LEFT JOIN artefact_position_owner ON artefact_position.artefact_position_id = artefact_position_owner.artefact_position_id
     AND edition.edition_id = artefact_position_owner.edition_id
-JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
+JOIN artefact_data USING(artefact_id)
+JOIN artefact_data_owner ON artefact_data.artefact_data_id = artefact_data_owner.artefact_data_id
+    AND edition.edition_id = artefact_data_owner.edition_id
+JOIN SQE_image USING(sqe_image_id)
+JOIN image_catalog USING(image_catalog_id)
+
 WHERE edition.edition_id = @EditionId
+   AND (
+        (artefact_position_owner.edition_id IS NULL AND artefact_position.transform_matrix IS NULL) OR
+        (artefact_position_owner.edition_id IS NOT NULL AND artefact_position.transform_matrix IS NOT NULL)
+   ) 
   AND $Restriction
 $Order";
 
@@ -55,16 +60,20 @@ $Order";
     public static class FindArtefactComponentId
     {
         private const string _getQuery = @"
-            SELECT $Table_id
+            SELECT DISTINCT $Table_id
             FROM $Table
             JOIN $Table_owner USING($Table_id)
-            WHERE $Table.artefact_id = @ArtefactId
+            WHERE $Where
                 AND $Table_owner.edition_id = @EditionId
             ";
 
-        public static string GetQuery(string table)
+        private const string _normalArt = "$Table.artefact_id = @ArtefactId";
+        private const string _artStack = "$Table.artefact_A_id = @ArtefactId OR $Table.artefact_B_id = @ArtefactId";
+
+        public static string GetQuery(string table, bool stack = false)
         {
-            return _getQuery.Replace("$Table", table);
+            return _getQuery.Replace("$Where", stack ? _artStack : _normalArt)
+                .Replace("$Table", table);
         }
     }
 

@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.AspNetCore.Mvc;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
 
@@ -42,14 +44,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
-            try
-            {
-                return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, masks, images);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, masks, images);
         }
         
         /// <summary>
@@ -65,14 +60,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
         {
             ParseOptionals(optional, out var images, out var masks);
-            try
-            {
-                return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
         }
         
         /// <summary>
@@ -91,20 +79,31 @@ namespace SQE.SqeHttpApi.Server.Controllers
             [FromBody] UpdateArtefactDTO payload
             )
         {
-            try
-            {
-                return await _artefactService.UpdateArtefact(
-                    _userService.GetCurrentUserObject(editionId), 
-                    editionId, 
-                    artefactId, 
-                    payload.mask, 
-                    payload.name, 
-                    payload.position);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            return await _artefactService.UpdateArtefactAsync(
+                _userService.GetCurrentUserObject(editionId),
+                editionId,
+                artefactId,
+                payload.mask,
+                payload.name,
+                payload.position);
+        }
+        
+        /// <summary>
+        /// Deletes the specified artefact
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactId">Unique Id of the desired artefact</param>
+        [HttpDelete("editions/{editionId}/artefacts/{artefactId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult> DeleteArtefact(
+            [FromRoute] uint editionId, 
+            [FromRoute] uint artefactId
+        )
+        {
+            await _artefactService.DeleteArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId);
+            return NoContent();
         }
         
         /// <summary>
@@ -121,20 +120,13 @@ namespace SQE.SqeHttpApi.Server.Controllers
             [FromBody] CreateArtefactDTO payload
         )
         {
-            try
-            {
-                return await _artefactService.CreateArtefact(
-                    _userService.GetCurrentUserObject(editionId), 
-                    editionId, 
-                    payload.masterImageId, 
-                    payload.mask, 
-                    payload.name, 
-                    payload.position);
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
+            return await _artefactService.CreateArtefactAsync(
+                _userService.GetCurrentUserObject(editionId), 
+                editionId, 
+                payload.masterImageId, 
+                payload.mask, 
+                payload.name, 
+                payload.position);
         }
     }
 }

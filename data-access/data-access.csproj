@@ -11,7 +11,6 @@
     <PackageReference Include="Dapper" Version="1.60.6" />
     <PackageReference Include="MySql.Data" Version="8.0.15" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Wkx" Version="0.5.0" /> 
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.2.0" /> 
   </ItemGroup>
 </Project>

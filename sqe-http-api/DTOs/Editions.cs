@@ -14,6 +14,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public bool locked { get; set; }
         public bool isPublic { get; set; }
         public DateTime? lastEdit { set; get; }
+        public string copyright { get; set; }
     }
 
     public class EditionGroupDTO
@@ -41,7 +42,32 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class EditionUpdateRequestDTO
     {
-        // Currently only the Name can be updated
+        /// <summary>
+        /// Metadata to be added to or updated for an edition 
+        /// </summary>
+        /// <param name="name">Name of the work being edited. If null, the name is left the same as it currently is.</param>
+        /// <param name="copyrightHolder">Name of the copyright holder. This is a required field.
+        /// If left null, then the name of the first editor of the edition is input.</param>
+        /// <param name="collaborators">Name(s) of the collaborator(s) working officially on the edition.
+        /// This may be null, in which case the names of all edition editors are collected automatically
+        /// and added to the edition license.</param>
+        public EditionUpdateRequestDTO(string name, string copyrightHolder, string collaborators)
+        {
+            this.name = name;
+            this.copyrightHolder = copyrightHolder;
+            this.collaborators = collaborators;
+        }
+
         public string name { get; set; }
+        public string copyrightHolder { get; set; }
+        public string collaborators { get; set; }
+    }
+
+    public class EditionCopyDTO : EditionUpdateRequestDTO
+    {
+        public EditionCopyDTO(string name, string copyrightHolder, string collaborators) : base(name, copyrightHolder,
+            collaborators)
+        {
+        }
     }
 }

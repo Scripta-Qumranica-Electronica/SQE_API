@@ -46,21 +46,14 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param name="payload">A JSON object with all data necessary to create a new user account</param>
         /// <returns>Returns a UserDTO for the newly created account.</returns>
         /// <response code="200">New user account was created and an activation email has been sent to the new user</response>
-        /// <response code="409">Username or email already in use by another user account</response>
+        /// <response code="409">Email already in use by another user account</response>
         [AllowAnonymous]
         [HttpPost]
         [ProducesResponseType(200)]
         [ProducesResponseType(409)]
         public async Task<ActionResult<UserDTO>> CreateNewUser([FromBody] NewUserRequestDTO payload)
         {
-            try
-            {
-                return await _userService.CreateNewUserAsync(payload);
-            }
-            catch(DbDetailedFailedWrite err)
-            {
-                return Conflict(new {message = err.Message});
-            }
+            return await _userService.CreateNewUserAsync(payload);
         }
         
         /// <summary>
@@ -71,21 +64,14 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// will be populated with existing user data.</param>
         /// <returns>Returns a UserDTO with the updated user account details.</returns>
         /// <response code="200">User account details have been updated</response>
-        /// <response code="409">Username or email already in use by another user account</response>
+        /// <response code="409">Email already in use by another user account</response>
         [HttpPut]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(409)]
-        public async Task<ActionResult<UserDTO>> ChangeUserInfo([FromBody] UpdateUserRequestDTO payload)
+        public async Task<ActionResult<DetailedUserDTO>> ChangeUserInfo([FromBody] UserUpdateRequestDTO payload)
         {
-            try
-            {
-                return await _userService.UpdateUserAsync(_userService.GetCurrentUserObject(), payload);
-            }
-            catch(DbDetailedFailedWrite err)
-            {
-                return Conflict(new {message = err.Message});
-            }
+            return await _userService.UpdateUserAsync(_userService.GetCurrentUserObject(), payload);
         }
         
         /// <summary>
@@ -99,41 +85,26 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpPost("confirm-registration")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<UserDTO>> ConfirmUserRegistration([FromBody] EmailTokenDTO payload)
+        public async Task<ActionResult<UserDTO>> ConfirmUserRegistration([FromBody] AccountActivationRequestDTO payload)
         {
-            try
-            {
-                await _userService.ConfirmUserRegistrationAsync(payload.token);
-                return NoContent();
-            }
-            catch
-            {
-                return NotFound();
-            }
+            await _userService.ConfirmUserRegistrationAsync(payload.token);
+            return NoContent();
         }
 
         /// <summary>
-        /// Provides a JWT bearer token for valid username and password
+        /// Provides a JWT bearer token for valid email and password
         /// </summary>
-        /// <param name="payload">JSON object with a username and password parameter</param>
-        /// <returns>A LoginResponseDTO with a JWT for activated user accounts, or the email address of an unactivated user account.</returns>
+        /// <param name="payload">JSON object with an email and password parameter</param>
+        /// <returns>A DetailedUserTokenDTO with a JWT for activated user accounts, or the email address of an unactivated user account.</returns>
         /// <response code="200">User has been authenticated</response>
         /// <response code="401">User credentials could not be authenticated</response>
         [AllowAnonymous]
         [HttpPost("login")]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
-        public async Task<ActionResult<LoginResponseDTO>> AuthenticateAsync([FromBody]LoginRequestDTO payload)
+        public async Task<ActionResult<DetailedUserTokenDTO>> AuthenticateAsync([FromBody]LoginRequestDTO payload)
         {
-            try
-            {
-                var user = await _userService.AuthenticateAsync(payload.userName, payload.password);
-                return user;
-            }
-            catch
-            {
-                return Unauthorized(new {message = "Username or password is incorrect ", code = 600});
-            }
+            return await _userService.AuthenticateAsync(payload.email, payload.password);
         }
         
         /// <summary>
@@ -142,23 +113,35 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// </summary>
         /// <param name="payload">JSON object with the current email address and the new desired email address</param>
         /// <returns></returns>
-        /// <response code="204">Always returns 204 whether successful or not</response>
+        /// <response code="204">Returns 204 if successful</response>
+        /// <response code="409">Email already in use by another user account or account already activated</response>
         [AllowAnonymous]
         [HttpPost("change-unactivated-email")]
         [ProducesResponseType(204)]
+        [ProducesResponseType(409)]
         public async Task<ActionResult> ChangeEmailOfUnactivatedUserAccount(
             [FromBody]UnactivatedEmailUpdateRequestDTO payload)
         {
-            try
-            {
-                await _userService.UpdateUnactivatedAccountEmail(payload.oldEmail, payload.newEmail);
-                return NoContent();
-            }
-            catch //(DbDetailedFailedWrite err)
-            {
-                return NoContent(); // Let's suppress these errors for now until we decide what if anything might be safe.
-                //return Conflict(new {message = err.Message});
-            }
+            await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail);
+            return NoContent();
+            
+        }
+        
+        /// <summary>
+        /// Sends a new activation email for the user's account.
+        /// This will not work if the user account associated with the email address has already been activated.
+        /// </summary>
+        /// <param name="payload">JSON object with the current email address and the new desired email address</param>
+        /// <returns></returns>
+        /// <response code="204">Always returns 204 whether successful or not</response>
+        [AllowAnonymous]
+        [HttpPost("resend-activation-email")]
+        [ProducesResponseType(204)]
+        public async Task<ActionResult> ResendUserAccountActivationEmail(
+            [FromBody]ResendUserAccountActivationRequestDTO payload)
+        {
+            await _userService.ResendActivationEmail(payload.email);
+            return NoContent();
             
         }
         
@@ -173,15 +156,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(204)]
         public async Task<ActionResult> ForgotPassword([FromBody] ResetUserPasswordRequestDTO payload)
         {
-            try
-            {
-                await _userService.RequestResetLostPasswordAsync(payload.email);
-                return NoContent();
-            }
-            catch
-            {
-                return NoContent(); // Suppress any errors
-            }
+            await _userService.RequestResetLostPasswordAsync(payload.email);
+            return NoContent();
         }
         
         /// <summary>
@@ -194,18 +170,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpPost("change-password")]
         [ProducesResponseType(204)]
         [ProducesResponseType(401)]
-        public async Task<ActionResult> ResetForgottenPassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
+        public async Task<ActionResult> ChangePassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
         {
-            try
-            {
-                await _userService.ChangePasswordAsync(_userService.GetCurrentUserObject(), payload.oldPassword,
-                    payload.newPassword);
-                return NoContent();
-            }
-            catch
-            {
-                return Unauthorized(new {message = "Incorrect password", error = 600});
-            }
+            await _userService.ChangePasswordAsync(_userService.GetCurrentUserObject(), payload.oldPassword,
+                payload.newPassword);
+            return NoContent();
         }
         
         /// <summary>
@@ -219,17 +188,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpPost("change-forgotten-password")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult> ResetForgottenPassword([FromBody] ResetForgottenUserPasswordDTO payload)
+        public async Task<ActionResult> ChangeForgottenPassword([FromBody] ResetForgottenUserPasswordRequestDto payload)
         {
-            try
-            {
-                await _userService.ResetLostPasswordAsync(payload.token, payload.password);
-                return NoContent();
-            }
-            catch
-            {
-                return NotFound(new {message = "Token not found", error = 602});
-            }
+            await _userService.ResetLostPasswordAsync(payload.token, payload.password);
+            return NoContent();
         }
     }
 }

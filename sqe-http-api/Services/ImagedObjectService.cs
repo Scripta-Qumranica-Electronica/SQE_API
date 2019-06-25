@@ -2,13 +2,15 @@
 using System.Linq;
 using System.Threading.Tasks;
 using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 
 namespace SQE.SqeHttpApi.Server.Helpers
 {
     public interface IImagedObjectService
     {
-        Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId);
+        Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId, bool artefacts = false,
+            bool masks = false);
         Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(uint? userId, uint editionId,
             bool withMasks = false);
         Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId,
@@ -34,13 +36,18 @@ namespace SQE.SqeHttpApi.Server.Helpers
             _artefactRepository = artefactRepository;
         }
 
-        public async Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId)
+        // TODO: Fix this and GetImagedObjectsWithArtefactsAsync up to be more DRY and efficient.
+        public async Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId,
+            bool artefacts = false, bool masks = false)
         {
-            var imagedFragments = await _repo.GetImagedObjectsAsync(userId, editionId, null);
+            if (artefacts)
+                return await GetImagedObjectsWithArtefactsAsync(userId, editionId, masks);
+            
+            var imagedObjects = await _repo.GetImagedObjectsAsync(userId, editionId, null);
 
-            if (imagedFragments == null)
+            if (imagedObjects == null)
             {
-                throw new NotFoundException((uint)editionId);
+                throw new StandardErrors.DataNotFound("imaged object", editionId, "edition");
             }
             var result = new ImagedObjectListDTO
             {
@@ -58,7 +65,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 imageDict[image.ObjectId].Add(_imageService.ImageToDTO(image));
             }
 
-            foreach (var i in imagedFragments)
+            foreach (var i in imagedObjects)
             {
                 if (imageDict.TryGetValue(i.Id, out var imagedFragment))
                     result.imagedObjects.Add(ImagedObjectModelToDTO(i, imagedFragment));
