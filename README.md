@@ -40,6 +40,8 @@ Provide some random string as a secret that is used to generate the JWT's
 
 These environment variables automatically rewrite the settings `sqe-http-api/appsettings.json` when starting up the docker container.  If you are running the API directly, probably for development purposes, then you can insert your settings in sqe-http-api/appsettings.json before running the project (the `.githooks/pre-commit` script will check for sensitive information in the `docker-compose.yml`and `sqe-http-api/appsettings.json` files before allowing you to commit changes with git and thus accidentally push sensitive data to GitHub).
 
+This project has a custom githook in .githooks that will ensure no sensitive data is transmitted to GitHub when pushing commits. If you want to benefit from this, you must run `git config core.hooksPath .githooks` in the project's root to enable the checks.
+
 ## Project structure
 
 The overall project (or solution) uses several distinct components in two separate cs projects to process web requests.  The `sqe-http-api` project houses the `controllers`, which receive HTTP requests and route them to the `services`, which are responsible for managing the data access task and formatting the response using a `DTO`.  We still need to add a project with the `sqe-signalr-api`.
