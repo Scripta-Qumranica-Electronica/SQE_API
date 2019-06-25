@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
 using MailKit.Net.Smtp;
+using EmailValidation;
 using Microsoft.AspNetCore.Hosting;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 
@@ -43,23 +44,12 @@ namespace SQE.SqeHttpApi.Server.Helpers
             var security = _config.GetConnectionString("MailerEmailSmtpSecurity");
             var securityEnum = (SecureSocketOptions)Enum.Parse(typeof(SecureSocketOptions), security);
             
+            if (!EmailValidator.Validate(email))
+                throw new StandardErrors.EmailAddressImproperlyFormatted(email);
+            
             var mimeMessage = new MimeMessage();
             mimeMessage.From.Add(new MailboxAddress("SQE Webadmin", senderEmail));
-            
-            // First catch any parsing errors for the submitted email address
-            try
-            {
-                mimeMessage.To.Add(new MailboxAddress("Microsoft ASP.NET Core", email));
-            }
-            catch (ParseException)
-            {
-                // Throw a more helpful error when running in production
-                if (_env.IsProduction())
-                    throw new StandardErrors.EmailAddressImproperlyFormatted(email);
-
-                throw;
-            }
-            
+            mimeMessage.To.Add(new MailboxAddress("Microsoft ASP.NET Core", email));
             mimeMessage.Subject = subject; //Subject  
             mimeMessage.Body = new TextPart("html") {Text = htmlMessage};
 
@@ -72,15 +62,18 @@ namespace SQE.SqeHttpApi.Server.Helpers
                         int.TryParse(port, out var intValue) ? intValue : 0,
                         securityEnum);
                     client.Authenticate(user, pwd);
-                    client.Verify(email); // Check first if the email address is deliverable
                     await client.SendAsync(mimeMessage);
                     await client.DisconnectAsync(true);
                 }
                 catch (SmtpCommandException e)
                 {
                     // If the status code indicates that the email address is undeliverable, throw a descriptive error
-                    if (_env.IsProduction() && e.StatusCode == SmtpStatusCode.CannotVerifyUserWillAttemptDelivery)
+                    if (_env.IsProduction() && e.StatusCode == SmtpStatusCode.MailboxUnavailable)
                         throw new StandardErrors.EmailAddressUndeliverable(email);
+                    
+                    // Throw a less revealing error when running in production
+                    if (_env.IsProduction())
+                        throw new StandardErrors.EmailNotSent(email);
 
                     throw;
                 }
