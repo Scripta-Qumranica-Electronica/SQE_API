@@ -39,7 +39,7 @@ namespace SQE.ApiTest
             // Assert
             response.EnsureSuccessStatusCode();
             Assert.NotEmpty(msg.textFragments);
-            Assert.NotNull(msg.textFragments[0].colId);
+            Assert.NotEqual((uint)0, msg.textFragments[0].colId);
         }
         
         #endregion Anonymous retrieval
