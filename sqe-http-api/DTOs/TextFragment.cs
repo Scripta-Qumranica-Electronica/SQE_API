@@ -4,10 +4,10 @@ namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class TextFragmentDTO
     {
-        public string colId { get; set; }
+        public uint colId { get; set; }
         public string colName { get; set; }
         
-        public TextFragmentDTO(string colId, string colName)
+        public TextFragmentDTO(uint colId, string colName)
         {
             this.colId = colId;
             this.colName = colName;
@@ -26,10 +26,10 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class LineDataDTO
     {
-        public string lineId { get; set; }
+        public uint lineId { get; set; }
         public string lineName { get; set; }
 
-        public LineDataDTO(string lineId, string lineName)
+        public LineDataDTO(uint lineId, string lineName)
         {
             this.lineId = lineId;
             this.lineName = lineName;

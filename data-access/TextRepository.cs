@@ -12,77 +12,71 @@ namespace SQE.SqeHttpApi.DataAccess
 
     public interface ITextRepository
     {
-        Task<TextEdition> GetLineById( uint lineId, uint editionId);
-        Task<TextEdition> GetTextFragmentByIdAsync( uint textFragmentId, uint editionId);
-        Task<List<LineData>> GetLineIdsAsync(uint fragmentId, uint editionId);
-        Task<List<TextFragment>> GetFragmentIds(uint editionId);
+        Task<TextEdition> GetLineById(UserInfo user, uint lineId);
+        Task<TextEdition> GetTextFragmentByIdAsync(UserInfo user, uint textFragmentId);
+        Task<List<LineData>> GetLineIdsAsync(UserInfo user, uint fragmentId);
+        Task<List<TextFragment>> GetFragmentIds(UserInfo user);
     }
 
     public class TextRepository : DbConnectionBase, ITextRepository
     {
         public TextRepository(IConfiguration config) : base(config) { }
 
-        public async Task<TextEdition> GetLineById( uint lineId, uint editionId)
+        public async Task<TextEdition> GetLineById(UserInfo user, uint lineId)
         {
-            var terminators = _getTerminators(
-                TextRetrieval.GetLineTerminatorsQuery,
-                lineId,
-                editionId);
+            var terminators = _getTerminators(user, TextRetrieval.GetLineTerminatorsQuery, lineId);
 
             if (terminators.Length!=2) 
                 return new TextEdition();
 
-            return await _getEntityById(terminators[0], terminators[1], editionId);
+            return await _getEntityById(user, terminators[0], terminators[1]);
             
         }
         
-        public async Task<TextEdition> GetTextFragmentByIdAsync(uint textFragmentId, uint editionId)
+        public async Task<TextEdition> GetTextFragmentByIdAsync(UserInfo user, uint textFragmentId)
         {
-            var terminators = _getTerminators(
-                TextRetrieval.GetFragmentTerminatorsQuery,
-                textFragmentId,
-                editionId);
+            var terminators = _getTerminators(user, TextRetrieval.GetFragmentTerminatorsQuery, textFragmentId);
 
             if (terminators.Length!=2) 
                 return new TextEdition();
 
-           return await _getEntityById(terminators[0], terminators[1], editionId);
+           return await _getEntityById(user, terminators[0], terminators[1]);
             
         }
 
-        public async Task<List<LineData>> GetLineIdsAsync(uint fragmentId, uint editionId)
+        public async Task<List<LineData>> GetLineIdsAsync(UserInfo user, uint fragmentId)
         {
             using (var connection = OpenConnection())
             {
                 return (await connection.QueryAsync<LineData>(
                     TextRetrieval.GetLineIdsQuery,
-                    param: new {fragmentId = fragmentId, editionId = editionId}
+                    param: new {fragmentId = fragmentId, editionId = user.editionId, UserId = user.userId}
                 )).ToList();
                     //connection.Close();
             }
         }
 
-        public async Task<List<TextFragment>> GetFragmentIds(uint editionId)
+        public async Task<List<TextFragment>> GetFragmentIds(UserInfo user)
         {
             using (var connection = OpenConnection())
             {
                 return (await connection.QueryAsync<TextFragment>(
                     TextRetrieval.GetFragmentIdsQuery,
-                    param: new {editionId = editionId}
+                    param: new {editionId = user.editionId, UserId = user.userId}
                 )).ToList();
                 // connection.Close(); // using will close this for you, or so the docs say.
             }
         }
 
 
-        private uint[] _getTerminators(string query, uint entityId, uint editionId)
+        private uint[] _getTerminators(UserInfo user, string query, uint entityId)
         {
             uint[] terminators;
             using (var connection = OpenConnection())
             {
                 terminators = (connection.Query<uint>(
                     query,
-                    param: new {EntityId = entityId, EditionId = editionId})).ToArray();
+                    param: new {EntityId = entityId, EditionId = user.editionId ?? 0})).ToArray();
                 connection.Close();
             }
 
@@ -92,7 +86,7 @@ namespace SQE.SqeHttpApi.DataAccess
         }
         
         // TODO:Get license and author data
-        private async Task<TextEdition> _getEntityById(uint startId, uint endId, uint editionId)
+        private async Task<TextEdition> _getEntityById(UserInfo user, uint startId, uint endId)
         {
             TextEdition lastEdition = null;
             Fragment lastFragment = null;
@@ -151,7 +145,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
                         return newScroll ? scroll : null;
                     },
-                    param: new {startId = startId, endId = endId, editionId=editionId},
+                    param: new {startId = startId, endId = endId, editionId=user.editionId ?? 0},
                     splitOn: "textFragmentId, lineId, signId, signCharId, charAttributeId");
                 //connection.Close();
                 var formattedEdition = scrolls.AsList()[0];
