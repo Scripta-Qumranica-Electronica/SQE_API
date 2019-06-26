@@ -22,7 +22,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     )
     
     SELECT scroll_data.scroll_id AS scrollId,
-       scroll_data.Name AS scroll,
+       scroll_data.Name AS editionNAme,
        edition.copyright_holder AS copyrightHolder,
        edition.collaborators,
        col_data.col_id AS textFragmentId,
@@ -105,36 +105,41 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     public const string GetLineIdsQuery = @"
       WITH RECURSIVE lineIds
       AS (
-        SELECT col_to_line.col_id AS fragmentId, col_to_line.line_id AS lineId, edition_id AS editionId
+        SELECT col_to_line.col_id AS fragmentId, col_to_line.line_id AS lineId, line_data.name AS lineName, sign_char_attribute_owner.edition_id AS editionId
         FROM col_to_line
           JOIN line_to_sign USING (line_id)
           JOIN sign_char USING (sign_id)
           JOIN sign_char_attribute USING (sign_char_id)
           JOIN sign_char_attribute_owner USING (sign_char_attribute_id)
+          JOIN line_data USING(line_id)
+          JOIN line_data_owner USING(line_data_id)
         WHERE col_id = @fragmentId
-          AND edition_id=@editionId
-          AND attribute_value_id =12
+          AND sign_char_attribute_owner.edition_id = @editionId
+          AND line_data_owner.edition_id = @editionId
+          AND attribute_value_id = 12
         
        UNION
         
-        SELECT fragmentId, lts2.line_id as lineId, editionId
-        FROM lineIds     
+        SELECT fragmentId, lts2.line_id AS lineId, line_data.name AS lineName, editionId
+        FROM lineIds
           JOIN line_to_sign AS lts1 ON lts1.line_id =lineId
           JOIN sign_char USING (sign_id)
           JOIN sign_char_attribute USING (sign_char_id)
-          JOIN sign_char_attribute_owner USING (sign_char_attribute_id)
+          JOIN sign_char_attribute_owner ON sign_char_attribute_owner.sign_char_attribute_id = sign_char_attribute.sign_char_attribute_id
+            AND sign_char_attribute_owner.edition_id = editionId
           JOIN position_in_stream USING (sign_id)
           JOIN line_to_sign as lts2 on lts2.sign_id=next_sign_id
           JOIN col_to_line ON lts2.line_id=col_to_line.line_id
-          JOIN col_to_line_owner USING (col_to_line_id)
+          JOIN col_to_line_owner ON col_to_line_owner.col_to_line_id = col_to_line.col_to_line_id
+            AND col_to_line_owner.edition_id = editionId
+          JOIN line_data ON line_data.line_id = lts2.line_id
+          JOIN line_data_owner ON line_data_owner.line_data_id = line_data.line_data_id
+            AND line_data_owner.edition_id = editionId
         WHERE lts1.line_id = lineId
            AND  attribute_value_id =11
            AND col_to_line.col_id=fragmentId
-           AND sign_char_attribute_owner.edition_id
-                = col_to_line_owner.edition_id
-                = editionId
         )
-      SELECT lineId
+      SELECT lineId, lineName
       FROM lineIds
 
 ";

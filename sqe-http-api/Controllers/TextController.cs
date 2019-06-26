@@ -10,14 +10,14 @@ namespace SQE.SqeHttpApi.Server.Controllers
     [Authorize]
     [Route("v1")]
     [ApiController]
-    public class TextRetrievingController : ControllerBase
+    public class TextController : ControllerBase
     {
-        private ITextRetrievingService _service;
+        private ITextService _textService;
         
         
-        public TextRetrievingController(ITextRetrievingService service)
+        public TextController(ITextService textService)
         {
-            _service = service;
+            _textService = textService;
         }
 
         /// <summary>
@@ -28,10 +28,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <returns>A scroll object with includes the fragments and their lines
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
-        [HttpGet("line")]
-        public async Task<ActionResult<Scroll>> RetrieveTextOfLineById(uint lineId, uint editionId)
+        [HttpGet("editions/{editionId}/lines/{lineId}")]
+        public async Task<ActionResult<TextEdition>> RetrieveTextOfLineById([FromRoute] uint editionId, [FromRoute] uint lineId)
         {
-            return await _service.GetLineById( lineId, editionId);
+            return await _textService.GetLineByIdAsync( lineId, editionId);
         }
    
         /// <summary>
@@ -43,9 +43,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/text-fragments/{textFragmentId}")]
-        public async Task<ActionResult<Scroll>> RetrieveTextOfFragmentById([FromRoute] uint editionId, [FromRoute] uint textFragmentId)
+        public async Task<ActionResult<TextEdition>> RetrieveTextOfFragmentById([FromRoute] uint editionId, [FromRoute] uint textFragmentId)
         {
-            return await _service.GetFragmentByIdAsync(textFragmentId, editionId);
+            return await _textService.GetFragmentByIdAsync(textFragmentId, editionId);
         }
   
         
@@ -58,7 +58,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet("editions/{editionId}/text-fragments")]
         public async Task<ActionResult<TextFragmentListDTO>> RetrieveFragmentIds([FromRoute] uint editionId)
         {
-            return await _service.GetFragmentIdsAsync(editionId);
+            return await _textService.GetFragmentIdsAsync(editionId);
         }
  
         /// <summary>
@@ -68,10 +68,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param Name="editionId">Id of the edition</param>
         /// <returns>An array of the ids in the right sequence</returns>
         [AllowAnonymous]
-        [HttpGet("lineIds")]
-        public async Task<ActionResult<uint[]>> RetrieveLineIds(uint fragmentId, uint editionId)
+        [HttpGet("editions/{editionId}/text-fragments/{textFragmentId}/lines")]
+        public async Task<ActionResult<LineDataListDTO>> RetrieveLineIds([FromRoute] uint editionId, [FromRoute] uint textFragmentId)
         {
-            return await _service.GetLineIds(fragmentId, editionId);
+            return await _textService.GetLineIdsAsync(textFragmentId, editionId);
         }
     }
 }

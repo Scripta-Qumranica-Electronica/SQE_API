@@ -4,10 +4,10 @@ using SQE.SqeHttpApi.DataAccess.Helpers;
 
 namespace SQE.SqeHttpApi.DataAccess.Models
 {
-    public class Scroll
+    public class TextEdition
     {
         public uint scrollId { get; set; }
-        public string scroll { get; set; }
+        public string editionName { get; set; }
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }
         public readonly List<Fragment> fragments = new List<Fragment>();

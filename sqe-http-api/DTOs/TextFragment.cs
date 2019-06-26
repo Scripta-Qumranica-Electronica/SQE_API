@@ -23,4 +23,26 @@ namespace SQE.SqeHttpApi.Server.DTOs
             this.textFragments = textFragments;
         }
     }
+
+    public class LineDataDTO
+    {
+        public string lineId { get; set; }
+        public string lineName { get; set; }
+
+        public LineDataDTO(string lineId, string lineName)
+        {
+            this.lineId = lineId;
+            this.lineName = lineName;
+        }
+    }
+
+    public class LineDataListDTO
+    {
+        public List<LineDataDTO> lines { get; set; }
+
+        public LineDataListDTO(List<LineDataDTO> lines)
+        {
+            this.lines = lines;
+        }
+    }
 }

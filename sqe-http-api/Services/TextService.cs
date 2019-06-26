@@ -8,26 +8,25 @@ using SQE.SqeHttpApi.Server.DTOs;
 
 namespace SQE.SqeHttpApi.Server.Helpers
 {
-    public interface ITextRetrievingService
+    public interface ITextService
     {
-        Task<Scroll> GetLineById(uint lineId, uint editionId);
-        Task<Scroll> GetFragmentByIdAsync(uint fragmentId, uint editionId);
-        Task<uint[]> GetLineIds(uint fragmentId, uint editionId);
+        Task<TextEdition> GetLineByIdAsync(uint lineId, uint editionId);
+        Task<TextEdition> GetFragmentByIdAsync(uint fragmentId, uint editionId);
+        Task<LineDataListDTO> GetLineIdsAsync(uint fragmentId, uint editionId);
         Task<TextFragmentListDTO> GetFragmentIdsAsync(uint editionId);
     }
-    public class TextRetrievingService : ITextRetrievingService
+    public class TextService : ITextService
         {
-            private ITextRetrievalRepository _repo;
+            private ITextRepository _repo;
         
         
-            public TextRetrievingService(ITextRetrievalRepository repo)
+            public TextService(ITextRepository repo)
             {
                 _repo = repo;
             }
-
             
-            
-             public async Task<Scroll> GetLineById(uint lineId, uint editionId)
+            // TODO: make a DTO for this
+             public async Task<TextEdition> GetLineByIdAsync(uint lineId, uint editionId)
             {
                 var scroll = await _repo.GetLineById(lineId, editionId);
                 if (scroll.scrollId==0) 
@@ -36,7 +35,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             }
 
              // TODO: make a DTO for this
-            public async Task<Scroll> GetFragmentByIdAsync(uint fragmentId, uint editionId)
+            public async Task<TextEdition> GetFragmentByIdAsync(uint fragmentId, uint editionId)
             {
                 var edition = await _repo.GetTextFragmentByIdAsync(fragmentId, editionId);
                 if (edition.scrollId==0) // TODO: describe missing data better here.
@@ -44,10 +43,10 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 return edition;
             }
 
-            public async Task<uint[]> GetLineIds(uint fragmentId, uint editionId)
+            public async Task<LineDataListDTO> GetLineIdsAsync(uint fragmentId, uint editionId)
             {
-                var lineIds = await _repo.GetLineIds(fragmentId, editionId);
-                return lineIds;
+                return new LineDataListDTO((await _repo.GetLineIdsAsync(fragmentId, editionId))
+                    .Select(x => new LineDataDTO(x.lineId, x.lineName)).ToList());
             }
 
             public async Task<TextFragmentListDTO> GetFragmentIdsAsync(uint editionId)

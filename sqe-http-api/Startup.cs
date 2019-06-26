@@ -47,7 +47,7 @@ namespace SQE.SqeHttpApi.Server
             services.AddScoped<IImagedObjectService, ImagedObjectService>();
             services.AddScoped<IArtefactService, ArtefactService>();
             services.AddScoped<IImageService, ImageService>();
-            services.AddScoped<ITextRetrievingService, TextRetrievingService>();
+            services.AddScoped<ITextService, TextService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IEditionRepository, EditionRepository>();
@@ -55,7 +55,7 @@ namespace SQE.SqeHttpApi.Server
             services.AddTransient<IImageRepository, ImageRepository>();
             services.AddTransient<IArtefactRepository, ArtefactRepository>();
             services.AddTransient<IDatabaseWriter, DatabaseWriter>();
-            services.AddTransient<ITextRetrievalRepository, TextRetrievalRepository>();
+            services.AddTransient<ITextRepository, TextRepository>();
             
             // When running integration tests, we do not actually send out emails. This checks ASPNETCORE_ENVIRONMENT
             // and if it is "IntegrationTests", then a Fake for IEmailSender is used instead of the real one.
