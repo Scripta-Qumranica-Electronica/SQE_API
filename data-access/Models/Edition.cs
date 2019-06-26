@@ -9,6 +9,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public uint scrollId { get; set; }
         public string scroll { get; set; }
         public string copyrightHolder { get; set; }
+        public string collaborators { get; set; }
         public readonly List<Fragment> fragments = new List<Fragment>();
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -24,7 +25,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         /// <returns>String with all contributors</returns>
         public string getAuthors()
         {
-            return "Authors";
+            return collaborators;
         }
 
 
@@ -33,7 +34,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         /// </summary>
         public void addLicence()
         {
-            licence = Licence.printLicence(copyrightHolder, getAuthors());
+            licence = Licence.printLicence(copyrightHolder, collaborators);
         }
     }
 

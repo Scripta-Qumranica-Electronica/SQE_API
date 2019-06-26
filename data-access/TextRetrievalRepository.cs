@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -12,9 +13,9 @@ namespace SQE.SqeHttpApi.DataAccess
     public interface ITextRetrievalRepository
     {
         Task<Scroll> GetLineById( uint lineId, uint editionId);
-        Task<Scroll> GetFragmentById( uint fragmentId, uint editionId);
+        Task<Scroll> GetTextFragmentByIdAsync( uint textFragmentId, uint editionId);
         Task<uint[]> GetLineIds(uint fragmentId, uint editionId);
-        Task<uint[]> GetFragmentIds(uint editionId);
+        Task<List<TextFragment>> GetFragmentIds(uint editionId);
     }
 
     public class TextRetrievalRepository : DbConnectionBase, ITextRetrievalRepository
@@ -35,11 +36,11 @@ namespace SQE.SqeHttpApi.DataAccess
             
         }
         
-        public async Task<Scroll> GetFragmentById(uint fragmentId, uint editionId)
+        public async Task<Scroll> GetTextFragmentByIdAsync(uint textFragmentId, uint editionId)
         {
             var terminators = _getTerminators(
                 TextRetrieval.GetFragmentTerminatorsQuery,
-                fragmentId,
+                textFragmentId,
                 editionId);
 
             if (terminators.Length!=2) 
@@ -62,16 +63,15 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        public async Task<uint[]> GetFragmentIds(uint editionId)
+        public async Task<List<TextFragment>> GetFragmentIds(uint editionId)
         {
             using (var connection = OpenConnection())
             {
-                var ids = await connection.QueryAsync<uint>(
+                return (await connection.QueryAsync<TextFragment>(
                     TextRetrieval.GetFragmentIdsQuery,
                     param: new {editionId = editionId}
-                );
-                connection.Close();
-                return ids.ToArray();
+                )).ToList();
+                // connection.Close(); // using will close this for you, or so the docs say.
             }
         }
 
@@ -83,7 +83,7 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 terminators = (connection.Query<uint>(
                     query,
-                    param: new {entityId = entityId, editionId = editionId})).ToArray();
+                    param: new {EntityId = entityId, EditionId = editionId})).ToArray();
                 connection.Close();
             }
 
@@ -92,9 +92,10 @@ namespace SQE.SqeHttpApi.DataAccess
 
         }
         
+        // TODO:Get license and author data
         private async Task<Scroll> _getEntityById(uint startId, uint endId, uint editionId)
         {
-            Scroll lastScroll = null;
+            Scroll lastEdition = null;
             Fragment lastFragment = null;
             Line lastLine = null;
             Sign lastSign = null;
@@ -109,20 +110,20 @@ namespace SQE.SqeHttpApi.DataAccess
                     TextRetrieval.GetTextChunkQuery,
                     map: (scroll, fragment, line, sign, signChar, charAttribute) =>
                     {
-                        var newScroll = scroll.scrollId != lastScroll?.scrollId;
+                        var newScroll = scroll.scrollId != lastEdition?.scrollId;
 
                         if (newScroll)
                         {
-                            lastScroll = scroll;
+                            lastEdition = scroll;
                         }
 
                         if (fragment.fragmentId != lastFragment?.fragmentId)
 
-                            lastScroll = scroll.scrollId == lastScroll?.scrollId ? lastScroll : scroll;
+                            lastEdition = scroll.scrollId == lastEdition?.scrollId ? lastEdition : scroll;
                         if (fragment.fragmentId != lastFragment?.fragmentId)
                         {
                             lastFragment = fragment;
-                            lastScroll.fragments.Add(fragment);
+                            lastEdition.fragments.Add(fragment);
                         }
 
                         if (line.lineId != lastLine?.lineId)
@@ -152,9 +153,11 @@ namespace SQE.SqeHttpApi.DataAccess
                         return newScroll ? scroll : null;
                     },
                     param: new {startId = startId, endId = endId, editionId=editionId},
-                    splitOn: "fragmentId, lineId, signId, signCharId, charAttributeId");
-                connection.Close();
-                return scrolls.AsList()[0];
+                    splitOn: "textFragmentId, lineId, signId, signCharId, charAttributeId");
+                //connection.Close();
+                var formattedEdition = scrolls.AsList()[0];
+                formattedEdition.addLicence();
+                return formattedEdition;
             }
         }
     }
