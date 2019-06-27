@@ -8,4 +8,10 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public string line { get; set; }
         public readonly List<Sign> signs = new List<Sign>();
     }
+    
+    public class LineData
+    {
+        public uint lineId { get; set; }
+        public string lineName { get; set; }
+    }
 }

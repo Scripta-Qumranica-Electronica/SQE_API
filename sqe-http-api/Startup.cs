@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.Helpers;
+using SQE.SqeHttpApi.Server.Services;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace SQE.SqeHttpApi.Server

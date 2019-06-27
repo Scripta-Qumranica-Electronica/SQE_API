@@ -21,7 +21,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
             AND signId != @endId
     )
     
-    SELECT scroll_data.scroll_id AS scrollId,
+    SELECT scroll_data.scroll_id AS manuscriptId,
        scroll_data.Name AS editionNAme,
        edition.copyright_holder AS copyrightHolder,
        edition.collaborators,
@@ -84,25 +84,40 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
 
 ";
 
+    
+
+    
+
+    // TODO We have still to connect the fragments in a scroll and to adjust the query accordingly
+    
+  }
+
+  internal class GetFragmentTerminators
+  {
     /// <summary>
     /// Retrieves the first and last sign of a fragment
     /// </summary>
     /// <param Name="entityId">Id of line</param>
     /// <param Name="editionId">d of the edition the line is to be taken from</param>
-    public const string GetFragmentTerminatorsQuery = @"
+    public const string GetQuery = @"
       SELECT sign_char.sign_id
       FROM col_to_line
         JOIN line_to_sign USING (line_id)
         JOIN  sign_char USING (sign_id)
         JOIN   sign_char_attribute USING (sign_char_id)
         JOIN sign_char_attribute_owner USING (sign_char_attribute_id)
-      WHERE col_id=@EntityId
-        AND (attribute_value_id=12 OR attribute_value_id = 13)
-        AND edition_id=@EditionId
+        JOIN edition_editor ON edition_editor.edition_editor_id = @EditionId
+      WHERE (attribute_value_id = 12 OR attribute_value_id = 13)
+        AND col_id=@EntityId
+        AND sign_char_attribute_owner.edition_id=@EditionId
+        AND (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
       ORDER BY attribute_value_id
 ";
+  }
 
-    public const string GetLineIdsQuery = @"
+  internal class GetLineData
+  {
+    public const string Query = @"
       WITH RECURSIVE lineIds
       AS (
         SELECT col_to_line.col_id AS fragmentId, col_to_line.line_id AS lineId, line_data.name AS lineName, sign_char_attribute_owner.edition_id AS editionId
@@ -113,9 +128,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
           JOIN sign_char_attribute_owner USING (sign_char_attribute_id)
           JOIN line_data USING(line_id)
           JOIN line_data_owner USING(line_data_id)
-        WHERE col_id = @fragmentId
-          AND sign_char_attribute_owner.edition_id = @editionId
-          AND line_data_owner.edition_id = @editionId
+          JOIN edition_editor ON edition_editor.edition_id = @EditionId
+        WHERE col_id = @TextFragmentId
+          AND sign_char_attribute_owner.edition_id = @EditionId
+          AND line_data_owner.edition_id = @EditionId
+          AND (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
           AND attribute_value_id = 12
         
        UNION
@@ -141,19 +158,20 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
         )
       SELECT lineId, lineName
       FROM lineIds
-
-";
-
-    // TODO We have still to connect the fragments in a scroll and to adjust the query accordingly
-    public const string GetFragmentIdsQuery = @"
+    
+    ";
+  }
+  internal class GetFragmentData
+  {
+    public const string GetQuery = @"
       SELECT col_id AS ColId, name AS ColName
       FROM col_data
         JOIN col_data_owner USING (col_data_id)
         JOIN col_sequence USING(col_id)
-      WHERE edition_id = @EditionId
+        JOIN edition_editor USING(edition_id)
+      WHERE col_data_owner.edition_id = @EditionId
+        AND (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
       ORDER BY col_sequence.position
-";
-
-    
+      ";
   }
 }

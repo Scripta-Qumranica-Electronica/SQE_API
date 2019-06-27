@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
+using SQE.SqeHttpApi.Server.Services;
 
 namespace SQE.SqeHttpApi.Server.Controllers
 {
@@ -12,7 +12,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
     [ApiController]
     public class TextController : ControllerBase
     {
-        private ITextService _textService;
+        private readonly ITextService _textService;
         private readonly IUserService _userService;
         
         public TextController(ITextService textService, IUserService userService)
@@ -30,7 +30,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/lines/{lineId}")]
-        public async Task<ActionResult<TextEdition>> RetrieveTextOfLineById([FromRoute] uint editionId, [FromRoute] uint lineId)
+        public async Task<ActionResult<LineTextDTO>> RetrieveTextOfLineById([FromRoute] uint editionId, [FromRoute] uint lineId)
         {
             return await _textService.GetLineByIdAsync(_userService.GetCurrentUserObject(editionId), lineId);
         }
@@ -44,7 +44,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/text-fragments/{textFragmentId}")]
-        public async Task<ActionResult<TextEdition>> RetrieveTextOfFragmentById([FromRoute] uint editionId, [FromRoute] uint textFragmentId)
+        public async Task<ActionResult<TextEditionDTO>> RetrieveTextOfFragmentById([FromRoute] uint editionId, [FromRoute] uint textFragmentId)
         {
             return await _textService.GetFragmentByIdAsync(_userService.GetCurrentUserObject(editionId), textFragmentId);
         }
@@ -57,9 +57,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <returns>An array of the ids in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/text-fragments")]
-        public async Task<ActionResult<TextFragmentListDTO>> RetrieveFragmentIds([FromRoute] uint editionId)
+        public async Task<ActionResult<TextFragmentDataListDTO>> RetrieveFragmentIds([FromRoute] uint editionId)
         {
-            return await _textService.GetFragmentIdsAsync(_userService.GetCurrentUserObject(editionId));
+            return await _textService.GetFragmentDataAsync(_userService.GetCurrentUserObject(editionId));
         }
  
         /// <summary>

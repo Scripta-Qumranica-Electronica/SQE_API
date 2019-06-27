@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
 
@@ -16,19 +15,13 @@ namespace SQE.SqeHttpApi.Server.Controllers
     {
         private readonly IEditionService _editionService;
         private readonly IUserService _userService;
-        private readonly IImagedObjectService _imagedObjectService;
-        private readonly IArtefactService _artefactService;
 
         public EditionController(
             IEditionService editionService, 
-            IUserService userService, 
-            IImagedObjectService imagedObjectService,
-            IArtefactService artefactService)
+            IUserService userService)
         {
             _editionService = editionService;
             _userService = userService;
-            _imagedObjectService = imagedObjectService;
-            _artefactService = artefactService;
         }
 
         /// <summary>
@@ -41,7 +34,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
-            return await _editionService.GetEditionAsync(_userService.GetCurrentUserObject(editionId), fragments: false, artefacts: false);
+            return await _editionService.GetEditionAsync(_userService.GetCurrentUserObject(editionId));
         }
 
         /// <summary>

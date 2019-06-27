@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
@@ -33,6 +34,14 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public bool canWrite { get; set; }
         public bool canAdmin { get; set; }
     }
+    
+    public class TextEditionDTO
+    {
+        public uint manuscriptId { get; set; }
+        public string editionName { get; set; }
+        public string licence { get; set; }
+        public List<TextFragmentDTO> textFragments { get; set; }
+    }
 
     public class ShareDTO
     {
@@ -40,6 +49,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public PermissionDTO permission { get; set; }
     }
 
+    #region Request DTO's
     public class EditionUpdateRequestDTO
     {
         /// <summary>
@@ -70,4 +80,5 @@ namespace SQE.SqeHttpApi.Server.DTOs
         {
         }
     }
+    #endregion Request DTO's
 }

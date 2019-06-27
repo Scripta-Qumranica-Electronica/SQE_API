@@ -12,17 +12,17 @@ namespace SQE.SqeHttpApi.DataAccess
 
     public interface ITextRepository
     {
-        Task<TextEdition> GetLineById(UserInfo user, uint lineId);
+        Task<TextEdition> GetLineByIdAsync(UserInfo user, uint lineId);
         Task<TextEdition> GetTextFragmentByIdAsync(UserInfo user, uint textFragmentId);
-        Task<List<LineData>> GetLineIdsAsync(UserInfo user, uint fragmentId);
-        Task<List<TextFragment>> GetFragmentIds(UserInfo user);
+        Task<List<LineData>> GetLineIdsAsync(UserInfo user, uint textFragmentId);
+        Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo user);
     }
 
     public class TextRepository : DbConnectionBase, ITextRepository
     {
         public TextRepository(IConfiguration config) : base(config) { }
 
-        public async Task<TextEdition> GetLineById(UserInfo user, uint lineId)
+        public async Task<TextEdition> GetLineByIdAsync(UserInfo user, uint lineId)
         {
             var terminators = _getTerminators(user, TextRetrieval.GetLineTerminatorsQuery, lineId);
 
@@ -35,7 +35,7 @@ namespace SQE.SqeHttpApi.DataAccess
         
         public async Task<TextEdition> GetTextFragmentByIdAsync(UserInfo user, uint textFragmentId)
         {
-            var terminators = _getTerminators(user, TextRetrieval.GetFragmentTerminatorsQuery, textFragmentId);
+            var terminators = _getTerminators(user, GetFragmentTerminators.GetQuery, textFragmentId);
 
             if (terminators.Length!=2) 
                 return new TextEdition();
@@ -44,27 +44,25 @@ namespace SQE.SqeHttpApi.DataAccess
             
         }
 
-        public async Task<List<LineData>> GetLineIdsAsync(UserInfo user, uint fragmentId)
+        public async Task<List<LineData>> GetLineIdsAsync(UserInfo user, uint textFragmentId)
         {
             using (var connection = OpenConnection())
             {
                 return (await connection.QueryAsync<LineData>(
-                    TextRetrieval.GetLineIdsQuery,
-                    param: new {fragmentId = fragmentId, editionId = user.editionId, UserId = user.userId}
+                    GetLineData.Query,
+                    param: new {TextFragmentId = textFragmentId, EditionId = user.editionId, UserId = user.userId}
                 )).ToList();
                     //connection.Close();
             }
         }
 
-        public async Task<List<TextFragment>> GetFragmentIds(UserInfo user)
+        public async Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo user)
         {
             using (var connection = OpenConnection())
             {
-                return (await connection.QueryAsync<TextFragment>(
-                    TextRetrieval.GetFragmentIdsQuery,
-                    param: new {editionId = user.editionId, UserId = user.userId}
+                return (await connection.QueryAsync<TextFragmentData>(GetFragmentData.GetQuery,
+                    param: new {EditionId = user.editionId, UserId = user.userId ?? 0}
                 )).ToList();
-                // connection.Close(); // using will close this for you, or so the docs say.
             }
         }
 
@@ -76,7 +74,7 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 terminators = (connection.Query<uint>(
                     query,
-                    param: new {EntityId = entityId, EditionId = user.editionId ?? 0})).ToArray();
+                    param: new {EntityId = entityId, EditionId = user.editionId ?? 0, UserId = user.userId ?? 0})).ToArray();
                 connection.Close();
             }
 
@@ -89,7 +87,7 @@ namespace SQE.SqeHttpApi.DataAccess
         private async Task<TextEdition> _getEntityById(UserInfo user, uint startId, uint endId)
         {
             TextEdition lastEdition = null;
-            Fragment lastFragment = null;
+            TextFragment lastTextFragment = null;
             Line lastLine = null;
             Sign lastSign = null;
             SignChar lastChar = null;
@@ -99,30 +97,30 @@ namespace SQE.SqeHttpApi.DataAccess
             using (var connection = OpenConnection())
             {
                 
-                var scrolls = await connection.QueryAsync<TextEdition, Fragment, Line, Sign, SignChar, CharAttribute, TextEdition>(
+                var scrolls = await connection.QueryAsync<TextEdition, TextFragment, Line, Sign, SignChar, CharAttribute, TextEdition>(
                     TextRetrieval.GetTextChunkQuery,
                     map: (scroll, fragment, line, sign, signChar, charAttribute) =>
                     {
-                        var newScroll = scroll.scrollId != lastEdition?.scrollId;
+                        var newScroll = scroll.manuscriptId != lastEdition?.manuscriptId;
 
                         if (newScroll)
                         {
                             lastEdition = scroll;
                         }
 
-                        if (fragment.fragmentId != lastFragment?.fragmentId)
+                        if (fragment.textFragmentId != lastTextFragment?.textFragmentId)
 
-                            lastEdition = scroll.scrollId == lastEdition?.scrollId ? lastEdition : scroll;
-                        if (fragment.fragmentId != lastFragment?.fragmentId)
+                            lastEdition = scroll.manuscriptId == lastEdition?.manuscriptId ? lastEdition : scroll;
+                        if (fragment.textFragmentId != lastTextFragment?.textFragmentId)
                         {
-                            lastFragment = fragment;
+                            lastTextFragment = fragment;
                             lastEdition.fragments.Add(fragment);
                         }
 
                         if (line.lineId != lastLine?.lineId)
                         {
                             lastLine = line;
-                            lastFragment.lines.Add(line);
+                            lastTextFragment.lines.Add(line);
 
                         }
 

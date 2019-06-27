@@ -2,26 +2,33 @@ using System.Collections.Generic;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
-    public class TextFragmentDTO
+    public class TextFragmentDataDTO
     {
         public uint colId { get; set; }
         public string colName { get; set; }
         
-        public TextFragmentDTO(uint colId, string colName)
+        public TextFragmentDataDTO(uint colId, string colName)
         {
             this.colId = colId;
             this.colName = colName;
         }
     }
 
-    public class TextFragmentListDTO
+    public class TextFragmentDataListDTO
     {
-        public List<TextFragmentDTO> textFragments { get; set; }
+        public List<TextFragmentDataDTO> textFragments { get; set; }
 
-        public TextFragmentListDTO(List<TextFragmentDTO> textFragments)
+        public TextFragmentDataListDTO(List<TextFragmentDataDTO> textFragments)
         {
             this.textFragments = textFragments;
         }
+    }
+    
+    public class TextFragmentDTO
+    {
+        public uint textFragmentId { get; set; }
+        public string textFragmentName { get; set; }
+        public List<LineDTO> lines { get; set; }
     }
 
     public class LineDataDTO
@@ -44,5 +51,17 @@ namespace SQE.SqeHttpApi.Server.DTOs
         {
             this.lines = lines;
         }
+    }
+    
+    public class LineDTO
+    {
+        public uint lineId { get; set; }
+        public string lineName { get; set; }
+        public List<SignDTO> signs { get; set; }
+    }
+
+    public class LineTextDTO : LineDTO
+    {
+        public string licence { get; set; }
     }
 }

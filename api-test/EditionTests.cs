@@ -243,7 +243,7 @@ namespace SQE.ApiTest
         /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
         /// <param name="jwt">A JWT can be added the request to access private editions.</param>
         /// <returns></returns>
-        private async Task<EditionListDTO> GetRandomEdition(uint userId = 1, string jwt = null)
+        public async Task<EditionGroupDTO> GetRandomEdition(uint userId = 1, string jwt = null)
         {
             const string sql = @"
 SELECT edition_id 
@@ -256,7 +256,7 @@ WHERE user_id = @UserId";
             
             var randomEdition = allUserEditions[_faker.Random.Int(0, allUserEditions.Count - 1)];
             var url = $"/{version}/editions/{randomEdition}";
-            var (response, editionResponse) = await HttpRequest.SendAsync<string, EditionListDTO>(_client,
+            var (response, editionResponse) = await HttpRequest.SendAsync<string, EditionGroupDTO>(_client,
                 HttpMethod.Get, url, null, jwt);
             response.EnsureSuccessStatusCode();
 
