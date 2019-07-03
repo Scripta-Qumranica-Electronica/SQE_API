@@ -155,10 +155,10 @@ namespace SQE.ApiTest
             Assert.NotEqual((uint)0, msg.lineId);
             Assert.NotEmpty(msg.signs);
             Assert.NotEqual((uint)0, msg.signs.First().signId);
-            Assert.NotEmpty(msg.signs.First().signChars);
-            Assert.NotEqual((uint)0, msg.signs.First().signChars.First().signCharId);
-            Assert.NotEmpty(msg.signs.First().signChars.First().attributes);
-            Assert.NotEqual((uint)0, msg.signs.First().signChars.First().attributes.First().charAttributeId);
+            Assert.NotEmpty(msg.signs.First().signInterpretations);
+            Assert.NotEqual((uint)0, msg.signs.First().signInterpretations.First().signInterpretationId);
+            Assert.NotEmpty(msg.signs.First().signInterpretations.First().attributes);
+            Assert.NotEqual((uint)0, msg.signs.First().signInterpretations.First().attributes.First().interpretationAttributeId);
         }
 
         private static void _verifyTextEditionDTO(TextEditionDTO msg)
@@ -171,10 +171,10 @@ namespace SQE.ApiTest
             Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().lineId);
             Assert.NotEmpty(msg.textFragments.First().lines.First().signs);
             Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signId);
-            Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signChars);
-            Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signChars.First().signCharId);
-            Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signChars.First().attributes);
-            Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signChars.First().attributes.First().charAttributeId);
+            Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signInterpretations);
+            Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signInterpretations.First().signInterpretationId);
+            Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signInterpretations.First().attributes);
+            Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signInterpretations.First().attributes.First().interpretationAttributeId);
 
         }
         #endregion Helpers

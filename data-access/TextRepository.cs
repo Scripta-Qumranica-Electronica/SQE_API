@@ -24,7 +24,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
         public async Task<TextEdition> GetLineByIdAsync(UserInfo user, uint lineId)
         {
-            var terminators = _getTerminators(user, TextRetrieval.GetLineTerminatorsQuery, lineId);
+            var terminators = _getTerminators(user, GetLineTerminators.GetQuery, lineId);
 
             if (terminators.Length!=2) 
                 return new TextEdition();
@@ -90,16 +90,16 @@ namespace SQE.SqeHttpApi.DataAccess
             TextFragment lastTextFragment = null;
             Line lastLine = null;
             Sign lastSign = null;
-            SignChar lastChar = null;
+            SignInterpretation lastChar = null;
             CharAttribute lastCharAttribute = null;
             
             
             using (var connection = OpenConnection())
             {
                 
-                var scrolls = await connection.QueryAsync<TextEdition, TextFragment, Line, Sign, SignChar, CharAttribute, TextEdition>(
-                    TextRetrieval.GetTextChunkQuery,
-                    map: (scroll, fragment, line, sign, signChar, charAttribute) =>
+                var scrolls = await connection.QueryAsync<TextEdition, TextFragment, Line, Sign, SignInterpretation, CharAttribute, SignInterpretationROI, TextEdition>(
+                    GetTextChunk.GetQuery,
+                    map: (scroll, fragment, line, sign, signInterpretation, charAttribute, roi) =>
                     {
                         var newScroll = scroll.manuscriptId != lastEdition?.manuscriptId;
 
@@ -131,20 +131,22 @@ namespace SQE.SqeHttpApi.DataAccess
 
                         }
 
-                        if (signChar.signCharId != lastChar?.signCharId)
+                        if (signInterpretation.signInterpretationId != lastChar?.signInterpretationId)
                         {
-                            lastChar = signChar;
-                            lastSign.signChars.Add(signChar);
+                            lastChar = signInterpretation;
+                            lastSign.signInterpretations.Add(signInterpretation);
                         }
 
                         lastCharAttribute = charAttribute;
                         lastChar.attributes.Add(charAttribute);
 
-
+                        if(roi != null)
+                            lastChar.signInterpretationRois.Add(roi);
+                        
                         return newScroll ? scroll : null;
                     },
                     param: new {startId = startId, endId = endId, editionId=user.editionId ?? 0},
-                    splitOn: "textFragmentId, lineId, signId, signCharId, charAttributeId");
+                    splitOn: "textFragmentId, lineId, signId, signInterpretationId, interpretationAttributeId, SignInterpretationRoiId");
                 //connection.Close();
                 var formattedEdition = scrolls.AsList()[0];
                 formattedEdition.addLicence();

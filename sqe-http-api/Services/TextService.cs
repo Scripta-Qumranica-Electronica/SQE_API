@@ -36,7 +36,7 @@ namespace SQE.SqeHttpApi.Server.Services
             {
                 var edition = await _repo.GetTextFragmentByIdAsync(user, fragmentId);
                 if (edition.manuscriptId == 0) // TODO: describe missing data better here.
-                    throw new StandardErrors.DataNotFound("text fragment", fragmentId, "col_id");
+                    throw new StandardErrors.DataNotFound("text fragment", fragmentId, "text_fragment_id");
                 return _textEditionToDTO(edition);
             }
 
@@ -61,37 +61,53 @@ namespace SQE.SqeHttpApi.Server.Services
                     licence = ed.licence,
                     manuscriptId = ed.manuscriptId,
                     editionName = ed.editionName,
+                    editorId = ed.manuscriptAuthor,
 
                     textFragments = ed.fragments.Select(
                         x => new TextFragmentDTO()
                         {
                             textFragmentId = x.textFragmentId,
                             textFragmentName = x.fragment,
+                            editorId = x.textFragmentAuthor,
 
                             lines = x.lines.Select(
                                 y => new LineDTO()
                                 {
                                     lineId = y.lineId,
                                     lineName = y.line,
+                                    editorId = y.lineAuthor,
 
                                     signs = y.signs.Select(
                                         z => new SignDTO()
                                         {
                                             signId = z.signId,
-                                            nextSignId = z.nextSignId,
+                                            nextSignIds = z.nextSignIds.Split(',').Select(int.Parse).ToList(),
+                                            editorId = z.signSequenceAuthor,
                                             
-                                            signChars = z.signChars.Select(
-                                                a => new SignCharDTO()
+                                            signInterpretations = z.signInterpretations.Select(
+                                                a => new SignInterpretationDTO()
                                                 {
-                                                    signCharId = a.signCharId,
-                                                    signChar = a.signChar,
+                                                    signInterpretationId = a.signInterpretationId,
+                                                    signInterpretation = a.signInterpretation,
                                                     
                                                     attributes = a.attributes.Select(
-                                                        b => new CharAttributeDTO()
+                                                        b => new InterpretationAttributeDTO()
                                                         {
-                                                            charAttributeId = b.charAttributeId,
+                                                            interpretationAttributeId = b.interpretationAttributeId,
                                                             attributeValueId = b.attributeValueId,
+                                                            editorId = b.signInterpretationAttributeAuthor,
                                                             value = b.value
+                                                        }).ToList(),
+                                    
+                                                    rois = a.signInterpretationRois.Select(
+                                                        b => new InterpretationRoiDTO()
+                                                        {
+                                                            interpretationRoiId = b.SignInterpretationRoiId,
+                                                            artefactId = b.ArtefactId,
+                                                            shape = b.Shape,
+                                                            position = b.Position,
+                                                            exceptional = b.Exceptional,
+                                                            valuesSet = b.ValuesSet
                                                         }).ToList()
                                                     
                                                 }).ToList()
@@ -111,24 +127,38 @@ namespace SQE.SqeHttpApi.Server.Services
                     licence = ed.licence,
                     lineId = ed.fragments.First().lines.First().lineId,
                     lineName = ed.fragments.First().lines.First().line,
+                    editorId = ed.fragments.First().lines.First().lineAuthor,
                     signs = ed.fragments.First().lines.First().signs.Select(
                         z => new SignDTO()
                         {
                             signId = z.signId,
-                            nextSignId = z.nextSignId,
+                            nextSignIds = z.nextSignIds.Split(',').Select(int.Parse).ToList(),
+                            editorId = z.signSequenceAuthor,
                             
-                            signChars = z.signChars.Select(
-                                a => new SignCharDTO()
+                            signInterpretations = z.signInterpretations.Select(
+                                a => new SignInterpretationDTO()
                                 {
-                                    signCharId = a.signCharId,
-                                    signChar = a.signChar,
+                                    signInterpretationId = a.signInterpretationId,
+                                    signInterpretation = a.signInterpretation,
                                     
                                     attributes = a.attributes.Select(
-                                        b => new CharAttributeDTO()
+                                        b => new InterpretationAttributeDTO()
                                         {
-                                            charAttributeId = b.charAttributeId,
+                                            interpretationAttributeId = b.interpretationAttributeId,
                                             attributeValueId = b.attributeValueId,
+                                            editorId = b.signInterpretationAttributeAuthor,
                                             value = b.value
+                                        }).ToList(),
+                                    
+                                    rois = a.signInterpretationRois.Select(
+                                        b => new InterpretationRoiDTO()
+                                        {
+                                            interpretationRoiId = b.SignInterpretationRoiId,
+                                            artefactId = b.ArtefactId,
+                                            shape = b.Shape,
+                                            position = b.Position,
+                                            exceptional = b.Exceptional,
+                                            valuesSet = b.ValuesSet
                                         }).ToList()
                                     
                                 }).ToList()

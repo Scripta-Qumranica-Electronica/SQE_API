@@ -10,7 +10,7 @@ SELECT image_catalog.institution AS Institution,
     image_catalog.catalog_number_2 AS catalog_2,
     image_catalog.object_id AS object_id
 FROM iaa_edition_catalog
-JOIN edition USING(scroll_id)
+JOIN edition USING(manuscript_id)
 JOIN edition_editor USING(edition_id)
 JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN image_catalog USING(image_catalog_id)

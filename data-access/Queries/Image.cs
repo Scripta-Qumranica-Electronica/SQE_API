@@ -23,7 +23,7 @@ SELECT image_urls.url AS url,
     ASTEXT(image_to_image_map.region_on_image2) AS region_on_image2,
     image_to_image_map.transform_matrix AS transform_matrix
 FROM iaa_edition_catalog
-JOIN edition USING(scroll_id)
+JOIN edition USING(manuscript_id)
 JOIN edition_editor USING(edition_id)
 JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN image_catalog USING(image_catalog_id)
@@ -81,7 +81,7 @@ FROM image_catalog
         private const string _scrollLimit = @"
 JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
 JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
-JOIN edition USING(scroll_id)
+JOIN edition USING(manuscript_id)
 WHERE edition.edition_is = @EditionId
 ";
 

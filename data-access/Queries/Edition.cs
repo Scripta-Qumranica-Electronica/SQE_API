@@ -13,10 +13,10 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
         GROUP_CONCAT(DISTINCT CONCAT(user.forename, ' ', user.surname)
         SEPARATOR ', ')) AS Collaborators,
     edition_editor.is_admin AS Admin,
-    scroll_data.name AS Name, 
+    manuscript_data.name AS Name, 
     im.thumbnail_url AS Thumbnail, 
     ed2.locked AS Locked,
-    ed2.scroll_id AS ScrollId,
+    ed2.manuscript_id AS ScrollId,
     edition_editor.may_lock AS MayLock,
     edition_editor.may_write AS MayWrite, 
     edition_editor.may_read AS MayRead,
@@ -24,23 +24,23 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
     user.user_id AS UserId, 
     user.email AS Email 
 FROM edition AS ed1
-JOIN edition AS ed2 ON ed1.scroll_id = ed2.scroll_id
+JOIN edition AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
 JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
-JOIN scroll_data_owner ON scroll_data_owner.edition_id = ed2.edition_id
-JOIN scroll_data USING(scroll_data_id)
+JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
+JOIN manuscript_data USING(manuscript_data_id)
 JOIN user ON user.user_id = edition_editor.user_id
 LEFT JOIN (SELECT edition_id, MAX(time) AS last_edit 
            FROM edition_editor
            JOIN main_action USING(edition_id) 
            GROUP BY edition_id) AS last ON last.edition_id = ed2.edition_id
-LEFT JOIN (SELECT iaa_edition_catalog.scroll_id, MIN(CONCAT(proxy, url, SQE_image.filename)) AS thumbnail_url 
+LEFT JOIN (SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT(proxy, url, SQE_image.filename)) AS thumbnail_url 
 		   FROM edition
-		   JOIN iaa_edition_catalog USING(scroll_id)
+		   JOIN iaa_edition_catalog USING(manuscript_id)
            JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
 		   JOIN SQE_image ON SQE_image.image_catalog_id = image_to_iaa_edition_catalog.image_catalog_id AND SQE_image.type = 0 
            JOIN image_urls USING(image_urls_id)
            WHERE iaa_edition_catalog.edition_side = 0
-           GROUP BY scroll_id) AS im ON im.scroll_id = ed2.scroll_id
+           GROUP BY manuscript_id) AS im ON im.manuscript_id = ed2.manuscript_id
 $Where
 GROUP BY ed2.edition_id
 ";
@@ -84,9 +84,9 @@ GROUP BY ed2.edition_id
     internal class EditionNameQuery
     {
         private const string _baseQuery = @"
-SELECT scroll_data_id AS ScrollDataId, scroll_id AS ScrollId, name AS Name
-FROM scroll_data
-JOIN scroll_data_owner USING(scroll_data_id)
+SELECT manuscript_data_id AS ScrollDataId, manuscript_id AS ScrollId, name AS Name
+FROM manuscript_data
+JOIN manuscript_data_owner USING(manuscript_data_id)
 WHERE edition_id = @EditionId";
 
         public static string GetQuery()
@@ -158,8 +158,8 @@ WHERE edition_id = @EditionId";
     {
         // You must add the parameter `@EditionId` to use this, the parameters `@CopyrightHolder`, `@Collaborators` are optional.
         public const string GetQuery = 
-            @"INSERT INTO edition (scroll_id, locked, copyright_holder, collaborators)  
-            (SELECT scroll_id, 0, COALESCE(@CopyrightHolder, copyright_holder), @Collaborators
+            @"INSERT INTO edition (manuscript_id, locked, copyright_holder, collaborators)  
+            (SELECT manuscript_id, 0, COALESCE(@CopyrightHolder, copyright_holder), @Collaborators
             FROM edition
             WHERE edition_id = @EditionId)";
     }

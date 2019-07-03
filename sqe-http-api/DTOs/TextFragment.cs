@@ -28,6 +28,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
     {
         public uint textFragmentId { get; set; }
         public string textFragmentName { get; set; }
+        public uint editorId { get; set; }
         public List<LineDTO> lines { get; set; }
     }
 
@@ -57,6 +58,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
     {
         public uint lineId { get; set; }
         public string lineName { get; set; }
+        public uint editorId { get; set; }
         public List<SignDTO> signs { get; set; }
     }
 

@@ -40,6 +40,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public string editionName { get; set; }
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }
+        public uint manuscriptAuthor { get; set; }
         public readonly List<TextFragment> fragments = new List<TextFragment>();
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

@@ -5,21 +5,34 @@ namespace SQE.SqeHttpApi.Server.DTOs
     public class SignDTO
     {
         public uint signId { get; set; }
-        public uint nextSignId { get; set; }
-        public List<SignCharDTO> signChars { get; set; }
+        public List<int> nextSignIds { get; set; }
+        public uint editorId { get; set; }
+        public List<SignInterpretationDTO> signInterpretations { get; set; }
     }
     
-    public class SignCharDTO
+    public class SignInterpretationDTO
     {
-        public uint signCharId { get; set; }
-        public string signChar { get; set; }
-        public List<CharAttributeDTO> attributes { get; set; }
+        public uint signInterpretationId { get; set; }
+        public string signInterpretation { get; set; }
+        public List<InterpretationAttributeDTO> attributes { get; set; }
+        public List<InterpretationRoiDTO> rois { get; set; }
     }
     
-    public class CharAttributeDTO
+    public class InterpretationAttributeDTO
     {
-        public uint charAttributeId { get; set; }
+        public uint interpretationAttributeId { get; set; }
         public uint attributeValueId { get; set; }
+        public uint editorId { get; set; }
         public float value { get; set; }
+    }
+
+    public class InterpretationRoiDTO
+    {
+        public uint interpretationRoiId { get; set; }
+        public uint artefactId { get; set; }
+        public string shape { get; set; }
+        public string position { get; set; }
+        public bool exceptional { get; set; }
+        public bool valuesSet { get; set; }
     }
 }
