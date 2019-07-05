@@ -65,5 +65,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
     public class LineTextDTO : LineDTO
     {
         public string licence { get; set; }
+        public Dictionary<uint, EditorDTO> editors { get; set; }
+        
     }
 }

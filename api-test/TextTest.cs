@@ -152,30 +152,105 @@ namespace SQE.ApiTest
         private static void _verifyLineTextDTO(LineTextDTO msg)
         {
             Assert.NotNull(msg.licence);
+            Assert.NotEmpty(msg.editors);
             Assert.NotEqual((uint)0, msg.lineId);
             Assert.NotEmpty(msg.signs);
-            Assert.NotEqual((uint)0, msg.signs.First().signId);
+            Assert.NotEqual((uint)0, msg.signs.First().nextSignInterpretations.First().nextSignInterpretationId);
             Assert.NotEmpty(msg.signs.First().signInterpretations);
             Assert.NotEqual((uint)0, msg.signs.First().signInterpretations.First().signInterpretationId);
             Assert.NotEmpty(msg.signs.First().signInterpretations.First().attributes);
             Assert.NotEqual((uint)0, msg.signs.First().signInterpretations.First().attributes.First().interpretationAttributeId);
+
+            var editorIds = new List<uint> {msg.editorId};
+            foreach (var sign in msg.signs)
+            {
+                foreach (var nexSign in sign.nextSignInterpretations)
+                {
+                    if (!msg.editors.ContainsKey(nexSign.editorId))
+                        editorIds.Add(nexSign.editorId);
+                }
+
+                foreach (var signInterpretation in sign.signInterpretations)
+                {
+                    foreach (var attr in signInterpretation.attributes)
+                    {
+                        if (!msg.editors.ContainsKey(attr.editorId))
+                            editorIds.Add(attr.editorId);
+                    }
+                    
+                    foreach (var roi in signInterpretation.rois)
+                    {
+                        if (!msg.editors.ContainsKey(roi.editorId))
+                            editorIds.Add(roi.editorId);
+                    }
+                }
+            }
+
+            Assert.NotEmpty(editorIds);
+            foreach (var editorId in editorIds)
+            {
+                Assert.True(msg.editors.ContainsKey(editorId));
+            }
         }
 
         private static void _verifyTextEditionDTO(TextEditionDTO msg)
         {
             Assert.NotNull(msg.licence);
+            Assert.NotEmpty(msg.editors);
             Assert.NotEqual((uint)0, msg.manuscriptId);
             Assert.NotEmpty(msg.textFragments);
             Assert.NotEqual((uint)0, msg.textFragments.First().textFragmentId);
             Assert.NotEmpty(msg.textFragments.First().lines);
             Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().lineId);
             Assert.NotEmpty(msg.textFragments.First().lines.First().signs);
-            Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signId);
+            Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().nextSignInterpretations.First().nextSignInterpretationId);
             Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signInterpretations);
             Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signInterpretations.First().signInterpretationId);
             Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signInterpretations.First().attributes);
             Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signInterpretations.First().attributes.First().interpretationAttributeId);
 
+            var editorIds = new List<uint> {msg.editorId};
+            foreach (var textFragment in msg.textFragments)
+            {
+                if (!msg.editors.ContainsKey(textFragment.editorId))
+                    editorIds.Add(textFragment.editorId);
+
+                foreach (var line in textFragment.lines)
+                {
+                    if (!msg.editors.ContainsKey(line.editorId))
+                        editorIds.Add(line.editorId);
+                    
+                    foreach (var sign in line.signs)
+                    {
+                        foreach (var nexSign in sign.nextSignInterpretations)
+                        {
+                            if (!msg.editors.ContainsKey(nexSign.editorId))
+                                editorIds.Add(nexSign.editorId);
+                        }
+
+                        foreach (var signInterpretation in sign.signInterpretations)
+                        {
+                            foreach (var attr in signInterpretation.attributes)
+                            {
+                                if (!msg.editors.ContainsKey(attr.editorId))
+                                    editorIds.Add(attr.editorId);
+                            }
+                    
+                            foreach (var roi in signInterpretation.rois)
+                            {
+                                if (!msg.editors.ContainsKey(roi.editorId))
+                                    editorIds.Add(roi.editorId);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Assert.NotEmpty(editorIds);
+            foreach (var editorId in editorIds)
+            {
+                Assert.True(msg.editors.ContainsKey(editorId));
+            }
         }
         #endregion Helpers
     }

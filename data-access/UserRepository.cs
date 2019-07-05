@@ -19,6 +19,7 @@ namespace SQE.SqeHttpApi.DataAccess
         Task<DetailedUser> GetDetailedUsedByTokenAsync(string token);
         Task<DetailedUserWithToken> GetUnactivatedUserByEmailAsync(string email);
         Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo user);
+        Task<List<EditorInfo>> GetEditionEditorsAsync(uint editionId);
         
         // Create/update account data
         Task<DetailedUserWithToken> CreateNewUserAsync(string email, string password, string forename = null,
@@ -472,6 +473,15 @@ namespace SQE.SqeHttpApi.DataAccess
                     transactionScope.Complete(); // Close the transaction
                     return detailedUserInfo;
                 }
+            }
+        }
+
+        public async Task<List<EditorInfo>> GetEditionEditorsAsync(uint editionId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<EditorInfo>(GetEditorInfo.GetQuery, 
+                    new {EditionId = editionId})).ToList();
             }
         }
     }

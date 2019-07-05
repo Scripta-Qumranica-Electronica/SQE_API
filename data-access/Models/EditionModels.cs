@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 
@@ -50,9 +51,15 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         /// <summary>
         /// Call this, if you want the the licence to be added on the output.
         /// </summary>
-        public void addLicence()
+        public void addLicence(List<EditorInfo> editors = null)
         {
-            licence = Licence.printLicence(copyrightHolder, collaborators);
+            var collab = collaborators;
+            if (string.IsNullOrEmpty(collab))
+                collab = editors == null ? 
+                    copyrightHolder
+                    : string.Join(",", editors.Select(x => 
+                        x.Forename + " " + x.Surname + (string.IsNullOrEmpty(x.Organization) ? "" : "(" + x.Organization + ")") ));
+            licence = Licence.printLicence(copyrightHolder, collab);
         }
     }
 }

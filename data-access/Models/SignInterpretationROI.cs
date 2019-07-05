@@ -3,6 +3,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     public class SignInterpretationROI
     {
         public uint SignInterpretationRoiId { get; set; }
+        public uint SignInterpretationRoiAuthor { get; set; }
         public uint ArtefactId { get; set; }
         public string Shape { get; set; }
         public string Position { get; set; }

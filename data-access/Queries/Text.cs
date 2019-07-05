@@ -37,7 +37,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       line_author.user_id AS lineAuthor,
       
       signId,
-      GROUP_CONCAT(DISTINCT next_sign_id) AS nextSignIds,
+      next_sign_interpretation.sign_interpretation_id AS nextSignInterpretationId,
       sign_sequence_author.user_id AS signSequenceAuthor,
       
       sign_interpretation.sign_interpretation_id AS signInterpretationId,
@@ -49,6 +49,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       attribute_numeric.value AS value,
 
       sign_interpretation_roi.sign_interpretation_id AS SignInterpretationRoiId,
+      sign_interpretation_roi_author.user_id AS SignInterpretationRoiAuthor,
       sign_interpretation_roi.values_set AS ValuesSet,
       sign_interpretation_roi.exceptional AS Exceptional,
       ST_ASTEXT(roi_shape.path) AS Shape,
@@ -92,9 +93,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
           AND sign_interpretation_roi_owner.edition_id = EditionId
       LEFT JOIN roi_shape ON roi_shape.roi_shape_id = sign_interpretation_roi.roi_shape_id
       LEFT JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
+      LEFT JOIN edition_editor AS sign_interpretation_roi_author ON sign_interpretation_roi_author.edition_editor_id = sign_interpretation_roi_owner.edition_editor_id
           
+      JOIN sign_interpretation AS next_sign_interpretation ON next_sign_interpretation.sign_id = next_sign_id
+
       JOIN edition ON edition.edition_id = EditionId
-      GROUP BY position_in_stream.next_sign_id
 ";
   }
 

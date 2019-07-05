@@ -1,13 +1,18 @@
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class SignDTO
     {
-        public uint signId { get; set; }
-        public List<int> nextSignIds { get; set; }
-        public uint editorId { get; set; }
+        public List<NextSignInterpretationDTO> nextSignInterpretations { get; set; }
         public List<SignInterpretationDTO> signInterpretations { get; set; }
+    }
+
+    public class NextSignInterpretationDTO
+    {
+        public uint nextSignInterpretationId { get; set; }
+        public uint editorId { get; set; }
     }
     
     public class SignInterpretationDTO
@@ -29,6 +34,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
     public class InterpretationRoiDTO
     {
         public uint interpretationRoiId { get; set; }
+        public uint editorId { get; set; }
         public uint artefactId { get; set; }
         public string shape { get; set; }
         public string position { get; set; }

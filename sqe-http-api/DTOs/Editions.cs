@@ -41,6 +41,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string editionName { get; set; }
         public uint editorId { get; set; }
         public string licence { get; set; }
+        public Dictionary<uint, EditorDTO> editors { get; set; }
         public List<TextFragmentDTO> textFragments { get; set; }
     }
 

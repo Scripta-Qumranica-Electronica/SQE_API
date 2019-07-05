@@ -9,4 +9,10 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         public readonly List<CharAttribute> attributes = new List<CharAttribute>();
         public readonly List<SignInterpretationROI> signInterpretationRois = new List<SignInterpretationROI>();
     }
+    
+    public class NextSignInterpretation
+    {
+        public uint nextSignInterpretationId { get; set; }
+        public uint signSequenceAuthor { get; set; }
+    }
 }
