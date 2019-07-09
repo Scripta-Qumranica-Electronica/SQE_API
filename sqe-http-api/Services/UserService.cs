@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http;
@@ -21,7 +21,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
     public interface IUserService
     {
         Task<DetailedUserTokenDTO> AuthenticateAsync(string email, string password); // TODO: Return a User object, not a LoginResponse
-        UserDTO GetCurrentUser();
+        Task<DetailedUserDTO> GetCurrentUser();
         uint? GetCurrentUserId();
         UserInfo GetCurrentUserObject(uint? editionId = null);
         Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
@@ -108,19 +108,17 @@ namespace SQE.SqeHttpApi.Server.Helpers
             return tokenHandler.WriteToken(token);
         }
         
-        public UserDTO GetCurrentUser()
+        public async Task<DetailedUserDTO> GetCurrentUser()
         {
-            // TODO: Check if ...User.Identity.Name exists. Return null if not.
-            var currentUserEmail = _accessor.HttpContext.User.Identity.Name;
-            var currentUserId = GetCurrentUserId();
-
-           return (currentUserEmail == null || !currentUserId.HasValue) ?
-                null :
-                new UserDTO
-                {
-                    email = currentUserEmail,
-                    userId = currentUserId.Value,
-                };
+            var userInfo = await _userRepository.GetDetailedUserByIdAsync(GetCurrentUserObject());
+            return new DetailedUserDTO()
+            {
+                email = userInfo.Email,
+                forename = userInfo.Forename,
+                surname = userInfo.Surname,
+                organization = userInfo.Organization,
+                userId = userInfo.UserId
+            };
         }
 
         public uint? GetCurrentUserId()

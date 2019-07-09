@@ -31,13 +31,9 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpGet]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
-        public ActionResult<UserDTO> GetCurrentUser()
+        public async Task<ActionResult<DetailedUserDTO>> GetCurrentUser()
         {
-            var user = _userService.GetCurrentUser();
-            if (user == null)
-                return Unauthorized(new { message = "No current user", code =601 });
-
-            return user;
+            return await _userService.GetCurrentUser();
         }
         
         /// <summary>
