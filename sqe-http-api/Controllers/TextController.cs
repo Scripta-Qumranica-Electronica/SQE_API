@@ -36,11 +36,11 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
    
         /// <summary>
-        /// Retrieves all signs and their data from the given fragment
+        /// Retrieves all signs and their data from the given textFragmentName
         /// </summary>
-        /// <param name="textFragmentId">Id of the fragment</param>
+        /// <param name="textFragmentId">Id of the textFragmentName</param>
         /// <param name="editionId">Id of the edition</param>
-        /// <returns>A scroll object with includes the fragment and its lines
+        /// <returns>A scroll object with includes the textFragmentName and its lines
         /// in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/text-fragments/{textFragmentId}")]
@@ -63,10 +63,10 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
  
         /// <summary>
-        /// Retrieves the ids of all lines in the given fragment
+        /// Retrieves the ids of all lines in the given textFragmentName
         /// </summary>
         /// <param name="editionId">Id of the edition</param>
-        /// <param name="textFragmentId">Id of the fragment</param>
+        /// <param name="textFragmentId">Id of the textFragmentName</param>
         /// <returns>An array of the ids in the right sequence</returns>
         [AllowAnonymous]
         [HttpGet("editions/{editionId}/text-fragments/{textFragmentId}/lines")]

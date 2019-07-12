@@ -29,7 +29,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       edition.collaborators,
       
       text_fragment_data.text_fragment_id AS textFragmentId,
-      text_fragment_data.name AS fragment,
+      text_fragment_data.name AS textFragmentName,
       text_fragment_author.user_id AS textFragmentAuthor,
       
       line_data.line_id AS lineId,
@@ -124,7 +124,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
   internal static class GetFragmentTerminators
   {
     /// <summary>
-    /// Retrieves the first and last sign of a fragment
+    /// Retrieves the first and last sign of a textFragmentName
     /// </summary>
     /// <param Name="entityId">Id of line</param>
     /// <param Name="editionId">d of the edition the line is to be taken from</param>
@@ -193,7 +193,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
   internal static class GetFragmentData
   {
     public const string GetQuery = @"
-      SELECT text_fragment_id AS ColId, name AS ColName
+      SELECT text_fragment_id AS TextFragmentId, name AS TextFragmentName
       FROM text_fragment_data
         JOIN text_fragment_data_owner USING (text_fragment_data_id)
         JOIN text_fragment_sequence USING(text_fragment_id)

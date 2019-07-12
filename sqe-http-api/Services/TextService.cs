@@ -41,7 +41,7 @@ namespace SQE.SqeHttpApi.Server.Services
                 var editionEditors = _userRepo.GetEditionEditorsAsync(user.editionId ?? 0);
                 var edition = await _textRepo.GetTextFragmentByIdAsync(user, fragmentId);
                 if (edition.manuscriptId == 0) // TODO: describe missing data better here.
-                    throw new StandardErrors.DataNotFound("text fragment", fragmentId, "text_fragment_id");
+                    throw new StandardErrors.DataNotFound("text textFragmentName", fragmentId, "text_fragment_id");
                 return _textEditionToDTO(edition, await editionEditors);
             }
 
@@ -55,7 +55,7 @@ namespace SQE.SqeHttpApi.Server.Services
             {
                 return new TextFragmentDataListDTO(
                     (await _textRepo.GetFragmentDataAsync(user))
-                        .Select(x => new TextFragmentDataDTO(x.ColId, x.ColName)).ToList()
+                        .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName)).ToList()
                     );
             }
 
@@ -89,7 +89,7 @@ namespace SQE.SqeHttpApi.Server.Services
                         x => new TextFragmentDTO()
                         {
                             textFragmentId = x.textFragmentId,
-                            textFragmentName = x.fragment,
+                            textFragmentName = x.textFragmentName,
                             editorId = x.textFragmentAuthor,
 
                             lines = x.lines.Select(

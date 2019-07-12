@@ -4,13 +4,13 @@ namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class TextFragmentDataDTO
     {
-        public uint colId { get; set; }
-        public string colName { get; set; }
+        public uint id { get; set; }
+        public string name { get; set; }
         
-        public TextFragmentDataDTO(uint colId, string colName)
+        public TextFragmentDataDTO(uint id, string name)
         {
-            this.colId = colId;
-            this.colName = colName;
+            this.id = id;
+            this.name = name;
         }
     }
 

@@ -129,7 +129,7 @@ namespace SQE.ApiTest
                 fragmentsResponse.EnsureSuccessStatusCode();
             }
             var textFragmentIdx = ListHelpers.RandomIdx(textFragments.textFragments);
-            return (editionId, textFragments.textFragments[textFragmentIdx].colId);
+            return (editionId, colId: textFragments.textFragments[textFragmentIdx].id);
         }
 
         private async Task<(uint editionId, uint textFragmentId, uint lineId)> _getLine()
