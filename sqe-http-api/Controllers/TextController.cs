@@ -61,6 +61,19 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             return await _textService.GetFragmentDataAsync(_userService.GetCurrentUserObject(editionId));
         }
+        
+        /// <summary>
+        /// Creates a new text fragment in the given edition of a scroll
+        /// </summary>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="createFragment">A JSON object with the details of the new text fragment to be created</param>
+        /// <returns>An array of the ids in correct sequence</returns>
+        [HttpPost("editions/{editionId}/text-fragments")]
+        public async Task<ActionResult<TextFragmentDataDTO>> RetrieveFragmentIds(
+            [FromRoute] uint editionId, [FromBody] CreateTextFragmentDTO createFragment)
+        {
+            return await _textService.CreateTextFragmentAsync(_userService.GetCurrentUserObject(editionId), createFragment);
+        }
  
         /// <summary>
         /// Retrieves the ids of all lines in the given textFragmentName

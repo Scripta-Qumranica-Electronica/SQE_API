@@ -15,6 +15,7 @@ namespace SQE.SqeHttpApi.Server.Services
         Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo user, uint fragmentId);
         Task<LineDataListDTO> GetLineIdsAsync(UserInfo user, uint fragmentId);
         Task<TextFragmentDataListDTO> GetFragmentDataAsync(UserInfo user);
+        Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user, CreateTextFragmentDTO createFragment);
     }
     public class TextService : ITextService
         {
@@ -57,6 +58,13 @@ namespace SQE.SqeHttpApi.Server.Services
                     (await _textRepo.GetFragmentDataAsync(user))
                         .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName)).ToList()
                     );
+            }
+
+            public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user, CreateTextFragmentDTO createFragment)
+            {
+                var newFragment = await _textRepo.CreateTextFragmentAsync(user,
+                    createFragment.name, createFragment.previousTextFragmentId, createFragment.nextTextFragmentId);
+                return new TextFragmentDataDTO(newFragment.TextFragmentId, newFragment.TextFragmentName);
             }
 
             private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)

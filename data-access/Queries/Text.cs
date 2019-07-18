@@ -193,7 +193,8 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
   internal static class GetFragmentData
   {
     public const string GetQuery = @"
-      SELECT text_fragment_id AS TextFragmentId, name AS TextFragmentName
+      SELECT text_fragment_id AS TextFragmentId, name AS TextFragmentName, position AS Position, 
+             text_fragment_sequence_id AS TextFragmentSequenceId
       FROM text_fragment_data
         JOIN text_fragment_data_owner USING (text_fragment_data_id)
         JOIN text_fragment_sequence USING(text_fragment_id)
