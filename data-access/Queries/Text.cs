@@ -204,4 +204,20 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       ORDER BY text_fragment_sequence.position
       ";
   }
+
+  internal static class CreateTextFragment
+  {
+    public const string GetQuery = @"
+INSERT INTO text_fragment () VALUES()
+";
+  }
+
+  internal static class ManuscriptOfEdition
+  {
+    public const string GetQuery = @"
+SELECT manuscript_id
+FROM edition
+WHERE edition_id = @EditionId
+";
+  }
 }

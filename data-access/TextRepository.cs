@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using SQE.SqeHttpApi.DataAccess.Helpers;
@@ -79,79 +80,132 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<TextFragmentData> CreateTextFragmentAsync(UserInfo user,
             string fragmentName, uint? previousFragmentId, uint? nextFragmentId)
         {
-            using (var connection = OpenConnection())
+            using (var transactionScope = new TransactionScope(
+                    TransactionScopeOption.Required,
+                    new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }
+                )
+            )
             {
-                var textFragmentIds = (await connection.QueryAsync<TextFragmentData>(GetFragmentData.GetQuery,
-                    param: new {EditionId = user.editionId, UserId = user.userId ?? 0}
-                )).ToList();
-
-                if (textFragmentIds.Any(x => x.TextFragmentName == fragmentName))
-                    throw new StandardErrors.ConflictingData("textFragmentName");
-
-                ushort? nextPosition = null;
-                if (nextFragmentId.HasValue)
+                using (var connection = OpenConnection())
                 {
-                    var nextTextFragment = textFragmentIds.Where(x => x.TextFragmentId == nextFragmentId);
-                    if (nextTextFragment.Count() != 0)
-                        throw new StandardErrors.ImproperInputData("textFragmentId");
-                    nextPosition = nextTextFragment.First().Position;
-                }
-                else if (previousFragmentId.HasValue)
-                {
-                    ushort? previousPosition = null;
-                    var previousTextFragment = textFragmentIds.Where(x => x.TextFragmentId == nextFragmentId);
-                    if (previousTextFragment.Count() != 0)
-                        throw new StandardErrors.ImproperInputData("textFragmentId");
-                    previousPosition = previousTextFragment.First().Position;
-                    if (nextPosition.HasValue)
+                    // Get all text fragments for sorting operations later on
+                    var textFragmentIds = (await connection.QueryAsync<TextFragmentData>(GetFragmentData.GetQuery,
+                        param: new {EditionId = user.editionId, UserId = user.userId ?? 0}
+                    )).ToList();
+    
+                    // Check to make sure the new named text fragment doesn't conflict with existing ones (the frontend will resolve this)
+                    if (textFragmentIds.Any(x => x.TextFragmentName == fragmentName))
+                        throw new StandardErrors.ConflictingData("textFragmentName");
+    
+                    ushort? nextPosition = null;
+                    if (nextFragmentId.HasValue) // We know the existing text fragment that the new one will displace
                     {
-                        if (previousPosition + 1 != nextPosition)
+                        // Verify that the nextFragmentId exists and take its position as the position for the new text fragment
+                        var nextTextFragment = textFragmentIds.Where(x => x.TextFragmentId == nextFragmentId);
+                        if (nextTextFragment.Count() != 1)
                             throw new StandardErrors.ImproperInputData("textFragmentId");
+                        nextPosition = nextTextFragment.First().Position;
                     }
-                    else
+    
+                    if (previousFragmentId.HasValue) // We know the text fragment after which the new one should be placed
                     {
-                        nextPosition = (ushort)(previousPosition.Value + 1);
+                        ushort? previousPosition;
+                        // Make sure the previousFragmentId exists
+                        var previousTextFragment = textFragmentIds.Where(x => x.TextFragmentId == nextFragmentId);
+                        if (previousTextFragment.Count() != 1)
+                            throw new StandardErrors.ImproperInputData("textFragmentId");
+                        previousPosition = previousTextFragment.First().Position;
+                        if (nextPosition.HasValue
+                        ) // If there is also a nextPosition, verify that previousPosition and nextPosition are sequential
+                        {
+                            if (previousPosition + 1 != nextPosition)
+                                throw new StandardErrors.ImproperInputData("textFragmentId");
+                        }
+                        else // There is no nextPosition, so assume it should be one higher than the previousFragmentId
+                        {
+                            nextPosition = (ushort) (previousPosition.Value + 1);
+                        }
                     }
-                }
-                else
-                {
-                    nextPosition = (ushort)(textFragmentIds.Any() ? textFragmentIds.Last().Position + 1 : 1);
-                }
-                
-                var createTextFragmentParameters = new DynamicParameters();
-                createTextFragmentParameters.Add("@name", fragmentName);
-                var createTextFragmentMutation = new MutationRequest(MutateType.Create, 
-                    createTextFragmentParameters, "text_fragment_data");
-                var createTextFragmentResponse = await _databaseWriter.WriteToDatabaseAsync(user, 
-                    new List<MutationRequest>(){createTextFragmentMutation});
-                if (createTextFragmentResponse.Count() != 1 && createTextFragmentResponse.First().NewId.HasValue)
-                    throw new StandardErrors.DataNotWritten("create new textFragment");
-                var newTextFragmentId = createTextFragmentResponse.First().NewId.Value;
-
-                var textFragmentShiftMutations = textFragmentIds.Where(x => x.Position >= nextPosition)
-                    .Select(x =>
+                    else if (!nextFragmentId.HasValue) // Neither previousFragmentId nor nextFragmentId have been set
+                        // so put the new text fragment at the end of the manuscript.
                     {
-                        var parameters = new DynamicParameters();
-                        parameters.Add("@position", x.Position + 1);
-                        return new MutationRequest(MutateType.Update, parameters, 
-                            "text_fragment_sequence", x.TextFragmentSequenceId);
-                    });
-                var fragmentShiftParameters = new DynamicParameters();
-                fragmentShiftParameters.Add("@text_fragment_id", newTextFragmentId);
-                fragmentShiftParameters.Add("@position", nextPosition);
-                textFragmentShiftMutations.Append(new MutationRequest(MutateType.Create, fragmentShiftParameters,
-                    "text_fragment_sequence"));
-                var shiftMutationResults =
-                    await _databaseWriter.WriteToDatabaseAsync(user, textFragmentShiftMutations.ToList());
-                if (shiftMutationResults.Count() != textFragmentIds.Count() + 1)
-                    throw new StandardErrors.DataNotWritten("shift textFragment sequence when creating new text fragment");
-                return new TextFragmentData()
-                {
-                    TextFragmentId = newTextFragmentId,
-                    TextFragmentName = fragmentName,
-                    Position = nextPosition.Value,
-                    TextFragmentSequenceId = 0
-                };
+                        nextPosition = (ushort) (textFragmentIds.Any() ? textFragmentIds.Last().Position + 1 : 1);
+                    }
+    
+                    // Create the new text fragment id
+                    var createNewTextFragmentId = await connection.ExecuteAsync(CreateTextFragment.GetQuery);
+                    if (createNewTextFragmentId == 0)
+                        throw new StandardErrors.DataNotWritten("create new textFragment");
+    
+                    // Get the new text fragmentid
+                    var getNewTextFragmentId = await connection.QueryAsync<uint>(LastInsertId.GetQuery);
+                    if (getNewTextFragmentId.Count() != 1)
+                        throw new StandardErrors.DataNotWritten("create new textFragment");
+                    var newTextFragmentId = getNewTextFragmentId.First();
+    
+                    // Create the data entry for the new text fragment
+                    var createTextFragmentParameters = new DynamicParameters();
+                    createTextFragmentParameters.Add("@name", fragmentName);
+                    createTextFragmentParameters.Add("@text_fragment_id", newTextFragmentId);
+                    var createTextFragmentMutation = new MutationRequest(MutateType.Create,
+                        createTextFragmentParameters, "text_fragment_data");
+                    var createTextFragmentResponse = await _databaseWriter.WriteToDatabaseAsync(user,
+                        new List<MutationRequest>() {createTextFragmentMutation});
+                    if (createTextFragmentResponse.Count() != 1 && createTextFragmentResponse.First().NewId.HasValue)
+                        throw new StandardErrors.DataNotWritten("create new textFragment data");
+    
+                    // Shift the position of any text fragments that have been displaced by the new one
+                    var textFragmentShiftMutations = textFragmentIds.Where(x => x.Position >= nextPosition)
+                        .Select(x =>
+                        {
+                            var parameters = new DynamicParameters();
+                            parameters.Add("@position", x.Position + 1);
+                            parameters.Add("@text_fragment_id", x.TextFragmentId);
+                            return new MutationRequest(MutateType.Update, parameters,
+                                "text_fragment_sequence", x.TextFragmentSequenceId);
+                        }).ToList();
+                    var fragmentShiftParameters = new DynamicParameters();
+    
+                    // Also set the position for the new text fragment
+                    fragmentShiftParameters.Add("@text_fragment_id", newTextFragmentId);
+                    fragmentShiftParameters.Add("@position", nextPosition);
+                    textFragmentShiftMutations.Add(new MutationRequest(MutateType.Create, fragmentShiftParameters,
+                        "text_fragment_sequence"));
+                    var shiftMutationResults =
+                        await _databaseWriter.WriteToDatabaseAsync(user, textFragmentShiftMutations);
+                    if (shiftMutationResults.Count() != textFragmentShiftMutations.Count())
+                        throw new StandardErrors.DataNotWritten(
+                            "shift textFragment sequence when creating new text fragment");
+    
+                    // Get the manuscript id of the current edition
+                    var manuscriptId = await connection.QueryAsync<uint>(ManuscriptOfEdition.GetQuery,
+                        new {EditionId = user.editionId.Value});
+    
+                    // Link the manuscript to the new text fragment
+                    var manuscriptToTextFragmentParameters = new DynamicParameters();
+                    manuscriptToTextFragmentParameters.Add("@manuscript_id", manuscriptId);
+                    manuscriptToTextFragmentParameters.Add("@text_fragment_id", newTextFragmentId);
+                    var manuscriptToTextFragmentResults =
+                        await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>()
+                        {
+                            new MutationRequest(MutateType.Create, manuscriptToTextFragmentParameters,
+                                "manuscript_to_text_fragment")
+                        });
+                    if (manuscriptToTextFragmentResults.Count != 1)
+                        throw new StandardErrors.DataNotWritten("manuscript id to new text fragment link");
+                    
+                    // End the transaction
+                    transactionScope.Complete();
+    
+                    // Package the new text fragment to return to user
+                    return new TextFragmentData()
+                    {
+                        TextFragmentId = newTextFragmentId,
+                        TextFragmentName = fragmentName,
+                        Position = nextPosition.Value,
+                        TextFragmentSequenceId = 0
+                    };
+                }
             }
         }
 
