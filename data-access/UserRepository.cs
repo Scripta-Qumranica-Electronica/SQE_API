@@ -16,7 +16,7 @@ namespace SQE.SqeHttpApi.DataAccess
         // Get user data
         Task<DetailedUserWithToken> GetUserByPasswordAsync(string email, string password);
         Task<DetailedUserWithToken> GetDetailedUserByIdAsync(UserInfo userInfo);
-        Task<DetailedUser> GetDetailedUsedByTokenAsync(string token);
+        Task<DetailedUser> GetDetailedUserByTokenAsync(string token);
         Task<DetailedUserWithToken> GetUnactivatedUserByEmailAsync(string email);
         Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo user);
         Task<List<EditorInfo>> GetEditionEditorsAsync(uint editionId);
@@ -87,7 +87,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
-        public async Task<DetailedUser> GetDetailedUsedByTokenAsync(string token)
+        public async Task<DetailedUser> GetDetailedUserByTokenAsync(string token)
         {
             using (var connection = OpenConnection())
             {
@@ -455,7 +455,7 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 using (var connection = OpenConnection())
                 {
-                    DetailedUser detailedUserInfo = await GetDetailedUsedByTokenAsync(token);
+                    DetailedUser detailedUserInfo = await GetDetailedUserByTokenAsync(token);
 
                     var resetPassword = await connection.ExecuteAsync(UpdatePasswordByToken.GetQuery, new
                         {
