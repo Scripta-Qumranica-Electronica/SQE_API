@@ -77,6 +77,7 @@ namespace SQE.SqeHttpApi.DataAccess
             }
         }
 
+        // TODO: adding a text fragment at a specific location does not yet work, fix it
         public async Task<TextFragmentData> CreateTextFragmentAsync(UserInfo user,
             string fragmentName, uint? previousFragmentId, uint? nextFragmentId)
         {
@@ -111,7 +112,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     {
                         ushort? previousPosition;
                         // Make sure the previousFragmentId exists
-                        var previousTextFragment = textFragmentIds.Where(x => x.TextFragmentId == nextFragmentId);
+                        var previousTextFragment = textFragmentIds.Where(x => x.TextFragmentId == previousFragmentId).ToList();
                         if (previousTextFragment.Count() != 1)
                             throw new StandardErrors.ImproperInputData("textFragmentId");
                         previousPosition = previousTextFragment.First().Position;
@@ -151,7 +152,7 @@ namespace SQE.SqeHttpApi.DataAccess
                         createTextFragmentParameters, "text_fragment_data");
                     var createTextFragmentResponse = await _databaseWriter.WriteToDatabaseAsync(user,
                         new List<MutationRequest>() {createTextFragmentMutation});
-                    if (createTextFragmentResponse.Count() != 1 && createTextFragmentResponse.First().NewId.HasValue)
+                    if (createTextFragmentResponse.Count() != 1 || !createTextFragmentResponse.First().NewId.HasValue)
                         throw new StandardErrors.DataNotWritten("create new textFragment data");
     
                     // Shift the position of any text fragments that have been displaced by the new one

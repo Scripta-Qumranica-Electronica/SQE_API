@@ -1,9 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Bogus;
+using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore.Internal;
+using Org.BouncyCastle.Asn1.Crmf;
 using SQE.ApiTest.Helpers;
 using SQE.SqeHttpApi.Server;
 using SQE.SqeHttpApi.Server.DTOs;
@@ -25,6 +29,7 @@ namespace SQE.ApiTest
         private readonly string _getTextFragments;
         private readonly string _getTextLinesData;
         private readonly string _getTextLines;
+        private readonly string _postTextFragment;
 
         public TextTest(WebApplicationFactory<Startup> factory) : base(factory)
         {
@@ -34,6 +39,7 @@ namespace SQE.ApiTest
             _getTextFragments = $"{_getTextFragmentsData}/$TextFragmentId";
             _getTextLinesData = $"{_getTextFragments}/{linesController}";
             _getTextLines = $"{_editionBase}/{linesController}/$LineId";
+            _postTextFragment = _getTextFragmentsData;
         }
         
         #region Anonymous retrieval
@@ -57,7 +63,7 @@ namespace SQE.ApiTest
         public async Task CanGetAnonymousEditionTextFragment()
         {
             // Arrange
-            var (editionId, textFragmentId) = await _getTextFragment();
+            var (editionId, textFragmentId) = await _getTextRandomFragment();
             
             // Act
             var (response, msg) = await HttpRequest.SendAsync<string, TextEditionDTO>(_client, HttpMethod.Get, 
@@ -73,7 +79,7 @@ namespace SQE.ApiTest
         public async Task CanGetAnonymousEditionTextLineData()
         {
             // Arrange
-            var (editionId, textFragmentId) = await _getTextFragment();
+            var (editionId, textFragmentId) = await _getTextRandomFragment();
             
             // Act
             var (response, msg) = await HttpRequest.SendAsync<string, LineDataListDTO>(_client, HttpMethod.Get, 
@@ -107,20 +113,309 @@ namespace SQE.ApiTest
         // TODO: authenticated retrieval and blocking of unauthorized requests
         #region Authenticated retrieval (should succeed)
         #endregion Authenticated retrieval (should succeed)
+
+        #region mutations
+
+            #region should succeed
+            
+            [Fact]
+            public async Task CanAddTextFragmentToEnd()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                var textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                const string textFragmentName = "my new can add to end col";
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Empty(textFragments.textFragments.Where(x => (x.id == msg.id) || (x.name == msg.name)));
+                var updatedTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                Assert.Equal(msg.id, updatedTextFragments.textFragments.Last().id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments.Last().name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                {
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                }
+            }
+            
+            [Fact]
+            public async Task CanAddTextFragmentAfter()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                var textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                const string textFragmentName = "my can add after col";
+                var previousFragmentId = textFragments.textFragments.First().id; // We will make the new text fragment number two
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName, previousTextFragmentId: previousFragmentId);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Empty(textFragments.textFragments.Where(x => (x.id == msg.id) || (x.name == msg.name)));
+                var updatedTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                Assert.Equal(1, index); //Index 1 would be the second position
+                Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+                
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                {
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[
+                        i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
+                        ]);
+                }
+            }
+            
+            [Fact]
+            public async Task CanAddTextFragmentBefore()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                var textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                const string textFragmentName = "my can add before col";
+                var nextFragmentId = textFragments.textFragments.Last().id; // We will make the new text fragment second to last
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName, nextTextFragmentId: nextFragmentId);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Empty(textFragments.textFragments.Where(x => (x.id == msg.id) || (x.name == msg.name)));
+                var updatedTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                Assert.Equal(updatedTextFragments.textFragments.Count - 2, index); // Check that it is second to last
+                Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+                
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                {
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[
+                        i > updatedTextFragments.textFragments.Count - 3 ? i + 1 : i // skip the second to last, which is the new text fragment
+                        ]);
+                }
+            }
+            
+            [Fact]
+            public async Task CanAddTextFragmentBeforeAndAfter()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                var textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                while (textFragments.textFragments.Count < 2) // Make sure we have at least 2 text fragments
+                {
+                    editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                    textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                }
+                
+                const string textFragmentName = "my can add before and after col";
+                var previousFragmentId = textFragments.textFragments.First().id; // We will make the new text fragment number two
+                var nextFragmentId = textFragments.textFragments[1].id; // We get the next one in sequence
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName, previousTextFragmentId: previousFragmentId, nextTextFragmentId: nextFragmentId);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Empty(textFragments.textFragments.Where(x => (x.id == msg.id) || (x.name == msg.name)));
+                var updatedTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                Assert.Equal(1, index); //Index 1 would be the second position
+                Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+                
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                {
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[
+                        i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
+                    ]);
+                }
+            }
+
+            #endregion should succeed
+
+            #region should fail
+            [Fact]
+            public async Task CannotAddTextFragmentWithoutPermission()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                const string textFragmentName = "my new can add to end col";
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName, authenticated: false, shouldSucceed: false);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            }
+            
+            [Fact]
+            public async Task CannotAddTextFragmentAfterTextFragmentNotInEdition()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                var textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                const string textFragmentName = "my can add after col";
+                const uint previousFragmentId = 0; // There is no text fragments 0 possible
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName, previousTextFragmentId: previousFragmentId, shouldSucceed: false);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var updatedTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the list of text fragments in the edition again
+                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+                
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                {
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                }
+            }
+            
+            [Fact]
+            public async Task CannotAddTextFragmentBeforeTextFragmentNotInEdition()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                var textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                const string textFragmentName = "my can add after col";
+                const uint nextFragmentId = 0; // There is no text fragments 0 possible
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName, nextTextFragmentId: nextFragmentId, shouldSucceed: false);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var updatedTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the list of text fragments in the edition again
+                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+                
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                {
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                }
+            }
+            
+            [Fact]
+            public async Task CannotAddTextFragmentBetweenNonSequentialTextFragments()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                var textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                while (textFragments.textFragments.Count < 2) // Make sure we have at least 2 text fragments
+                {
+                    editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                    textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                }
+                const string textFragmentName = "my can add after col";
+                var nextFragmentId = textFragments.textFragments.First().id; // We get these out of order
+                var previousFragmentId = textFragments.textFragments[1].id; // We get these out of order
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId, textFragmentName, 
+                    nextTextFragmentId: nextFragmentId, previousTextFragmentId: previousFragmentId, shouldSucceed: false);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var updatedTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the list of text fragments in the edition again
+                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+                
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                {
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                }
+            }
+            
+            [Fact]
+            public async Task CanNotAddTwoTextFragmentsWithTheSameName()
+            {
+                // Arrange
+                var editionId = await _getClonedEdition(); // Get a newly cloned edition with text fragments
+                var textFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get all the text fragments in the edition
+                const string textFragmentName = "my new can add to end col";
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Empty(textFragments.textFragments.Where(x => (x.id == msg.id) || (x.name == msg.name)));
+                var updatedTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                Assert.Equal(msg.id, updatedTextFragments.textFragments.Last().id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments.Last().name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                {
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                }
+
+                // Act
+                (response, msg) = await _createTextFragment(editionId,
+                    textFragmentName, shouldSucceed: false);
+                
+                // Assert
+                Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+                var secondUpdateTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
+                updatedTextFragments.textFragments.ShouldDeepEqual(secondUpdateTextFragments.textFragments);
+            }
+            
+            #endregion should fail
+            
+        #endregion mutations
         
         #region Unauthenticated retrieval (should fail)
         #endregion Unauthenticated retrieval (should fail)
         
         #region Helpers
 
-        private async Task<(uint editionId, uint textFragmentId)> _getTextFragment()
+        private async Task<(uint editionId, uint textFragmentId)> _getTextRandomFragment(uint? editionId = null)
         {
-            var edition = await EditionHelpers.GetRandomEdition(_db, _client);
-            var editionId = edition.id;
+            var submittedEdition = false;
+            EditionDTO edition;
+            if (editionId == null)
+            {
+                edition = await EditionHelpers.GetRandomEdition(_db, _client);
+                editionId = edition.id;
+            } else submittedEdition = true;
             var (fragmentsResponse, textFragments) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(_client, HttpMethod.Get, 
                 _getTextFragmentsData.Replace("$EditionId", editionId.ToString()), null);
             fragmentsResponse.EnsureSuccessStatusCode();
-            while (!textFragments.textFragments.Any())
+            while (!textFragments.textFragments.Any() && !submittedEdition)
             {
                 edition = await EditionHelpers.GetRandomEdition(_db, _client);
                 editionId = edition.id;
@@ -129,7 +424,38 @@ namespace SQE.ApiTest
                 fragmentsResponse.EnsureSuccessStatusCode();
             }
             var textFragmentIdx = ListHelpers.RandomIdx(textFragments.textFragments);
-            return (editionId, colId: textFragments.textFragments[textFragmentIdx].id);
+            return (editionId.Value, textFragmentId: textFragments.textFragments[textFragmentIdx].id);
+        }
+
+        private async Task<uint> _getClonedEdition()
+        {
+            var (editionId, _) = await _getTextRandomFragment(); // Get an edition with text fragments
+            return await HttpRequest.CreateNewEdition(_client, editionId); // Clone it
+        }
+
+        private async Task<TextFragmentDataListDTO> _getEditionTextFragments(uint editionId, string jwt = null)
+        {
+            var (fragmentsResponse, textFragments) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(_client, HttpMethod.Get, 
+                _getTextFragmentsData.Replace("$EditionId", editionId.ToString()), null, jwt);
+            fragmentsResponse.EnsureSuccessStatusCode();
+            return textFragments;
+        }
+
+        private async Task<(HttpResponseMessage response, TextFragmentDataDTO msg)> _createTextFragment(uint editionId, 
+            string textFragmentName, bool shouldSucceed = true, uint? previousTextFragmentId = null, 
+            uint? nextTextFragmentId = null, bool authenticated = true)
+        {
+            
+             var (response, msg) = await HttpRequest.SendAsync<CreateTextFragmentDTO, TextFragmentDataDTO>(_client, HttpMethod.Post, 
+                _postTextFragment.Replace("$EditionId", editionId.ToString()), new CreateTextFragmentDTO()
+                {
+                    name = textFragmentName,
+                    previousTextFragmentId = previousTextFragmentId,
+                    nextTextFragmentId = nextTextFragmentId
+                }, authenticated? await HttpRequest.GetJWTAsync(_client) : null);
+             if (shouldSucceed)
+                 response.EnsureSuccessStatusCode();
+             return (response, msg);
         }
 
         private async Task<(uint editionId, uint textFragmentId, uint lineId)> _getLine()
@@ -138,7 +464,7 @@ namespace SQE.ApiTest
             var (lineResponse, lines) = (new HttpResponseMessage(), new LineDataListDTO(new List<LineDataDTO>()));
             while (editionId == 0 || textFragmentId == 0 || lines == null || !lines.lines.Any())
             {
-                (editionId, textFragmentId) = await _getTextFragment();
+                (editionId, textFragmentId) = await _getTextRandomFragment();
                 (lineResponse, lines) = await HttpRequest.SendAsync<string, LineDataListDTO>(_client, HttpMethod.Get, 
                     _getTextLinesData.Replace("$EditionId", editionId.ToString())
                         .Replace("$TextFragmentId", textFragmentId.ToString()), null);

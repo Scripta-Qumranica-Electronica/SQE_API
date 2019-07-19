@@ -193,15 +193,17 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
   internal static class GetFragmentData
   {
     public const string GetQuery = @"
-      SELECT text_fragment_id AS TextFragmentId, name AS TextFragmentName, position AS Position, 
-             text_fragment_sequence_id AS TextFragmentSequenceId
-      FROM text_fragment_data
-        JOIN text_fragment_data_owner USING (text_fragment_data_id)
-        JOIN text_fragment_sequence USING(text_fragment_id)
-        JOIN edition_editor USING(edition_id)
-      WHERE text_fragment_data_owner.edition_id = @EditionId
-        AND (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
-      ORDER BY text_fragment_sequence.position
+SELECT text_fragment_id AS TextFragmentId, name AS TextFragmentName, text_fragment_sequence.position AS Position, 
+       text_fragment_sequence.text_fragment_sequence_id AS TextFragmentSequenceId
+FROM text_fragment_data
+  JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
+    AND text_fragment_data_owner.edition_id = @EditionId
+  JOIN text_fragment_sequence USING(text_fragment_id)
+  JOIN text_fragment_sequence_owner ON text_fragment_sequence_owner.text_fragment_sequence_id = text_fragment_sequence.text_fragment_sequence_id
+    AND text_fragment_sequence_owner.edition_id = @EditionId
+  JOIN edition_editor ON edition_editor.edition_id = @EditionId
+WHERE edition_editor.user_id = @UserId OR edition_editor.user_id = 1
+ORDER BY text_fragment_sequence.position
       ";
   }
 
