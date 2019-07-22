@@ -83,7 +83,7 @@ namespace SQE.SqeHttpApi.Server.Services
                 // Check if this edition has a proper collaborators field, if not dynamically add
                 // all edition editors to that field.
                 if (string.IsNullOrEmpty(ed.collaborators))
-                    ed.addLicence(editors);
+                    ed.AddLicence(editors);
                 
                 return new TextEditionDTO()
                 {
@@ -171,7 +171,7 @@ namespace SQE.SqeHttpApi.Server.Services
                 // Check if this edition has a proper collaborators field, if not dynamically add
                 // all edition editors to that field.
                 if (string.IsNullOrEmpty(ed.collaborators))
-                    ed.addLicence(editors);
+                    ed.AddLicence(editors);
                 
                 return new LineTextDTO()
                 {

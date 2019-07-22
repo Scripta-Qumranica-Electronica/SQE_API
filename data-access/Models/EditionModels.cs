@@ -50,15 +50,17 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 
         /// <summary>
         /// Call this, if you want the the licence to be added on the output.
+        /// If the collaborators field is empty, it will be populated from the list of editors.
         /// </summary>
-        public void addLicence(List<EditorInfo> editors = null)
+        public void AddLicence(List<EditorInfo> editors = null)
         {
             var collab = collaborators;
             if (string.IsNullOrEmpty(collab))
                 collab = editors == null ? 
                     copyrightHolder
-                    : string.Join(",", editors.Select(x => 
-                        x.Forename + " " + x.Surname + (string.IsNullOrEmpty(x.Organization) ? "" : "(" + x.Organization + ")") ));
+                    : string.Join(", ", editors.Select(x => 
+                        x.Forename + (!string.IsNullOrEmpty(x.Forename) &&  !string.IsNullOrEmpty(x.Surname) ? " " : "") 
+                                   + x.Surname + (string.IsNullOrEmpty(x.Organization) ? "" : " (" + x.Organization + ")") ));
             licence = Licence.printLicence(copyrightHolder, collab);
         }
     }
