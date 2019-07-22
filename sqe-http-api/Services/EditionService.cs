@@ -16,21 +16,22 @@ namespace SQE.SqeHttpApi.Server.Helpers
         Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
             string collaborators = null);
         Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo);
+        Task DeleteEditionAsync(UserInfo user);
     }
 
     public class EditionService : IEditionService
     {
-        private readonly IEditionRepository _repo;
+        private readonly IEditionRepository _editionRepo;
 
-        public EditionService(IEditionRepository repo)
+        public EditionService(IEditionRepository editionRepo)
         {
-            _repo = repo;
+            _editionRepo = editionRepo;
         }
 
         public async Task<EditionGroupDTO> GetEditionAsync(UserInfo user, bool artefacts = false,
             bool fragments = false)
         {
-            var scrollModels = await _repo.ListEditionsAsync(user.userId, user.editionId);
+            var scrollModels = await _editionRepo.ListEditionsAsync(user.userId, user.editionId);
 
             var primaryModel = scrollModels.FirstOrDefault(sv => sv.EditionId == user.editionId);
             if (primaryModel == null) // User is not allowed to see this scroll version
@@ -50,7 +51,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         {
             return new EditionListDTO()
             {
-                editions = (await _repo.ListEditionsAsync(userId, null))
+                editions = (await _editionRepo.ListEditionsAsync(userId, null))
                     .GroupBy(x => x.ScrollId) // Group the edition listings by scroll_id
                     .Select(x => x.Select(EditionModelToDTO)) // Format each entry as an EditionDTO
                     .Select(x => x.ToList()) // Convert the groups from IEnumerable to List
@@ -104,19 +105,19 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
             string collaborators = null)
         {
-            var editionBeforeChanges = (await _repo.ListEditionsAsync(user.userId, user.editionId)).First();
+            var editionBeforeChanges = (await _editionRepo.ListEditionsAsync(user.userId, user.editionId)).First();
             
             if (copyrightHolder != null || editionBeforeChanges.Collaborators != collaborators)
             {
-                await _repo.ChangeEditionCopyrightAsync(user, copyrightHolder, collaborators);
+                await _editionRepo.ChangeEditionCopyrightAsync(user, copyrightHolder, collaborators);
             }
 
             if (!string.IsNullOrEmpty(name))
             {
-                await _repo.ChangeEditionNameAsync(user, name);
+                await _editionRepo.ChangeEditionNameAsync(user, name);
             }
             
-            var editions = await _repo.ListEditionsAsync(user.userId, user.editionId); //get wanted edition by edition Id
+            var editions = await _editionRepo.ListEditionsAsync(user.userId, user.editionId); //get wanted edition by edition Id
             
             return EditionModelToDTO(editions.First(x => x.EditionId == user.editionId));
         }
@@ -125,7 +126,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         {
             EditionDTO edition;
             // Clone edition
-            var copyToEditionId = await _repo.CopyEditionAsync(user, editionInfo.copyrightHolder, editionInfo.collaborators);
+            var copyToEditionId = await _editionRepo.CopyEditionAsync(user, editionInfo.copyrightHolder, editionInfo.collaborators);
             if (user.editionId == copyToEditionId)
             {
                 // Check if is success is true, else throw error.
@@ -140,7 +141,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             }
             else
             {
-                var editions = await _repo.ListEditionsAsync(user.userId, user.editionId); //get wanted scroll by Id
+                var editions = await _editionRepo.ListEditionsAsync(user.userId, user.editionId); //get wanted scroll by Id
                 var unformattedEdition = editions.First(x => x.EditionId == user.editionId);
                 //I think we do not get this far if no records were found, `First` will, I think throw an error.
                 //Maybe we should more often make use of try/catch.
@@ -151,6 +152,16 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 edition = EditionModelToDTO(unformattedEdition);
             }
             return edition; //need to return the updated scroll
+        }
+
+        /// <summary>
+        /// Delete all data from the edition that the user is currently subscribed to.
+        /// </summary>
+        /// <param name="user">User object requesting the delete</param>
+        /// <returns></returns>
+        public async Task DeleteEditionAsync(UserInfo user)
+        {
+            await _editionRepo.DeleteAllEditionDataAsync(user);
         }
     }
 }

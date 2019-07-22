@@ -185,4 +185,25 @@ SET copyright_holder = COALESCE(@CopyrightHolder, copyright_holder),
     collaborators = @Collaborators 
 WHERE edition_id = @EditionId";
     }
+
+    /// <summary>
+    /// Delete all entries for a specific edition from the specified table.
+    /// We ensure here that the user requesting this is indeed an admin (even though that should also have been
+    /// done in API logic elsewhere).
+    /// </summary>
+    internal static class DeleteEditionFromTable
+    {
+        private const string _sql = @"
+DELETE $Table
+FROM $Table
+JOIN edition_editor ON edition_editor.edition_id = @EditionId 
+  AND edition_editor.user_id = @UserId
+WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
+";
+
+        public static string GetQuery(string table)
+        {
+            return _sql.Replace("$Table", table);
+        }
+    }
 }

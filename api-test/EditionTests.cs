@@ -231,6 +231,36 @@ namespace SQE.ApiTest
             Assert.True(msg.editions.Count > 0);
             Assert.DoesNotContain(msg.editions.SelectMany(x => x), x => x.id == editionId);
         }
+
+        // TODO: write the rest of the tests.
+        [Fact]
+        public async Task CanDeleteEditionAsAdmin()
+        {
+            // Arrange
+            var editionId = await HttpRequest.CreateNewEdition(_client);
+            const string url = "/v1/editions";
+            
+            // Act
+            var (response, msg) = await HttpRequest.SendAsync<string, string>(
+                _client, 
+                HttpMethod.Delete, 
+                url + "/" + editionId.ToString(), 
+                null, 
+                await HttpRequest.GetJWTAsync(_client));
+            
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var (editionResponse, editionMsg) = await HttpRequest.SendAsync<string, EditionListDTO>(
+                _client, 
+                HttpMethod.Get, 
+                url, 
+                null, 
+                await HttpRequest.GetJWTAsync(_client));
+            editionResponse.EnsureSuccessStatusCode();
+            var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
+            Assert.Empty(editionMatch);
+        }
         
         
         

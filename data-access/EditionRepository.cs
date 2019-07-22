@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
@@ -17,6 +17,7 @@ namespace SQE.SqeHttpApi.DataAccess
         Task ChangeEditionNameAsync(UserInfo user, string name);
         Task<uint> CopyEditionAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
         Task ChangeEditionCopyrightAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
+        Task DeleteAllEditionDataAsync(UserInfo user);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
@@ -235,6 +236,50 @@ namespace SQE.SqeHttpApi.DataAccess
                         Collaborators = collaborators,
                     });
             }
+        }
+
+        /// <summary>
+        /// Delete all data from the edition that the user is currently subscribed to.
+        /// </summary>
+        /// <param name="user">User object requesting the delete</param>
+        /// <returns></returns>
+        public async Task DeleteAllEditionDataAsync(UserInfo user)
+        {
+            // We only allow admins to delete all data in an edition.
+            if (!(await user.IsAdmin()))
+                throw new StandardErrors.NoAdminPermissions(user);
+
+            using (var transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
+            {
+                // Dynamically get all tables that can be part of an edition, that way we don't worry about
+                // this breaking due to future updates.
+                var dataTables = await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
+                
+                // Loop over every table and remove every entry with the requested editionId
+                var tasks = new List<Task>();
+                foreach (var dataTable in dataTables)
+                {
+                    // Fire off all delete tasks async
+                    tasks.Add(connection.ExecuteAsync(DeleteEditionFromTable.GetQuery(dataTable.TableName),
+                        new
+                        {
+                            EditionId = user.editionId ?? 0,
+                            UserId = user.userId ?? 0,
+                        })
+                    );
+                }
+                
+                // Await all delete tasks
+                await Task.WhenAll(tasks.ToArray());
+                
+                // Commit the full transaction (all or nothing)
+                transactionScope.Complete();
+            }
+            // TODO: Check with Ingo if we should leave the edition in the database (it could perhaps be undeleted).
+            // Should I have used the mutation tracking system for all the deletes?
+            // Note that when all data is removed from an edition, it will no longer show up in the get editions endpoint
+            // response (since there is no entry for it in the "manuscript_data" table.
         }
     }
 }

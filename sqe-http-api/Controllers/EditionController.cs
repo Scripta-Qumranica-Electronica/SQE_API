@@ -25,6 +25,17 @@ namespace SQE.SqeHttpApi.Server.Controllers
         }
 
         /// <summary>
+        /// Provides a listing of all editions accessible to the current user
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("")]
+        [ProducesResponseType(200)]
+        public async Task<ActionResult<EditionListDTO>> ListEditions()
+        {
+            return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
+        }
+
+        /// <summary>
         /// Provides details about the specified edition and all accessible alternate editions
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
@@ -35,17 +46,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
         public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
         {
             return await _editionService.GetEditionAsync(_userService.GetCurrentUserObject(editionId));
-        }
-
-        /// <summary>
-        /// Provides a listing of all editions accessible to the current user
-        /// </summary>
-        [AllowAnonymous]
-        [HttpGet("")]
-        [ProducesResponseType(200)]
-        public async Task<ActionResult<EditionListDTO>> ListEditions()
-        {
-            return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
         }
 
         /// <summary>
@@ -83,7 +83,19 @@ namespace SQE.SqeHttpApi.Server.Controllers
         {
             return await _editionService.CopyEditionAsync(_userService.GetCurrentUserObject(editionId), request);
         }
-        
-        // TODO: delete edition.
+
+        /// <summary>
+        /// Provides details about the specified edition and all accessible alternate editions
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        [AllowAnonymous]
+        [HttpDelete("{editionId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult> DeleteEdition([FromRoute] uint editionId)
+        {
+            await _editionService.DeleteEditionAsync(_userService.GetCurrentUserObject(editionId));
+            return Ok();
+        }
     }
 }
