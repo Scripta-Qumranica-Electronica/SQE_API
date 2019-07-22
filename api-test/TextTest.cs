@@ -144,6 +144,8 @@ namespace SQE.ApiTest
                 {
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
+
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -178,6 +180,8 @@ namespace SQE.ApiTest
                         i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
                         ]);
                 }
+                
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -212,6 +216,8 @@ namespace SQE.ApiTest
                         i > updatedTextFragments.textFragments.Count - 3 ? i + 1 : i // skip the second to last, which is the new text fragment
                         ]);
                 }
+                
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -253,6 +259,8 @@ namespace SQE.ApiTest
                         i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
                     ]);
                 }
+                
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
 
             #endregion should succeed
@@ -271,6 +279,8 @@ namespace SQE.ApiTest
 
                 // Assert
                 Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -297,6 +307,8 @@ namespace SQE.ApiTest
                 {
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
+                
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -323,6 +335,8 @@ namespace SQE.ApiTest
                 {
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
+                
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -355,6 +369,8 @@ namespace SQE.ApiTest
                 {
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
+                
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -392,6 +408,8 @@ namespace SQE.ApiTest
                 Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
                 var secondUpdateTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
                 updatedTextFragments.textFragments.ShouldDeepEqual(secondUpdateTextFragments.textFragments);
+                
+                await HttpRequest.DeleteEdition(_client, editionId, true);
             }
             
             #endregion should fail

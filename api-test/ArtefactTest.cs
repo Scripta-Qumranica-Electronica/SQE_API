@@ -168,6 +168,8 @@ namespace SQE.ApiTest
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", null, 
                 await HttpRequest.GetJWTAsync(_client));
             Assert.Equal(HttpStatusCode.NotFound, delResponse.StatusCode);
+
+            await HttpRequest.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -251,6 +253,8 @@ namespace SQE.ApiTest
             Assert.Equal(artefact.mask.mask, updatedAllArtefact.mask.mask);
             Assert.Equal(otherTransform, updatedAllArtefact.mask.transformMatrix);
             Assert.Equal(artefact.name, updatedAllArtefact.name);
+
+            await HttpRequest.DeleteEdition(_client, newEdition, true);
         }
 
         #endregion Access artefacts (should succeed)
@@ -286,6 +290,8 @@ namespace SQE.ApiTest
             
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+            await HttpRequest.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -306,6 +312,8 @@ namespace SQE.ApiTest
             
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+            await HttpRequest.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -332,6 +340,8 @@ namespace SQE.ApiTest
             
             // Assert (update name)
             Assert.Equal(HttpStatusCode.Unauthorized, nameResponse.StatusCode);
+
+            await HttpRequest.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -359,6 +369,8 @@ namespace SQE.ApiTest
             
             // Assert (update name)
             Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
+
+            await HttpRequest.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -386,6 +398,8 @@ namespace SQE.ApiTest
             
             // Assert (update name)
             Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
+
+            await HttpRequest.DeleteEdition(_client, newEdition, true);
         }
         #endregion Access artefacts (should fail)
         

@@ -260,6 +260,39 @@ namespace SQE.ApiTest
             editionResponse.EnsureSuccessStatusCode();
             var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
             Assert.Empty(editionMatch);
+
+            await HttpRequest.DeleteEdition(_client, editionId, true);
+        }
+        
+        // TODO: need sharing capability before this can be tested properly
+        [Fact]
+        public async Task CanNotDeleteEditionWhenNotAdmin()
+        {
+            // Arrange
+            var editionId = await HttpRequest.CreateNewEdition(_client);
+            const string url = "/v1/editions";
+            
+            // Act
+            var (response, msg) = await HttpRequest.SendAsync<string, string>(
+                _client, 
+                HttpMethod.Delete, 
+                url + "/" + editionId.ToString(), 
+                null, 
+                null);
+            
+            // Assert
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            var (editionResponse, editionMsg) = await HttpRequest.SendAsync<string, EditionListDTO>(
+                _client, 
+                HttpMethod.Get, 
+                url, 
+                null, 
+                await HttpRequest.GetJWTAsync(_client));
+            editionResponse.EnsureSuccessStatusCode();
+            var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
+            Assert.Single(editionMatch);
+
+            await HttpRequest.DeleteEdition(_client, editionId, true);
         }
         
         
