@@ -6,9 +6,9 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <summary>
     /// Retrieves all textual data for a chunk of text
     /// </summary>
-    /// <param Name="startId">Id of the first sign</param>
-    /// <param Name="endId">Id of the last sign</param>
-    /// <param Name="editionId">Id of the edition the text is to be taken from</param>
+    /// <param name="startId">Id of the first sign</param>
+    /// <param name="endId">Id of the last sign</param>
+    /// <param name="editionId">Id of the edition the text is to be taken from</param>
     public const string GetQuery = @"
     WITH RECURSIVE sign_ids
     AS (
@@ -106,8 +106,8 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <summary>
     /// Retrieves the first and last sign of a line
     /// </summary>
-    /// <param Name="entityId">Id of line</param>
-    /// <param Name="editionId">d of the edition the line is to be taken from</param>
+    /// <param name="entityId">Id of line</param>
+    /// <param name="editionId">d of the edition the line is to be taken from</param>
     public const string GetQuery = @"
       SELECT sign_interpretation.sign_id
       FROM  line_to_sign
@@ -126,8 +126,8 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <summary>
     /// Retrieves the first and last sign of a textFragmentName
     /// </summary>
-    /// <param Name="entityId">Id of line</param>
-    /// <param Name="editionId">d of the edition the line is to be taken from</param>
+    /// <param name="entityId">Id of line</param>
+    /// <param name="editionId">d of the edition the line is to be taken from</param>
     public const string GetQuery = @"
       SELECT sign_interpretation.sign_id
       FROM text_fragment_to_line

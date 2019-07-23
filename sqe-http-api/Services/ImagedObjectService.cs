@@ -145,7 +145,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <summary>
         /// Get a tuple of DTO's for the recto and verso image set from a flat list of ImageDTO's.
         /// </summary>
-        /// <param Name="images"></param>
+        /// <param name="images">List of ImageDTO to be organized into recto/verso</param>
         /// <returns></returns>
         private static (ImageStackDTO recto, ImageStackDTO verso) getSides(IEnumerable<ImageDTO> images)
         {

@@ -22,8 +22,8 @@ GROUP BY single_action.id_in_table
             /// This returns a query string that provides the original author for a list of
             /// Id's in a user editable table.
             /// </summary>
-            /// <param Name="tableName">The table containing the Id's being audited.</param>
-            /// <param Name="idList">The list of Id's to audit</param>
+            /// <param name="tableName">The table containing the Id's being audited.</param>
+            /// <param name="idList">The list of Id's to audit</param>
             /// <returns>A query string to be run with the database connector.</returns>
             public string GetQuery(string tableName, List<uint> idList)
             {

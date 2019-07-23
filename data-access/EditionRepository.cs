@@ -137,7 +137,7 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <param name="user"></param>
         /// <param name="copyrightHolder"></param>
         /// <param name="collaborators"></param>
-        /// <param Name="user">User info object contains the editionId that the user wishes to copy and
+        /// <param name="user">User info object contains the editionId that the user wishes to copy and
         /// all user permissions related to it.</param>
         /// <returns>The editionId of the newly created edition.</returns>
         public async Task<uint> CopyEditionAsync(UserInfo user, string copyrightHolder = null,
@@ -240,13 +240,20 @@ namespace SQE.SqeHttpApi.DataAccess
 
         /// <summary>
         /// Delete all data from the edition that the user is currently subscribed to.
+        /// 
+        /// TODO: Update this method after the sharing functionality is built out.
+        /// We must perform the following logic: 1. if there is one editor for the edition
+        /// use this current method as-is; 2. if the edition has more than one editor, then revoke
+        /// access rights for the user requesting the delete (read/write/admin all become false);
+        /// 3. if the user requesting the delete was the only admin among the editors of the edition,
+        /// then raise every other editor to admin status and also perform option 2.
         /// </summary>
         /// <param name="user">User object requesting the delete</param>
         /// <returns></returns>
         public async Task DeleteAllEditionDataAsync(UserInfo user)
         {
-            // We only allow admins to delete all data in an edition.
-            if (!(await user.IsAdmin()))
+            // We only allow admins to delete all data in an unlocked edition.
+            if (!(await user.IsAdmin()) || !(await user.MayWrite()))
                 throw new StandardErrors.NoAdminPermissions(user);
 
             using (var transactionScope = new TransactionScope())
@@ -257,29 +264,17 @@ namespace SQE.SqeHttpApi.DataAccess
                 var dataTables = await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
                 
                 // Loop over every table and remove every entry with the requested editionId
-                var tasks = new List<Task>();
-                foreach (var dataTable in dataTables)
-                {
-                    // Fire off all delete tasks async
-                    tasks.Add(connection.ExecuteAsync(DeleteEditionFromTable.GetQuery(dataTable.TableName),
-                        new
-                        {
-                            EditionId = user.editionId ?? 0,
-                            UserId = user.userId ?? 0,
-                        })
+                // Each individual delete can be async and happen concurrently
+                await Task.WhenAll(
+                    dataTables.Select(
+                        dataTable => connection.ExecuteAsync(DeleteEditionFromTable.GetQuery(dataTable.TableName), 
+                            new {EditionId = user.editionId ?? 0, UserId = user.userId ?? 0,})
+                        ).ToArray()
                     );
-                }
-                
-                // Await all delete tasks
-                await Task.WhenAll(tasks.ToArray());
                 
                 // Commit the full transaction (all or nothing)
                 transactionScope.Complete();
             }
-            // TODO: Check with Ingo if we should leave the edition in the database (it could perhaps be undeleted).
-            // Should I have used the mutation tracking system for all the deletes?
-            // Note that when all data is removed from an edition, it will no longer show up in the get editions endpoint
-            // response (since there is no entry for it in the "manuscript_data" table.
         }
     }
 }
