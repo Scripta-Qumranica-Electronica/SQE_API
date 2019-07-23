@@ -42,6 +42,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
         private readonly IUserRepository _userRepo;
         public uint? editionId;
         private uint? _editionEditorId;
+        private bool? _editionLocked;
         private bool? _mayWrite;
         private bool? _mayLock;
         private bool? _isAdmin;
@@ -51,6 +52,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
             this.editionId = editionId;
             this.userId = userId;
             _userRepo = userRepository;
+            _editionLocked = null;
             _mayWrite = null;
             _mayLock = null;
             _isAdmin = null;
@@ -77,6 +79,15 @@ namespace SQE.SqeHttpApi.DataAccess.Models
                 await SetPermissions();
             }
             return _editionEditorId.HasValue && _editionEditorId.Value == 0 ? null : _editionEditorId;
+        }
+        
+        public async Task<bool> EditionLocked()
+        {
+            if (!_editionLocked.HasValue)
+            {
+                await SetPermissions();
+            }
+            return _editionLocked ?? true;
         }
 
         public async Task<bool> MayWrite()
@@ -113,6 +124,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
             {
                 var permissions = await _userRepo.GetUserEditionPermissionsAsync(this);
                 _mayWrite = permissions.MayWrite && !permissions.Locked;
+                _editionLocked = permissions.Locked;
                 _mayLock = permissions.MayLock;
                 _isAdmin = permissions.IsAdmin;
                 _editionEditorId = permissions.EditionEditionEditorId;

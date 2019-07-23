@@ -17,6 +17,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
             string collaborators = null);
         Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo);
         Task DeleteEditionAsync(UserInfo user);
+        Task<EditorRightsDTO> AddEditionEditor(UserInfo user, EditorRightsDTO newEditor);
+        Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO newEditor);
     }
 
     public class EditionService : IEditionService
@@ -79,8 +81,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
         {
             return new PermissionDTO
             {
-                canAdmin = model.CanAdmin,
-                canWrite = model.CanWrite,
+                isAdmin = model.IsAdmin,
+                mayWrite = model.MayWrite,
             };
         }
 
@@ -97,8 +99,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
         {
             return new DataAccess.Models.Permission
             {
-                CanAdmin = permission.canAdmin,
-                CanWrite = permission.canWrite
+                IsAdmin = permission.isAdmin,
+                MayWrite = permission.mayWrite
             };
         }
 
@@ -162,6 +164,44 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task DeleteEditionAsync(UserInfo user)
         {
             await _editionRepo.DeleteAllEditionDataAsync(user);
+        }
+
+        /// <summary>
+        /// Adds a new editor to an edition with the requested access rights
+        /// </summary>
+        /// <param name="user">User object making the request</param>
+        /// <param name="newEditor">Details of the new editor to be added</param>
+        /// <returns></returns>
+        public async Task<EditorRightsDTO> AddEditionEditor(UserInfo user, EditorRightsDTO newEditor)
+        {
+            var newUserPermissions = await _editionRepo.AddEditionEditor(user, newEditor.email, newEditor.mayRead,
+                newEditor.mayWrite, newEditor.mayLock, newEditor.isAdmin);
+            return _permissionsToEditorRightsDTO(newEditor.email, newUserPermissions);
+        }
+        
+        /// <summary>
+        /// Changes the access rights of an editor
+        /// </summary>
+        /// <param name="user">User object making the request</param>
+        /// <param name="newEditor">Details of the editor and the desired access rights</param>
+        /// <returns></returns>
+        public async Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO newEditor)
+        {
+            var updatedUserPermissions = await _editionRepo.AddEditionEditor(user, newEditor.email, newEditor.mayRead,
+                newEditor.mayWrite, newEditor.mayLock, newEditor.isAdmin);
+            return _permissionsToEditorRightsDTO(newEditor.email, updatedUserPermissions);
+        }
+
+        private static EditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail, Permission permissions)
+        {
+            return new EditorRightsDTO()
+            {
+                email = editorEmail,
+                mayRead = permissions.MayRead,
+                mayWrite = permissions.MayWrite,
+                mayLock = permissions.MayLock,
+                isAdmin = permissions.IsAdmin
+            };
         }
     }
 }

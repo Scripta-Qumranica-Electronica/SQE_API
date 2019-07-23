@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using Dapper;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using Microsoft.Extensions.Configuration;
 using System.Transactions;
 using SQE.SqeHttpApi.DataAccess.Helpers;
@@ -18,6 +20,10 @@ namespace SQE.SqeHttpApi.DataAccess
         Task<uint> CopyEditionAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
         Task ChangeEditionCopyrightAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
         Task DeleteAllEditionDataAsync(UserInfo user);
+        Task<Permission> AddEditionEditor(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
+            bool? mayLock, bool? isAdmin);
+        Task<Permission> ChangeEditionEditorRights(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
+            bool? mayLock, bool? isAdmin);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
@@ -70,18 +76,18 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 model.Permission = new Permission
                 {
-                    CanAdmin = model.Owner.UserId == currentUserId.Value && result.Admin,
-                    CanWrite = model.Owner.UserId == currentUserId.Value && result.MayWrite,
-                    CanLock = model.Owner.UserId == currentUserId.Value && result.MayLock,
+                    IsAdmin = model.Owner.UserId == currentUserId.Value && result.Admin,
+                    MayWrite = model.Owner.UserId == currentUserId.Value && result.MayWrite,
+                    MayLock = model.Owner.UserId == currentUserId.Value && result.MayLock,
                 };
             }
             else
             {
                 model.Permission = new Permission
                 {
-                    CanAdmin = false,
-                    CanLock = false,
-                    CanWrite = false,
+                    IsAdmin = false,
+                    MayLock = false,
+                    MayWrite = false,
                 };
             }
 
@@ -274,6 +280,133 @@ namespace SQE.SqeHttpApi.DataAccess
                 
                 // Commit the full transaction (all or nothing)
                 transactionScope.Complete();
+            }
+        }
+
+        public async Task<Permission> AddEditionEditor(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
+            bool? mayLock, bool? isAdmin)
+        {
+            // Make sure requesting user is admin, only and edition admin may perform this action
+            if (!(await user.IsAdmin()))
+                throw new StandardErrors.NoAdminPermissions(user);
+            
+            // Check if the editor already exists, don't attempt to re-add
+            if ((await _getEditionEditors(user.editionId ?? 0)).Any(x => x.Email == editorEmail))
+                throw new StandardErrors.ConflictingData("editor email");
+            
+            // Set the permissions object by coalescing with the default values
+            var permissions = new Permission()
+            {
+                MayRead = mayRead ?? true,
+                MayWrite = mayWrite ?? false,
+                MayLock = mayLock ?? false,
+                IsAdmin = isAdmin ?? false
+            };
+            
+            // Check for invalid settings
+            if (permissions.IsAdmin && !permissions.MayRead)
+                throw new StandardErrors.InputDataRuleViolation("an edition admin must have read rights");
+            
+            if (permissions.MayWrite && !permissions.MayRead)
+                throw new StandardErrors.InputDataRuleViolation("an editor with write rights must have read rights");
+
+            using (var connection = OpenConnection())
+            {
+                // Add the editor
+                var editorUpdateExecution = await connection.ExecuteAsync(CreateDetailedEditionEditorQuery.GetQuery,
+                    new
+                    {
+                        EditionId = user.editionId ?? 0,
+                        Email = editorEmail,
+                        permissions.MayRead,
+                        permissions.MayWrite,
+                        permissions.MayLock,
+                        permissions.IsAdmin
+                    });
+
+                if (editorUpdateExecution != 1)
+                    throw new StandardErrors.DataNotWritten($"update permissions for {editorEmail}");
+
+                // Return the results
+                return permissions;
+            }
+
+            // In the future should we email the editor to confirm adding?
+        }
+
+        public async Task<Permission> ChangeEditionEditorRights(UserInfo user, string editorEmail, bool? mayRead,
+            bool? mayWrite, bool? mayLock, bool? isAdmin)
+        {
+            // Make sure requesting user is admin, only and edition admin may perform this action
+            if (!(await user.IsAdmin()))
+                throw new StandardErrors.NoAdminPermissions(user);
+            
+            // Check if the editor exists
+            var editors = await _getEditionEditors(user.editionId ?? 0);
+            var currentEditorSettingsList = editors.Where(x => x.Email == editorEmail).ToList();
+            if (currentEditorSettingsList.Count != 1) // There should be only 1 record
+                throw new StandardErrors.DataNotFound("editor email", user.editionId.ToString(), 
+                    "edition_editors");
+            
+            // Set the new permissions object by coalescing the new settings with those already existing
+            var currentEditorSettings = currentEditorSettingsList.First();
+            var permissions = new Permission()
+            {
+                MayRead = mayRead ?? currentEditorSettings.MayRead,
+                MayWrite = mayWrite ?? currentEditorSettings.MayWrite,
+                MayLock = mayLock ?? currentEditorSettings.MayLock,
+                IsAdmin = isAdmin ?? currentEditorSettings.IsAdmin
+            };
+            
+            // Make sure we are not removing an admin's read access (that is not allowed)
+            if (permissions.IsAdmin && !permissions.MayRead)
+                throw new StandardErrors.InputDataRuleViolation("read rights may not be revoked for an edition admin");
+            
+            // Make sure that we are not revoking editor read access when editor still has write access 
+            if (permissions.MayWrite && !permissions.MayRead)
+                throw new StandardErrors.InputDataRuleViolation("read rights may not be revoked for an editor with write rights");
+            
+            // If the last admin is giving up admin rights, elevate every editor with read rights to admin
+            if (!editors.Any(x => (x.Email == editorEmail && permissions.IsAdmin) || (x.Email != editorEmail && x.IsAdmin)))
+            {
+                await Task.WhenAll(
+                    editors.Select(
+                        x => ChangeEditionEditorRights(user, x.Email, x.MayRead, x.MayWrite, x.MayLock,x.IsAdmin || x.MayRead)
+                    ).ToArray()
+                );
+            }
+            
+            using (var connection = OpenConnection())
+            {
+                // Perform the update
+                var editorUpdateExecution = await connection.ExecuteAsync(UpdateEditionEditorPermissionsQuery.GetQuery,
+                    new
+                    {
+                        EditionId = user.editionId ?? 0,
+                        Email = editorEmail,
+                        permissions.MayRead,
+                        permissions.MayWrite,
+                        permissions.MayLock,
+                        permissions.IsAdmin
+                    });
+
+                if (editorUpdateExecution != 1)
+                    throw new StandardErrors.DataNotWritten($"update permissions for {editorEmail}");
+
+                // Return the results
+                return permissions;
+            }
+            
+
+            // In the future should we email the editor about their change in status?
+        }
+
+        private async Task<List<DetailedPermissions>> _getEditionEditors(uint editionId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<DetailedPermissions>(GetEditionEditorsWithPermissionsQuery.GetQuery,
+                    new {EditionId = editionId})).ToList();
             }
         }
     }

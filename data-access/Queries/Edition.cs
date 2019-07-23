@@ -116,6 +116,7 @@ WHERE edition_id = @EditionId";
         }
     }
 
+    // TODO: probably delete this.
     internal static class ScrollVersionGroupLimitQuery
     {
         private const string DefaultLimit = " sv1.user_id = 1 ";
@@ -145,14 +146,57 @@ WHERE edition_id = @EditionId";
             LimitScrollVersionGroupToDefaultUser + " OR scroll_version.user_id = @UserId ";
     }
 
+    #region editor queries
+    
+    internal static class GetEditionEditorsWithPermissionsQuery
+    {
+        public const string GetQuery= @"
+SELECT SQE.user.email AS Email, edition_editor.may_read AS MayRead, edition_editor.may_write AS MayLock, 
+       edition_editor.may_lock AS MayLock, edition_editor.is_admin AS IsAdmin
+FROM SQE.edition_editor
+JOIN SQE.user USING(user_id)
+WHERE edition_editor.edition_id = @EditionId
+";
+    }
+
     internal static class CreateEditionEditorQuery
     {
         // You must add a parameter `@UserId`, `@EditionId`, `@MayLock` (0 = false, 1 = true),
         // and `@Admin` (0 = false, 1 = true) to use this.
         public const string GetQuery = @"
-            INSERT INTO edition_editor (user_id, edition_id, may_write, may_lock, is_admin) 
-            VALUES (@UserId, @EditionId, 1, @MayLock, @IsAdmin)";
+INSERT INTO edition_editor (user_id, edition_id, may_write, may_lock, is_admin) 
+VALUES (@UserId, @EditionId, 1, @MayLock, @IsAdmin)";
     }
+    
+    internal static class CreateDetailedEditionEditorQuery
+    {
+        // You must add a parameter `@UserId`, `@EditionId`, `@MayRead` (0 = false, 1 = true), `@MayWrite` (0 = false, 1 = true),
+        // `@MayLock` (0 = false, 1 = true), and `@Admin` (0 = false, 1 = true) to use this.
+        public const string GetQuery = @"
+INSERT INTO edition_editor (user_id, edition_id, may_read, may_write, may_lock, is_admin) 
+SELECT user_id, @EditionId, @MayRead, @MayWrite, @MayLock, @IsAdmin
+FROM SQE.user
+WHERE SQE.user.email = @Email
+";
+    }
+    
+    internal static class UpdateEditionEditorPermissionsQuery
+    {
+        // You must add a parameter `@UserId`, `@EditionId`, `@MayRead` (0 = false, 1 = true), `@MayWrite` (0 = false, 1 = true),
+        // `@MayLock` (0 = false, 1 = true), and `@Admin` (0 = false, 1 = true) to use this.
+        public const string GetQuery = @"
+UPDATE edition_editor
+JOIN user ON user.user_id = edition_editor.user_id 
+    AND user.email = @Email 
+SET may_read = @MayRead,
+    may_write = @MayWrite,
+    may_lock = @MayLock,
+    is_admin = @IsAdmin 
+WHERE edition_editor.edition_id = @EditionId
+";
+    }
+    
+    #endregion editor queries
     
     internal static class CopyEditionQuery
     {

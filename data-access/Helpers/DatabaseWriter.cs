@@ -141,6 +141,10 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         public async Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
             List<MutationRequest> mutationRequests)
         {
+            // Check if the edition is locked
+            if ((await user.EditionLocked()))
+                throw new StandardErrors.LockedData(user);
+            
             // Check the permissions and throw if user has no rights to alter this edition
             if (!(await user.MayWrite()) && !(await user.EditionEditorId()).HasValue)
                 throw new StandardErrors.NoWritePermissions(user);

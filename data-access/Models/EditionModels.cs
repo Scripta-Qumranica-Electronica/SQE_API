@@ -24,9 +24,15 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 
     public class Permission
     {
-        public bool CanWrite { get; set; }
-        public bool CanLock { get; set; }
-        public bool CanAdmin { get; set; }
+        public bool MayRead { get; set; }
+        public bool MayWrite { get; set; }
+        public bool MayLock { get; set; }
+        public bool IsAdmin { get; set; }
+    }
+
+    public class DetailedPermissions : Permission
+    {
+        public string Email { get; set; }
     }
 
     public class Share
