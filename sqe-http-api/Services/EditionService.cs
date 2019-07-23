@@ -18,16 +18,18 @@ namespace SQE.SqeHttpApi.Server.Helpers
         Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo);
         Task DeleteEditionAsync(UserInfo user);
         Task<EditorRightsDTO> AddEditionEditor(UserInfo user, EditorRightsDTO newEditor);
-        Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO newEditor);
+        Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO updatedEditor);
     }
 
     public class EditionService : IEditionService
     {
         private readonly IEditionRepository _editionRepo;
+        private readonly IUserRepository _userRepo;
 
-        public EditionService(IEditionRepository editionRepo)
+        public EditionService(IEditionRepository editionRepo, IUserRepository userRepo)
         {
             _editionRepo = editionRepo;
+            _userRepo = userRepo;
         }
 
         public async Task<EditionGroupDTO> GetEditionAsync(UserInfo user, bool artefacts = false,
@@ -40,13 +42,13 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 return null;
             var otherModels = scrollModels.Where(sv => sv.EditionId != user.editionId).OrderBy(sv => sv.EditionId);
 
-            var svg = new EditionGroupDTO
+            var editionGroup = new EditionGroupDTO
             {
                 primary = EditionModelToDTO(primaryModel),
                 others = otherModels.Select(EditionModelToDTO),
             };
 
-            return svg;
+            return editionGroup;
         }
 
         public async Task<EditionListDTO> ListEditionsAsync(uint? userId)
@@ -163,7 +165,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// <returns></returns>
         public async Task DeleteEditionAsync(UserInfo user)
         {
-            await _editionRepo.DeleteAllEditionDataAsync(user);
+            var userInfo = await _userRepo.GetDetailedUserByIdAsync(user);
+            // Setting all permission to false is how we delete a user's access to an edition.
+            // The code downstream will more aggressively delete the edition when the last editor gives up admin status.
+            await _editionRepo.ChangeEditionEditorRights(user, userInfo.Email, false, false, 
+                false, false);
         }
 
         /// <summary>
@@ -183,13 +189,13 @@ namespace SQE.SqeHttpApi.Server.Helpers
         /// Changes the access rights of an editor
         /// </summary>
         /// <param name="user">User object making the request</param>
-        /// <param name="newEditor">Details of the editor and the desired access rights</param>
+        /// <param name="updatedEditor">Details of the editor and the desired access rights</param>
         /// <returns></returns>
-        public async Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO newEditor)
+        public async Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO updatedEditor)
         {
-            var updatedUserPermissions = await _editionRepo.AddEditionEditor(user, newEditor.email, newEditor.mayRead,
-                newEditor.mayWrite, newEditor.mayLock, newEditor.isAdmin);
-            return _permissionsToEditorRightsDTO(newEditor.email, updatedUserPermissions);
+            var updatedUserPermissions = await _editionRepo.ChangeEditionEditorRights(user, updatedEditor.email, updatedEditor.mayRead,
+                updatedEditor.mayWrite, updatedEditor.mayLock, updatedEditor.isAdmin);
+            return _permissionsToEditorRightsDTO(updatedEditor.email, updatedUserPermissions);
         }
 
         private static EditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail, Permission permissions)

@@ -88,7 +88,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Provides details about the specified edition and all accessible alternate editions
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
-        [AllowAnonymous]
         [HttpDelete("{editionId}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]

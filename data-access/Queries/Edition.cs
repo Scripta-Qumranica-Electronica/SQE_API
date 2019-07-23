@@ -24,7 +24,12 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
     user.user_id AS UserId, 
     user.email AS Email 
 FROM edition AS ed1
-JOIN edition AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
+JOIN (SELECT edition.edition_id, edition.copyright_holder, edition.collaborators, edition.locked, edition.manuscript_id
+      FROM edition
+      JOIN edition_editor USING(edition_id)
+      WHERE edition_editor.user_id = 1 $UserFilter
+        AND edition_editor.may_read = 1
+      GROUP BY edition.edition_id) AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
 JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
 JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
 JOIN manuscript_data USING(manuscript_data_id)
@@ -47,18 +52,13 @@ GROUP BY ed2.edition_id
 
         public static string GetQuery(bool limitUser, bool limitScrolls)
         {
-            // Build the WHERE clause
-            var where = new StringBuilder(" WHERE (user.user_id = 1");
-            if (limitUser)
-            {
-                where.Append(" OR user.user_id = @UserId");
-            }
-            where.Append(")");
+            // Build the WHERE clauses
+            var where = limitScrolls ? "WHERE ed1.edition_id = @EditionId" : "";
+            var userFilter = limitUser ? "OR edition_editor.user_id = @UserId" : "";
+            
 
-            if (limitScrolls)
-                where.Append(" AND ed1.edition_id = @EditionId");
-
-            return _baseQuery.Replace("$Where", where.ToString());
+            return _baseQuery.Replace("$Where", where.ToString())
+                .Replace("$UserFilter", userFilter);
         }
 
 

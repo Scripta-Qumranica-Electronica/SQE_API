@@ -337,8 +337,9 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<Permission> ChangeEditionEditorRights(UserInfo user, string editorEmail, bool? mayRead,
             bool? mayWrite, bool? mayLock, bool? isAdmin)
         {
-            // Make sure requesting user is admin, only and edition admin may perform this action
-            if (!(await user.IsAdmin()))
+            // Make sure requesting user is admin when raising access, only and edition admin may perform this action
+            if (((mayRead ?? false) || (mayWrite ?? false) || (mayLock ?? false) || (isAdmin ?? false)) && 
+                !(await user.IsAdmin()))
                 throw new StandardErrors.NoAdminPermissions(user);
             
             // Check if the editor exists
@@ -366,7 +367,20 @@ namespace SQE.SqeHttpApi.DataAccess
             if (permissions.MayWrite && !permissions.MayRead)
                 throw new StandardErrors.InputDataRuleViolation("read rights may not be revoked for an editor with write rights");
             
-            // If the last admin is giving up admin rights, elevate every editor with read rights to admin
+            // If there is only one editor, who is now giving up admin rights, then delete the edition and return no access
+            if (!permissions.IsAdmin && editors.Count == 1)
+            {
+                await DeleteAllEditionDataAsync(user);
+                return new Permission()
+                {
+                    MayRead = false,
+                    MayWrite = false,
+                    MayLock = false,
+                    IsAdmin = false
+                };
+            }
+            
+            // If the last admin in a group of editors is giving up admin rights, elevate every editor with read rights to admin
             if (!editors.Any(x => (x.Email == editorEmail && permissions.IsAdmin) || (x.Email != editorEmail && x.IsAdmin)))
             {
                 await Task.WhenAll(

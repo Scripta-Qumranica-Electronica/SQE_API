@@ -38,8 +38,10 @@ namespace SQE.SqeHttpApi.Server.DTOs
     public class EditorRightsDTO : PermissionDTO
     {
         public string email { get; set; }
-        public bool mayRead { get; set; }
-        public bool mayLock { get; set; }
+        public bool? mayRead { get; set; }
+        public bool? isAdmin { get; set; }
+        public bool? mayLock { get; set; }
+        public bool? mayWrite { get; set; }
     }
     
     public class TextEditionDTO
