@@ -351,7 +351,6 @@ namespace SQE.ApiTest
             Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
             Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
             user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
-            user1Msg.primary.owner.ShouldDeepEqual(user2Msg.primary.owner);
         }
         
         [Fact]
@@ -401,7 +400,6 @@ namespace SQE.ApiTest
             Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
             Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
             user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
-            user1Msg.primary.owner.ShouldDeepEqual(user2Msg.primary.owner);
         }
         
         [Fact]
@@ -451,7 +449,6 @@ namespace SQE.ApiTest
             Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
             Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
             user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
-            user1Msg.primary.owner.ShouldDeepEqual(user2Msg.primary.owner);
         }
         
         [Fact]
@@ -502,7 +499,6 @@ namespace SQE.ApiTest
             Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
             Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
             user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
-            user1Msg.primary.owner.ShouldDeepEqual(user2Msg.primary.owner);
         }
         
         [Fact]
@@ -555,10 +551,9 @@ namespace SQE.ApiTest
             share2Response.EnsureSuccessStatusCode();
             Assert.True(share2Msg.mayRead);
             Assert.True(share2Msg.mayWrite);
-            Assert.False(shareMsg.mayLock);
+            Assert.False(share2Msg.mayLock);
             Assert.True(share2Msg.isAdmin);
             
-            // TODO: I am receiving the wrong permissions here, figure it out.
             var (user2Resp2, user2Msg2) = await HttpRequest.SendAsync<string, EditionGroupDTO>(_client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}", null,

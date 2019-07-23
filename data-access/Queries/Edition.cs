@@ -12,17 +12,17 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
         ed2.collaborators, 
         GROUP_CONCAT(DISTINCT CONCAT(user.forename, ' ', user.surname)
         SEPARATOR ', ')) AS Collaborators,
-    edition_editor.is_admin AS Admin,
+    current_editor.is_admin AS Admin,
     manuscript_data.name AS Name, 
     im.thumbnail_url AS Thumbnail, 
     ed2.locked AS Locked,
     ed2.manuscript_id AS ScrollId,
-    edition_editor.may_lock AS MayLock,
-    edition_editor.may_write AS MayWrite, 
-    edition_editor.may_read AS MayRead,
+    current_editor.may_lock AS MayLock,
+    current_editor.may_write AS MayWrite, 
+    current_editor.may_read AS MayRead,
     last.last_edit AS LastEdit, 
-    user.user_id AS UserId, 
-    user.email AS Email 
+    current_editor.user_id AS UserId, 
+    current_editor_details.email AS Email 
 FROM edition AS ed1
 JOIN (SELECT edition.edition_id, edition.copyright_holder, edition.collaborators, edition.locked, edition.manuscript_id
       FROM edition
@@ -31,9 +31,12 @@ JOIN (SELECT edition.edition_id, edition.copyright_holder, edition.collaborators
         AND edition_editor.may_read = 1
       GROUP BY edition.edition_id) AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
 JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
+JOIN user ON user.user_id = edition_editor.user_id
+LEFT JOIN edition_editor AS current_editor ON current_editor.edition_id = ed2.edition_id
+    $CurrentEditorFilter
+LEFT JOIN user AS current_editor_details ON current_editor_details.user_id = current_editor.user_id
 JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
 JOIN manuscript_data USING(manuscript_data_id)
-JOIN user ON user.user_id = edition_editor.user_id
 LEFT JOIN (SELECT edition_id, MAX(time) AS last_edit 
            FROM edition_editor
            JOIN main_action USING(edition_id) 
@@ -55,10 +58,12 @@ GROUP BY ed2.edition_id
             // Build the WHERE clauses
             var where = limitScrolls ? "WHERE ed1.edition_id = @EditionId" : "";
             var userFilter = limitUser ? "OR edition_editor.user_id = @UserId" : "";
+            var currentEditorFilter = limitUser ? "AND current_editor.user_id = @UserId" : "";
             
 
             return _baseQuery.Replace("$Where", where.ToString())
-                .Replace("$UserFilter", userFilter);
+                .Replace("$UserFilter", userFilter)
+                .Replace("$CurrentEditorFilter", currentEditorFilter);
         }
 
 

@@ -76,9 +76,9 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 model.Permission = new Permission
                 {
-                    IsAdmin = model.Owner.UserId == currentUserId.Value && result.Admin,
-                    MayWrite = model.Owner.UserId == currentUserId.Value && result.MayWrite,
-                    MayLock = model.Owner.UserId == currentUserId.Value && result.MayLock,
+                    IsAdmin = result.Admin,
+                    MayWrite = result.MayWrite,
+                    MayLock = result.MayLock,
                 };
             }
             else
