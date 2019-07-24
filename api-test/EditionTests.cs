@@ -255,8 +255,10 @@ namespace SQE.ApiTest
                 await HttpRequest.GetJWTAsync(_client));
             
             // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); // Should fail without confirmation
+            
+            // Delete the edition for real
+            await HttpRequest.DeleteEdition(_client, editionId, true, true);
             var (editionResponse, editionMsg) = await HttpRequest.SendAsync<string, EditionListDTO>(
                 _client, 
                 HttpMethod.Get, 
@@ -266,8 +268,6 @@ namespace SQE.ApiTest
             editionResponse.EnsureSuccessStatusCode();
             var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
             Assert.Empty(editionMatch);
-
-            await HttpRequest.DeleteEdition(_client, editionId, true);
         }
         
         // TODO: need sharing capability before this can be tested properly
@@ -638,7 +638,9 @@ namespace SQE.ApiTest
                 await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd));
             
             // Assert
-            delete2Response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
+            // Kill the edition for real
+            await HttpRequest.DeleteEdition(_client, newEdition, true, true, user1.email, user1Pwd);
             var (user1Resp2, user1Msg2) = await HttpRequest.SendAsync<string, EditionGroupDTO>(_client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}", null,

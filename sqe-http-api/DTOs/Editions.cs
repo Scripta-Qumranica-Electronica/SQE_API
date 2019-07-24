@@ -60,6 +60,12 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public PermissionDTO permission { get; set; }
     }
 
+    public class DeleteTokenDTO
+    {
+        public uint editionId { get; set; }
+        public string token { get; set; }
+    }
+
     #region Request DTO's
     public class EditionUpdateRequestDTO
     {

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -155,7 +156,7 @@ namespace SQE.ApiTest
             response.EnsureSuccessStatusCode();
             Assert.Null(msg);
             var newTokenCreationTime = await GetToken(user.email);
-            Assert.True(newTokenCreationTime.date_created > tokenCreationTime.date_created); // Make sure the token date was updated
+            Assert.True(newTokenCreationTime.date_created >= tokenCreationTime.date_created); // Make sure the token date the same or higher
 
             // Cleanup (remove user)
             await CleanupUserAccountAsync(newUser);
@@ -207,8 +208,6 @@ namespace SQE.ApiTest
             // Arrange
             var user = RandomUser();
             await CreateUserAccountAsync(user); // Asserts already in this function
-            var tokenCreationTime = await GetToken(user.email);
-
             var newEmail = _faker.Internet.Email();
             
             // Act
@@ -232,9 +231,8 @@ namespace SQE.ApiTest
             await GetUserByEmail(user.email, shouldSucceed: false); // Assert checks already in method
             
                 // Verify we have a new token
-            var newTokenCreationTime = await GetToken(newEmail);
-            Assert.True(newTokenCreationTime.date_created > tokenCreationTime.date_created);
-            Assert.Equal(tokenCreationTime.token, newTokenCreationTime.token);
+            var token = await GetToken(newEmail);
+            Assert.NotNull(token.token);
             
             // Cleanup (remove user)
             await CleanupUserAccountAsync(lgMsg);
@@ -677,9 +675,14 @@ namespace SQE.ApiTest
             
             var checkForUserSQLParams = new DynamicParameters();
             checkForUserSQLParams.Add("@Email", email);
-            
+
             if (shouldSucceed)
-                return await _db.RunQuerySingleAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams); // Get  token from DB
+            {
+                var activateTokens = await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams); // Get  token from DB
+                Assert.NotEmpty(activateTokens);
+                return activateTokens.First();
+            }
+                
             
             var tokens = await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams);
             Assert.Empty(tokens);

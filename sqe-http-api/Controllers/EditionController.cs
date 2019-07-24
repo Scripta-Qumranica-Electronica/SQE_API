@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -88,13 +89,15 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// Provides details about the specified edition and all accessible alternate editions
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="optional">Optional parameters: "deleteForAllEditors"</param>
+        /// <param name="token">token required when using optional "deleteForAllEditors"</param>
         [HttpDelete("{editionId}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult> DeleteEdition([FromRoute] uint editionId)
+        public async Task<ActionResult<DeleteTokenDTO>> DeleteEdition([FromRoute] uint editionId, 
+            [FromQuery] string token, [FromQuery] List<string> optional)
         {
-            await _editionService.DeleteEditionAsync(_userService.GetCurrentUserObject(editionId));
-            return Ok();
+            return await _editionService.DeleteEditionAsync(_userService.GetCurrentUserObject(editionId), token, optional);
         }
         
         /// <summary>
@@ -104,10 +107,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <exception cref="NullReferenceException"></exception>
         [HttpPost("{editionId}/editors")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(401)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(404)]
         public async Task<ActionResult<EditorRightsDTO>> AddEditionEditor([FromBody] EditorRightsDTO payload, [FromRoute] uint editionId)
         {
             return await _editionService.AddEditionEditor(_userService.GetCurrentUserObject(editionId), payload);
@@ -120,10 +119,6 @@ namespace SQE.SqeHttpApi.Server.Controllers
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <exception cref="NullReferenceException"></exception>
         [HttpPut("{editionId}/editors")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(401)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(404)]
         public async Task<ActionResult<EditorRightsDTO>> AlterEditionEditor([FromBody] EditorRightsDTO payload, [FromRoute] uint editionId)
         {
             return await _editionService.ChangeEditionEditorRights(_userService.GetCurrentUserObject(editionId), payload);

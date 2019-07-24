@@ -19,7 +19,8 @@ namespace SQE.SqeHttpApi.DataAccess
         Task ChangeEditionNameAsync(UserInfo user, string name);
         Task<uint> CopyEditionAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
         Task ChangeEditionCopyrightAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
-        Task DeleteAllEditionDataAsync(UserInfo user);
+        Task<string> DeleteAllEditionDataAsync(UserInfo user, string token);
+        Task<string> GetDeleteToken(UserInfo user);
         Task<Permission> AddEditionEditor(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
             bool? mayLock, bool? isAdmin);
         Task<Permission> ChangeEditionEditorRights(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
@@ -246,25 +247,32 @@ namespace SQE.SqeHttpApi.DataAccess
 
         /// <summary>
         /// Delete all data from the edition that the user is currently subscribed to.
-        /// 
-        /// TODO: Update this method after the sharing functionality is built out.
-        /// We must perform the following logic: 1. if there is one editor for the edition
-        /// use this current method as-is; 2. if the edition has more than one editor, then revoke
-        /// access rights for the user requesting the delete (read/write/admin all become false);
-        /// 3. if the user requesting the delete was the only admin among the editors of the edition,
-        /// then raise every other editor to admin status and also perform option 2.
         /// </summary>
         /// <param name="user">User object requesting the delete</param>
-        /// <returns></returns>
-        public async Task DeleteAllEditionDataAsync(UserInfo user)
+        /// <param name="token">Token required to verify delete. If this is null, one will be created and sent
+        /// to the requester to use a confirmation of the delete.</param>
+        /// <returns>Returns a null string if successful; a string with a confirmation token if no token was provided.</returns>
+        public async Task<string> DeleteAllEditionDataAsync(UserInfo user, string token)
         {
             // We only allow admins to delete all data in an unlocked edition.
             if (!(await user.IsAdmin()) || !(await user.MayWrite()))
                 throw new StandardErrors.NoAdminPermissions(user);
+            
+            // A token is required to delete an edition (we make sure here that people don't accidentally do it)
+            if (string.IsNullOrEmpty(token))
+            {
+                return await GetDeleteToken(user);
+            }
 
             using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
+                // Verify that the token is still valid
+                var deleteToken = await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
+                    { Token = token, Type = CreateUserEmailTokenQuery.DeleteEdition});
+                if (deleteToken != 1)
+                    throw new StandardErrors.DataNotWritten("verifying the delete request token");
+                
                 // Dynamically get all tables that can be part of an edition, that way we don't worry about
                 // this breaking due to future updates.
                 var dataTables = await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
@@ -280,7 +288,31 @@ namespace SQE.SqeHttpApi.DataAccess
                 
                 // Commit the full transaction (all or nothing)
                 transactionScope.Complete();
+                return null;
             }
+        }
+
+        public async Task<string> GetDeleteToken(UserInfo user)
+        {
+            // Generate our secret token
+            var token = Guid.NewGuid().ToString();
+
+            using (var connection = OpenConnection())
+            {
+                // Add the secret token to the database
+                var userEmailConfirmation = await connection.ExecuteAsync(
+                    CreateUserEmailTokenQuery.GetQuery(),
+                    new
+                    {
+                        UserId = user.userId,
+                        Token = token,
+                        Type = CreateUserEmailTokenQuery.DeleteEdition
+                    });
+                if (userEmailConfirmation != 1) // Something strange must have gone wrong
+                    throw new StandardErrors.DataNotWritten("create edition delete token");
+            }
+
+            return token;
         }
 
         public async Task<Permission> AddEditionEditor(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
@@ -363,35 +395,18 @@ namespace SQE.SqeHttpApi.DataAccess
             if (permissions.IsAdmin && !permissions.MayRead)
                 throw new StandardErrors.InputDataRuleViolation("read rights may not be revoked for an edition admin");
             
-            // Make sure that we are not revoking editor read access when editor still has write access 
+            // Make sure that we are not revoking editor's read access when editor still has write access 
             if (permissions.MayWrite && !permissions.MayRead)
                 throw new StandardErrors.InputDataRuleViolation("read rights may not be revoked for an editor with write rights");
             
-            // If there is only one editor, who is now giving up admin rights, then delete the edition and return no access
-            if (!permissions.IsAdmin && editors.Count == 1)
-            {
-                await DeleteAllEditionDataAsync(user);
-                return new Permission()
-                {
-                    MayRead = false,
-                    MayWrite = false,
-                    MayLock = false,
-                    IsAdmin = false
-                };
-            }
-            
-            // If the last admin in a group of editors is giving up admin rights, elevate every editor with read rights to admin
-            if (!editors.Any(x => (x.Email == editorEmail && permissions.IsAdmin) || (x.Email != editorEmail && x.IsAdmin)))
-            {
-                await Task.WhenAll(
-                    editors.Select(
-                        x => ChangeEditionEditorRights(user, x.Email, x.MayRead, x.MayWrite, x.MayLock,x.IsAdmin || x.MayRead)
-                    ).ToArray()
-                );
-            }
-            
             using (var connection = OpenConnection())
             {
+                // If the last admin is giving up admin rights, return error message with token for complete delete
+                if (!editors.Any(x => (x.Email == editorEmail && permissions.IsAdmin) || (x.Email != editorEmail && x.IsAdmin)))
+                    throw new StandardErrors.InputDataRuleViolation($@"an edition must have at least one admin.  
+Please give admin status to another editor before relinquishing admin status for the current user or deleting the edition.
+An admin may delete the edition for all editors with the request DELETE /v1/editions/{user.editionId.ToString()}.");
+            
                 // Perform the update
                 var editorUpdateExecution = await connection.ExecuteAsync(UpdateEditionEditorPermissionsQuery.GetQuery,
                     new

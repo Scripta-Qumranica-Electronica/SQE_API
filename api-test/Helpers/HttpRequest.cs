@@ -67,6 +67,7 @@ namespace SQE.ApiTest.Helpers
             return (response: response, msg: parsedClass);
         }
         
+        //TODO: these helpers do not belong here.  Move them to a more sensible place.
         public static async Task<string> GetJWTAsync(HttpClient client, string username = null, string pwd = null)
         {
             var name = username ?? "test";
@@ -87,12 +88,20 @@ namespace SQE.ApiTest.Helpers
             return msg.id;
         }
         
-        public static async Task DeleteEdition(HttpClient client, uint editionId, bool authenticated = false, bool shouldSucceed = true)
+        public static async Task DeleteEdition(HttpClient client, uint editionId, bool authenticated = false, bool shouldSucceed = true, string email = null, string pwd = null)
         {
-            var (response, msg) = await SendAsync<EditionUpdateRequestDTO, EditionDTO>(client, HttpMethod.Delete, 
-                $"/v1/editions/{editionId}", null, authenticated ? await GetJWTAsync(client) : null);
+            var (response, msg) = await SendAsync<string, DeleteTokenDTO>(client, HttpMethod.Delete, 
+                $"/v1/editions/{editionId}?optional=deleteForAllEditors", null, authenticated ? await GetJWTAsync(client, email, pwd) : null);
             if (shouldSucceed)
+            {
                 response.EnsureSuccessStatusCode();
+                Assert.NotNull(msg.token);
+                Assert.Equal(editionId, msg.editionId);
+                var (response2, msg2) = await SendAsync<string, DeleteTokenDTO>(client, HttpMethod.Delete, 
+                    $"/v1/editions/{msg.editionId}?optional=deleteForAllEditors&token={msg.token}", null, authenticated ? await GetJWTAsync(client, email, pwd) : null);
+                response2.EnsureSuccessStatusCode();
+                Assert.Null(msg2);
+            }
         }
         
         #region User Account Conveniences

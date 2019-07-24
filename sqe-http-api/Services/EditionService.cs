@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SQE.SqeHttpApi.DataAccess;
@@ -16,7 +17,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
         Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
             string collaborators = null);
         Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo);
-        Task DeleteEditionAsync(UserInfo user);
+        Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional);
         Task<EditorRightsDTO> AddEditionEditor(UserInfo user, EditorRightsDTO newEditor);
         Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO updatedEditor);
     }
@@ -159,17 +160,39 @@ namespace SQE.SqeHttpApi.Server.Helpers
         }
 
         /// <summary>
-        /// Delete all data from the edition that the user is currently subscribed to.
+        /// Delete all data from the edition that the user is currently subscribed to. The user must be admin and
+        /// provide a valid delete token.
         /// </summary>
         /// <param name="user">User object requesting the delete</param>
+        /// <param name="optional">optional parameters: "deleteForAllEditors"</param>
+        /// <param name="token">token required for optional "deleteForAllEditors"</param>
         /// <returns></returns>
-        public async Task DeleteEditionAsync(UserInfo user)
+        public async Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional)
         {
+            _parseOptional(optional, out var deleteForAllEditors);
+            
+            // Check if the edition should be deleted for all users
+            if (deleteForAllEditors)
+            {
+                // Try to delete the edition fully for all editors
+                var newToken = await _editionRepo.DeleteAllEditionDataAsync(user, token);
+                
+                // End the request with null for successful delete or a proper token for requests without a confirmation token
+                return string.IsNullOrEmpty(newToken) ? null :
+                    new DeleteTokenDTO
+                    {
+                        editionId = user.editionId ?? 0,
+                        token = newToken,
+                    };
+            }
+            
+            // The edition should only be made inaccessible for the current user
             var userInfo = await _userRepo.GetDetailedUserByIdAsync(user);
+            
             // Setting all permission to false is how we delete a user's access to an edition.
-            // The code downstream will more aggressively delete the edition when the last editor gives up admin status.
             await _editionRepo.ChangeEditionEditorRights(user, userInfo.Email, false, false, 
                 false, false);
+            return null;
         }
 
         /// <summary>
@@ -208,6 +231,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 mayLock = permissions.MayLock,
                 isAdmin = permissions.IsAdmin
             };
+        }
+
+        private static void _parseOptional(List<string> optional, out bool deleteForAllEditors)
+        {
+            deleteForAllEditors = optional.Contains("deleteForAllEditors");
         }
     }
 }

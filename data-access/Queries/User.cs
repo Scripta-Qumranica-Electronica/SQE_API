@@ -126,6 +126,7 @@ ON DUPLICATE KEY UPDATE `type` = @Type, date_created = NOW()";
 
         public const string Activate = "ACTIVATE_ACCOUNT";
         public const string ResetPassword = "RESET_PASSWORD";
+        public const string DeleteEdition = "DELETE_EDITION";
     }
 
     /// <summary>
@@ -137,7 +138,7 @@ ON DUPLICATE KEY UPDATE `type` = @Type, date_created = NOW()";
 DELETE FROM user_email_token WHERE user_id = @UserId";
         
         public const string GetTokenQuery = @"
-DELETE FROM user_email_token WHERE token = @Token";
+DELETE FROM user_email_token WHERE token = @Token AND type = @Type";
     }
 
     /// <summary>

@@ -116,7 +116,7 @@ namespace SQE.SqeHttpApi.DataAccess
         {
             using (var connection = OpenConnection())
             {
-                // Generate our new secret token (if token already exists, this will update that token's date)
+                // Generate our new secret token
                 var token = Guid.NewGuid().ToString();
                 await connection.ExecuteAsync(CreateUserEmailTokenQuery.GetQuery(emailOnly: true), new
                 {
@@ -127,7 +127,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 
                 // Prepare account details request
                 var columns = new List<string>() {"email", "user_id", "forename", "surname", "token"};
-                var where = new List<string>() {"email", "activated"};
+                var where = new List<string>() {"email", "activated", "token"};
                 
                 try
                 {
@@ -135,7 +135,8 @@ namespace SQE.SqeHttpApi.DataAccess
                         UserDetails.GetQuery(columns, where), new
                         {
                             Email = email,
-                            Activated = 0
+                            Activated = 0,
+                            Token = token
                         });
                 }
                 catch (InvalidOperationException)
@@ -346,7 +347,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     if (confirmRegistration != 1)
                         throw new StandardErrors.ImproperInputData("user account activation token");
                     await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
-                        { Token = token});
+                        { Token = token, Type = CreateUserEmailTokenQuery.Activate});
                     transactionScope.Complete();
                 }
             }
@@ -467,7 +468,8 @@ namespace SQE.SqeHttpApi.DataAccess
 
                     await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
                     {
-                        Token = token
+                        Token = token,
+                        Type = CreateUserEmailTokenQuery.ResetPassword
                     });
                     
                     transactionScope.Complete(); // Close the transaction
