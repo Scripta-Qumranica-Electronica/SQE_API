@@ -10,15 +10,15 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <param name="endId">Id of the last sign</param>
     /// <param name="editionId">Id of the edition the text is to be taken from</param>
     public const string GetQuery = @"
-    WITH RECURSIVE sign_ids
+    WITH RECURSIVE sign_interpretation_ids
     AS (
-          SELECT @startId AS signId, @editionId AS EditionId
+          SELECT @startId AS signInterpretationId, @editionId AS EditionId
 
         UNION
-          SELECT next_sign_id, EditionId
-          FROM  sign_ids, position_in_stream
-          WHERE position_in_stream.sign_id = signId
-            AND signId != @endId
+          SELECT next_sign_interpretation_id, EditionId
+          FROM  sign_interpretation_ids, position_in_stream
+          WHERE position_in_stream.sign_interpretation_id = signInterpretationId
+            AND signInterpretationId != @endId
     )
     
     SELECT manuscript_data.manuscript_id AS manuscriptId,
@@ -36,12 +36,12 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       line_data.name AS line,
       line_author.user_id AS lineAuthor,
       
-      signId,
+      sign_interpretation.sign_id AS signId,
       next_sign_interpretation.sign_interpretation_id AS nextSignInterpretationId,
       sign_sequence_author.user_id AS signSequenceAuthor,
       
-      sign_interpretation.sign_interpretation_id AS signInterpretationId,
-      sign_interpretation.sign AS signInterpretation,
+      signInterpretationId,
+      sign_interpretation.`character` AS `character`,
       
       sign_interpretation_attribute.sign_interpretation_attribute_id AS interpretationAttributeId,
       sign_interpretation_attribute.attribute_value_id AS attributeValueId,
@@ -56,16 +56,16 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       roi_position.transform_matrix AS Position,
       roi_position.artefact_id AS ArtefactId
 
-    FROM sign_ids
+    FROM sign_interpretation_ids
 
-      JOIN sign_interpretation ON sign_interpretation.sign_id=signId
-      JOIN sign_interpretation_attribute USING (sign_interpretation_id)
+      JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id=signInterpretationId
+      JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_id=signInterpretationId
       LEFT JOIN attribute_numeric USING (sign_interpretation_attribute_id)
       JOIN sign_interpretation_attribute_owner ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
           AND sign_interpretation_attribute_owner.edition_id = EditionId
       JOIN edition_editor AS sign_interpretation_attribute_author ON sign_interpretation_attribute_author.edition_editor_id = sign_interpretation_attribute_owner.edition_editor_id
 
-      JOIN line_to_sign USING (sign_id)
+      JOIN line_to_sign ON line_to_sign.sign_id = sign_interpretation.sign_id
       JOIN line_data USING (line_id)
       JOIN line_data_owner ON line_data_owner.line_data_id = line_data.line_data_id
           AND line_data_owner.edition_id = EditionId
@@ -83,7 +83,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
           AND manuscript_data_owner.edition_id = EditionId
       JOIN edition_editor AS manuscript_author ON manuscript_data_owner.edition_editor_id = manuscript_author.edition_editor_id
           
-      JOIN position_in_stream ON position_in_stream.sign_id = signId
+      JOIN position_in_stream ON position_in_stream.sign_interpretation_id = signInterpretationId
       JOIN position_in_stream_owner ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
           AND position_in_stream_owner.edition_id = EditionId
       JOIN edition_editor AS sign_sequence_author ON position_in_stream_owner.edition_editor_id = sign_sequence_author.edition_editor_id
@@ -95,7 +95,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       LEFT JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
       LEFT JOIN edition_editor AS sign_interpretation_roi_author ON sign_interpretation_roi_author.edition_editor_id = sign_interpretation_roi_owner.edition_editor_id
           
-      JOIN sign_interpretation AS next_sign_interpretation ON next_sign_interpretation.sign_id = next_sign_id
+      JOIN sign_interpretation AS next_sign_interpretation ON next_sign_interpretation.sign_interpretation_id = next_sign_interpretation_id
 
       JOIN edition ON edition.edition_id = EditionId
 ";
@@ -109,7 +109,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <param name="entityId">Id of line</param>
     /// <param name="editionId">d of the edition the line is to be taken from</param>
     public const string GetQuery = @"
-      SELECT sign_interpretation.sign_id
+      SELECT sign_interpretation.sign_interpretation_id
       FROM  line_to_sign
         JOIN  sign_interpretation USING (sign_id)
         JOIN   sign_interpretation_attribute USING (sign_interpretation_id)
@@ -129,7 +129,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     /// <param name="entityId">Id of line</param>
     /// <param name="editionId">d of the edition the line is to be taken from</param>
     public const string GetQuery = @"
-      SELECT sign_interpretation.sign_id
+      SELECT sign_interpretation.sign_interpretation_id
       FROM text_fragment_to_line
         JOIN line_to_sign USING (line_id)
         JOIN  sign_interpretation USING (sign_id)
@@ -173,8 +173,9 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
           JOIN sign_interpretation_attribute USING (sign_interpretation_id)
           JOIN sign_interpretation_attribute_owner ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
             AND sign_interpretation_attribute_owner.edition_id = editionId
-          JOIN position_in_stream USING (sign_id)
-          JOIN line_to_sign as lts2 on lts2.sign_id=next_sign_id
+          JOIN position_in_stream USING (sign_interpretation_id)
+          JOIN sign_interpretation AS si2 ON si2.sign_interpretation_id = position_in_stream.next_sign_interpretation_id
+          JOIN line_to_sign as lts2 on lts2.sign_id=si2.sign_id
           JOIN text_fragment_to_line ON lts2.line_id=text_fragment_to_line.line_id
           JOIN text_fragment_to_line_owner ON text_fragment_to_line_owner.text_fragment_to_line_id = text_fragment_to_line.text_fragment_to_line_id
             AND text_fragment_to_line_owner.edition_id = editionId

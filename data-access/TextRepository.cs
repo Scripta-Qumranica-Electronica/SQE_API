@@ -193,7 +193,6 @@ namespace SQE.SqeHttpApi.DataAccess
                         {
                             lastLine = line;
                             lastTextFragment.lines.Add(line);
-    
                         }
     
                         if (sign.signId != lastSign?.signId)

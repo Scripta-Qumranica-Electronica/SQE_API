@@ -114,7 +114,7 @@ namespace SQE.SqeHttpApi.Server.Services
                                                 a => new SignInterpretationDTO()
                                                 {
                                                     signInterpretationId = a.signInterpretationId,
-                                                    signInterpretation = a.signInterpretation,
+                                                    character = a.character,
                                                     
                                                     attributes = a.attributes.Select(
                                                         b => new InterpretationAttributeDTO()
@@ -187,7 +187,7 @@ namespace SQE.SqeHttpApi.Server.Services
                                 a => new SignInterpretationDTO()
                                 {
                                     signInterpretationId = a.signInterpretationId,
-                                    signInterpretation = a.signInterpretation,
+                                    character = a.character,
                                     
                                     attributes = a.attributes.Select(
                                         b => new InterpretationAttributeDTO()

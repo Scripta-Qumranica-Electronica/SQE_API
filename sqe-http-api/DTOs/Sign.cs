@@ -18,7 +18,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
     public class SignInterpretationDTO
     {
         public uint signInterpretationId { get; set; }
-        public string signInterpretation { get; set; }
+        public string character { get; set; }
         public List<InterpretationAttributeDTO> attributes { get; set; }
         public List<InterpretationRoiDTO> rois { get; set; }
     }
