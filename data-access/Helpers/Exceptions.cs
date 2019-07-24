@@ -196,9 +196,10 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         public class DataNotWritten : ServerErrorException
         {
             private const string customMsg = "System failed while trying to $Operation.";
-            public DataNotWritten(string operation)
+            public DataNotWritten(string operation, string reason = null)
             {
-                this.Error = customMsg.Replace("$Operation", operation);
+                this.Error = customMsg.Replace("$Operation", operation)
+                    .Replace("$Reason", string.IsNullOrEmpty(reason) ? "" : $"This happened because {reason}.");
             }
         }
         

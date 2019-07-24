@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.AspNetCore.Mvc;
-using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
 
@@ -19,8 +17,8 @@ namespace SQE.SqeHttpApi.Server.Controllers
 
         public ArtefactController(IUserService userService, IArtefactService artefactService)
         {
-            this._artefactService = artefactService;
-            this._userService = userService;
+            _artefactService = artefactService;
+            _userService = userService;
         }
         
         private void ParseOptionals(List<string> optionals, out bool images, out bool masks)
@@ -59,7 +57,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
         {
-            ParseOptionals(optional, out var images, out var masks);
+            ParseOptionals(optional, out _, out var masks);
             return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
         }
         

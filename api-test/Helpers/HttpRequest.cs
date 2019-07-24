@@ -81,5 +81,14 @@ namespace SQE.ApiTest.Helpers
             response.EnsureSuccessStatusCode();
             return msg.id;
         }
+        
+        // TODO: the controller needs to be created first.
+        public static async Task<uint> DeleteEdition(HttpClient client, uint editionId)
+        {
+            var newScrollRequest = new EditionUpdateRequestDTO("test-name", null, null);
+            var (response, msg) = await SendAsync<EditionUpdateRequestDTO, EditionDTO>(client, HttpMethod.Post, $"/v1/editions/{editionId}", newScrollRequest, await GetJWTAsync(client));
+            response.EnsureSuccessStatusCode();
+            return msg.id;
+        }
     }
 }

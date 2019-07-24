@@ -120,4 +120,12 @@ namespace SQE.SqeHttpApi.DataAccess.Models
             return completed;
         }
     }
+
+    public class EditorInfo
+    {
+        public uint UserId { get; set; }
+        public string Forename { get; set; }
+        public string Surname { get; set; }
+        public string Organization { get; set; }
+    }
 }

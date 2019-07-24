@@ -192,4 +192,17 @@ WHERE user_id = @UserId AND pw = SHA2(@Pw, 224)
             return _query.Replace("$Activated", resetActivation ? ", activated = 0" : "");
         }
     }
+
+    // We do not return the "email" field here, because we do not want to make that information is public.
+    // All users have agreed to license their editorial decisions at registration and that cannot be revoked,
+    // so it is safe to send this information to anyone when it is connected with licensing information of an
+    // edition.
+    internal static class GetEditorInfo
+    {
+        public const string GetQuery = @"
+SELECT user_id AS UserId, forename AS Forename, surname AS Surname, organization AS Organization
+FROM edition_editor
+JOIN user USING(user_id)
+WHERE edition_editor.edition_id = @EditionId";
+    }
 }

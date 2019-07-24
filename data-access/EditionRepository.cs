@@ -114,12 +114,12 @@ namespace SQE.SqeHttpApi.DataAccess
                 // Now we create the mutation object for the requested action
                 // You will want to check the database to make sure you what you are doing.
                 var nameChangeParams = new DynamicParameters();
-                nameChangeParams.Add("@scroll_id", result.ScrollId);
+                nameChangeParams.Add("@manuscript_id", result.ScrollId);
                 nameChangeParams.Add("@Name", name);
                 var nameChangeRequest = new MutationRequest(
                     MutateType.Update,
                     nameChangeParams,
-                    "scroll_data",
+                    "manuscript_data",
                     result.ScrollDataId
                     );
                 

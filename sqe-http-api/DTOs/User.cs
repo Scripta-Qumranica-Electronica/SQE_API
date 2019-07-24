@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 
 namespace SQE.SqeHttpApi.Server.DTOs
@@ -109,6 +110,13 @@ namespace SQE.SqeHttpApi.Server.DTOs
     public class DetailedUserTokenDTO : DetailedUserDTO
     {
         public string token { get; set; }
+    }
+
+    public class EditorDTO
+    {
+        public string forename { get; set; }
+        public string surname { get; set; }
+        public string organization { get; set; }
     }
     #endregion Response DTO's
 }

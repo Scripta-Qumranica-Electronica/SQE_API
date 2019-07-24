@@ -240,7 +240,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <returns></returns>
         public async Task ConfirmUserRegistrationAsync(string token)
         {
-            var userInfo = await _userRepository.GetDetailedUsedByTokenAsync(token);
+            var userInfo = await _userRepository.GetDetailedUserByTokenAsync(token);
             await _userRepository.ConfirmAccountCreationAsync(token);
             
             // TODO: Use Razor to format this and ad organization name.
