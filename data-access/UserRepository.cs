@@ -77,7 +77,7 @@ namespace SQE.SqeHttpApi.DataAccess
             using (var connection = OpenConnection())
             {
                 var columns = new List<string>()
-                    {"user_id", "email", "forename", "surname", "organization"};
+                    {"user_id", "email", "forename", "surname", "organization", "activated"};
                 var where = new List<string>() {"user_id"};
                 return await connection.QuerySingleAsync<DetailedUserWithToken>(
                     UserDetails.GetQuery(columns, where), new

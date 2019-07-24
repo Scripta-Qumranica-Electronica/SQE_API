@@ -117,7 +117,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
                 forename = userInfo.Forename,
                 surname = userInfo.Surname,
                 organization = userInfo.Organization,
-                userId = userInfo.UserId
+                userId = userInfo.UserId,
+                activated = userInfo.Activated
             };
         }
 
