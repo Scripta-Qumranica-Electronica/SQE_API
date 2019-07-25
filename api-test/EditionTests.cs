@@ -164,7 +164,7 @@ namespace SQE.ApiTest
         {
             // ARRANGE
             var bearerToken = await HttpRequest.GetJWTAsync(_client);
-            var editionId = await HttpRequest.CreateNewEdition(_client);
+            var editionId = await EditionHelpers.CreateCopyOfEdition(_client);
             var url = "/v1/editions/" + editionId;
             var (response, msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
                 _client, 
@@ -203,7 +203,7 @@ namespace SQE.ApiTest
         {
             // ARRANGE
             var bearerToken = await HttpRequest.GetJWTAsync(_client);
-            var editionId = await HttpRequest.CreateNewEdition(_client);
+            var editionId = await EditionHelpers.CreateCopyOfEdition(_client);
             const string url = "/v1/editions";
             
             // Act (get listings with authentication)
@@ -243,7 +243,7 @@ namespace SQE.ApiTest
         public async Task CanDeleteEditionAsAdmin()
         {
             // Arrange
-            var editionId = await HttpRequest.CreateNewEdition(_client);
+            var editionId = await EditionHelpers.CreateCopyOfEdition(_client);
             const string url = "/v1/editions";
             
             // Act
@@ -258,7 +258,7 @@ namespace SQE.ApiTest
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); // Should fail without confirmation
             
             // Delete the edition for real
-            await HttpRequest.DeleteEdition(_client, editionId, true, true);
+            await EditionHelpers.DeleteEdition(_client, editionId, true, true);
             var (editionResponse, editionMsg) = await HttpRequest.SendAsync<string, EditionListDTO>(
                 _client, 
                 HttpMethod.Get, 
@@ -275,7 +275,7 @@ namespace SQE.ApiTest
         public async Task CanNotDeleteEditionWhenAnonymous()
         {
             // Arrange
-            var editionId = await HttpRequest.CreateNewEdition(_client);
+            var editionId = await EditionHelpers.CreateCopyOfEdition(_client);
             const string url = "/v1/editions";
             
             // Act
@@ -298,7 +298,7 @@ namespace SQE.ApiTest
             var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
             Assert.Single(editionMatch);
 
-            await HttpRequest.DeleteEdition(_client, editionId, true);
+            await EditionHelpers.DeleteEdition(_client, editionId, true);
         }
 
         #region Edition Editor Permissions
@@ -311,10 +311,10 @@ namespace SQE.ApiTest
         
             // Arrange
             const string user1Pwd = "pwd1";
-            var user1 = await HttpRequest.CreateRandomUser(_client, user1Pwd);
+            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
-            var user2 = await HttpRequest.CreateRandomUser(_client, user2Pwd);
-            var newEdition = await HttpRequest.CreateNewEdition(_client, username: user1.email, pwd: user1Pwd);
+            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
             var newPermissions = new EditorRightsDTO()
             {
                 email = user2.email,
@@ -359,10 +359,10 @@ namespace SQE.ApiTest
         
             // Arrange
             const string user1Pwd = "pwd1";
-            var user1 = await HttpRequest.CreateRandomUser(_client, user1Pwd);
+            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
-            var user2 = await HttpRequest.CreateRandomUser(_client, user2Pwd);
-            var newEdition = await HttpRequest.CreateNewEdition(_client, username: user1.email, pwd: user1Pwd);
+            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
             var newPermissions = new EditorRightsDTO()
             {
                 email = user2.email,
@@ -408,10 +408,10 @@ namespace SQE.ApiTest
         
             // Arrange
             const string user1Pwd = "pwd1";
-            var user1 = await HttpRequest.CreateRandomUser(_client, user1Pwd);
+            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
-            var user2 = await HttpRequest.CreateRandomUser(_client, user2Pwd);
-            var newEdition = await HttpRequest.CreateNewEdition(_client, username: user1.email, pwd: user1Pwd);
+            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
             var newPermissions = new EditorRightsDTO()
             {
                 email = user2.email,
@@ -456,10 +456,10 @@ namespace SQE.ApiTest
         {
             // Arrange
             const string user1Pwd = "pwd1";
-            var user1 = await HttpRequest.CreateRandomUser(_client, user1Pwd);
+            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
-            var user2 = await HttpRequest.CreateRandomUser(_client, user2Pwd);
-            var newEdition = await HttpRequest.CreateNewEdition(_client, username: user1.email, pwd: user1Pwd);
+            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
             var newPermissions = new EditorRightsDTO()
             {
                 email = user2.email,
@@ -506,10 +506,10 @@ namespace SQE.ApiTest
         {
             // Arrange
             const string user1Pwd = "pwd1";
-            var user1 = await HttpRequest.CreateRandomUser(_client, user1Pwd);
+            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
-            var user2 = await HttpRequest.CreateRandomUser(_client, user2Pwd);
-            var newEdition = await HttpRequest.CreateNewEdition(_client, username: user1.email, pwd: user1Pwd);
+            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
             var newPermissions = new EditorRightsDTO()
             {
                 email = user2.email,
@@ -582,10 +582,10 @@ namespace SQE.ApiTest
         {
             // Arrange
             const string user1Pwd = "pwd1";
-            var user1 = await HttpRequest.CreateRandomUser(_client, user1Pwd);
+            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
-            var user2 = await HttpRequest.CreateRandomUser(_client, user2Pwd);
-            var newEdition = await HttpRequest.CreateNewEdition(_client, username: user1.email, pwd: user1Pwd);
+            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
             var newPermissions = new EditorRightsDTO()
             {
                 email = user2.email,
@@ -640,7 +640,7 @@ namespace SQE.ApiTest
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
             // Kill the edition for real
-            await HttpRequest.DeleteEdition(_client, newEdition, true, true, user1.email, user1Pwd);
+            await EditionHelpers.DeleteEdition(_client, newEdition, true, true, user1.email, user1Pwd);
             var (user1Resp2, user1Msg2) = await HttpRequest.SendAsync<string, EditionGroupDTO>(_client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}", null,
@@ -661,10 +661,10 @@ namespace SQE.ApiTest
         
             // Arrange
             const string user1Pwd = "pwd1";
-            var user1 = await HttpRequest.CreateRandomUser(_client, user1Pwd);
+            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
-            var user2 = await HttpRequest.CreateRandomUser(_client, user2Pwd);
-            var newEdition = await HttpRequest.CreateNewEdition(_client, username: user1.email, pwd: user1Pwd);
+            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
             var newPermissions = new EditorRightsDTO()
             {
                 email = user2.email,
@@ -690,10 +690,10 @@ namespace SQE.ApiTest
         
             // Arrange
             const string user1Pwd = "pwd1";
-            var user1 = await HttpRequest.CreateRandomUser(_client, user1Pwd);
+            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
-            var user2 = await HttpRequest.CreateRandomUser(_client, user2Pwd);
-            var newEdition = await HttpRequest.CreateNewEdition(_client, username: user1.email, pwd: user1Pwd);
+            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
             var newPermissions = new EditorRightsDTO()
             {
                 email = user2.email,

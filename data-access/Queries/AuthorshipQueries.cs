@@ -13,7 +13,7 @@ FROM single_action
 JOIN main_action USING(main_action_id)
 JOIN scroll_version USING(scroll_version_id)
 JOIN user USING(user_id)
-WHERE single_action.table = ""@TableName"" AND single_action.action = ""add""
+WHERE single_action.table = @TableName AND single_action.action = 'add'
     AND (@IdList)
 GROUP BY single_action.id_in_table
     HAVING min(single_action.single_action_id)"; // Presumably a lower single_action_id is equivalent to an earlier date main_action. object this[int index]

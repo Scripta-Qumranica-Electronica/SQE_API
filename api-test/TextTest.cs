@@ -145,7 +145,7 @@ namespace SQE.ApiTest
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -181,7 +181,7 @@ namespace SQE.ApiTest
                         ]);
                 }
                 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -217,7 +217,7 @@ namespace SQE.ApiTest
                         ]);
                 }
                 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -260,7 +260,7 @@ namespace SQE.ApiTest
                     ]);
                 }
                 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
 
             #endregion should succeed
@@ -280,7 +280,7 @@ namespace SQE.ApiTest
                 // Assert
                 Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
                 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -308,7 +308,7 @@ namespace SQE.ApiTest
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
                 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -336,7 +336,7 @@ namespace SQE.ApiTest
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
                 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -370,7 +370,7 @@ namespace SQE.ApiTest
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
                 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -409,7 +409,7 @@ namespace SQE.ApiTest
                 var secondUpdateTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
                 updatedTextFragments.textFragments.ShouldDeepEqual(secondUpdateTextFragments.textFragments);
                 
-                await HttpRequest.DeleteEdition(_client, editionId, true);
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             #endregion should fail
@@ -448,7 +448,7 @@ namespace SQE.ApiTest
         private async Task<uint> _getClonedEdition()
         {
             var (editionId, _) = await _getTextRandomFragment(); // Get an edition with text fragments
-            return await HttpRequest.CreateNewEdition(_client, editionId); // Clone it
+            return await EditionHelpers.CreateCopyOfEdition(_client, editionId); // Clone it
         }
 
         private async Task<TextFragmentDataListDTO> _getEditionTextFragments(uint editionId, string jwt = null)
