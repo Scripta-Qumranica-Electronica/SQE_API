@@ -264,11 +264,11 @@ namespace SQE.SqeHttpApi.DataAccess
                 return await GetDeleteToken(user);
             }
 
-            // Remove read/write permissions from all editors, so they cannot make any changes while the delete proceeds
+            // Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
             var editors = await _getEditionEditors(user.editionId.Value);
             await Task.WhenAll(
                 editors.Select(
-                    x => ChangeEditionEditorRights(user, x.Email, false, false, x.MayLock, x.IsAdmin)
+                    x => ChangeEditionEditorRights(user, x.Email, x.MayRead, false, x.MayLock, x.IsAdmin)
                     )
                 );
 
