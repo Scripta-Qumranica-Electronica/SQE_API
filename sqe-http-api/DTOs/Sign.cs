@@ -5,7 +5,6 @@ namespace SQE.SqeHttpApi.Server.DTOs
 {
     public class SignDTO
     {
-        public List<NextSignInterpretationDTO> nextSignInterpretations { get; set; }
         public List<SignInterpretationDTO> signInterpretations { get; set; }
     }
 
@@ -21,6 +20,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string character { get; set; }
         public List<InterpretationAttributeDTO> attributes { get; set; }
         public List<InterpretationRoiDTO> rois { get; set; }
+        public List<NextSignInterpretationDTO> nextSignInterpretations { get; set; }
     }
     
     public class InterpretationAttributeDTO

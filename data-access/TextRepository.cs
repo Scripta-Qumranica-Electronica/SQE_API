@@ -204,7 +204,6 @@ namespace SQE.SqeHttpApi.DataAccess
                         if (nextSignInterpretation.nextSignInterpretationId != lastNextSignInterpretation?.nextSignInterpretationId)
                         {
                             lastNextSignInterpretation = nextSignInterpretation;
-                            lastSign.nextSignInterpretations.Add(nextSignInterpretation);
                         }
     
                         if (signInterpretation.signInterpretationId != lastChar?.signInterpretationId)
@@ -212,6 +211,8 @@ namespace SQE.SqeHttpApi.DataAccess
                             lastChar = signInterpretation;
                             lastSign.signInterpretations.Add(signInterpretation);
                         }
+                        
+                        lastChar.nextSignInterpretations.Add(nextSignInterpretation);
     
                         lastCharAttribute = charAttribute;
                         lastChar.attributes.Add(charAttribute);

@@ -106,6 +106,18 @@ WHERE user_email_token.token = @Token
 ";
     }
 
+    internal static class GetTokensQuery
+    {
+        public const string GetQuery = @"
+SELECT all_tokens.token AS token
+FROM SQE.user_email_token
+JOIN SQE.user_email_token AS all_tokens 
+  ON all_tokens.user_id = SQE.user_email_token.user_id
+  AND all_tokens.type = @Type
+WHERE user_email_token.token = @Token
+";
+    }
+
     /// <summary>
     /// Creates an entry in the user_email_token table for @UserId with the token @Token for the request type @Type
     /// (CreateUserEmailTokenQuery.Activate or CreateUserEmailTokenQuery.ResetPassword).
@@ -138,7 +150,7 @@ ON DUPLICATE KEY UPDATE `type` = @Type, date_created = NOW()";
 DELETE FROM user_email_token WHERE user_id = @UserId";
         
         public const string GetTokenQuery = @"
-DELETE FROM user_email_token WHERE token = @Token AND type = @Type";
+DELETE FROM user_email_token WHERE token in @Tokens AND type = @Type";
     }
 
     /// <summary>

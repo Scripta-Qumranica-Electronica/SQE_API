@@ -269,7 +269,7 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 // Verify that the token is still valid
                 var deleteToken = await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
-                    { Token = token, Type = CreateUserEmailTokenQuery.DeleteEdition});
+                    { Tokens = new []{token}, Type = CreateUserEmailTokenQuery.DeleteEdition});
                 if (deleteToken != 1)
                     throw new StandardErrors.DataNotWritten("verifying the delete request token");
                 
