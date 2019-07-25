@@ -135,16 +135,17 @@ namespace SQE.SqeHttpApi.Server.Services
                                                             position = b.Position,
                                                             exceptional = b.Exceptional,
                                                             valuesSet = b.ValuesSet
-                                                        }).ToList()
+                                                        }).ToList(),
                                                     
+                                                    nextSignInterpretations = a.nextSignInterpretations.Select(
+                                                        b => new NextSignInterpretationDTO()
+                                                        {
+                                                        nextSignInterpretationId = b.nextSignInterpretationId,
+                                                        editorId = b.signSequenceAuthor
+                                                    }).ToList()
                                                 }).ToList(),
                                             
-                                            nextSignInterpretations = z.nextSignInterpretations.Select(
-                                                b => new NextSignInterpretationDTO()
-                                                {
-                                                    nextSignInterpretationId = b.nextSignInterpretationId,
-                                                    editorId = b.signSequenceAuthor
-                                                }).ToList()
+                                            
                                             
                                         }).ToList()
 
@@ -208,16 +209,18 @@ namespace SQE.SqeHttpApi.Server.Services
                                             position = b.Position,
                                             exceptional = b.Exceptional,
                                             valuesSet = b.ValuesSet
-                                        }).ToList()
+                                        }).ToList(),
+                                    
+                                    nextSignInterpretations = a.nextSignInterpretations.Select(
+                                        b => new NextSignInterpretationDTO()
+                                        {
+                                            nextSignInterpretationId = b.nextSignInterpretationId,
+                                            editorId = b.signSequenceAuthor
+                                        }).ToList(),
                                     
                                 }).ToList(),
                             
-                            nextSignInterpretations = z.nextSignInterpretations.Select(
-                                b => new NextSignInterpretationDTO()
-                                {
-                                    nextSignInterpretationId = b.nextSignInterpretationId,
-                                    editorId = b.signSequenceAuthor
-                                }).ToList(),
+                            
                             
                         }).ToList()
                 };
