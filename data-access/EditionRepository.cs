@@ -255,7 +255,7 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<string> DeleteAllEditionDataAsync(UserInfo user, string token)
         {
             // We only allow admins to delete all data in an unlocked edition.
-            if (!(await user.IsAdmin()) || !(await user.MayWrite()))
+            if (!(await user.IsAdmin()))
                 throw new StandardErrors.NoAdminPermissions(user);
             
             // A token is required to delete an edition (we make sure here that people don't accidentally do it)
@@ -264,10 +264,22 @@ namespace SQE.SqeHttpApi.DataAccess
                 return await GetDeleteToken(user);
             }
 
+            // Remove read/write permissions from all editors, so they cannot make any changes while the delete proceeds
+            var editors = await _getEditionEditors(user.editionId.Value);
+            await Task.WhenAll(
+                editors.Select(
+                    x => ChangeEditionEditorRights(user, x.Email, false, false, x.MayLock, x.IsAdmin)
+                    )
+                );
+
+            // This transaction may take a while, so we cannot lock all of these tables. Otherwise, we DO get deadlock.
+            // ReadUncommitted is fine because we will not get any further writes to this edition (all editors have lost
+            // write permission), and any new writes to the user_email_token table will be irrelevant (the token
+            // is unique).
             using (var transactionScope = new TransactionScope(
                 TransactionScopeOption.Required,
                 new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted })
-            ) // This transaction may take a while, so we cannot lock all of these tables. Otherwise, we DO get deadlock.
+            )
             using (var connection = OpenConnection())
             {
                 // Verify that the token is still valid
