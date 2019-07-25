@@ -264,7 +264,10 @@ namespace SQE.SqeHttpApi.DataAccess
                 return await GetDeleteToken(user);
             }
 
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted })
+            ) // This transaction may take a while, so we cannot lock all of these tables. Otherwise, we DO get deadlock.
             using (var connection = OpenConnection())
             {
                 // Verify that the token is still valid
