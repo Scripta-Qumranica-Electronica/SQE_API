@@ -338,18 +338,26 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <returns></returns>
         public async Task ConfirmAccountCreationAsync(string token)
         {
+            
             using (var transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
             {
-                using (var connection = OpenConnection())
+                var confirmRegistration = await connection.ExecuteAsync(ConfirmNewUserAccount.GetQuery, new
+                    { Token = token});
+                if (confirmRegistration != 1)
+                    throw new StandardErrors.ImproperInputData("user account activation token");
+                
+                // Get all Activate tokens for this user
+                var tokens = await connection.QueryAsync<string>(GetTokensQuery.GetQuery, new
                 {
-                    var confirmRegistration = await connection.ExecuteAsync(ConfirmNewUserAccount.GetQuery, new
-                        { Token = token});
-                    if (confirmRegistration != 1)
-                        throw new StandardErrors.ImproperInputData("user account activation token");
-                    await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
-                        { Token = token, Type = CreateUserEmailTokenQuery.Activate});
-                    transactionScope.Complete();
-                }
+                    Token = token,
+                    Type = CreateUserEmailTokenQuery.Activate
+                });
+                
+                // Delete them all
+                await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
+                    { Tokens = tokens, Type = CreateUserEmailTokenQuery.Activate});
+                transactionScope.Complete();
             }
         }
 
@@ -466,9 +474,17 @@ namespace SQE.SqeHttpApi.DataAccess
                     if (resetPassword != 1)
                         throw new StandardErrors.DataNotWritten("reset password");
 
-                    await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
+                    // Get all unused ResetPassword tokens
+                    var tokens = await connection.QueryAsync<string>(GetTokensQuery.GetQuery, new
                     {
                         Token = token,
+                        Type = CreateUserEmailTokenQuery.ResetPassword
+                    });
+                    
+                    // Delete them all
+                    await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
+                    {
+                        Tokens = tokens,
                         Type = CreateUserEmailTokenQuery.ResetPassword
                     });
                     
