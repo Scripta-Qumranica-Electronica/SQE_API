@@ -157,7 +157,10 @@ namespace SQE.SqeHttpApi.DataAccess
             // until the copy process was complete in order to guard against
             // creating an inconsistent copy.
             // What if someone unlocks the source scroll mid-copy?
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(
+                TransactionScopeOption.Required,
+                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted })
+            )
             {
                 using (var connection = OpenConnection())
                 {

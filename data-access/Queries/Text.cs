@@ -45,6 +45,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       
       sign_interpretation_attribute.sign_interpretation_attribute_id AS interpretationAttributeId,
       sign_interpretation_attribute.attribute_value_id AS attributeValueId,
+      sign_interpretation_attribute.sequence AS sequence,
       sign_interpretation_attribute_author.user_id AS signInterpretationAttributeAuthor,
       attribute_numeric.value AS value,
 

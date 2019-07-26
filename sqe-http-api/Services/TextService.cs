@@ -120,6 +120,7 @@ namespace SQE.SqeHttpApi.Server.Services
                                                         b => new InterpretationAttributeDTO()
                                                         {
                                                             interpretationAttributeId = b.interpretationAttributeId,
+                                                            sequence = b.sequence,
                                                             attributeValueId = b.attributeValueId,
                                                             editorId = b.signInterpretationAttributeAuthor,
                                                             value = b.value
@@ -194,6 +195,7 @@ namespace SQE.SqeHttpApi.Server.Services
                                         b => new InterpretationAttributeDTO()
                                         {
                                             interpretationAttributeId = b.interpretationAttributeId,
+                                            sequence = b.sequence,
                                             attributeValueId = b.attributeValueId,
                                             editorId = b.signInterpretationAttributeAuthor,
                                             value = b.value
