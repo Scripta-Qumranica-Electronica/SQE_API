@@ -153,11 +153,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             // Grab a transaction scope, we roll back all changes if any transactions fail
             // I could limit the transaction scope to each individual mutation request,
             // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
-            using (var transactionScope = new TransactionScope(
-                TransactionScopeOption.Required,
-                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }
-                )
-            )
+            using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
                 foreach (var mutationRequest in mutationRequests)

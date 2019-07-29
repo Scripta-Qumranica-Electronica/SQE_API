@@ -5,11 +5,12 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
     // Itay - Sure, let's add Query, it makes things clearer and maybe helps with possible collisions.
     
     // No more ON DUPLICATE KEY UPDATE.  The following INSERTs use subqueries to verify whether something should
-    // be inserted or not.  The only question I have is if two transactions from different scroll_versions in the
-    // same scroll_version_group hit the x_owner table at the same time, will two entries be made (one for each
-    // scroll_version)?  The subquery on OwnerTableInsertQuery checks against cases where one x_id is linked to two
-    // members (scroll_version) of the same group (scroll_version_group).  Since we use ReadUncommitted in the transaction,
-    // we should be safe in situations like this when two transactions run at the same time.
+    // be inserted or not.  The only possible problem is if two transactions from different edition_editors in the
+    // same edition hit the x_owner table at the same time. The subquery on OwnerTableInsertQuery checks against
+    // cases where one x_id is linked twice to the same edition_id.  Without a uniqueness constraint on x_id + edition_id
+    // in the database this query would still allow the (however unlikely) situation that two simultaneous transactions
+    // could write the same x_id + edition_id, since the query in each transaction would not see the uncommitted
+    // mutation from the other (we do not use ReadUncommitted).
     internal static class OwnedTableInsertQuery
     {
         public static string GetQuery { get; } = @"

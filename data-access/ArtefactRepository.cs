@@ -227,10 +227,7 @@ namespace SQE.SqeHttpApi.DataAccess
             var res = string.Join("", binaryMask);
             var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
            
-            using (var transactionScope = new TransactionScope(
-                TransactionScopeOption.Required,
-                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted })
-            )
+            using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
                 {
