@@ -156,11 +156,10 @@ namespace SQE.SqeHttpApi.DataAccess
             // have to block all transactions on all _owner tables in the DB
             // until the copy process was complete in order to guard against
             // creating an inconsistent copy.
-            // What if someone unlocks the source scroll mid-copy?
-            using (var transactionScope = new TransactionScope(
-                TransactionScopeOption.Required,
-                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted })
-            )
+            // TODO: Gather permissions info for all editors of this edition, directly remove Lock/Admin/Write access,
+            // and lock the edition for the duration of the copy (don't bother checking if it is locked first).
+            // Then, when the copy is finished, restore the original permissions.  That procedure should make it safe.
+            using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
                 {
@@ -275,14 +274,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     )
                 );
 
-            // This transaction may take a while, so we cannot lock all of these tables. Otherwise, we DO get deadlock.
-            // ReadUncommitted is fine because we will not get any further writes to this edition (all editors have lost
-            // write permission), and any new writes to the user_email_token table will be irrelevant (the token
-            // is unique).
-            using (var transactionScope = new TransactionScope(
-                TransactionScopeOption.Required,
-                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted })
-            )
+            using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
                 // Verify that the token is still valid

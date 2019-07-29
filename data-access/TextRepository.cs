@@ -81,9 +81,8 @@ namespace SQE.SqeHttpApi.DataAccess
             string fragmentName, uint? previousFragmentId, uint? nextFragmentId)
         {
             using (var transactionScope = new TransactionScope(
-                    TransactionScopeOption.Required,
-                    new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }
-                )
+                TransactionScopeOption.Required,
+                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted })
             )
             {
                 // Get all text fragments in the edition for sorting operations later on
