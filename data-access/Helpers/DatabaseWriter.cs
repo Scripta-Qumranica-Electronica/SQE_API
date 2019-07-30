@@ -123,7 +123,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <summary>
         /// Enum for allowed actions in the single_action database table.
         /// </summary>
-        public enum SingleAction
+        private enum SingleAction
         {
             Add,
             Delete
