@@ -186,31 +186,34 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<DetailedUserWithToken> CreateNewUserAsync(string email, string password,
             string forename = null, string surname = null, string organization = null)
         {
-            using (var transactionScope = new TransactionScope())
-            using (var connection = OpenConnection())
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () => 
             {
-                // Find any users with either the same  email address.
-                await ResolveExistingUserConflictAsync(email);
+                using (var transactionScope = new TransactionScope())
+                using (var connection = OpenConnection())
+                {
+                    // Find any users with either the same  email address.
+                    await ResolveExistingUserConflictAsync(email);
 
-                // Ok, the input email is unique so create the record
-                var newUser = await connection.ExecuteAsync(CreateNewUserQuery.GetQuery,
-                    new
-                    {
-                        Email = email,
-                        Password = password,
-                        Forename = forename,
-                        Surname = surname,
-                        Organization = organization
-                    });
-                if (newUser != 1) // Something strange must have gone wrong
-                    throw new StandardErrors.DataNotWritten("create user");
+                    // Ok, the input email is unique so create the record
+                    var newUser = await connection.ExecuteAsync(CreateNewUserQuery.GetQuery,
+                        new
+                        {
+                            Email = email,
+                            Password = password,
+                            Forename = forename,
+                            Surname = surname,
+                            Organization = organization
+                        });
+                    if (newUser != 1) // Something strange must have gone wrong
+                        throw new StandardErrors.DataNotWritten("create user");
 
-                // Everything went well, so create the email token so the
-                // calling function can email the new user.
-                var newUserObject = await CreateUserActivateTokenAsync(email);
-                transactionScope.Complete();
-                return newUserObject;
-            }
+                    // Everything went well, so create the email token so the
+                    // calling function can email the new user.
+                    var newUserObject = await CreateUserActivateTokenAsync(email);
+                    transactionScope.Complete();
+                    return newUserObject;
+                } 
+            });
         }
 
         /// <summary>
@@ -409,42 +412,45 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <returns>Returns user information and secret token that are used to format the reset password email</returns>
         public async Task<DetailedUserWithToken> RequestResetForgottenPasswordAsync(string email)
         {
-            using (var transactionScope = new TransactionScope())
-            using (var connection = OpenConnection())
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
             {
-                try
+                using (var transactionScope = new TransactionScope())
+                using (var connection = OpenConnection())
                 {
-                    // Get the user's details via the submitted email address
-                    var columns = new List<string>() { "email", "user_id", "forename", "surname", "organization" };
-                    var where = new List<string>() { "email" };
-                    var userInfo = await connection.QuerySingleAsync<DetailedUserWithToken>(
-                        UserDetails.GetQuery(columns, where), 
-                        new { Email = email});
-                    
-                    // Generate our secret token
-                    var token = Guid.NewGuid().ToString();
-                    
-                    // Write the token to the database
-                    var tokenEntry = await connection.ExecuteAsync(CreateUserEmailTokenQuery.GetQuery(), new
+                    try
                     {
-                        Token = token,
-                        UserId = userInfo.UserId,
-                        Type = CreateUserEmailTokenQuery.ResetPassword
-                    });
-                    if (tokenEntry != 1)
-                        return null;
+                        // Get the user's details via the submitted email address
+                        var columns = new List<string>() { "email", "user_id", "forename", "surname", "organization" };
+                        var where = new List<string>() { "email" };
+                        var userInfo = await connection.QuerySingleAsync<DetailedUserWithToken>(
+                            UserDetails.GetQuery(columns, where), 
+                            new { Email = email});
                     
-                    // Cleanup
-                    transactionScope.Complete();
+                        // Generate our secret token
+                        var token = Guid.NewGuid().ToString();
                     
-                    // Pass the token back in the user info object
-                    userInfo.Token = token;
-                    return userInfo;
+                        // Write the token to the database
+                        var tokenEntry = await connection.ExecuteAsync(CreateUserEmailTokenQuery.GetQuery(), new
+                        {
+                            Token = token,
+                            UserId = userInfo.UserId,
+                            Type = CreateUserEmailTokenQuery.ResetPassword
+                        });
+                        if (tokenEntry != 1)
+                            return null;
+                    
+                        // Cleanup
+                        transactionScope.Complete();
+                    
+                        // Pass the token back in the user info object
+                        userInfo.Token = token;
+                        return userInfo;
+                    }
+                    catch{} // Suppress errors here. We don't want to risk people fishing for valid email addresses,
+                    // though any errors are suppressed in the controller too.
                 }
-                catch{} // Suppress errors here. We don't want to risk people fishing for valid email addresses,
-                        // though any errors are suppressed in the controller too.
-            }
-            return null;
+                return null;
+            });
         }
         
         /// <summary>
