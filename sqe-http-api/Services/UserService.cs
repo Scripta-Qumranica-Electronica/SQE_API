@@ -145,8 +145,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
         public async Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData)
         {
             // Ask the repo to create the new user
-            var createdUser = await _userRepository.CreateNewUserAsync(newUserData.email, newUserData.password,
-                forename: newUserData.forename, surname: newUserData.surname,  organization: newUserData.organization);
+            var createdUser = await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                () => _userRepository.CreateNewUserAsync(newUserData.email, newUserData.password,
+                forename: newUserData.forename, surname: newUserData.surname,  organization: newUserData.organization));
             
             // Email the user
             await SendAccountActivationEmail(new DetailedUserWithToken()

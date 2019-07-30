@@ -131,7 +131,8 @@ namespace SQE.SqeHttpApi.Server.Helpers
         {
             EditionDTO edition;
             // Clone edition
-            var copyToEditionId = await _editionRepo.CopyEditionAsync(user, editionInfo.copyrightHolder, editionInfo.collaborators);
+            var copyToEditionId = await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                () => _editionRepo.CopyEditionAsync(user, editionInfo.copyrightHolder, editionInfo.collaborators));
             if (user.editionId == copyToEditionId)
             {
                 // Check if is success is true, else throw error.
