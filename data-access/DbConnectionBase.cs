@@ -7,6 +7,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Polly;
+using Polly.Wrap;
 
 
 namespace SQE.SqeHttpApi.DataAccess
@@ -36,12 +37,13 @@ namespace SQE.SqeHttpApi.DataAccess
         }
 
         // This returns the ReliableMySqlConnection, which wraps MySqlConnection in a set of retry policies for handling
-        // the transient database errors where MariaDB says the transaction should be retried.
+        // the transient database errors where MariaDB says the transaction should be retried and pauses all attemtps
+        // to get a connection from the database when it errors out more that 5 times trying to get a connection.
         protected IDbConnection OpenConnection() => new ReliableMySqlConnection(ConnectionString, _retryPolicy);
     }
     
-    // I used a lot of help from https://sergeyakopov.com/reliable-database-connections-and-commands-with-polly/
-    // to implement this Polly retry and circuit breaker system.
+    // https://sergeyakopov.com/reliable-database-connections-and-commands-with-polly/ provided many tips
+    // for implementing this Polly retry and circuit breaker system.
     public interface IRetryPolicy
     {
         void ExecuteRetry(Action operation);
@@ -51,6 +53,7 @@ namespace SQE.SqeHttpApi.DataAccess
         Task ExecuteRetry(Func<Task> operation, CancellationToken cancellationToken);
 
         Task<TResult> ExecuteRetry<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken);
+        
         void ExecuteRetryWithCircuitBreaker(Action operation);
 
         TResult ExecuteRetryWithCircuitBreaker<TResult>(Func<TResult> operation);
@@ -69,7 +72,7 @@ namespace SQE.SqeHttpApi.DataAccess
     /// 1213	40001	ER_LOCK_DEADLOCK	Deadlock found when trying to get lock; try restarting transaction
     /// 1412	HY000	ER_TABLE_DEF_CHANGED	Table definition has changed, please retry transaction
     ///
-    /// In the case of errors 1203 (above max_user_connections) and 1040 (too many connections) we should short circuit
+    /// In the case of errors 1203 (above max_user_connections) and 1040 (too many connections) we short circuit
     /// all db interactions for a little while to see if the db will recover on its own.
     /// 
     /// TODO: Could we do anything useful for error 1927? Research and see if it should just be retried.
@@ -78,50 +81,72 @@ namespace SQE.SqeHttpApi.DataAccess
     {
         private const int RetryCount = 5;
         private const int WaitBetweenRetriesInMilliseconds = 200;
+        private const int CircuitBreakerPause = 5;
         private readonly Random _random = new Random();
 
-        private readonly List<int> _retrySqlExceptions = new List<int>{ 1205, 1213, 1412 };
-        private readonly List<int> _pauseExceptions = new List<int>{ 1040, 1203 };
+        private readonly List<uint> _retrySqlExceptions = new List<uint>{ 1205, 1213, 1412 };
+        private readonly List<uint> _pauseExceptions = new List<uint>{ 1040, 1203 };
 
         private readonly AsyncPolicy _retryPolicyAsync;
+        private readonly AsyncPolicy _circuitBreakerRetryPolicyAsync;
         private readonly AsyncPolicy _circuitBreakPolicyAsync;
         private readonly Policy _retryPolicy;
+        private readonly Policy _circuitBreakerRetryPolicy;
         private readonly Policy _circuitBreakPolicy;
 
         /// <summary>
-        /// In both sync and async the command will be retried a maximum of 5 times when the exception MariaDb errors
-        /// 1205, 1213, 1412, or 1622 are received (all other exceptions bubble up immediately). After max-retries the
-        /// exception is allowed to bubble up.
-        /// This also contains a circuit breaker, so that whenever
+        /// In both sync and async any command run with ExecuteRetry will be retried a maximum of 5 times when the
+        /// exception MariaDb errors 1205, 1213, or 1412 are received (all other exceptions bubble up immediately).
+        /// After max-retries the exception is allowed to bubble up.
+        /// 
+        /// In both sync and async any command run with ExecuteRetryWithCircuitBreaker will be retried a maximum of
+        /// 5 times when the exception MariaDb errors 1040 or 1203 are received, after which any attempt to run that
+        /// command will immediately error without even attempting to run it for CircuitBreakerPause seconds.
+        ///
+        /// TODO: log this activity when the system logger is set up.
         /// </summary>
         public DatabaseCommunicationRetryPolicy()
         {
             _retryPolicyAsync = Policy
-                .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Number))
+                .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
                 .WaitAndRetryAsync(
                     retryCount: RetryCount,
                     sleepDurationProvider: attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
                 );
             
             _retryPolicy = Policy
-                .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Number))
+                .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
+                .WaitAndRetry(
+                    retryCount: RetryCount,
+                    sleepDurationProvider: attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
+                );
+            
+            _circuitBreakerRetryPolicyAsync = Policy
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
+                .WaitAndRetryAsync(
+                    retryCount: RetryCount,
+                    sleepDurationProvider: attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
+                );
+            
+            _circuitBreakerRetryPolicy = Policy
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .WaitAndRetry(
                     retryCount: RetryCount,
                     sleepDurationProvider: attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
                 );
 
             _circuitBreakPolicyAsync = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .CircuitBreakerAsync(
                     exceptionsAllowedBeforeBreaking: RetryCount, 
-                    durationOfBreak: TimeSpan.FromMinutes(1)
+                    durationOfBreak: TimeSpan.FromSeconds(CircuitBreakerPause)
                 );
             
             _circuitBreakPolicy = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .CircuitBreaker(
                     exceptionsAllowedBeforeBreaking: RetryCount, 
-                    durationOfBreak: TimeSpan.FromMinutes(1)
+                    durationOfBreak: TimeSpan.FromSeconds(CircuitBreakerPause)
                 );
         }
 
@@ -142,7 +167,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
         public TResult ExecuteRetry<TResult>(Func<TResult> operation)
         {
-            return _retryPolicy.Execute(() => operation.Invoke());
+            return _retryPolicy.Execute(operation.Invoke);
         }
 
         public async Task ExecuteRetry(Func<Task> operation, CancellationToken cancellationToken)
@@ -157,22 +182,22 @@ namespace SQE.SqeHttpApi.DataAccess
         
         public void ExecuteRetryWithCircuitBreaker(Action operation)
         {
-            _retryPolicy.Wrap(_circuitBreakPolicy).Execute(operation.Invoke);
+            _circuitBreakerRetryPolicy.Wrap(_circuitBreakPolicy).Execute(operation.Invoke);
         }
 
         public TResult ExecuteRetryWithCircuitBreaker<TResult>(Func<TResult> operation)
         {
-            return _retryPolicy.Wrap(_circuitBreakPolicy).Execute(operation.Invoke);
+            return _circuitBreakerRetryPolicy.Wrap(_circuitBreakPolicy).Execute(operation.Invoke);
         }
 
         public async Task ExecuteRetryWithCircuitBreaker(Func<Task> operation, CancellationToken cancellationToken)
         {
-            await _retryPolicyAsync.WrapAsync(_circuitBreakPolicyAsync).ExecuteAsync(operation.Invoke);
+            await _circuitBreakerRetryPolicyAsync.WrapAsync(_circuitBreakPolicyAsync).ExecuteAsync(operation.Invoke);
         }
 
         public async Task<TResult> ExecuteRetryWithCircuitBreaker<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken)
         {
-            return await _retryPolicyAsync.WrapAsync(_circuitBreakPolicyAsync).ExecuteAsync(operation.Invoke);
+            return await _circuitBreakerRetryPolicyAsync.WrapAsync(_circuitBreakPolicyAsync).ExecuteAsync(operation.Invoke);
         }
     }
 
@@ -364,7 +389,7 @@ namespace SQE.SqeHttpApi.DataAccess
         // Wrap ExecuteReaderAsync in the retry policy.
         protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken token)
         {
-            return _retryPolicy.ExecuteRetry(() => _underlyingSqlCommand.ExecuteReaderAsync(behavior, token));
+            return _retryPolicy.ExecuteRetry(() => _underlyingSqlCommand.ExecuteReaderAsync(behavior, token), token);
         }
 
         // Wrap ExecuteNonQuery in the retry policy.
@@ -376,7 +401,7 @@ namespace SQE.SqeHttpApi.DataAccess
         // Wrap ExecuteNonQueryAsync in the retry policy.
         public override Task<int> ExecuteNonQueryAsync(CancellationToken token)
         {
-            return _retryPolicy.ExecuteRetry(() => _underlyingSqlCommand.ExecuteNonQueryAsync(token));
+            return _retryPolicy.ExecuteRetry(() => _underlyingSqlCommand.ExecuteNonQueryAsync(token), token);
         }
 
         // Wrap ExecuteScalar in the retry policy.
@@ -388,7 +413,7 @@ namespace SQE.SqeHttpApi.DataAccess
         // Wrap ExecuteScalarAsync in the retry policy.
         public override Task<object> ExecuteScalarAsync(CancellationToken token)
         {
-            return _retryPolicy.ExecuteRetry(() => _underlyingSqlCommand.ExecuteScalarAsync(token));
+            return _retryPolicy.ExecuteRetry(() => _underlyingSqlCommand.ExecuteScalarAsync(token), token);
         }
 
         public override void Prepare()
