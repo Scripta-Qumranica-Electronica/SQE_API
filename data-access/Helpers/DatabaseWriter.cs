@@ -139,6 +139,13 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <param name="user"></param>
         /// <param name="mutationRequests">List of mutation requests.</param>
         public async Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
+        List<MutationRequest> mutationRequests)
+        {
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                () => _writeToDatabaseAsync(user, mutationRequests));
+        }
+
+        private async Task<List<AlteredRecord>> _writeToDatabaseAsync(UserInfo user,
             List<MutationRequest> mutationRequests)
         {
             // Check if the edition is locked

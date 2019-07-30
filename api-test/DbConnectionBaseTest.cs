@@ -24,11 +24,11 @@ namespace SQE.ApiTest
             var counter = new Counter() { Count = 0 };
             const uint code = 1205;
             const int minExecutionTime = 2500; // Currently 200 factorial 5 - minimum random offset (100 * 5)
-            var policy = new DatabaseCommunicationRetryPolicy();
+            
             var watch = System.Diagnostics.Stopwatch.StartNew();
             
             // Act
-            var ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetry(() => ThrowMySqlException(counter, code)));
+            var ex = Assert.Throws<MySqlException>(() => DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlException(counter, code)));
             
             // Assert
             watch.Stop();
@@ -42,7 +42,7 @@ namespace SQE.ApiTest
             watch = System.Diagnostics.Stopwatch.StartNew();
             
             // Act
-            ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetry(() => ThrowMySqlExceptionWithReturn(counter, code)));
+            ex = Assert.Throws<MySqlException>(() => DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlExceptionWithReturn(counter, code)));
             
             // Assert
             watch.Stop();
@@ -57,7 +57,7 @@ namespace SQE.ApiTest
             var token = new CancellationToken();
             
             // Act
-            ex = await Assert.ThrowsAsync<MySqlException>(() => policy.ExecuteRetry(() => ThrowMySqlExceptionAsync(counter, code), token));
+            ex = await Assert.ThrowsAsync<MySqlException>(() => DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlExceptionAsync(counter, code), token));
             
             // Assert
             watch.Stop();
@@ -71,7 +71,7 @@ namespace SQE.ApiTest
             watch = System.Diagnostics.Stopwatch.StartNew();
             
             // Act
-            ex = await Assert.ThrowsAsync<MySqlException>(() => policy.ExecuteRetry(() => ThrowMySqlExceptionWithReturnAsync(counter, code), token));
+            ex = await Assert.ThrowsAsync<MySqlException>(() => DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlExceptionWithReturnAsync(counter, code), token));
             
             // Assert
             watch.Stop();
@@ -86,11 +86,10 @@ namespace SQE.ApiTest
             // Arrange
             var counter = new Counter() { Count = 0 };
             const uint code = 1203;
-            var policy = new DatabaseCommunicationRetryPolicy();
             var watch = System.Diagnostics.Stopwatch.StartNew();
             
             // Act
-            var ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetry(() => ThrowMySqlException(counter, code)));
+            var ex = Assert.Throws<MySqlException>(() => DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlException(counter, code)));
             
             // Assert
             watch.Stop();
@@ -104,7 +103,7 @@ namespace SQE.ApiTest
             // Arrange
             var counter = new Counter() { Count = 0 };
             const uint code = 1040;
-            var policy = new DatabaseCommunicationRetryPolicy();
+            var policy = new DatabaseCommunicationCircuitBreakPolicy();
             
             // Act (even though we run this 7 times, the method itself should only run 5 times total)
             var retryEx = Assert.Throws<BrokenCircuitException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
@@ -121,7 +120,7 @@ namespace SQE.ApiTest
             
             // With return type
             // Arrange
-            policy = new DatabaseCommunicationRetryPolicy();
+            policy = new DatabaseCommunicationCircuitBreakPolicy();
             counter.Count = 0;
             
             // Act (even though we run this 7 times, the method itself should only run 5 times total)
@@ -140,7 +139,7 @@ namespace SQE.ApiTest
             // Async
             // Arrange
             counter.Count = 0;
-            policy = new DatabaseCommunicationRetryPolicy();
+            policy = new DatabaseCommunicationCircuitBreakPolicy();
             var token = new CancellationToken();
             
             // Act (even though we run this 7 times, the method itself should only run 5 times total)
@@ -158,7 +157,7 @@ namespace SQE.ApiTest
             
             // Async with return
             // Arrange
-            policy = new DatabaseCommunicationRetryPolicy();
+            policy = new DatabaseCommunicationCircuitBreakPolicy();
             counter.Count = 0;
             
             // Act (even though we run this 7 times, the method itself should only run 5 times total)
@@ -181,7 +180,7 @@ namespace SQE.ApiTest
             // Arrange
             var counter = new Counter() { Count = 0 };
             const uint code = 1044;
-            var policy = new DatabaseCommunicationRetryPolicy();
+            var policy = new DatabaseCommunicationCircuitBreakPolicy();
             
             // Act (we run this 7 times and the circuit breaker should not engage)
             var ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
