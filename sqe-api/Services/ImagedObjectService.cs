@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SQE.SqeHttpApi.DataAccess;
-using SQE.SqeHttpApi.DataAccess.Helpers;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeApi.DataAccess;
+using SQE.SqeApi.DataAccess.Helpers;
+using SQE.SqeApi.Server.DTOs;
 
-namespace SQE.SqeHttpApi.Server.Helpers
+namespace SQE.SqeApi.Server.Helpers
 {
     public interface IImagedObjectService
     {
