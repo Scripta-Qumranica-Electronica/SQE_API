@@ -7,11 +7,11 @@ using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.Extensions.Configuration;
 using System.Transactions;
-using SQE.SqeHttpApi.DataAccess.Helpers;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.DataAccess.Queries;
+using SQE.SqeApi.DataAccess.Helpers;
+using SQE.SqeApi.DataAccess.Models;
+using SQE.SqeApi.DataAccess.Queries;
 
-namespace SQE.SqeHttpApi.DataAccess
+namespace SQE.SqeApi.DataAccess
 {
     public interface IEditionRepository
     {

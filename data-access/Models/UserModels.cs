@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace SQE.SqeHttpApi.DataAccess.Models
+namespace SQE.SqeApi.DataAccess.Models
 {
     public class User
     {

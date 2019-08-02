@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Bogus;
 using Dapper;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeApi.Server.DTOs;
 using Xunit;
 
 namespace SQE.ApiTest.Helpers

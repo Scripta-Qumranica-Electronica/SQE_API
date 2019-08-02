@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace SQE.SqeHttpApi.DataAccess.Queries
+namespace SQE.SqeApi.DataAccess.Queries
 {
     internal class EditionGroupQuery
     {

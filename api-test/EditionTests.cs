@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.CodeAnalysis.Operations;
 using SQE.ApiTest.Helpers;
-using SQE.SqeHttpApi.Server;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeApi.Server;
+using SQE.SqeApi.Server.DTOs;
 using Xunit;
 using HttpRequest = SQE.ApiTest.Helpers.HttpRequest;
 

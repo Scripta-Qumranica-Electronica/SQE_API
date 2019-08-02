@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 using Newtonsoft.Json;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeApi.Server.DTOs;
 using Xunit;
 using Bogus;
 

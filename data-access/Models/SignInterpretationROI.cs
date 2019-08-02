@@ -1,4 +1,4 @@
-namespace SQE.SqeHttpApi.DataAccess.Models
+namespace SQE.SqeApi.DataAccess.Models
 {
     public class SignInterpretationROI
     {

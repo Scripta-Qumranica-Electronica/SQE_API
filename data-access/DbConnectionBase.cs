@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Polly;
 
 
-namespace SQE.SqeHttpApi.DataAccess
+namespace SQE.SqeApi.DataAccess
 {
     public class DbConnectionBase
     {

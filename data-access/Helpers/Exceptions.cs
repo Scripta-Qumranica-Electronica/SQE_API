@@ -1,8 +1,8 @@
 using System;
 using System.Net;
-using SQE.SqeHttpApi.DataAccess.Models;
+using SQE.SqeApi.DataAccess.Models;
 
-namespace SQE.SqeHttpApi.DataAccess.Helpers
+namespace SQE.SqeApi.DataAccess.Helpers
 {
     #region Exception Base Class 
     // Exceptions of this class will be caught by the middleware and thrown back to HTTP requests with the proper

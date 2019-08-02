@@ -3,7 +3,7 @@ using System.Net.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
-using SQE.SqeHttpApi.Server;
+using SQE.SqeApi.Server;
 using Xunit;
 
 namespace SQE.ApiTest
@@ -19,7 +19,7 @@ namespace SQE.ApiTest
         public WebControllerTest(WebApplicationFactory<Startup> factory)
         {
             var projectDir = Directory.GetCurrentDirectory();
-            var configPath = Path.Combine(projectDir, "../../../../sqe-http-api/appsettings.json");
+            var configPath = Path.Combine(projectDir, "../../../../sqe-api/appsettings.json");
  
             _factory = factory.WithWebHostBuilder(builder =>
             {

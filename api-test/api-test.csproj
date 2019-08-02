@@ -19,6 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\sqe-http-api\sqe-http-api.csproj" />
+    <ProjectReference Include="..\sqe-api\sqe-api.csproj" />
   </ItemGroup>
 </Project>

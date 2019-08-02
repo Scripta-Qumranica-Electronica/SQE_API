@@ -3,10 +3,10 @@ using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.DataAccess.Queries;
+using SQE.SqeApi.DataAccess.Models;
+using SQE.SqeApi.DataAccess.Queries;
 
-namespace SQE.SqeHttpApi.DataAccess
+namespace SQE.SqeApi.DataAccess
 {
     public interface IImageRepository
     {

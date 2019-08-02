@@ -10,7 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "data-access", "data-access\data-access.csproj", "{260192E4-F9FE-4FD5-A478-558A6F611550}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-http-api", "sqe-http-api\sqe-http-api.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-api", "sqe-api\sqe-api.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{2342F74C-D461-45E2-BA99-72BD0C84F64B}"
 	ProjectSection(SolutionItems) = preProject

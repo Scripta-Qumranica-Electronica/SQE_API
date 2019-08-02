@@ -1,4 +1,4 @@
-namespace SQE.SqeHttpApi.DataAccess.Queries
+namespace SQE.SqeApi.DataAccess.Queries
 {
     // Bronson - I'm not sure whether all the classes here need to have Query added to their names,
     // as they are not  queries but rather update statements. What do you think?

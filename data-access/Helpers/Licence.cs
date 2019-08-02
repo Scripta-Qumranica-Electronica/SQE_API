@@ -1,4 +1,4 @@
-namespace SQE.SqeHttpApi.DataAccess.Helpers
+namespace SQE.SqeApi.DataAccess.Helpers
 {
     // TODO We still have to find a final formulation.
     /// <summary>

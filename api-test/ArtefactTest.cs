@@ -7,8 +7,8 @@ using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.ApiTest.Helpers;
-using SQE.SqeHttpApi.Server;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeApi.Server;
+using SQE.SqeApi.Server.DTOs;
 using Xunit;
 
 // TODO: It would be nice to be able to generate random polygons for these testing purposes.

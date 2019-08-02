@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using Polly.CircuitBreaker;
-using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeApi.DataAccess;
 using Xunit;
 
 namespace SQE.ApiTest

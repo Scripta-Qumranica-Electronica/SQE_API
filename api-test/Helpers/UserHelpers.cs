@@ -4,8 +4,8 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Dapper;
-using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.DataAccess.Queries;
+using SQE.SqeApi.Server.DTOs;
+using SQE.SqeApi.DataAccess.Queries;
 using Xunit;
 using Bogus;
 

@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using SQE.SqeHttpApi.DataAccess.Helpers;
+using SQE.SqeApi.DataAccess.Helpers;
 
-namespace SQE.SqeHttpApi.DataAccess.Queries
+namespace SQE.SqeApi.DataAccess.Queries
 {
     /// <summary>
     /// An extensible Us

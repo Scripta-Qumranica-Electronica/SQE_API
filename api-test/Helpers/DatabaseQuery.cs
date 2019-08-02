@@ -22,7 +22,7 @@ namespace SQE.ApiTest.Helpers
         {
             // TODO: Find a better way to get these settings.
             string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName;
-            using (StreamReader r = new StreamReader(projectDirectory + "/../../sqe-http-api/appsettings.json"))
+            using (StreamReader r = new StreamReader(projectDirectory + "/../../sqe-api/appsettings.json"))
             {
                 var json = r.ReadToEnd();
                 dynamic settings = JsonConvert.DeserializeObject(json);

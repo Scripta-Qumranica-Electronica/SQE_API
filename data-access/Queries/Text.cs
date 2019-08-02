@@ -1,4 +1,4 @@
-namespace SQE.SqeHttpApi.DataAccess.Queries
+namespace SQE.SqeApi.DataAccess.Queries
 {
   public static class GetTextChunk
   {

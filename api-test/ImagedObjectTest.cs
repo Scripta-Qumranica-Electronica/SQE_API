@@ -2,11 +2,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Net.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
-using SQE.SqeHttpApi.Server;
+using SQE.SqeApi.Server;
 using Bogus;
 using Dapper;
 using SQE.ApiTest.Helpers;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeApi.Server.DTOs;
 using Xunit;
 
 namespace SQE.ApiTest

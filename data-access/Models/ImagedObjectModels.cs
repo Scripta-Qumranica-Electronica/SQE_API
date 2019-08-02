@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SQE.SqeHttpApi.DataAccess.Models
+namespace SQE.SqeApi.DataAccess.Models
 {
     public class ImagedObject
     {
