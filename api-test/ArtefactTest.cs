@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.ApiTest.Helpers;
 using SQE.SqeApi.Server;
 using SQE.SqeApi.Server.DTOs;
@@ -76,10 +77,22 @@ namespace SQE.ApiTest
                 name = newName,
                 masterImageId = masterImageId
             };
+            var jwt = await HttpRequest.GetJWTAsync(_client);
+            var signalr = await StartConnectionAsync(jwt);
+            signalr.Closed += async error =>
+            {
+                await Task.Delay(new Random().Next(0, 5) * 1000);
+                await signalr.StartAsync();
+            };
             
             // Act
+            await signalr.InvokeAsync("SubscribeToEdition", newEdition);
+            signalr.On<ArtefactDTO>("createArtefact", (receivedArtefact) =>
+            {
+                Assert.NotNull(receivedArtefact);
+            });
             var (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Post,
-                $"/{version}/editions/{newEdition}/{controller}", newArtefact, await HttpRequest.GetJWTAsync(_client));
+                $"/{version}/editions/{newEdition}/{controller}", newArtefact, jwt);
             
             // Assert
             response.EnsureSuccessStatusCode();
@@ -104,7 +117,7 @@ namespace SQE.ApiTest
             
             // Act
             (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Post,
-                $"/{version}/editions/{newEdition}/{controller}", newArtefact, await HttpRequest.GetJWTAsync(_client));
+                $"/{version}/editions/{newEdition}/{controller}", newArtefact, jwt);
             
             // Assert
             response.EnsureSuccessStatusCode();
@@ -129,7 +142,7 @@ namespace SQE.ApiTest
             
             // Act
             (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Post,
-                $"/{version}/editions/{newEdition}/{controller}", newArtefact, await HttpRequest.GetJWTAsync(_client));
+                $"/{version}/editions/{newEdition}/{controller}", newArtefact, jwt);
             
             // Assert
             response.EnsureSuccessStatusCode();

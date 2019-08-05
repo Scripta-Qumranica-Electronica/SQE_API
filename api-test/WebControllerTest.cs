@@ -1,8 +1,10 @@
 using System.IO;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.SqeApi.Server;
 using Xunit;
 
@@ -32,6 +34,22 @@ namespace SQE.ApiTest
  
             });
             _client = _factory.CreateClient();
+        }
+        
+        protected async Task<HubConnection> StartConnectionAsync(string token = null)
+        {
+            var hubConnection = new HubConnectionBuilder()
+                .WithUrl($"ws://localhost/signalr", o =>
+                {
+                    o.HttpMessageHandlerFactory = _ => _factory.Server.CreateHandler();
+                    if (!string.IsNullOrEmpty(token))
+                        o.AccessTokenProvider = () => Task.FromResult(token);
+                })
+                .Build();
+ 
+            await hubConnection.StartAsync();
+ 
+            return hubConnection;
         }
     }
 }
