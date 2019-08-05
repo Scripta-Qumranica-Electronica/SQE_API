@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.Server.DTOs;
 using SQE.SqeApi.Server.Services;
+using SQE.SqeApi.DataAccess.Helpers;
 
 namespace SQE.SqeApi.Server.Hubs
 {
@@ -43,7 +44,8 @@ namespace SQE.SqeApi.Server.Hubs
                 payload.masterImageId,
                 payload.mask,
                 payload.name,
-                payload.position);
+                payload.position,
+                clientId: Context.ConnectionId);
         }
 
 
@@ -57,7 +59,8 @@ namespace SQE.SqeApi.Server.Hubs
         {
             await _artefactService.DeleteArtefactAsync(
                 _userService.GetCurrentUserObject(editionId),
-                artefactId);
+                artefactId,
+                clientId: Context.ConnectionId);
         }
 
 
@@ -109,7 +112,8 @@ namespace SQE.SqeApi.Server.Hubs
                 artefactId,
                 payload.mask,
                 payload.name,
-                payload.position);
+                payload.position,
+                clientId: Context.ConnectionId);
         }
 
         #endregion artefact
@@ -170,7 +174,8 @@ namespace SQE.SqeApi.Server.Hubs
             return await _editionService.DeleteEditionAsync(
                 _userService.GetCurrentUserObject(editionId),
                 token,
-                optional);
+                optional,
+                clientId: Context.ConnectionId);
         }
 
 
@@ -207,7 +212,8 @@ namespace SQE.SqeApi.Server.Hubs
                 _userService.GetCurrentUserObject(editionId),
                 request.name,
                 request.copyrightHolder,
-                request.collaborators);
+                request.collaborators,
+                clientId: Context.ConnectionId);
         }
 
         #endregion edition
@@ -272,7 +278,8 @@ namespace SQE.SqeApi.Server.Hubs
         {
             return await _textService.CreateTextFragmentAsync(
                 _userService.GetCurrentUserObject(editionId),
-                createFragment);
+                createFragment,
+                clientId: Context.ConnectionId);
         }
 
 
@@ -310,7 +317,7 @@ namespace SQE.SqeApi.Server.Hubs
         /// <param name="editionId">Id of the edition</param>
         /// <param name="textFragmentId">Id of the text fragment</param>
         /// <returns>A manuscript edition object including the fragments and their lines in a hierarchical order and in correct sequence</returns>
-        [Authorize]
+        [AllowAnonymous]
         public async Task<TextEditionDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentId(uint editionId,
             uint textFragmentId)
         {
@@ -408,11 +415,11 @@ namespace SQE.SqeApi.Server.Hubs
         /// Confirms registration of new user account.
         /// </summary>
         /// <param name="payload">JSON object with token from user registration email</param>
-        /// <returns>Returns a DetailedUserDTO for the confirmed account</returns>
+        /// <returns>Returns NoContent when the account was properly confirmed</returns>
         [AllowAnonymous]
-        public async Task<DetailedUserDTO> PostV1UsersConfirmRegistration(AccountActivationRequestDTO payload)
+        public async Task PostV1UsersConfirmRegistration(AccountActivationRequestDTO payload)
         {
-            return await _userService.ConfirmUserRegistrationAsync(payload.token);
+            await _userService.ConfirmUserRegistrationAsync(payload.token);
         }
 
 
@@ -463,19 +470,76 @@ namespace SQE.SqeApi.Server.Hubs
         #endregion user
 
 
-//        /// <summary>
-//        /// This is used to authorize the client.  The bearer token stays with the client for the life of the connection.
-//        /// I believe it is even remains over a reconnect (probably the load balancer needs sticky sessions for that
-//        /// to work).
-//        /// </summary>
-//        /// <param name="payload">Stringified JSON with credentials: {email: string, password: string}</param>
-//        /// <returns></returns>
-//        public async Task Auth(string payload)
-//        {
-//            var user = await _userService.AuthenticateAsync(payload.email, payload.password);
-//
-//            // Call the broadcastMessage method to update clients.
-//            return Clients.Caller.SendAsync("returnedRequest", response.status.ToString(), "auth", user);
-//        }
+        /// <summary>
+        /// The client subscribes to all changes for the specified editionId.
+        /// </summary>
+        /// <param name="editionId">The ID of the edition to receive updates</param>
+        /// <returns></returns>
+        public async Task SubscribeToEdition(uint editionId)
+        {
+            var user = _userService.GetCurrentUserObject(editionId);
+
+            if (!(await user.MayRead()))
+                throw new StandardErrors.NoReadPermissions(user);
+
+            // If client is already subscribed to at least one editionId
+            if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
+            {
+                // It seems that Context.Items is hardcoded as Dict<object, object>.
+                // Too bad I don't know a better way to deal with that.
+                var clientSubscriptions = clientSubscriptionsObject as List<uint>;
+                // If not already subscribed to this edition, then add it
+                if (!clientSubscriptions.Contains(editionId))
+                {
+                    clientSubscriptions.Add(editionId);
+                    await Groups.AddToGroupAsync(Context.ConnectionId, editionId.ToString());
+                }
+            }
+            else // Create the subcription context item and add the editionId
+            {
+                Context.Items["editionId"] = new List<uint>() {editionId};
+                // Add it to the editionIdId of this request
+                await Groups.AddToGroupAsync(Context.ConnectionId, editionId.ToString());
+            }
+        }
+
+        /// <summary>
+        /// The client unsubscribes to all changes for the specified editionId.
+        /// </summary>
+        /// <param name="editionId">The ID of the edition to stop receiving updates</param>
+        /// <returns></returns>
+        public async Task UnsubscribeToEdition(uint editionId)
+        {
+            // If client is already subscribed to at least one editionId
+            if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
+            {
+                // It seems that Context.Items is hardcoded as Dict<object, object>.
+                // Too bad I don't know a better way to deal with that.
+                var clientSubscriptions = clientSubscriptionsObject as List<uint>;
+                // If not already subscribed to this edition, then add it
+                if (clientSubscriptions.Contains(editionId))
+                {
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, editionId.ToString());
+                    clientSubscriptions.RemoveAll((x) => x == editionId);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get a list of all editions the client is currently subscribed to.
+        /// </summary>
+        /// <returns>A list of every editionId for which the client receives update</returns>
+        public List<uint> ListEditionSubscriptions()
+        {
+            // If client is already subscribed to at least one editionId
+            if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
+            {
+                // It seems that Context.Items is hardcoded as Dict<object, object>.
+                // Too bad I don't know a better way to deal with that.
+                return clientSubscriptionsObject as List<uint>;
+            }
+
+            return null;
+        }
     }
 }

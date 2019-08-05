@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.DataAccess;
 using SQE.SqeApi.DataAccess.Helpers;
 using SQE.SqeApi.DataAccess.Models;
 using SQE.SqeApi.Server.DTOs;
+using SQE.SqeApi.Server.Hubs;
 
 
 namespace SQE.SqeApi.Server.Services
@@ -15,9 +17,9 @@ namespace SQE.SqeApi.Server.Services
         Task<EditionGroupDTO> GetEditionAsync(UserInfo user, bool artefacts = false, bool fragments = false);
         Task<EditionListDTO> ListEditionsAsync(uint? userId);
         Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
-            string collaborators = null);
+            string collaborators = null, string clientId = null);
         Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo);
-        Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional);
+        Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional, string clientId = null);
         Task<EditorRightsDTO> AddEditionEditor(UserInfo user, EditorRightsDTO newEditor);
         Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO updatedEditor);
     }
@@ -26,11 +28,13 @@ namespace SQE.SqeApi.Server.Services
     {
         private readonly IEditionRepository _editionRepo;
         private readonly IUserRepository _userRepo;
+        private readonly IHubContext<MainHub> _hubContext;
 
-        public EditionService(IEditionRepository editionRepo, IUserRepository userRepo)
+        public EditionService(IEditionRepository editionRepo, IUserRepository userRepo, IHubContext<MainHub> hubContext)
         {
             _editionRepo = editionRepo;
             _userRepo = userRepo;
+            _hubContext = hubContext;
         }
 
         public async Task<EditionGroupDTO> GetEditionAsync(UserInfo user, bool artefacts = false,
@@ -108,7 +112,7 @@ namespace SQE.SqeApi.Server.Services
         }
 
         public async Task<EditionDTO> UpdateEditionAsync(UserInfo user, string name, string copyrightHolder = null,
-            string collaborators = null)
+            string collaborators = null, string clientId = null)
         {
             var editionBeforeChanges = (await _editionRepo.ListEditionsAsync(user.userId, user.editionId)).First();
             
@@ -124,7 +128,10 @@ namespace SQE.SqeApi.Server.Services
             
             var editions = await _editionRepo.ListEditionsAsync(user.userId, user.editionId); //get wanted edition by edition Id
             
-            return EditionModelToDTO(editions.First(x => x.EditionId == user.editionId));
+            var updatedEdition = EditionModelToDTO(editions.First(x => x.EditionId == user.editionId));
+            await _hubContext.Clients.GroupExcept(user.editionId.ToString(), clientId)
+                .SendAsync("updateEdition", updatedEdition);
+            return updatedEdition;
         }
 
         public async Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo)
@@ -167,7 +174,7 @@ namespace SQE.SqeApi.Server.Services
         /// <param name="optional">optional parameters: "deleteForAllEditors"</param>
         /// <param name="token">token required for optional "deleteForAllEditors"</param>
         /// <returns></returns>
-        public async Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional)
+        public async Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional, string clientId = null)
         {
             _parseOptional(optional, out var deleteForAllEditors);
             
@@ -178,8 +185,19 @@ namespace SQE.SqeApi.Server.Services
                 var newToken = await _editionRepo.DeleteAllEditionDataAsync(user, token);
                 
                 // End the request with null for successful delete or a proper token for requests without a confirmation token
-                return string.IsNullOrEmpty(newToken) ? null :
-                    new DeleteTokenDTO
+                if (string.IsNullOrEmpty(newToken))
+                {
+                    await _hubContext.Clients.GroupExcept(user.editionId.Value.ToString(), clientId)
+                        .SendAsync("deleteEdition", 
+                            new
+                            {
+                                userId = user.userId, 
+                                editionId = user.editionId,
+                                deleteForAllEditors = deleteForAllEditors
+                            });
+                    return null;
+                }
+                return new DeleteTokenDTO
                     {
                         editionId = user.editionId ?? 0,
                         token = newToken,
@@ -192,6 +210,14 @@ namespace SQE.SqeApi.Server.Services
             // Setting all permission to false is how we delete a user's access to an edition.
             await _editionRepo.ChangeEditionEditorRights(user, userInfo.Email, false, false, 
                 false, false);
+            await _hubContext.Clients.GroupExcept(user.editionId.Value.ToString(), clientId)
+                .SendAsync("deleteEdition", 
+                    new
+                    {
+                        userId = user.userId, 
+                        editionId = user.editionId,
+                        deleteForAllEditors = deleteForAllEditors
+                    });
             return null;
         }
 

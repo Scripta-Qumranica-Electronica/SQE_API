@@ -47,9 +47,10 @@ namespace SQE.SqeApi.Server.Controllers
         [HttpDelete("v1/editions/{editionId}/[controller]s/{artefactId}")]
         public async Task<ActionResult> DeleteArtefact([FromRoute] uint artefactId, [FromRoute] uint editionId)
         {
-            return await _artefactService.DeleteArtefactAsync(
+            await _artefactService.DeleteArtefactAsync(
                 _userService.GetCurrentUserObject(editionId),
                 artefactId);
+            return NoContent();
         }
 
         /// <summary>

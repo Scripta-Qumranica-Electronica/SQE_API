@@ -22,6 +22,12 @@ declare -A SETTINGS=(
     
     ## Secret for API JWT generation
     [Secret]=${SQE_API_SECRET}
+    
+    ## Redis SignalR backplane settings
+    [UseRedis]=${USE_REDIS}
+    [RedisHost]=${REDIS_HOST} 
+    [RedisPort]=${REDIS_PORT} 
+    [RedisPassword]=${REDIS_PASSWORD} 
 )
 
 ## Iterate over each setting and update appsettings.json if the environment variable has a value

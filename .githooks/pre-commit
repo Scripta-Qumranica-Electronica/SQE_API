@@ -40,6 +40,7 @@ check_docker_vars "MAILER_EMAIL_PASSWORD"
 check_docker_vars "MAILER_EMAIL_SMTP_URL"
 check_docker_vars "MAILER_EMAIL_SMTP_PORT"
 check_docker_vars "WEBSITE_HOST"
+check_docker_vars "REDIS_PASSWORD"
 
 ## Checking for custom settings in sqe-http-api/appsettings.json
 check_appsettings_vars "MailerEmailAddress"
@@ -47,4 +48,5 @@ check_appsettings_vars "MailerEmailUsername"
 check_appsettings_vars "MailerEmailPassword"
 check_appsettings_vars "MailerEmailSmtpUrl"
 check_appsettings_vars "MailerEmailSmtpPort"
+check_appsettings_vars "RedisPassword"
 

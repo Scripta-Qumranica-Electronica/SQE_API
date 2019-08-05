@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.DataAccess;
 using SQE.SqeApi.DataAccess.Helpers;
 using SQE.SqeApi.DataAccess.Models;
 using SQE.SqeApi.Server.DTOs;
 using SQE.SqeApi.Server.Helpers;
+using SQE.SqeApi.Server.Hubs;
 
 namespace SQE.SqeApi.Server.Services
 {
@@ -20,22 +21,23 @@ namespace SQE.SqeApi.Server.Services
             bool withMask = false);
 
         Task<ArtefactDTO> UpdateArtefactAsync(UserInfo user, uint editionId, uint artefactId, string mask = null,
-            string name = null,
-            string position = null);
+            string name = null, string position = null, string clientId = null);
 
         Task<ArtefactDTO> CreateArtefactAsync(UserInfo user, uint editionId, uint masterImageId, string mask = null,
-            string name = null, string position = null);
+            string name = null, string position = null, string clientId = null);
 
-        Task<NoContentResult> DeleteArtefactAsync(UserInfo user, uint artefactId);
+        Task<NoContentResult> DeleteArtefactAsync(UserInfo user, uint artefactId, string clientId = null);
     }
 
     public class ArtefactService : IArtefactService
     {
-        IArtefactRepository _artefactRepository;
+        private readonly IArtefactRepository _artefactRepository;
+        private readonly IHubContext<MainHub> _hubContext;
 
-        public ArtefactService(IArtefactRepository artefactRepository)
+        public ArtefactService(IArtefactRepository artefactRepository, IHubContext<MainHub> hubContext)
         {
             _artefactRepository = artefactRepository;
+            _hubContext = hubContext;
         }
 
         public async Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, List<string> optional)
@@ -74,7 +76,7 @@ namespace SQE.SqeApi.Server.Services
         }
 
         public async Task<ArtefactDTO> UpdateArtefactAsync(UserInfo user, uint editionId, uint artefactId, string mask = null,
-            string name = null, string position = null)
+            string name = null, string position = null, string clientId = null)
         {
             var withMask = false;
             var resultList = new List<AlteredRecord>();
@@ -99,11 +101,15 @@ namespace SQE.SqeApi.Server.Services
                 }  
             }
             
-            return await GetEditionArtefactAsync(user, artefactId, new List<string>(){"masks"});
+            var updatedArtefact = await GetEditionArtefactAsync(user, artefactId, new List<string>(){"masks"});
+
+            await _hubContext.Clients.GroupExcept(editionId.ToString(), clientId)
+                .SendAsync("updateArtefact", updatedArtefact);
+            return updatedArtefact;
         }
         
         public async Task<ArtefactDTO> CreateArtefactAsync(UserInfo user, uint editionId, uint masterImageId, string mask = null,
-            string name = null, string position = null)
+            string name = null, string position = null, string clientId = null)
         {
             uint newArtefactId = 0;
             if (user.userId.HasValue)
@@ -116,14 +122,19 @@ namespace SQE.SqeApi.Server.Services
             
             var optional = mask != null ? new List<string>(){"masks"} : new List<string>();
 
-            return newArtefactId != 0 
+            var newArtefact = newArtefactId != 0 
                 ? await GetEditionArtefactAsync(user, newArtefactId, optional)
                 : null;
+            await _hubContext.Clients.GroupExcept(editionId.ToString(), clientId)
+                .SendAsync("createArtefact", newArtefact);
+            return newArtefact;
         }
 
-        public async Task<NoContentResult> DeleteArtefactAsync(UserInfo user, uint artefactId)
+        public async Task<NoContentResult> DeleteArtefactAsync(UserInfo user, uint artefactId, string clientId = null)
         {
             await _artefactRepository.DeleteArtefactAsync(user, artefactId);
+            await _hubContext.Clients.GroupExcept(user.editionId.Value.ToString(), clientId)
+                .SendAsync("deleteArtefact", artefactId);
             return new NoContentResult();
         }
         

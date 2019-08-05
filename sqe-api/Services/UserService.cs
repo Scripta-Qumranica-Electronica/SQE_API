@@ -30,7 +30,7 @@ namespace SQE.SqeApi.Server.Services
         Task<DetailedUserTokenDTO> UpdateUserAsync(UserInfo user, UserUpdateRequestDTO updateUserData);
         Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
         Task<NoContentResult> ResendActivationEmail(string email);
-        Task<DetailedUserDTO> ConfirmUserRegistrationAsync(string token);
+        Task<NoContentResult> ConfirmUserRegistrationAsync(string token);
         Task<NoContentResult> ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
         Task<NoContentResult> RequestResetLostPasswordAsync(string email);
         Task<NoContentResult> ResetLostPasswordAsync(string token, string password);
@@ -240,7 +240,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// </summary>
         /// <param name="token">Secret authentication token for user's new account</param>
         /// <returns></returns>
-        public async Task<DetailedUserDTO> ConfirmUserRegistrationAsync(string token)
+        public async Task<NoContentResult> ConfirmUserRegistrationAsync(string token)
         {
             var userInfo = await _userRepository.GetDetailedUserByTokenAsync(token);
             await _userRepository.ConfirmAccountCreationAsync(token);
@@ -264,7 +264,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 emailBody.Replace("$User", name)
                     .Replace("$WebServer", webServer));
             
-            return DetailedUserModelToDto(userInfo, true);
+            return new NoContentResult();
         }
 
         /// <summary>

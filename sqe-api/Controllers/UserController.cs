@@ -91,13 +91,13 @@ namespace SQE.SqeApi.Server.Controllers
         /// Confirms registration of new user account.
         /// </summary>
         /// <param name="payload">JSON object with token from user registration email</param>
-        /// <returns>Returns a DetailedUserDTO for the confirmed account</returns>
+        /// <returns>Returns NoContent when the account was properly confirmed</returns>
         [AllowAnonymous]
         [HttpPost("v1/[controller]s/confirm-registration")]
-        public async Task<ActionResult<DetailedUserDTO>> ConfirmUserRegistration(
-            [FromBody] AccountActivationRequestDTO payload)
+        public async Task<ActionResult> ConfirmUserRegistration([FromBody] AccountActivationRequestDTO payload)
         {
-            return await _userService.ConfirmUserRegistrationAsync(payload.token);
+            await _userService.ConfirmUserRegistrationAsync(payload.token);
+            return NoContent();
         }
 
         /// <summary>

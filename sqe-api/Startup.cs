@@ -151,7 +151,23 @@ namespace SQE.SqeApi.Server
             });
             
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-            services.AddSignalR();
+            
+            // Add a Redis backplane if we need to scale horizontally.
+            // You must set sticky sessions in the load balancer.
+            // Remember that the docs warn to only use a Redis backplane in the same network as the SignalR Hubs,
+            // otherwise you may experience latency issues.
+            if (appSettings.UseRedis == "true")
+            {
+                var redisHost = Configuration.GetConnectionString("RedisHost") ?? "localhost";
+                var redisPort = Configuration.GetConnectionString("RedisPort") ?? "6379";
+                var redisPassword = Configuration.GetConnectionString("RedisPassword") ?? "sqesecret";
+                var redisConn = $"{redisHost}:{redisPort},password={redisPassword},ssl=False,abortConnect=False";
+                services.AddSignalR().AddRedis(redisConn);
+            }
+            else
+            {
+                services.AddSignalR();
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

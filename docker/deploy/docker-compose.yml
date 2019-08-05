@@ -47,6 +47,12 @@ services:
             
             ## Partner website settings (website that calls the user registration functions)
             #- WEBSITE_HOST=
+            
+            ## Redis SignalR backplane settings for horizontal scaling of the realtime API (disabled by default)
+            #- USE_REDIS=
+            #- REDIS_HOST=
+            #- REDIS_PORT=
+            #- REDIS_PASSWORD=
               
             ## Dotnet telemetry optout
             - DOTNET_CLI_TELEMETRY_OPTOUT=1

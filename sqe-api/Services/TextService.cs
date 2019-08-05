@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MailKit;
+using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.DataAccess;
 using SQE.SqeApi.DataAccess.Helpers;
 using SQE.SqeApi.DataAccess.Models;
 using SQE.SqeApi.Server.DTOs;
+using SQE.SqeApi.Server.Hubs;
 
 namespace SQE.SqeApi.Server.Services
 {
@@ -15,17 +17,20 @@ namespace SQE.SqeApi.Server.Services
         Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo user, uint fragmentId);
         Task<LineDataListDTO> GetLineIdsAsync(UserInfo user, uint fragmentId);
         Task<TextFragmentDataListDTO> GetFragmentDataAsync(UserInfo user);
-        Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user, CreateTextFragmentDTO createFragment);
+        Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user, CreateTextFragmentDTO createFragment, 
+            string clientId = null);
     }
     public class TextService : ITextService
         {
             private readonly ITextRepository _textRepo;
             private readonly IUserRepository _userRepo;
+            private readonly IHubContext<MainHub> _hubContext;
         
-            public TextService(ITextRepository textRepo, IUserRepository userRepo)
+            public TextService(ITextRepository textRepo, IUserRepository userRepo, IHubContext<MainHub> hubContext)
             {
                 _textRepo = textRepo;
                 _userRepo = userRepo;
+                _hubContext = hubContext;
             }
             
             public async Task<LineTextDTO> GetLineByIdAsync(UserInfo user, uint lineId)
@@ -60,11 +65,16 @@ namespace SQE.SqeApi.Server.Services
                     );
             }
 
-            public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user, CreateTextFragmentDTO createFragment)
+            public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user, 
+                CreateTextFragmentDTO createFragment, string clientId = null)
             {
                 var newFragment = await _textRepo.CreateTextFragmentAsync(user, createFragment.name, 
                         createFragment.previousTextFragmentId, createFragment.nextTextFragmentId);
-                return new TextFragmentDataDTO(newFragment.TextFragmentId, newFragment.TextFragmentName);
+                var newTextFragmentData =
+                    new TextFragmentDataDTO(newFragment.TextFragmentId, newFragment.TextFragmentName);
+                await _hubContext.Clients.GroupExcept(user.editionId.ToString(), clientId)
+                    .SendAsync("createTextFragment", newTextFragmentData);
+                return newTextFragmentData;
             }
 
             private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)

@@ -45,6 +45,7 @@ namespace SQE.SqeApi.DataAccess.Models
         private bool? _editionLocked;
         private bool? _mayWrite;
         private bool? _mayLock;
+        private bool? _mayRead;
         private bool? _isAdmin;
 
         public UserInfo(uint? userId, uint? editionId, IUserRepository userRepository)
@@ -108,6 +109,15 @@ namespace SQE.SqeApi.DataAccess.Models
             return _mayLock ?? false;
         }
         
+        public async Task<bool> MayRead()
+        {
+            if (!_mayRead.HasValue)
+            {
+                await SetPermissions();
+            }
+            return _mayRead ?? false;
+        }
+        
         public async Task<bool> IsAdmin()
         {
             if (!_isAdmin.HasValue)
@@ -126,6 +136,7 @@ namespace SQE.SqeApi.DataAccess.Models
                 _mayWrite = permissions.MayWrite && !permissions.Locked;
                 _editionLocked = permissions.Locked;
                 _mayLock = permissions.MayLock;
+                _mayRead = permissions.MayRead;
                 _isAdmin = permissions.IsAdmin;
                 _editionEditorId = permissions.EditionEditionEditorId;
                 completed = true;

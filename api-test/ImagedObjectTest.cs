@@ -80,7 +80,9 @@ namespace SQE.ApiTest
             var foundArtefact = false;
             foreach (var io in msg.imagedObjects)
             {
-                if (io.artefacts != null && string.IsNullOrEmpty(io.artefacts.First().mask.mask))
+                if (io.artefacts.Any() && 
+                    io.artefacts.First().mask != null && 
+                    string.IsNullOrEmpty(io.artefacts.First().mask.mask))
                 {
                     foundArtefact = true;
                     break;
