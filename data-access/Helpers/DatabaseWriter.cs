@@ -39,13 +39,13 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="T:SQE.SqeHttpApi.DataAccess.Helpers.MutationRequest"/> class.
         /// </summary>
-        /// <param Name="action">Set the mutate to Create, Update, or Delete.
+        /// <param name="action">Set the mutate to Create, Update, or Delete.
         /// For Update or Delete, the id for the record being updated or deleted must be passed in tablePkId.</param>
-        /// <param Name="parameters">These are the parameters for the columns that will be inserted/updated in the SQL query.
+        /// <param name="parameters">These are the parameters for the columns that will be inserted/updated in the SQL query.
         /// The parameter names must start with @ and use the column Name exactly as it is written in the database (e.g., `@scroll_id`).
         /// For Delete actions this should be empty.</param>
-        /// <param Name="tableName">Name of the table you are altering.</param>
-        /// <param Name="tablePkId">Id of the record being updated or deleted.  This will be null with an Insert action.</param>
+        /// <param name="tableName">Name of the table you are altering.</param>
+        /// <param name="tablePkId">Id of the record being updated or deleted.  This will be null with an Insert action.</param>
         public MutationRequest(MutateType action, DynamicParameters parameters, string tableName, uint? tablePkId = null)
         {
             Action = action;
@@ -101,9 +101,9 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <summary>
         /// Initializes a new instance of the <see cref="T:SQE.SqeHttpApi.DataAccess.Helpers.AlteredRecord"/> class.
         /// </summary>
-        /// <param Name="tableName">Name of the table that was altered.</param>
-        /// <param Name="oldId">Id of the record that was altered. Only present with update/delete.</param>
-        /// <param Name="newId">Id of the new record that was created. Only present with update/create.</param>
+        /// <param name="tableName">Name of the table that was altered.</param>
+        /// <param name="oldId">Id of the record that was altered. Only present with update/delete.</param>
+        /// <param name="newId">Id of the new record that was created. Only present with update/create.</param>
         public AlteredRecord(string tableName, uint? oldId, uint? newId)
         {
             TableName = tableName;
@@ -136,25 +136,26 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// </summary>
         /// <returns>A list of AlteredRecord objects containing the details of each mutation.
         /// The order of the returned list or results matches the order of the list of mutation requests</returns>
-        /// <param Name="user"></param>
-        /// <param Name="mutationRequests">List of mutation requests.</param>
+        /// <param name="user"></param>
+        /// <param name="mutationRequests">List of mutation requests.</param>
         public async Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
             List<MutationRequest> mutationRequests)
         {
+            // Check if the edition is locked
+            if ((await user.EditionLocked()))
+                throw new StandardErrors.LockedData(user);
+            
+            // Check the permissions and throw if user has no rights to alter this edition
+            if (!(await user.MayWrite()) && !(await user.EditionEditorId()).HasValue)
+                throw new StandardErrors.NoWritePermissions(user);
+            
             var alteredRecords = new List<AlteredRecord>();
             // Grab a transaction scope, we roll back all changes if any transactions fail
             // I could limit the transaction scope to each individual mutation request,
             // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
-            using (var transactionScope = new TransactionScope(
-                TransactionScopeOption.Required,
-                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }
-                )
-            )
+            using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
-                // Check the permissions and throw if user has no rights to alter this scrollVersion
-                if (!(await user.MayWrite()) && !(await user.EditionEditorId()).HasValue)
-                    throw new StandardErrors.NoWritePermissions(user);
                 foreach (var mutationRequest in mutationRequests)
                 {
                     // Set the editionId for the mutation.
@@ -202,8 +203,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// Insert record into table.  This takes care of writing the new record (if necessary) and makes the necessary
         /// changes to the owner tables.  It also records the action in the database.
         /// </summary>
-        /// <param Name="connection">An IDbConnection belonging to the current transaction.</param>
-        /// <param Name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="connection">An IDbConnection belonging to the current transaction.</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
         /// <returns>The alteredRecord object to be added to the request response.</returns>
         private static async Task<AlteredRecord> InsertAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
@@ -224,8 +225,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// Delete record.  This takes care of deleting the record and by making the necessary
         /// changes to the owner table.  It also records the action in the database.
         /// </summary>
-        /// <param Name="connection">An IDbConnection belonging to the current transaction</param>
-        /// <param Name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
         /// <returns>The alteredRecord object to be added to the request response.</returns>
         private static async Task<AlteredRecord> DeleteAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
@@ -243,8 +244,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// This inserts the requested data into its table. If a record with the same data already exists, then the
         /// Id of that record is used in place of creating a duplicate record.
         /// </summary>
-        /// <param Name="connection">An IDbConnection belonging to the current transaction</param>
-        /// <param Name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
         /// <returns>Returns the Id of the newly inserted record. If a record with the same data already existed,
         /// then the Id of that record is returned.</returns>
         private static async Task<uint> InsertOwnedTableAsync(IDbConnection connection, MutationRequest mutationRequest)
@@ -295,9 +296,9 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <summary>
         /// Creates an entry in the owner table linking the editionId to the record with the inserted data.
         /// </summary>
-        /// <param Name="connection">An IDbConnection belonging to the current transaction</param>
-        /// <param Name="mutationRequest">A mutation request object with all the necessary data.</param>
-        /// <param Name="insertId">The primary key Id of the record that was just inserted.</param>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="insertId">The primary key Id of the record that was just inserted.</param>
         /// <returns></returns>
         private static async Task InsertOwnerTableAsync(IDbConnection connection, MutationRequest mutationRequest,  uint insertId)
         {
@@ -316,8 +317,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <summary>
         /// Delete the entry in the owner table that links a particular record to a specific editionId
         /// </summary>
-        /// <param Name="connection">An IDbConnection belonging to the current transaction</param>
-        /// <param Name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
         /// <returns></returns>
         private static async Task DeleteOwnerTableAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
@@ -337,7 +338,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <summary>
         /// Convenience function to get the last insert Id. Throws on error.
         /// </summary>
-        /// <param Name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
         /// <returns>Returns the Id of the last inserted record.</returns>
         private static async Task<uint> LastInsertIdAsync(IDbConnection connection)
         {
@@ -348,8 +349,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <summary>
         /// Creates an entry in the main_action table for the current mutation request.
         /// </summary>
-        /// <param Name="connection">An IDbConnection belonging to the current transaction</param>
-        /// <param Name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
         /// <returns></returns>
         private static async Task AddMainActionAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
@@ -367,9 +368,9 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
         /// <summary>
         /// Creates and entry in the single_action table to record the mutation.
         /// </summary>
-        /// <param Name="connection">An IDbConnection belonging to the current transaction</param>
-        /// <param Name="mutationRequest">A mutation request object with all the necessary data.</param>
-        /// <param Name="action"></param>
+        /// <param name="connection">An IDbConnection belonging to the current transaction</param>
+        /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+        /// <param name="action"></param>
         /// <returns></returns>
         private static async Task AddSingleActionAsync(IDbConnection connection, MutationRequest mutationRequest, SingleAction action)
         {

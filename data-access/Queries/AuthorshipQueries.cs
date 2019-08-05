@@ -13,7 +13,7 @@ FROM single_action
 JOIN main_action USING(main_action_id)
 JOIN scroll_version USING(scroll_version_id)
 JOIN user USING(user_id)
-WHERE single_action.table = ""@TableName"" AND single_action.action = ""add""
+WHERE single_action.table = @TableName AND single_action.action = 'add'
     AND (@IdList)
 GROUP BY single_action.id_in_table
     HAVING min(single_action.single_action_id)"; // Presumably a lower single_action_id is equivalent to an earlier date main_action. object this[int index]
@@ -22,8 +22,8 @@ GROUP BY single_action.id_in_table
             /// This returns a query string that provides the original author for a list of
             /// Id's in a user editable table.
             /// </summary>
-            /// <param Name="tableName">The table containing the Id's being audited.</param>
-            /// <param Name="idList">The list of Id's to audit</param>
+            /// <param name="tableName">The table containing the Id's being audited.</param>
+            /// <param name="idList">The list of Id's to audit</param>
             /// <returns>A query string to be run with the database connector.</returns>
             public string GetQuery(string tableName, List<uint> idList)
             {

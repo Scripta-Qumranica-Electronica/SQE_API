@@ -49,9 +49,11 @@ SELECT edition_editor_id AS EditionEditionEditorId,
        may_write AS MayWrite, 
        may_lock AS MayLock, 
        may_read AS MayRead, 
-       is_admin AS IsAdmin
+       is_admin AS IsAdmin,
+       locked AS Locked
 FROM edition_editor
-WHERE edition_id = @EditionId AND user_id = @UserId";
+JOIN edition ON edition.edition_id = @EditionId
+WHERE edition_editor.edition_id = @EditionId AND user_id = @UserId";
     }
 
     /// <summary>
@@ -104,6 +106,18 @@ WHERE user_email_token.token = @Token
 ";
     }
 
+    internal static class GetTokensQuery
+    {
+        public const string GetQuery = @"
+SELECT all_tokens.token AS token
+FROM SQE.user_email_token
+JOIN SQE.user_email_token AS all_tokens 
+  ON all_tokens.user_id = SQE.user_email_token.user_id
+  AND all_tokens.type = @Type
+WHERE user_email_token.token = @Token
+";
+    }
+
     /// <summary>
     /// Creates an entry in the user_email_token table for @UserId with the token @Token for the request type @Type
     /// (CreateUserEmailTokenQuery.Activate or CreateUserEmailTokenQuery.ResetPassword).
@@ -124,6 +138,7 @@ ON DUPLICATE KEY UPDATE `type` = @Type, date_created = NOW()";
 
         public const string Activate = "ACTIVATE_ACCOUNT";
         public const string ResetPassword = "RESET_PASSWORD";
+        public const string DeleteEdition = "DELETE_EDITION";
     }
 
     /// <summary>
@@ -135,7 +150,7 @@ ON DUPLICATE KEY UPDATE `type` = @Type, date_created = NOW()";
 DELETE FROM user_email_token WHERE user_id = @UserId";
         
         public const string GetTokenQuery = @"
-DELETE FROM user_email_token WHERE token = @Token";
+DELETE FROM user_email_token WHERE token in @Tokens AND type = @Type";
     }
 
     /// <summary>

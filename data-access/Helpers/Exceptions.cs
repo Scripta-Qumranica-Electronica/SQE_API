@@ -212,6 +212,15 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
             }
         }
         
+        public class InputDataRuleViolation : BadInputException
+        {
+            private const string customMsg = "The request is not allowed because it violates the rule: $Rule.";
+            public InputDataRuleViolation(string rule)
+            {
+                this.Error = customMsg.Replace("$Rule", rule);
+            }
+        }
+        
         public class ConflictingData : ConflictingInputException
         {
             private const string customMsg = "The submitted $DataType conflicts with data already existing in the system.";

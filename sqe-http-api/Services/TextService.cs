@@ -114,12 +114,13 @@ namespace SQE.SqeHttpApi.Server.Services
                                                 a => new SignInterpretationDTO()
                                                 {
                                                     signInterpretationId = a.signInterpretationId,
-                                                    signInterpretation = a.signInterpretation,
+                                                    character = a.character,
                                                     
                                                     attributes = a.attributes.Select(
                                                         b => new InterpretationAttributeDTO()
                                                         {
                                                             interpretationAttributeId = b.interpretationAttributeId,
+                                                            sequence = b.sequence,
                                                             attributeValueId = b.attributeValueId,
                                                             editorId = b.signInterpretationAttributeAuthor,
                                                             value = b.value
@@ -135,16 +136,17 @@ namespace SQE.SqeHttpApi.Server.Services
                                                             position = b.Position,
                                                             exceptional = b.Exceptional,
                                                             valuesSet = b.ValuesSet
-                                                        }).ToList()
+                                                        }).ToList(),
                                                     
+                                                    nextSignInterpretations = a.nextSignInterpretations.Select(
+                                                        b => new NextSignInterpretationDTO()
+                                                        {
+                                                        nextSignInterpretationId = b.nextSignInterpretationId,
+                                                        editorId = b.signSequenceAuthor
+                                                    }).ToList()
                                                 }).ToList(),
                                             
-                                            nextSignInterpretations = z.nextSignInterpretations.Select(
-                                                b => new NextSignInterpretationDTO()
-                                                {
-                                                    nextSignInterpretationId = b.nextSignInterpretationId,
-                                                    editorId = b.signSequenceAuthor
-                                                }).ToList()
+                                            
                                             
                                         }).ToList()
 
@@ -187,12 +189,13 @@ namespace SQE.SqeHttpApi.Server.Services
                                 a => new SignInterpretationDTO()
                                 {
                                     signInterpretationId = a.signInterpretationId,
-                                    signInterpretation = a.signInterpretation,
+                                    character = a.character,
                                     
                                     attributes = a.attributes.Select(
                                         b => new InterpretationAttributeDTO()
                                         {
                                             interpretationAttributeId = b.interpretationAttributeId,
+                                            sequence = b.sequence,
                                             attributeValueId = b.attributeValueId,
                                             editorId = b.signInterpretationAttributeAuthor,
                                             value = b.value
@@ -208,16 +211,18 @@ namespace SQE.SqeHttpApi.Server.Services
                                             position = b.Position,
                                             exceptional = b.Exceptional,
                                             valuesSet = b.ValuesSet
-                                        }).ToList()
+                                        }).ToList(),
+                                    
+                                    nextSignInterpretations = a.nextSignInterpretations.Select(
+                                        b => new NextSignInterpretationDTO()
+                                        {
+                                            nextSignInterpretationId = b.nextSignInterpretationId,
+                                            editorId = b.signSequenceAuthor
+                                        }).ToList(),
                                     
                                 }).ToList(),
                             
-                            nextSignInterpretations = z.nextSignInterpretations.Select(
-                                b => new NextSignInterpretationDTO()
-                                {
-                                    nextSignInterpretationId = b.nextSignInterpretationId,
-                                    editorId = b.signSequenceAuthor
-                                }).ToList(),
+                            
                             
                         }).ToList()
                 };

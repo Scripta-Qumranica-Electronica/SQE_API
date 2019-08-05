@@ -144,6 +144,8 @@ namespace SQE.ApiTest
                 {
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
+
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -178,6 +180,8 @@ namespace SQE.ApiTest
                         i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
                         ]);
                 }
+                
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -212,6 +216,8 @@ namespace SQE.ApiTest
                         i > updatedTextFragments.textFragments.Count - 3 ? i + 1 : i // skip the second to last, which is the new text fragment
                         ]);
                 }
+                
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -253,6 +259,8 @@ namespace SQE.ApiTest
                         i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
                     ]);
                 }
+                
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
 
             #endregion should succeed
@@ -271,6 +279,8 @@ namespace SQE.ApiTest
 
                 // Assert
                 Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -297,6 +307,8 @@ namespace SQE.ApiTest
                 {
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
+                
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -323,6 +335,8 @@ namespace SQE.ApiTest
                 {
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
+                
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -355,6 +369,8 @@ namespace SQE.ApiTest
                 {
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
                 }
+                
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             [Fact]
@@ -392,6 +408,8 @@ namespace SQE.ApiTest
                 Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
                 var secondUpdateTextFragments = await _getEditionTextFragments(editionId, await HttpRequest.GetJWTAsync(_client)); // Get the updated list of text fragments in the edition
                 updatedTextFragments.textFragments.ShouldDeepEqual(secondUpdateTextFragments.textFragments);
+                
+                await EditionHelpers.DeleteEdition(_client, editionId, true);
             }
             
             #endregion should fail
@@ -430,7 +448,7 @@ namespace SQE.ApiTest
         private async Task<uint> _getClonedEdition()
         {
             var (editionId, _) = await _getTextRandomFragment(); // Get an edition with text fragments
-            return await HttpRequest.CreateNewEdition(_client, editionId); // Clone it
+            return await EditionHelpers.CreateCopyOfEdition(_client, editionId); // Clone it
         }
 
         private async Task<TextFragmentDataListDTO> _getEditionTextFragments(uint editionId, string jwt = null)
@@ -481,7 +499,7 @@ namespace SQE.ApiTest
             Assert.NotEmpty(msg.editors);
             Assert.NotEqual((uint)0, msg.lineId);
             Assert.NotEmpty(msg.signs);
-            Assert.NotEqual((uint)0, msg.signs.First().nextSignInterpretations.First().nextSignInterpretationId);
+            Assert.NotEqual((uint)0, msg.signs.First().signInterpretations.First().nextSignInterpretations.First().nextSignInterpretationId);
             Assert.NotEmpty(msg.signs.First().signInterpretations);
             Assert.NotEqual((uint)0, msg.signs.First().signInterpretations.First().signInterpretationId);
             Assert.NotEmpty(msg.signs.First().signInterpretations.First().attributes);
@@ -490,12 +508,6 @@ namespace SQE.ApiTest
             var editorIds = new List<uint> {msg.editorId};
             foreach (var sign in msg.signs)
             {
-                foreach (var nexSign in sign.nextSignInterpretations)
-                {
-                    if (!msg.editors.ContainsKey(nexSign.editorId))
-                        editorIds.Add(nexSign.editorId);
-                }
-
                 foreach (var signInterpretation in sign.signInterpretations)
                 {
                     foreach (var attr in signInterpretation.attributes)
@@ -508,6 +520,12 @@ namespace SQE.ApiTest
                     {
                         if (!msg.editors.ContainsKey(roi.editorId))
                             editorIds.Add(roi.editorId);
+                    }
+                    
+                    foreach (var nexSign in signInterpretation.nextSignInterpretations)
+                    {
+                        if (!msg.editors.ContainsKey(nexSign.editorId))
+                            editorIds.Add(nexSign.editorId);
                     }
                 }
             }
@@ -529,7 +547,7 @@ namespace SQE.ApiTest
             Assert.NotEmpty(msg.textFragments.First().lines);
             Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().lineId);
             Assert.NotEmpty(msg.textFragments.First().lines.First().signs);
-            Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().nextSignInterpretations.First().nextSignInterpretationId);
+            Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signInterpretations.First().nextSignInterpretations.First().nextSignInterpretationId);
             Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signInterpretations);
             Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().signs.First().signInterpretations.First().signInterpretationId);
             Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signInterpretations.First().attributes);
@@ -548,12 +566,6 @@ namespace SQE.ApiTest
                     
                     foreach (var sign in line.signs)
                     {
-                        foreach (var nexSign in sign.nextSignInterpretations)
-                        {
-                            if (!msg.editors.ContainsKey(nexSign.editorId))
-                                editorIds.Add(nexSign.editorId);
-                        }
-
                         foreach (var signInterpretation in sign.signInterpretations)
                         {
                             foreach (var attr in signInterpretation.attributes)
@@ -566,6 +578,12 @@ namespace SQE.ApiTest
                             {
                                 if (!msg.editors.ContainsKey(roi.editorId))
                                     editorIds.Add(roi.editorId);
+                            }
+                            
+                            foreach (var nexSign in signInterpretation.nextSignInterpretations)
+                            {
+                                if (!msg.editors.ContainsKey(nexSign.editorId))
+                                    editorIds.Add(nexSign.editorId);
                             }
                         }
                     }

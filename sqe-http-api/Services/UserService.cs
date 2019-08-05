@@ -393,7 +393,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// HTTP request.  The UserInfo object can fetch the permissions if requested, and once
         /// the permissions have been requested, they are "cached" for the life of the object.
         /// </summary>
-        /// <param Name="editionId">Optional id of the edition the user is requesting to work with</param>
+        /// <param name="editionId">Optional id of the edition the user is requesting to work with</param>
         /// <returns></returns>
         public UserInfo GetCurrentUserObject(uint? editionId = null)
         {

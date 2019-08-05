@@ -62,7 +62,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
-            var newEdition = await HttpRequest.CreateNewEdition(_client, allArtefacts.First().editionId); // Clone it
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, allArtefacts.First().editionId); // Clone it
 
             const string masterImageSQL = "SELECT sqe_image_id FROM SQE_image WHERE type = 0 ORDER BY RAND() LIMIT 1";
             var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
@@ -152,7 +152,7 @@ namespace SQE.ApiTest
             // Arrange
             var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
             var artefact = allArtefacts.First();
-            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
             
             // Act
             var (response, writtenArtefact) = await HttpRequest.SendAsync<string, string>(_client, HttpMethod.Delete,
@@ -168,6 +168,8 @@ namespace SQE.ApiTest
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}", null, 
                 await HttpRequest.GetJWTAsync(_client));
             Assert.Equal(HttpStatusCode.NotFound, delResponse.StatusCode);
+
+            await EditionHelpers.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -180,7 +182,7 @@ namespace SQE.ApiTest
             // Arrange
             var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
             var artefact = allArtefacts.First();
-            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
             var newArtefactName = _faker.Random.Words(5);
             var newArtefactPosition = RandomPosition();
             const string newArtefactShape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
@@ -251,6 +253,8 @@ namespace SQE.ApiTest
             Assert.Equal(artefact.mask.mask, updatedAllArtefact.mask.mask);
             Assert.Equal(otherTransform, updatedAllArtefact.mask.transformMatrix);
             Assert.Equal(artefact.name, updatedAllArtefact.name);
+
+            await EditionHelpers.DeleteEdition(_client, newEdition, true);
         }
 
         #endregion Access artefacts (should succeed)
@@ -265,7 +269,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
-            var newEdition = await HttpRequest.CreateNewEdition(_client, allArtefacts.First().editionId); // Clone it
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, allArtefacts.First().editionId); // Clone it
 
             const string masterImageSQL = "SELECT sqe_image_id FROM SQE_image WHERE type = 0 ORDER BY RAND() LIMIT 1";
             var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
@@ -286,6 +290,8 @@ namespace SQE.ApiTest
             
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+            await EditionHelpers.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -298,7 +304,7 @@ namespace SQE.ApiTest
             // Arrange
             var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
             var artefact = allArtefacts.First();
-            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
             
             // Act
             var (response, _) = await HttpRequest.SendAsync<string, string>(_client, HttpMethod.Delete,
@@ -306,6 +312,8 @@ namespace SQE.ApiTest
             
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+            await EditionHelpers.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -318,7 +326,7 @@ namespace SQE.ApiTest
             // Arrange
             var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
             var artefact = allArtefacts.First();
-            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
             var newArtefactName = _faker.Random.Words(5);
             
             // Act (update name)
@@ -332,6 +340,8 @@ namespace SQE.ApiTest
             
             // Assert (update name)
             Assert.Equal(HttpStatusCode.Unauthorized, nameResponse.StatusCode);
+
+            await EditionHelpers.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -344,7 +354,7 @@ namespace SQE.ApiTest
             // Arrange
             var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
             var artefact = allArtefacts.First();
-            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
             const string newArtefactShape = "POLYGON(0 0,0 200,200 200,0 200,0 0),5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
             
             // Act (update name)
@@ -359,6 +369,8 @@ namespace SQE.ApiTest
             
             // Assert (update name)
             Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
+
+            await EditionHelpers.DeleteEdition(_client, newEdition, true);
         }
         
         /// <summary>
@@ -371,7 +383,7 @@ namespace SQE.ApiTest
             // Arrange
             var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
             var artefact = allArtefacts.First();
-            var newEdition = await HttpRequest.CreateNewEdition(_client, artefact.editionId); // Clone it
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
             var newArtefactMatrix = RandomPosition(properlyFormatted: false);
             
             // Act (update name)
@@ -386,6 +398,8 @@ namespace SQE.ApiTest
             
             // Assert (update name)
             Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
+
+            await EditionHelpers.DeleteEdition(_client, newEdition, true);
         }
         #endregion Access artefacts (should fail)
         

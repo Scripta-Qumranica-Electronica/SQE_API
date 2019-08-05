@@ -4,8 +4,11 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper;
 using Newtonsoft.Json;
 using SQE.SqeHttpApi.Server.DTOs;
+using Xunit;
+using Bogus;
 
 namespace SQE.ApiTest.Helpers
 { 
@@ -64,31 +67,22 @@ namespace SQE.ApiTest.Helpers
             return (response: response, msg: parsedClass);
         }
         
-        public static async Task<string> GetJWTAsync(HttpClient client)
+        /// <summary>
+        /// Returns the JWT for a user account. If no username/password is provided
+        /// this will return a JWT for the "test" account.
+        /// </summary>
+        /// <param name="client">Http Client</param>
+        /// <param name="username">email address of the user</param>
+        /// <param name="pwd">the user's password</param>
+        /// <returns>A valid JWT</returns>
+        public static async Task<string> GetJWTAsync(HttpClient client, string username = null, string pwd = null)
         {
-            const string name = "test";
-            const string password = "asdf";
+            var name = username ?? "test";
+            var password = pwd ?? "asdf";
             var login = new LoginRequestDTO(){ email = name, password = password};
             var (response, msg) = await SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(client, HttpMethod.Post, "/v1/users/login", login);
             response.EnsureSuccessStatusCode();
             return msg.token;
-        }
-
-        public static async Task<uint> CreateNewEdition(HttpClient client, uint editionId = 1)
-        {
-            var newScrollRequest = new EditionUpdateRequestDTO("test-name", null, null);
-            var (response, msg) = await SendAsync<EditionUpdateRequestDTO, EditionDTO>(client, HttpMethod.Post, $"/v1/editions/{editionId}", newScrollRequest, await GetJWTAsync(client));
-            response.EnsureSuccessStatusCode();
-            return msg.id;
-        }
-        
-        // TODO: the controller needs to be created first.
-        public static async Task<uint> DeleteEdition(HttpClient client, uint editionId)
-        {
-            var newScrollRequest = new EditionUpdateRequestDTO("test-name", null, null);
-            var (response, msg) = await SendAsync<EditionUpdateRequestDTO, EditionDTO>(client, HttpMethod.Post, $"/v1/editions/{editionId}", newScrollRequest, await GetJWTAsync(client));
-            response.EnsureSuccessStatusCode();
-            return msg.id;
         }
     }
 }

@@ -227,14 +227,12 @@ namespace SQE.SqeHttpApi.DataAccess
             var res = string.Join("", binaryMask);
             var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
            
-            using (var transactionScope = new TransactionScope(
-                TransactionScopeOption.Required,
-                new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }))
+            using (var transactionScope = new TransactionScope())
             {
                 using (var connection = OpenConnection())
                 {
                     // Create a new edition
-                    await connection.ExecuteAsync("INSERT INTO artefact () VALUES()");
+                    await connection.ExecuteAsync("INSERT INTO artefact (artefact_id) VALUES(NULL)");
                         
                     var artefactId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (artefactId == 0)
@@ -252,7 +250,6 @@ namespace SQE.SqeHttpApi.DataAccess
                     await newName;
                     //Cleanup
                     transactionScope.Complete();
-                    connection.Close();
                         
                     return artefactId;
                 }

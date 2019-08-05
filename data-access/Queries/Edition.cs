@@ -12,23 +12,31 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
         ed2.collaborators, 
         GROUP_CONCAT(DISTINCT CONCAT(user.forename, ' ', user.surname)
         SEPARATOR ', ')) AS Collaborators,
-    edition_editor.is_admin AS Admin,
+    current_editor.is_admin AS Admin,
     manuscript_data.name AS Name, 
     im.thumbnail_url AS Thumbnail, 
     ed2.locked AS Locked,
     ed2.manuscript_id AS ScrollId,
-    edition_editor.may_lock AS MayLock,
-    edition_editor.may_write AS MayWrite, 
-    edition_editor.may_read AS MayRead,
+    current_editor.may_lock AS MayLock,
+    current_editor.may_write AS MayWrite, 
+    current_editor.may_read AS MayRead,
     last.last_edit AS LastEdit, 
-    user.user_id AS UserId, 
-    user.email AS Email 
+    current_editor.user_id AS UserId, 
+    current_editor_details.email AS Email 
 FROM edition AS ed1
-JOIN edition AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
+JOIN (SELECT edition.edition_id, edition.copyright_holder, edition.collaborators, edition.locked, edition.manuscript_id
+      FROM edition
+      JOIN edition_editor USING(edition_id)
+      WHERE edition_editor.user_id = 1 $UserFilter
+        AND edition_editor.may_read = 1
+      GROUP BY edition.edition_id) AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
 JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
+JOIN user ON user.user_id = edition_editor.user_id
+LEFT JOIN edition_editor AS current_editor ON current_editor.edition_id = ed2.edition_id
+    $CurrentEditorFilter
+LEFT JOIN user AS current_editor_details ON current_editor_details.user_id = current_editor.user_id
 JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
 JOIN manuscript_data USING(manuscript_data_id)
-JOIN user ON user.user_id = edition_editor.user_id
 LEFT JOIN (SELECT edition_id, MAX(time) AS last_edit 
            FROM edition_editor
            JOIN main_action USING(edition_id) 
@@ -47,18 +55,15 @@ GROUP BY ed2.edition_id
 
         public static string GetQuery(bool limitUser, bool limitScrolls)
         {
-            // Build the WHERE clause
-            var where = new StringBuilder(" WHERE (user.user_id = 1");
-            if (limitUser)
-            {
-                where.Append(" OR user.user_id = @UserId");
-            }
-            where.Append(")");
+            // Build the WHERE clauses
+            var where = limitScrolls ? "WHERE ed1.edition_id = @EditionId" : "";
+            var userFilter = limitUser ? "OR edition_editor.user_id = @UserId" : "";
+            var currentEditorFilter = limitUser ? "AND current_editor.user_id = @UserId" : "";
+            
 
-            if (limitScrolls)
-                where.Append(" AND ed1.edition_id = @EditionId");
-
-            return _baseQuery.Replace("$Where", where.ToString());
+            return _baseQuery.Replace("$Where", where.ToString())
+                .Replace("$UserFilter", userFilter)
+                .Replace("$CurrentEditorFilter", currentEditorFilter);
         }
 
 
@@ -116,6 +121,7 @@ WHERE edition_id = @EditionId";
         }
     }
 
+    // TODO: probably delete this.
     internal static class ScrollVersionGroupLimitQuery
     {
         private const string DefaultLimit = " sv1.user_id = 1 ";
@@ -145,14 +151,57 @@ WHERE edition_id = @EditionId";
             LimitScrollVersionGroupToDefaultUser + " OR scroll_version.user_id = @UserId ";
     }
 
+    #region editor queries
+    
+    internal static class GetEditionEditorsWithPermissionsQuery
+    {
+        public const string GetQuery= @"
+SELECT SQE.user.email AS Email, edition_editor.may_read AS MayRead, edition_editor.may_write AS MayLock, 
+       edition_editor.may_lock AS MayLock, edition_editor.is_admin AS IsAdmin
+FROM SQE.edition_editor
+JOIN SQE.user USING(user_id)
+WHERE edition_editor.edition_id = @EditionId
+";
+    }
+
     internal static class CreateEditionEditorQuery
     {
         // You must add a parameter `@UserId`, `@EditionId`, `@MayLock` (0 = false, 1 = true),
         // and `@Admin` (0 = false, 1 = true) to use this.
         public const string GetQuery = @"
-            INSERT INTO edition_editor (user_id, edition_id, may_write, may_lock, is_admin) 
-            VALUES (@UserId, @EditionId, 1, @MayLock, @IsAdmin)";
+INSERT INTO edition_editor (user_id, edition_id, may_write, may_lock, is_admin) 
+VALUES (@UserId, @EditionId, 1, @MayLock, @IsAdmin)";
     }
+    
+    internal static class CreateDetailedEditionEditorQuery
+    {
+        // You must add a parameter `@UserId`, `@EditionId`, `@MayRead` (0 = false, 1 = true), `@MayWrite` (0 = false, 1 = true),
+        // `@MayLock` (0 = false, 1 = true), and `@Admin` (0 = false, 1 = true) to use this.
+        public const string GetQuery = @"
+INSERT INTO edition_editor (user_id, edition_id, may_read, may_write, may_lock, is_admin) 
+SELECT user_id, @EditionId, @MayRead, @MayWrite, @MayLock, @IsAdmin
+FROM SQE.user
+WHERE SQE.user.email = @Email
+";
+    }
+    
+    internal static class UpdateEditionEditorPermissionsQuery
+    {
+        // You must add a parameter `@UserId`, `@EditionId`, `@MayRead` (0 = false, 1 = true), `@MayWrite` (0 = false, 1 = true),
+        // `@MayLock` (0 = false, 1 = true), and `@Admin` (0 = false, 1 = true) to use this.
+        public const string GetQuery = @"
+UPDATE edition_editor
+JOIN user ON user.user_id = edition_editor.user_id 
+    AND user.email = @Email 
+SET may_read = @MayRead,
+    may_write = @MayWrite,
+    may_lock = @MayLock,
+    is_admin = @IsAdmin 
+WHERE edition_editor.edition_id = @EditionId
+";
+    }
+    
+    #endregion editor queries
     
     internal static class CopyEditionQuery
     {
@@ -184,5 +233,26 @@ UPDATE edition
 SET copyright_holder = COALESCE(@CopyrightHolder, copyright_holder), 
     collaborators = @Collaborators 
 WHERE edition_id = @EditionId";
+    }
+
+    /// <summary>
+    /// Delete all entries for a specific edition from the specified table.
+    /// We ensure here that the user requesting this is indeed an admin (even though that should also have been
+    /// done in API logic elsewhere).
+    /// </summary>
+    internal static class DeleteEditionFromTable
+    {
+        private const string _sql = @"
+DELETE $Table
+FROM $Table
+JOIN edition_editor ON edition_editor.edition_id = @EditionId 
+  AND edition_editor.user_id = @UserId
+WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
+";
+
+        public static string GetQuery(string table)
+        {
+            return _sql.Replace("$Table", table);
+        }
     }
 }

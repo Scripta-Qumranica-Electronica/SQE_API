@@ -31,8 +31,17 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class PermissionDTO
     {
-        public bool canWrite { get; set; }
-        public bool canAdmin { get; set; }
+        public bool mayWrite { get; set; }
+        public bool isAdmin { get; set; }
+    }
+
+    public class EditorRightsDTO : PermissionDTO
+    {
+        public string email { get; set; }
+        public bool? mayRead { get; set; }
+        public new bool? isAdmin { get; set; }
+        public bool? mayLock { get; set; }
+        public new bool? mayWrite { get; set; }
     }
     
     public class TextEditionDTO
@@ -49,6 +58,12 @@ namespace SQE.SqeHttpApi.Server.DTOs
     {
         public UserDTO user { get; set; }
         public PermissionDTO permission { get; set; }
+    }
+
+    public class DeleteTokenDTO
+    {
+        public uint editionId { get; set; }
+        public string token { get; set; }
     }
 
     #region Request DTO's

@@ -80,11 +80,7 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<TextFragmentData> CreateTextFragmentAsync(UserInfo user,
             string fragmentName, uint? previousFragmentId, uint? nextFragmentId)
         {
-            using (var transactionScope = new TransactionScope(
-                    TransactionScopeOption.Required,
-                    new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }
-                )
-            )
+            using (var transactionScope = new TransactionScope())
             {
                 // Get all text fragments in the edition for sorting operations later on
                 var editionTextFragments = await GetFragmentDataAsync(user);
@@ -193,7 +189,6 @@ namespace SQE.SqeHttpApi.DataAccess
                         {
                             lastLine = line;
                             lastTextFragment.lines.Add(line);
-    
                         }
     
                         if (sign.signId != lastSign?.signId)
@@ -205,7 +200,6 @@ namespace SQE.SqeHttpApi.DataAccess
                         if (nextSignInterpretation.nextSignInterpretationId != lastNextSignInterpretation?.nextSignInterpretationId)
                         {
                             lastNextSignInterpretation = nextSignInterpretation;
-                            lastSign.nextSignInterpretations.Add(nextSignInterpretation);
                         }
     
                         if (signInterpretation.signInterpretationId != lastChar?.signInterpretationId)
@@ -213,6 +207,8 @@ namespace SQE.SqeHttpApi.DataAccess
                             lastChar = signInterpretation;
                             lastSign.signInterpretations.Add(signInterpretation);
                         }
+                        
+                        lastChar.nextSignInterpretations.Add(nextSignInterpretation);
     
                         lastCharAttribute = charAttribute;
                         lastChar.attributes.Add(charAttribute);
