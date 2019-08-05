@@ -3,10 +3,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.Server.Helpers;
+using SQE.SqeApi.Server.Services;
 
 namespace SQE.SqeApi.Server.Controllers
 {
+    public enum Optional {images, masks};
+    
     [Authorize]
     [Route("v1")]
     [ApiController]
@@ -21,15 +23,6 @@ namespace SQE.SqeApi.Server.Controllers
             _userService = userService;
         }
         
-        private void ParseOptionals(List<string> optionals, out bool images, out bool masks)
-        {
-            images = masks = false;
-            if (optionals == null) 
-                return;
-            images = optionals.Contains("images");
-            masks = optionals.Contains("masks");
-        }
-        
         /// <summary>
         /// Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
@@ -41,8 +34,7 @@ namespace SQE.SqeApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
-            ParseOptionals(optional, out var images, out var masks);
-            return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, masks, images);
+            return await _artefactService.GetEditionArtefactListingsAsync(_userService.GetCurrentUserId(), editionId, optional);
         }
         
         /// <summary>
@@ -57,8 +49,7 @@ namespace SQE.SqeApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId, [FromQuery] List<string> optional)
         {
-            ParseOptionals(optional, out _, out var masks);
-            return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, masks);
+            return await _artefactService.GetEditionArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId, optional);
         }
         
         /// <summary>
@@ -100,8 +91,7 @@ namespace SQE.SqeApi.Server.Controllers
             [FromRoute] uint artefactId
         )
         {
-            await _artefactService.DeleteArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId);
-            return NoContent();
+            return await _artefactService.DeleteArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId);
         }
         
         /// <summary>

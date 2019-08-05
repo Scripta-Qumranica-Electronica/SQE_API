@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using SQE.SqeApi.DataAccess;
 using SQE.SqeApi.DataAccess.Helpers;
 using SQE.SqeApi.DataAccess.Models;
 using SQE.SqeApi.Server.DTOs;
+using SQE.SqeApi.Server.Helpers;
 
-namespace SQE.SqeApi.Server.Helpers
+namespace SQE.SqeApi.Server.Services
 {
     public interface IArtefactService
     {
-        Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask);
-        Task<ArtefactListDTO> GetEditionArtefactListingsAsync(uint? userId, uint editionId, bool withMask = false,
-            bool withImages = false);
+        Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, List<string> optional);
+        Task<ArtefactListDTO> GetEditionArtefactListingsAsync(uint? userId, uint editionId, List<string> optional);
 
         Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(uint? userId, uint editionId,
             bool withMask = false);
@@ -25,7 +26,7 @@ namespace SQE.SqeApi.Server.Helpers
         Task<ArtefactDTO> CreateArtefactAsync(UserInfo user, uint editionId, uint masterImageId, string mask = null,
             string name = null, string position = null);
 
-        Task DeleteArtefactAsync(UserInfo user, uint artefactId);
+        Task<NoContentResult> DeleteArtefactAsync(UserInfo user, uint artefactId);
     }
 
     public class ArtefactService : IArtefactService
@@ -37,8 +38,9 @@ namespace SQE.SqeApi.Server.Helpers
             _artefactRepository = artefactRepository;
         }
 
-        public async Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, bool withMask)
+        public async Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo user, uint artefactId, List<string> optional)
         {
+            ParseOptionals(optional, out _, out var withMask);
             if (!user.editionId.HasValue) 
                 return null;
             var artefact = await _artefactRepository.GetEditionArtefactAsync(user, artefactId, withMask);
@@ -46,8 +48,9 @@ namespace SQE.SqeApi.Server.Helpers
         }
 
         public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(uint? userId, uint editionId,
-            bool withMask = false, bool withImages = false)
+            List<string> optional)
         {
+            ParseOptionals(optional, out var withImages, out var withMask);
             ArtefactListDTO artefacts;
             if (withImages)
                 artefacts = await GetEditionArtefactListingsWithImagesAsync(userId, editionId, withMask);
@@ -96,7 +99,7 @@ namespace SQE.SqeApi.Server.Helpers
                 }  
             }
             
-            return await GetEditionArtefactAsync(user, artefactId, withMask);
+            return await GetEditionArtefactAsync(user, artefactId, new List<string>(){"masks"});
         }
         
         public async Task<ArtefactDTO> CreateArtefactAsync(UserInfo user, uint editionId, uint masterImageId, string mask = null,
@@ -110,15 +113,27 @@ namespace SQE.SqeApi.Server.Helpers
                 newArtefactId = await _artefactRepository.CreateNewArtefactAsync(user, editionId, masterImageId, 
                         mask, name, position);
             }
+            
+            var optional = mask != null ? new List<string>(){"masks"} : new List<string>();
 
             return newArtefactId != 0 
-                ? await GetEditionArtefactAsync(user, newArtefactId, mask != null)
+                ? await GetEditionArtefactAsync(user, newArtefactId, optional)
                 : null;
         }
 
-        public async Task DeleteArtefactAsync(UserInfo user, uint artefactId)
+        public async Task<NoContentResult> DeleteArtefactAsync(UserInfo user, uint artefactId)
         {
             await _artefactRepository.DeleteArtefactAsync(user, artefactId);
+            return new NoContentResult();
+        }
+        
+        private void ParseOptionals(List<string> optionals, out bool images, out bool masks)
+        {
+            images = masks = false;
+            if (optionals == null) 
+                return;
+            images = optionals.Contains("images");
+            masks = optionals.Contains("masks");
         }
     }
 }

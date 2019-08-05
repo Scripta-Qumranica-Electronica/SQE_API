@@ -8,7 +8,7 @@ using SQE.SqeApi.DataAccess.Models;
 using SQE.SqeApi.Server.DTOs;
 
 
-namespace SQE.SqeApi.Server.Helpers
+namespace SQE.SqeApi.Server.Services
 {
     public interface IEditionService
     {

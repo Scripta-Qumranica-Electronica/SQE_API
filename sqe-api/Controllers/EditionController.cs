@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.Server.Helpers;
+using SQE.SqeApi.Server.Services;
 
 namespace SQE.SqeApi.Server.Controllers
 {

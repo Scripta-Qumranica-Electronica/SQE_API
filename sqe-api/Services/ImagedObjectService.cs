@@ -1,20 +1,21 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using SQE.SqeApi.DataAccess;
 using SQE.SqeApi.DataAccess.Helpers;
 using SQE.SqeApi.Server.DTOs;
+using SQE.SqeApi.Server.Helpers;
 
-namespace SQE.SqeApi.Server.Helpers
+namespace SQE.SqeApi.Server.Services
 {
     public interface IImagedObjectService
     {
-        Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId, bool artefacts = false,
-            bool masks = false);
+        Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId, List<string> optional = null);
         Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(uint? userId, uint editionId,
             bool withMasks = false);
         Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId,
-            bool withArtefacts = false, bool withMasks = false);
+            List<string> optional = null);
     }
 
     public class ImagedObjectService : IImagedObjectService
@@ -38,8 +39,9 @@ namespace SQE.SqeApi.Server.Helpers
 
         // TODO: Fix this and GetImagedObjectsWithArtefactsAsync up to be more DRY and efficient.
         public async Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId, uint editionId,
-            bool artefacts = false, bool masks = false)
+            List<string> optional = null)
         {
+            ParseOptionals(optional, out var artefacts, out var masks);
             if (artefacts)
                 return await GetImagedObjectsWithArtefactsAsync(userId, editionId, masks);
             
@@ -109,8 +111,9 @@ namespace SQE.SqeApi.Server.Helpers
         
         // TODO: Make this less wasteful by retrieving only the desired imaged object
         public async Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId, uint editionId, string imagedObjectId,
-            bool withArtefacts = false, bool withMasks = false)
+            List<string> optional = null)
         {
+            ParseOptionals(optional, out var withArtefacts, out var withMasks);
             var result = (await GetImagedObjectsAsync(userId, editionId)).imagedObjects.First(x => x.id == imagedObjectId);
             if (withArtefacts)
             {
@@ -194,6 +197,18 @@ namespace SQE.SqeApi.Server.Helpers
                         } 
                         : null
                     );
+        }
+        
+        private void ParseOptionals(List<string> optionals, out bool artefacts, out bool masks)
+        {
+            artefacts = masks = false;
+            if (optionals == null) 
+                return;
+            artefacts = optionals.Contains("artefacts");
+            if (!optionals.Contains("masks")) 
+                return;
+            masks = true;
+            artefacts = true;
         }
     }
 }

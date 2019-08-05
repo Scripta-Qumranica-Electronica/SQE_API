@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.Server.Helpers;
+using SQE.SqeApi.Server.Services;
 
 namespace SQE.SqeApi.Server.Controllers
 {
@@ -92,9 +92,7 @@ namespace SQE.SqeApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjects([FromRoute] uint editionId, [FromQuery] List<string> optional)
         {
-            ParseOptionals(optional, out var artefacts, out var masks);
-
-            return await _imagedObjectService.GetImagedObjectsAsync(_userService.GetCurrentUserId(), editionId, artefacts, masks);
+            return await _imagedObjectService.GetImagedObjectsAsync(_userService.GetCurrentUserId(), editionId, optional);
         }
         
         /// <summary>
@@ -112,8 +110,7 @@ namespace SQE.SqeApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId, string imagedObjectId, [FromQuery] List<string> optional)
         {
-            ParseOptionals(optional, out var artefacts, out var masks);
-            return await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId, artefacts, masks);
+            return await _imagedObjectService.GetImagedObjectAsync(_userService.GetCurrentUserId(), editionId, imagedObjectId, optional);
         }
     }
 }

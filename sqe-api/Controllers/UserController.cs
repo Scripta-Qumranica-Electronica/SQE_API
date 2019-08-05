@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.Server.Helpers;
+using SQE.SqeApi.Server.Services;
 using SQE.SqeApi.DataAccess.Helpers;
 
 
@@ -81,10 +81,9 @@ namespace SQE.SqeApi.Server.Controllers
         [HttpPost("confirm-registration")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult<UserDTO>> ConfirmUserRegistration([FromBody] AccountActivationRequestDTO payload)
+        public async Task<ActionResult<DetailedUserDTO>> ConfirmUserRegistration([FromBody] AccountActivationRequestDTO payload)
         {
-            await _userService.ConfirmUserRegistrationAsync(payload.token);
-            return NoContent();
+            return await _userService.ConfirmUserRegistrationAsync(payload.token);
         }
 
         /// <summary>
@@ -118,9 +117,7 @@ namespace SQE.SqeApi.Server.Controllers
         public async Task<ActionResult> ChangeEmailOfUnactivatedUserAccount(
             [FromBody]UnactivatedEmailUpdateRequestDTO payload)
         {
-            await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail);
-            return NoContent();
-            
+            return await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail);
         }
         
         /// <summary>
@@ -136,8 +133,7 @@ namespace SQE.SqeApi.Server.Controllers
         public async Task<ActionResult> ResendUserAccountActivationEmail(
             [FromBody]ResendUserAccountActivationRequestDTO payload)
         {
-            await _userService.ResendActivationEmail(payload.email);
-            return NoContent();
+            return await _userService.ResendActivationEmail(payload.email);
             
         }
         
@@ -152,8 +148,7 @@ namespace SQE.SqeApi.Server.Controllers
         [ProducesResponseType(204)]
         public async Task<ActionResult> ForgotPassword([FromBody] ResetUserPasswordRequestDTO payload)
         {
-            await _userService.RequestResetLostPasswordAsync(payload.email);
-            return NoContent();
+            return await _userService.RequestResetLostPasswordAsync(payload.email);
         }
         
         /// <summary>
@@ -168,9 +163,8 @@ namespace SQE.SqeApi.Server.Controllers
         [ProducesResponseType(401)]
         public async Task<ActionResult> ChangePassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
         {
-            await _userService.ChangePasswordAsync(_userService.GetCurrentUserObject(), payload.oldPassword,
+            return await _userService.ChangePasswordAsync(_userService.GetCurrentUserObject(), payload.oldPassword,
                 payload.newPassword);
-            return NoContent();
         }
         
         /// <summary>
@@ -186,8 +180,7 @@ namespace SQE.SqeApi.Server.Controllers
         [ProducesResponseType(404)]
         public async Task<ActionResult> ChangeForgottenPassword([FromBody] ResetForgottenUserPasswordRequestDto payload)
         {
-            await _userService.ResetLostPasswordAsync(payload.token, payload.password);
-            return NoContent();
+            return await _userService.ResetLostPasswordAsync(payload.token, payload.password);
         }
     }
 }

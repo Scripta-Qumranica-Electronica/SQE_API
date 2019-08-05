@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -15,8 +16,9 @@ using SQE.SqeApi.DataAccess;
 using SQE.SqeApi.DataAccess.Models;
 using SQE.SqeApi.Server.DTOs;
 using SQE.SqeApi.DataAccess.Helpers;
+using SQE.SqeApi.Server.Helpers;
 
-namespace SQE.SqeApi.Server.Helpers
+namespace SQE.SqeApi.Server.Services
 {
     public interface IUserService
     {
@@ -26,12 +28,12 @@ namespace SQE.SqeApi.Server.Helpers
         UserInfo GetCurrentUserObject(uint? editionId = null);
         Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
         Task<DetailedUserTokenDTO> UpdateUserAsync(UserInfo user, UserUpdateRequestDTO updateUserData);
-        Task UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
-        Task ResendActivationEmail(string email);
-        Task ConfirmUserRegistrationAsync(string token);
-        Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
-        Task RequestResetLostPasswordAsync(string email);
-        Task ResetLostPasswordAsync(string token, string password);
+        Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
+        Task<NoContentResult> ResendActivationEmail(string email);
+        Task<DetailedUserDTO> ConfirmUserRegistrationAsync(string token);
+        Task<NoContentResult> ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
+        Task<NoContentResult> RequestResetLostPasswordAsync(string email);
+        Task<NoContentResult> ResetLostPasswordAsync(string token, string password);
     }
 
     public class UserService : IUserService
@@ -158,7 +160,7 @@ namespace SQE.SqeApi.Server.Helpers
                 Email = newUserData.email
             });
             
-            return DetailedUserModelToDto(createdUser);
+            return DetailedUserModelWithTokenToDto(createdUser);
         }
 
         /// <summary>
@@ -205,7 +207,7 @@ namespace SQE.SqeApi.Server.Helpers
                 updatedUserWithInfo = await _userRepository.GetDetailedUserByIdAsync(user);
             }
             
-            return DetailedUserModelToDto(updatedUserWithInfo);
+            return DetailedUserModelWithTokenToDto(updatedUserWithInfo);
         }
 
         private async Task SendAccountActivationEmail(DetailedUserWithToken userWithInfo)
@@ -238,7 +240,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// </summary>
         /// <param name="token">Secret authentication token for user's new account</param>
         /// <returns></returns>
-        public async Task ConfirmUserRegistrationAsync(string token)
+        public async Task<DetailedUserDTO> ConfirmUserRegistrationAsync(string token)
         {
             var userInfo = await _userRepository.GetDetailedUserByTokenAsync(token);
             await _userRepository.ConfirmAccountCreationAsync(token);
@@ -261,6 +263,8 @@ The Scripta Qumranica Electronica team</body></html>";
                 emailSubject,
                 emailBody.Replace("$User", name)
                     .Replace("$WebServer", webServer));
+            
+            return DetailedUserModelToDto(userInfo, true);
         }
 
         /// <summary>
@@ -269,7 +273,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <param name="oldEmail">Email address that was originally entered when creating the account</param>
         /// <param name="newEmail">New email address to use for the account</param>
         /// <returns></returns>
-        public async Task UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail)
+        public async Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail)
         {
             // Check if account is already activated
             await _userRepository.GetUnactivatedUserByEmailAsync(oldEmail); 
@@ -279,6 +283,7 @@ The Scripta Qumranica Electronica team</body></html>";
             await _userRepository.UpdateUnactivatedUserEmailAsync(oldEmail, newEmail);
             // Get the account info and send a new account activation email
             await ResendActivationEmail(newEmail);
+            return new NoContentResult();
         }
 
         /// <summary>
@@ -286,7 +291,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// </summary>
         /// <param name="email">Email address that was originally entered when creating the account</param>
         /// <returns></returns>
-        public async Task ResendActivationEmail(string email)
+        public async Task<NoContentResult> ResendActivationEmail(string email)
         {
             try
             {
@@ -300,6 +305,8 @@ The Scripta Qumranica Electronica team</body></html>";
                 if (_env.IsDevelopment()) 
                     throw;
             }
+                
+            return new NoContentResult();
         }
         
         /// <summary>
@@ -307,13 +314,13 @@ The Scripta Qumranica Electronica team</body></html>";
         /// </summary>
         /// <param name="email">Email address of the user who has requested reset of a forgotten password</param>
         /// <returns></returns>
-        public async Task RequestResetLostPasswordAsync(string email)
+        public async Task<NoContentResult> RequestResetLostPasswordAsync(string email)
         {
             try
             {
                 var userInfo = await _userRepository.RequestResetForgottenPasswordAsync(email);
                 if (userInfo == null) // Silently return on error
-                    return;
+                    return new NoContentResult();
             
                 // Email the user
                 // TODO: Use Razor to format this and ad organization name.
@@ -343,6 +350,8 @@ The Scripta Qumranica Electronica team</body></html>";
                 if (_env.IsDevelopment())
                     throw;
             }
+            
+            return new NoContentResult();
         }
 
         /// <summary>
@@ -352,9 +361,10 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <param name="oldPassword">The old password for the user's account</param>
         /// <param name="newPassword">The new password for the user's account</param>
         /// <returns></returns>
-        public async Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword)
+        public async Task<NoContentResult> ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword)
         {
             await _userRepository.ChangePasswordAsync(user, oldPassword, newPassword);
+            return new NoContentResult();
         }
 
         /// <summary>
@@ -364,7 +374,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <param name="token">Secret token for validating change password request.</param>
         /// <param name="password">New password for the user's account</param>
         /// <returns></returns>
-        public async Task ResetLostPasswordAsync(string token, string password)
+        public async Task<NoContentResult> ResetLostPasswordAsync(string token, string password)
         {
             var userInfo = await _userRepository.ResetForgottenPasswordAsync(token, password);
             
@@ -386,6 +396,8 @@ The Scripta Qumranica Electronica team</body></html>";
                 emailSubject,
                 emailBody.Replace("$User", name)
             );
+            
+            return new NoContentResult();
         }
 
         /// <summary>
@@ -403,9 +415,9 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <summary>
         /// Packages a DetailedUser as a DTO to send back to the client.
         /// </summary>
-        /// <param name="model"></param>
+        /// <param name="model">USer details</param>
         /// <returns></returns>
-        private static DetailedUserTokenDTO DetailedUserModelToDto(DataAccess.Models.DetailedUserWithToken model)
+        private static DetailedUserTokenDTO DetailedUserModelWithTokenToDto(DataAccess.Models.DetailedUserWithToken model)
         {
             return new DetailedUserTokenDTO
             {
@@ -415,6 +427,26 @@ The Scripta Qumranica Electronica team</body></html>";
                 surname = model.Surname,
                 organization = model.Organization,
                 activated = model.Activated
+            };
+        }
+        
+        /// <summary>
+        /// Packages a DetailedUser as a DTO to send back to the client.
+        /// </summary>
+        /// <param name="model">USer details</param>
+        /// <param name="activated">Whether the account is activated</param>
+        /// <returns></returns>
+        private static DetailedUserTokenDTO DetailedUserModelToDto(DataAccess.Models.DetailedUser model, 
+            bool activated = false)
+        {
+            return new DetailedUserTokenDTO
+            {
+                userId = model.UserId,
+                email = model.Email,
+                forename = model.Forename,
+                surname = model.Surname,
+                organization = model.Organization,
+                activated = activated
             };
         }
         
