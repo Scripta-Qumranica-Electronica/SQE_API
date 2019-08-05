@@ -173,6 +173,8 @@ namespace SQE.SqeApi.Server.Services
         /// <param name="user">User object requesting the delete</param>
         /// <param name="optional">optional parameters: "deleteForAllEditors"</param>
         /// <param name="token">token required for optional "deleteForAllEditors"</param>
+        /// <param name="clientId">connection Id of the SignalR making the request (this connection will be excluded
+        /// from the broadcast message)</param>
         /// <returns></returns>
         public async Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional, string clientId = null)
         {

@@ -101,7 +101,8 @@ namespace SQE.SqeApi.Server.Services
                 }  
             }
             
-            var updatedArtefact = await GetEditionArtefactAsync(user, artefactId, new List<string>(){"masks"});
+            var updatedArtefact = await GetEditionArtefactAsync(user, artefactId, 
+                withMask ? new List<string>(){"masks"} : null);
 
             await _hubContext.Clients.GroupExcept(editionId.ToString(), clientId)
                 .SendAsync("updateArtefact", updatedArtefact);
