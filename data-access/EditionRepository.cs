@@ -150,8 +150,6 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<uint> CopyEditionAsync(UserInfo user, string copyrightHolder = null,
             string collaborators = null)
         {
-            uint toEditionId;
-            
             // If we allowed copying of scrolls that are not locked, we would
             // have to block all transactions on all _owner tables in the DB
             // until the copy process was complete in order to guard against
@@ -159,8 +157,9 @@ namespace SQE.SqeHttpApi.DataAccess
             // TODO: Gather permissions info for all editors of this edition, directly remove Lock/Admin/Write access,
             // and lock the edition for the duration of the copy (don't bother checking if it is locked first).
             // Then, when the copy is finished, restore the original permissions.  That procedure should make it safe.
-            using (var transactionScope = new TransactionScope())
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
             {
+                using (var transactionScope = new TransactionScope())
                 using (var connection = OpenConnection())
                 {
                     // Check that edition is locked
@@ -179,7 +178,7 @@ namespace SQE.SqeHttpApi.DataAccess
                             Collaborators = collaborators,
                         });
                     
-                    toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                    var toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (toEditionId == 0)
                         throw new StandardErrors.DataNotWritten("create edition");
                     
@@ -193,7 +192,7 @@ namespace SQE.SqeHttpApi.DataAccess
                             IsAdmin = 1
                         });
 
-                    uint toEditionEditorId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                    var toEditionEditorId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (toEditionEditorId == 0)
                         throw new StandardErrors.DataNotWritten("create edition_editor");
 
@@ -216,10 +215,9 @@ namespace SQE.SqeHttpApi.DataAccess
                     }
                     //Cleanup
                     transactionScope.Complete();
-                    connection.Close();
+                    return toEditionId;
                 }
-            }
-            return toEditionId;
+            });
         }
 
         /// <summary>

@@ -62,8 +62,8 @@ namespace SQE.SqeHttpApi.Server.Services
 
             public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user, CreateTextFragmentDTO createFragment)
             {
-                var newFragment = await _textRepo.CreateTextFragmentAsync(user,
-                    createFragment.name, createFragment.previousTextFragmentId, createFragment.nextTextFragmentId);
+                var newFragment = await _textRepo.CreateTextFragmentAsync(user, createFragment.name, 
+                        createFragment.previousTextFragmentId, createFragment.nextTextFragmentId);
                 return new TextFragmentDataDTO(newFragment.TextFragmentId, newFragment.TextFragmentName);
             }
 

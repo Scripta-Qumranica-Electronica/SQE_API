@@ -226,14 +226,14 @@ namespace SQE.SqeHttpApi.DataAccess
             var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
             var res = string.Join("", binaryMask);
             var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-           
-            using (var transactionScope = new TransactionScope())
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
             {
+                using (var transactionScope = new TransactionScope())
                 using (var connection = OpenConnection())
                 {
                     // Create a new edition
                     await connection.ExecuteAsync("INSERT INTO artefact (artefact_id) VALUES(NULL)");
-                        
+
                     var artefactId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (artefactId == 0)
                         throw new StandardErrors.DataNotWritten("create artefact");
@@ -245,15 +245,15 @@ namespace SQE.SqeHttpApi.DataAccess
                     {
                         await InsertArtefactPositionAsync(user, artefactId, position);
                     }
-                    
+
                     await newShape;
                     await newName;
                     //Cleanup
                     transactionScope.Complete();
-                        
+
                     return artefactId;
                 }
-            }
+            });
         }
 
         public async Task DeleteArtefactAsync(UserInfo user, uint artefactId)

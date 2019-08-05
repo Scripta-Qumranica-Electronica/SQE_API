@@ -80,46 +80,50 @@ namespace SQE.SqeHttpApi.DataAccess
         public async Task<TextFragmentData> CreateTextFragmentAsync(UserInfo user,
             string fragmentName, uint? previousFragmentId, uint? nextFragmentId)
         {
-            using (var transactionScope = new TransactionScope())
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
             {
-                // Get all text fragments in the edition for sorting operations later on
-                var editionTextFragments = await GetFragmentDataAsync(user);
-
-                // Check to make sure the new named text fragment doesn't conflict with existing ones (the frontend will resolve this)
-                if (editionTextFragments.Any(x => x.TextFragmentName == fragmentName))
-                    throw new StandardErrors.ConflictingData("textFragmentName");
-
-                // Determine the desired position of the new text fragment
-                var newTextFragmentPosition =
-                    _getNewTextFragmentPosition(previousFragmentId, nextFragmentId, editionTextFragments);
-
-                // Create the new text fragment abstract id
-                var newTextFragmentId = await _createTextFragmentIdAsync();
-                
-                // Add the new text fragment to the edition manuscript
-                await _addTextFragmentToManuscript(user, newTextFragmentId);
-
-                // Create the data entry for the new text fragment
-                await _createTextFragmentDataAsync(user, newTextFragmentId, fragmentName);
-
-                // Shift the position of any text fragments that have been displaced by the new one
-                await _shiftTextFragmentsPosition(user, editionTextFragments, newTextFragmentPosition, offset: 1);
-
-                // Now set the position for the new text fragment
-                await _createTextFragmentPosition(user, newTextFragmentId, newTextFragmentPosition);
-                
-                // End the transaction (it was all or nothing)
-                transactionScope.Complete();
-
-                // Package the new text fragment to return to user
-                return new TextFragmentData()
+                using (var transactionScope = new TransactionScope())
                 {
-                    TextFragmentId = newTextFragmentId,
-                    TextFragmentName = fragmentName,
-                    Position = newTextFragmentPosition,
-                    TextFragmentSequenceId = 0
-                };
-            }
+                    // Get all text fragments in the edition for sorting operations later on
+                    var editionTextFragments = await GetFragmentDataAsync(user);
+
+                    // Check to make sure the new named text fragment doesn't conflict with existing ones (the frontend will resolve this)
+                    if (editionTextFragments.Any(x => x.TextFragmentName == fragmentName))
+                        throw new StandardErrors.ConflictingData("textFragmentName");
+
+                    // Determine the desired position of the new text fragment
+                    var newTextFragmentPosition =
+                        _getNewTextFragmentPosition(previousFragmentId, nextFragmentId, editionTextFragments);
+
+                    // Create the new text fragment abstract id
+                    var newTextFragmentId = await _createTextFragmentIdAsync();
+                    
+                    // Add the new text fragment to the edition manuscript
+                    await _addTextFragmentToManuscript(user, newTextFragmentId);
+
+                    // Create the data entry for the new text fragment
+                    await _createTextFragmentDataAsync(user, newTextFragmentId, fragmentName);
+
+                    // Shift the position of any text fragments that have been displaced by the new one
+                    await _shiftTextFragmentsPosition(user, editionTextFragments, newTextFragmentPosition, offset: 1);
+
+                    // Now set the position for the new text fragment
+                    await _createTextFragmentPosition(user, newTextFragmentId, newTextFragmentPosition);
+                    
+                    // End the transaction (it was all or nothing)
+                    transactionScope.Complete();
+
+                    // Package the new text fragment to return to user
+                    return new TextFragmentData()
+                    {
+                        TextFragmentId = newTextFragmentId,
+                        TextFragmentName = fragmentName,
+                        Position = newTextFragmentPosition,
+                        TextFragmentSequenceId = 0
+                    };
+                }
+            });
+
         }
 
         #region Private methods

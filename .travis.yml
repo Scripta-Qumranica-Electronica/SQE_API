@@ -15,5 +15,5 @@ install:
 
 script:
 - dotnet build
-- dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput='../coverage.xml' /p:Exclude="[xunit.*]*%2c[*]SQE.SqeHttpApi.Server.Helpers.EmailSender%2c[*]SQE.SqeHttpApi.Server.Helpers.StartupChecks%2c[*]SQE.SqeHttpApi.Server.Program%2c[*]SQE.SqeHttpApi.DataAccess.Helpers.ApiException%2c[*]SQE.SqeHttpApi.DataAccess.Helpers.StandardErrors"
+- dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput='../coverage.xml' /p:Exclude="[xunit.*]*%2c[*]SQE.SqeHttpApi.Server.Helpers.EmailSender%2c[*]SQE.SqeHttpApi.Server.Helpers.StartupChecks%2c[*]SQE.SqeHttpApi.Server.Program%2c[*]SQE.SqeHttpApi.DataAccess.Helpers.ApiException%2c[*]SQE.SqeHttpApi.DataAccess.Helpers.StandardErrors%2c[*]SQE.SqeHttpApi.DataAccess.DbConnectionBase.ReliableMySqlDbCommand%2c[*]SQE.SqeHttpApi.DataAccess.DbConnectionBase.ReliableMySqlConnection"
 - ~/.dotnet/tools/csmacnz.Coveralls --opencover -i ./coverage.xml --commitId $TRAVIS_COMMIT --commitBranch $TRAVIS_BRANCH --commitAuthor "$REPO_COMMIT_AUTHOR" --commitEmail "$REPO_COMMIT_AUTHOR_EMAIL" --commitMessage "$REPO_COMMIT_MESSAGE" --jobId $TRAVIS_JOB_ID  --serviceName "travis-ci" --useRelativePaths
