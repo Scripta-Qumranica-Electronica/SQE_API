@@ -4,11 +4,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using Dapper;
 using Newtonsoft.Json;
 using SQE.SqeApi.Server.DTOs;
-using Xunit;
-using Bogus;
 
 namespace SQE.ApiTest.Helpers
 { 

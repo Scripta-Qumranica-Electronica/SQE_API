@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
@@ -129,6 +128,9 @@ namespace SQE.SqeApi.Server.Services
             var editions = await _editionRepo.ListEditionsAsync(user.userId, user.editionId); //get wanted edition by edition Id
             
             var updatedEdition = EditionModelToDTO(editions.First(x => x.EditionId == user.editionId));
+            
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(user.editionId.ToString(), clientId)
                 .SendAsync("updateEdition", updatedEdition);
             return updatedEdition;
@@ -189,6 +191,9 @@ namespace SQE.SqeApi.Server.Services
                 // End the request with null for successful delete or a proper token for requests without a confirmation token
                 if (string.IsNullOrEmpty(newToken))
                 {
+                    // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+                    // made the request, that client directly received the response.
+                    // TODO: make a DTO for the delete object.
                     await _hubContext.Clients.GroupExcept(user.editionId.Value.ToString(), clientId)
                         .SendAsync("deleteEdition", 
                             new
@@ -212,6 +217,9 @@ namespace SQE.SqeApi.Server.Services
             // Setting all permission to false is how we delete a user's access to an edition.
             await _editionRepo.ChangeEditionEditorRights(user, userInfo.Email, false, false, 
                 false, false);
+            
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(user.editionId.Value.ToString(), clientId)
                 .SendAsync("deleteEdition", 
                     new

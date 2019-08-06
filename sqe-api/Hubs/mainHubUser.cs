@@ -1,30 +1,19 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.Server.Services;
 
-namespace SQE.SqeApi.Server.Controllers
+namespace SQE.SqeApi.Server.Hubs
 {
-    [Authorize]
-    [ApiController]
-    public class UserController : ControllerBase
+    public partial class MainHub : Hub
     {
-        private readonly IUserService _userService;
-
-        public UserController(IUserService userService)
-        {
-            _userService = userService;
-        }
-
         /// <summary>
         /// Provides a JWT bearer token for valid email and password
         /// </summary>
         /// <param name="payload">JSON object with an email and password parameter</param>
         /// <returns>A DetailedUserTokenDTO with a JWT for activated user accounts, or the email address of an unactivated user account</returns>
         [AllowAnonymous]
-        [HttpPost("v1/[controller]s/login")]
-        public async Task<ActionResult<DetailedUserTokenDTO>> AuthenticateUser([FromBody] LoginRequestDTO payload)
+        public async Task<DetailedUserTokenDTO> PostV1UsersLogin(LoginRequestDTO payload)
         {
             return await _userService.AuthenticateAsync(payload.email, payload.password);
         }
@@ -34,14 +23,11 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="payload">JSON object with the current email address and the new desired email address</param>
         [AllowAnonymous]
-        [HttpPost("v1/[controller]s/change-unactivated-email")]
-        public async Task<ActionResult> ChangeEmailOfUnactivatedUserAccount(
-            [FromBody] UnactivatedEmailUpdateRequestDTO payload)
+        public async Task PostV1UsersChangeUnactivatedEmail(UnactivatedEmailUpdateRequestDTO payload)
         {
             await _userService.UpdateUnactivatedAccountEmailAsync(
                 payload.email,
                 payload.newEmail);
-            return NoContent();
         }
 
         /// <summary>
@@ -49,27 +35,24 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="payload">A JSON object with the secret token and the new password</param>
         [AllowAnonymous]
-        [HttpPost("v1/[controller]s/change-forgotten-password")]
-        public async Task<ActionResult> ChangeForgottenPassword([FromBody] ResetForgottenUserPasswordRequestDto payload)
+        public async Task PostV1UsersChangeForgottenPassword(ResetForgottenUserPasswordRequestDto payload)
         {
             await _userService.ResetLostPasswordAsync(
                 payload.token,
                 payload.password);
-            return NoContent();
         }
 
         /// <summary>
         /// Changes the password for the currently logged in user
         /// </summary>
         /// <param name="payload">A JSON object with the old password and the new password</param>
-        [HttpPost("v1/[controller]s/change-password")]
-        public async Task<ActionResult> ChangePassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
+        [Authorize]
+        public async Task PostV1UsersChangePassword(ResetLoggedInUserPasswordRequestDTO payload)
         {
             await _userService.ChangePasswordAsync(
                 _userService.GetCurrentUserObject(),
                 payload.oldPassword,
                 payload.newPassword);
-            return NoContent();
         }
 
         /// <summary>
@@ -77,8 +60,8 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="payload">A JSON object with all data necessary to update a user account.  Null fields (but not empty strings!) will be populated with existing user data</param>
         /// <returns>Returns a DetailedUserDTO with the updated user account details</returns>
-        [HttpPut("v1/[controller]s")]
-        public async Task<ActionResult<DetailedUserDTO>> ChangeUserInfo([FromBody] UserUpdateRequestDTO payload)
+        [Authorize]
+        public async Task<DetailedUserDTO> PutV1Users(UserUpdateRequestDTO payload)
         {
             return await _userService.UpdateUserAsync(
                 _userService.GetCurrentUserObject(),
@@ -91,11 +74,9 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="payload">JSON object with token from user registration email</param>
         /// <returns>Returns NoContent when the account was properly confirmed</returns>
         [AllowAnonymous]
-        [HttpPost("v1/[controller]s/confirm-registration")]
-        public async Task<ActionResult> ConfirmUserRegistration([FromBody] AccountActivationRequestDTO payload)
+        public async Task PostV1UsersConfirmRegistration(AccountActivationRequestDTO payload)
         {
             await _userService.ConfirmUserRegistrationAsync(payload.token);
-            return NoContent();
         }
 
         /// <summary>
@@ -104,8 +85,7 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="payload">A JSON object with all data necessary to create a new user account</param>
         /// <returns>Returns a UserDTO for the newly created account</returns>
         [AllowAnonymous]
-        [HttpPost("v1/[controller]s")]
-        public async Task<ActionResult<UserDTO>> CreateNewUser([FromBody] NewUserRequestDTO payload)
+        public async Task<UserDTO> PostV1Users(NewUserRequestDTO payload)
         {
             return await _userService.CreateNewUserAsync(payload);
         }
@@ -114,8 +94,8 @@ namespace SQE.SqeApi.Server.Controllers
         /// Provides the user details for a user with valid JWT in the Authorize header
         /// </summary>
         /// <returns>A DetailedUserDTO for user account.</returns>
-        [HttpGet("v1/[controller]s")]
-        public async Task<ActionResult<DetailedUserDTO>> GetCurrentUser()
+        [Authorize]
+        public async Task<DetailedUserDTO> GetV1Users()
         {
             return await _userService.GetCurrentUser();
         }
@@ -125,11 +105,9 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="payload">JSON object with the email address for the user who wants to reset a lost password</param>
         [AllowAnonymous]
-        [HttpPost("v1/[controller]s/forgot-password")]
-        public async Task<ActionResult> RequestForgottenPasswordToken([FromBody] ResetUserPasswordRequestDTO payload)
+        public async Task PostV1UsersForgotPassword(ResetUserPasswordRequestDTO payload)
         {
             await _userService.RequestResetLostPasswordAsync(payload.email);
-            return NoContent();
         }
 
         /// <summary>
@@ -137,12 +115,9 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="payload">JSON object with the current email address and the new desired email address</param>
         [AllowAnonymous]
-        [HttpPost("v1/[controller]s/resend-activation-email")]
-        public async Task<ActionResult> ResendUserAccountActivationEmail(
-            [FromBody] ResendUserAccountActivationRequestDTO payload)
+        public async Task PostV1UsersResendActivationEmail(ResendUserAccountActivationRequestDTO payload)
         {
             await _userService.ResendActivationEmail(payload.email);
-            return NoContent();
         }
     }
 }

@@ -7,7 +7,6 @@ using Bogus;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore.Internal;
-using Org.BouncyCastle.Asn1.Crmf;
 using SQE.ApiTest.Helpers;
 using SQE.SqeApi.Server;
 using SQE.SqeApi.Server.DTOs;

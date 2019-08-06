@@ -1,33 +1,20 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.Server.Services;
 
-namespace SQE.SqeApi.Server.Controllers
+namespace SQE.SqeApi.Server.Hubs
 {
-    [Authorize]
-    [ApiController]
-    public class ArtefactController : ControllerBase
+    public partial class MainHub : Hub
     {
-        private readonly IArtefactService _artefactService;
-        private readonly IUserService _userService;
-
-        public ArtefactController(IArtefactService artefactService, IUserService userService)
-        {
-            _artefactService = artefactService;
-            _userService = userService;
-        }
-
         /// <summary>
         /// Creates a new artefact with the provided data.
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">A CreateArtefactDTO with the data for the new artefact</param>
-        [HttpPost("v1/editions/{editionId}/[controller]s")]
-        public async Task<ActionResult<ArtefactDTO>> CreateArtefact([FromRoute] uint editionId,
-            [FromBody] CreateArtefactDTO payload)
+        [Authorize]
+        public async Task<ArtefactDTO> PostV1EditionsEditionIdArtefacts(uint editionId, CreateArtefactDTO payload)
         {
             return await _artefactService.CreateArtefactAsync(
                 _userService.GetCurrentUserObject(editionId),
@@ -35,7 +22,8 @@ namespace SQE.SqeApi.Server.Controllers
                 payload.masterImageId,
                 payload.mask,
                 payload.name,
-                payload.position);
+                payload.position,
+                clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -43,13 +31,13 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
-        [HttpDelete("v1/editions/{editionId}/[controller]s/{artefactId}")]
-        public async Task<ActionResult> DeleteArtefact([FromRoute] uint artefactId, [FromRoute] uint editionId)
+        [Authorize]
+        public async Task DeleteV1EditionsEditionIdArtefactsArtefactId(uint artefactId, uint editionId)
         {
             await _artefactService.DeleteArtefactAsync(
                 _userService.GetCurrentUserObject(editionId),
-                artefactId);
-            return NoContent();
+                artefactId,
+                clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -59,9 +47,8 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
         [AllowAnonymous]
-        [HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}")]
-        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint artefactId,
-            [FromRoute] uint editionId, [FromQuery] List<string> optional)
+        public async Task<ArtefactDTO> GetV1EditionsEditionIdArtefactsArtefactId(uint artefactId, uint editionId,
+            List<string> optional)
         {
             return await _artefactService.GetEditionArtefactAsync(
                 _userService.GetCurrentUserObject(editionId),
@@ -75,9 +62,7 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
         [AllowAnonymous]
-        [HttpGet("v1/editions/{editionId}/[controller]s")]
-        public async Task<ActionResult<ArtefactListDTO>> GetArtefacts([FromRoute] uint editionId,
-            [FromQuery] List<string> optional)
+        public async Task<ArtefactListDTO> GetV1EditionsEditionIdArtefacts(uint editionId, List<string> optional)
         {
             return await _artefactService.GetEditionArtefactListingsAsync(
                 _userService.GetCurrentUserId(),
@@ -91,9 +76,9 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
-        [HttpPut("v1/editions/{editionId}/[controller]s/{artefactId}")]
-        public async Task<ActionResult<ArtefactDTO>> UpdateArtefact([FromRoute] uint artefactId,
-            [FromRoute] uint editionId, [FromBody] UpdateArtefactDTO payload)
+        [Authorize]
+        public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint artefactId, uint editionId,
+            UpdateArtefactDTO payload)
         {
             return await _artefactService.UpdateArtefactAsync(
                 _userService.GetCurrentUserObject(editionId),
@@ -101,7 +86,8 @@ namespace SQE.SqeApi.Server.Controllers
                 artefactId,
                 payload.mask,
                 payload.name,
-                payload.position);
+                payload.position,
+                clientId: Context.ConnectionId);
         }
     }
 }

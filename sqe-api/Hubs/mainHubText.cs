@@ -1,36 +1,25 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.Server.Services;
 
-namespace SQE.SqeApi.Server.Controllers
+namespace SQE.SqeApi.Server.Hubs
 {
-    [Authorize]
-    [ApiController]
-    public class TextController : ControllerBase
+    public partial class MainHub : Hub
     {
-        private readonly ITextService _textService;
-        private readonly IUserService _userService;
-
-        public TextController(ITextService textService, IUserService userService)
-        {
-            _textService = textService;
-            _userService = userService;
-        }
-
         /// <summary>
         /// Creates a new text fragment in the given edition of a scroll
         /// </summary>
         /// <param name="createFragment">A JSON object with the details of the new text fragment to be created</param>
         /// <param name="editionId">Id of the edition</param>
-        [HttpPost("v1/editions/{editionId}/text-fragments")]
-        public async Task<ActionResult<TextFragmentDataDTO>> CreateEditionTextFragment(
-            [FromBody] CreateTextFragmentDTO createFragment, [FromRoute] uint editionId)
+        [Authorize]
+        public async Task<TextFragmentDataDTO> PostV1EditionsEditionIdTextFragments(
+            CreateTextFragmentDTO createFragment, uint editionId)
         {
             return await _textService.CreateTextFragmentAsync(
                 _userService.GetCurrentUserObject(editionId),
-                createFragment);
+                createFragment,
+                clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -39,8 +28,7 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="editionId">Id of the edition</param>
         /// <returns>An array of the text fregment ids in correct sequence</returns>
         [AllowAnonymous]
-        [HttpGet("v1/editions/{editionId}/text-fragments")]
-        public async Task<ActionResult<TextFragmentDataListDTO>> RetrieveEditionFragmentIds([FromRoute] uint editionId)
+        public async Task<TextFragmentDataListDTO> GetV1EditionsEditionIdTextFragments(uint editionId)
         {
             return await _textService.GetFragmentDataAsync(_userService.GetCurrentUserObject(editionId));
         }
@@ -52,9 +40,8 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="textFragmentId">Id of the text fragment</param>
         /// <returns>An array of the line ids in the proper sequence</returns>
         [AllowAnonymous]
-        [HttpGet("v1/editions/{editionId}/text-fragments/{textFragmentId}/lines")]
-        public async Task<ActionResult<LineDataListDTO>> RetrieveEditionTextFragmentLineIds([FromRoute] uint editionId,
-            [FromRoute] uint textFragmentId)
+        public async Task<LineDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines(uint editionId,
+            uint textFragmentId)
         {
             return await _textService.GetLineIdsAsync(
                 _userService.GetCurrentUserObject(editionId),
@@ -68,9 +55,8 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="textFragmentId">Id of the text fragment</param>
         /// <returns>A manuscript edition object including the fragments and their lines in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
-        [HttpGet("v1/editions/{editionId}/text-fragments/{textFragmentId}")]
-        public async Task<ActionResult<TextEditionDTO>> RetrieveEditionTextOfFragmentById([FromRoute] uint editionId,
-            [FromRoute] uint textFragmentId)
+        public async Task<TextEditionDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentId(uint editionId,
+            uint textFragmentId)
         {
             return await _textService.GetFragmentByIdAsync(
                 _userService.GetCurrentUserObject(editionId),
@@ -84,9 +70,7 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="lineId">Id of the line</param>
         /// <returns>A manuscript edition object including the fragments and their lines in a hierarchical order and in correct sequence</returns>
         [AllowAnonymous]
-        [HttpGet("v1/editions/{editionId}/lines/{lineId}")]
-        public async Task<ActionResult<LineTextDTO>> RetrieveEditionTextOfLineById([FromRoute] uint editionId,
-            [FromRoute] uint lineId)
+        public async Task<LineTextDTO> GetV1EditionsEditionIdLinesLineId(uint editionId, uint lineId)
         {
             return await _textService.GetLineByIdAsync(
                 _userService.GetCurrentUserObject(editionId),

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Bogus;
 using Dapper;
+using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.ApiTest.Helpers;
@@ -78,18 +79,30 @@ namespace SQE.ApiTest
                 masterImageId = masterImageId
             };
             var jwt = await HttpRequest.GetJWTAsync(_client);
+            
+            // Get a SignalR connection
             var signalr = await StartConnectionAsync(jwt);
-            signalr.Closed += async error =>
+            signalr.Closed += async (error) =>
             {
-                await Task.Delay(new Random().Next(0, 5) * 1000);
+                await Task.Delay(new Random().Next(0,5) * 1000);
                 await signalr.StartAsync();
             };
             
             // Act
+            // Subscribe to the edition
             await signalr.InvokeAsync("SubscribeToEdition", newEdition);
+            // Listen for calls to "createArtefact"
             signalr.On<ArtefactDTO>("createArtefact", (receivedArtefact) =>
             {
+                // These tests work now, but since this is run over three mutation requests, there is no 
+                // guarantee that it will always be checking the returned artefact against the proper
+                // instance of `newArtefact`. Rewrite tests with signalr to check only one mutation,
+                // or use a different method to verify that the expected notification has indeed been
+                // received.
                 Assert.NotNull(receivedArtefact);
+                Assert.Equal(newArtefact.name, receivedArtefact.name);
+                Assert.Equal(newArtefact.position, receivedArtefact.mask.transformMatrix);
+                Assert.Equal(newArtefact.mask, receivedArtefact.mask.mask);
             });
             var (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(_client, HttpMethod.Post,
                 $"/{version}/editions/{newEdition}/{controller}", newArtefact, jwt);

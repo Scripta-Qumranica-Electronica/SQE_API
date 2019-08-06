@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Dapper;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.DataAccess.Queries;
 using Xunit;
 using Bogus;
 

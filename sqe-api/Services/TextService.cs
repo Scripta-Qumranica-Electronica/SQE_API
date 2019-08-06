@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MailKit;
 using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.DataAccess;
 using SQE.SqeApi.DataAccess.Helpers;
@@ -72,6 +71,9 @@ namespace SQE.SqeApi.Server.Services
                         createFragment.previousTextFragmentId, createFragment.nextTextFragmentId);
                 var newTextFragmentData =
                     new TextFragmentDataDTO(newFragment.TextFragmentId, newFragment.TextFragmentName);
+                
+                // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+                // made the request, that client directly received the response.
                 await _hubContext.Clients.GroupExcept(user.editionId.ToString(), clientId)
                     .SendAsync("createTextFragment", newTextFragmentData);
                 return newTextFragmentData;

@@ -28,6 +28,10 @@
   <ItemGroup>
     <_ContentIncludedByDefault Remove="Templates\UserAccountEmail.cshtml" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Hubs" />
+  </ItemGroup>
     
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

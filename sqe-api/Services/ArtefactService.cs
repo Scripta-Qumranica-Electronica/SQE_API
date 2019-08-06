@@ -104,6 +104,8 @@ namespace SQE.SqeApi.Server.Services
             var updatedArtefact = await GetEditionArtefactAsync(user, artefactId, 
                 withMask ? new List<string>(){"masks"} : null);
 
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionId.ToString(), clientId)
                 .SendAsync("updateArtefact", updatedArtefact);
             return updatedArtefact;
@@ -126,6 +128,9 @@ namespace SQE.SqeApi.Server.Services
             var newArtefact = newArtefactId != 0 
                 ? await GetEditionArtefactAsync(user, newArtefactId, optional)
                 : null;
+            
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionId.ToString(), clientId)
                 .SendAsync("createArtefact", newArtefact);
             return newArtefact;
@@ -134,6 +139,9 @@ namespace SQE.SqeApi.Server.Services
         public async Task<NoContentResult> DeleteArtefactAsync(UserInfo user, uint artefactId, string clientId = null)
         {
             await _artefactRepository.DeleteArtefactAsync(user, artefactId);
+            
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(user.editionId.Value.ToString(), clientId)
                 .SendAsync("deleteArtefact", artefactId);
             return new NoContentResult();

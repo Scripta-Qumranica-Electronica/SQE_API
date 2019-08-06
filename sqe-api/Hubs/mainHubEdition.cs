@@ -1,33 +1,20 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.Server.Services;
 
-namespace SQE.SqeApi.Server.Controllers
+namespace SQE.SqeApi.Server.Hubs
 {
-    [Authorize]
-    [ApiController]
-    public class EditionController : ControllerBase
+    public partial class MainHub : Hub
     {
-        private readonly IEditionService _editionService;
-        private readonly IUserService _userService;
-
-        public EditionController(IEditionService editionService, IUserService userService)
-        {
-            _editionService = editionService;
-            _userService = userService;
-        }
-
         /// <summary>
         /// Adds an editor to the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
-        [HttpPost("v1/[controller]s/{editionId}/editors")]
-        public async Task<ActionResult<EditorRightsDTO>> AddEditionEditor([FromRoute] uint editionId,
-            [FromBody] EditorRightsDTO payload)
+        [Authorize]
+        public async Task<EditorRightsDTO> PostV1EditionsEditionIdEditors(uint editionId, EditorRightsDTO payload)
         {
             return await _editionService.AddEditionEditor(
                 _userService.GetCurrentUserObject(editionId),
@@ -39,9 +26,8 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
-        [HttpPut("v1/[controller]s/{editionId}/editors")]
-        public async Task<ActionResult<EditorRightsDTO>> AlterEditionEditorRights([FromRoute] uint editionId,
-            [FromBody] EditorRightsDTO payload)
+        [Authorize]
+        public async Task<EditorRightsDTO> PutV1EditionsEditionIdEditors(uint editionId, EditorRightsDTO payload)
         {
             return await _editionService.ChangeEditionEditorRights(
                 _userService.GetCurrentUserObject(editionId),
@@ -53,9 +39,8 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="request">JSON object with the attributes to be changed in the copied edition</param>
-        [HttpPost("v1/[controller]s/{editionId}")]
-        public async Task<ActionResult<EditionDTO>> CopyEdition([FromRoute] uint editionId,
-            [FromBody] EditionCopyDTO request)
+        [Authorize]
+        public async Task<EditionDTO> PostV1EditionsEditionId(uint editionId, EditionCopyDTO request)
         {
             return await _editionService.CopyEditionAsync(
                 _userService.GetCurrentUserObject(editionId),
@@ -68,14 +53,14 @@ namespace SQE.SqeApi.Server.Controllers
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
         /// <param name="token">token required when using optional 'deleteForAllEditors'</param>
-        [HttpDelete("v1/[controller]s/{editionId}")]
-        public async Task<ActionResult<DeleteTokenDTO>> DeleteEdition([FromRoute] uint editionId,
-            [FromQuery] List<string> optional, [FromQuery] string token)
+        [Authorize]
+        public async Task<DeleteTokenDTO> DeleteV1EditionsEditionId(uint editionId, List<string> optional, string token)
         {
             return await _editionService.DeleteEditionAsync(
                 _userService.GetCurrentUserObject(editionId),
                 token,
-                optional);
+                optional,
+                clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -83,8 +68,7 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         [AllowAnonymous]
-        [HttpGet("v1/[controller]s/{editionId}")]
-        public async Task<ActionResult<EditionGroupDTO>> GetEditionInfo([FromRoute] uint editionId)
+        public async Task<EditionGroupDTO> GetV1EditionsEditionId(uint editionId)
         {
             return await _editionService.GetEditionAsync(_userService.GetCurrentUserObject(editionId));
         }
@@ -93,8 +77,7 @@ namespace SQE.SqeApi.Server.Controllers
         /// Provides a listing of all editions accessible to the current user
         /// </summary>
         [AllowAnonymous]
-        [HttpGet("v1/[controller]s")]
-        public async Task<ActionResult<EditionListDTO>> ListEditions()
+        public async Task<EditionListDTO> GetV1Editions()
         {
             return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
         }
@@ -104,15 +87,15 @@ namespace SQE.SqeApi.Server.Controllers
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="request">JSON object with the attributes to be updated</param>
-        [HttpPut("v1/[controller]s/{editionId}")]
-        public async Task<ActionResult<EditionDTO>> UpdateEdition([FromRoute] uint editionId,
-            [FromBody] EditionUpdateRequestDTO request)
+        [Authorize]
+        public async Task<EditionDTO> PutV1EditionsEditionId(uint editionId, EditionUpdateRequestDTO request)
         {
             return await _editionService.UpdateEditionAsync(
                 _userService.GetCurrentUserObject(editionId),
                 request.name,
                 request.copyrightHolder,
-                request.collaborators);
+                request.collaborators,
+                clientId: Context.ConnectionId);
         }
     }
 }

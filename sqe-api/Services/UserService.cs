@@ -1,7 +1,5 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +13,6 @@ using Microsoft.IdentityModel.Tokens;
 using SQE.SqeApi.DataAccess;
 using SQE.SqeApi.DataAccess.Models;
 using SQE.SqeApi.Server.DTOs;
-using SQE.SqeApi.DataAccess.Helpers;
 using SQE.SqeApi.Server.Helpers;
 
 namespace SQE.SqeApi.Server.Services
