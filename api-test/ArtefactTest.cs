@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Bogus;
 using Dapper;
-using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.ApiTest.Helpers;

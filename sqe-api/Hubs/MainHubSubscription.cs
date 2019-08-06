@@ -16,7 +16,7 @@ namespace SQE.SqeApi.Server.Hubs
         // for updates to an edition seemed so ephemeral that using some other store appeared unnecessary or
         // even undesirable—we want these connections to be as disposable as possible and we do not want subscriptions
         // associated with a user_id, only the client.
-        
+
         /// <summary>
         /// The client subscribes to all changes for the specified editionId.
         /// </summary>
