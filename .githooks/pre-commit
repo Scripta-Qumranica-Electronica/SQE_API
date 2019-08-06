@@ -16,17 +16,17 @@ function check_docker_vars
 
 function check_appsettings_vars
 {
-    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-http-api/appsettings.json 
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api/appsettings.json 
     if [[ "$?" == 0 ]]; then 
-        echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.json"
+        echo "Please remove the custom settings for ${1} from sqe-api/appsettings.json"
         echo "The line should be:"
         echo "\"${1}\": \"\","
         exit 1
     fi
     
-    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-http-api/appsettings.Development.json 
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api/appsettings.Development.json 
     if [[ "$?" == 0 ]]; then 
-        echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.Development.json"
+        echo "Please remove the custom settings for ${1} from sqe-api/appsettings.Development.json"
         echo "The line should be:"
         echo "\"${1}\": \"\","
         exit 1
@@ -42,7 +42,7 @@ check_docker_vars "MAILER_EMAIL_SMTP_PORT"
 check_docker_vars "WEBSITE_HOST"
 check_docker_vars "REDIS_PASSWORD"
 
-## Checking for custom settings in sqe-http-api/appsettings.json
+## Checking for custom settings in sqe-api/appsettings.json
 check_appsettings_vars "MailerEmailAddress"
 check_appsettings_vars "MailerEmailUsername"
 check_appsettings_vars "MailerEmailPassword"
