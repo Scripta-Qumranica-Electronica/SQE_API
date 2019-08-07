@@ -184,7 +184,7 @@ namespace SQE.SqeHttpApi.Server.Controllers
         [HttpPost("change-forgotten-password")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public async Task<ActionResult> ChangeForgottenPassword([FromBody] ResetForgottenUserPasswordRequestDto payload)
+        public async Task<ActionResult> ChangeForgottenPassword([FromBody] ResetForgottenUserPasswordRequestDTO payload)
         {
             await _userService.ResetLostPasswordAsync(payload.token, payload.password);
             return NoContent();

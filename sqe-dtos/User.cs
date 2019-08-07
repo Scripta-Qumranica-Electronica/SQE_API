@@ -76,7 +76,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public string email { get; set; }
     }
     
-    public class ResetForgottenUserPasswordRequestDto : AccountActivationRequestDTO
+    public class ResetForgottenUserPasswordRequestDTO : AccountActivationRequestDTO
     {
         public string password { get; set; }
     }
