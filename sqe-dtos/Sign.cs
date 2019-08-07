@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {

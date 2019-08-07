@@ -27,7 +27,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{392327
 		docker\deploy\docker-compose.yml = docker\deploy\docker-compose.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "api-test", "api-test\api-test.csproj", "{C195B450-C6DE-40FE-A4D6-A44CC7978700}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "api-test", "api-test\api-test.csproj", "{C195B450-C6DE-40FE-A4D6-A44CC7978700}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-dtos", "sqe-dtos\sqe-dtos.csproj", "{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,10 +45,14 @@ Global
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
