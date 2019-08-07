@@ -32,15 +32,16 @@ namespace SQE.Utilities.GenerateTypescriptDTOs
             // Combine all files into one big TypeScript file
             using (var sw = new StreamWriter(new FileStream(OutputFile, FileMode.Create), Encoding.UTF8))
             {
+                sw.WriteLine("// This file was generate automatically. DO NOT EDIT.");
+                sw.WriteLine("/* tslint:disable */");
                 foreach (var file in result.Files)
                 {
-                    // Each file contains import statements, we want to remove them, as we're putting everything in one file
-                    var noImports = RemoveImports(file.Content);
-                    sw.Write(noImports);
+                    var processed = PostprocessTypescript(file.Content);
+                    sw.Write(processed);
                 }
             }
 
-            Console.WriteLine($"DTOs written to ${OutputFile}");
+            Console.WriteLine($"DTOs written to {OutputFile}");
         }
 
         private static bool ParseArguments(string[] args)
@@ -65,12 +66,58 @@ GenerateTypescriptDTOs <sqe-dtos.dll> <output-file.ts>
             return false;
         }
 
-        private static string RemoveImports(string typescript)
+        private static string PostprocessTypescript(string typescript)
         {
+            // We need to perform some post processing on the typescript files.
+            // This is done on a line level, so:
+
+            // Break into lines
             var lines = Regex.Split(typescript, "\r\n|\r|\n"); // https://stackoverflow.com/a/1508217/871910
+
+            // Remove all import statements
             var noImports = lines.Where(line => !line.StartsWith("import"));
 
-            return String.Join('\n', noImports);
+            // Convert classes into interfaces
+            var withInterfaces = noImports.Select(line => line.Replace("class", "interface"));
+
+            // Fix various issues with the definitions
+            var fixedDefinitions = withInterfaces.Select(line => FixDefinition(line));
+
+            return String.Join('\n', fixedDefinitions);
+        }
+
+        private static string FixDefinition(string line)
+        {
+            // There are several issues with the definitions, when the property type is not a primitive type.
+            // All non primitive properties are translate into:
+            //     prop = new type();
+            // instead of
+            //     prop: type;
+            //
+            // In addition, a C# List<T> translates into Array<T> an not T[]
+            // A C#'s Dictionary<k, v> translates into Map<T, V> instead of { [key: k]: v }
+            var match = Regex.Match(line, @"^(?<indent>\s*)(?<name>.+)\s=\snew\s(?<type>.*)\(\);$");
+            if (!match.Success)
+                return line;
+
+            var type = FixType(match.Groups["type"].Value);
+            var correct = $"{match.Groups["indent"]}{match.Groups["name"]}: {type};";
+            return correct;
+        }
+
+        private static string FixType(string type)
+        {
+            var matchArray = Regex.Match(type, @"Array<(?<type>.+)>");
+            if (matchArray.Success)
+                return $"{matchArray.Groups["type"]}[]";
+
+            var matchMap = Regex.Match(type, @"Map<(?<key>.+), (?<value>.+)>");
+            if (matchMap.Success)
+            {
+                // Adding { to $"" strings in C# is ugly, so we break the string into three parts
+                return "{ " + $"[key: {matchMap.Groups["key"]}] : {matchMap.Groups["value"]}" + " }";
+            }
+            return type;
         }
     }
 }
