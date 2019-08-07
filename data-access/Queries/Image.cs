@@ -34,7 +34,7 @@ LEFT JOIN image_to_image_map ON SQE_image.sqe_image_id = image_to_image_map.imag
     AND image_to_image_map.image1_id = master_image.sqe_image_id 
 JOIN image_urls ON SQE_image.image_urls_id = image_urls.image_urls_id
 WHERE edition.edition_id = @EditionId
-    AND (edition_editor.user_id = 1 OR edition_editor.user_id = @UserId)
+    AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
         public static string GetImageQuery(bool filterFragment)
         {
@@ -82,7 +82,7 @@ FROM image_catalog
 JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
 JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN edition USING(manuscript_id)
-WHERE edition.edition_is = @EditionId
+WHERE edition.edition_id = @EditionId
 ";
 
         public static string GetQuery(bool limitScrolls)
