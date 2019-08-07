@@ -107,10 +107,16 @@ GenerateTypescriptDTOs <sqe-dtos.dll> <output-file.ts>
 
         private static string FixType(string type)
         {
+            // Dates are actually strings that we parse on the Typescript side
+            if (type == "Date")
+                return "string";
+
+            // Array<T> is T[]
             var matchArray = Regex.Match(type, @"Array<(?<type>.+)>");
             if (matchArray.Success)
                 return $"{matchArray.Groups["type"]}[]";
 
+            // Map<k, v> is { [key: k]: v }
             var matchMap = Regex.Match(type, @"Map<(?<key>.+), (?<value>.+)>");
             if (matchMap.Success)
             {
