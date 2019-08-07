@@ -16,6 +16,7 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
     manuscript_data.name AS Name, 
     im.thumbnail_url AS Thumbnail, 
     ed2.locked AS Locked,
+    ed2.public AS IsPublic,
     ed2.manuscript_id AS ScrollId,
     current_editor.may_lock AS MayLock,
     current_editor.may_write AS MayWrite, 
@@ -24,11 +25,16 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
     current_editor.user_id AS UserId, 
     current_editor_details.email AS Email 
 FROM edition AS ed1
-JOIN (SELECT edition.edition_id, edition.copyright_holder, edition.collaborators, edition.locked, edition.manuscript_id
+JOIN (SELECT edition.edition_id, 
+             edition.copyright_holder, 
+             edition.collaborators, 
+             edition.locked, 
+             edition.manuscript_id, 
+             edition.public
       FROM edition
       JOIN edition_editor USING(edition_id)
-      WHERE edition_editor.user_id = 1 $UserFilter
-        AND edition_editor.may_read = 1
+      WHERE (edition.public = 1 $UserFilter)
+        AND (edition.public = 1 OR edition_editor.may_read = 1)
       GROUP BY edition.edition_id) AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
 JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
 JOIN user ON user.user_id = edition_editor.user_id
@@ -83,6 +89,7 @@ GROUP BY ed2.edition_id
             public string Email { get; set; }
             public string Collaborators { get; set; }
             public string CopyrightHolder { get; set; }
+            public bool IsPublic { get; set; }
         }
     }
 

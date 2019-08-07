@@ -15,7 +15,7 @@ JOIN edition_editor USING(edition_id)
 JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN image_catalog USING(image_catalog_id)
 WHERE edition.edition_id = @EditionId
-  AND (edition_editor.user_id = 1 
+  AND (edition.public = 1 
          OR edition_editor.user_id = @UserId) 
   AND iaa_edition_catalog.edition_side =0
 "; 

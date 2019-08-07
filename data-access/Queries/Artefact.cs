@@ -41,8 +41,8 @@ WHERE edition.edition_id = @EditionId
   AND $Restriction
 $Order";
 
-        private const string _userRestriction = "(edition_editor.user_id = @UserID OR edition_editor.user_id = 1)";
-        private const string _publicRestriction = "edition_editor.user_id = 1";
+        private const string _userRestriction = "(edition_editor.user_id = @UserID OR edition.public = 1)";
+        private const string _publicRestriction = "edition.public = 1";
         private const string _mask = "ASTEXT(artefact_shape.region_in_sqe_image)";
 
         private const string _order =

@@ -137,10 +137,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
         JOIN   sign_interpretation_attribute USING (sign_interpretation_id)
         JOIN sign_interpretation_attribute_owner USING (sign_interpretation_attribute_id)
         JOIN edition_editor ON edition_editor.edition_editor_id = @EditionId
+        JOIN edition ON edition.edition_id = @EditionId
       WHERE (attribute_value_id = 12 OR attribute_value_id = 13)
         AND text_fragment_id=@EntityId
         AND sign_interpretation_attribute_owner.edition_id=@EditionId
-        AND (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
+        AND (edition_editor.user_id = @UserId OR edition.public = 1)
       ORDER BY attribute_value_id
 ";
   }
@@ -159,10 +160,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
           JOIN line_data USING(line_id)
           JOIN line_data_owner USING(line_data_id)
           JOIN edition_editor ON edition_editor.edition_id = @EditionId
+          JOIN edition ON edition.edition_id = @EditionId
         WHERE text_fragment_id = @TextFragmentId
           AND sign_interpretation_attribute_owner.edition_id = @EditionId
           AND line_data_owner.edition_id = @EditionId
-          AND (edition_editor.user_id = @UserId OR edition_editor.user_id = 1)
+          AND (edition_editor.user_id = @UserId OR edition.public = 1)
           AND attribute_value_id = 12
         
        UNION
@@ -204,7 +206,8 @@ FROM text_fragment_data
   JOIN text_fragment_sequence_owner ON text_fragment_sequence_owner.text_fragment_sequence_id = text_fragment_sequence.text_fragment_sequence_id
     AND text_fragment_sequence_owner.edition_id = @EditionId
   JOIN edition_editor ON edition_editor.edition_id = @EditionId
-WHERE edition_editor.user_id = @UserId OR edition_editor.user_id = 1
+  JOIN edition ON edition.edition_id = @EditionId
+WHERE edition_editor.user_id = @UserId OR edition.public = 1
 ORDER BY text_fragment_sequence.position
       ";
   }

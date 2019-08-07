@@ -62,7 +62,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 Thumbnail = result.Thumbnail,
                 Locked = result.Locked,
                 LastEdit = result.LastEdit,
-                IsPublic = result.UserId == 1, // The default (public and uneditable) SQE data is associated with user_id 1.
+                IsPublic = result.IsPublic,
                 Owner = new User()
                 {
                     UserId = result.UserId,
