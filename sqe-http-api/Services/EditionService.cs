@@ -70,6 +70,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             {
                 id = model.EditionId,
                 name = model.Name,
+                editionDataEditorId = model.EditionDataEditorId,
                 permission = PermissionModelToDTO(model.Permission),
                 owner = UserService.UserModelToDto(model.Owner),
                 thumbnailUrl = model.Thumbnail,

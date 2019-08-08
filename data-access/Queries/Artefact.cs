@@ -13,10 +13,13 @@
     {
         private const string _getArtefact = @"
 SELECT artefact_data.name AS Name, 
+       artefact_data_owner.edition_editor_id AS ArtefactDataEditorId,
        $Mask as Mask,
        artefact_shape.artefact_id AS ArtefactId,
+       artefact_shape_owner.edition_editor_id AS MaskEditorId,
        artefact_position.transform_matrix AS TransformMatrix,
        artefact_position.z_index AS ZIndex,
+       artefact_position_owner.edition_editor_id AS TransformMatrixEditorId,
        image_catalog.object_id AS ImagedObjectId,
        image_catalog.catalog_side AS CatalogSide, 
        SQE_image.image_catalog_id AS ImageCatalogId

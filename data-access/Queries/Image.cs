@@ -21,6 +21,7 @@ SELECT image_urls.url AS url,
     image_catalog.object_id AS object_id,
     ASTEXT(image_to_image_map.region_on_image1) AS region_on_image1,
     ASTEXT(image_to_image_map.region_on_image2) AS region_on_image2,
+    NULL AS image_to_image_map_editor_id,
     image_to_image_map.transform_matrix AS transform_matrix
 FROM iaa_edition_catalog
 JOIN edition USING(manuscript_id)
@@ -50,7 +51,7 @@ WHERE edition.edition_id = @EditionId
             public string url { get; set; }
             public string proxy { get; set; }
             public string filename { get; set; }
-            public string sqe_image_id { get; set; }
+            public uint sqe_image_id { get; set; }
             public uint image_catalog_id { get; set; }
             public byte img_type { get; set; }
             public byte side { get; set; }
@@ -62,6 +63,7 @@ WHERE edition.edition_id = @EditionId
             public string catalog_1 { get; set; }
             public string catalog_2 { get; set; }
             public string object_id { get; set; }
+            public uint? image_to_image_map_editor_id { get; set; }
             public string region_on_image1 { get; set; }
             public string region_on_image2 { get; set; }
             public string transform_matrix { get; set; }

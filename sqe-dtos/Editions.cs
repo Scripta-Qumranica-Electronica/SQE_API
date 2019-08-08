@@ -4,10 +4,12 @@ using Newtonsoft.Json;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
+    // TODO: get rid of owner and instead provide a list of editors (don't give the email addresses)
     public class EditionDTO
     {
         public uint id { get; set; }
         public string name { get; set; }
+        public uint editionDataEditorId { get; set; }
         public PermissionDTO permission { get; set; }
         public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }

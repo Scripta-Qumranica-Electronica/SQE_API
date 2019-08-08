@@ -3,7 +3,8 @@
     public class Image
     {
         public string URL { get; set; }
-        public string Id { get; set; }
+        public uint Id { get; set; }
+        public uint? ImageToImageMapEditorId { get; set; }
         public string[] WaveLength { set; get; }
         public byte Type { set; get; }
         public string Side { get; set; }
