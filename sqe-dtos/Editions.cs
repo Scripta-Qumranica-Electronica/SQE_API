@@ -94,10 +94,8 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class EditionCopyDTO : EditionUpdateRequestDTO
     {
-        public EditionCopyDTO(string name, string copyrightHolder, string collaborators) : base(name, copyrightHolder,
-            collaborators)
-        {
-        }
+        public EditionCopyDTO(string name, string copyrightHolder, string collaborators) 
+            : base(name, copyrightHolder, collaborators) {}
     }
     #endregion Request DTO's
 }

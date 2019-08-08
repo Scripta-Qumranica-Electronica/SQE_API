@@ -11,6 +11,7 @@
         public uint TransformMatrixEditorId { get; set; }
         public short ZIndex { get; set; }
         public byte CatalogSide { get; set; }
+        public uint ImageId { get; set; }
         public uint ImageCatalogId { get; set; }
         public string ImagedObjectId { get; set; }
     }

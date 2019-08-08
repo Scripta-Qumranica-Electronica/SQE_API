@@ -8,11 +8,14 @@ namespace SQE.SqeHttpApi.Server.DTOs
     {
         public uint id { get; set; }
         public string name { get; set; }
+        
+        public uint editorId { get; set; }
             
-        public TextFragmentDataDTO(uint id, string name)
+        public TextFragmentDataDTO(uint id, string name, uint editorId)
         {
             this.id = id;
             this.name = name;
+            this.editorId = editorId;
         }
     }
     

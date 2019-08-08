@@ -56,7 +56,7 @@ namespace SQE.SqeHttpApi.Server.Services
             {
                 return new TextFragmentDataListDTO(
                     (await _textRepo.GetFragmentDataAsync(user))
-                        .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName)).ToList()
+                        .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditor)).ToList()
                     );
             }
 
@@ -64,7 +64,7 @@ namespace SQE.SqeHttpApi.Server.Services
             {
                 var newFragment = await _textRepo.CreateTextFragmentAsync(user, createFragment.name, 
                         createFragment.previousTextFragmentId, createFragment.nextTextFragmentId);
-                return new TextFragmentDataDTO(newFragment.TextFragmentId, newFragment.TextFragmentName);
+                return new TextFragmentDataDTO(newFragment.TextFragmentId, newFragment.TextFragmentName, newFragment.EditionEditor);
             }
 
             private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)

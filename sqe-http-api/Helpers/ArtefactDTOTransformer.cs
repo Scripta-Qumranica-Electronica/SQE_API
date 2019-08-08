@@ -13,6 +13,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
             {
                 id = artefact.ArtefactId,
                 editionId = editionId,
+                imageId = artefact.ImageId,
                 artefactDataEditorId = artefact.ArtefactDataEditorId,
                 mask = new PolygonDTO()
                 {
