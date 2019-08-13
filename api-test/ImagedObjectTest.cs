@@ -257,12 +257,12 @@ namespace SQE.ApiTest
         private async Task<uint> GetEditionWithImages(uint user = 1)
         {
             const string sql = @"
-SELECT DISTINCT edition_editor.edition_id
+SELECT DISTINCT artefact_shape_owner.edition_id
 FROM artefact_shape_owner
-JOIN edition_editor USING(edition_editor_id)
+JOIN edition USING(edition_id)
 JOIN artefact_shape USING(artefact_shape_id)
 JOIN SQE_image USING(sqe_image_id)
-WHERE user_id = @UserId";
+WHERE edition.public = @UserId";
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", user);
             var editionIds = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
@@ -272,13 +272,13 @@ WHERE user_id = @UserId";
         private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact(uint user = 1)
         {
             const string sql = @"
-SELECT DISTINCT edition_editor.edition_id, image_catalog.object_id
+SELECT DISTINCT artefact_shape_owner.edition_id, image_catalog.object_id
 FROM artefact_shape_owner
-JOIN edition_editor USING(edition_editor_id)
+JOIN edition USING(edition_id)
 JOIN artefact_shape USING(artefact_shape_id)
 JOIN SQE_image USING(sqe_image_id)
 JOIN image_catalog USING(image_catalog_id)
-WHERE user_id = @UserId AND artefact_shape.region_in_sqe_image IS NOT NULL 
+WHERE edition.public = @UserId AND artefact_shape.region_in_sqe_image IS NOT NULL 
 LIMIT 50";
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", user);

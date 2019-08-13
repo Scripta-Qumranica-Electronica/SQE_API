@@ -68,7 +68,7 @@ namespace SQE.SqeHttpApi.DataAccess
     /// </summary>
     public static class DatabaseCommunicationRetryPolicy
     {
-        private const int RetryCount = 5;
+        private const int RetryCount = 10;
         private const int WaitBetweenRetriesInMilliseconds = 200;
         private static readonly Random _random = new Random();
 
@@ -131,7 +131,7 @@ namespace SQE.SqeHttpApi.DataAccess
     /// </summary>
     public class DatabaseCommunicationCircuitBreakPolicy
     {
-        private const int RetryCount = 5;
+        private const int RetryCount = 10;
         private const int WaitBetweenRetriesInMilliseconds = 200;
         private const int CircuitBreakerPause = 5;
         private readonly Random _random = new Random();
