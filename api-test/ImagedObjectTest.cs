@@ -258,11 +258,11 @@ namespace SQE.ApiTest
         {
             const string sql = @"
 SELECT DISTINCT artefact_shape_owner.edition_id
-FROM artefact_shape_owner
-JOIN edition USING(edition_id)
-JOIN artefact_shape USING(artefact_shape_id)
-JOIN SQE_image USING(sqe_image_id)
-WHERE edition.public = @UserId";
+FROM artefact_shape
+JOIN artefact_shape_owner ON artefact_shape.artefact_shape_id = artefact_shape_owner.artefact_shape_id
+JOIN edition_editor ON artefact_shape_owner.edition_editor_id = edition_editor.edition_editor_id
+  AND edition_editor.user_id = @UserId
+JOIN SQE_image ON artefact_shape.sqe_image_id = SQE_image.sqe_image_id";
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", user);
             var editionIds = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
@@ -273,12 +273,13 @@ WHERE edition.public = @UserId";
         {
             const string sql = @"
 SELECT DISTINCT artefact_shape_owner.edition_id, image_catalog.object_id
-FROM artefact_shape_owner
-JOIN edition USING(edition_id)
-JOIN artefact_shape USING(artefact_shape_id)
-JOIN SQE_image USING(sqe_image_id)
-JOIN image_catalog USING(image_catalog_id)
-WHERE edition.public = @UserId AND artefact_shape.region_in_sqe_image IS NOT NULL 
+FROM artefact_shape
+JOIN artefact_shape_owner ON artefact_shape.artefact_shape_id = artefact_shape_owner.artefact_shape_id
+JOIN SQE_image ON artefact_shape.sqe_image_id = SQE_image.sqe_image_id
+JOIN image_catalog ON SQE_image.image_catalog_id = image_catalog.image_catalog_id
+JOIN edition_editor ON artefact_shape_owner.edition_editor_id = edition_editor.edition_editor_id
+  AND edition_editor.user_id = @UserId
+WHERE artefact_shape.region_in_sqe_image IS NOT NULL 
 LIMIT 50";
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", user);
