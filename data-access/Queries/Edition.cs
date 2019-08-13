@@ -14,6 +14,7 @@ SELECT DISTINCT ed2.edition_id AS EditionId,
         SEPARATOR ', ')) AS Collaborators,
     current_editor.is_admin AS Admin,
     manuscript_data.name AS Name, 
+    manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
     im.thumbnail_url AS Thumbnail, 
     ed2.locked AS Locked,
     ed2.public AS IsPublic,
@@ -78,6 +79,7 @@ GROUP BY ed2.edition_id
             public uint EditionId { get; set; }
             public bool Admin { get; set; }
             public string Name { get; set; }
+            public uint EditionDataEditorId { get; set; }
             public string ScrollId { get; set; }
             public string Thumbnail { get; set; }
             public bool Locked { get; set; }

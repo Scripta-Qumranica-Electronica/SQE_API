@@ -8,6 +8,8 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public uint id { get; set; }
         public uint editionId { get; set; }
         public string imagedObjectId {get; set;}
+        public uint imageId { get; set; }
+        public uint artefactDataEditorId { get; set; }
         public string name { get; set; }
         public PolygonDTO mask { get; set; }
         public short zOrder { get; set; }

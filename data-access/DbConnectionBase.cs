@@ -68,14 +68,15 @@ namespace SQE.SqeHttpApi.DataAccess
     /// </summary>
     public static class DatabaseCommunicationRetryPolicy
     {
-        private const int RetryCount = 5;
-        private const int WaitBetweenRetriesInMilliseconds = 200;
+        private const int RetryCount = 40;
+        private const int WaitBetweenRetriesInMilliseconds = 50;
         private static readonly Random _random = new Random();
 
         private static readonly List<uint> _retrySqlExceptions = new List<uint>{ 1205, 1213, 1412 };
 
         private static readonly AsyncPolicy _retryPolicyAsync = Policy
-            .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
+            .Handle<MySqlException>(exception => 
+                _retrySqlExceptions.Contains(exception.Code))
             .WaitAndRetryAsync(
                 retryCount: RetryCount,
                 sleepDurationProvider: attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
@@ -131,7 +132,7 @@ namespace SQE.SqeHttpApi.DataAccess
     /// </summary>
     public class DatabaseCommunicationCircuitBreakPolicy
     {
-        private const int RetryCount = 5;
+        private const int RetryCount = 10;
         private const int WaitBetweenRetriesInMilliseconds = 200;
         private const int CircuitBreakerPause = 5;
         private readonly Random _random = new Random();

@@ -10,6 +10,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
     {
         public uint EditionId { get; set; }
         public string Name { get; set; }
+        public uint EditionDataEditorId { get; set; }
         public string ScrollId { get; set; }
         public Permission Permission { get; set; }
         public string Thumbnail { get; set; }
