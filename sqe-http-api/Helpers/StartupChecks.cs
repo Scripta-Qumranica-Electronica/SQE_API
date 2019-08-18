@@ -71,7 +71,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
             // Connect to the database and run a quick test query
             var tries = 0;
-            var max_tries = 3;
+            var max_tries = 5;
             while(tries < max_tries)
             {
                 tries++;
