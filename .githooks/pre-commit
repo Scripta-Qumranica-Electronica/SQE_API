@@ -50,6 +50,21 @@ check_appsettings_vars "MailerEmailPassword"
 check_appsettings_vars "MailerEmailSmtpUrl"
 check_appsettings_vars "MailerEmailSmtpPort"
 
+## We run the "linter" to ensure the code remains formatted consistently
+function cleanup_code
+{
+    ## Check that dotnet-format is installed
+    if ! dotnet tool list -g | grep "dotnet-format"; then
+        dotnet tool install -g dotnet-format
+    fi
+    
+    dotnet format
+}
+
+## Cleaning up code formatting
+echo "Cleaning up code formatting"
+cleanup_code
+
 ## We generate the ts definitions for the C# DTOs before pushing
 function generate_ts_from_dtos
 {

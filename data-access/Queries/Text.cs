@@ -1,15 +1,14 @@
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-  public static class GetTextChunk
-  {
-
-    /// <summary>
-    /// Retrieves all textual data for a chunk of text
-    /// </summary>
-    /// <param name="startId">Id of the first sign</param>
-    /// <param name="endId">Id of the last sign</param>
-    /// <param name="editionId">Id of the edition the text is to be taken from</param>
-    public const string GetQuery = @"
+	public static class GetTextChunk
+	{
+		/// <summary>
+		///     Retrieves all textual data for a chunk of text
+		/// </summary>
+		/// <param name="startId">Id of the first sign</param>
+		/// <param name="endId">Id of the last sign</param>
+		/// <param name="editionId">Id of the edition the text is to be taken from</param>
+		public const string GetQuery = @"
     WITH RECURSIVE sign_interpretation_ids
     AS (
           SELECT @startId AS signInterpretationId, @editionId AS EditionId
@@ -100,16 +99,16 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
 
       JOIN edition ON edition.edition_id = EditionId
 ";
-  }
+	}
 
-  internal static class GetLineTerminators
-  {
-    /// <summary>
-    /// Retrieves the first and last sign of a line
-    /// </summary>
-    /// <param name="entityId">Id of line</param>
-    /// <param name="editionId">d of the edition the line is to be taken from</param>
-    public const string GetQuery = @"
+	internal static class GetLineTerminators
+	{
+		/// <summary>
+		///     Retrieves the first and last sign of a line
+		/// </summary>
+		/// <param name="entityId">Id of line</param>
+		/// <param name="editionId">d of the edition the line is to be taken from</param>
+		public const string GetQuery = @"
       SELECT sign_interpretation.sign_interpretation_id
       FROM  line_to_sign
         JOIN  sign_interpretation USING (sign_id)
@@ -120,16 +119,16 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
         AND edition_id=@editionId
 
 ";
-  }
+	}
 
-  internal static class GetFragmentTerminators
-  {
-    /// <summary>
-    /// Retrieves the first and last sign of a textFragmentName
-    /// </summary>
-    /// <param name="entityId">Id of line</param>
-    /// <param name="editionId">d of the edition the line is to be taken from</param>
-    public const string GetQuery = @"
+	internal static class GetFragmentTerminators
+	{
+		/// <summary>
+		///     Retrieves the first and last sign of a textFragmentName
+		/// </summary>
+		/// <param name="entityId">Id of line</param>
+		/// <param name="editionId">d of the edition the line is to be taken from</param>
+		public const string GetQuery = @"
       SELECT sign_interpretation.sign_interpretation_id
       FROM text_fragment_to_line
         JOIN line_to_sign USING (line_id)
@@ -144,11 +143,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
         AND (edition_editor.user_id = @UserId OR edition.public = 1)
       ORDER BY attribute_value_id
 ";
-  }
+	}
 
-  internal static class GetLineData
-  {
-    public const string Query = @"
+	internal static class GetLineData
+	{
+		public const string Query = @"
       WITH RECURSIVE lineIds
       AS (
         SELECT text_fragment_to_line.text_fragment_id AS fragmentId, text_fragment_to_line.line_id AS lineId, line_data.name AS lineName, sign_interpretation_attribute_owner.edition_id AS editionId
@@ -193,10 +192,11 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       FROM lineIds
     
     ";
-  }
-  internal static class GetFragmentData
-  {
-    public const string GetQuery = @"
+	}
+
+	internal static class GetFragmentData
+	{
+		public const string GetQuery = @"
 SELECT text_fragment_id AS TextFragmentId, name AS TextFragmentName, text_fragment_sequence.position AS Position, 
        text_fragment_sequence.text_fragment_sequence_id AS TextFragmentSequenceId, 
        text_fragment_data_owner.edition_editor_id AS EditorId
@@ -211,21 +211,21 @@ FROM text_fragment_data
 WHERE edition_editor.user_id = @UserId OR edition.public = 1
 ORDER BY text_fragment_sequence.position
       ";
-  }
+	}
 
-  internal static class CreateTextFragment
-  {
-    public const string GetQuery = @"
+	internal static class CreateTextFragment
+	{
+		public const string GetQuery = @"
 INSERT INTO text_fragment () VALUES()
 ";
-  }
+	}
 
-  internal static class ManuscriptOfEdition
-  {
-    public const string GetQuery = @"
+	internal static class ManuscriptOfEdition
+	{
+		public const string GetQuery = @"
 SELECT manuscript_id
 FROM edition
 WHERE edition_id = @EditionId
 ";
-  }
+	}
 }

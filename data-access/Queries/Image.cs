@@ -2,9 +2,9 @@
 
 namespace SQE.SqeHttpApi.DataAccess.Queries
 {
-    internal class ImageQueries
-    {
-        private const string _getImageQuery = @"
+	internal class ImageQueries
+	{
+		private const string _getImageQuery = @"
 SELECT image_urls.url AS url,
     image_urls.proxy AS proxy,
     image_catalog.image_catalog_id,
@@ -37,42 +37,45 @@ JOIN image_urls ON SQE_image.image_urls_id = image_urls.image_urls_id
 WHERE edition.edition_id = @EditionId
     AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
-        public static string GetImageQuery(bool filterFragment)
-        {
-            if (!filterFragment)
-                return _getImageQuery;
-            var str = new StringBuilder(_getImageQuery);
-            str.Append(" AND image_catalog.object_id=@ObjectId");
-            return str.ToString();
-        }
 
-        internal class Result
-        {
-            public string url { get; set; }
-            public string proxy { get; set; }
-            public string filename { get; set; }
-            public uint sqe_image_id { get; set; }
-            public uint image_catalog_id { get; set; }
-            public byte img_type { get; set; }
-            public byte side { get; set; }
-            public bool master { get; set; }
-            public ushort wave_start { get; set; }
-            public ushort wave_end { get; set; }
-            //public string TransformMatrix { get; set; }
-            public string institution { get; set; }
-            public string catalog_1 { get; set; }
-            public string catalog_2 { get; set; }
-            public string object_id { get; set; }
-            public uint? image_to_image_map_editor_id { get; set; }
-            public string region_on_image1 { get; set; }
-            public string region_on_image2 { get; set; }
-            public string transform_matrix { get; set; }
-        }
-    }
+		public static string GetImageQuery(bool filterFragment)
+		{
+			if (!filterFragment)
+				return _getImageQuery;
+			var str = new StringBuilder(_getImageQuery);
+			str.Append(" AND image_catalog.object_id=@ObjectId");
+			return str.ToString();
+		}
 
-    internal class ImageGroupQuery
-    {
-        private const string _baseQuery = @"
+		internal class Result
+		{
+			public string url { get; set; }
+			public string proxy { get; set; }
+			public string filename { get; set; }
+			public uint sqe_image_id { get; set; }
+			public uint image_catalog_id { get; set; }
+			public byte img_type { get; set; }
+			public byte side { get; set; }
+			public bool master { get; set; }
+			public ushort wave_start { get; set; }
+
+			public ushort wave_end { get; set; }
+
+			//public string TransformMatrix { get; set; }
+			public string institution { get; set; }
+			public string catalog_1 { get; set; }
+			public string catalog_2 { get; set; }
+			public string object_id { get; set; }
+			public uint? image_to_image_map_editor_id { get; set; }
+			public string region_on_image1 { get; set; }
+			public string region_on_image2 { get; set; }
+			public string transform_matrix { get; set; }
+		}
+	}
+
+	internal class ImageGroupQuery
+	{
+		private const string _baseQuery = @"
 SELECT  image_catalog.image_catalog_id, 
         image_catalog.Institution, 
         image_catalog.catalog_number_1, 
@@ -80,38 +83,39 @@ SELECT  image_catalog.image_catalog_id,
         image_catalog.catalog_side
 FROM image_catalog
 ";
-        private const string _scrollLimit = @"
+
+		private const string _scrollLimit = @"
 JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
 JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN edition USING(manuscript_id)
 WHERE edition.edition_id = @EditionId
 ";
 
-        public static string GetQuery(bool limitScrolls)
-        {
-            return limitScrolls ? _baseQuery + _scrollLimit : _baseQuery;
-        }
+		public static string GetQuery(bool limitScrolls)
+		{
+			return limitScrolls ? _baseQuery + _scrollLimit : _baseQuery;
+		}
 
-        internal class Result
-        {
-            public uint image_catalog_id { get; set; }
-            public string institution { get; set; }
-            public string catalog_number_1 { get; set; }
-            public string catalog_number_2 { get; set; }
-            public byte catalog_side { get; set; }
-        }
-    }
+		internal class Result
+		{
+			public uint image_catalog_id { get; set; }
+			public string institution { get; set; }
+			public string catalog_number_1 { get; set; }
+			public string catalog_number_2 { get; set; }
+			public byte catalog_side { get; set; }
+		}
+	}
 
-    internal static class ImageInstitutionQuery
-    {
-        public static string GetQuery()
-        {
-            return $"SELECT DISTINCT Institution FROM image_catalog";
-        }
+	internal static class ImageInstitutionQuery
+	{
+		public static string GetQuery()
+		{
+			return "SELECT DISTINCT Institution FROM image_catalog";
+		}
 
-        internal class Result
-        {
-            public string Institution { get; set; }
-        }
-    }
+		internal class Result
+		{
+			public string Institution { get; set; }
+		}
+	}
 }
