@@ -6,6 +6,8 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.EntityFrameworkCore.Internal;
 using SQE.SqeHttpApi.DataAccess;
+using MySql.Data.MySqlClient;
+using System.Threading;
 
 namespace SQE.SqeHttpApi.Server.Helpers
 {
@@ -68,8 +70,26 @@ namespace SQE.SqeHttpApi.Server.Helpers
             CheckConfig(configuration, "MysqlPassword", err, "$DatabaseSetting");
 
             // Connect to the database and run a quick test query
-            var db = new DatabaseVerificationInstance(configuration);
-            db.Verify();
+            var tries = 0;
+            var max_tries = 5;
+            while(tries < max_tries)
+            {
+                tries++;
+                try
+                {
+                    var db = new DatabaseVerificationInstance(configuration);
+                    db.Verify();
+                    break;
+                }
+                catch (MySqlException)
+                {
+                    if (tries == max_tries)
+                        throw;
+
+                    Console.WriteLine("Database connection failed, retrying in a few seconds");
+                    Thread.Sleep(3);
+                }
+            }
         }
         
         private static void CheckConfig(IConfiguration configuration, string stringName, string err, string errReplaceToken = null)
