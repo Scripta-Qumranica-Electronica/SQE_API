@@ -263,12 +263,12 @@ export interface EditorDTO {
 }
 export interface ArtefactSide {
 }
-export enum Lighting {
-    direct = 0,
-    raking = 1
-}
 export enum Direction {
     left = 0,
     right = 1,
     top = 2
+}
+export enum Lighting {
+    direct = 0,
+    raking = 1
 }

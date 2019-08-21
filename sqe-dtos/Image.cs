@@ -2,41 +2,53 @@
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
-    public class ImageDTO
-    {
-        public uint id { get; set; }
-        public string url { get; set; }
-        public uint? imageToImageMapEditorId { get; set; }
-        public Lighting lightingType { get; set; }
-        public Direction lightingDirection { get; set; }
-        public string[] waveLength { get; set; }
-        public string type { get; set; }
-        public string side { get; set; }
-        public string regionInMasterImage { get; set; }
-        public string regionInImage { get; set; }
-        public string transformToMaster { get; set; }
-        public bool master { get; set; }
-        public uint catalogNumber { get; set; }
+	public class ImageDTO
+	{
+		public enum Direction
+		{
+			left,
+			right,
+			top
+		}
 
-        public enum Lighting { direct, raking }
-        public enum Direction { left, right, top }
-    }
+		public enum Lighting
+		{
+			direct,
+			raking
+		}
 
-    public class ImageInstitutionDTO
-    {
-        public string name { get; set; }
-        public ImageInstitutionDTO(string name)
-        {
-            this.name = name;
-        }
-    }
+		public uint id { get; set; }
+		public string url { get; set; }
+		public uint? imageToImageMapEditorId { get; set; }
+		public Lighting lightingType { get; set; }
+		public Direction lightingDirection { get; set; }
+		public string[] waveLength { get; set; }
+		public string type { get; set; }
+		public string side { get; set; }
+		public string regionInMasterImage { get; set; }
+		public string regionInImage { get; set; }
+		public string transformToMaster { get; set; }
+		public bool master { get; set; }
+		public uint catalogNumber { get; set; }
+	}
 
-    public class ImageInstitutionListDTO
-    {
-        public List<ImageInstitutionDTO> institutions { get; set; }
-        public ImageInstitutionListDTO(List<ImageInstitutionDTO> institutions)
-        {
-            this.institutions = institutions;
-        }
-    }
+	public class ImageInstitutionDTO
+	{
+		public ImageInstitutionDTO(string name)
+		{
+			this.name = name;
+		}
+
+		public string name { get; set; }
+	}
+
+	public class ImageInstitutionListDTO
+	{
+		public ImageInstitutionListDTO(List<ImageInstitutionDTO> institutions)
+		{
+			this.institutions = institutions;
+		}
+
+		public List<ImageInstitutionDTO> institutions { get; set; }
+	}
 }
