@@ -21,9 +21,11 @@ namespace SQE.SqeHttpApi.DataAccess
         Task ChangeEditionCopyrightAsync(UserInfo user, string copyrightHolder = null, string collaborators = null);
         Task<string> DeleteAllEditionDataAsync(UserInfo user, string token);
         Task<string> GetDeleteToken(UserInfo user);
-        Task<Permission> AddEditionEditor(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
+
+        Task<Permission> AddEditionEditor(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite,
             bool? mayLock, bool? isAdmin);
-        Task<Permission> ChangeEditionEditorRights(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
+
+        Task<Permission> ChangeEditionEditorRights(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite,
             bool? mayLock, bool? isAdmin);
     }
 
@@ -31,7 +33,7 @@ namespace SQE.SqeHttpApi.DataAccess
     {
         readonly IDatabaseWriter _databaseWriter;
 
-        public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config) 
+        public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
             _databaseWriter = databaseWriter;
         }
@@ -41,8 +43,9 @@ namespace SQE.SqeHttpApi.DataAccess
             using (var connection = OpenConnection())
             {
                 var results = await connection.QueryAsync<EditionGroupQuery.Result>(
-                    EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue), 
-                    new {
+                    EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue),
+                    new
+                    {
                         UserId = userId ?? 0, // @UserId is not expanded if userId is null
                         EditionId = editionId ?? 0,
                     });
@@ -58,6 +61,7 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 EditionId = result.EditionId,
                 Name = result.Name,
+                EditionDataEditorId = result.EditionDataEditorId,
                 ScrollId = result.ScrollId,
                 Thumbnail = result.Thumbnail,
                 Locked = result.Locked,
@@ -100,15 +104,16 @@ namespace SQE.SqeHttpApi.DataAccess
             using (var connection = OpenConnection())
             {
                 EditionNameQuery.Result result;
-                
+
                 try
                 {
                     // Here we get the data from the original scroll_data field, we need the scroll_id,
                     // which no one in the front end will generally have or care about.
-                    result = await connection.QuerySingleAsync<EditionNameQuery.Result>(EditionNameQuery.GetQuery(), 
-                        new {
-                        EditionId = user.editionId ?? 0
-                    });
+                    result = await connection.QuerySingleAsync<EditionNameQuery.Result>(EditionNameQuery.GetQuery(),
+                        new
+                        {
+                            EditionId = user.editionId ?? 0
+                        });
                 }
                 catch (InvalidOperationException)
                 {
@@ -118,7 +123,7 @@ namespace SQE.SqeHttpApi.DataAccess
                 // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
                 // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
                 // throws a NoPermissionException immediately.
-                
+
                 // Now we create the mutation object for the requested action
                 // You will want to check the database to make sure you what you are doing.
                 var nameChangeParams = new DynamicParameters();
@@ -129,11 +134,11 @@ namespace SQE.SqeHttpApi.DataAccess
                     nameChangeParams,
                     "manuscript_data",
                     result.ScrollDataId
-                    );
-                
+                );
+
                 // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
                 // care of main_action and single_action.
-                await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() { nameChangeRequest });
+                await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest>() {nameChangeRequest});
             }
         }
 
@@ -168,25 +173,25 @@ namespace SQE.SqeHttpApi.DataAccess
                             new {EditionId = user.editionId});
                     if (!fromVersion.Locked)
                         throw new StandardErrors.EditionCopyLockProtection(user);
-                    
+
                     // Create a new edition
-                    connection.Execute(CopyEditionQuery.GetQuery, 
+                    connection.Execute(CopyEditionQuery.GetQuery,
                         new
                         {
                             EditionId = user.editionId,
                             CopyrightHolder = copyrightHolder,
                             Collaborators = collaborators,
                         });
-                    
+
                     var toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                     if (toEditionId == 0)
                         throw new StandardErrors.DataNotWritten("create edition");
-                    
+
                     // Create new edition_editor
-                    connection.Execute(Queries.CreateEditionEditorQuery.GetQuery, 
+                    connection.Execute(Queries.CreateEditionEditorQuery.GetQuery,
                         new
                         {
-                            EditionId = toEditionId, 
+                            EditionId = toEditionId,
                             UserId = user.userId,
                             MayLock = 1,
                             IsAdmin = 1
@@ -203,7 +208,7 @@ namespace SQE.SqeHttpApi.DataAccess
                     foreach (var ownerTable in ownerTables)
                     {
                         var tableName = ownerTable.TableName;
-                        var tableIdColumn = tableName.Substring(0, tableName.Length-5) + "id";
+                        var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
                         connection.Execute(
                             CopyEditionDataForTableQuery.GetQuery(tableName, tableIdColumn),
                             new
@@ -213,6 +218,7 @@ namespace SQE.SqeHttpApi.DataAccess
                                 CopyToEditionId = toEditionId
                             });
                     }
+
                     //Cleanup
                     transactionScope.Complete();
                     return toEditionId;
@@ -228,7 +234,8 @@ namespace SQE.SqeHttpApi.DataAccess
         /// <param name="collaborators">The new collaborator list. Null is meaningful here 
         /// and will switch to an autogenerated collaborator listing.</param>
         /// <returns></returns>
-        public async Task ChangeEditionCopyrightAsync(UserInfo user, string copyrightHolder = null, string collaborators = null)
+        public async Task ChangeEditionCopyrightAsync(UserInfo user, string copyrightHolder = null,
+            string collaborators = null)
         {
             // Let's only allow admins to change these legal details.
             if (!(await user.IsAdmin()))
@@ -257,7 +264,7 @@ namespace SQE.SqeHttpApi.DataAccess
             // We only allow admins to delete all data in an unlocked edition.
             if (!(await user.IsAdmin()))
                 throw new StandardErrors.NoAdminPermissions(user);
-            
+
             // A token is required to delete an edition (we make sure here that people don't accidentally do it)
             if (string.IsNullOrEmpty(token))
             {
@@ -269,42 +276,55 @@ namespace SQE.SqeHttpApi.DataAccess
             await Task.WhenAll(
                 editors.Select(
                     x => ChangeEditionEditorRights(user, x.Email, x.MayRead, false, x.MayLock, x.IsAdmin)
-                    )
-                );
+                )
+            );
 
-            using (var transactionScope = new TransactionScope())
+            // Note: I had wrapped the following in a transaction, but this has the problem that it can lockup every
+            // *_owner table in the entire database for a significant amount of time (sometimes 1000's of rows will be
+            // deleted from a single table). So I am doing it now without any transaction and with some retry
+            // logic.  What this means is that a delete might be partially carried out and return with an error,
+            // in which case the user will need to try again. This is not too worrisome since an inconsistent state
+            // for a deleted edition is not a cause for user concern (the users only care about the edition
+            // becoming unusable, not whether any data was left behind). It is a concern for those maintaining the
+            // database, and we should discuss what might be done for that.  We could check for this and other things
+            // with some "health check" services.
             using (var connection = OpenConnection())
             {
                 // Verify that the token is still valid
                 var deleteToken = await connection.ExecuteAsync(DeleteUserEmailTokenQuery.GetTokenQuery, new
-                    { Tokens = new []{token}, Type = CreateUserEmailTokenQuery.DeleteEdition});
+                    {Tokens = new[] {token}, Type = CreateUserEmailTokenQuery.DeleteEdition});
                 if (deleteToken != 1)
                     throw new StandardErrors.DataNotWritten("verifying the delete request token");
-                
+
                 // Dynamically get all tables that can be part of an edition, that way we don't worry about
                 // this breaking due to future updates.
                 var dataTables = await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
-                
+
                 // Loop over every table and remove every entry with the requested editionId
                 // Each individual delete can be async and happen concurrently
                 await Task.WhenAll(
                     dataTables.Select(
-                        dataTable => connection.ExecuteAsync(DeleteEditionFromTable.GetQuery(dataTable.TableName), 
-                            new {EditionId = user.editionId ?? 0, UserId = user.userId ?? 0,})
-                        ).ToArray()
-                    );
-                
-                // Commit the full transaction (all or nothing)
-                transactionScope.Complete();
+                        dataTable => this.DeleteDataFromOwnerTable(connection, dataTable.TableName, user)
+                    ).ToArray()
+                );
+
                 return null;
             }
         }
+
+        private async Task DeleteDataFromOwnerTable(IDbConnection connection, string tableName, UserInfo user)
+        {
+            await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
+                await connection.ExecuteAsync(DeleteEditionFromTable.GetQuery(tableName),
+                    new {EditionId = user.editionId ?? 0, UserId = user.userId ?? 0,})
+            );
+        }
+
 
         public async Task<string> GetDeleteToken(UserInfo user)
         {
             // Generate our secret token
             var token = Guid.NewGuid().ToString();
-
             using (var connection = OpenConnection())
             {
                 // Add the secret token to the database
@@ -323,17 +343,17 @@ namespace SQE.SqeHttpApi.DataAccess
             return token;
         }
 
-        public async Task<Permission> AddEditionEditor(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite, 
+        public async Task<Permission> AddEditionEditor(UserInfo user, string editorEmail, bool? mayRead, bool? mayWrite,
             bool? mayLock, bool? isAdmin)
         {
             // Make sure requesting user is admin, only and edition admin may perform this action
             if (!(await user.IsAdmin()))
                 throw new StandardErrors.NoAdminPermissions(user);
-            
+
             // Check if the editor already exists, don't attempt to re-add
             if ((await _getEditionEditors(user.editionId ?? 0)).Any(x => x.Email == editorEmail))
                 throw new StandardErrors.ConflictingData("editor email");
-            
+
             // Set the permissions object by coalescing with the default values
             var permissions = new Permission()
             {
@@ -342,14 +362,12 @@ namespace SQE.SqeHttpApi.DataAccess
                 MayLock = mayLock ?? false,
                 IsAdmin = isAdmin ?? false
             };
-            
+
             // Check for invalid settings
             if (permissions.IsAdmin && !permissions.MayRead)
                 throw new StandardErrors.InputDataRuleViolation("an edition admin must have read rights");
-            
             if (permissions.MayWrite && !permissions.MayRead)
                 throw new StandardErrors.InputDataRuleViolation("an editor with write rights must have read rights");
-
             using (var connection = OpenConnection())
             {
                 // Add the editor
@@ -378,19 +396,21 @@ namespace SQE.SqeHttpApi.DataAccess
             bool? mayWrite, bool? mayLock, bool? isAdmin)
         {
             // Make sure requesting user is admin when raising access, only and edition admin may perform this action
-            if (((mayRead ?? false) || (mayWrite ?? false) || (mayLock ?? false) || (isAdmin ?? false)) && 
+            if (((mayRead ?? false) || (mayWrite ?? false) || (mayLock ?? false) || (isAdmin ?? false)) &&
                 !(await user.IsAdmin()))
                 throw new StandardErrors.NoAdminPermissions(user);
-            
+
             // Check if the editor exists
             var editors = await _getEditionEditors(user.editionId ?? 0);
+
             var currentEditorSettingsList = editors.Where(x => x.Email == editorEmail).ToList();
             if (currentEditorSettingsList.Count != 1) // There should be only 1 record
-                throw new StandardErrors.DataNotFound("editor email", user.editionId.ToString(), 
+                throw new StandardErrors.DataNotFound("editor email", user.editionId.ToString(),
                     "edition_editors");
-            
+
             // Set the new permissions object by coalescing the new settings with those already existing
             var currentEditorSettings = currentEditorSettingsList.First();
+
             var permissions = new Permission()
             {
                 MayRead = mayRead ?? currentEditorSettings.MayRead,
@@ -398,23 +418,24 @@ namespace SQE.SqeHttpApi.DataAccess
                 MayLock = mayLock ?? currentEditorSettings.MayLock,
                 IsAdmin = isAdmin ?? currentEditorSettings.IsAdmin
             };
-            
+
             // Make sure we are not removing an admin's read access (that is not allowed)
             if (permissions.IsAdmin && !permissions.MayRead)
                 throw new StandardErrors.InputDataRuleViolation("read rights may not be revoked for an edition admin");
-            
+
             // Make sure that we are not revoking editor's read access when editor still has write access 
             if (permissions.MayWrite && !permissions.MayRead)
-                throw new StandardErrors.InputDataRuleViolation("read rights may not be revoked for an editor with write rights");
-            
+                throw new StandardErrors.InputDataRuleViolation(
+                    "read rights may not be revoked for an editor with write rights");
             using (var connection = OpenConnection())
             {
                 // If the last admin is giving up admin rights, return error message with token for complete delete
-                if (!editors.Any(x => (x.Email == editorEmail && permissions.IsAdmin) || (x.Email != editorEmail && x.IsAdmin)))
+                if (!editors.Any(x =>
+                    (x.Email == editorEmail && permissions.IsAdmin) || (x.Email != editorEmail && x.IsAdmin)))
                     throw new StandardErrors.InputDataRuleViolation($@"an edition must have at least one admin.  
 Please give admin status to another editor before relinquishing admin status for the current user or deleting the edition.
 An admin may delete the edition for all editors with the request DELETE /v1/editions/{user.editionId.ToString()}.");
-            
+
                 // Perform the update
                 var editorUpdateExecution = await connection.ExecuteAsync(UpdateEditionEditorPermissionsQuery.GetQuery,
                     new
@@ -433,7 +454,6 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                 // Return the results
                 return permissions;
             }
-            
 
             // In the future should we email the editor about their change in status?
         }
@@ -448,7 +468,3 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
         }
     }
 }
-
-
-
-

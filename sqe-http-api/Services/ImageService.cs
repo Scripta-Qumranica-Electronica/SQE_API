@@ -29,18 +29,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
             {
                 id = model.Id,
                 url = model.URL,
+                imageToImageMapEditorId = model.ImageToImageMapEditorId,
                 waveLength = model.WaveLength,
                 type = GetType(model.Type),
-                regionInMaster = new PolygonDTO()
-                {
-                    mask = model.RegionInMaster,
-                    transformMatrix = null
-                },
-                regionOfMaster = new PolygonDTO()
-                {
-                    mask = model.RegionOfMaster,
-                    transformMatrix = null
-                },
+                regionInMasterImage = model.RegionInMaster,
+                regionInImage = model.RegionOfMaster,
                 lightingDirection = GetLightingDirection(model.Type),
                 lightingType = GetLightingType(model.Type),
                 side = model.Side,

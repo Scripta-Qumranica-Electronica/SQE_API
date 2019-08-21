@@ -4,10 +4,12 @@ using Newtonsoft.Json;
 
 namespace SQE.SqeHttpApi.Server.DTOs
 {
+    // TODO: get rid of owner and instead provide a list of editors (don't give the email addresses)
     public class EditionDTO
     {
         public uint id { get; set; }
         public string name { get; set; }
+        public uint editionDataEditorId { get; set; }
         public PermissionDTO permission { get; set; }
         public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }
@@ -35,13 +37,13 @@ namespace SQE.SqeHttpApi.Server.DTOs
         public bool isAdmin { get; set; }
     }
 
-    public class EditorRightsDTO : PermissionDTO
+    public class EditorRightsDTO
     {
         public string email { get; set; }
         public bool? mayRead { get; set; }
-        public new bool? isAdmin { get; set; }
+        public bool? isAdmin { get; set; }
         public bool? mayLock { get; set; }
-        public new bool? mayWrite { get; set; }
+        public bool? mayWrite { get; set; }
     }
     
     public class TextEditionDTO
@@ -92,10 +94,8 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
     public class EditionCopyDTO : EditionUpdateRequestDTO
     {
-        public EditionCopyDTO(string name, string copyrightHolder, string collaborators) : base(name, copyrightHolder,
-            collaborators)
-        {
-        }
+        public EditionCopyDTO(string name, string copyrightHolder, string collaborators) 
+            : base(name, copyrightHolder, collaborators) {}
     }
     #endregion Request DTO's
 }

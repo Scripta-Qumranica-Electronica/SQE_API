@@ -21,8 +21,8 @@ namespace SQE.ApiTest.Helpers
         public DatabaseQuery()
         {
             // TODO: Find a better way to get these settings.
-            string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName;
-            using (StreamReader r = new StreamReader(projectDirectory + "/../../sqe-http-api/appsettings.json"))
+            var projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName;
+            using (var r = new StreamReader(projectDirectory + "/../../sqe-http-api/appsettings.json"))
             {
                 var json = r.ReadToEnd();
                 dynamic settings = JsonConvert.DeserializeObject(json);
@@ -33,7 +33,6 @@ namespace SQE.ApiTest.Helpers
                 var pwd = settings.ConnectionStrings.MysqlPassword;
                 _connection = $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8;";
             }
-            
         }
 
         private IDbConnection OpenConnection()

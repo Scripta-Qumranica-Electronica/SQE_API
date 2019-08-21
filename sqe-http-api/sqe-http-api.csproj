@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\data-access\data-access.csproj" />
+    <ProjectReference Include="..\sqe-dtos\sqe-dtos.csproj" />
   </ItemGroup>
 
   <ItemGroup>

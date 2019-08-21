@@ -445,9 +445,9 @@ namespace SQE.ApiTest
             
             // Act (attempt to reset password with token)
             var newPassword = _faker.Internet.Password();
-            var (cpResponse, cpMsg) = await HttpRequest.SendAsync<ResetForgottenUserPasswordRequestDto, string>(
+            var (cpResponse, cpMsg) = await HttpRequest.SendAsync<ResetForgottenUserPasswordRequestDTO, string>(
                 _client, HttpMethod.Post, changeForgottenPassword, 
-                new ResetForgottenUserPasswordRequestDto(){token = userToken.token, password = newPassword});
+                new ResetForgottenUserPasswordRequestDTO(){token = userToken.token, password = newPassword});
             
             // Assert (attempt to reset password with token)
             cpResponse.EnsureSuccessStatusCode();

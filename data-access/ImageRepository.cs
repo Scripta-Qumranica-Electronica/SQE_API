@@ -43,6 +43,7 @@ namespace SQE.SqeHttpApi.DataAccess
             {
                 URL = image.proxy + image.url + image.filename,
                 Id = image.sqe_image_id,
+                ImageToImageMapEditorId = image.image_to_image_map_editor_id,
                 Side = image.side == 0 ? "recto" : "verso",
                 Type = image.img_type,
                 WaveLength = GetWave(image.wave_start, image.wave_end),

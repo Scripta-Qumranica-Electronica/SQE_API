@@ -42,6 +42,10 @@ These environment variables automatically rewrite the settings `sqe-http-api/app
 
 This project has a custom githook in .githooks that will ensure no sensitive data is transmitted to GitHub when pushing commits. If you want to benefit from this, you must run `git config core.hooksPath .githooks` in the project's root to enable the checks.
 
+## Typescript interoperability
+
+The data returned by the SQE API is formatted according to strictly structured data transfer objects. Typescript definitions for all data transfer objects are automatically generated from the C# code and are provide in a single file [`ts-dtos/sqe-dtos.ts`](./ts-dtos/sqe-dtos.ts).
+
 ## Project structure
 
 The overall project (or solution) uses several distinct components in two separate cs projects to process web requests.  The `sqe-http-api` project houses the `controllers`, which receive HTTP requests and route them to the `services`, which are responsible for managing the data access task and formatting the response using a `DTO`.  We still need to add a project with the `sqe-signalr-api`.
