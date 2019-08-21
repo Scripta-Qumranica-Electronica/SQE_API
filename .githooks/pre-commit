@@ -34,6 +34,7 @@ function check_appsettings_vars
 }
 
 ## Checking for custom settings in docker/deploy/docker-compose.yml
+echo "Checking for private data in docker/deploy/docker-compose.yml"
 check_docker_vars "MAILER_EMAIL_ADDRESS"
 check_docker_vars "MAILER_EMAIL_USERNAME"
 check_docker_vars "MAILER_EMAIL_PASSWORD"
@@ -42,6 +43,7 @@ check_docker_vars "MAILER_EMAIL_SMTP_PORT"
 check_docker_vars "WEBSITE_HOST"
 
 ## Checking for custom settings in sqe-http-api/appsettings.json
+echo "Checking for private data in sqe-http-api/appsettings.json"
 check_appsettings_vars "MailerEmailAddress"
 check_appsettings_vars "MailerEmailUsername"
 check_appsettings_vars "MailerEmailPassword"
@@ -49,11 +51,13 @@ check_appsettings_vars "MailerEmailSmtpUrl"
 check_appsettings_vars "MailerEmailSmtpPort"
 
 ## We generate the ts definitions for the C# DTOs before pushing
-function generateTsFromDto
+function generate_ts_from_dtos
 {
     dotnet build Utilities/GenerateTypescriptDTOs
     dotnet build sqe-dtos
     dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp2.2/GenerateTypescriptDTOs.dll sqe-dtos/bin/Debug/netcoreapp2.2/sqe-dtos.dll ts-dtos/sqe-dtos.ts 
 }
 
-generateTsFromDto
+## Generating typescript definitions
+echo "Generating typescript dto definitions"
+generate_ts_from_dtos
