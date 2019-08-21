@@ -48,3 +48,12 @@ check_appsettings_vars "MailerEmailPassword"
 check_appsettings_vars "MailerEmailSmtpUrl"
 check_appsettings_vars "MailerEmailSmtpPort"
 
+## We generate the ts definitions for the C# DTOs before pushing
+function generateTsFromDto
+{
+    dotnet build Utilities/GenerateTypescriptDTOs
+    dotnet build sqe-dtos
+    dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp2.2/GenerateTypescriptDTOs.dll sqe-dtos/bin/Debug/netcoreapp2.2/sqe-dtos.dll ts-dtos/sqe-dtos.ts 
+}
+
+generateTsFromDto
