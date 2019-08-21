@@ -76,3 +76,6 @@ function generate_ts_from_dtos
 ## Generating typescript definitions
 echo "Generating typescript dto definitions"
 generate_ts_from_dtos
+
+## Now add any updated files
+git add -A

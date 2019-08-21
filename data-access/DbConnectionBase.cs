@@ -73,7 +73,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		// The total delay will be somewhere between 4375 and 5425 ms.
 		private const int RetryCount = 7;
 		private const int WaitBetweenRetriesInMilliseconds = 175;
-		
+
 		private static readonly Random _random = new Random();
 
 		private static readonly List<uint> _retrySqlExceptions = new List<uint> { 1205, 1213, 1412 };

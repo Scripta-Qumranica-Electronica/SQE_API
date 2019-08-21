@@ -49,7 +49,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			parameters.Add("@UserId", userId);
 			var allUserEditions = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
 
-			var editionId = allUserEditions[(int) artefactCount % (allUserEditions.Count + 1)];
+			var editionId = allUserEditions[(int)artefactCount % (allUserEditions.Count + 1)];
 			var url = $"/{version}/editions/{editionId}/{controller}?optional=masks";
 			var (response, artefactResponse) = await HttpRequest.SendAsync<string, ArtefactListDTO>(
 				_client,
@@ -181,7 +181,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			await DeleteArtefact(newEdition, writtenArtefact.id);
 
 			// Arrange
-			newName = "CanCreateArtefacts.artefact ב";;
+			newName = "CanCreateArtefacts.artefact ב"; ;
 
 			newArtefact = new CreateArtefactDTO
 			{
@@ -266,7 +266,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
 			var newTransform = RandomPosition();
-			var newName = "CanCreateArtefacts.artefact α";;
+			var newName = "CanCreateArtefacts.artefact α"; ;
 			var newArtefact = new CreateArtefactDTO
 			{
 				mask = newArtefactShape,
