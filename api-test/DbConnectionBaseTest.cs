@@ -25,15 +25,15 @@ namespace SQE.ApiTest
 			counter.Count += 1;
 			var mySqlExceptionType = typeof(MySqlException).GetTypeInfo();
 			var internalConstructor = (from consInfo in mySqlExceptionType.DeclaredConstructors
-				let paramInfos = consInfo.GetParameters()
-				where paramInfos.Length == 3
-				      && paramInfos[0].ParameterType == typeof(uint)
-				      && paramInfos[1].ParameterType == typeof(string)
-				      && paramInfos[2].ParameterType == typeof(string)
-				select consInfo).Single();
+									   let paramInfos = consInfo.GetParameters()
+									   where paramInfos.Length == 3
+											 && paramInfos[0].ParameterType == typeof(uint)
+											 && paramInfos[1].ParameterType == typeof(string)
+											 && paramInfos[2].ParameterType == typeof(string)
+									   select consInfo).Single();
 
 			var exception =
-				internalConstructor.Invoke(new object[] {sqlErrorCode, "Nothing done.", "deadlock"}) as Exception;
+				internalConstructor.Invoke(new object[] { sqlErrorCode, "Nothing done.", "deadlock" }) as Exception;
 			throw exception;
 		}
 
@@ -42,15 +42,15 @@ namespace SQE.ApiTest
 			counter.Count += 1;
 			var mySqlExceptionType = typeof(MySqlException).GetTypeInfo();
 			var internalConstructor = (from consInfo in mySqlExceptionType.DeclaredConstructors
-				let paramInfos = consInfo.GetParameters()
-				where paramInfos.Length == 3
-				      && paramInfos[0].ParameterType == typeof(uint)
-				      && paramInfos[1].ParameterType == typeof(string)
-				      && paramInfos[2].ParameterType == typeof(string)
-				select consInfo).Single();
+									   let paramInfos = consInfo.GetParameters()
+									   where paramInfos.Length == 3
+											 && paramInfos[0].ParameterType == typeof(uint)
+											 && paramInfos[1].ParameterType == typeof(string)
+											 && paramInfos[2].ParameterType == typeof(string)
+									   select consInfo).Single();
 
 			var exception =
-				internalConstructor.Invoke(new object[] {sqlErrorCode, "Nothing done.", "deadlock"}) as Exception;
+				internalConstructor.Invoke(new object[] { sqlErrorCode, "Nothing done.", "deadlock" }) as Exception;
 			throw exception;
 		}
 
@@ -59,15 +59,15 @@ namespace SQE.ApiTest
 			counter.Count += 1;
 			var mySqlExceptionType = typeof(MySqlException).GetTypeInfo();
 			var internalConstructor = (from consInfo in mySqlExceptionType.DeclaredConstructors
-				let paramInfos = consInfo.GetParameters()
-				where paramInfos.Length == 3
-				      && paramInfos[0].ParameterType == typeof(uint)
-				      && paramInfos[1].ParameterType == typeof(string)
-				      && paramInfos[2].ParameterType == typeof(string)
-				select consInfo).Single();
+									   let paramInfos = consInfo.GetParameters()
+									   where paramInfos.Length == 3
+											 && paramInfos[0].ParameterType == typeof(uint)
+											 && paramInfos[1].ParameterType == typeof(string)
+											 && paramInfos[2].ParameterType == typeof(string)
+									   select consInfo).Single();
 
 			var exception =
-				internalConstructor.Invoke(new object[] {sqlErrorCode, "Nothing done.", "deadlock"}) as Exception;
+				internalConstructor.Invoke(new object[] { sqlErrorCode, "Nothing done.", "deadlock" }) as Exception;
 			throw exception;
 		}
 
@@ -76,15 +76,15 @@ namespace SQE.ApiTest
 			counter.Count += 1;
 			var mySqlExceptionType = typeof(MySqlException).GetTypeInfo();
 			var internalConstructor = (from consInfo in mySqlExceptionType.DeclaredConstructors
-				let paramInfos = consInfo.GetParameters()
-				where paramInfos.Length == 3
-				      && paramInfos[0].ParameterType == typeof(uint)
-				      && paramInfos[1].ParameterType == typeof(string)
-				      && paramInfos[2].ParameterType == typeof(string)
-				select consInfo).Single();
+									   let paramInfos = consInfo.GetParameters()
+									   where paramInfos.Length == 3
+											 && paramInfos[0].ParameterType == typeof(uint)
+											 && paramInfos[1].ParameterType == typeof(string)
+											 && paramInfos[2].ParameterType == typeof(string)
+									   select consInfo).Single();
 
 			var exception =
-				internalConstructor.Invoke(new object[] {sqlErrorCode, "Nothing done.", "deadlock"}) as Exception;
+				internalConstructor.Invoke(new object[] { sqlErrorCode, "Nothing done.", "deadlock" }) as Exception;
 			throw exception;
 		}
 
@@ -97,7 +97,7 @@ namespace SQE.ApiTest
 		public void RetryPoliciesShouldNotRepeat()
 		{
 			// Arrange
-			var counter = new Counter {Count = 0};
+			var counter = new Counter { Count = 0 };
 			const uint code = 1203;
 			var watch = Stopwatch.StartNew();
 
@@ -116,7 +116,7 @@ namespace SQE.ApiTest
 		public async Task RetryPoliciesShouldRepeat()
 		{
 			// Arrange
-			var counter = new Counter {Count = 0};
+			var counter = new Counter { Count = 0 };
 			const uint code = 1205;
 			const int minExecutionTime = 2500; // Currently 200 factorial 5 - minimum random offset (100 * 5)
 
@@ -135,7 +135,7 @@ namespace SQE.ApiTest
 
 			// With return type
 			// Arrange
-			counter = new Counter {Count = 0};
+			counter = new Counter { Count = 0 };
 			watch = Stopwatch.StartNew();
 
 			// Act
@@ -151,7 +151,7 @@ namespace SQE.ApiTest
 
 			// With Async
 			// Arrange
-			counter = new Counter {Count = 0};
+			counter = new Counter { Count = 0 };
 			watch = Stopwatch.StartNew();
 			var token = new CancellationToken();
 
@@ -171,7 +171,7 @@ namespace SQE.ApiTest
 
 			// Async with return type
 			// Arrange
-			counter = new Counter {Count = 0};
+			counter = new Counter { Count = 0 };
 			watch = Stopwatch.StartNew();
 
 			// Act
@@ -193,7 +193,7 @@ namespace SQE.ApiTest
 		public async Task ShortCircuitShouldEngage()
 		{
 			// Arrange
-			var counter = new Counter {Count = 0};
+			var counter = new Counter { Count = 0 };
 			const uint code = 1040;
 			var policy = new DatabaseCommunicationCircuitBreakPolicy();
 
@@ -221,7 +221,7 @@ namespace SQE.ApiTest
 			);
 
 			// Assert
-			Assert.Equal(code, ((MySqlException) retryEx.InnerException).Code);
+			Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
 			Assert.Equal(
 				_circuitBreakCount,
 				counter.Count
@@ -256,7 +256,7 @@ namespace SQE.ApiTest
 			);
 
 			// Assert
-			Assert.Equal(code, ((MySqlException) retryEx.InnerException).Code);
+			Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
 			Assert.Equal(
 				_circuitBreakCount,
 				counter.Count
@@ -292,7 +292,7 @@ namespace SQE.ApiTest
 			);
 
 			// Assert
-			Assert.Equal(code, ((MySqlException) retryEx.InnerException).Code);
+			Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
 			Assert.Equal(
 				_circuitBreakCount,
 				counter.Count
@@ -348,7 +348,7 @@ namespace SQE.ApiTest
 			);
 
 			// Assert
-			Assert.Equal(code, ((MySqlException) retryEx.InnerException).Code);
+			Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
 			Assert.Equal(
 				_circuitBreakCount,
 				counter.Count
@@ -359,7 +359,7 @@ namespace SQE.ApiTest
 		public void ShortCircuitShouldNotEngage()
 		{
 			// Arrange
-			var counter = new Counter {Count = 0};
+			var counter = new Counter { Count = 0 };
 			const uint code = 1044;
 			var policy = new DatabaseCommunicationCircuitBreakPolicy();
 			const int repeatCount = 7;

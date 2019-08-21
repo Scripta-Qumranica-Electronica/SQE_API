@@ -116,7 +116,7 @@ namespace SQE.ApiTest
 		private async Task ActivatUserAccountAsync(DetailedUserDTO user, bool shouldSucceed = true)
 		{
 			var userToken = await GetToken(user.email); // Get  token from DB
-			var payload = new AccountActivationRequestDTO {token = userToken.token};
+			var payload = new AccountActivationRequestDTO { token = userToken.token };
 
 			var (response, msg) =
 				await HttpRequest.SendAsync<AccountActivationRequestDTO, UserDTO>(
@@ -192,7 +192,7 @@ namespace SQE.ApiTest
 				_client,
 				HttpMethod.Post,
 				login,
-				new LoginRequestDTO {email = user.email, password = user.password}
+				new LoginRequestDTO { email = user.email, password = user.password }
 			);
 			if (shouldSucceed)
 			{
@@ -357,7 +357,7 @@ namespace SQE.ApiTest
 			await ActivatUserAccountAsync(newUser); // Asserts already in this function
 
 			// Act (login)
-			var userForLogin = new LoginRequestDTO {email = user.email, password = user.password};
+			var userForLogin = new LoginRequestDTO { email = user.email, password = user.password };
 			var (response, loggedInUser) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
 				_client,
 				HttpMethod.Post,
@@ -391,7 +391,7 @@ namespace SQE.ApiTest
 
 			var tokenCreationTime = await GetToken(user.email);
 
-			var payload = new ResendUserAccountActivationRequestDTO {email = newUser.email};
+			var payload = new ResendUserAccountActivationRequestDTO { email = newUser.email };
 
 			// Act (resend activation)
 			Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
@@ -472,7 +472,7 @@ namespace SQE.ApiTest
 				_client,
 				HttpMethod.Post,
 				changePassword,
-				new ResetLoggedInUserPasswordRequestDTO {oldPassword = user.password, newPassword = newPassword},
+				new ResetLoggedInUserPasswordRequestDTO { oldPassword = user.password, newPassword = newPassword },
 				loggedInUser.token
 			);
 
@@ -619,7 +619,7 @@ namespace SQE.ApiTest
 				_client,
 				HttpMethod.Post,
 				changeUnactivatedEmail,
-				new UnactivatedEmailUpdateRequestDTO {email = user.email, newEmail = newEmail}
+				new UnactivatedEmailUpdateRequestDTO { email = user.email, newEmail = newEmail }
 			);
 
 			// Assert
@@ -718,7 +718,7 @@ namespace SQE.ApiTest
 				_client,
 				HttpMethod.Post,
 				forgotPassword,
-				new ResetUserPasswordRequestDTO {email = user.email}
+				new ResetUserPasswordRequestDTO { email = user.email }
 			);
 
 			// Assert (request password reset)
@@ -733,7 +733,7 @@ namespace SQE.ApiTest
 				_client,
 				HttpMethod.Post,
 				changeForgottenPassword,
-				new ResetForgottenUserPasswordRequestDTO {token = userToken.token, password = newPassword}
+				new ResetForgottenUserPasswordRequestDTO { token = userToken.token, password = newPassword }
 			);
 
 			// Assert (attempt to reset password with token)

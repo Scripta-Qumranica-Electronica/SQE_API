@@ -299,7 +299,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 			// Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
 			// care of main_action and single_action.
-			return await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest> {artefactChangeRequest});
+			return await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest> { artefactChangeRequest });
 		}
 
 		private async Task<uint> GetArtefactPkAsync(UserInfo user, uint artefactId, string table)
@@ -365,7 +365,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
 			public static List<string> All()
 			{
-				return new List<string> {data, shape, position, stack};
+				return new List<string> { data, shape, position, stack };
 			}
 		}
 	}

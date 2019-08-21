@@ -31,7 +31,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			}
 			catch (ApiException httpException)
 			{
-				context.Response.StatusCode = (int) httpException.StatusCode;
+				context.Response.StatusCode = (int)httpException.StatusCode;
 				context.Response.ContentType = "application/json; charset=utf-8";
 				await context.Response.WriteAsync(
 					JsonConvert.SerializeObject(

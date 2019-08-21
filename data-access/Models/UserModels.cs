@@ -66,7 +66,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 		public async void SetEditionId(uint editionId)
 		{
 			if (!this.editionId.HasValue
-			    || this.editionId.Value != editionId)
+				|| this.editionId.Value != editionId)
 			{
 				this.editionId = editionId;
 				await SetPermissions();
@@ -76,7 +76,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 		public async Task<uint?> EditionEditorId()
 		{
 			if (!_editionEditorId.HasValue
-			    && editionId.HasValue) await SetPermissions();
+				&& editionId.HasValue) await SetPermissions();
 			return _editionEditorId.HasValue && _editionEditorId.Value == 0 ? null : _editionEditorId;
 		}
 
@@ -108,7 +108,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 		{
 			var completed = false;
 			if (editionId.HasValue
-			    && userId.HasValue)
+				&& userId.HasValue)
 			{
 				var permissions = await _userRepo.GetUserEditionPermissionsAsync(this);
 				_mayWrite = permissions.MayWrite && !permissions.Locked;

@@ -51,7 +51,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 				IConfiguration config,
 				IHostingEnvironment env)
 
-			// http://jasonwatmore.com/post/2018/08/14/aspnet-core-21-jwt-authentication-tutorial-with-example-api
+		// http://jasonwatmore.com/post/2018/08/14/aspnet-core-21-jwt-authentication-tutorial-with-example-api
 		{
 			_userRepository = userRepository;
 			_appSettings = appSettings.Value; // For the secret key
@@ -103,7 +103,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 
 		public uint? GetCurrentUserId()
 		{
-			var identity = (ClaimsIdentity) _accessor.HttpContext.User.Identity;
+			var identity = (ClaimsIdentity)_accessor.HttpContext.User.Identity;
 			var claims = identity.Claims;
 			foreach (var claim in claims)
 			{

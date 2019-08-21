@@ -131,7 +131,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			if (user.userId.HasValue)
 			{
 				if (!string.IsNullOrEmpty(position)
-				    && !GeometryValidation.ValidateTransformMatrix(position))
+					&& !GeometryValidation.ValidateTransformMatrix(position))
 					throw new StandardErrors.ImproperInputData("artefact position");
 				newArtefactId = await _artefactRepository.CreateNewArtefactAsync(
 					user,

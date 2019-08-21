@@ -76,7 +76,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			var editionBeforeChanges = (await _editionRepo.ListEditionsAsync(user.userId, user.editionId)).First();
 
 			if (copyrightHolder != null
-			    || editionBeforeChanges.Collaborators != collaborators)
+				|| editionBeforeChanges.Collaborators != collaborators)
 				await _editionRepo.ChangeEditionCopyrightAsync(user, copyrightHolder, collaborators);
 
 			if (!string.IsNullOrEmpty(name)) await _editionRepo.ChangeEditionNameAsync(user, name);

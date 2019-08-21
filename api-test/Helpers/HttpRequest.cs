@@ -77,7 +77,7 @@ namespace SQE.ApiTest.Helpers
 		{
 			var name = username ?? "test";
 			var password = pwd ?? "asdf";
-			var login = new LoginRequestDTO {email = name, password = password};
+			var login = new LoginRequestDTO { email = name, password = password };
 			var (response, msg) = await SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
 				client,
 				HttpMethod.Post,
