@@ -1,9 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.ApiTest.Helpers;
@@ -24,11 +24,11 @@ namespace SQE.ApiTest
 			_db = new DatabaseQuery();
 		}
 
-		private readonly Faker _faker = new Faker();
 		private readonly DatabaseQuery _db;
 
 		private const string version = "v1";
 		private const string controller = "artefacts";
+		private static uint artefactCount = 0;
 
 		/// <summary>
 		///     Searches randomly for an edition with artefacts and returns the artefacts.
@@ -36,35 +36,31 @@ namespace SQE.ApiTest
 		/// <param name="userId">Id of the user whose editions should be randomly selected.</param>
 		/// <param name="jwt">A JWT can be added the request to access private editions.</param>
 		/// <returns></returns>
-		private async Task<ArtefactListDTO> GetRandomEditionArtefacts(uint userId = 1, string jwt = null)
+		private async Task<ArtefactListDTO> GetEditionArtefacts(uint userId = 1, string jwt = null)
 		{
-			var artefactResponse = new ArtefactListDTO();
 			const string sql = @"
-SELECT edition_id 
+SELECT DISTINCT edition_id 
 FROM edition 
 JOIN edition_editor USING(edition_id)
-WHERE user_id = @UserId";
+JOIN artefact_shape_owner USING(edition_id)
+JOIN artefact_shape USING(artefact_shape_id)
+WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var parameters = new DynamicParameters();
 			parameters.Add("@UserId", userId);
-			var allUserEditions = await _db.RunQueryAsync<uint>(sql, parameters);
+			var allUserEditions = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
 
-			var r = new Random();
-			var response = new HttpResponseMessage();
-			foreach (var edition in allUserEditions.OrderBy(x => r.Next()))
-			{
-				var url = $"/{version}/editions/{edition}/{controller}?optional=masks";
-				(response, artefactResponse) = await HttpRequest.SendAsync<string, ArtefactListDTO>(
-					_client,
-					HttpMethod.Get,
-					url,
-					null,
-					jwt
-				);
-				response.EnsureSuccessStatusCode();
-				if (artefactResponse.artefacts.Any())
-					break;
-			}
+			var editionId = allUserEditions[(int) artefactCount % (allUserEditions.Count + 1)];
+			var url = $"/{version}/editions/{editionId}/{controller}?optional=masks";
+			var (response, artefactResponse) = await HttpRequest.SendAsync<string, ArtefactListDTO>(
+				_client,
+				HttpMethod.Get,
+				url,
+				null,
+				jwt
+			);
+			response.EnsureSuccessStatusCode();
 
+			artefactCount++;
 			return artefactResponse;
 		}
 
@@ -84,7 +80,7 @@ WHERE user_id = @UserId";
 		private string RandomPosition(bool properlyFormatted = true)
 		{
 			return properlyFormatted
-				? $"{{\"matrix\":[[{_faker.Random.Double(-1)},{_faker.Random.Double(-1)},{_faker.Random.Int()}],[{_faker.Random.Double(-1)},{_faker.Random.Double(-1)},{_faker.Random.Int()}]]}}"
+				? "{\"matrix\":[[1.3,0,32],[0,0.67,54]]}"
 				: "{\"matrix\":[[1,0,0],[0,1,0,0]]}";
 		}
 
@@ -96,11 +92,11 @@ WHERE user_id = @UserId";
 		public async Task CanAccessArtefacts()
 		{
 			// Act
-			var artefacts = (await GetRandomEditionArtefacts()).artefacts;
+			var artefacts = (await GetEditionArtefacts()).artefacts;
 
 			// Assert
 			Assert.NotEmpty(artefacts);
-			var artefact = artefacts[_faker.Random.Int(0, artefacts.Count - 1)];
+			var artefact = artefacts.First();
 			Assert.True(artefact.editionId > 0);
 			Assert.True(artefact.id > 0);
 			Assert.True(artefact.zOrder > -256 && artefact.zOrder < 256);
@@ -117,7 +113,7 @@ WHERE user_id = @UserId";
 		public async Task CanCreateArtefacts()
 		{
 			// Arrange
-			var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var newEdition =
 				await EditionHelpers.CreateCopyOfEdition(_client, allArtefacts.First().editionId); // Clone it
 
@@ -126,7 +122,7 @@ WHERE user_id = @UserId";
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
 			var newTransform = RandomPosition();
-			var newName = _faker.Lorem.Sentence(5);
+			var newName = "CanCreateArtefacts.artefact א";
 			var newArtefact = new CreateArtefactDTO
 			{
 				mask = newArtefactShape,
@@ -185,7 +181,7 @@ WHERE user_id = @UserId";
 			await DeleteArtefact(newEdition, writtenArtefact.id);
 
 			// Arrange
-			newName = _faker.Lorem.Sentence(5);
+			newName = "CanCreateArtefacts.artefact ב";;
 
 			newArtefact = new CreateArtefactDTO
 			{
@@ -223,7 +219,7 @@ WHERE user_id = @UserId";
 		public async Task CanDeleteArtefacts()
 		{
 			// Arrange
-			var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 
@@ -261,7 +257,7 @@ WHERE user_id = @UserId";
 		public async Task CannotCreateArtefactsOnUnownedEdition()
 		{
 			// Arrange
-			var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var newEdition =
 				await EditionHelpers.CreateCopyOfEdition(_client, allArtefacts.First().editionId); // Clone it
 
@@ -270,7 +266,7 @@ WHERE user_id = @UserId";
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
 			var newTransform = RandomPosition();
-			var newName = _faker.Lorem.Sentence(5);
+			var newName = "CanCreateArtefacts.artefact α";;
 			var newArtefact = new CreateArtefactDTO
 			{
 				mask = newArtefactShape,
@@ -301,7 +297,7 @@ WHERE user_id = @UserId";
 		public async Task CannotDeleteUnownedArtefacts()
 		{
 			// Arrange
-			var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 
@@ -327,10 +323,10 @@ WHERE user_id = @UserId";
 		public async Task CannotUpdateUnownedArtefacts()
 		{
 			// Arrange
-			var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
-			var newArtefactName = _faker.Random.Words(5);
+			var newArtefactName = "CannotUpdateUnownedArtefacts.artefact 😈";
 
 			// Act (update name)
 			var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
@@ -359,10 +355,10 @@ WHERE user_id = @UserId";
 		public async Task CanUpdateArtefacts()
 		{
 			// Arrange
-			var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
-			var newArtefactName = _faker.Random.Words(5);
+			var newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
 			var newArtefactPosition = RandomPosition();
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
@@ -462,7 +458,7 @@ WHERE user_id = @UserId";
 		public async Task RejectsUpdateToImproperArtefactPosition()
 		{
 			// Arrange
-			var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 			var newArtefactMatrix = RandomPosition(false);
@@ -495,7 +491,7 @@ WHERE user_id = @UserId";
 		public async Task RejectsUpdateToImproperArtefactShape()
 		{
 			// Arrange
-			var allArtefacts = (await GetRandomEditionArtefacts()).artefacts; // Find edition with artefacts
+			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 			const string newArtefactShape =

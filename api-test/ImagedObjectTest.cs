@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.ApiTest.Helpers;
@@ -24,7 +23,6 @@ namespace SQE.ApiTest
 			editionImagedObjectbyId = $"{editionImagedObjects}/$ImageObjectId";
 		}
 
-		private readonly Faker _faker = new Faker();
 		private readonly DatabaseQuery _db;
 		private const string version = "v1";
 		private const string controller = "imaged-objects";
@@ -47,7 +45,7 @@ JOIN SQE_image ON artefact_shape.sqe_image_id = SQE_image.sqe_image_id";
 			var parameters = new DynamicParameters();
 			parameters.Add("@UserId", user);
 			var editionIds = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
-			return editionIds[_faker.Random.Number(0, editionIds.Count() - 1)];
+			return editionIds[3];
 		}
 
 		private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact(uint user = 1)
@@ -65,7 +63,7 @@ LIMIT 50";
 			var parameters = new DynamicParameters();
 			parameters.Add("@UserId", user);
 			var editionIds = (await _db.RunQueryAsync<(uint editionId, string objectId)>(sql, parameters)).ToList();
-			return editionIds[_faker.Random.Number(0, editionIds.Count() - 1)];
+			return editionIds[3];
 		}
 
 		/// <summary>
@@ -123,8 +121,8 @@ LIMIT 50";
 			// Arrange
 			var (editionId, objectId) = await GetEditionImagesWithArtefact();
 			var path = editionImagedObjectbyId.Replace("$EditionId", editionId.ToString())
-						   .Replace("$ImageObjectId", objectId)
-					   + "?optional=artefacts";
+				           .Replace("$ImageObjectId", objectId)
+			           + "?optional=artefacts";
 
 			// Act
 			var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectDTO>(
@@ -150,8 +148,8 @@ LIMIT 50";
 			// Arrange
 			var (editionId, objectId) = await GetEditionImagesWithArtefact();
 			var path = editionImagedObjectbyId.Replace("$EditionId", editionId.ToString())
-						   .Replace("$ImageObjectId", objectId)
-					   + "?optional=artefacts&optional=masks";
+				           .Replace("$ImageObjectId", objectId)
+			           + "?optional=artefacts&optional=masks";
 
 			// Act
 			var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectDTO>(
@@ -223,7 +221,7 @@ LIMIT 50";
 			var foundArtefact = false;
 			foreach (var io in msg.imagedObjects)
 				if (io.artefacts != null
-					&& string.IsNullOrEmpty(io.artefacts.First().mask.mask))
+				    && string.IsNullOrEmpty(io.artefacts.First().mask.mask))
 				{
 					foundArtefact = true;
 					break;
@@ -242,7 +240,7 @@ LIMIT 50";
 			// Arrange
 			var editionId = await GetEditionWithImages();
 			var path = editionImagedObjects.Replace("$EditionId", editionId.ToString())
-					   + "?optional=artefacts&optional=masks";
+			           + "?optional=artefacts&optional=masks";
 
 			// Act
 			var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectListDTO>(
@@ -266,45 +264,5 @@ LIMIT 50";
 
 			Assert.True(foundArtefactWithMask);
 		}
-
-		//        /// <summary>
-		//        /// This tests if an anonymous user can retrieve a full list of imaged objects
-		//        /// </summary>
-		//        /// <returns></returns>
-		//        [Fact]
-		//        public async Task CanGetAllImagedObjects()
-		//        {
-		//            // Act
-		//            var (response, msg) = await HttpRequest.SendAsync<string, ImageGroupListDTO>(_client, HttpMethod.Get,
-		//                imagedObjectBarePath, null);
-		//            
-		//            // Assert
-		//            response.EnsureSuccessStatusCode();
-		//            Assert.NotEmpty(msg.imageGroups);
-		//        }
-		//        
-		//        /// <summary>
-		//        /// This tests if an anonymous user can retrieve a specific imaged object
-		//        /// </summary>
-		//        /// <returns></returns>
-		//        [Fact]
-		//        public async Task CanGetImagedObject()
-		//        {
-		//            // Arrange
-		//            var (response, msg) = await HttpRequest.SendAsync<string, ImageGroupListDTO>(_client, HttpMethod.Get,
-		//                imagedObjectBarePath, null);
-		//            response.EnsureSuccessStatusCode();
-		//            var id = msg.imageGroups[_faker.Random.Number(0, msg.imageGroups.Count() - 1)].id;
-		//            var path = singleImagedObject.Replace("$id", id.ToString());
-		//            
-		//            
-		//            // Act
-		//            var (singleResponse, singleMsg) = await HttpRequest.SendAsync<string, ImageGroupListDTO>(_client, HttpMethod.Get,
-		//                path, null);
-		//            
-		//            // Assert
-		//            singleResponse.EnsureSuccessStatusCode();
-		//            Assert.NotEmpty(msg.imageGroups);
-		//        }
 	}
 }

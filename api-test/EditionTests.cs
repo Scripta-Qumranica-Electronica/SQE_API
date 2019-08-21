@@ -2,8 +2,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Bogus;
-using Dapper;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.ApiTest.Helpers;
@@ -24,43 +22,10 @@ namespace SQE.ApiTest
 			_addEditionEditor = $"/{version}/{controller}/$EditionId/editors";
 		}
 
-		private readonly Faker _faker = new Faker();
 		private readonly DatabaseQuery _db;
 		private const string version = "v1";
 		private const string controller = "editions";
 		private readonly string _addEditionEditor;
-
-
-		/// <summary>
-		///     Searches randomly for an edition and returns it.
-		/// </summary>
-		/// <param name="userId">Id of the user whose editions should be randomly selected.</param>
-		/// <param name="jwt">A JWT can be added the request to access private editions.</param>
-		/// <returns></returns>
-		public async Task<EditionGroupDTO> GetRandomEdition(uint userId = 1, string jwt = null)
-		{
-			const string sql = @"
-SELECT edition_id 
-FROM edition 
-JOIN edition_editor USING(edition_id)
-WHERE user_id = @UserId";
-			var parameters = new DynamicParameters();
-			parameters.Add("@UserId", userId);
-			var allUserEditions = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
-
-			var randomEdition = allUserEditions[_faker.Random.Int(0, allUserEditions.Count - 1)];
-			var url = $"/{version}/editions/{randomEdition}";
-			var (response, editionResponse) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
-				_client,
-				HttpMethod.Get,
-				url,
-				null,
-				jwt
-			);
-			response.EnsureSuccessStatusCode();
-
-			return editionResponse;
-		}
 
 		[Fact]
 		public async Task CanAdminShareEdition()
