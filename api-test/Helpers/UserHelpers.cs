@@ -3,7 +3,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Bogus;
 using Dapper;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
@@ -12,6 +11,7 @@ namespace SQE.ApiTest.Helpers
 {
 	public class UserHelpers
 	{
+		private static uint userCount = 0;
 		/// <summary>
 		///     Create a user with random information.
 		/// </summary>
@@ -20,13 +20,12 @@ namespace SQE.ApiTest.Helpers
 		/// <returns>Returns a DetailedUserDTO object describing the new user.</returns>
 		public static async Task<DetailedUserDTO> CreateRandomUserAsync(HttpClient client, string password)
 		{
-			var faker = new Faker();
 			var user = new NewUserRequestDTO(
-				faker.Internet.Email(),
+				$"sequential.user{userCount}@fakeEmail.edu",
 				password,
-				faker.Company.CompanyName(),
-				faker.Name.FirstName(),
-				faker.Name.LastName()
+				$"Company {userCount}",
+				$"forename {userCount}",
+				$"surname {userCount}"
 			);
 
 			var userAcctMsg = await CreateUserAccountAsync(client, user);

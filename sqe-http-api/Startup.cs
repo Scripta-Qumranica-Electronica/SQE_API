@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.Server.Helpers;
@@ -141,6 +142,8 @@ namespace SQE.SqeHttpApi.Server
 		public void Configure(IApplicationBuilder app)
 		{
 			if (Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
+			
+			app.UseSerilogRequestLogging();
 
 			app.UseCors(
 				options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
