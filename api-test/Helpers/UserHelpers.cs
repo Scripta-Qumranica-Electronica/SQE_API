@@ -31,6 +31,7 @@ namespace SQE.ApiTest.Helpers
 			var userAcctMsg = await CreateUserAccountAsync(client, user);
 
 			await ActivateUserAccountAsync(client, userAcctMsg);
+			userCount++;
 			return userAcctMsg;
 		}
 
