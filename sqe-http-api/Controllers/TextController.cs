@@ -70,6 +70,7 @@ namespace SQE.SqeApi.Server.Controllers
 		///     A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
 		///     sequence
 		/// </returns>
+		[AllowAnonymous]
 		[HttpGet("v1/editions/{editionId}/text-fragments/{textFragmentId}")]
 		public async Task<ActionResult<TextEditionDTO>> RetrieveTextOfFragmentById([FromRoute] uint editionId,
 			[FromRoute] uint textFragmentId)
