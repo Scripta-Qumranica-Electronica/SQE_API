@@ -1,8 +1,5 @@
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Bogus;
-using Dapper;
 using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
@@ -12,7 +9,7 @@ namespace SQE.ApiTest.Helpers
 	{
 		private const string version = "v1";
 		private const string controller = "editions";
-		private static readonly Faker _faker = new Faker();
+		private static int cloneCount = 0;
 
 		/// <summary>
 		///     Searches randomly for an edition and returns it.
@@ -20,33 +17,20 @@ namespace SQE.ApiTest.Helpers
 		/// <param name="userId">Id of the user whose editions should be randomly selected.</param>
 		/// <param name="jwt">A JWT can be added the request to access private editions.</param>
 		/// <returns>a randomly selected EditionDTO</returns>
-		public static async Task<EditionDTO> GetRandomEdition(DatabaseQuery db,
+		public static async Task<EditionDTO> GetEdition(
 			HttpClient client,
-			uint userId = 1,
+			uint editionId = 3,
 			string jwt = null)
 		{
-			const string sql = @"
-SELECT edition_id 
-FROM edition 
-JOIN edition_editor USING(edition_id)
-WHERE user_id = @UserId";
-			var parameters = new DynamicParameters();
-			parameters.Add("@UserId", userId);
-			var allUserEditions = (await db.RunQueryAsync<uint>(sql, parameters)).ToList();
-			var (response, editionResponse) = (new HttpResponseMessage(), new EditionGroupDTO());
-			while (editionResponse?.primary == null)
-			{
-				var randomEdition = allUserEditions[_faker.Random.Int(0, allUserEditions.Count - 1)];
-				var url = $"/{version}/{controller}/{randomEdition}";
-				(response, editionResponse) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
-					client,
-					HttpMethod.Get,
-					url,
-					null,
-					jwt
-				);
-				response.EnsureSuccessStatusCode();
-			}
+			var url = $"/{version}/{controller}/{editionId}";
+			var (response, editionResponse) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+				client,
+				HttpMethod.Get,
+				url,
+				null,
+				jwt
+			);
+			response.EnsureSuccessStatusCode();
 
 			return editionResponse.primary;
 		}
@@ -56,15 +40,23 @@ WHERE user_id = @UserId";
 		/// </summary>
 		/// <param name="client">The HttpClient</param>
 		/// <param name="editionId">Optional id of the edition to be cloned</param>
+		/// <param name="name">Optional name for the new edition</param>
 		/// <param name="username">Optional username for the user who will own the edition</param>
 		/// <param name="pwd">Optional password for the user who will own the edition</param>
 		/// <returns>The ID of the new edition</returns>
 		public static async Task<uint> CreateCopyOfEdition(HttpClient client,
 			uint editionId = 1,
+			string name = "",
 			string username = null,
 			string pwd = null)
 		{
-			var newScrollRequest = new EditionUpdateRequestDTO("test-name", null, null);
+			if (string.IsNullOrEmpty(name))
+			{
+				cloneCount++;
+				name = "test-name-" + cloneCount.ToString();
+			}
+
+			var newScrollRequest = new EditionUpdateRequestDTO(name, null, null);
 			var (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
 				client,
 				HttpMethod.Post,

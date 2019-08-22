@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
+using Polly;
 using SQE.SqeHttpApi.DataAccess;
 
 namespace SQE.SqeHttpApi.Server.Helpers
@@ -71,26 +72,15 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			CheckConfig(configuration, "MysqlPassword", err, "$DatabaseSetting");
 
 			// Connect to the database and run a quick test query
-			var tries = 0;
-			var max_tries = 5;
-			while (tries < max_tries)
-			{
-				tries++;
-				try
-				{
-					var db = new DatabaseVerificationInstance(configuration);
-					db.Verify();
-					break;
-				}
-				catch (MySqlException)
-				{
-					if (tries == max_tries)
-						throw;
-
-					Console.WriteLine("Database connection failed, retrying in a few seconds");
-					Thread.Sleep(3);
-				}
-			}
+			// Retry 5 times if the database is not yet up (3 second pause between retries)
+			var policy = Policy
+				.Handle<MySqlException>() // Only retry on Mysql Exceptions
+				.WaitAndRetry(
+					retryCount: 5,
+					sleepDurationProvider: attempt => TimeSpan.FromSeconds(3), // wait a total of 5 * 3 seconds
+					onRetry: (exception, retryCount) => Console.WriteLine($"Database connection failed, retry {retryCount} in a 3 seconds")
+				);
+			policy.Execute(() => new DatabaseVerificationInstance(configuration).Verify());
 		}
 
 		private static void CheckConfig(IConfiguration configuration,

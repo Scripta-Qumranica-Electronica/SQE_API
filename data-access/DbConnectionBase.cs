@@ -30,7 +30,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				var port = _config.GetConnectionString("MysqlPort");
 				var user = _config.GetConnectionString("MysqlUsername");
 				var pwd = _config.GetConnectionString("MysqlPassword");
-				return $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8;";
+				return $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8mb4;";
 			}
 		}
 
@@ -69,8 +69,11 @@ namespace SQE.SqeHttpApi.DataAccess
 	/// </summary>
 	public static class DatabaseCommunicationRetryPolicy
 	{
-		private const int RetryCount = 40;
-		private const int WaitBetweenRetriesInMilliseconds = 50;
+		// There is a +-75 ms randomness added to the retry pause.
+		// The total delay will be somewhere between 4375 and 5425 ms.
+		private const int RetryCount = 7;
+		private const int WaitBetweenRetriesInMilliseconds = 175;
+
 		private static readonly Random _random = new Random();
 
 		private static readonly List<uint> _retrySqlExceptions = new List<uint> { 1205, 1213, 1412 };
@@ -101,7 +104,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		/// <returns></returns>
 		private static int _waitTime(int retryCount)
 		{
-			return retryCount * WaitBetweenRetriesInMilliseconds + _random.Next(-100, 100);
+			return retryCount * WaitBetweenRetriesInMilliseconds + _random.Next(-75, 75);
 		}
 
 		public static void ExecuteRetry(Action operation)
@@ -137,7 +140,7 @@ namespace SQE.SqeHttpApi.DataAccess
 	/// </summary>
 	public class DatabaseCommunicationCircuitBreakPolicy
 	{
-		private const int RetryCount = 10;
+		private const int RetryCount = 5;
 		private const int WaitBetweenRetriesInMilliseconds = 200;
 		private const int CircuitBreakerPause = 5;
 

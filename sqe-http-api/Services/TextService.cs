@@ -59,7 +59,7 @@ namespace SQE.SqeHttpApi.Server.Services
 		{
 			return new TextFragmentDataListDTO(
 				(await _textRepo.GetFragmentDataAsync(user))
-				.Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditor))
+				.Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId))
 				.ToList()
 			);
 		}
@@ -76,7 +76,7 @@ namespace SQE.SqeHttpApi.Server.Services
 			return new TextFragmentDataDTO(
 				newFragment.TextFragmentId,
 				newFragment.TextFragmentName,
-				newFragment.EditionEditor
+				newFragment.EditionEditorId
 			);
 		}
 

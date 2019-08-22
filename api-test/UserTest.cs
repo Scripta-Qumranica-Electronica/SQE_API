@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Bogus;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.ApiTest.Helpers;
@@ -34,8 +33,6 @@ namespace SQE.ApiTest
 		}
 
 		private readonly DatabaseQuery _db;
-
-		private readonly Faker _faker = new Faker();
 
 		// Routes
 		private const string version = "v1";
@@ -223,7 +220,13 @@ namespace SQE.ApiTest
 		/// <returns></returns>
 		private async Task<NewUserRequestDTO> CreateRandomActivatedUserAsync(bool shouldSucceed = true)
 		{
-			var user = RandomUser();
+			var user = new NewUserRequestDTO(
+				"nobody@fake-email.com",
+				"7ryew$$###01-_-Ytiuy",
+				null,
+				"Joe",
+				"Nobody"
+			);
 			await CreateActivatedUserAsync(user, shouldSucceed); // Asserts already in sub functions.
 			return user;
 		}
@@ -242,18 +245,6 @@ namespace SQE.ApiTest
 			deleteEmailTokenParams.Add("@Email", user.email);
 			await _db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
 			await _db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
-		}
-
-		private NewUserRequestDTO RandomUser(bool empty = false, string locale = null)
-		{
-			var faker = string.IsNullOrEmpty(locale) ? _faker : new Faker(locale);
-			return new NewUserRequestDTO(
-				faker.Internet.Email(),
-				faker.Internet.Password(),
-				empty ? null : faker.Company.CompanyName(),
-				empty ? null : faker.Name.FirstName(),
-				empty ? null : faker.Name.LastName()
-			);
 		}
 
 		private class UserObj
@@ -283,7 +274,13 @@ namespace SQE.ApiTest
 		{
 			// Arrange
 			var user = await CreateRandomActivatedUserAsync();
-			var newDetails = RandomUser();
+			var newDetails = new NewUserRequestDTO(
+				"fake1@fake-email.com",
+				"*****&&&&&",
+				"𒂍𒁾𒁀",
+				"𒁉𒊏𒀭𒊓𒀭",
+				"𒇽𒋛𒀀 𒃻 𒄑𒌁"
+			);
 			var loginDetails = await Login(user);
 
 			// Act 
@@ -311,12 +308,18 @@ namespace SQE.ApiTest
 		{
 			// Arrange
 			var user = await CreateRandomActivatedUserAsync();
-			var newDetails = RandomUser();
+			var newDetails = new NewUserRequestDTO(
+				"fake2@fake-email.com",
+				"*****&&&&&",
+				"בת ספר",
+				"שלמה",
+				"בן ציון"
+			);
 			var loginDetails = await Login(user);
 			var newPwd = new ResetLoggedInUserPasswordRequestDTO
 			{
-				oldPassword = _faker.Internet.Password(),
-				newPassword = _faker.Internet.Password()
+				oldPassword = "wrongpasswd",
+				newPassword = "newpasswd"
 			};
 
 			// Act 
@@ -346,7 +349,13 @@ namespace SQE.ApiTest
 			// ARRANGE
 
 			// Act (register user)
-			var user = RandomUser(locale: "zh_CN"); // Let's try chinese to ensure unicode multibyte success.
+			var user = new NewUserRequestDTO(
+				"fake3@fake-email.com",
+				"12345",
+				"🦊🦆",
+				"💩",
+				null
+			); // Let's try some modern person with an emoji for a name to ensure unicode multibyte success.
 			var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
 
 			// Assert
@@ -386,7 +395,13 @@ namespace SQE.ApiTest
 		public async Task CanResendAccountActivation()
 		{
 			// ARRANGE
-			var user = RandomUser();
+			var user = new NewUserRequestDTO(
+				"fake4@fake-email.com",
+				"*****&&&&&",
+				"בת ספר",
+				"שלמה",
+				"בן ציון"
+			);
 			var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
 
 			var tokenCreationTime = await GetToken(user.email);
@@ -426,7 +441,13 @@ namespace SQE.ApiTest
 		public async Task CanUpdateDetailsBeforeActivation()
 		{
 			// Arrange
-			var user = RandomUser(true);
+			var user = new NewUserRequestDTO(
+				"fake6@fake-email.com",
+				"password",
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 			var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
 			var tokenCreationTime = await GetToken(user.email);
 			// Update user details
@@ -458,14 +479,20 @@ namespace SQE.ApiTest
 		public async Task ChangeActivatedAccountPassword()
 		{
 			// ARRANGE
-			var user = RandomUser();
+			var user = new NewUserRequestDTO(
+				"fake7@fake-email.com",
+				"password",
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 			var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
 			await ActivatUserAccountAsync(newUser); // Asserts already in this function
 
 			var loggedInUser = await Login(user);
 			Assert.NotNull(loggedInUser.token);
 
-			var newPassword = _faker.Internet.Password();
+			const string newPassword = "more secure pa$$w0rd";
 
 			// Act (change password)
 			var (cpResponse, cpMsg) = await HttpRequest.SendAsync<ResetLoggedInUserPasswordRequestDTO, string>(
@@ -504,15 +531,26 @@ namespace SQE.ApiTest
 		public async Task ChangeActivatedAccountUserDetails()
 		{
 			// ARRANGE
-			var user = RandomUser();
+			var user = new NewUserRequestDTO(
+				"fake8@fake-email.com",
+				"password",
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 			var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
 			await ActivatUserAccountAsync(newUser); // Asserts already in this function
 
 			var loggedInUser = await Login(user);
 			Assert.NotNull(loggedInUser.token);
 
-			var updatedUser = RandomUser();
-			updatedUser.password = user.password;
+			var updatedUser = new NewUserRequestDTO(
+				"fake88@fake-email.com",
+				user.password,
+				"Big Company",
+				"John",
+				"Doe"
+			);
 
 			// Act (change user details)
 			var (cdResponse, cdMsg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
@@ -559,16 +597,26 @@ namespace SQE.ApiTest
 		public async Task ChangeActivatedAccountUserDetailsWithoutEmail()
 		{
 			// ARRANGE
-			var user = RandomUser();
+			var user = new NewUserRequestDTO(
+				"fake9@fake-email.com",
+				"password",
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 			var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
 			await ActivatUserAccountAsync(newUser); // Asserts already in this function
 
 			var loggedInUser = await Login(user);
 			Assert.NotNull(loggedInUser.token);
 
-			var updatedUser = RandomUser();
-			updatedUser.email = null;
-			updatedUser.password = user.password;
+			var updatedUser = new NewUserRequestDTO(
+				null,
+				user.password,
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 
 			// Act (change user details)
 			var (cdResponse, cdMsg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
@@ -609,9 +657,15 @@ namespace SQE.ApiTest
 		public async Task ChangeUnactivatedAccountEmail()
 		{
 			// Arrange
-			var user = RandomUser();
+			var user = new NewUserRequestDTO(
+				"fake10@fake-email.com",
+				"password",
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 			await CreateUserAccountAsync(user); // Asserts already in this function
-			var newEmail = _faker.Internet.Email();
+			const string newEmail = "new.user@email.gov";
 
 			// Act
 			Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
@@ -671,7 +725,13 @@ namespace SQE.ApiTest
 		public async Task DontAllowUnauthenticatedUsersToHaveJwt()
 		{
 			// Arrange
-			var user = RandomUser();
+			var user = new NewUserRequestDTO(
+				"fake11@fake-email.com",
+				"password",
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 			var newUser = await CreateUserAccountAsync(user);
 
 			// Act
@@ -692,7 +752,13 @@ namespace SQE.ApiTest
 		public async Task NonexistentAccountsShouldNotLogin()
 		{
 			// Arrange
-			var user = RandomUser(locale: "vi");
+			var user = new NewUserRequestDTO(
+				"fake12@fake-email.com",
+				"password",
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 
 			// Act
 			var loggedInUser = await Login(user, false); // Asserts already in method.
@@ -706,7 +772,13 @@ namespace SQE.ApiTest
 		public async Task ResetActivatedAccountPassword()
 		{
 			// ARRANGE
-			var user = RandomUser();
+			var user = new NewUserRequestDTO(
+				"fake13@fake-email.com",
+				"password",
+				"Big Company",
+				"Jane",
+				"Doe"
+			);
 			var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
 			await ActivatUserAccountAsync(newUser); // Asserts already in this function
 
@@ -728,7 +800,7 @@ namespace SQE.ApiTest
 			Assert.NotNull(userToken);
 
 			// Act (attempt to reset password with token)
-			var newPassword = _faker.Internet.Password();
+			const string newPassword = "unu$u^l..pw@wierdpr0vider.org";
 			var (cpResponse, cpMsg) = await HttpRequest.SendAsync<ResetForgottenUserPasswordRequestDTO, string>(
 				_client,
 				HttpMethod.Post,

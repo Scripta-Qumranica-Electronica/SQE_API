@@ -14,7 +14,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 	{
 		public string TextFragmentName { get; set; }
 		public uint TextFragmentId { get; set; }
-		public uint EditionEditor { get; set; }
+		public uint EditionEditorId { get; set; }
 		public ushort Position { get; set; }
 		public uint TextFragmentSequenceId { get; set; }
 	}

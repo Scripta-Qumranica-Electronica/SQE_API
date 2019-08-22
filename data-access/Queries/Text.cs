@@ -199,7 +199,7 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
 		public const string GetQuery = @"
 SELECT text_fragment_id AS TextFragmentId, name AS TextFragmentName, text_fragment_sequence.position AS Position, 
        text_fragment_sequence.text_fragment_sequence_id AS TextFragmentSequenceId, 
-       text_fragment_data_owner.edition_editor_id AS EditorId
+       text_fragment_data_owner.edition_editor_id AS EditionEditorId
 FROM text_fragment_data
   JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
     AND text_fragment_data_owner.edition_id = @EditionId

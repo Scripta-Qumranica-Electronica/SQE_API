@@ -3,7 +3,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Bogus;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -27,7 +26,6 @@ namespace SQE.ApiTest
 			_postTextFragment = _getTextFragmentsData;
 		}
 
-		private readonly Faker _faker = new Faker();
 		private readonly DatabaseQuery _db;
 
 		private const string version = "v1";
@@ -41,47 +39,26 @@ namespace SQE.ApiTest
 		private readonly string _getTextLines;
 		private readonly string _postTextFragment;
 
-		private async Task<(uint editionId, uint textFragmentId)> _getTextRandomFragment(uint? editionId = null)
+		private async Task<(uint editionId, uint textFragmentId)> _getTextFragmentIds(uint? editionId = null)
 		{
-			var submittedEdition = false;
-			EditionDTO edition;
-			if (editionId == null)
-			{
-				edition = await EditionHelpers.GetRandomEdition(_db, _client);
-				editionId = edition.id;
-			}
-			else
-			{
-				submittedEdition = true;
-			}
+			var editionDTO = editionId.HasValue
+				? await EditionHelpers.GetEdition(_client, editionId.Value)
+				: await EditionHelpers.GetEdition(_client);
 
 			var (fragmentsResponse, textFragments) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(
 				_client,
 				HttpMethod.Get,
-				_getTextFragmentsData.Replace("$EditionId", editionId.ToString()),
+				_getTextFragmentsData.Replace("$EditionId", editionDTO.id.ToString()),
 				null
 			);
 			fragmentsResponse.EnsureSuccessStatusCode();
-			while (!textFragments.textFragments.Any() && !submittedEdition)
-			{
-				edition = await EditionHelpers.GetRandomEdition(_db, _client);
-				editionId = edition.id;
-				(fragmentsResponse, textFragments) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(
-					_client,
-					HttpMethod.Get,
-					_getTextFragmentsData.Replace("$EditionId", editionId.ToString()),
-					null
-				);
-				fragmentsResponse.EnsureSuccessStatusCode();
-			}
 
-			var textFragmentIdx = ListHelpers.RandomIdx(textFragments.textFragments);
-			return (editionId.Value, textFragmentId: textFragments.textFragments[textFragmentIdx].id);
+			return (editionDTO.id, textFragmentId: textFragments.textFragments.First().id);
 		}
 
 		private async Task<uint> _getClonedEdition()
 		{
-			var (editionId, _) = await _getTextRandomFragment(); // Get an edition with text fragments
+			var (editionId, _) = await _getTextFragmentIds(); // Get an edition with text fragments
 			return await EditionHelpers.CreateCopyOfEdition(_client, editionId); // Clone it
 		}
 
@@ -128,7 +105,7 @@ namespace SQE.ApiTest
 			var (lineResponse, lines) = (new HttpResponseMessage(), new LineDataListDTO(new List<LineDataDTO>()));
 			while (editionId == 0 || textFragmentId == 0 || lines == null || !lines.lines.Any())
 			{
-				(editionId, textFragmentId) = await _getTextRandomFragment();
+				(editionId, textFragmentId) = await _getTextFragmentIds();
 				(lineResponse, lines) = await HttpRequest.SendAsync<string, LineDataListDTO>(
 					_client,
 					HttpMethod.Get,
@@ -139,8 +116,7 @@ namespace SQE.ApiTest
 				lineResponse.EnsureSuccessStatusCode();
 			}
 
-			var lineIdx = ListHelpers.RandomIdx(lines.lines);
-			return (editionId, textFragmentId, lines.lines[lineIdx].lineId);
+			return (editionId, textFragmentId, lines.lines.First().lineId);
 		}
 
 		private static void _verifyLineTextDTO(LineTextDTO msg)
@@ -458,7 +434,7 @@ namespace SQE.ApiTest
 		public async Task CanGetAnonymousEditionTextFragment()
 		{
 			// Arrange
-			var (editionId, textFragmentId) = await _getTextRandomFragment();
+			var (editionId, textFragmentId) = await _getTextFragmentIds();
 
 			// Act
 			var (response, msg) = await HttpRequest.SendAsync<string, TextEditionDTO>(
@@ -478,7 +454,7 @@ namespace SQE.ApiTest
 		public async Task CanGetAnonymousEditionTextFragmentData()
 		{
 			// Arrange
-			var edition = EditionHelpers.GetRandomEdition(_db, _client);
+			var edition = EditionHelpers.GetEdition(_client);
 			var editionId = edition.Id;
 
 			// Act
@@ -517,7 +493,7 @@ namespace SQE.ApiTest
 		public async Task CanGetAnonymousEditionTextLineData()
 		{
 			// Arrange
-			var (editionId, textFragmentId) = await _getTextRandomFragment();
+			var (editionId, textFragmentId) = await _getTextFragmentIds();
 
 			// Act
 			var (response, msg) = await HttpRequest.SendAsync<string, LineDataListDTO>(

@@ -17,8 +17,8 @@ namespace SQE.ApiTest
 		// They are in use and all other tests pass, but some things, like ReliableMySqlDbCommand.Prepare() or 
 		// ReliableMySqlConnection.DataSource, never get tested (I don't necessarily know what they all should do).
 		// Perhaps something could be wrong there and we would not see it for a very long time.
-		private const int _retryCount = 41;
-		private const int _circuitBreakCount = 10;
+		private const int _retryCount = 8;
+		private const int _circuitBreakCount = 5;
 
 		private static void ThrowMySqlException(Counter counter, uint sqlErrorCode)
 		{
@@ -109,7 +109,7 @@ namespace SQE.ApiTest
 			// Assert
 			watch.Stop();
 			Assert.Equal(code, ex.Code);
-			Assert.Equal(1, counter.Count); // This should have tried a total of 6 times.
+			Assert.Equal(1, counter.Count); // This should have tried a total of _retryCount times.
 		}
 
 		[Fact]
@@ -118,8 +118,8 @@ namespace SQE.ApiTest
 			// Arrange
 			var counter = new Counter { Count = 0 };
 			const uint code = 1205;
-			const int minExecutionTime = 2500; // Currently 200 factorial 5 - minimum random offset (100 * 5)
-
+			// Currently 175 factorial (_retryCount - 1) - minimum random offset (75 * (_retryCount - 1)), with 1 subtracted
+			const int minExecutionTime = 4374;
 			var watch = Stopwatch.StartNew();
 
 			// Act
@@ -130,7 +130,7 @@ namespace SQE.ApiTest
 			// Assert
 			watch.Stop();
 			Assert.Equal(code, ex.Code);
-			Assert.Equal(_retryCount, counter.Count); // This should have tried a total of 6 times.
+			Assert.Equal(_retryCount, counter.Count); // This should have tried a total of _retryCount times.
 			Assert.True(watch.ElapsedMilliseconds > minExecutionTime);
 
 			// With return type
@@ -146,7 +146,7 @@ namespace SQE.ApiTest
 			// Assert
 			watch.Stop();
 			Assert.Equal(code, ex.Code);
-			Assert.Equal(_retryCount, counter.Count); // This should have tried a total of 6 times.
+			Assert.Equal(_retryCount, counter.Count); // This should have tried a total of _retryCount times.
 			Assert.True(watch.ElapsedMilliseconds > minExecutionTime);
 
 			// With Async
@@ -166,7 +166,7 @@ namespace SQE.ApiTest
 			// Assert
 			watch.Stop();
 			Assert.Equal(code, ex.Code);
-			Assert.Equal(_retryCount, counter.Count); // This should have tried a total of 6 times.
+			Assert.Equal(_retryCount, counter.Count); // This should have tried a total of _retryCount times.
 			Assert.True(watch.ElapsedMilliseconds > minExecutionTime);
 
 			// Async with return type
@@ -185,7 +185,7 @@ namespace SQE.ApiTest
 			// Assert
 			watch.Stop();
 			Assert.Equal(code, ex.Code);
-			Assert.Equal(_retryCount, counter.Count); // This should have tried a total of 6 times.
+			Assert.Equal(_retryCount, counter.Count); // This should have tried a total of _retryCount times.
 			Assert.True(watch.ElapsedMilliseconds > minExecutionTime);
 		}
 
@@ -196,29 +196,14 @@ namespace SQE.ApiTest
 			var counter = new Counter { Count = 0 };
 			const uint code = 1040;
 			var policy = new DatabaseCommunicationCircuitBreakPolicy();
+			const int repeatCount = 7;
+			BrokenCircuitException retryEx = null;
 
 			// Act (even though we run this 7 times, the method itself should only run 5 times total)
-			var retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
-			);
+			for (var i = 0; i < repeatCount; i++)
+				retryEx = Assert.Throws<BrokenCircuitException>(
+					() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
+				);
 
 			// Assert
 			Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
@@ -233,27 +218,10 @@ namespace SQE.ApiTest
 			counter.Count = 0;
 
 			// Act (even though we run this 7 times, the method itself should only run 5 times total)
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionWithReturn(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionWithReturn(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionWithReturn(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionWithReturn(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionWithReturn(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionWithReturn(counter, code))
-			);
-			retryEx = Assert.Throws<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionWithReturn(counter, code))
-			);
+			for (var i = 0; i < repeatCount; i++)
+				retryEx = Assert.Throws<BrokenCircuitException>(
+					() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionWithReturn(counter, code))
+				);
 
 			// Assert
 			Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
@@ -269,27 +237,10 @@ namespace SQE.ApiTest
 			var token = new CancellationToken();
 
 			// Act (even though we run this 7 times, the method itself should only run 5 times total)
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionAsync(counter, code), token)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionAsync(counter, code), token)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionAsync(counter, code), token)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionAsync(counter, code), token)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionAsync(counter, code), token)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionAsync(counter, code), token)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionAsync(counter, code), token)
-			);
+			for (var i = 0; i < repeatCount; i++)
+				retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
+					() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlExceptionAsync(counter, code), token)
+				);
 
 			// Assert
 			Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
@@ -304,48 +255,13 @@ namespace SQE.ApiTest
 			counter.Count = 0;
 
 			// Act (even though we run this 7 times, the method itself should only run 5 times total)
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(
-					() => ThrowMySqlExceptionWithReturnAsync(counter, code),
-					token
-				)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(
-					() => ThrowMySqlExceptionWithReturnAsync(counter, code),
-					token
-				)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(
-					() => ThrowMySqlExceptionWithReturnAsync(counter, code),
-					token
-				)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(
-					() => ThrowMySqlExceptionWithReturnAsync(counter, code),
-					token
-				)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(
-					() => ThrowMySqlExceptionWithReturnAsync(counter, code),
-					token
-				)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(
-					() => ThrowMySqlExceptionWithReturnAsync(counter, code),
-					token
-				)
-			);
-			retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
-				() => policy.ExecuteRetryWithCircuitBreaker(
-					() => ThrowMySqlExceptionWithReturnAsync(counter, code),
-					token
-				)
-			);
+			for (var i = 0; i < repeatCount; i++)
+				retryEx = await Assert.ThrowsAsync<BrokenCircuitException>(
+					() => policy.ExecuteRetryWithCircuitBreaker(
+						() => ThrowMySqlExceptionWithReturnAsync(counter, code),
+						token
+					)
+				);
 
 			// Assert
 			Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
@@ -370,14 +286,6 @@ namespace SQE.ApiTest
 				ex = Assert.Throws<MySqlException>(
 					() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code))
 				);
-
-			//            var ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
-			//            ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
-			//            ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
-			//            ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
-			//            ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
-			//            ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
-			//            ex = Assert.Throws<MySqlException>(() => policy.ExecuteRetryWithCircuitBreaker(() => ThrowMySqlException(counter, code)));
 
 			// Assert
 			Assert.NotNull(ex);
