@@ -142,7 +142,7 @@ namespace SQE.SqeHttpApi.Server
 		public void Configure(IApplicationBuilder app)
 		{
 			if (Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
-			
+
 			app.UseSerilogRequestLogging();
 
 			app.UseCors(

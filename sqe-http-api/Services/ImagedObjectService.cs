@@ -1,19 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
+using SQE.SqeHttpApi.Server.Helpers;
 
-namespace SQE.SqeHttpApi.Server.Helpers
+namespace SQE.SqeHttpApi.Server.Services
 {
 	public interface IImagedObjectService
 	{
 		Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId,
 			uint editionId,
-			bool artefacts = false,
-			bool masks = false);
+			List<string> optional = null);
 
 		Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(uint? userId,
 			uint editionId,
@@ -22,8 +23,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 		Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId,
 			uint editionId,
 			string imagedObjectId,
-			bool withArtefacts = false,
-			bool withMasks = false);
+			List<string> optional = null);
 	}
 
 	public class ImagedObjectService : IImagedObjectService
@@ -48,9 +48,9 @@ namespace SQE.SqeHttpApi.Server.Helpers
 		// TODO: Fix this and GetImagedObjectsWithArtefactsAsync up to be more DRY and efficient.
 		public async Task<ImagedObjectListDTO> GetImagedObjectsAsync(uint? userId,
 			uint editionId,
-			bool artefacts = false,
-			bool masks = false)
+			List<string> optional = null)
 		{
+			ParseOptionals(optional, out var artefacts, out var masks);
 			if (artefacts)
 				return await GetImagedObjectsWithArtefactsAsync(userId, editionId, masks);
 
@@ -118,24 +118,24 @@ namespace SQE.SqeHttpApi.Server.Helpers
 		public async Task<ImagedObjectDTO> GetImagedObjectAsync(uint? userId,
 			uint editionId,
 			string imagedObjectId,
-			bool withArtefacts = false,
-			bool withMasks = false)
+			List<string> optional = null)
 		{
+			ParseOptionals(optional, out var artefacts, out var masks);
 			var result =
 				(await GetImagedObjectsAsync(userId, editionId)).imagedObjects.First(x => x.id == imagedObjectId);
-			if (withArtefacts)
+			if (artefacts)
 			{
-				var artefacts = ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
-					(await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, withMasks)).ToList(),
+				var artefactList = ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
+					(await _artefactRepository.GetEditionArtefactListAsync(userId, editionId, masks)).ToList(),
 					editionId
 				);
 
-				foreach (var artefact in artefacts.artefacts)
+				foreach (var art in artefactList.artefacts)
 				{
 					if (result.artefacts == null)
 						result.artefacts = new List<ArtefactDTO>();
-					if (result.id == artefact.imagedObjectId)
-						result.artefacts.Add(artefact);
+					if (result.id == art.imagedObjectId)
+						result.artefacts.Add(art);
 				}
 			}
 
@@ -203,6 +203,18 @@ namespace SQE.SqeHttpApi.Server.Helpers
 						}
 						: null
 				);
+		}
+
+		private void ParseOptionals(List<string> optionals, out bool artefacts, out bool masks)
+		{
+			artefacts = masks = false;
+			if (optionals == null)
+				return;
+			artefacts = optionals.Contains("artefacts");
+			if (!optionals.Contains("masks"))
+				return;
+			masks = true;
+			artefacts = true;
 		}
 	}
 }

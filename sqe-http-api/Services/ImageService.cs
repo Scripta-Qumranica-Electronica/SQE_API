@@ -5,7 +5,7 @@ using SQE.SqeHttpApi.DataAccess;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 
-namespace SQE.SqeHttpApi.Server.Helpers
+namespace SQE.SqeHttpApi.Server.Services
 {
 	public interface IImageService
 	{
