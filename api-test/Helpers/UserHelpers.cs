@@ -12,7 +12,7 @@ namespace SQE.ApiTest.Helpers
 	public class UserHelpers
 	{
 		private static uint userCount = 0;
-		
+
 		/// <summary>
 		///     Create a user with random information.
 		/// </summary>

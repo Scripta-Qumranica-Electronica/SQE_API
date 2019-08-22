@@ -91,8 +91,8 @@ namespace SQE.SqeHttpApi.DataAccess
 				{
 					Log.ForContext<DbConnectionBase>()
 						.Warning(
-							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
-							retryCount, 
+							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
+							retryCount,
 							delay,
 							exception);
 				}
@@ -107,8 +107,8 @@ namespace SQE.SqeHttpApi.DataAccess
 				{
 					Log.ForContext<DbConnectionBase>()
 						.Warning(
-							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
-							retryCount, 
+							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
+							retryCount,
 							delay,
 							exception);
 				}
@@ -181,8 +181,8 @@ namespace SQE.SqeHttpApi.DataAccess
 					{
 						Log.ForContext<DbConnectionBase>()
 							.Warning(
-								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
-								retryCount, 
+								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
+								retryCount,
 								delay,
 								exception);
 					}
@@ -197,8 +197,8 @@ namespace SQE.SqeHttpApi.DataAccess
 					{
 						Log.ForContext<DbConnectionBase>()
 							.Warning(
-								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
-								retryCount, 
+								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
+								retryCount,
 								delay,
 								exception);
 					}

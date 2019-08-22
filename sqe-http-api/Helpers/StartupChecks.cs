@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using Dapper;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -83,10 +82,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
 					{
 						Log.ForContext<Startup>()
 							.Warning(
-								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
-								retryCount, 
+								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
+								retryCount,
 								delay,
-								exception);
+								exception
+							);
 					}
 				);
 			policy.Execute(() => new DatabaseVerificationInstance(configuration).Verify());
