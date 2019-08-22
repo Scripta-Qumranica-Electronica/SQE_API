@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Polly;
+using Serilog;
 using SQE.SqeHttpApi.DataAccess;
 
 namespace SQE.SqeHttpApi.Server.Helpers
@@ -76,9 +77,17 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			var policy = Policy
 				.Handle<MySqlException>() // Only retry on Mysql Exceptions
 				.WaitAndRetry(
-					retryCount: 5,
-					sleepDurationProvider: attempt => TimeSpan.FromSeconds(3), // wait a total of 5 * 3 seconds
-					onRetry: (exception, retryCount) => Console.WriteLine($"Database connection failed, retry {retryCount} in a 3 seconds")
+					10,
+					attempt => TimeSpan.FromSeconds(3), // wait a total of 10 * 3 seconds
+					(exception, delay, retryCount, _) =>
+					{
+						Log.ForContext<Startup>()
+							.Warning(
+								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
+								retryCount, 
+								delay,
+								exception);
+					}
 				);
 			policy.Execute(() => new DatabaseVerificationInstance(configuration).Verify());
 		}

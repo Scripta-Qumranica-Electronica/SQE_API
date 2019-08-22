@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Polly;
+using Serilog;
 
 namespace SQE.SqeHttpApi.DataAccess
 {
@@ -85,14 +86,32 @@ namespace SQE.SqeHttpApi.DataAccess
 			)
 			.WaitAndRetryAsync(
 				RetryCount,
-				attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
+				attempt => TimeSpan.FromMilliseconds(_waitTime(attempt)),
+				(exception, delay, retryCount, _) =>
+				{
+					Log.ForContext<DbConnectionBase>()
+						.Warning(
+							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
+							retryCount, 
+							delay,
+							exception);
+				}
 			);
 
 		private static readonly Policy _retryPolicy = Policy
 			.Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
 			.WaitAndRetry(
 				RetryCount,
-				attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
+				attempt => TimeSpan.FromMilliseconds(_waitTime(attempt)),
+				(exception, delay, retryCount, _) =>
+				{
+					Log.ForContext<DbConnectionBase>()
+						.Warning(
+							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
+							retryCount, 
+							delay,
+							exception);
+				}
 			);
 
 		/// <summary>
@@ -157,14 +176,32 @@ namespace SQE.SqeHttpApi.DataAccess
 				.Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
 				.WaitAndRetryAsync(
 					RetryCount,
-					attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
+					attempt => TimeSpan.FromMilliseconds(_waitTime(attempt)),
+					(exception, delay, retryCount, _) =>
+					{
+						Log.ForContext<DbConnectionBase>()
+							.Warning(
+								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
+								retryCount, 
+								delay,
+								exception);
+					}
 				);
 
 			_circuitBreakerRetryPolicy = Policy
 				.Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
 				.WaitAndRetry(
 					RetryCount,
-					attempt => TimeSpan.FromMilliseconds(_waitTime(attempt))
+					attempt => TimeSpan.FromMilliseconds(_waitTime(attempt)),
+					(exception, delay, retryCount, _) =>
+					{
+						Log.ForContext<DbConnectionBase>()
+							.Warning(
+								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}", 
+								retryCount, 
+								delay,
+								exception);
+					}
 				);
 
 			_circuitBreakPolicyAsync = Policy
