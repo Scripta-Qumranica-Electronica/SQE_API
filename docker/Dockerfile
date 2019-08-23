@@ -9,6 +9,7 @@ WORKDIR /src
 
 COPY ./sqe-http-api/sqe-http-api.csproj ./sqe-http-api/
 COPY ./data-access/data-access.csproj ./data-access/
+COPY ./sqe-dtos/sqe-dtos.csproj ./sqe-dtos/
 
 RUN dotnet restore "sqe-http-api/sqe-http-api.csproj"
 
@@ -16,6 +17,7 @@ WORKDIR /src/sqe-http-api
 
 COPY ./sqe-http-api /src/sqe-http-api
 COPY ./data-access /src/data-access
+COPY ./sqe-dtos /src/sqe-dtos
 
 RUN dotnet build "sqe-http-api.csproj" -c Release -o /app
 
