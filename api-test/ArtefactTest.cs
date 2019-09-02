@@ -77,7 +77,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 		}
 
 
-		private string RandomPosition(bool properlyFormatted = true)
+		private string ArtefactPosition(bool properlyFormatted = true)
 		{
 			return properlyFormatted
 				? "{\"matrix\":[[1.3,0,32],[0,0.67,54]]}"
@@ -121,7 +121,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
-			var newTransform = RandomPosition();
+			var newTransform = ArtefactPosition();
 			var newName = "CanCreateArtefacts.artefact א";
 			var newArtefact = new CreateArtefactDTO
 			{
@@ -265,7 +265,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
-			var newTransform = RandomPosition();
+			var newTransform = ArtefactPosition();
 			var newName = "CanCreateArtefacts.artefact α"; ;
 			var newArtefact = new CreateArtefactDTO
 			{
@@ -359,7 +359,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 			var newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
-			var newArtefactPosition = RandomPosition();
+			var newArtefactPosition = ArtefactPosition();
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
 
@@ -426,7 +426,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(newArtefactName, updatedShapeArtefact.name);
 
 			// Arrange (update all)
-			var otherTransform = RandomPosition();
+			var otherTransform = ArtefactPosition();
 			// Act (update all)
 			var (allResponse, updatedAllArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
 				_client,
@@ -461,7 +461,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
-			var newArtefactMatrix = RandomPosition(false);
+			var newArtefactMatrix = ArtefactPosition(false);
 
 			// Act (update name)
 			var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
@@ -515,6 +515,30 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
 
 			await EditionHelpers.DeleteEdition(_client, newEdition, true);
+		}
+
+		[Fact]
+		public async Task CanGetSuggestedTextFragmentForArtefact()
+		{
+			// Arrange
+			const uint editionId = 894;
+			const uint artefactId = 10058;
+			var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/suggested-text-fragments";
+
+			// Act
+			var (tfResponse, tfData) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(
+				_client,
+				HttpMethod.Get,
+				path,
+				null
+			);
+
+			// Assert
+			tfResponse.EnsureSuccessStatusCode();
+			Assert.NotEmpty(tfData.textFragments);
+			Assert.Equal((uint)10029, tfData.textFragments.First().id);
+			Assert.Equal("frg. 78_79", tfData.textFragments.First().name);
+			Assert.Equal((uint)894, tfData.textFragments.First().editorId);
 		}
 	}
 }
