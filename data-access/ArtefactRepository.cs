@@ -40,6 +40,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			string position = null);
 
 		Task DeleteArtefactAsync(UserInfo user, uint artefactId);
+		Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(UserInfo user, uint artefactId);
 	}
 
 	public class ArtefactRepository : DbConnectionBase, IArtefactRepository
@@ -300,6 +301,22 @@ namespace SQE.SqeHttpApi.DataAccess
 			// Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
 			// care of main_action and single_action.
 			return await _databaseWriter.WriteToDatabaseAsync(user, new List<MutationRequest> { artefactChangeRequest });
+		}
+
+		public async Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(UserInfo user, uint artefactId)
+		{
+			using (var connection = OpenConnection())
+			{
+				return (await connection.QueryAsync<TextFragmentData>(
+					FindSuggestedArtefactTextFragments.GetQuery,
+					new
+					{
+						EditionId = user.editionId ?? 0,
+						UserId = user.userId ?? 0,
+						ArtefactId = artefactId
+					}
+				)).ToList();
+			}
 		}
 
 		private async Task<uint> GetArtefactPkAsync(UserInfo user, uint artefactId, string table)

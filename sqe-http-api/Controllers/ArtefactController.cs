@@ -87,6 +87,22 @@ namespace SQE.SqeApi.Server.Controllers
 		}
 
 		/// <summary>
+		///     Provides a listing of text fragments that may match the specified artefact
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		[AllowAnonymous]
+		[HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/suggested-text-fragments")]
+		public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactSuggestedTextFragments([FromRoute] uint editionId,
+			[FromRoute] uint artefactId)
+		{
+			return await _artefactService.ArtefactSuggestedTextFragmentsAsync(
+				_userService.GetCurrentUserObject(editionId),
+				artefactId
+			);
+		}
+
+		/// <summary>
 		///     Updates the specified artefact
 		/// </summary>
 		/// <param name="artefactId">Unique Id of the desired artefact</param>

@@ -25,6 +25,7 @@ namespace SQE.SqeHttpApi.Server.Services
 			string name = null, string position = null, string clientId = null);
 
 		Task<NoContentResult> DeleteArtefactAsync(UserInfo user, uint artefactId, string clientId = null);
+		Task<TextFragmentDataListDTO> ArtefactSuggestedTextFragmentsAsync(UserInfo user, uint artefactId);
 	}
 
 	public class ArtefactService : IArtefactService
@@ -129,6 +130,18 @@ namespace SQE.SqeHttpApi.Server.Services
 			await _artefactRepository.DeleteArtefactAsync(user, artefactId);
 
 			return new NoContentResult();
+		}
+
+		public async Task<TextFragmentDataListDTO> ArtefactSuggestedTextFragmentsAsync(UserInfo user, uint artefactId)
+		{
+			return new TextFragmentDataListDTO()
+			{
+				textFragments = (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(user, artefactId))
+					.Select(
+						x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId)
+					)
+					.ToList()
+			};
 		}
 
 		private void ParseOptionals(List<string> optionals, out bool images, out bool masks)

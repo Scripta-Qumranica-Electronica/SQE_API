@@ -91,4 +91,26 @@ $Order";
             WHERE artefact_shape.artefact_id = @ArtefactId
                 AND artefact_shape_owner.edition_id = @EditionId";
 	}
+
+	internal static class FindSuggestedArtefactTextFragments
+	{
+		public const string GetQuery = @"
+SELECT text_fragment_id AS TextFragmentId, 
+       text_fragment_data.name AS TextFragmentName, 
+       text_fragment_data_owner.edition_editor_id AS EditionEditorId
+FROM artefact_shape
+JOIN artefact_shape_owner ON artefact_shape.artefact_shape_id = artefact_shape_owner.artefact_shape_id
+   AND artefact_shape_owner.edition_id = @EditionId
+JOIN SQE_image USING(sqe_image_id)
+JOIN image_to_iaa_edition_catalog USING(image_catalog_id)
+JOIN iaa_edition_catalog_to_text_fragment USING(iaa_edition_catalog_id)
+JOIN text_fragment_data USING(text_fragment_id)
+JOIN text_fragment_data_owner ON text_fragment_data.text_fragment_data_id = text_fragment_data_owner.text_fragment_data_id
+   AND text_fragment_data_owner.edition_id = @EditionId
+JOIN edition ON edition.edition_id = @EditionId
+JOIN edition_editor ON edition_editor.edition_id = @EditionId
+WHERE artefact_id = @ArtefactId
+   AND (edition.public = 1 OR edition_editor.user_id = @UserId)
+";
+	}
 }
