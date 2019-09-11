@@ -30,15 +30,4 @@ namespace SQE.SqeHttpApi.Server.DTOs
 		public uint editorId { get; set; }
 		public float value { get; set; }
 	}
-
-	public class InterpretationRoiDTO
-	{
-		public uint interpretationRoiId { get; set; }
-		public uint editorId { get; set; }
-		public uint artefactId { get; set; }
-		public string shape { get; set; }
-		public string position { get; set; }
-		public bool exceptional { get; set; }
-		public bool valuesSet { get; set; }
-	}
 }

@@ -12,12 +12,12 @@ namespace SQE.SqeHttpApi.DataAccess
 {
 	public interface ITextRepository
 	{
-		Task<TextEdition> GetLineByIdAsync(UserInfo user, uint lineId);
-		Task<TextEdition> GetTextFragmentByIdAsync(UserInfo user, uint textFragmentId);
-		Task<List<LineData>> GetLineIdsAsync(UserInfo user, uint textFragmentId);
-		Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo user);
+		Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
+		Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId);
+		Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId);
+		Task<List<TextFragmentData>> GetFragmentDataAsync(EditionUserInfo editionUser);
 
-		Task<TextFragmentData> CreateTextFragmentAsync(UserInfo user,
+		Task<TextFragmentData> CreateTextFragmentAsync(EditionUserInfo editionUser,
 			string fragmentName,
 			uint? previousFragmentId,
 			uint? nextFragmentId);
@@ -32,50 +32,49 @@ namespace SQE.SqeHttpApi.DataAccess
 			_databaseWriter = databaseWriter;
 		}
 
-		public async Task<TextEdition> GetLineByIdAsync(UserInfo user, uint lineId)
+		public async Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
 		{
-			var terminators = _getTerminators(user, GetLineTerminators.GetQuery, lineId);
+			var terminators = _getTerminators(editionUser, GetLineTerminators.GetQuery, lineId);
 
 			if (terminators.Length != 2)
 				return new TextEdition();
 
-			return await _getEntityById(user, terminators[0], terminators[1]);
+			return await _getEntityById(editionUser, terminators[0], terminators[1]);
 		}
 
-		public async Task<TextEdition> GetTextFragmentByIdAsync(UserInfo user, uint textFragmentId)
+		public async Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId)
 		{
-			var terminators = _getTerminators(user, GetFragmentTerminators.GetQuery, textFragmentId);
+			var terminators = _getTerminators(editionUser, GetFragmentTerminators.GetQuery, textFragmentId);
 
 			if (terminators.Length != 2)
 				return new TextEdition();
 
-			return await _getEntityById(user, terminators[0], terminators[1]);
+			return await _getEntityById(editionUser, terminators[0], terminators[1]);
 		}
 
-		public async Task<List<LineData>> GetLineIdsAsync(UserInfo user, uint textFragmentId)
+		public async Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId)
 		{
 			using (var connection = OpenConnection())
 			{
 				return (await connection.QueryAsync<LineData>(
 					GetLineData.Query,
-					new { TextFragmentId = textFragmentId, EditionId = user.editionId, UserId = user.userId }
+					new {TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId}
 				)).ToList();
-				//connection.Close();
 			}
 		}
 
-		public async Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo user)
+		public async Task<List<TextFragmentData>> GetFragmentDataAsync(EditionUserInfo editionUser)
 		{
 			using (var connection = OpenConnection())
 			{
 				return (await connection.QueryAsync<TextFragmentData>(
 					GetFragmentData.GetQuery,
-					new { EditionId = user.editionId, UserId = user.userId ?? 0 }
+					new {editionUser.EditionId, UserId = editionUser.userId ?? 0}
 				)).ToList();
 			}
 		}
 
-		public async Task<TextFragmentData> CreateTextFragmentAsync(UserInfo user,
+		public async Task<TextFragmentData> CreateTextFragmentAsync(EditionUserInfo editionUser,
 			string fragmentName,
 			uint? previousFragmentId,
 			uint? nextFragmentId)
@@ -86,7 +85,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					using (var transactionScope = new TransactionScope())
 					{
 						// Get all text fragments in the edition for sorting operations later on
-						var editionTextFragments = await GetFragmentDataAsync(user);
+						var editionTextFragments = await GetFragmentDataAsync(editionUser);
 
 						// Check to make sure the new named text fragment doesn't conflict with existing ones (the frontend will resolve this)
 						if (editionTextFragments.Any(x => x.TextFragmentName == fragmentName))
@@ -100,16 +99,21 @@ namespace SQE.SqeHttpApi.DataAccess
 						var newTextFragmentId = await _createTextFragmentIdAsync();
 
 						// Add the new text fragment to the edition manuscript
-						await _addTextFragmentToManuscript(user, newTextFragmentId);
+						await _addTextFragmentToManuscript(editionUser, newTextFragmentId);
 
 						// Create the data entry for the new text fragment
-						await _createTextFragmentDataAsync(user, newTextFragmentId, fragmentName);
+						await _createTextFragmentDataAsync(editionUser, newTextFragmentId, fragmentName);
 
 						// Shift the position of any text fragments that have been displaced by the new one
-						await _shiftTextFragmentsPosition(user, editionTextFragments, newTextFragmentPosition, 1);
+						await _shiftTextFragmentsPosition(
+							editionUser,
+							editionTextFragments,
+							newTextFragmentPosition,
+							1
+						);
 
 						// Now set the position for the new text fragment
-						await _createTextFragmentPosition(user, newTextFragmentId, newTextFragmentPosition);
+						await _createTextFragmentPosition(editionUser, newTextFragmentId, newTextFragmentPosition);
 
 						// End the transaction (it was all or nothing)
 						transactionScope.Complete();
@@ -129,14 +133,14 @@ namespace SQE.SqeHttpApi.DataAccess
 
 		#region Private methods
 
-		private uint[] _getTerminators(UserInfo user, string query, uint entityId)
+		private uint[] _getTerminators(EditionUserInfo editionUser, string query, uint entityId)
 		{
 			uint[] terminators;
 			using (var connection = OpenConnection())
 			{
 				terminators = connection.Query<uint>(
 						query,
-						new { EntityId = entityId, EditionId = user.editionId ?? 0, UserId = user.userId ?? 0 }
+						new {EntityId = entityId, editionUser.EditionId, UserId = editionUser.userId ?? 0}
 					)
 					.ToArray();
 				connection.Close();
@@ -145,7 +149,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			return terminators;
 		}
 
-		private async Task<TextEdition> _getEntityById(UserInfo user, uint startId, uint endId)
+		private async Task<TextEdition> _getEntityById(EditionUserInfo editionUser, uint startId, uint endId)
 		{
 			TextEdition lastEdition = null;
 			TextFragment lastTextFragment = null;
@@ -205,7 +209,7 @@ namespace SQE.SqeHttpApi.DataAccess
 						}
 
 						if (nextSignInterpretation.nextSignInterpretationId
-							!= lastNextSignInterpretation?.nextSignInterpretationId)
+						    != lastNextSignInterpretation?.nextSignInterpretationId)
 							lastNextSignInterpretation = nextSignInterpretation;
 
 						if (signInterpretation.signInterpretationId != lastChar?.signInterpretationId)
@@ -224,7 +228,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
 						return newScroll ? manuscript : null;
 					},
-					new { startId, endId, editionId = user.editionId ?? 0 },
+					new {startId, endId, editionUser.EditionId},
 					splitOn:
 					"textFragmentId, lineId, signId, nextSignInterpretationId, signInterpretationId, interpretationAttributeId, SignInterpretationRoiId"
 				);
@@ -242,8 +246,8 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 			// If neither previousFragmentId nor nextFragmentId have been set, put the new text fragment at the end of the manuscript.
 			if (!previousFragmentId.HasValue
-				&& !nextFragmentId.HasValue)
-				return (ushort)(textFragmentIds.Any() ? textFragmentIds.Last().Position + 1 : 1);
+			    && !nextFragmentId.HasValue)
+				return (ushort) (textFragmentIds.Any() ? textFragmentIds.Last().Position + 1 : 1);
 
 			ushort? nextPosition = null;
 			if (nextFragmentId.HasValue) // We know the existing text fragment that the new one will displace
@@ -269,12 +273,12 @@ namespace SQE.SqeHttpApi.DataAccess
 
 			// If there is also a nextPosition, verify that previousPosition and nextPosition are sequential
 			if (nextPosition.HasValue
-				&& previousPosition + 1 != nextPosition
+			    && previousPosition + 1 != nextPosition
 			) // The specified previous and next text fragments are not sequential
 				throw new StandardErrors.ImproperInputData("textFragmentId");
 
 			// Since there is no nextPosition just assume it should be one higher than the previousFragmentId
-			return (ushort)(previousPosition + 1);
+			return (ushort) (previousPosition + 1);
 		}
 
 		private async Task<uint> _createTextFragmentIdAsync()
@@ -295,7 +299,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			}
 		}
 
-		private async Task<uint> _createTextFragmentDataAsync(UserInfo user,
+		private async Task<uint> _createTextFragmentDataAsync(EditionUserInfo editionUser,
 			uint textFragmentId,
 			string textFragmentName)
 		{
@@ -313,19 +317,19 @@ namespace SQE.SqeHttpApi.DataAccess
 
 			// Commit the mutation
 			var createTextFragmentResponse = await _databaseWriter.WriteToDatabaseAsync(
-				user,
-				new List<MutationRequest> { createTextFragmentMutation }
+				editionUser,
+				new List<MutationRequest> {createTextFragmentMutation}
 			);
 
 			// Ensure that the entry was created
 			if (createTextFragmentResponse.Count != 1
-				|| !createTextFragmentResponse.First().NewId.HasValue)
+			    || !createTextFragmentResponse.First().NewId.HasValue)
 				throw new StandardErrors.DataNotWritten("create new textFragment data");
 
 			return createTextFragmentResponse.First().NewId.Value;
 		}
 
-		private async Task<uint> _createTextFragmentPosition(UserInfo user,
+		private async Task<uint> _createTextFragmentPosition(EditionUserInfo editionUser,
 			uint textFragmentId,
 			ushort position)
 		{
@@ -344,13 +348,13 @@ namespace SQE.SqeHttpApi.DataAccess
 			// Commit the mutation
 			var textFragmentMutationResults =
 				await _databaseWriter.WriteToDatabaseAsync(
-					user,
-					new List<MutationRequest> { createTextFragmentPositionMutation }
+					editionUser,
+					new List<MutationRequest> {createTextFragmentPositionMutation}
 				);
 
 			// Ensure that the entry was created
 			if (textFragmentMutationResults.Count != 1
-				|| !textFragmentMutationResults.First().NewId.HasValue)
+			    || !textFragmentMutationResults.First().NewId.HasValue)
 				throw new StandardErrors.DataNotWritten(
 					"create text fragment position"
 				);
@@ -358,7 +362,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			return textFragmentMutationResults.First().NewId.Value;
 		}
 
-		private async Task _shiftTextFragmentsPosition(UserInfo user,
+		private async Task _shiftTextFragmentsPosition(EditionUserInfo editionUser,
 			IReadOnlyCollection<TextFragmentData> textFragmentList,
 			ushort startPosition,
 			int offset)
@@ -369,7 +373,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					x =>
 					{
 						if (x.Position + offset < 0
-							|| x.Position + offset > 65535)
+						    || x.Position + offset > 65535)
 							throw new StandardErrors.DataNotWritten(
 								"change textFragment position",
 								"the desired position is out of range"
@@ -389,7 +393,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
 			// Commit the mutation
 			var shiftTextFragmentMutationResults =
-				await _databaseWriter.WriteToDatabaseAsync(user, textFragmentShiftMutations);
+				await _databaseWriter.WriteToDatabaseAsync(editionUser, textFragmentShiftMutations);
 
 			// Ensure that the entry was created
 			if (shiftTextFragmentMutationResults.Count != textFragmentShiftMutations.Count)
@@ -398,14 +402,14 @@ namespace SQE.SqeHttpApi.DataAccess
 				);
 		}
 
-		private async Task _addTextFragmentToManuscript(UserInfo user, uint textFragmentId)
+		private async Task _addTextFragmentToManuscript(EditionUserInfo editionUser, uint textFragmentId)
 		{
 			using (var connection = OpenConnection())
 			{
 				// Get the manuscript id of the current edition
 				var manuscriptId = await connection.QueryAsync<uint>(
 					ManuscriptOfEdition.GetQuery,
-					new { EditionId = user.editionId.Value }
+					new {editionUser.EditionId}
 				);
 
 				// Link the manuscript to the new text fragment
@@ -414,7 +418,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				manuscriptToTextFragmentParameters.Add("@text_fragment_id", textFragmentId);
 				var manuscriptToTextFragmentResults =
 					await _databaseWriter.WriteToDatabaseAsync(
-						user,
+						editionUser,
 						new List<MutationRequest>
 						{
 							new MutationRequest(

@@ -22,7 +22,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 			if (!IsValidRows(matrix))
 				throw new StandardErrors.ImproperInputData("position");
 			if (!IsValidValues(matrix[0])
-				|| !IsValidValues(matrix[1]))
+			    || !IsValidValues(matrix[1]))
 				throw new StandardErrors.ImproperInputData("position");
 		}
 
@@ -41,7 +41,7 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 		private static bool IsValidValues(IReadOnlyList<double> row)
 		{
 			// Check that the third element in the 2nd dimension of the array is equivalent to a whole number.
-			return (int)row[2] == row[2];
+			return (int) row[2] == row[2];
 		}
 	}
 }

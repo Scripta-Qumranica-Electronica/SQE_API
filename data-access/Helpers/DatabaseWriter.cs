@@ -57,7 +57,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 			// Fail creating the object if missing record id for update/delete.
 			if ((action == MutateType.Update || action == MutateType.Delete)
-				&& !tablePkId.HasValue)
+			    && !tablePkId.HasValue)
 				throw new ArgumentException(
 					"The primary key of the record is necessary for Update and Delete actions",
 					nameof(tablePkId)
@@ -69,8 +69,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		public MutateType Action { get; }
 
 		public List<string>
-			ColumnNames
-		{ get; } // Itay, we still need this, since we add more to the SQL parameters than
+			ColumnNames { get; } // Itay, we still need this, since we add more to the SQL parameters than
 
 		// just the column names after this mutation request is created (e.g.
 		// @EditionId and maybe @OwnedTableId).  But now this is computed
@@ -123,7 +122,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 	public interface IDatabaseWriter
 	{
-		Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
+		Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
 			List<MutationRequest> mutationRequests);
 	}
 
@@ -140,19 +139,18 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		///     A list of AlteredRecord objects containing the details of each mutation.
 		///     The order of the returned list or results matches the order of the list of mutation requests
 		/// </returns>
-		/// <param name="user"></param>
+		/// <param name="editionUser"></param>
 		/// <param name="mutationRequests">List of mutation requests.</param>
-		public async Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
+		public async Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
 			List<MutationRequest> mutationRequests)
 		{
 			// Check if the edition is locked
-			if (await user.EditionLocked())
-				throw new StandardErrors.LockedData(user);
+			if (editionUser.EditionLocked)
+				throw new StandardErrors.LockedData(editionUser);
 
 			// Check the permissions and throw if user has no rights to alter this edition
-			if (!await user.MayWrite()
-				&& !(await user.EditionEditorId()).HasValue)
-				throw new StandardErrors.NoWritePermissions(user);
+			if (!editionUser.MayWrite)
+				throw new StandardErrors.NoWritePermissions(editionUser);
 
 			var alteredRecords = new List<AlteredRecord>();
 
@@ -171,8 +169,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 							// Though we accept a List of mutations, we have the restriction that
 							// they all belong to the same editionId and userID.
 							// This way, we only do one permission check for the whole batch.
-							mutationRequest.Parameters.Add("@EditionId", user.editionId);
-							mutationRequest.Parameters.Add("@EditionEditorId", (await user.EditionEditorId()).Value);
+							mutationRequest.Parameters.Add("@EditionId", editionUser.EditionId);
+							mutationRequest.Parameters.Add("@EditionEditorId", editionUser.EditionEditorId);
 							await AddMainActionAsync(connection, mutationRequest);
 							switch (mutationRequest.Action)
 							{
@@ -183,7 +181,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 								case MutateType.Update
 									: // Update in our system is really Delete + Insert, the old record remains.
-									  // Delete the old record
+									// Delete the old record
 									var deletedRecord = await DeleteAsync(connection, mutationRequest);
 
 									// Insert the new record

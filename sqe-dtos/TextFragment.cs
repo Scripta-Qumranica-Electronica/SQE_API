@@ -26,7 +26,9 @@ namespace SQE.SqeHttpApi.Server.DTOs
 			this.textFragments = textFragments;
 		}
 
-		public TextFragmentDataListDTO() : this(null) { }
+		public TextFragmentDataListDTO() : this(null)
+		{
+		}
 
 		public List<TextFragmentDataDTO> textFragments { get; set; }
 	}

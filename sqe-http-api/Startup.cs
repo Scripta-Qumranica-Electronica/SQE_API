@@ -50,6 +50,7 @@ namespace SQE.SqeHttpApi.Server
 			services.AddScoped<IArtefactService, ArtefactService>();
 			services.AddScoped<IImageService, ImageService>();
 			services.AddScoped<ITextService, TextService>();
+			services.AddScoped<IRoiService, RoiService>();
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddTransient<IUserRepository, UserRepository>();
 			services.AddTransient<IEditionRepository, EditionRepository>();
@@ -58,6 +59,7 @@ namespace SQE.SqeHttpApi.Server
 			services.AddTransient<IArtefactRepository, ArtefactRepository>();
 			services.AddTransient<IDatabaseWriter, DatabaseWriter>();
 			services.AddTransient<ITextRepository, TextRepository>();
+			services.AddTransient<IRoiRepository, RoiRepository>();
 
 			// When running integration tests, we do not actually send out emails. This checks ASPNETCORE_ENVIRONMENT
 			// and if it is "IntegrationTests", then a Fake for IEmailSender is used instead of the real one.
@@ -113,7 +115,7 @@ namespace SQE.SqeHttpApi.Server
 			services.AddSwaggerGen(
 				c =>
 				{
-					c.SwaggerDoc("v1", new Info { Title = "SQE API", Version = "v1" });
+					c.SwaggerDoc("v1", new Info {Title = "SQE API", Version = "v1"});
 					var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
 					var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
 					c.IncludeXmlComments(xmlPath);

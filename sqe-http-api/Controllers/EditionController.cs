@@ -30,7 +30,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromBody] EditorRightsDTO payload)
 		{
 			return await _editionService.AddEditionEditor(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
 				payload
 			);
 		}
@@ -45,7 +45,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromBody] EditorRightsDTO payload)
 		{
 			return await _editionService.ChangeEditionEditorRights(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
 				payload
 			);
 		}
@@ -60,7 +60,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromBody] EditionCopyDTO request)
 		{
 			return await _editionService.CopyEditionAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				request
 			);
 		}
@@ -77,7 +77,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromQuery] string token)
 		{
 			return await _editionService.DeleteEditionAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
 				token,
 				optional
 			);
@@ -91,7 +91,7 @@ namespace SQE.SqeApi.Server.Controllers
 		[HttpGet("v1/[controller]s/{editionId}")]
 		public async Task<ActionResult<EditionGroupDTO>> GetEdition([FromRoute] uint editionId)
 		{
-			return await _editionService.GetEditionAsync(_userService.GetCurrentUserObject(editionId));
+			return await _editionService.GetEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
 		}
 
 		/// <summary>
@@ -114,7 +114,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromBody] EditionUpdateRequestDTO request)
 		{
 			return await _editionService.UpdateEditionAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
 				request.name,
 				request.copyrightHolder,
 				request.collaborators

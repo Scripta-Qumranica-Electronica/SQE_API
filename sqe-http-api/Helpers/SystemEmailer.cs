@@ -42,7 +42,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			var smtp = _config.GetConnectionString("MailerEmailSmtpUrl");
 			var port = _config.GetConnectionString("MailerEmailSmtpPort");
 			var security = _config.GetConnectionString("MailerEmailSmtpSecurity");
-			var securityEnum = (SecureSocketOptions)Enum.Parse(typeof(SecureSocketOptions), security);
+			var securityEnum = (SecureSocketOptions) Enum.Parse(typeof(SecureSocketOptions), security);
 
 			if (!EmailValidator.Validate(email))
 				throw new StandardErrors.EmailAddressImproperlyFormatted(email);
@@ -51,7 +51,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			mimeMessage.From.Add(new MailboxAddress("SQE Webadmin", senderEmail));
 			mimeMessage.To.Add(new MailboxAddress("Microsoft ASP.NET Core", email));
 			mimeMessage.Subject = subject; //Subject  
-			mimeMessage.Body = new TextPart("html") { Text = htmlMessage };
+			mimeMessage.Body = new TextPart("html") {Text = htmlMessage};
 
 			using (var client = new SmtpClient())
 			{
@@ -70,7 +70,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 				{
 					// If the status code indicates that the email address is undeliverable, throw a descriptive error
 					if (_env.IsProduction()
-						&& e.StatusCode == SmtpStatusCode.MailboxUnavailable)
+					    && e.StatusCode == SmtpStatusCode.MailboxUnavailable)
 						throw new StandardErrors.EmailAddressUndeliverable(email);
 
 					// Throw a less revealing error when running in production

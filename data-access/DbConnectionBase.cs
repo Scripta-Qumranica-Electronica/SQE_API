@@ -77,7 +77,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
 		private static readonly Random _random = new Random();
 
-		private static readonly List<uint> _retrySqlExceptions = new List<uint> { 1205, 1213, 1412 };
+		private static readonly List<uint> _retrySqlExceptions = new List<uint> {1205, 1213, 1412};
 
 		private static readonly AsyncPolicy _retryPolicyAsync = Policy
 			.Handle<MySqlException>(
@@ -94,7 +94,8 @@ namespace SQE.SqeHttpApi.DataAccess
 							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
 							retryCount,
 							delay,
-							exception);
+							exception
+						);
 				}
 			);
 
@@ -110,7 +111,8 @@ namespace SQE.SqeHttpApi.DataAccess
 							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
 							retryCount,
 							delay,
-							exception);
+							exception
+						);
 				}
 			);
 
@@ -163,7 +165,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		private const int WaitBetweenRetriesInMilliseconds = 200;
 		private const int CircuitBreakerPause = 5;
 
-		private static readonly List<uint> _pauseExceptions = new List<uint> { 1040, 1203 };
+		private static readonly List<uint> _pauseExceptions = new List<uint> {1040, 1203};
 		private readonly Policy _circuitBreakerRetryPolicy;
 		private readonly AsyncPolicy _circuitBreakerRetryPolicyAsync;
 		private readonly Policy _circuitBreakPolicy;
@@ -184,7 +186,8 @@ namespace SQE.SqeHttpApi.DataAccess
 								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
 								retryCount,
 								delay,
-								exception);
+								exception
+							);
 					}
 				);
 
@@ -200,7 +203,8 @@ namespace SQE.SqeHttpApi.DataAccess
 								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
 								retryCount,
 								delay,
-								exception);
+								exception
+							);
 					}
 				);
 
@@ -387,7 +391,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		protected override DbConnection DbConnection
 		{
 			get => _underlyingSqlCommand.Connection;
-			set => _underlyingSqlCommand.Connection = (MySqlConnection)value; // Cast to a MySqlConnection for safety
+			set => _underlyingSqlCommand.Connection = (MySqlConnection) value; // Cast to a MySqlConnection for safety
 		}
 
 		protected override DbParameterCollection DbParameterCollection => _underlyingSqlCommand.Parameters;
@@ -396,7 +400,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 			get => _underlyingSqlCommand.Transaction;
 			set => _underlyingSqlCommand.Transaction =
-				(MySqlTransaction)value; // Cast to a MySqlTransaction for safety
+				(MySqlTransaction) value; // Cast to a MySqlTransaction for safety
 		}
 
 		public override bool DesignTimeVisible

@@ -38,8 +38,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromQuery] List<string> optional)
 		{
 			return await _imagedObjectService.GetImagedObjectAsync(
-				_userService.GetCurrentUserId(),
-				editionId,
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				imagedObjectId,
 				optional
 			);
@@ -57,8 +56,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromQuery] List<string> optional)
 		{
 			return await _imagedObjectService.GetImagedObjectsAsync(
-				_userService.GetCurrentUserId(),
-				editionId,
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				optional
 			);
 		}

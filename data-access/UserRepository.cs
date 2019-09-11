@@ -15,10 +15,10 @@ namespace SQE.SqeHttpApi.DataAccess
 	{
 		// Get user data
 		Task<DetailedUserWithToken> GetUserByPasswordAsync(string email, string password);
-		Task<DetailedUserWithToken> GetDetailedUserByIdAsync(UserInfo userInfo);
+		Task<DetailedUserWithToken> GetDetailedUserByIdAsync(uint? userId);
 		Task<DetailedUser> GetDetailedUserByTokenAsync(string token);
 		Task<DetailedUserWithToken> GetUnactivatedUserByEmailAsync(string email);
-		Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo user);
+		Task<UserEditionPermissions> GetUserEditionPermissionsAsync(EditionUserInfo editionUser);
 		Task<List<EditorInfo>> GetEditionEditorsAsync(uint editionId);
 
 		// Create/update account data
@@ -30,7 +30,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
 		Task ResolveExistingUserConflictAsync(string email);
 
-		Task UpdateUserAsync(UserInfo user,
+		Task UpdateUserAsync(uint userId,
 			string password,
 			string email,
 			bool resetActivation,
@@ -41,7 +41,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		Task<DetailedUserWithToken> CreateUserActivateTokenAsync(string email);
 		Task ConfirmAccountCreationAsync(string token);
 		Task UpdateUnactivatedUserEmailAsync(string oldEmail, string newEmail);
-		Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
+		Task ChangePasswordAsync(uint userId, string oldPassword, string newPassword);
 		Task<DetailedUserWithToken> RequestResetForgottenPasswordAsync(string email);
 		Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password);
 	}
@@ -67,8 +67,8 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 			using (var connection = OpenConnection())
 			{
-				var columns = new List<string> { "user_id", "email", "activated", "forename", "surname", "organization" };
-				var where = new List<string> { "email", "pw" };
+				var columns = new List<string> {"user_id", "email", "activated", "forename", "surname", "organization"};
+				var where = new List<string> {"email", "pw"};
 				try
 				{
 					return await connection.QuerySingleAsync<DetailedUserWithToken>(
@@ -87,17 +87,17 @@ namespace SQE.SqeHttpApi.DataAccess
 			}
 		}
 
-		public async Task<DetailedUserWithToken> GetDetailedUserByIdAsync(UserInfo userInfo)
+		public async Task<DetailedUserWithToken> GetDetailedUserByIdAsync(uint? userId)
 		{
 			using (var connection = OpenConnection())
 			{
-				var columns = new List<string> { "user_id", "email", "forename", "surname", "organization", "activated" };
-				var where = new List<string> { "user_id" };
+				var columns = new List<string> {"user_id", "email", "forename", "surname", "organization", "activated"};
+				var where = new List<string> {"user_id"};
 				return await connection.QuerySingleAsync<DetailedUserWithToken>(
 					UserDetails.GetQuery(columns, where),
 					new
 					{
-						UserId = userInfo.userId ?? 0
+						UserId = userId ?? 0
 					}
 				);
 			}
@@ -147,8 +147,8 @@ namespace SQE.SqeHttpApi.DataAccess
 				);
 
 				// Prepare account details request
-				var columns = new List<string> { "email", "user_id", "forename", "surname", "token" };
-				var where = new List<string> { "email", "activated", "token" };
+				var columns = new List<string> {"email", "user_id", "forename", "surname", "token"};
+				var where = new List<string> {"email", "activated", "token"};
 
 				try
 				{
@@ -172,9 +172,9 @@ namespace SQE.SqeHttpApi.DataAccess
 		/// <summary>
 		///     Retrieves the current users permissions for a specific edition.
 		/// </summary>
-		/// <param name="user"></param>
+		/// <param name="editionUser"></param>
 		/// <returns>Returns the user's rights to read, write, and admin the edition and the users editor id for the edition</returns>
-		public async Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo user)
+		public async Task<UserEditionPermissions> GetUserEditionPermissionsAsync(EditionUserInfo editionUser)
 		{
 			using (var connection = OpenConnection())
 			{
@@ -184,15 +184,15 @@ namespace SQE.SqeHttpApi.DataAccess
 						UserPermissionQuery.GetQuery,
 						new
 						{
-							EditionId = user.editionId,
-							UserId = user.userId
+							editionUser.EditionId,
+							UserId = editionUser.userId ?? 1 // if userID is null we get the permissions for userId 1
 						}
 					);
 					return results;
 				}
 				catch (InvalidOperationException)
 				{
-					throw new StandardErrors.NoPermissions(user);
+					throw new StandardErrors.NoPermissions(editionUser);
 				}
 			}
 		}
@@ -263,8 +263,8 @@ namespace SQE.SqeHttpApi.DataAccess
 			using (var connection = OpenConnection())
 			{
 				// Find any users with either the same email address.
-				var columns = new List<string> { "user_id", "activated", "email" };
-				var where = new List<string> { "email" };
+				var columns = new List<string> {"user_id", "activated", "email"};
+				var where = new List<string> {"email"};
 				var existingUser = (await connection.QueryAsync<DetailedUserWithToken>(
 					UserDetails.GetQuery(columns, where),
 					new
@@ -282,11 +282,11 @@ namespace SQE.SqeHttpApi.DataAccess
 
 						await connection.ExecuteAsync(
 							DeleteUserEmailTokenQuery.GetUserIdQuery,
-							new { record.UserId }
+							new {record.UserId}
 						);
 						await connection.ExecuteAsync(
 							DeleteUserQuery.GetQuery,
-							new { record.UserId }
+							new {record.UserId}
 						);
 					}
 			}
@@ -296,7 +296,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		///     Updates the info for an existing user.  This cannot be used to reset a password, use ChangePasswordAsync
 		///     instead. You should probably have run ResolveExistingUserConflict before attempting this.
 		/// </summary>
-		/// <param name="user"></param>
+		/// <param name="userId"></param>
 		/// <param name="password"></param>
 		/// <param name="email">Email address for the new account (it will be verified)</param>
 		/// <param name="resetActivation"></param>
@@ -308,7 +308,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		///     the secret confirmation token that should be emailed to the user and then likely stripped
 		///     from the User object, which can be returned as a DTO to the HTTP request.
 		/// </returns>
-		public async Task UpdateUserAsync(UserInfo user,
+		public async Task UpdateUserAsync(uint userId,
 			string password,
 			string email,
 			bool resetActivation,
@@ -330,7 +330,7 @@ namespace SQE.SqeHttpApi.DataAccess
 						Forename = forename,
 						Surname = surname,
 						Organization = organization,
-						UserId = user.userId
+						UserId = userId
 					}
 				);
 
@@ -350,8 +350,8 @@ namespace SQE.SqeHttpApi.DataAccess
 			using (var connection = OpenConnection())
 			{
 				// Confirm creation by getting the User object for the new user
-				var columns = new List<string> { "user_id", "email", "forename", "surname", "organization" };
-				var where = new List<string> { "email" };
+				var columns = new List<string> {"user_id", "email", "forename", "surname", "organization"};
+				var where = new List<string> {"email"};
 				var userObject = await connection.QuerySingleAsync<DetailedUserWithToken>(
 					UserDetails.GetQuery(columns, where),
 					new
@@ -395,7 +395,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				var confirmRegistration = await connection.ExecuteAsync(
 					ConfirmNewUserAccount.GetQuery,
 					new
-					{ Token = token }
+						{Token = token}
 				);
 				if (confirmRegistration != 1)
 					throw new StandardErrors.ImproperInputData("user account activation token");
@@ -414,7 +414,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				await connection.ExecuteAsync(
 					DeleteUserEmailTokenQuery.GetTokenQuery,
 					new
-					{ Tokens = tokens, Type = CreateUserEmailTokenQuery.Activate }
+						{Tokens = tokens, Type = CreateUserEmailTokenQuery.Activate}
 				);
 				transactionScope.Complete();
 			}
@@ -447,11 +447,11 @@ namespace SQE.SqeHttpApi.DataAccess
 		/// <summary>
 		///     Change password from old password to new password for the user's account.
 		/// </summary>
-		/// <param name="user">User object with all information for the user requesting a password change</param>
+		/// <param name="userId"></param>
 		/// <param name="oldPassword">The old password for the user's account</param>
 		/// <param name="newPassword">The new password for the user's account</param>
 		/// <returns></returns>
-		public async Task ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword)
+		public async Task ChangePasswordAsync(uint userId, string oldPassword, string newPassword)
 		{
 			using (var connection = OpenConnection())
 			{
@@ -459,7 +459,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					ChangePasswordQuery.GetQuery,
 					new
 					{
-						UserId = user.userId,
+						UserId = userId,
 						OldPassword = oldPassword,
 						NewPassword = newPassword
 					}
@@ -486,11 +486,11 @@ namespace SQE.SqeHttpApi.DataAccess
 						try
 						{
 							// Get the user's details via the submitted email address
-							var columns = new List<string> { "email", "user_id", "forename", "surname", "organization" };
-							var where = new List<string> { "email" };
+							var columns = new List<string> {"email", "user_id", "forename", "surname", "organization"};
+							var where = new List<string> {"email"};
 							var userInfo = await connection.QuerySingleAsync<DetailedUserWithToken>(
 								UserDetails.GetQuery(columns, where),
-								new { Email = email }
+								new {Email = email}
 							);
 
 							// Generate our secret token
@@ -583,7 +583,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			{
 				return (await connection.QueryAsync<EditorInfo>(
 					GetEditorInfo.GetQuery,
-					new { EditionId = editionId }
+					new {EditionId = editionId}
 				)).ToList();
 			}
 		}

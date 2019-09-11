@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -28,7 +26,7 @@ namespace SQE.ApiTest
 
 		private const string version = "v1";
 		private const string controller = "artefacts";
-		private static uint artefactCount = 0;
+		private static uint artefactCount;
 
 		/// <summary>
 		///     Searches randomly for an edition with artefacts and returns the artefacts.
@@ -49,7 +47,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			parameters.Add("@UserId", userId);
 			var allUserEditions = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
 
-			var editionId = allUserEditions[(int)artefactCount % (allUserEditions.Count + 1)];
+			var editionId = allUserEditions[(int) artefactCount % (allUserEditions.Count + 1)];
 			var url = $"/{version}/editions/{editionId}/{controller}?optional=masks";
 			var (response, artefactResponse) = await HttpRequest.SendAsync<string, ArtefactListDTO>(
 				_client,
@@ -181,7 +179,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			await DeleteArtefact(newEdition, writtenArtefact.id);
 
 			// Arrange
-			newName = "CanCreateArtefacts.artefact ב"; ;
+			newName = "CanCreateArtefacts.artefact ב";
+			;
 
 			newArtefact = new CreateArtefactDTO
 			{
@@ -249,6 +248,30 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			await EditionHelpers.DeleteEdition(_client, newEdition, true);
 		}
 
+		[Fact]
+		public async Task CanGetSuggestedTextFragmentForArtefact()
+		{
+			// Arrange
+			const uint editionId = 894;
+			const uint artefactId = 10058;
+			var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/suggested-text-fragments";
+
+			// Act
+			var (tfResponse, tfData) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(
+				_client,
+				HttpMethod.Get,
+				path,
+				null
+			);
+
+			// Assert
+			tfResponse.EnsureSuccessStatusCode();
+			Assert.NotEmpty(tfData.textFragments);
+			Assert.Equal((uint) 10029, tfData.textFragments.First().id);
+			Assert.Equal("frg. 78_79", tfData.textFragments.First().name);
+			Assert.Equal((uint) 894, tfData.textFragments.First().editorId);
+		}
+
 		/// <summary>
 		///     Ensure that a new artefact cannot be created in an edition not owned by the current user.
 		/// </summary>
@@ -266,7 +289,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
 			var newTransform = ArtefactPosition();
-			var newName = "CanCreateArtefacts.artefact α"; ;
+			var newName = "CanCreateArtefacts.artefact α";
+			;
 			var newArtefact = new CreateArtefactDTO
 			{
 				mask = newArtefactShape,
@@ -515,30 +539,6 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
 
 			await EditionHelpers.DeleteEdition(_client, newEdition, true);
-		}
-
-		[Fact]
-		public async Task CanGetSuggestedTextFragmentForArtefact()
-		{
-			// Arrange
-			const uint editionId = 894;
-			const uint artefactId = 10058;
-			var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/suggested-text-fragments";
-
-			// Act
-			var (tfResponse, tfData) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(
-				_client,
-				HttpMethod.Get,
-				path,
-				null
-			);
-
-			// Assert
-			tfResponse.EnsureSuccessStatusCode();
-			Assert.NotEmpty(tfData.textFragments);
-			Assert.Equal((uint)10029, tfData.textFragments.First().id);
-			Assert.Equal("frg. 78_79", tfData.textFragments.First().name);
-			Assert.Equal((uint)894, tfData.textFragments.First().editorId);
 		}
 	}
 }

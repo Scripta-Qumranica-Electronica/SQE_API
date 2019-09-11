@@ -11,7 +11,7 @@ namespace SQE.ApiTest.Helpers
 {
 	public class UserHelpers
 	{
-		private static uint userCount = 0;
+		private static uint userCount;
 
 		/// <summary>
 		///     Create a user with random information.
@@ -83,7 +83,7 @@ namespace SQE.ApiTest.Helpers
 			bool shouldSucceed = true)
 		{
 			var userToken = await GetToken(user.email, "ACTIVATE_ACCOUNT"); // Get  token from DB
-			var payload = new AccountActivationRequestDTO { token = userToken.token };
+			var payload = new AccountActivationRequestDTO {token = userToken.token};
 
 			var (response, msg) =
 				await HttpRequest.SendAsync<AccountActivationRequestDTO, UserDTO>(

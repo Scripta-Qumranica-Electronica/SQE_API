@@ -476,9 +476,8 @@ namespace SQE.ApiTest
 				null,
 				await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
 			);
-			user2Resp.EnsureSuccessStatusCode();
+			Assert.Equal(HttpStatusCode.Forbidden, user2Resp.StatusCode);
 			Assert.NotNull(user1Msg);
-			Assert.Null(user2Msg);
 
 			// Act (final delete)
 			var (delete2Response, delete2Msg) = await HttpRequest.SendAsync<string, string>(
@@ -491,7 +490,7 @@ namespace SQE.ApiTest
 
 			// Assert
 			Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
-																				 // Kill the edition for real
+			// Kill the edition for real
 			await EditionHelpers.DeleteEdition(_client, newEdition, true, true, user1.email, user1Pwd);
 			var (user1Resp2, user1Msg2) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
 				_client,

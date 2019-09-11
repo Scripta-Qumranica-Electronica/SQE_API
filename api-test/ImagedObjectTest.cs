@@ -121,8 +121,8 @@ LIMIT 50";
 			// Arrange
 			var (editionId, objectId) = await GetEditionImagesWithArtefact();
 			var path = editionImagedObjectbyId.Replace("$EditionId", editionId.ToString())
-						   .Replace("$ImageObjectId", objectId)
-					   + "?optional=artefacts";
+				           .Replace("$ImageObjectId", objectId)
+			           + "?optional=artefacts";
 
 			// Act
 			var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectDTO>(
@@ -148,8 +148,8 @@ LIMIT 50";
 			// Arrange
 			var (editionId, objectId) = await GetEditionImagesWithArtefact();
 			var path = editionImagedObjectbyId.Replace("$EditionId", editionId.ToString())
-						   .Replace("$ImageObjectId", objectId)
-					   + "?optional=artefacts&optional=masks";
+				           .Replace("$ImageObjectId", objectId)
+			           + "?optional=artefacts&optional=masks";
 
 			// Act
 			var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectDTO>(
@@ -221,7 +221,7 @@ LIMIT 50";
 			var foundArtefact = false;
 			foreach (var io in msg.imagedObjects)
 				if (io.artefacts != null
-					&& string.IsNullOrEmpty(io.artefacts.First().mask.mask))
+				    && string.IsNullOrEmpty(io.artefacts.First().mask.mask))
 				{
 					foundArtefact = true;
 					break;
@@ -240,7 +240,7 @@ LIMIT 50";
 			// Arrange
 			var editionId = await GetEditionWithImages();
 			var path = editionImagedObjects.Replace("$EditionId", editionId.ToString())
-					   + "?optional=artefacts&optional=masks";
+			           + "?optional=artefacts&optional=masks";
 
 			// Act
 			var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectListDTO>(

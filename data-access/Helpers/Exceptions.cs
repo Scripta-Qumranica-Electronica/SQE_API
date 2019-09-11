@@ -123,11 +123,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		{
 			private const string customMsg = "User $UserId has no permissions associated with edition $EditionId.";
 
-			public NoPermissions(UserInfo user)
+			public NoPermissions(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
@@ -135,11 +135,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		{
 			private const string customMsg = "User $UserId does not have read access to edition $EditionId.";
 
-			public NoReadPermissions(UserInfo user)
+			public NoReadPermissions(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
@@ -147,11 +147,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		{
 			private const string customMsg = "User $UserId does not have write access to edition $EditionId.";
 
-			public NoWritePermissions(UserInfo user)
+			public NoWritePermissions(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
@@ -159,11 +159,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		{
 			private const string customMsg = "User $UserId is not allowed to lock edition $EditionId.";
 
-			public NoLockPermissions(UserInfo user)
+			public NoLockPermissions(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
@@ -171,11 +171,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		{
 			private const string customMsg = "User $UserId does not have admin privilege for edition $EditionId.";
 
-			public NoAdminPermissions(UserInfo user)
+			public NoAdminPermissions(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
@@ -184,12 +184,12 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 			private const string customMsg =
 				"Edition $EditionId is locked. User $UserId $Permission admin privilege to unlock it.";
 
-			public LockedData(UserInfo user)
+			public LockedData(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString())
-					.Replace("$Permission", user.IsAdmin().Result ? "has" : "does not have");
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString())
+					.Replace("$Permission", editionUser.IsAdmin ? "has" : "does not have");
 			}
 		}
 
@@ -229,7 +229,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 			public DataNotFound(string datatype = null, string id = "0", string searchEntity = null)
 			{
 				if (!string.IsNullOrEmpty(datatype)
-					&& string.IsNullOrEmpty(searchEntity))
+				    && string.IsNullOrEmpty(searchEntity))
 					searchEntity = datatype;
 
 				var fullMsg = string.IsNullOrEmpty(datatype) || id == "0"
@@ -295,12 +295,12 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 			private const string customMsg =
 				"The edition $EditionId must be locked before attempting to copy it. User $UserId $Permission admin privilege to unlock it.";
 
-			public EditionCopyLockProtection(UserInfo user)
+			public EditionCopyLockProtection(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString())
-					.Replace("$Permission", user.IsAdmin().Result ? "has" : "does not have");
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString())
+					.Replace("$Permission", editionUser.IsAdmin ? "has" : "does not have");
 			}
 		}
 

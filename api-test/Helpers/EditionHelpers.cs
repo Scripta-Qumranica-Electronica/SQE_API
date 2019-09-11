@@ -9,7 +9,7 @@ namespace SQE.ApiTest.Helpers
 	{
 		private const string version = "v1";
 		private const string controller = "editions";
-		private static int cloneCount = 0;
+		private static int cloneCount;
 
 		/// <summary>
 		///     Searches randomly for an edition and returns it.
@@ -53,7 +53,7 @@ namespace SQE.ApiTest.Helpers
 			if (string.IsNullOrEmpty(name))
 			{
 				cloneCount++;
-				name = "test-name-" + cloneCount.ToString();
+				name = "test-name-" + cloneCount;
 			}
 
 			var newScrollRequest = new EditionUpdateRequestDTO(name, null, null);

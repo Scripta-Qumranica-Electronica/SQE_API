@@ -30,7 +30,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromBody] CreateArtefactDTO payload)
 		{
 			return await _artefactService.CreateArtefactAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
 				editionId,
 				payload.masterImageId,
 				payload.mask,
@@ -47,7 +47,10 @@ namespace SQE.SqeApi.Server.Controllers
 		[HttpDelete("v1/editions/{editionId}/[controller]s/{artefactId}")]
 		public async Task<ActionResult> DeleteArtefact([FromRoute] uint artefactId, [FromRoute] uint editionId)
 		{
-			return await _artefactService.DeleteArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId);
+			return await _artefactService.DeleteArtefactAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
+				artefactId
+			);
 		}
 
 		/// <summary>
@@ -63,7 +66,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromQuery] List<string> optional)
 		{
 			return await _artefactService.GetEditionArtefactAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				artefactId,
 				optional
 			);
@@ -80,8 +83,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromQuery] List<string> optional)
 		{
 			return await _artefactService.GetEditionArtefactListingsAsync(
-				_userService.GetCurrentUserId(),
-				editionId,
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				optional
 			);
 		}
@@ -93,11 +95,12 @@ namespace SQE.SqeApi.Server.Controllers
 		/// <param name="artefactId">Unique Id of the desired artefact</param>
 		[AllowAnonymous]
 		[HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/suggested-text-fragments")]
-		public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactSuggestedTextFragments([FromRoute] uint editionId,
+		public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactSuggestedTextFragments(
+			[FromRoute] uint editionId,
 			[FromRoute] uint artefactId)
 		{
 			return await _artefactService.ArtefactSuggestedTextFragmentsAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				artefactId
 			);
 		}
@@ -114,7 +117,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromBody] UpdateArtefactDTO payload)
 		{
 			return await _artefactService.UpdateArtefactAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
 				editionId,
 				artefactId,
 				payload.mask,

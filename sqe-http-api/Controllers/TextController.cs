@@ -30,7 +30,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromRoute] uint editionId)
 		{
 			return await _textService.CreateTextFragmentAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
 				createFragment
 			);
 		}
@@ -44,7 +44,7 @@ namespace SQE.SqeApi.Server.Controllers
 		[HttpGet("v1/editions/{editionId}/text-fragments")]
 		public async Task<ActionResult<TextFragmentDataListDTO>> RetrieveFragmentIds([FromRoute] uint editionId)
 		{
-			return await _textService.GetFragmentDataAsync(_userService.GetCurrentUserObject(editionId));
+			return await _textService.GetFragmentDataAsync(await _userService.GetCurrentUserObjectAsync(editionId));
 		}
 
 		/// <summary>
@@ -58,7 +58,10 @@ namespace SQE.SqeApi.Server.Controllers
 		public async Task<ActionResult<LineDataListDTO>> RetrieveLineIds([FromRoute] uint editionId,
 			[FromRoute] uint textFragmentId)
 		{
-			return await _textService.GetLineIdsAsync(_userService.GetCurrentUserObject(editionId), textFragmentId);
+			return await _textService.GetLineIdsAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId),
+				textFragmentId
+			);
 		}
 
 		/// <summary>
@@ -76,7 +79,7 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromRoute] uint textFragmentId)
 		{
 			return await _textService.GetFragmentByIdAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				textFragmentId
 			);
 		}
@@ -95,7 +98,7 @@ namespace SQE.SqeApi.Server.Controllers
 		public async Task<ActionResult<LineTextDTO>> RetrieveTextOfLineById([FromRoute] uint editionId,
 			[FromRoute] uint lineId)
 		{
-			return await _textService.GetLineByIdAsync(_userService.GetCurrentUserObject(editionId), lineId);
+			return await _textService.GetLineByIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), lineId);
 		}
 	}
 }

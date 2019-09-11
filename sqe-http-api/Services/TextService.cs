@@ -10,11 +10,13 @@ namespace SQE.SqeHttpApi.Server.Services
 {
 	public interface ITextService
 	{
-		Task<LineTextDTO> GetLineByIdAsync(UserInfo user, uint lineId);
-		Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo user, uint fragmentId);
-		Task<LineDataListDTO> GetLineIdsAsync(UserInfo user, uint fragmentId);
-		Task<TextFragmentDataListDTO> GetFragmentDataAsync(UserInfo user);
-		Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user, CreateTextFragmentDTO createFragment);
+		Task<LineTextDTO> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
+		Task<TextEditionDTO> GetFragmentByIdAsync(EditionUserInfo editionUser, uint fragmentId);
+		Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId);
+		Task<TextFragmentDataListDTO> GetFragmentDataAsync(EditionUserInfo editionUser);
+
+		Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
+			CreateTextFragmentDTO createFragment);
 	}
 
 	public class TextService : ITextService
@@ -28,47 +30,47 @@ namespace SQE.SqeHttpApi.Server.Services
 			_userRepo = userRepo;
 		}
 
-		public async Task<LineTextDTO> GetLineByIdAsync(UserInfo user, uint lineId)
+		public async Task<LineTextDTO> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
 		{
-			var editionEditors = _userRepo.GetEditionEditorsAsync(user.editionId ?? 0);
-			var editionLine = await _textRepo.GetLineByIdAsync(user, lineId);
+			var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId);
+			var editionLine = await _textRepo.GetLineByIdAsync(editionUser, lineId);
 			if (editionLine.manuscriptId == 0)
 				throw new StandardErrors.DataNotFound("line", lineId, "line_id");
 			return _textEditionLineToDTO(editionLine, await editionEditors);
 		}
 
-		public async Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo user, uint fragmentId)
+		public async Task<TextEditionDTO> GetFragmentByIdAsync(EditionUserInfo editionUser, uint fragmentId)
 		{
-			var editionEditors = _userRepo.GetEditionEditorsAsync(user.editionId ?? 0);
-			var edition = await _textRepo.GetTextFragmentByIdAsync(user, fragmentId);
+			var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId);
+			var edition = await _textRepo.GetTextFragmentByIdAsync(editionUser, fragmentId);
 			if (edition.manuscriptId == 0) // TODO: describe missing data better here.
 				throw new StandardErrors.DataNotFound("text textFragmentName", fragmentId, "text_fragment_id");
 			return _textEditionToDTO(edition, await editionEditors);
 		}
 
-		public async Task<LineDataListDTO> GetLineIdsAsync(UserInfo user, uint fragmentId)
+		public async Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId)
 		{
 			return new LineDataListDTO(
-				(await _textRepo.GetLineIdsAsync(user, fragmentId))
+				(await _textRepo.GetLineIdsAsync(editionUser, fragmentId))
 				.Select(x => new LineDataDTO(x.lineId, x.lineName))
 				.ToList()
 			);
 		}
 
-		public async Task<TextFragmentDataListDTO> GetFragmentDataAsync(UserInfo user)
+		public async Task<TextFragmentDataListDTO> GetFragmentDataAsync(EditionUserInfo editionUser)
 		{
 			return new TextFragmentDataListDTO(
-				(await _textRepo.GetFragmentDataAsync(user))
+				(await _textRepo.GetFragmentDataAsync(editionUser))
 				.Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId))
 				.ToList()
 			);
 		}
 
-		public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo user,
+		public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
 			CreateTextFragmentDTO createFragment)
 		{
 			var newFragment = await _textRepo.CreateTextFragmentAsync(
-				user,
+				editionUser,
 				createFragment.name,
 				createFragment.previousTextFragmentId,
 				createFragment.nextTextFragmentId
