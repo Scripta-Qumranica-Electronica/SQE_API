@@ -14,13 +14,17 @@ namespace SQE.SqeHttpApi.DataAccess
 		Task<List<SignInterpretationROI>> CreateRoisAsync(EditionUserInfo editionUser,
 			List<SetSignInterpretationROI> newRois);
 
-		Task<List<SignInterpretationROI>> UpdateRoisAsync(EditionUserInfo editionUser,
+		Task<List<UpdatedSignInterpretationROI>> UpdateRoisAsync(EditionUserInfo editionUser,
 			List<SignInterpretationROI> updateRois);
 
 		Task DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds);
 
 		Task<DetailedSignInterpretationROI> GetSignInterpretationRoiByIdAsync(EditionUserInfo editionUser,
 			uint signInterpretationRoiId);
+
+		Task<List<DetailedSignInterpretationROI>> GetSignInterpretationRoisByArtefactIdAsync(
+			EditionUserInfo editionUser,
+			uint artefactId);
 	}
 
 	public class RoiRepository : DbConnectionBase, IRoiRepository
@@ -65,15 +69,12 @@ namespace SQE.SqeHttpApi.DataAccess
 		/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
 		/// <param name="updateRois">List of rois to be added to the system.</param>
 		/// <returns></returns>
-		public async Task<List<SignInterpretationROI>> UpdateRoisAsync(EditionUserInfo editionUser,
+		public async Task<List<UpdatedSignInterpretationROI>> UpdateRoisAsync(EditionUserInfo editionUser,
 			List<SignInterpretationROI> updateRois)
 		{
 			return (await Task.WhenAll(updateRois.Select(
 				async (x) =>
 				{
-					if (!x.SignInterpretationId.HasValue)
-						throw new StandardErrors.ImproperInputData("signInterpretationId");
-
 					var originalSignRoiInterpretation =
 						await GetSignInterpretationRoiByIdAsync(editionUser, x.SignInterpretationRoiId);
 
@@ -87,7 +88,7 @@ namespace SQE.SqeHttpApi.DataAccess
 						? originalSignRoiInterpretation.RoiPositionId
 						: await CreateRoiPositionAsync(x.ArtefactId, x.Position);
 
-					var signInterpretationRoiId = await UpdateSignInterpretationRoiAsync(
+					var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
 						editionUser,
 						x.SignInterpretationId,
 						roiShapeId,
@@ -96,11 +97,36 @@ namespace SQE.SqeHttpApi.DataAccess
 						x.Exceptional,
 						x.SignInterpretationRoiId
 					);
-					return (SignInterpretationROI)(await GetSignInterpretationRoiByIdAsync(editionUser, signInterpretationRoiId));
+					if (!signInterpretationRoiUpdate.NewId.HasValue || !signInterpretationRoiUpdate.OldId.HasValue)
+						throw new StandardErrors.DataNotWritten("update sign inter");
+
+					var updatedRoi =
+						(SignInterpretationROI)(await GetSignInterpretationRoiByIdAsync(
+							editionUser,
+							signInterpretationRoiUpdate.NewId.Value
+						));
+					return new UpdatedSignInterpretationROI()
+					{
+						ArtefactId = updatedRoi.ArtefactId,
+						Exceptional = updatedRoi.Exceptional,
+						OldSignInterpretationRoiId = signInterpretationRoiUpdate.OldId.Value,
+						Position = updatedRoi.Position,
+						Shape = updatedRoi.Shape,
+						SignInterpretationId = updatedRoi.SignInterpretationId,
+						SignInterpretationRoiAuthor = updatedRoi.SignInterpretationRoiAuthor,
+						SignInterpretationRoiId = updatedRoi.SignInterpretationRoiId,
+						ValuesSet = updatedRoi.ValuesSet,
+					};
 				}
 			))).ToList();
 		}
 
+		/// <summary>
+		/// Deletes the ROI's with the submitted roiIds from the edition
+		/// </summary>
+		/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
+		/// <param name="deleteRoiIds">ROI ID's to be deleted'</param>
+		/// <returns></returns>
 		public async Task DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds)
 		{
 			foreach (var deleteRoiId in deleteRoiIds)
@@ -114,13 +140,32 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 			using (var connection = OpenConnection())
 			{
-				return await connection.QuerySingleAsync<DetailedSignInterpretationROI>(
+				var result = (await connection.QueryAsync<DetailedSignInterpretationROI>(
 					GetSignInterpretationRoiDetailsQuery.GetQuery,
 					new
 					{
-						EditionId = editionUser.EditionId,
+						editionUser.EditionId,
 						SignInterpretationRoiId = signInterpretationRoiId
-					});
+					})).ToList();
+
+				if (result.Count != 1)
+					throw new StandardErrors.DataNotFound("sign interpretation roi", signInterpretationRoiId);
+				return result.First();
+			}
+		}
+
+		public async Task<List<DetailedSignInterpretationROI>> GetSignInterpretationRoisByArtefactIdAsync(EditionUserInfo editionUser,
+			uint artefactId)
+		{
+			using (var connection = OpenConnection())
+			{
+				return (await connection.QueryAsync<DetailedSignInterpretationROI>(
+					GetSignInterpretationRoiDetailsByArtefactIdQuery.GetQuery,
+					new
+					{
+						editionUser.EditionId,
+						ArtefactId = artefactId
+					})).ToList();
 			}
 		}
 
@@ -195,7 +240,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			return writeResults.First().NewId.Value;
 		}
 
-		private async Task<uint> UpdateSignInterpretationRoiAsync(
+		private async Task<AlteredRecord> UpdateSignInterpretationRoiAsync(
 			EditionUserInfo editionUser,
 			uint? signInterpretationId,
 			uint roiShapeId,
@@ -224,7 +269,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
 			if (writeResults.Count != 1 || !writeResults.First().NewId.HasValue)
 				throw new StandardErrors.DataNotWritten("update sign interpretation roi");
-			return writeResults.First().NewId.Value;
+			return writeResults.First();
 		}
 
 		private async Task DeleteSignInterpretationRoiAsync(EditionUserInfo editionUser, uint signInterpretationRoiId)

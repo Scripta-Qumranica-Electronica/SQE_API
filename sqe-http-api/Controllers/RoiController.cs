@@ -72,7 +72,7 @@ namespace SQE.SqeApi.Server.Controllers
 		/// <param name="roiId">Id of the ROI to be updated</param>
 		/// <param name="updateRoi">A JSON object with the updated ROI details</param>
 		[HttpPut("v1/editions/{editionId}/rois/{roiId}")]
-		public async Task<ActionResult<InterpretationRoiDTO>> UpdateRoi(
+		public async Task<ActionResult<UpdatedInterpretationRoiDTO>> UpdateRoi(
 			[FromRoute] uint editionId,
 			[FromRoute] uint roiId,
 			[FromBody] SetInterpretationRoiDTO updateRoi)
@@ -90,7 +90,7 @@ namespace SQE.SqeApi.Server.Controllers
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="updateRois">A JSON object with an array of the updated ROI details</param>
 		[HttpPut("v1/editions/{editionId}/rois/batch")]
-		public async Task<ActionResult<InterpretationRoiDTOList>> UpdateRois(
+		public async Task<ActionResult<UpdatedInterpretationRoiDTOList>> UpdateRois(
 			[FromRoute] uint editionId,
 			[FromBody] InterpretationRoiDTOList updateRois)
 		{

@@ -12,15 +12,18 @@ namespace SQE.SqeHttpApi.Server.Services
 	{
 		Task<InterpretationRoiDTO> GetRoiAsync(EditionUserInfo editionUser, uint roiId);
 
+		Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(EditionUserInfo editionUser, uint artefactId);
+
 		Task<InterpretationRoiDTO> CreateRoiAsync(EditionUserInfo editionUser, SetInterpretationRoiDTO newRois);
 
 		Task<InterpretationRoiDTOList>
 			CreateRoisAsync(EditionUserInfo editionUser, SetInterpretationRoiDTOList newRois);
 
-		Task<InterpretationRoiDTO> UpdateRoiAsync(EditionUserInfo editionUser, uint roiId,
+		Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(EditionUserInfo editionUser,
+			uint roiId,
 			SetInterpretationRoiDTO updatedRoi);
 
-		Task<InterpretationRoiDTOList> UpdateRoisAsync(EditionUserInfo editionUser,
+		Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(EditionUserInfo editionUser,
 			InterpretationRoiDTOList updatedRois);
 
 		Task<NoContentResult> DeleteRoisAsync(EditionUserInfo editionUser,
@@ -42,7 +45,7 @@ namespace SQE.SqeHttpApi.Server.Services
 		public async Task<InterpretationRoiDTO> GetRoiAsync(EditionUserInfo editionUser, uint roiId)
 		{
 			var roi = await _roiRepository.GetSignInterpretationRoiByIdAsync(editionUser, roiId);
-			return new InterpretationRoiDTO()
+			return new InterpretationRoiDTO
 			{
 				artefactId = roi.ArtefactId,
 				editorId = roi.SignInterpretationRoiAuthor,
@@ -52,6 +55,29 @@ namespace SQE.SqeHttpApi.Server.Services
 				shape = roi.Shape,
 				signInterpretationId = roi.SignInterpretationId,
 				valuesSet = roi.ValuesSet
+			};
+		}
+
+		public async Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(EditionUserInfo editionUser,
+			uint artefactId)
+		{
+			return new InterpretationRoiDTOList
+			{
+				rois = (await _roiRepository.GetSignInterpretationRoisByArtefactIdAsync(editionUser, artefactId))
+					.Select(
+						x => new InterpretationRoiDTO
+						{
+							artefactId = x.ArtefactId,
+							editorId = x.SignInterpretationRoiAuthor,
+							exceptional = x.Exceptional,
+							interpretationRoiId = x.SignInterpretationRoiId,
+							position = x.Position,
+							shape = x.Shape,
+							signInterpretationId = x.SignInterpretationId,
+							valuesSet = x.ValuesSet
+						}
+					)
+					.ToList()
 			};
 		}
 
@@ -104,10 +130,11 @@ namespace SQE.SqeHttpApi.Server.Services
 			};
 		}
 
-		public async Task<InterpretationRoiDTO> UpdateRoiAsync(EditionUserInfo editionUser, uint roiId,
+		public async Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(EditionUserInfo editionUser,
+			uint roiId,
 			SetInterpretationRoiDTO updatedRoi)
 		{
-			var fullUpdatedRoi = new InterpretationRoiDTO()
+			var fullUpdatedRoi = new InterpretationRoiDTO
 			{
 				artefactId = updatedRoi.artefactId,
 				interpretationRoiId = roiId,
@@ -123,10 +150,10 @@ namespace SQE.SqeHttpApi.Server.Services
 			)).rois.FirstOrDefault();
 		}
 
-		public async Task<InterpretationRoiDTOList> UpdateRoisAsync(EditionUserInfo editionUser,
+		public async Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(EditionUserInfo editionUser,
 			InterpretationRoiDTOList updatedRois)
 		{
-			return new InterpretationRoiDTOList
+			return new UpdatedInterpretationRoiDTOList
 			{
 				rois = (
 						await _roiRepository.UpdateRoisAsync( // Write new rois
@@ -148,12 +175,13 @@ namespace SQE.SqeHttpApi.Server.Services
 						)
 					)
 					.Select( // Serialize the ROI Repository response to a List of InterpretationRoiDTO
-						x => new InterpretationRoiDTO
+						x => new UpdatedInterpretationRoiDTO
 						{
 							artefactId = x.ArtefactId,
 							editorId = x.SignInterpretationRoiAuthor,
 							exceptional = x.Exceptional,
 							interpretationRoiId = x.SignInterpretationRoiId,
+							oldInterpretationRoiId = x.OldSignInterpretationRoiId,
 							signInterpretationId = x.SignInterpretationId,
 							position = x.Position,
 							shape = x.Shape,

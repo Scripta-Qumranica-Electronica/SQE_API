@@ -372,15 +372,14 @@ The Scripta Qumranica Electronica team</body></html>";
 		}
 
 		/// <summary>
-		///     This returns a UserInfo object that will persist only for the life of the current
+		/// 	This returns a UserInfo object that will persist only for the life of the current
 		///     HTTP request.  The UserInfo object can fetch the permissions if requested, and once
 		///     the permissions have been requested, they are "cached" for the life of the object.
 		/// </summary>
-		/// <param name="access">
-		///     Optionally set the permissions required for the current operation.
-		///     When null, the default settings are used with Read = true, and everything else = False.
-		/// </param>
-		/// <param name="editionId">Optional id of the edition the user is requesting to work with</param>
+		/// <param name="editionId">Id of the edition the user will be accessing</param>
+		/// <param name="write">Whether the user must have write access</param>
+		/// <param name="locking">Whether the user must have locking access</param>
+		/// <param name="admin">Whether the user must have admin access</param>
 		/// <returns></returns>
 		public async Task<EditionUserInfo> GetCurrentUserObjectAsync(uint editionId,
 			bool write = false,

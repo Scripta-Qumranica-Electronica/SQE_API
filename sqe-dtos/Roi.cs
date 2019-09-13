@@ -18,6 +18,11 @@ namespace SQE.SqeHttpApi.Server.DTOs
 		public uint editorId { get; set; }
 	}
 
+	public class UpdatedInterpretationRoiDTO : InterpretationRoiDTO
+	{
+		public uint oldInterpretationRoiId { get; set; }
+	}
+
 	public class SetInterpretationRoiDTOList
 	{
 		public List<SetInterpretationRoiDTO> rois { get; set; }
@@ -26,5 +31,10 @@ namespace SQE.SqeHttpApi.Server.DTOs
 	public class InterpretationRoiDTOList
 	{
 		public List<InterpretationRoiDTO> rois { get; set; }
+	}
+
+	public class UpdatedInterpretationRoiDTOList
+	{
+		public List<UpdatedInterpretationRoiDTO> rois { get; set; }
 	}
 }

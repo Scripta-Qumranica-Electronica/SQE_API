@@ -106,7 +106,7 @@ namespace SQE.SqeHttpApi.Server.Services
 			if (editionUser.EditionId == copyToEditionId)
 				// Check if is success is true, else throw error.
 				throw new Exception($"Failed to clone {editionUser.EditionId}.");
-			editionUser.SetEditionId(copyToEditionId); // Update user object for the new editionId
+			await editionUser.SetEditionId(copyToEditionId); // Update user object for the new editionId
 
 			//Change the Name, if a Name has been passed
 			if (!string.IsNullOrEmpty(editionInfo.name))

@@ -12,11 +12,13 @@ namespace SQE.SqeApi.Server.Controllers
 	public class ArtefactController : ControllerBase
 	{
 		private readonly IArtefactService _artefactService;
+		private readonly IRoiService _roiService;
 		private readonly IUserService _userService;
 
-		public ArtefactController(IArtefactService artefactService, IUserService userService)
+		public ArtefactController(IArtefactService artefactService, IRoiService roiService, IUserService userService)
 		{
 			_artefactService = artefactService;
+			_roiService = roiService;
 			_userService = userService;
 		}
 
@@ -69,6 +71,22 @@ namespace SQE.SqeApi.Server.Controllers
 				await _userService.GetCurrentUserObjectAsync(editionId),
 				artefactId,
 				optional
+			);
+		}
+
+		/// <summary>
+		///     Provides a listing of all rois belonging to an artefact in the specified edition
+		/// </summary>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		[AllowAnonymous]
+		[HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/rois")]
+		public async Task<ActionResult<InterpretationRoiDTOList>> GetArtefactRois([FromRoute] uint artefactId,
+			[FromRoute] uint editionId)
+		{
+			return await _roiService.GetRoisByArtefactIdAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId),
+				artefactId
 			);
 		}
 

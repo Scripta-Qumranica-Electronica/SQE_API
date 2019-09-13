@@ -147,12 +147,20 @@ export interface InterpretationRoiDTO extends SetInterpretationRoiDTO {
     editorId: number;
 }
 
+export interface UpdatedInterpretationRoiDTO extends InterpretationRoiDTO {
+    oldInterpretationRoiId: number;
+}
+
 export interface SetInterpretationRoiDTOList {
     rois: SetInterpretationRoiDTO[];
 }
 
 export interface InterpretationRoiDTOList {
     rois: InterpretationRoiDTO[];
+}
+
+export interface UpdatedInterpretationRoiDTOList {
+    rois: UpdatedInterpretationRoiDTO[];
 }
 
 export interface SignDTO {
