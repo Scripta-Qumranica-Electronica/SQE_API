@@ -133,6 +133,27 @@ export interface PolygonDTO {
     transformMatrix: string;
     transformMatrixEditorId: number;
 }
+export interface SetInterpretationRoiDTO {
+    artefactId: number;
+    signInterpretationId?: number;
+    shape: string;
+    position: string;
+    exceptional: boolean;
+    valuesSet: boolean;
+}
+
+export interface InterpretationRoiDTO extends SetInterpretationRoiDTO {
+    interpretationRoiId: number;
+    editorId: number;
+}
+
+export interface SetInterpretationRoiDTOList {
+    rois: SetInterpretationRoiDTO[];
+}
+
+export interface InterpretationRoiDTOList {
+    rois: InterpretationRoiDTO[];
+}
 
 export interface SignDTO {
     signInterpretations: SignInterpretationDTO[];
@@ -155,15 +176,6 @@ export interface InterpretationAttributeDTO {
     attributeValueId: number;
     editorId: number;
     value: number;
-}
-export interface InterpretationRoiDTO {
-    interpretationRoiId: number;
-    editorId: number;
-    artefactId: number;
-    shape: string;
-    position: string;
-    exceptional: boolean;
-    valuesSet: boolean;
 }
 export interface TextFragmentDataDTO {
     id: number;

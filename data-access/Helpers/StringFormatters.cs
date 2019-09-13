@@ -19,7 +19,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 			// replace white spaces with undescore, then replace all invalid chars with empty string
 			var pascalCase = invalidCharsRgx.Replace(whiteSpace.Replace(original, "_"), string.Empty)
 				// split by underscores
-				.Split(new[] {'_'}, StringSplitOptions.RemoveEmptyEntries)
+				.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries)
 				// set first letter to uppercase
 				.Select(w => startsWithLowerCaseChar.Replace(w, m => m.Value.ToUpper()))
 				// replace second and all following upper case letters to lower if there is no next lower (ABC -> Abc)

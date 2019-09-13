@@ -57,7 +57,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 			// Fail creating the object if missing record id for update/delete.
 			if ((action == MutateType.Update || action == MutateType.Delete)
-			    && !tablePkId.HasValue)
+				&& !tablePkId.HasValue)
 				throw new ArgumentException(
 					"The primary key of the record is necessary for Update and Delete actions",
 					nameof(tablePkId)
@@ -69,7 +69,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		public MutateType Action { get; }
 
 		public List<string>
-			ColumnNames { get; } // Itay, we still need this, since we add more to the SQL parameters than
+			ColumnNames
+		{ get; } // Itay, we still need this, since we add more to the SQL parameters than
 
 		// just the column names after this mutation request is created (e.g.
 		// @EditionId and maybe @OwnedTableId).  But now this is computed
@@ -181,7 +182,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 								case MutateType.Update
 									: // Update in our system is really Delete + Insert, the old record remains.
-									// Delete the old record
+									  // Delete the old record
 									var deletedRecord = await DeleteAsync(connection, mutationRequest);
 
 									// Insert the new record

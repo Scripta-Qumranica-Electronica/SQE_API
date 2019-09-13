@@ -229,7 +229,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 			public DataNotFound(string datatype = null, string id = "0", string searchEntity = null)
 			{
 				if (!string.IsNullOrEmpty(datatype)
-				    && string.IsNullOrEmpty(searchEntity))
+					&& string.IsNullOrEmpty(searchEntity))
 					searchEntity = datatype;
 
 				var fullMsg = string.IsNullOrEmpty(datatype) || id == "0"

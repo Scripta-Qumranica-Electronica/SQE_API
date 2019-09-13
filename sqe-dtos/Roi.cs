@@ -5,6 +5,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
 	public class SetInterpretationRoiDTO
 	{
 		public uint artefactId { get; set; }
+		public uint? signInterpretationId { get; set; }
 		public string shape { get; set; }
 		public string position { get; set; }
 		public bool exceptional { get; set; }

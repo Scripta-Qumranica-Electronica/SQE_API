@@ -81,7 +81,7 @@ namespace SQE.SqeHttpApi.Server.Services
 				(await _editionRepo.ListEditionsAsync(editionUser.userId, editionUser.EditionId)).First();
 
 			if (copyrightHolder != null
-			    || editionBeforeChanges.Collaborators != collaborators)
+				|| editionBeforeChanges.Collaborators != collaborators)
 				await _editionRepo.ChangeEditionCopyrightAsync(editionUser, copyrightHolder, collaborators);
 
 			if (!string.IsNullOrEmpty(name)) await _editionRepo.ChangeEditionNameAsync(editionUser, name);

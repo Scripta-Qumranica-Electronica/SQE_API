@@ -327,7 +327,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			// care of main_action and single_action.
 			return await _databaseWriter.WriteToDatabaseAsync(
 				editionUser,
-				new List<MutationRequest> {artefactChangeRequest}
+				new List<MutationRequest> { artefactChangeRequest }
 			);
 		}
 
@@ -398,7 +398,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
 			public static List<string> All()
 			{
-				return new List<string> {data, shape, position, stack};
+				return new List<string> { data, shape, position, stack };
 			}
 		}
 	}

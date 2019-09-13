@@ -65,7 +65,7 @@ namespace SQE.SqeHttpApi.Server.Services
 		private static ImageDTO.Lighting GetLightingType(byte type)
 		{
 			if (type == 2
-			    || type == 3) return ImageDTO.Lighting.raking;
+				|| type == 3) return ImageDTO.Lighting.raking;
 			return ImageDTO.Lighting.direct; // need to check..
 		}
 

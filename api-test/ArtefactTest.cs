@@ -47,7 +47,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			parameters.Add("@UserId", userId);
 			var allUserEditions = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
 
-			var editionId = allUserEditions[(int) artefactCount % (allUserEditions.Count + 1)];
+			var editionId = allUserEditions[(int)artefactCount % (allUserEditions.Count + 1)];
 			var url = $"/{version}/editions/{editionId}/{controller}?optional=masks";
 			var (response, artefactResponse) = await HttpRequest.SendAsync<string, ArtefactListDTO>(
 				_client,
@@ -267,9 +267,9 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			// Assert
 			tfResponse.EnsureSuccessStatusCode();
 			Assert.NotEmpty(tfData.textFragments);
-			Assert.Equal((uint) 10029, tfData.textFragments.First().id);
+			Assert.Equal((uint)10029, tfData.textFragments.First().id);
 			Assert.Equal("frg. 78_79", tfData.textFragments.First().name);
-			Assert.Equal((uint) 894, tfData.textFragments.First().editorId);
+			Assert.Equal((uint)894, tfData.textFragments.First().editorId);
 		}
 
 		/// <summary>

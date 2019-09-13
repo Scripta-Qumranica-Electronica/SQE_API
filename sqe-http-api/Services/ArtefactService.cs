@@ -132,7 +132,7 @@ namespace SQE.SqeHttpApi.Server.Services
 			var updatedArtefact = await GetEditionArtefactAsync(
 				editionUser,
 				artefactId,
-				withMask ? new List<string> {"masks"} : null
+				withMask ? new List<string> { "masks" } : null
 			);
 
 			return updatedArtefact;
@@ -150,7 +150,7 @@ namespace SQE.SqeHttpApi.Server.Services
 			if (editionUser.userId.HasValue)
 			{
 				if (!string.IsNullOrEmpty(position)
-				    && !GeometryValidation.ValidateTransformMatrix(position))
+					&& !GeometryValidation.ValidateTransformMatrix(position))
 					throw new StandardErrors.ImproperInputData("artefact position");
 				newArtefactId = await _artefactRepository.CreateNewArtefactAsync(
 					editionUser,
@@ -162,7 +162,7 @@ namespace SQE.SqeHttpApi.Server.Services
 				);
 			}
 
-			var optional = mask != null ? new List<string> {"masks"} : new List<string>();
+			var optional = mask != null ? new List<string> { "masks" } : new List<string>();
 
 			var newArtefact = newArtefactId != 0
 				? await GetEditionArtefactAsync(editionUser, newArtefactId, optional)

@@ -67,8 +67,8 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 			using (var connection = OpenConnection())
 			{
-				var columns = new List<string> {"user_id", "email", "activated", "forename", "surname", "organization"};
-				var where = new List<string> {"email", "pw"};
+				var columns = new List<string> { "user_id", "email", "activated", "forename", "surname", "organization" };
+				var where = new List<string> { "email", "pw" };
 				try
 				{
 					return await connection.QuerySingleAsync<DetailedUserWithToken>(
@@ -91,8 +91,8 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 			using (var connection = OpenConnection())
 			{
-				var columns = new List<string> {"user_id", "email", "forename", "surname", "organization", "activated"};
-				var where = new List<string> {"user_id"};
+				var columns = new List<string> { "user_id", "email", "forename", "surname", "organization", "activated" };
+				var where = new List<string> { "user_id" };
 				return await connection.QuerySingleAsync<DetailedUserWithToken>(
 					UserDetails.GetQuery(columns, where),
 					new
@@ -147,8 +147,8 @@ namespace SQE.SqeHttpApi.DataAccess
 				);
 
 				// Prepare account details request
-				var columns = new List<string> {"email", "user_id", "forename", "surname", "token"};
-				var where = new List<string> {"email", "activated", "token"};
+				var columns = new List<string> { "email", "user_id", "forename", "surname", "token" };
+				var where = new List<string> { "email", "activated", "token" };
 
 				try
 				{
@@ -263,8 +263,8 @@ namespace SQE.SqeHttpApi.DataAccess
 			using (var connection = OpenConnection())
 			{
 				// Find any users with either the same email address.
-				var columns = new List<string> {"user_id", "activated", "email"};
-				var where = new List<string> {"email"};
+				var columns = new List<string> { "user_id", "activated", "email" };
+				var where = new List<string> { "email" };
 				var existingUser = (await connection.QueryAsync<DetailedUserWithToken>(
 					UserDetails.GetQuery(columns, where),
 					new
@@ -282,11 +282,11 @@ namespace SQE.SqeHttpApi.DataAccess
 
 						await connection.ExecuteAsync(
 							DeleteUserEmailTokenQuery.GetUserIdQuery,
-							new {record.UserId}
+							new { record.UserId }
 						);
 						await connection.ExecuteAsync(
 							DeleteUserQuery.GetQuery,
-							new {record.UserId}
+							new { record.UserId }
 						);
 					}
 			}
@@ -350,8 +350,8 @@ namespace SQE.SqeHttpApi.DataAccess
 			using (var connection = OpenConnection())
 			{
 				// Confirm creation by getting the User object for the new user
-				var columns = new List<string> {"user_id", "email", "forename", "surname", "organization"};
-				var where = new List<string> {"email"};
+				var columns = new List<string> { "user_id", "email", "forename", "surname", "organization" };
+				var where = new List<string> { "email" };
 				var userObject = await connection.QuerySingleAsync<DetailedUserWithToken>(
 					UserDetails.GetQuery(columns, where),
 					new
@@ -395,7 +395,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				var confirmRegistration = await connection.ExecuteAsync(
 					ConfirmNewUserAccount.GetQuery,
 					new
-						{Token = token}
+					{ Token = token }
 				);
 				if (confirmRegistration != 1)
 					throw new StandardErrors.ImproperInputData("user account activation token");
@@ -414,7 +414,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				await connection.ExecuteAsync(
 					DeleteUserEmailTokenQuery.GetTokenQuery,
 					new
-						{Tokens = tokens, Type = CreateUserEmailTokenQuery.Activate}
+					{ Tokens = tokens, Type = CreateUserEmailTokenQuery.Activate }
 				);
 				transactionScope.Complete();
 			}
@@ -486,11 +486,11 @@ namespace SQE.SqeHttpApi.DataAccess
 						try
 						{
 							// Get the user's details via the submitted email address
-							var columns = new List<string> {"email", "user_id", "forename", "surname", "organization"};
-							var where = new List<string> {"email"};
+							var columns = new List<string> { "email", "user_id", "forename", "surname", "organization" };
+							var where = new List<string> { "email" };
 							var userInfo = await connection.QuerySingleAsync<DetailedUserWithToken>(
 								UserDetails.GetQuery(columns, where),
-								new {Email = email}
+								new { Email = email }
 							);
 
 							// Generate our secret token
@@ -583,7 +583,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			{
 				return (await connection.QueryAsync<EditorInfo>(
 					GetEditorInfo.GetQuery,
-					new {EditionId = editionId}
+					new { EditionId = editionId }
 				)).ToList();
 			}
 		}

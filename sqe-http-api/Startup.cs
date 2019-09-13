@@ -115,7 +115,7 @@ namespace SQE.SqeHttpApi.Server
 			services.AddSwaggerGen(
 				c =>
 				{
-					c.SwaggerDoc("v1", new Info {Title = "SQE API", Version = "v1"});
+					c.SwaggerDoc("v1", new Info { Title = "SQE API", Version = "v1" });
 					var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
 					var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
 					c.IncludeXmlComments(xmlPath);

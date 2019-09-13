@@ -111,7 +111,7 @@ namespace SQE.SqeHttpApi.DataAccess
 
 				// Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
 				// care of main_action and single_action.
-				await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> {nameChangeRequest});
+				await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
 			}
 		}
 
@@ -148,7 +148,7 @@ namespace SQE.SqeHttpApi.DataAccess
 						var fromVersion =
 							await connection.QuerySingleAsync<EditionLockQuery.Result>(
 								EditionLockQuery.GetQuery,
-								new {editionUser.EditionId}
+								new { editionUser.EditionId }
 							);
 						if (!fromVersion.Locked)
 							throw new StandardErrors.EditionCopyLockProtection(editionUser);
@@ -283,7 +283,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				var deleteToken = await connection.ExecuteAsync(
 					DeleteUserEmailTokenQuery.GetTokenQuery,
 					new
-						{Tokens = new[] {token}, Type = CreateUserEmailTokenQuery.DeleteEdition}
+					{ Tokens = new[] { token }, Type = CreateUserEmailTokenQuery.DeleteEdition }
 				);
 				if (deleteToken != 1)
 					throw new StandardErrors.DataNotWritten("verifying the delete request token");
@@ -355,10 +355,10 @@ namespace SQE.SqeHttpApi.DataAccess
 
 			// Check for invalid settings
 			if (permissions.IsAdmin
-			    && !permissions.MayRead)
+				&& !permissions.MayRead)
 				throw new StandardErrors.InputDataRuleViolation("an edition admin must have read rights");
 			if (permissions.MayWrite
-			    && !permissions.MayRead)
+				&& !permissions.MayRead)
 				throw new StandardErrors.InputDataRuleViolation("an editor with write rights must have read rights");
 			using (var connection = OpenConnection())
 			{
@@ -395,7 +395,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 			// Make sure requesting user is admin when raising access, only and edition admin may perform this action
 			if (((mayRead ?? false) || (mayWrite ?? false) || (mayLock ?? false) || (isAdmin ?? false))
-			    && !editionUser.IsAdmin)
+				&& !editionUser.IsAdmin)
 				throw new StandardErrors.NoAdminPermissions(editionUser);
 
 			// Check if the editor exists
@@ -422,12 +422,12 @@ namespace SQE.SqeHttpApi.DataAccess
 
 			// Make sure we are not removing an admin's read access (that is not allowed)
 			if (permissions.IsAdmin
-			    && !permissions.MayRead)
+				&& !permissions.MayRead)
 				throw new StandardErrors.InputDataRuleViolation("read rights may not be revoked for an edition admin");
 
 			// Make sure that we are not revoking editor's read access when editor still has write access 
 			if (permissions.MayWrite
-			    && !permissions.MayRead)
+				&& !permissions.MayRead)
 				throw new StandardErrors.InputDataRuleViolation(
 					"read rights may not be revoked for an editor with write rights"
 				);
@@ -516,7 +516,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 				async () =>
 					await connection.ExecuteAsync(
 						DeleteEditionFromTable.GetQuery(tableName),
-						new {editionUser.EditionId, UserId = editionUser.userId ?? 0}
+						new { editionUser.EditionId, UserId = editionUser.userId ?? 0 }
 					)
 			);
 		}
@@ -527,7 +527,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 			{
 				return (await connection.QueryAsync<DetailedPermissions>(
 					GetEditionEditorsWithPermissionsQuery.GetQuery,
-					new {EditionId = editionId}
+					new { EditionId = editionId }
 				)).ToList();
 			}
 		}

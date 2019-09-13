@@ -59,7 +59,7 @@ namespace SQE.SqeHttpApi.Server.Services
 				IConfiguration config,
 				IHostingEnvironment env)
 
-			// http://jasonwatmore.com/post/2018/08/14/aspnet-core-21-jwt-authentication-tutorial-with-example-api
+		// http://jasonwatmore.com/post/2018/08/14/aspnet-core-21-jwt-authentication-tutorial-with-example-api
 		{
 			_userRepository = userRepository;
 			_appSettings = appSettings.Value; // For the secret key
@@ -111,7 +111,7 @@ namespace SQE.SqeHttpApi.Server.Services
 
 		public uint? GetCurrentUserId()
 		{
-			var identity = (ClaimsIdentity) _accessor.HttpContext.User.Identity;
+			var identity = (ClaimsIdentity)_accessor.HttpContext.User.Identity;
 			var claims = identity.Claims;
 			foreach (var claim in claims)
 			{
@@ -394,16 +394,16 @@ The Scripta Qumranica Electronica team</body></html>";
 
 			// Immediately reject requests without proper permissions
 			if (access.Read
-			    && !user.MayRead)
+				&& !user.MayRead)
 				throw new StandardErrors.NoReadPermissions(user);
 			if (access.Write
-			    && !user.MayWrite)
+				&& !user.MayWrite)
 				throw new StandardErrors.NoWritePermissions(user);
 			if (access.Locking
-			    && !user.MayLock)
+				&& !user.MayLock)
 				throw new StandardErrors.NoLockPermissions(user);
 			if (access.Admin
-			    && !user.IsAdmin)
+				&& !user.IsAdmin)
 				throw new StandardErrors.NoAdminPermissions(user);
 
 			return user;

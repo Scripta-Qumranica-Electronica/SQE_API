@@ -123,21 +123,21 @@ namespace SQE.ApiTest
 		{
 			Assert.NotNull(msg.licence);
 			Assert.NotEmpty(msg.editors);
-			Assert.NotEqual((uint) 0, msg.lineId);
+			Assert.NotEqual((uint)0, msg.lineId);
 			Assert.NotEmpty(msg.signs);
 			Assert.NotEqual(
-				(uint) 0,
+				(uint)0,
 				msg.signs.First().signInterpretations.First().nextSignInterpretations.First().nextSignInterpretationId
 			);
 			Assert.NotEmpty(msg.signs.First().signInterpretations);
-			Assert.NotEqual((uint) 0, msg.signs.First().signInterpretations.First().signInterpretationId);
+			Assert.NotEqual((uint)0, msg.signs.First().signInterpretations.First().signInterpretationId);
 			Assert.NotEmpty(msg.signs.First().signInterpretations.First().attributes);
 			Assert.NotEqual(
-				(uint) 0,
+				(uint)0,
 				msg.signs.First().signInterpretations.First().attributes.First().interpretationAttributeId
 			);
 
-			var editorIds = new List<uint> {msg.editorId};
+			var editorIds = new List<uint> { msg.editorId };
 			foreach (var sign in msg.signs)
 			{
 				foreach (var signInterpretation in sign.signInterpretations)
@@ -164,14 +164,14 @@ namespace SQE.ApiTest
 		{
 			Assert.NotNull(msg.licence);
 			Assert.NotEmpty(msg.editors);
-			Assert.NotEqual((uint) 0, msg.manuscriptId);
+			Assert.NotEqual((uint)0, msg.manuscriptId);
 			Assert.NotEmpty(msg.textFragments);
-			Assert.NotEqual((uint) 0, msg.textFragments.First().textFragmentId);
+			Assert.NotEqual((uint)0, msg.textFragments.First().textFragmentId);
 			Assert.NotEmpty(msg.textFragments.First().lines);
-			Assert.NotEqual((uint) 0, msg.textFragments.First().lines.First().lineId);
+			Assert.NotEqual((uint)0, msg.textFragments.First().lines.First().lineId);
 			Assert.NotEmpty(msg.textFragments.First().lines.First().signs);
 			Assert.NotEqual(
-				(uint) 0,
+				(uint)0,
 				msg.textFragments.First()
 					.lines.First()
 					.signs.First()
@@ -181,14 +181,14 @@ namespace SQE.ApiTest
 			);
 			Assert.NotEmpty(msg.textFragments.First().lines.First().signs.First().signInterpretations);
 			Assert.NotEqual(
-				(uint) 0,
+				(uint)0,
 				msg.textFragments.First().lines.First().signs.First().signInterpretations.First().signInterpretationId
 			);
 			Assert.NotEmpty(
 				msg.textFragments.First().lines.First().signs.First().signInterpretations.First().attributes
 			);
 			Assert.NotEqual(
-				(uint) 0,
+				(uint)0,
 				msg.textFragments.First()
 					.lines.First()
 					.signs.First()
@@ -197,7 +197,7 @@ namespace SQE.ApiTest
 					.interpretationAttributeId
 			);
 
-			var editorIds = new List<uint> {msg.editorId};
+			var editorIds = new List<uint> { msg.editorId };
 			foreach (var textFragment in msg.textFragments)
 			{
 				if (!msg.editors.ContainsKey(textFragment.editorId))
@@ -507,7 +507,7 @@ namespace SQE.ApiTest
 			// Assert
 			response.EnsureSuccessStatusCode();
 			Assert.NotEmpty(msg.lines);
-			Assert.NotEqual((uint) 0, msg.lines[0].lineId);
+			Assert.NotEqual((uint)0, msg.lines[0].lineId);
 		}
 
 		[Fact]

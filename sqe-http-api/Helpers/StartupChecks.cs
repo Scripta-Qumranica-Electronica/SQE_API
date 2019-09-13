@@ -44,7 +44,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			var smtp = configuration.GetConnectionString("MailerEmailSmtpUrl");
 			var port = configuration.GetConnectionString("MailerEmailSmtpPort");
 			var security = configuration.GetConnectionString("MailerEmailSmtpSecurity");
-			var securityEnum = (SecureSocketOptions) Enum.Parse(typeof(SecureSocketOptions), security);
+			var securityEnum = (SecureSocketOptions)Enum.Parse(typeof(SecureSocketOptions), security);
 
 			using (var client = new SmtpClient())
 			{
@@ -127,7 +127,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 				const string sql = "SELECT table_name FROM information_schema.tables where table_schema=@DbName;";
 				using (var connection = OpenConnection())
 				{
-					var tableNames = connection.Query<string>(sql, new {DbName = dbName});
+					var tableNames = connection.Query<string>(sql, new { DbName = dbName });
 					if (!tableNames.Any())
 						throw new SystemException($"A database named {dbName} exists, but it is empty.");
 				}
