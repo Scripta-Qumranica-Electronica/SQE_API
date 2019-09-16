@@ -13,6 +13,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
 		public PolygonDTO mask { get; set; }
 		public short zOrder { get; set; }
 		public string side { get; set; }
+		public string statusMessage { get; set; }
 
 		public class ArtefactSide
 		{
@@ -26,18 +27,20 @@ namespace SQE.SqeHttpApi.Server.DTOs
 		public List<ArtefactDTO> artefacts { get; set; }
 	}
 
+	// TODO: Should we make the mask and positioning data a PolygonDTO here, like it is in the GET DTO?
 	public class UpdateArtefactDTO
 	{
 		public string mask { get; set; }
 		public string name { get; set; }
-		public string position { get; set; }
+		public float? scale { get; set; }
+		public float? rotate { get; set; }
+		public uint? translateX { get; set; }
+		public uint? translateY { get; set; }
+		public string statusMessage { get; set; }
 	}
 
-	public class CreateArtefactDTO
+	public class CreateArtefactDTO : UpdateArtefactDTO
 	{
 		public uint masterImageId { get; set; }
-		public string mask { get; set; }
-		public string name { get; set; }
-		public string position { get; set; }
 	}
 }

@@ -11,6 +11,7 @@ export interface ArtefactDTO {
     mask: PolygonDTO;
     zOrder: number;
     side: string;
+    statusMessage: string;
 }
 
 export interface ArtefactListDTO {
@@ -19,13 +20,15 @@ export interface ArtefactListDTO {
 export interface UpdateArtefactDTO {
     mask: string;
     name: string;
-    position: string;
+    scale?: number;
+    rotate?: number;
+    translateX?: number;
+    translateY?: number;
+    statusMessage: string;
 }
-export interface CreateArtefactDTO {
+
+export interface CreateArtefactDTO extends UpdateArtefactDTO {
     masterImageId: number;
-    mask: string;
-    name: string;
-    position: string;
 }
 
 export interface EditionDTO {
@@ -130,8 +133,11 @@ export interface ImagedObjectListDTO {
 export interface PolygonDTO {
     mask: string;
     maskEditorId: number;
-    transformMatrix: string;
-    transformMatrixEditorId: number;
+    scale?: number;
+    rotate?: number;
+    translateX?: number;
+    translateY?: number;
+    positionEditorId: number;
 }
 export interface SetInterpretationRoiDTO {
     artefactId: number;

@@ -19,11 +19,15 @@ namespace SQE.SqeHttpApi.Server.Helpers
 				{
 					mask = artefact.Mask,
 					maskEditorId = artefact.MaskEditorId,
-					transformMatrix = artefact.TransformMatrix,
-					transformMatrixEditorId = artefact.TransformMatrixEditorId
+					scale = artefact.Scale,
+					rotate = artefact.Rotate,
+					translateX = artefact.TranslateX,
+					translateY = artefact.TranslateY,
+					positionEditorId = artefact.PositionEditorId
 				},
 
 				imagedObjectId = artefact.ImagedObjectId,
+				statusMessage = artefact.WorkStatusMessage,
 
 				name = artefact.Name,
 				side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso,

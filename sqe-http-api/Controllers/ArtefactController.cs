@@ -33,11 +33,7 @@ namespace SQE.SqeApi.Server.Controllers
 		{
 			return await _artefactService.CreateArtefactAsync(
 				await _userService.GetCurrentUserObjectAsync(editionId, true),
-				editionId,
-				payload.masterImageId,
-				payload.mask,
-				payload.name,
-				payload.position
+				payload
 			);
 		}
 
@@ -136,11 +132,8 @@ namespace SQE.SqeApi.Server.Controllers
 		{
 			return await _artefactService.UpdateArtefactAsync(
 				await _userService.GetCurrentUserObjectAsync(editionId, true),
-				editionId,
 				artefactId,
-				payload.mask,
-				payload.name,
-				payload.position
+				payload
 			);
 		}
 	}

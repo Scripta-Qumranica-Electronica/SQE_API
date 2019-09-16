@@ -75,11 +75,9 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 		}
 
 
-		private string ArtefactPosition(bool properlyFormatted = true)
+		private (float? scale, float? rotate, uint? translateX, uint? translateY) ArtefactPosition()
 		{
-			return properlyFormatted
-				? "{\"matrix\":[[1.3,0,32],[0,0.67,54]]}"
-				: "{\"matrix\":[[1,0,0],[0,1,0,0]]}";
+			return ((float?)1.0, (float?)0, (uint?)34765, (uint?)556);
 		}
 
 		/// <summary>
@@ -119,12 +117,15 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
-			var newTransform = ArtefactPosition();
+			var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
 			var newName = "CanCreateArtefacts.artefact א";
 			var newArtefact = new CreateArtefactDTO
 			{
 				mask = newArtefactShape,
-				position = null,
+				scale = newScale,
+				rotate = newRotate,
+				translateX = newTranslateX,
+				translateY = newTranslateY,
 				name = newName,
 				masterImageId = masterImageId
 			};
@@ -142,7 +143,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			response.EnsureSuccessStatusCode();
 			Assert.Equal(newEdition, writtenArtefact.editionId);
 			Assert.Equal(newArtefact.mask, writtenArtefact.mask.mask);
-			Assert.Null(writtenArtefact.mask.transformMatrix);
+			Assert.Equal(newScale, writtenArtefact.mask.scale);
+			Assert.Equal(newRotate, writtenArtefact.mask.rotate);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.translateX);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.translateY);
 			Assert.Equal(newArtefact.name, writtenArtefact.name);
 
 			// Cleanup
@@ -154,7 +158,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			newArtefact = new CreateArtefactDTO
 			{
 				mask = newArtefactShape,
-				position = newTransform,
+				scale = newScale,
+				rotate = newRotate,
+				translateX = newTranslateX,
+				translateY = newTranslateY,
 				name = newName,
 				masterImageId = masterImageId
 			};
@@ -172,7 +179,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			response.EnsureSuccessStatusCode();
 			Assert.Equal(newEdition, writtenArtefact.editionId);
 			Assert.Equal(newArtefact.mask, writtenArtefact.mask.mask);
-			Assert.Equal(newTransform, writtenArtefact.mask.transformMatrix);
+			Assert.Equal(newScale, writtenArtefact.mask.scale);
+			Assert.Equal(newRotate, writtenArtefact.mask.rotate);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.translateX);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.translateY);
 			Assert.Equal("", writtenArtefact.name);
 
 			// Cleanup
@@ -185,7 +195,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			newArtefact = new CreateArtefactDTO
 			{
 				mask = null,
-				position = newTransform,
+				scale = newScale,
+				rotate = newRotate,
+				translateX = newTranslateX,
+				translateY = newTranslateY,
 				name = newName,
 				masterImageId = masterImageId
 			};
@@ -203,7 +216,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			response.EnsureSuccessStatusCode();
 			Assert.Equal(newEdition, writtenArtefact.editionId);
 			Assert.Equal("", writtenArtefact.mask.mask);
-			Assert.Equal(newTransform, writtenArtefact.mask.transformMatrix);
+			Assert.Equal(newScale, writtenArtefact.mask.scale);
+			Assert.Equal(newRotate, writtenArtefact.mask.rotate);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.translateX);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.translateY);
 			Assert.Equal(newArtefact.name, writtenArtefact.name);
 
 			// Cleanup
@@ -288,13 +304,16 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
-			var newTransform = ArtefactPosition();
+			var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
 			var newName = "CanCreateArtefacts.artefact α";
 			;
 			var newArtefact = new CreateArtefactDTO
 			{
 				mask = newArtefactShape,
-				position = newTransform,
+				scale = newScale,
+				rotate = newRotate,
+				translateX = newTranslateX,
+				translateY = newTranslateY,
 				name = newName,
 				masterImageId = masterImageId
 			};
@@ -360,7 +379,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				new UpdateArtefactDTO
 				{
 					mask = null,
-					position = null,
+					scale = null,
+					rotate = null,
+					translateX = null,
+					translateY = null,
 					name = newArtefactName
 				}
 			);
@@ -383,7 +405,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 			var newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
-			var newArtefactPosition = ArtefactPosition();
+			var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
 
@@ -395,7 +417,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				new UpdateArtefactDTO
 				{
 					mask = null,
-					position = null,
+					scale = null,
+					rotate = null,
+					translateX = null,
+					translateY = null,
 					name = newArtefactName
 				},
 				await HttpRequest.GetJWTAsync(_client)
@@ -403,7 +428,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
 			// Assert (update name)
 			nameResponse.EnsureSuccessStatusCode();
-			Assert.Equal(artefact.mask.transformMatrix, updatedNameArtefact.mask.transformMatrix);
+			Assert.Equal(artefact.mask.scale, updatedNameArtefact.mask.scale);
+			Assert.Equal(artefact.mask.rotate, updatedNameArtefact.mask.rotate);
+			Assert.Equal(artefact.mask.translateX, updatedNameArtefact.mask.translateX);
+			Assert.Equal(artefact.mask.translateY, updatedNameArtefact.mask.translateY);
 			Assert.NotEqual(artefact.name, updatedNameArtefact.name);
 			Assert.Equal(newArtefactName, updatedNameArtefact.name);
 
@@ -416,7 +444,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 					new UpdateArtefactDTO
 					{
 						mask = null,
-						position = newArtefactPosition,
+						scale = newScale,
+						rotate = newRotate,
+						translateX = newTranslateX,
+						translateY = newTranslateY,
 						name = null
 					},
 					await HttpRequest.GetJWTAsync(_client)
@@ -424,8 +455,14 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
 			// Assert (update position)
 			positionResponse.EnsureSuccessStatusCode();
-			Assert.NotEqual(artefact.mask.transformMatrix, updatedPositionArtefact.mask.transformMatrix);
-			Assert.Equal(newArtefactPosition, updatedPositionArtefact.mask.transformMatrix);
+			Assert.NotEqual(artefact.mask.scale, updatedPositionArtefact.mask.scale);
+			Assert.NotEqual(artefact.mask.rotate, updatedPositionArtefact.mask.rotate);
+			Assert.NotEqual(artefact.mask.translateX, updatedPositionArtefact.mask.translateX);
+			Assert.NotEqual(artefact.mask.translateY, updatedPositionArtefact.mask.translateY);
+			Assert.Equal(newScale, updatedPositionArtefact.mask.scale);
+			Assert.Equal(newRotate, updatedPositionArtefact.mask.rotate);
+			Assert.Equal(newTranslateX, updatedPositionArtefact.mask.translateX);
+			Assert.Equal(newTranslateY, updatedPositionArtefact.mask.translateY);
 			Assert.Equal(newArtefactName, updatedPositionArtefact.name);
 
 			// Act (update shape)
@@ -436,7 +473,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				new UpdateArtefactDTO
 				{
 					mask = newArtefactShape,
-					position = null,
+					scale = newScale,
+					rotate = newRotate,
+					translateX = newTranslateX,
+					translateY = newTranslateY,
 					name = null
 				},
 				await HttpRequest.GetJWTAsync(_client)
@@ -446,11 +486,14 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			shapeResponse.EnsureSuccessStatusCode();
 			Assert.NotEqual(artefact.mask.mask, updatedShapeArtefact.mask.mask);
 			Assert.Equal(newArtefactShape, updatedShapeArtefact.mask.mask);
-			Assert.Equal(newArtefactPosition, updatedShapeArtefact.mask.transformMatrix);
+			Assert.Equal(newScale, updatedShapeArtefact.mask.scale);
+			Assert.Equal(newRotate, updatedShapeArtefact.mask.rotate);
+			Assert.Equal(newTranslateX, updatedShapeArtefact.mask.translateX);
+			Assert.Equal(newTranslateY, updatedShapeArtefact.mask.translateY);
 			Assert.Equal(newArtefactName, updatedShapeArtefact.name);
 
 			// Arrange (update all)
-			var otherTransform = ArtefactPosition();
+			var (otherScale, otherRotate, otherTranslateX, otherTranslateY) = ArtefactPosition();
 			// Act (update all)
 			var (allResponse, updatedAllArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
 				_client,
@@ -459,7 +502,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				new UpdateArtefactDTO
 				{
 					mask = artefact.mask.mask,
-					position = otherTransform,
+					scale = otherScale,
+					rotate = otherRotate,
+					translateX = otherTranslateX,
+					translateY = otherTranslateY,
 					name = artefact.name
 				},
 				await HttpRequest.GetJWTAsync(_client)
@@ -468,41 +514,11 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			// Assert (update all)
 			allResponse.EnsureSuccessStatusCode();
 			Assert.Equal(artefact.mask.mask, updatedAllArtefact.mask.mask);
-			Assert.Equal(otherTransform, updatedAllArtefact.mask.transformMatrix);
+			Assert.Equal(otherScale, updatedAllArtefact.mask.scale);
+			Assert.Equal(otherRotate, updatedAllArtefact.mask.rotate);
+			Assert.Equal(otherTranslateX, updatedAllArtefact.mask.translateX);
+			Assert.Equal(otherTranslateY, updatedAllArtefact.mask.translateY);
 			Assert.Equal(artefact.name, updatedAllArtefact.name);
-
-			await EditionHelpers.DeleteEdition(_client, newEdition, true);
-		}
-
-		/// <summary>
-		///     Ensure that improperly formatted artefact position transform matrices are rejected.
-		/// </summary>
-		/// <returns></returns>
-		[Fact]
-		public async Task RejectsUpdateToImproperArtefactPosition()
-		{
-			// Arrange
-			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
-			var artefact = allArtefacts.First();
-			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
-			var newArtefactMatrix = ArtefactPosition(false);
-
-			// Act (update name)
-			var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
-				_client,
-				HttpMethod.Put,
-				$"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
-				new UpdateArtefactDTO
-				{
-					mask = null,
-					position = newArtefactMatrix,
-					name = null
-				},
-				await HttpRequest.GetJWTAsync(_client)
-			);
-
-			// Assert (update name)
-			Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
 
 			await EditionHelpers.DeleteEdition(_client, newEdition, true);
 		}
@@ -529,7 +545,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				new UpdateArtefactDTO
 				{
 					mask = newArtefactShape,
-					position = null,
+					scale = null,
+					rotate = null,
+					translateX = null,
+					translateY = null,
 					name = null
 				},
 				await HttpRequest.GetJWTAsync(_client)

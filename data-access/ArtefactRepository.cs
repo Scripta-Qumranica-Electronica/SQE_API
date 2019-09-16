@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
@@ -26,19 +27,32 @@ namespace SQE.SqeHttpApi.DataAccess
 		Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(EditionUserInfo editionUser,
 			bool withMask = false);
 
-		Task<List<AlteredRecord>> UpdateArtefactShapeAsync(EditionUserInfo editionUser, uint artefactId, string shape);
+		Task<List<AlteredRecord>> UpdateArtefactShapeAsync(EditionUserInfo editionUser,
+			uint artefactId,
+			string shape);
+
+		Task<List<AlteredRecord>> UpdateArtefactStatusAsync(EditionUserInfo editionUser,
+			uint artefactId,
+			string workStatus);
+
 		Task<List<AlteredRecord>> UpdateArtefactNameAsync(EditionUserInfo editionUser, uint artefactId, string name);
 
 		Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
 			uint artefactId,
-			string position);
+			float? scale,
+			float? rotate,
+			uint? translateX,
+			uint? translateY);
 
 		Task<uint> CreateNewArtefactAsync(EditionUserInfo editionUser,
-			uint editionId,
 			uint masterImageId,
 			string shape,
 			string artefactName,
-			string position = null);
+			float? scale,
+			float? rotate,
+			uint? translateX,
+			uint? translateY,
+			string workStatus);
 
 		Task DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId);
 		Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
@@ -112,6 +126,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			if (artefactShapeId == 0)
 				throw new StandardErrors.DataNotFound("artefact mask", artefactId, "artefact_id");
 			var sqeImageId = GetArtefactShapeSqeImageIdAsync(editionUser, editionUser.EditionId, artefactId);
+
 			var artefactChangeParams = new DynamicParameters();
 			artefactChangeParams.Add("@region_in_sqe_image", shape);
 			artefactChangeParams.Add("@artefact_id", artefactId);
@@ -134,6 +149,29 @@ namespace SQE.SqeHttpApi.DataAccess
 
 				throw;
 			}
+		}
+
+		public async Task<List<AlteredRecord>> UpdateArtefactStatusAsync(EditionUserInfo editionUser,
+			uint artefactId,
+			string workStatus)
+		{
+			const string tableName = "artefact_status";
+			var artefactShapeId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
+			if (artefactShapeId == 0)
+				throw new StandardErrors.DataNotFound("artefact status", artefactId, "artefact_id");
+			var workStatusId = string.IsNullOrEmpty(workStatus) ? (uint?)null : await SetWorkStatusAsync(workStatus);
+
+			var artefactChangeParams = new DynamicParameters();
+			artefactChangeParams.Add("@artefact_id", artefactId);
+			artefactChangeParams.Add("@work_status_id", workStatusId);
+			var artefactChangeRequest = new MutationRequest(
+				MutateType.Update,
+				artefactChangeParams,
+				tableName,
+				artefactShapeId
+			);
+
+			return await WriteArtefactAsync(editionUser, artefactChangeRequest);
 		}
 
 		public async Task<List<AlteredRecord>> UpdateArtefactNameAsync(EditionUserInfo editionUser,
@@ -159,17 +197,23 @@ namespace SQE.SqeHttpApi.DataAccess
 
 		public async Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
 			uint artefactId,
-			string position)
+			float? scale,
+			float? rotate,
+			uint? translateX,
+			uint? translateY)
 		{
 			const string tableName = "artefact_position";
 			var artefactPositionId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
 			// It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
 			// If no artefact_position already exists we need to create a new entry here.
 			if (artefactPositionId == 0)
-				return await InsertArtefactPositionAsync(editionUser, artefactId, position);
+				return await InsertArtefactPositionAsync(editionUser, artefactId, scale, rotate, translateX, translateY);
 
 			var artefactChangeParams = new DynamicParameters();
-			artefactChangeParams.Add("@transform_matrix", position);
+			artefactChangeParams.Add("@scale", scale);
+			artefactChangeParams.Add("@rotate", rotate);
+			artefactChangeParams.Add("@translate_x", translateX);
+			artefactChangeParams.Add("@translate_y", translateY);
 			artefactChangeParams.Add("@artefact_id", artefactId);
 			var artefactChangeRequest = new MutationRequest(
 				MutateType.Update,
@@ -182,11 +226,14 @@ namespace SQE.SqeHttpApi.DataAccess
 		}
 
 		public async Task<uint> CreateNewArtefactAsync(EditionUserInfo editionUser,
-			uint editionId,
 			uint masterImageId,
 			string shape,
 			string artefactName,
-			string position = null)
+			float? scale,
+			float? rotate,
+			uint? translateX,
+			uint? translateY,
+			string workStatus)
 		{
 			/* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
              write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
@@ -210,11 +257,13 @@ namespace SQE.SqeHttpApi.DataAccess
 
 						shape = string.IsNullOrEmpty(shape) ? "POLYGON((0 0))" : shape;
 						var newShape = InsertArtefactShapeAsync(editionUser, artefactId, masterImageId, shape);
+						var newArtefact = InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
 						var newName = InsertArtefactNameAsync(editionUser, artefactId, artefactName ?? "");
-						if (!string.IsNullOrEmpty(position))
-							await InsertArtefactPositionAsync(editionUser, artefactId, position);
+						if (scale.HasValue || rotate.HasValue || translateX.HasValue || translateY.HasValue)
+							await InsertArtefactPositionAsync(editionUser, artefactId, scale, rotate, translateX, translateY);
 
 						await newShape;
+						await newArtefact;
 						await newName;
 						//Cleanup
 						transactionScope.Complete();
@@ -288,6 +337,24 @@ namespace SQE.SqeHttpApi.DataAccess
 			return await WriteArtefactAsync(editionUser, artefactChangeRequest);
 		}
 
+		public async Task<List<AlteredRecord>> InsertArtefactStatusAsync(EditionUserInfo editionUser,
+			uint artefactId,
+			string workStatus)
+		{
+			var workStatusId = string.IsNullOrEmpty(workStatus) ? (uint?)null : await SetWorkStatusAsync(workStatus);
+
+			var artefactChangeParams = new DynamicParameters();
+			artefactChangeParams.Add("@artefact_id", artefactId);
+			artefactChangeParams.Add("@work_status_id", workStatusId);
+			var artefactChangeRequest = new MutationRequest(
+				MutateType.Create,
+				artefactChangeParams,
+				"artefact_status"
+			);
+
+			return await WriteArtefactAsync(editionUser, artefactChangeRequest);
+		}
+
 		public async Task<List<AlteredRecord>> InsertArtefactNameAsync(EditionUserInfo editionUser,
 			uint artefactId,
 			string name)
@@ -306,10 +373,16 @@ namespace SQE.SqeHttpApi.DataAccess
 
 		public async Task<List<AlteredRecord>> InsertArtefactPositionAsync(EditionUserInfo editionUser,
 			uint artefactId,
-			string position)
+			float? scale,
+			float? rotate,
+			uint? translateX,
+			uint? translateY)
 		{
 			var artefactChangeParams = new DynamicParameters();
-			artefactChangeParams.Add("@transform_matrix", position);
+			artefactChangeParams.Add("@scale", scale);
+			artefactChangeParams.Add("@rotate", rotate);
+			artefactChangeParams.Add("@translate_x", translateX);
+			artefactChangeParams.Add("@translate_y", translateY);
 			artefactChangeParams.Add("@artefact_id", artefactId);
 			var artefactChangeRequest = new MutationRequest(
 				MutateType.Create,
@@ -395,10 +468,29 @@ namespace SQE.SqeHttpApi.DataAccess
 			public const string shape = "artefact_shape";
 			public const string position = "artefact_position";
 			public const string stack = "artefact_stack";
+			public const string status = "artefact_status";
 
 			public static List<string> All()
 			{
-				return new List<string> { data, shape, position, stack };
+				return new List<string> { data, shape, position, stack, status };
+			}
+		}
+
+		private async Task<uint?> SetWorkStatusAsync(string workStatus)
+		{
+			if (string.IsNullOrEmpty(workStatus))
+				return null;
+			using (var connection = OpenConnection())
+			{
+				var setStatus = await connection.ExecuteAsync(
+					SetWorkStatus.GetQuery,
+					new { WorkStatus = workStatus }
+				);
+
+				return await connection.QuerySingleAsync<uint>(
+					GetWorkStatus.GetQuery,
+					new { WorkStatus = workStatus }
+					);
 			}
 		}
 	}

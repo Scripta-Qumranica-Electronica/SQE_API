@@ -19,30 +19,34 @@ SELECT artefact_data.name AS Name,
        artefact_shape.artefact_id AS ArtefactId,
        artefact_shape.sqe_image_id AS ImageId,
        artefact_shape_owner.edition_editor_id AS MaskEditorId,
-       artefact_position.transform_matrix AS TransformMatrix,
+       artefact_position.scale AS Scale,
+       artefact_position.rotate AS Rotate,
+       artefact_position.translate_x AS TranslateX,
+       artefact_position.translate_y AS TranslateY,
        artefact_position.z_index AS ZIndex,
-       artefact_position_owner.edition_editor_id AS TransformMatrixEditorId,
+       artefact_position_owner.edition_editor_id AS PositionEditorId,
        image_catalog.object_id AS ImagedObjectId,
        image_catalog.catalog_side AS CatalogSide, 
-       SQE_image.image_catalog_id AS ImageCatalogId
+       SQE_image.image_catalog_id AS ImageCatalogId,
+       work_status.work_status_message AS WorkStatusMessage
 FROM edition
-JOIN edition_editor USING(edition_id)
-JOIN artefact_shape_owner USING(edition_id)
-JOIN artefact_shape USING(artefact_shape_id)
-LEFT JOIN artefact_position USING(artefact_id)
-LEFT JOIN artefact_position_owner ON artefact_position.artefact_position_id = artefact_position_owner.artefact_position_id
-    AND edition.edition_id = artefact_position_owner.edition_id
-JOIN artefact_data USING(artefact_id)
-JOIN artefact_data_owner ON artefact_data.artefact_data_id = artefact_data_owner.artefact_data_id
-    AND edition.edition_id = artefact_data_owner.edition_id
-JOIN SQE_image USING(sqe_image_id)
-JOIN image_catalog USING(image_catalog_id)
+	JOIN edition_editor USING(edition_id)
+	JOIN artefact_shape_owner USING(edition_id)
+	JOIN artefact_shape USING(artefact_shape_id)
+	LEFT JOIN artefact_position_owner ON artefact_position_owner.edition_id = @EditionId
+	LEFT JOIN artefact_position ON artefact_position.artefact_id = artefact_shape.artefact_id
+	    AND artefact_position.artefact_position_id = artefact_position_owner.artefact_position_id
+	JOIN artefact_data ON artefact_data.artefact_id = artefact_shape.artefact_id
+	JOIN artefact_data_owner ON artefact_data.artefact_data_id = artefact_data_owner.artefact_data_id
+	    AND edition.edition_id = artefact_data_owner.edition_id
+	JOIN artefact_status ON artefact_shape.artefact_id = artefact_status.artefact_id
+	JOIN artefact_status_owner ON artefact_status_owner.edition_id = @EditionId
+    	AND artefact_status_owner.artefact_status_id = artefact_status.artefact_status_id
+    JOIN work_status ON artefact_status.work_status_id = work_status.work_status_id
+	JOIN SQE_image USING(sqe_image_id)
+	JOIN image_catalog USING(image_catalog_id)
 
 WHERE edition.edition_id = @EditionId
-   AND (
-        (artefact_position_owner.edition_id IS NULL AND artefact_position.transform_matrix IS NULL) OR
-        (artefact_position_owner.edition_id IS NOT NULL AND artefact_position.transform_matrix IS NOT NULL)
-   ) 
   AND $Restriction
 $Order";
 

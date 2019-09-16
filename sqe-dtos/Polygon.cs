@@ -4,7 +4,10 @@
 	{
 		public string mask { get; set; }
 		public uint maskEditorId { get; set; }
-		public string transformMatrix { get; set; } //CAN BE NULL
-		public uint transformMatrixEditorId { get; set; }
+		public float? scale { get; set; } // Can be null
+		public float? rotate { get; set; } // Can be null
+		public uint? translateX { get; set; } // Can be null
+		public uint? translateY { get; set; } // Can be null
+		public uint positionEditorId { get; set; }
 	}
 }

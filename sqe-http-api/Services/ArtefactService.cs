@@ -21,19 +21,12 @@ namespace SQE.SqeHttpApi.Server.Services
 			bool withMask = false);
 
 		Task<ArtefactDTO> UpdateArtefactAsync(EditionUserInfo editionUser,
-			uint editionId,
 			uint artefactId,
-			string mask = null,
-			string name = null,
-			string position = null,
+			UpdateArtefactDTO updateArtefact,
 			string clientId = null);
 
 		Task<ArtefactDTO> CreateArtefactAsync(EditionUserInfo editionUser,
-			uint editionId,
-			uint masterImageId,
-			string mask = null,
-			string name = null,
-			string position = null,
+			CreateArtefactDTO createArtefact,
 			string clientId = null);
 
 		Task<NoContentResult> DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId, string clientId = null);
@@ -93,41 +86,29 @@ namespace SQE.SqeHttpApi.Server.Services
 		}
 
 		public async Task<ArtefactDTO> UpdateArtefactAsync(EditionUserInfo editionUser,
-			uint editionId,
 			uint artefactId,
-			string mask = null,
-			string name = null,
-			string position = null,
+			UpdateArtefactDTO updateArtefact,
 			string clientId = null)
 		{
 			var withMask = false;
 			var resultList = new List<AlteredRecord>();
-			if (editionUser.userId.HasValue)
+			if (!string.IsNullOrEmpty(updateArtefact.mask))
 			{
-				if (!string.IsNullOrEmpty(mask))
-				{
-					// UpdateArtefactShapeAsync will inform us if the WKT mask is in an invalid format
-					resultList.AddRange(
-						await _artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, mask)
-					);
-					withMask = true;
-				}
-
-				if (!string.IsNullOrEmpty(name))
-					resultList.AddRange(
-						await _artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, name)
-					);
-
-				if (!string.IsNullOrEmpty(position)
-				) // TODO: we should allow for null here, which would mean we need to delete the position from the edition
-				{
-					if (!GeometryValidation.ValidateTransformMatrix(position))
-						throw new StandardErrors.ImproperInputData("artefact position");
-					resultList.AddRange(
-						await _artefactRepository.UpdateArtefactPositionAsync(editionUser, artefactId, position)
-					);
-				}
+				// UpdateArtefactShapeAsync will inform us if the WKT mask is in an invalid format
+				resultList.AddRange(
+					await _artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, updateArtefact.mask)
+				);
+				withMask = true;
 			}
+
+			if (!string.IsNullOrEmpty(updateArtefact.name))
+				resultList.AddRange(
+					await _artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, updateArtefact.name)
+				);
+
+			resultList.AddRange(
+				await _artefactRepository.UpdateArtefactPositionAsync(editionUser, artefactId, updateArtefact.scale, updateArtefact.rotate, updateArtefact.translateX, updateArtefact.translateY)
+			);
 
 			var updatedArtefact = await GetEditionArtefactAsync(
 				editionUser,
@@ -139,36 +120,32 @@ namespace SQE.SqeHttpApi.Server.Services
 		}
 
 		public async Task<ArtefactDTO> CreateArtefactAsync(EditionUserInfo editionUser,
-			uint editionId,
-			uint masterImageId,
-			string mask = null,
-			string name = null,
-			string position = null,
+			CreateArtefactDTO createArtefact,
 			string clientId = null)
 		{
 			uint newArtefactId = 0;
 			if (editionUser.userId.HasValue)
 			{
-				if (!string.IsNullOrEmpty(position)
-					&& !GeometryValidation.ValidateTransformMatrix(position))
-					throw new StandardErrors.ImproperInputData("artefact position");
 				newArtefactId = await _artefactRepository.CreateNewArtefactAsync(
 					editionUser,
-					editionId,
-					masterImageId,
-					mask,
-					name,
-					position
+					createArtefact.masterImageId,
+					createArtefact.mask,
+					createArtefact.name,
+					createArtefact.scale,
+					createArtefact.rotate,
+					createArtefact.translateX,
+					createArtefact.translateY,
+					createArtefact.statusMessage
 				);
 			}
 
-			var optional = mask != null ? new List<string> { "masks" } : new List<string>();
+			var optional = createArtefact.mask != null ? new List<string> { "masks" } : new List<string>();
 
-			var newArtefact = newArtefactId != 0
+			var createArtefactnewArtefact = newArtefactId != 0
 				? await GetEditionArtefactAsync(editionUser, newArtefactId, optional)
 				: null;
 
-			return newArtefact;
+			return createArtefactnewArtefact;
 		}
 
 		public async Task<NoContentResult> DeleteArtefactAsync(EditionUserInfo editionUser,
