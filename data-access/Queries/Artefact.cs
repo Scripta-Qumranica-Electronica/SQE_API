@@ -36,13 +36,14 @@ FROM edition
 	LEFT JOIN artefact_position_owner ON artefact_position_owner.edition_id = @EditionId
 	LEFT JOIN artefact_position ON artefact_position.artefact_id = artefact_shape.artefact_id
 	    AND artefact_position.artefact_position_id = artefact_position_owner.artefact_position_id
+	LEFT JOIN artefact_status_owner ON artefact_status_owner.edition_id = @EditionId
+    LEFT JOIN artefact_status ON artefact_status_owner.artefact_status_id = artefact_status.artefact_status_id
+    	AND artefact_shape.artefact_id = artefact_status.artefact_id
+    LEFT JOIN work_status ON artefact_status.work_status_id = work_status.work_status_id
 	JOIN artefact_data ON artefact_data.artefact_id = artefact_shape.artefact_id
 	JOIN artefact_data_owner ON artefact_data.artefact_data_id = artefact_data_owner.artefact_data_id
 	    AND edition.edition_id = artefact_data_owner.edition_id
-	JOIN artefact_status ON artefact_shape.artefact_id = artefact_status.artefact_id
-	JOIN artefact_status_owner ON artefact_status_owner.edition_id = @EditionId
-    	AND artefact_status_owner.artefact_status_id = artefact_status.artefact_status_id
-    JOIN work_status ON artefact_status.work_status_id = work_status.work_status_id
+	
 	JOIN SQE_image USING(sqe_image_id)
 	JOIN image_catalog USING(image_catalog_id)
 

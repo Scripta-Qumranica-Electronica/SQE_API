@@ -156,19 +156,19 @@ namespace SQE.SqeHttpApi.DataAccess
 			string workStatus)
 		{
 			const string tableName = "artefact_status";
-			var artefactShapeId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
-			if (artefactShapeId == 0)
+			var artefactStatusId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
+			if (artefactStatusId == 0)
 				throw new StandardErrors.DataNotFound("artefact status", artefactId, "artefact_id");
-			var workStatusId = string.IsNullOrEmpty(workStatus) ? (uint?)null : await SetWorkStatusAsync(workStatus);
 
 			var artefactChangeParams = new DynamicParameters();
 			artefactChangeParams.Add("@artefact_id", artefactId);
-			artefactChangeParams.Add("@work_status_id", workStatusId);
+			if (!string.IsNullOrEmpty(workStatus))
+				artefactChangeParams.Add("@work_status_id", await SetWorkStatusAsync(workStatus));
 			var artefactChangeRequest = new MutationRequest(
 				MutateType.Update,
 				artefactChangeParams,
 				tableName,
-				artefactShapeId
+				artefactStatusId
 			);
 
 			return await WriteArtefactAsync(editionUser, artefactChangeRequest);
@@ -341,11 +341,10 @@ namespace SQE.SqeHttpApi.DataAccess
 			uint artefactId,
 			string workStatus)
 		{
-			var workStatusId = string.IsNullOrEmpty(workStatus) ? (uint?)null : await SetWorkStatusAsync(workStatus);
-
 			var artefactChangeParams = new DynamicParameters();
 			artefactChangeParams.Add("@artefact_id", artefactId);
-			artefactChangeParams.Add("@work_status_id", workStatusId);
+			if (!string.IsNullOrEmpty(workStatus))
+				artefactChangeParams.Add("@work_status_id", await SetWorkStatusAsync(workStatus));
 			var artefactChangeRequest = new MutationRequest(
 				MutateType.Create,
 				artefactChangeParams,
@@ -479,10 +478,10 @@ namespace SQE.SqeHttpApi.DataAccess
 		private async Task<uint?> SetWorkStatusAsync(string workStatus)
 		{
 			if (string.IsNullOrEmpty(workStatus))
-				return null;
+				return 1;
 			using (var connection = OpenConnection())
 			{
-				var setStatus = await connection.ExecuteAsync(
+				await connection.ExecuteAsync(
 					SetWorkStatus.GetQuery,
 					new { WorkStatus = workStatus }
 				);
