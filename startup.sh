@@ -22,6 +22,10 @@ declare -A SETTINGS=(
     
     ## Secret for API JWT generation
     [Secret]=${SQE_API_SECRET}
+    
+    ## Logging debug mode
+    [MinimumLevel]=${API_LOGLEVEL}
+    [Microsoft]=${DOTNET_LOGLEVEL}
 )
 
 ## Iterate over each setting and update appsettings.json if the environment variable has a value

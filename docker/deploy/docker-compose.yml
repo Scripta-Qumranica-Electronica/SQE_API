@@ -53,6 +53,9 @@ services:
               
             ## Secret string for API JWT generation (the API will error if this is too short)
             - SQE_API_SECRET=kjdsavc987342r8gnx%%6bq1@@lknsdciqeurhfwiurbcea-+++
+              
+            - API_LOGLEVEL=Information
+            - DOTNET_LOGLEVEL=Warning
         depends_on:
             - sqe-database
         networks:
