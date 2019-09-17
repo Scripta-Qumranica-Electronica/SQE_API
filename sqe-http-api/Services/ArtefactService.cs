@@ -102,16 +102,20 @@ namespace SQE.SqeHttpApi.Server.Services
 			if (!string.IsNullOrEmpty(updateArtefact.name))
 				tasks.Add(_artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, updateArtefact.name));
 
-			tasks.Add(_artefactRepository.UpdateArtefactPositionAsync(
-				editionUser,
-				artefactId,
-				updateArtefact.scale,
-				updateArtefact.rotate,
-				updateArtefact.translateX,
-				updateArtefact.translateY
-			));
+			tasks.Add(
+				_artefactRepository.UpdateArtefactPositionAsync(
+					editionUser,
+					artefactId,
+					updateArtefact.scale,
+					updateArtefact.rotate,
+					updateArtefact.translateX,
+					updateArtefact.translateY
+				)
+			);
 
-			tasks.Add(_artefactRepository.UpdateArtefactStatusAsync(editionUser, artefactId, updateArtefact.statusMessage));
+			tasks.Add(
+				_artefactRepository.UpdateArtefactStatusAsync(editionUser, artefactId, updateArtefact.statusMessage)
+			);
 
 			await Task.WhenAll(tasks);
 			var updatedArtefact = await GetEditionArtefactAsync(
@@ -129,7 +133,6 @@ namespace SQE.SqeHttpApi.Server.Services
 		{
 			uint newArtefactId = 0;
 			if (editionUser.userId.HasValue)
-			{
 				newArtefactId = await _artefactRepository.CreateNewArtefactAsync(
 					editionUser,
 					createArtefact.masterImageId,
@@ -141,7 +144,6 @@ namespace SQE.SqeHttpApi.Server.Services
 					createArtefact.translateY,
 					createArtefact.statusMessage
 				);
-			}
 
 			var optional = createArtefact.mask != null ? new List<string> { "masks" } : new List<string>();
 
