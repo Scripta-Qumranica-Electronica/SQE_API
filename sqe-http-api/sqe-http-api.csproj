@@ -4,14 +4,14 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <RootNamespace>SQE.SqeHttpApi.Server</RootNamespace>
+    <RootNamespace>SQE.API.HTTP</RootNamespace>
     <Configurations>Debug;Release</Configurations>
     <Platforms>AnyCPU</Platforms>
+    <AssemblyName>http-server</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EmailValidation" Version="1.0.3" />
-    <PackageReference Include="MailKit" Version="2.1.4" />
+    <PackageReference Include="MailKit" Version="2.3.1.6" />
     <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\data-access\data-access.csproj" />
     <ProjectReference Include="..\sqe-dtos\sqe-dtos.csproj" />
+  	<ProjectReference Include="..\sqe-api-services\sqe-api-services.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +39,13 @@
 
   <ItemGroup>
     <Folder Include="logs" />
+    <Folder Include="Services" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.Extensions.Configuration.Abstractions, Version=2.2.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60">
+      <HintPath>..\..\..\..\usr\local\share\dotnet\sdk\NuGetFallbackFolder\microsoft.extensions.configuration.abstractions\2.2.0\lib\netstandard2.0\Microsoft.Extensions.Configuration.Abstractions.dll</HintPath>
+    </Reference>
   </ItemGroup>
     
   <PropertyGroup>

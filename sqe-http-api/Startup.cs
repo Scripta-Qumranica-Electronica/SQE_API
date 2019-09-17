@@ -17,13 +17,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using SQE.SqeHttpApi.DataAccess;
-using SQE.SqeHttpApi.DataAccess.Helpers;
-using SQE.SqeHttpApi.Server.Helpers;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.API.DATA;
+using SQE.API.DATA.Helpers;
+using SQE.API.HTTP.Helpers;
+using SQE.API.SERVICES;
+using SQE.API.SERVICES.Helpers;
 using Swashbuckle.AspNetCore.Swagger;
 
-namespace SQE.SqeHttpApi.Server
+namespace SQE.API.HTTP
 {
 	public class Startup
 	{

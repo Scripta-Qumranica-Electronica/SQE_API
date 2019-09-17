@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SQE.SqeHttpApi.DataAccess.Queries
+namespace SQE.API.DATA.Queries
 {
 	internal class EditionGroupQuery
 	{

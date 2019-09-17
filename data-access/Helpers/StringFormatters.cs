@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace SQE.SqeHttpApi.DataAccess.Helpers
+namespace SQE.API.DATA.Helpers
 {
 	public class StringFormatters
 	{

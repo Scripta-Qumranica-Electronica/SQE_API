@@ -2,9 +2,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
-using SQE.SqeHttpApi.DataAccess.Helpers;
+using SQE.API.DATA.Helpers;
 
-namespace SQE.SqeHttpApi.Server.Helpers
+namespace SQE.API.HTTP.Helpers
 {
 	public static class ApplicationBuilderExtensions
 	{

@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using SQE.SqeHttpApi.DataAccess.Models;
+using SQE.API.DATA.Models;
 
-namespace SQE.SqeHttpApi.Server.Helpers
+namespace SQE.API.SERVICES.Helpers
 {
 	public static class GeometryValidation
 	{

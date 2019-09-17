@@ -1,6 +1,6 @@
 using System.Net.Http;
 using System.Threading.Tasks;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.API.DTO;
 using Xunit;
 
 namespace SQE.ApiTest.Helpers

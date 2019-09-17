@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.DataAccess.Queries;
+using SQE.API.DATA.Models;
+using SQE.API.DATA.Queries;
 
-namespace SQE.SqeHttpApi.DataAccess.Helpers
+namespace SQE.API.DATA.Helpers
 {
 	/// <summary>
 	///     This enum sets a mutation request to one of the three types.
@@ -27,7 +27,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 	public class MutationRequest
 	{
 		/// <summary>
-		///     Initializes a new instance of the <see cref="T:SQE.SqeHttpApi.DataAccess.Helpers.MutationRequest" /> class.
+		///     Initializes a new instance of the <see cref="T:SQE.API.DATA.Helpers.MutationRequest" /> class.
 		/// </summary>
 		/// <param name="action">
 		///     Set the mutate to Create, Update, or Delete.
@@ -104,7 +104,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 	public class AlteredRecord
 	{
 		/// <summary>
-		///     Initializes a new instance of the <see cref="T:SQE.SqeHttpApi.DataAccess.Helpers.AlteredRecord" /> class.
+		///     Initializes a new instance of the <see cref="T:SQE.API.DATA.Helpers.AlteredRecord" /> class.
 		/// </summary>
 		/// <param name="tableName">Name of the table that was altered.</param>
 		/// <param name="oldId">Id of the record that was altered. Only present with update/delete.</param>

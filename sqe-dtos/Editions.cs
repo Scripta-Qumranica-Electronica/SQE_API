@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SQE.SqeHttpApi.Server.DTOs
+namespace SQE.API.DTO
 {
 	// TODO: get rid of owner and instead provide a list of editors (don't give the email addresses)
 	public class EditionDTO

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using SQE.SqeHttpApi.DataAccess.Helpers;
+using SQE.API.DATA.Helpers;
 
-namespace SQE.SqeHttpApi.DataAccess.Models
+namespace SQE.API.DATA.Models
 {
 	public class TransformMatrix
 	{

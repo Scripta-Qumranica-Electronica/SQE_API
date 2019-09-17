@@ -4,9 +4,10 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
+using SQE.API;
+using SQE.API.DTO;
+using SQE.API.HTTP;
 using SQE.ApiTest.Helpers;
-using SQE.SqeHttpApi.Server;
-using SQE.SqeHttpApi.Server.DTOs;
 using Xunit;
 
 // TODO: It would be nice to be able to generate random polygons for these testing purposes.

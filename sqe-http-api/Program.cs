@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
-namespace SQE.SqeHttpApi.Server
+namespace SQE.API.HTTP
 {
 	public static class Program
 	{

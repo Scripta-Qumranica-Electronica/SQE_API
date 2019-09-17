@@ -8,9 +8,9 @@ using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Polly;
 using Serilog;
-using SQE.SqeHttpApi.DataAccess;
+using SQE.API.DATA;
 
-namespace SQE.SqeHttpApi.Server.Helpers
+namespace SQE.API.HTTP.Helpers
 {
 	public static class StartupChecks
 	{

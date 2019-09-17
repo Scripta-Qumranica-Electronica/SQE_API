@@ -1,4 +1,4 @@
-﻿namespace SQE.SqeHttpApi.Server.Helpers
+﻿namespace SQE.API.SERVICES.Helpers
 {
 	public class AppSettings
 	{

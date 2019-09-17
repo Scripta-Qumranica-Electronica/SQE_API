@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SQE.SqeHttpApi.DataAccess;
-using SQE.SqeHttpApi.DataAccess.Helpers;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.API.DATA;
+using SQE.API.DATA.Helpers;
+using SQE.API.DATA.Models;
+using SQE.API.DTO;
 
-namespace SQE.SqeHttpApi.Server.Services
+namespace SQE.API.SERVICES
 {
 	public interface ITextService
 	{

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SQE.SqeHttpApi.DataAccess.Queries
+namespace SQE.API.DATA.Queries
 {
 	public class AuthorshipQueries
 	{

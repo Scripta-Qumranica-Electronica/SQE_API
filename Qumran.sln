@@ -35,6 +35,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs", "Utilities\GenerateTypescriptDTOs\GenerateTypescriptDTOs.csproj", "{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-api-services", "sqe-api-services\sqe-api-services.csproj", "{530870C1-B271-41D3-8D40-976B47DBC217}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{530870C1-B271-41D3-8D40-976B47DBC217}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{530870C1-B271-41D3-8D40-976B47DBC217}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{530870C1-B271-41D3-8D40-976B47DBC217}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{530870C1-B271-41D3-8D40-976B47DBC217}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

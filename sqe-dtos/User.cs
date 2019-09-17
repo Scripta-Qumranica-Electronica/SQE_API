@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SQE.SqeHttpApi.Server.DTOs
+namespace SQE.API.DTO
 {
 	#region Request DTO's
 

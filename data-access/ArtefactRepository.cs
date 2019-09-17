@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
-using SQE.SqeHttpApi.DataAccess.Helpers;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.DataAccess.Queries;
+using SQE.API.DATA.Helpers;
+using SQE.API.DATA.Models;
+using SQE.API.DATA.Queries;
 
-namespace SQE.SqeHttpApi.DataAccess
+namespace SQE.API.DATA
 {
 	public interface IArtefactRepository
 	{

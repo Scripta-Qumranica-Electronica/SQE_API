@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.API.DATA.Models;
+using SQE.API.DTO;
 
-namespace SQE.SqeHttpApi.Server.Helpers
+namespace SQE.API.SERVICES.Helpers
 {
 	public static class ArtefactDTOTransformer
 	{

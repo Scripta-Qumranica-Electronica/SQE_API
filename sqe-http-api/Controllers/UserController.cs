@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.Server.Services;
+using SQE.API.DTO;
+using SQE.API.SERVICES;
 
-namespace SQE.SqeApi.Server.Controllers
+namespace SQE.API.HTTP.Controllers
 {
 	[Authorize]
 	[ApiController]

@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
-using SQE.SqeHttpApi.DataAccess.Helpers;
+using SQE.API.DATA.Helpers;
 
-namespace SQE.SqeHttpApi.Server.Helpers
+namespace SQE.API.SERVICES.Helpers
 {
 	public class EmailSender : IEmailSender
 	{

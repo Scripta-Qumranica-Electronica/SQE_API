@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SQE.SqeHttpApi.Server.DTOs
+namespace SQE.API.DTO
 {
 	public class ImageStackDTO
 	{

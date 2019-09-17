@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using SQE.SqeHttpApi.Server.DTOs;
+using SQE.API.DTO;
 
 namespace SQE.ApiTest.Helpers
 {

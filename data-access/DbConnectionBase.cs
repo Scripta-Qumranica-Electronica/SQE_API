@@ -9,7 +9,7 @@ using MySql.Data.MySqlClient;
 using Polly;
 using Serilog;
 
-namespace SQE.SqeHttpApi.DataAccess
+namespace SQE.API.DATA
 {
 	public class DbConnectionBase
 	{

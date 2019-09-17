@@ -10,13 +10,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using SQE.SqeHttpApi.DataAccess;
-using SQE.SqeHttpApi.DataAccess.Helpers;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.Server.DTOs;
-using SQE.SqeHttpApi.Server.Helpers;
+using SQE.API.DATA;
+using SQE.API.DATA.Helpers;
+using SQE.API.DATA.Models;
+using SQE.API.DTO;
+using SQE.API.SERVICES.Helpers;
 
-namespace SQE.SqeHttpApi.Server.Services
+namespace SQE.API.SERVICES
 {
 	public interface IUserService
 	{

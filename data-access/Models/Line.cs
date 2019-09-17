@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SQE.SqeHttpApi.DataAccess.Models
+namespace SQE.API.DATA.Models
 {
 	public class Line
 	{

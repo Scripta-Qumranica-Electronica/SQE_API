@@ -1,8 +1,8 @@
 using System;
 using System.Net;
-using SQE.SqeHttpApi.DataAccess.Models;
+using SQE.API.DATA.Models;
 
-namespace SQE.SqeHttpApi.DataAccess.Helpers
+namespace SQE.API.DATA.Helpers
 {
 	#region Exception Base Class 
 

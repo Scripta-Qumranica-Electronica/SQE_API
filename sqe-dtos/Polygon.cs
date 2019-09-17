@@ -1,4 +1,4 @@
-﻿namespace SQE.SqeHttpApi.Server.DTOs
+﻿namespace SQE.API.DTO
 {
 	public class PolygonDTO
 	{
