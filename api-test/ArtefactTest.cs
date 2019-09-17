@@ -127,8 +127,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				translateX = newTranslateX,
 				translateY = newTranslateY,
 				name = newName,
-				masterImageId = masterImageId
+				masterImageId = masterImageId,
+				statusMessage = null
 			};
+			const string defaultStatusMessage = "New";
 
 			// Act
 			var (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(
@@ -148,6 +150,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(newTranslateX, writtenArtefact.mask.translateX);
 			Assert.Equal(newTranslateY, writtenArtefact.mask.translateY);
 			Assert.Equal(newArtefact.name, writtenArtefact.name);
+			Assert.Equal(newArtefact.name, writtenArtefact.statusMessage);
 
 			// Cleanup
 			await DeleteArtefact(newEdition, writtenArtefact.id);

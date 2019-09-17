@@ -7,3 +7,5 @@
 */bin
 */obj
 **/.toolstarget
+docker/deploy/logs
+sqe-http-api/logs
