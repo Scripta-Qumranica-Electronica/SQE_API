@@ -150,7 +150,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(newTranslateX, writtenArtefact.mask.translateX);
 			Assert.Equal(newTranslateY, writtenArtefact.mask.translateY);
 			Assert.Equal(newArtefact.name, writtenArtefact.name);
-			Assert.Equal(newArtefact.name, writtenArtefact.statusMessage);
+			Assert.Equal(defaultStatusMessage, writtenArtefact.statusMessage);
 
 			// Cleanup
 			await DeleteArtefact(newEdition, writtenArtefact.id);
@@ -411,8 +411,9 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
+			const string statusMessage = "Fully examined";
 
-			// Act (update name)
+			// Act (update name and set status)
 			var (nameResponse, updatedNameArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
 				_client,
 				HttpMethod.Put,
@@ -424,12 +425,13 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 					rotate = null,
 					translateX = null,
 					translateY = null,
-					name = newArtefactName
+					name = newArtefactName,
+					statusMessage = statusMessage,
 				},
 				await HttpRequest.GetJWTAsync(_client)
 			);
 
-			// Assert (update name)
+			// Assert (update name and set status)
 			nameResponse.EnsureSuccessStatusCode();
 			Assert.Equal(artefact.mask.scale, updatedNameArtefact.mask.scale);
 			Assert.Equal(artefact.mask.rotate, updatedNameArtefact.mask.rotate);
@@ -437,6 +439,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(artefact.mask.translateY, updatedNameArtefact.mask.translateY);
 			Assert.NotEqual(artefact.name, updatedNameArtefact.name);
 			Assert.Equal(newArtefactName, updatedNameArtefact.name);
+			Assert.Equal(statusMessage, updatedNameArtefact.statusMessage);
 
 			// Act (update position)
 			var (positionResponse, updatedPositionArtefact) =

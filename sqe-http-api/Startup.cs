@@ -62,7 +62,7 @@ namespace SQE.SqeHttpApi.Server
 			services.AddTransient<IDatabaseWriter, DatabaseWriter>();
 			services.AddTransient<ITextRepository, TextRepository>();
 			services.AddTransient<IRoiRepository, RoiRepository>();
-			
+
 			services.AddResponseCompression();
 			services.Configure<BrotliCompressionProviderOptions>(options =>
 			{

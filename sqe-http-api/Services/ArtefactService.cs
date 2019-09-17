@@ -91,25 +91,29 @@ namespace SQE.SqeHttpApi.Server.Services
 			string clientId = null)
 		{
 			var withMask = false;
-			var resultList = new List<AlteredRecord>();
+			var tasks = new List<Task<List<AlteredRecord>>>();
 			if (!string.IsNullOrEmpty(updateArtefact.mask))
 			{
 				// UpdateArtefactShapeAsync will inform us if the WKT mask is in an invalid format
-				resultList.AddRange(
-					await _artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, updateArtefact.mask)
-				);
+				tasks.Add(_artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, updateArtefact.mask));
 				withMask = true;
 			}
 
 			if (!string.IsNullOrEmpty(updateArtefact.name))
-				resultList.AddRange(
-					await _artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, updateArtefact.name)
-				);
+				tasks.Add(_artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, updateArtefact.name));
 
-			resultList.AddRange(
-				await _artefactRepository.UpdateArtefactPositionAsync(editionUser, artefactId, updateArtefact.scale, updateArtefact.rotate, updateArtefact.translateX, updateArtefact.translateY)
-			);
+			tasks.Add(_artefactRepository.UpdateArtefactPositionAsync(
+				editionUser,
+				artefactId,
+				updateArtefact.scale,
+				updateArtefact.rotate,
+				updateArtefact.translateX,
+				updateArtefact.translateY
+			));
 
+			tasks.Add(_artefactRepository.UpdateArtefactStatusAsync(editionUser, artefactId, updateArtefact.statusMessage));
+
+			await Task.WhenAll(tasks);
 			var updatedArtefact = await GetEditionArtefactAsync(
 				editionUser,
 				artefactId,

@@ -158,7 +158,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			const string tableName = "artefact_status";
 			var artefactStatusId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
 			if (artefactStatusId == 0)
-				throw new StandardErrors.DataNotFound("artefact status", artefactId, "artefact_id");
+				return await InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
 
 			var artefactChangeParams = new DynamicParameters();
 			artefactChangeParams.Add("@artefact_id", artefactId);
@@ -478,7 +478,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		private async Task<uint?> SetWorkStatusAsync(string workStatus)
 		{
 			if (string.IsNullOrEmpty(workStatus))
-				return 1;
+				return null;
 			using (var connection = OpenConnection())
 			{
 				await connection.ExecuteAsync(
