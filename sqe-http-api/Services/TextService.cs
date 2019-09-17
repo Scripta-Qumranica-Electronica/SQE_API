@@ -151,6 +151,7 @@ namespace SQE.SqeHttpApi.Server.Services
 																		{
 																			interpretationRoiId =
 																				b.SignInterpretationRoiId,
+																			signInterpretationId = b.SignInterpretationId,
 																			editorId = b.SignInterpretationRoiAuthor,
 																			artefactId = b.ArtefactId,
 																			shape = b.Shape,
@@ -239,6 +240,7 @@ namespace SQE.SqeHttpApi.Server.Services
 												b => new InterpretationRoiDTO
 												{
 													interpretationRoiId = b.SignInterpretationRoiId,
+													signInterpretationId = b.SignInterpretationId,
 													editorId = b.SignInterpretationRoiAuthor,
 													artefactId = b.ArtefactId,
 													shape = b.Shape,

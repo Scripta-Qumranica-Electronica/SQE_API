@@ -158,6 +158,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			NextSignInterpretation lastNextSignInterpretation = null;
 			SignInterpretation lastChar = null;
 			CharAttribute lastCharAttribute = null;
+			SignInterpretationROI lastInterpretationRoi = null;
 
 
 			using (var connection = OpenConnection())
@@ -223,8 +224,11 @@ namespace SQE.SqeHttpApi.DataAccess
 						lastCharAttribute = charAttribute;
 						lastChar.attributes.Add(charAttribute);
 
-						if (roi != null)
+						if (roi != null && roi.SignInterpretationRoiId != lastInterpretationRoi?.SignInterpretationRoiId)
+						{
+							lastInterpretationRoi = roi;
 							lastChar.signInterpretationRois.Add(roi);
+						}
 
 						return newScroll ? manuscript : null;
 					},
