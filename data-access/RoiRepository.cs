@@ -37,7 +37,7 @@ namespace SQE.API.DATA
 		}
 
 		/// <summary>
-		/// Creates a sign interpretation roi from a list.
+		///     Creates a sign interpretation roi from a list.
 		/// </summary>
 		/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
 		/// <param name="newRois">List of rois to be added to the system.</param>
@@ -45,26 +45,31 @@ namespace SQE.API.DATA
 		public async Task<List<SignInterpretationROI>> CreateRoisAsync(EditionUserInfo editionUser,
 			List<SetSignInterpretationROI> newRois)
 		{
-			return (await Task.WhenAll(newRois.Select(
-				async (x) =>
-				{
-					var roiShapeId = CreateRoiShapeAsync(x.Shape);
-					var roiPositionId = CreateRoiPositionAsync(x.ArtefactId, x.Position);
-					var signInterpretationRoiId = await CreateSignInterpretationRoiAsync(
-						editionUser,
-						x.SignInterpretationId,
-						await roiShapeId,
-						await roiPositionId,
-						x.ValuesSet,
-						x.Exceptional
-					);
-					return (SignInterpretationROI)(await GetSignInterpretationRoiByIdAsync(editionUser, signInterpretationRoiId));
-				}
-			))).ToList();
+			return (await Task.WhenAll(
+				newRois.Select(
+					async x =>
+					{
+						var roiShapeId = CreateRoiShapeAsync(x.Shape);
+						var roiPositionId = CreateRoiPositionAsync(x.ArtefactId, x.Position);
+						var signInterpretationRoiId = await CreateSignInterpretationRoiAsync(
+							editionUser,
+							x.SignInterpretationId,
+							await roiShapeId,
+							await roiPositionId,
+							x.ValuesSet,
+							x.Exceptional
+						);
+						return (SignInterpretationROI)await GetSignInterpretationRoiByIdAsync(
+							editionUser,
+							signInterpretationRoiId
+						);
+					}
+				)
+			)).ToList();
 		}
 
 		/// <summary>
-		/// Updates each sign interpretation roi in a list.
+		///     Updates each sign interpretation roi in a list.
 		/// </summary>
 		/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
 		/// <param name="updateRois">List of rois to be added to the system.</param>
@@ -72,67 +77,67 @@ namespace SQE.API.DATA
 		public async Task<List<UpdatedSignInterpretationROI>> UpdateRoisAsync(EditionUserInfo editionUser,
 			List<SignInterpretationROI> updateRois)
 		{
-			return (await Task.WhenAll(updateRois.Select(
-				async (x) =>
-				{
-					var originalSignRoiInterpretation =
-						await GetSignInterpretationRoiByIdAsync(editionUser, x.SignInterpretationRoiId);
-
-					// TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
-					var roiShapeId = originalSignRoiInterpretation.Shape == x.Shape
-						? originalSignRoiInterpretation.RoiShapeId
-						: await CreateRoiShapeAsync(x.Shape);
-
-					// TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
-					var roiPositionId = originalSignRoiInterpretation.Position == x.Position
-						? originalSignRoiInterpretation.RoiPositionId
-						: await CreateRoiPositionAsync(x.ArtefactId, x.Position);
-
-					var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
-						editionUser,
-						x.SignInterpretationId,
-						roiShapeId,
-						roiPositionId,
-						x.ValuesSet,
-						x.Exceptional,
-						x.SignInterpretationRoiId
-					);
-					if (!signInterpretationRoiUpdate.NewId.HasValue || !signInterpretationRoiUpdate.OldId.HasValue)
-						throw new StandardErrors.DataNotWritten("update sign inter");
-
-					var updatedRoi =
-						(SignInterpretationROI)(await GetSignInterpretationRoiByIdAsync(
-							editionUser,
-							signInterpretationRoiUpdate.NewId.Value
-						));
-					return new UpdatedSignInterpretationROI()
+			return (await Task.WhenAll(
+				updateRois.Select(
+					async x =>
 					{
-						ArtefactId = updatedRoi.ArtefactId,
-						Exceptional = updatedRoi.Exceptional,
-						OldSignInterpretationRoiId = signInterpretationRoiUpdate.OldId.Value,
-						Position = updatedRoi.Position,
-						Shape = updatedRoi.Shape,
-						SignInterpretationId = updatedRoi.SignInterpretationId,
-						SignInterpretationRoiAuthor = updatedRoi.SignInterpretationRoiAuthor,
-						SignInterpretationRoiId = updatedRoi.SignInterpretationRoiId,
-						ValuesSet = updatedRoi.ValuesSet,
-					};
-				}
-			))).ToList();
+						var originalSignRoiInterpretation =
+							await GetSignInterpretationRoiByIdAsync(editionUser, x.SignInterpretationRoiId);
+
+						// TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
+						var roiShapeId = originalSignRoiInterpretation.Shape == x.Shape
+							? originalSignRoiInterpretation.RoiShapeId
+							: await CreateRoiShapeAsync(x.Shape);
+
+						// TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
+						var roiPositionId = originalSignRoiInterpretation.Position == x.Position
+							? originalSignRoiInterpretation.RoiPositionId
+							: await CreateRoiPositionAsync(x.ArtefactId, x.Position);
+
+						var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
+							editionUser,
+							x.SignInterpretationId,
+							roiShapeId,
+							roiPositionId,
+							x.ValuesSet,
+							x.Exceptional,
+							x.SignInterpretationRoiId
+						);
+						if (!signInterpretationRoiUpdate.NewId.HasValue
+							|| !signInterpretationRoiUpdate.OldId.HasValue)
+							throw new StandardErrors.DataNotWritten("update sign inter");
+
+						var updatedRoi =
+							(SignInterpretationROI)await GetSignInterpretationRoiByIdAsync(
+								editionUser,
+								signInterpretationRoiUpdate.NewId.Value
+							);
+						return new UpdatedSignInterpretationROI
+						{
+							ArtefactId = updatedRoi.ArtefactId,
+							Exceptional = updatedRoi.Exceptional,
+							OldSignInterpretationRoiId = signInterpretationRoiUpdate.OldId.Value,
+							Position = updatedRoi.Position,
+							Shape = updatedRoi.Shape,
+							SignInterpretationId = updatedRoi.SignInterpretationId,
+							SignInterpretationRoiAuthor = updatedRoi.SignInterpretationRoiAuthor,
+							SignInterpretationRoiId = updatedRoi.SignInterpretationRoiId,
+							ValuesSet = updatedRoi.ValuesSet
+						};
+					}
+				)
+			)).ToList();
 		}
 
 		/// <summary>
-		/// Deletes the ROI's with the submitted roiIds from the edition
+		///     Deletes the ROI's with the submitted roiIds from the edition
 		/// </summary>
 		/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
 		/// <param name="deleteRoiIds">ROI ID's to be deleted'</param>
 		/// <returns></returns>
 		public async Task DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds)
 		{
-			foreach (var deleteRoiId in deleteRoiIds)
-			{
-				await DeleteSignInterpretationRoiAsync(editionUser, deleteRoiId);
-			}
+			foreach (var deleteRoiId in deleteRoiIds) await DeleteSignInterpretationRoiAsync(editionUser, deleteRoiId);
 		}
 
 		public async Task<DetailedSignInterpretationROI> GetSignInterpretationRoiByIdAsync(EditionUserInfo editionUser,
@@ -146,7 +151,8 @@ namespace SQE.API.DATA
 					{
 						editionUser.EditionId,
 						SignInterpretationRoiId = signInterpretationRoiId
-					})).ToList();
+					}
+				)).ToList();
 
 				if (result.Count != 1)
 					throw new StandardErrors.DataNotFound("sign interpretation roi", signInterpretationRoiId);
@@ -154,7 +160,8 @@ namespace SQE.API.DATA
 			}
 		}
 
-		public async Task<List<DetailedSignInterpretationROI>> GetSignInterpretationRoisByArtefactIdAsync(EditionUserInfo editionUser,
+		public async Task<List<DetailedSignInterpretationROI>> GetSignInterpretationRoisByArtefactIdAsync(
+			EditionUserInfo editionUser,
 			uint artefactId)
 		{
 			using (var connection = OpenConnection())
@@ -165,7 +172,8 @@ namespace SQE.API.DATA
 					{
 						editionUser.EditionId,
 						ArtefactId = artefactId
-					})).ToList();
+					}
+				)).ToList();
 			}
 		}
 
@@ -235,7 +243,8 @@ namespace SQE.API.DATA
 				new List<MutationRequest> { signInterpretationRoiRequest }
 			);
 
-			if (writeResults.Count != 1 || !writeResults.First().NewId.HasValue)
+			if (writeResults.Count != 1
+				|| !writeResults.First().NewId.HasValue)
 				throw new StandardErrors.DataNotWritten("create sign interpretation roi");
 			return writeResults.First().NewId.Value;
 		}
@@ -267,7 +276,8 @@ namespace SQE.API.DATA
 				new List<MutationRequest> { signInterpretationRoiRequest }
 			);
 
-			if (writeResults.Count != 1 || !writeResults.First().NewId.HasValue)
+			if (writeResults.Count != 1
+				|| !writeResults.First().NewId.HasValue)
 				throw new StandardErrors.DataNotWritten("update sign interpretation roi");
 			return writeResults.First();
 		}
@@ -289,7 +299,6 @@ namespace SQE.API.DATA
 			if (writeResults.Count != 1)
 				throw new StandardErrors.DataNotWritten("delete sign interpretation roi");
 		}
-
 
 		#endregion Private methods
 	}

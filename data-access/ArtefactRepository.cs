@@ -206,7 +206,14 @@ namespace SQE.API.DATA
 			// It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
 			// If no artefact_position already exists we need to create a new entry here.
 			if (artefactPositionId == 0)
-				return await InsertArtefactPositionAsync(editionUser, artefactId, scale, rotate, translateX, translateY);
+				return await InsertArtefactPositionAsync(
+					editionUser,
+					artefactId,
+					scale,
+					rotate,
+					translateX,
+					translateY
+				);
 
 			var artefactChangeParams = new DynamicParameters();
 			artefactChangeParams.Add("@scale", scale);
@@ -258,8 +265,18 @@ namespace SQE.API.DATA
 						var newShape = InsertArtefactShapeAsync(editionUser, artefactId, masterImageId, shape);
 						var newArtefact = InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
 						var newName = InsertArtefactNameAsync(editionUser, artefactId, artefactName ?? "");
-						if (scale.HasValue || rotate.HasValue || translateX.HasValue || translateY.HasValue)
-							await InsertArtefactPositionAsync(editionUser, artefactId, scale, rotate, translateX, translateY);
+						if (scale.HasValue
+							|| rotate.HasValue
+							|| translateX.HasValue
+							|| translateY.HasValue)
+							await InsertArtefactPositionAsync(
+								editionUser,
+								artefactId,
+								scale,
+								rotate,
+								translateX,
+								translateY
+							);
 
 						await newShape;
 						await newArtefact;
@@ -460,20 +477,6 @@ namespace SQE.API.DATA
 			}
 		}
 
-		private static class artefactTableNames
-		{
-			public const string data = "artefact_data";
-			public const string shape = "artefact_shape";
-			public const string position = "artefact_position";
-			public const string stack = "artefact_stack";
-			public const string status = "artefact_status";
-
-			public static List<string> All()
-			{
-				return new List<string> { data, shape, position, stack, status };
-			}
-		}
-
 		private async Task<uint?> SetWorkStatusAsync(string workStatus)
 		{
 			if (string.IsNullOrEmpty(workStatus))
@@ -488,7 +491,21 @@ namespace SQE.API.DATA
 				return await connection.QuerySingleAsync<uint>(
 					GetWorkStatus.GetQuery,
 					new { WorkStatus = workStatus }
-					);
+				);
+			}
+		}
+
+		private static class artefactTableNames
+		{
+			public const string data = "artefact_data";
+			public const string shape = "artefact_shape";
+			public const string position = "artefact_position";
+			public const string stack = "artefact_stack";
+			public const string status = "artefact_status";
+
+			public static List<string> All()
+			{
+				return new List<string> { data, shape, position, stack, status };
 			}
 		}
 	}

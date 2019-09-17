@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
-using SQE.API;
 using SQE.API.DTO;
 using SQE.API.HTTP;
 using SQE.ApiTest.Helpers;
@@ -427,7 +426,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 					translateX = null,
 					translateY = null,
 					name = newArtefactName,
-					statusMessage = statusMessage,
+					statusMessage = statusMessage
 				},
 				await HttpRequest.GetJWTAsync(_client)
 			);

@@ -372,7 +372,7 @@ The Scripta Qumranica Electronica team</body></html>";
 		}
 
 		/// <summary>
-		/// 	This returns a UserInfo object that will persist only for the life of the current
+		///     This returns a UserInfo object that will persist only for the life of the current
 		///     HTTP request.  The UserInfo object can fetch the permissions if requested, and once
 		///     the permissions have been requested, they are "cached" for the life of the object.
 		/// </summary>

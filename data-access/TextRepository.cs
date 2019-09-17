@@ -224,7 +224,8 @@ namespace SQE.API.DATA
 						lastCharAttribute = charAttribute;
 						lastChar.attributes.Add(charAttribute);
 
-						if (roi != null && roi.SignInterpretationRoiId != lastInterpretationRoi?.SignInterpretationRoiId)
+						if (roi != null
+							&& roi.SignInterpretationRoiId != lastInterpretationRoi?.SignInterpretationRoiId)
 						{
 							lastInterpretationRoi = roi;
 							lastChar.signInterpretationRois.Add(roi);

@@ -13,7 +13,7 @@ namespace SQE.API.HTTP
 		{
 			var configuration = new ConfigurationBuilder()
 				.SetBasePath(Directory.GetCurrentDirectory())
-				.AddJsonFile("appsettings.json", optional: true)
+				.AddJsonFile("appsettings.json", true)
 				.AddCommandLine(args)
 				.Build();
 

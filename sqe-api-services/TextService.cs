@@ -151,7 +151,8 @@ namespace SQE.API.SERVICES
 																		{
 																			interpretationRoiId =
 																				b.SignInterpretationRoiId,
-																			signInterpretationId = b.SignInterpretationId,
+																			signInterpretationId =
+																				b.SignInterpretationId,
 																			editorId = b.SignInterpretationRoiAuthor,
 																			artefactId = b.ArtefactId,
 																			shape = b.Shape,
