@@ -38,7 +38,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\data-access\data-access.csproj" />
+      <ProjectReference Include="..\sqe-data-access\sqe-data-access.csproj" />
       <ProjectReference Include="..\sqe-dtos\sqe-dtos.csproj" />
     </ItemGroup>
 

@@ -15,14 +15,16 @@ RUN dotnet restore "sqe-http-api/sqe-http-api.csproj"
 
 WORKDIR /src/sqe-http-api
 
-COPY ./sqe-http-api /src/sqe-http-api
-COPY ./data-access /src/data-access
+COPY ./sqe-api-http-server /src/sqe-api-http-server
+COPY ./sqe-api-services /src/sqe-api-services
+COPY ./sqe-api-tests /src/sqe-api-tests
+COPY ./sqe-data-access /src/sqe-data-access
 COPY ./sqe-dtos /src/sqe-dtos
 
-RUN dotnet build "sqe-http-api.csproj" -c Release -o /app
+RUN dotnet build "sqe-api-http-server.csproj" -c Release -o /app
 
 FROM build AS publish
-RUN dotnet publish "sqe-http-api.csproj" -c Release -o /app
+RUN dotnet publish "sqe-api-http-server.csproj" -c Release -o /app
 
 FROM base AS final
 WORKDIR /app
@@ -31,4 +33,4 @@ COPY --from=publish /app .
 # startup.sh picks up settings in environment variables and inserts them
 # into appsettings.json before the program runs.
 COPY ./startup.sh .
-ENTRYPOINT ["/app/startup.sh", "dotnet", "sqe-http-api.dll"]
+ENTRYPOINT ["/app/startup.sh", "dotnet", "sqe-api-http-server.dll"]

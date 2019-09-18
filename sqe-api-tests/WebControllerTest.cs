@@ -19,7 +19,7 @@ namespace SQE.ApiTest
 		public WebControllerTest(WebApplicationFactory<Startup> factory)
 		{
 			var projectDir = Directory.GetCurrentDirectory();
-			var configPath = Path.Combine(projectDir, "../../../../sqe-http-api/appsettings.json");
+			var configPath = Path.Combine(projectDir, "../../../../sqe-api-http-server/appsettings.json");
 
 			_factory = factory.WithWebHostBuilder(
 				builder =>

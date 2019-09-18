@@ -18,6 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\sqe-http-api\sqe-http-api.csproj" />
+    <ProjectReference Include="..\sqe-api-http-server\sqe-api-http-server.csproj" />
   </ItemGroup>
 </Project>

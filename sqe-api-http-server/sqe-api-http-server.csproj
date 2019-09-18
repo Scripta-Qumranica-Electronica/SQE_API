@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\data-access\data-access.csproj" />
+    <ProjectReference Include="..\sqe-data-access\sqe-data-access.csproj" />
     <ProjectReference Include="..\sqe-dtos\sqe-dtos.csproj" />
   	<ProjectReference Include="..\sqe-api-services\sqe-api-services.csproj" />
   </ItemGroup>
@@ -39,7 +39,6 @@
 
   <ItemGroup>
     <Folder Include="logs" />
-    <Folder Include="Services" />
   </ItemGroup>
 
   <ItemGroup>

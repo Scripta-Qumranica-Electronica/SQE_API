@@ -8,9 +8,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "data-access", "data-access\data-access.csproj", "{260192E4-F9FE-4FD5-A478-558A6F611550}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-data-access", "sqe-data-access\sqe-data-access.csproj", "{260192E4-F9FE-4FD5-A478-558A6F611550}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-http-api", "sqe-http-api\sqe-http-api.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-api-http-server", "sqe-api-http-server\sqe-api-http-server.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{2342F74C-D461-45E2-BA99-72BD0C84F64B}"
 	ProjectSection(SolutionItems) = preProject
@@ -27,7 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{392327
 		docker\deploy\docker-compose.yml = docker\deploy\docker-compose.yml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "api-test", "api-test\api-test.csproj", "{C195B450-C6DE-40FE-A4D6-A44CC7978700}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-api-tests", "sqe-api-tests\sqe-api-tests.csproj", "{C195B450-C6DE-40FE-A4D6-A44CC7978700}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-dtos", "sqe-dtos\sqe-dtos.csproj", "{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}"
 EndProject

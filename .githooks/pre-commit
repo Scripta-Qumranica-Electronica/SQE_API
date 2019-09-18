@@ -16,7 +16,7 @@ function check_docker_vars
 
 function check_appsettings_vars
 {
-    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-http-api/appsettings.json 
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-http-server/appsettings.json 
     if [[ "$?" == 0 ]]; then 
         echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.json"
         echo "The line should be:"
@@ -24,7 +24,7 @@ function check_appsettings_vars
         exit 1
     fi
     
-    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-http-api/appsettings.Development.json 
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-http-server/appsettings.Development.json 
     if [[ "$?" == 0 ]]; then 
         echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.Development.json"
         echo "The line should be:"
