@@ -52,7 +52,7 @@ namespace SQE.SqeHttpApi.Server.Services
 			var imagedObjects = await _repo.GetImagedObjectsAsync(editionUser, null);
 
 			if (imagedObjects == null)
-				throw new StandardErrors.DataNotFound("imaged object", editionUser.EditionId, "edition");
+				throw new StandardExceptions.DataNotFoundException("imaged object", editionUser.EditionId, "edition");
 			var result = new ImagedObjectListDTO
 			{
 				imagedObjects = new List<ImagedObjectDTO>()

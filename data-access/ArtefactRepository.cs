@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
@@ -78,12 +77,12 @@ namespace SQE.SqeHttpApi.DataAccess
 					new
 					{
 						editionUser.EditionId,
-						UserId = editionUser.userId ?? 0,
+						UserId = editionUser.userId,
 						ArtefactId = artefactId
 					}
 				);
 				if (artefacts.Count() != 1)
-					throw new StandardErrors.DataNotFound("artefact", artefactId, "artefact_id");
+					throw new StandardExceptions.DataNotFoundException("artefact", artefactId, "artefact_id");
 				return artefacts.First();
 			}
 		}
@@ -104,7 +103,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					new
 					{
 						editionUser.EditionId,
-						UserId = editionUser.userId ?? 0
+						UserId = editionUser.userId
 					}
 				);
 			}
@@ -124,7 +123,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			const string tableName = "artefact_shape";
 			var artefactShapeId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
 			if (artefactShapeId == 0)
-				throw new StandardErrors.DataNotFound("artefact mask", artefactId, "artefact_id");
+				throw new StandardExceptions.DataNotFoundException("artefact mask", artefactId, "artefact_id");
 			var sqeImageId = GetArtefactShapeSqeImageIdAsync(editionUser, editionUser.EditionId, artefactId);
 
 			var artefactChangeParams = new DynamicParameters();
@@ -145,7 +144,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			{
 				// Capture any errors caused by improperly formatted WKT shapes, which become null in this query.
 				if (e.Message.IndexOf("Column 'region_in_sqe_image' cannot be null") > -1)
-					throw new StandardErrors.ImproperInputData("mask");
+					throw new StandardExceptions.ImproperInputDataException("mask");
 
 				throw;
 			}
@@ -181,7 +180,7 @@ namespace SQE.SqeHttpApi.DataAccess
 			const string tableName = "artefact_data";
 			var artefactDataId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
 			if (artefactDataId == 0)
-				throw new StandardErrors.DataNotFound("artefact name", artefactId, "artefact_id");
+				throw new StandardExceptions.DataNotFoundException("artefact name", artefactId, "artefact_id");
 			var artefactChangeParams = new DynamicParameters();
 			artefactChangeParams.Add("@Name", name);
 			artefactChangeParams.Add("@artefact_id", artefactId);
@@ -207,7 +206,14 @@ namespace SQE.SqeHttpApi.DataAccess
 			// It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
 			// If no artefact_position already exists we need to create a new entry here.
 			if (artefactPositionId == 0)
-				return await InsertArtefactPositionAsync(editionUser, artefactId, scale, rotate, translateX, translateY);
+				return await InsertArtefactPositionAsync(
+					editionUser,
+					artefactId,
+					scale,
+					rotate,
+					translateX,
+					translateY
+				);
 
 			var artefactChangeParams = new DynamicParameters();
 			artefactChangeParams.Add("@scale", scale);
@@ -253,14 +259,24 @@ namespace SQE.SqeHttpApi.DataAccess
 
 						var artefactId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 						if (artefactId == 0)
-							throw new StandardErrors.DataNotWritten("create artefact");
+							throw new StandardExceptions.DataNotWrittenException("create artefact");
 
 						shape = string.IsNullOrEmpty(shape) ? "POLYGON((0 0))" : shape;
 						var newShape = InsertArtefactShapeAsync(editionUser, artefactId, masterImageId, shape);
 						var newArtefact = InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
 						var newName = InsertArtefactNameAsync(editionUser, artefactId, artefactName ?? "");
-						if (scale.HasValue || rotate.HasValue || translateX.HasValue || translateY.HasValue)
-							await InsertArtefactPositionAsync(editionUser, artefactId, scale, rotate, translateX, translateY);
+						if (scale.HasValue
+							|| rotate.HasValue
+							|| translateX.HasValue
+							|| translateY.HasValue)
+							await InsertArtefactPositionAsync(
+								editionUser,
+								artefactId,
+								scale,
+								rotate,
+								translateX,
+								translateY
+							);
 
 						await newShape;
 						await newArtefact;
@@ -304,7 +320,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					new
 					{
 						editionUser.EditionId,
-						UserId = editionUser.userId ?? 0,
+						UserId = editionUser.userId,
 						ArtefactId = artefactId
 					}
 				)).ToList();
@@ -456,22 +472,8 @@ namespace SQE.SqeHttpApi.DataAccess
 				}
 				catch (InvalidOperationException)
 				{
-					throw new StandardErrors.DataNotFound("SQE_image", artefactId, "artefact_id");
+					throw new StandardExceptions.DataNotFoundException("SQE_image", artefactId, "artefact_id");
 				}
-			}
-		}
-
-		private static class artefactTableNames
-		{
-			public const string data = "artefact_data";
-			public const string shape = "artefact_shape";
-			public const string position = "artefact_position";
-			public const string stack = "artefact_stack";
-			public const string status = "artefact_status";
-
-			public static List<string> All()
-			{
-				return new List<string> { data, shape, position, stack, status };
 			}
 		}
 
@@ -489,7 +491,21 @@ namespace SQE.SqeHttpApi.DataAccess
 				return await connection.QuerySingleAsync<uint>(
 					GetWorkStatus.GetQuery,
 					new { WorkStatus = workStatus }
-					);
+				);
+			}
+		}
+
+		private static class artefactTableNames
+		{
+			public const string data = "artefact_data";
+			public const string shape = "artefact_shape";
+			public const string position = "artefact_position";
+			public const string stack = "artefact_stack";
+			public const string status = "artefact_status";
+
+			public static List<string> All()
+			{
+				return new List<string> { data, shape, position, stack, status };
 			}
 		}
 	}

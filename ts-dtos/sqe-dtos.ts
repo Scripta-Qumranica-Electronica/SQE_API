@@ -17,13 +17,10 @@ export interface ArtefactDTO {
 export interface ArtefactListDTO {
     artefacts: ArtefactDTO[];
 }
+
 export interface UpdateArtefactDTO {
-    mask: string;
+    polygon: PolygonDTO;
     name: string;
-    scale?: number;
-    rotate?: number;
-    translateX?: number;
-    translateY?: number;
     statusMessage: string;
 }
 
@@ -130,13 +127,11 @@ export interface ImagedObjectDTO {
 export interface ImagedObjectListDTO {
     imagedObjects: ImagedObjectDTO[];
 }
+
 export interface PolygonDTO {
     mask: string;
     maskEditorId: number;
-    scale?: number;
-    rotate?: number;
-    translateX?: number;
-    translateY?: number;
+    transformation: TransformationDTO;
     positionEditorId: number;
 }
 export interface SetInterpretationRoiDTO {
@@ -231,6 +226,16 @@ export interface CreateTextFragmentDTO {
     name: string;
     previousTextFragmentId?: number;
     nextTextFragmentId?: number;
+}
+
+export interface TransformationDTO {
+    scale?: number;
+    rotate?: number;
+    translate: TranslateDTO;
+}
+export interface TranslateDTO {
+    translateX: number;
+    translateY: number;
 }
 export interface LoginRequestDTO {
     email: string;

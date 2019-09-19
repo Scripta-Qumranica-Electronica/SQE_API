@@ -13,7 +13,8 @@ namespace SQE.SqeHttpApi.Server
 		{
 			var configuration = new ConfigurationBuilder()
 				.SetBasePath(Directory.GetCurrentDirectory())
-				.AddJsonFile("appsettings.json", optional: true)
+				// TODO: when we know the deployment details we will probably need to change the logging settings
+				.AddJsonFile("appsettings.json", true)
 				.AddCommandLine(args)
 				.Build();
 

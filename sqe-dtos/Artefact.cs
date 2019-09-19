@@ -27,15 +27,10 @@ namespace SQE.SqeHttpApi.Server.DTOs
 		public List<ArtefactDTO> artefacts { get; set; }
 	}
 
-	// TODO: Should we make the mask and positioning data a PolygonDTO here, like it is in the GET DTO?
 	public class UpdateArtefactDTO
 	{
-		public string mask { get; set; }
+		public PolygonDTO polygon { get; set; }
 		public string name { get; set; }
-		public float? scale { get; set; }
-		public float? rotate { get; set; }
-		public uint? translateX { get; set; }
-		public uint? translateY { get; set; }
 		public string statusMessage { get; set; }
 	}
 

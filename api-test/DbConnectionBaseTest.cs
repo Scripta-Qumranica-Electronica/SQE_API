@@ -56,6 +56,7 @@ namespace SQE.ApiTest
 
 		private static async Task ThrowMySqlExceptionAsync(Counter counter, uint sqlErrorCode)
 		{
+			await Task.CompletedTask;
 			counter.Count += 1;
 			var mySqlExceptionType = typeof(MySqlException).GetTypeInfo();
 			var internalConstructor = (from consInfo in mySqlExceptionType.DeclaredConstructors
@@ -73,6 +74,7 @@ namespace SQE.ApiTest
 
 		private static async Task<string> ThrowMySqlExceptionWithReturnAsync(Counter counter, uint sqlErrorCode)
 		{
+			await Task.CompletedTask;
 			counter.Count += 1;
 			var mySqlExceptionType = typeof(MySqlException).GetTypeInfo();
 			var internalConstructor = (from consInfo in mySqlExceptionType.DeclaredConstructors

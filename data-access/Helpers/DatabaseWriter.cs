@@ -147,11 +147,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		{
 			// Check if the edition is locked
 			if (editionUser.EditionLocked)
-				throw new StandardErrors.LockedData(editionUser);
+				throw new StandardExceptions.LockedDataException(editionUser);
 
 			// Check the permissions and throw if user has no rights to alter this edition
 			if (!editionUser.MayWrite)
-				throw new StandardErrors.NoWritePermissions(editionUser);
+				throw new StandardExceptions.NoWritePermissionsException(editionUser);
 
 			var alteredRecords = new List<AlteredRecord>();
 
@@ -353,7 +353,10 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 			// If nothing was changed, then the data was not found, so throw an error.
 			if (results < 1)
-				throw new StandardErrors.DataNotFound(mutationRequest.TableName, mutationRequest.TablePkId ?? 0);
+				throw new StandardExceptions.DataNotFoundException(
+					mutationRequest.TableName,
+					mutationRequest.TablePkId ?? 0
+				);
 		}
 
 		/// <summary>

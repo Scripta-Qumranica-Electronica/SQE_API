@@ -92,10 +92,12 @@ namespace SQE.SqeHttpApi.Server.Services
 		{
 			var withMask = false;
 			var tasks = new List<Task<List<AlteredRecord>>>();
-			if (!string.IsNullOrEmpty(updateArtefact.mask))
+			if (!string.IsNullOrEmpty(updateArtefact.polygon.mask))
 			{
 				// UpdateArtefactShapeAsync will inform us if the WKT mask is in an invalid format
-				tasks.Add(_artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, updateArtefact.mask));
+				tasks.Add(
+					_artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, updateArtefact.polygon.mask)
+				);
 				withMask = true;
 			}
 
@@ -106,10 +108,15 @@ namespace SQE.SqeHttpApi.Server.Services
 				_artefactRepository.UpdateArtefactPositionAsync(
 					editionUser,
 					artefactId,
-					updateArtefact.scale,
-					updateArtefact.rotate,
-					updateArtefact.translateX,
-					updateArtefact.translateY
+					updateArtefact.polygon.transformation.scale,
+					updateArtefact.polygon.transformation.rotate,
+					// Convert the translation from signed int to the uint used in the database
+					updateArtefact.polygon.transformation.translate == null
+						? null
+						: (uint?)updateArtefact.polygon.transformation.translate.translateX + 2147483647,
+					updateArtefact.polygon.transformation.translate == null
+						? null
+						: (uint?)updateArtefact.polygon.transformation.translate.translateY + 2147483647
 				)
 			);
 
@@ -136,16 +143,23 @@ namespace SQE.SqeHttpApi.Server.Services
 				newArtefactId = await _artefactRepository.CreateNewArtefactAsync(
 					editionUser,
 					createArtefact.masterImageId,
-					createArtefact.mask,
+					createArtefact.polygon.mask,
 					createArtefact.name,
-					createArtefact.scale,
-					createArtefact.rotate,
-					createArtefact.translateX,
-					createArtefact.translateY,
+					createArtefact.polygon.transformation.scale,
+					createArtefact.polygon.transformation.rotate,
+					// Convert the translation from signed int to the uint used in the database
+					createArtefact.polygon.transformation.translate == null
+						? null
+						: (uint?)createArtefact.polygon.transformation.translate.translateX + 2147483647,
+					createArtefact.polygon.transformation.translate == null
+						? null
+						: (uint?)createArtefact.polygon.transformation.translate.translateY + 2147483647,
 					createArtefact.statusMessage
 				);
 
-			var optional = createArtefact.mask != null ? new List<string> { "masks" } : new List<string>();
+			var optional = string.IsNullOrEmpty(createArtefact.polygon.mask)
+				? new List<string>()
+				: new List<string> { "masks" };
 
 			var createArtefactnewArtefact = newArtefactId != 0
 				? await GetEditionArtefactAsync(editionUser, newArtefactId, optional)
@@ -166,14 +180,11 @@ namespace SQE.SqeHttpApi.Server.Services
 		public async Task<TextFragmentDataListDTO> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser,
 			uint artefactId)
 		{
-			return new TextFragmentDataListDTO
-			{
-				textFragments = (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
-					.Select(
-						x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId)
-					)
-					.ToList()
-			};
+			return new TextFragmentDataListDTO(
+				(await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
+				.Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId))
+				.ToList()
+			);
 		}
 
 		private void ParseOptionals(List<string> optionals, out bool images, out bool masks)

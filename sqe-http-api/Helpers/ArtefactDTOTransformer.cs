@@ -19,10 +19,19 @@ namespace SQE.SqeHttpApi.Server.Helpers
 				{
 					mask = artefact.Mask,
 					maskEditorId = artefact.MaskEditorId,
-					scale = artefact.Scale,
-					rotate = artefact.Rotate,
-					translateX = artefact.TranslateX,
-					translateY = artefact.TranslateY,
+					transformation = new TransformationDTO
+					{
+						scale = artefact.Scale,
+						rotate = artefact.Rotate,
+						translate = artefact.TranslateX != null && artefact.TranslateY != null
+							? new TranslateDTO
+							{
+								// These are stored as unsigned ints in the DB, convert them to signed ints here
+								translateX = (int)artefact.TranslateX - 2147483647,
+								translateY = (int)artefact.TranslateY - 2147483647
+							}
+							: null
+					},
 					positionEditorId = artefact.PositionEditorId
 				},
 

@@ -35,7 +35,7 @@ namespace SQE.SqeHttpApi.Server.Services
 			var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId);
 			var editionLine = await _textRepo.GetLineByIdAsync(editionUser, lineId);
 			if (editionLine.manuscriptId == 0)
-				throw new StandardErrors.DataNotFound("line", lineId, "line_id");
+				throw new StandardExceptions.DataNotFoundException("line", lineId, "line_id");
 			return _textEditionLineToDTO(editionLine, await editionEditors);
 		}
 
@@ -44,7 +44,11 @@ namespace SQE.SqeHttpApi.Server.Services
 			var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId);
 			var edition = await _textRepo.GetTextFragmentByIdAsync(editionUser, fragmentId);
 			if (edition.manuscriptId == 0) // TODO: describe missing data better here.
-				throw new StandardErrors.DataNotFound("text textFragmentName", fragmentId, "text_fragment_id");
+				throw new StandardExceptions.DataNotFoundException(
+					"text textFragmentName",
+					fragmentId,
+					"text_fragment_id"
+				);
 			return _textEditionToDTO(edition, await editionEditors);
 		}
 
@@ -151,7 +155,8 @@ namespace SQE.SqeHttpApi.Server.Services
 																		{
 																			interpretationRoiId =
 																				b.SignInterpretationRoiId,
-																			signInterpretationId = b.SignInterpretationId,
+																			signInterpretationId =
+																				b.SignInterpretationId,
 																			editorId = b.SignInterpretationRoiAuthor,
 																			artefactId = b.ArtefactId,
 																			shape = b.Shape,

@@ -32,11 +32,11 @@ namespace SQE.SqeHttpApi.Server.Services
 			bool admin = false);
 
 		Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
-		Task<DetailedUserTokenDTO> UpdateUserAsync(uint userId, UserUpdateRequestDTO updateUserData);
+		Task<DetailedUserTokenDTO> UpdateUserAsync(uint? userId, UserUpdateRequestDTO updateUserData);
 		Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
 		Task<NoContentResult> ResendActivationEmail(string email);
 		Task<NoContentResult> ConfirmUserRegistrationAsync(string token);
-		Task<NoContentResult> ChangePasswordAsync(uint userId, string oldPassword, string newPassword);
+		Task<NoContentResult> ChangePasswordAsync(uint? userId, string oldPassword, string newPassword);
 		Task<NoContentResult> RequestResetLostPasswordAsync(string email);
 		Task<NoContentResult> ResetLostPasswordAsync(string token, string password);
 	}
@@ -160,15 +160,18 @@ namespace SQE.SqeHttpApi.Server.Services
 		/// <param name="userId"></param>
 		/// <param name="updateUserData">All of the information for the new user.</param>
 		/// <returns>Returns a UserDTO for the newly created user account.</returns>
-		public async Task<DetailedUserTokenDTO> UpdateUserAsync(uint userId, UserUpdateRequestDTO updateUserData)
+		public async Task<DetailedUserTokenDTO> UpdateUserAsync(uint? userId, UserUpdateRequestDTO updateUserData)
 		{
+			if (!userId.HasValue)
+				throw new StandardExceptions.ImproperInputDataException("user id");
+
 			// Get current user data
 			var originalUserInfo = await _userRepository.GetDetailedUserByIdAsync(GetCurrentUserId());
 			var resetActivation = updateUserData.email != null && originalUserInfo.Email != updateUserData.email;
 
 			// Ask the repo to update the user (merge nul fields with the new request)
 			await _userRepository.UpdateUserAsync(
-				userId,
+				userId.Value,
 				updateUserData.password,
 				updateUserData.email ?? originalUserInfo.Email,
 				resetActivation,
@@ -332,9 +335,12 @@ The Scripta Qumranica Electronica team</body></html>";
 		/// <param name="oldPassword">The old password for the user's account</param>
 		/// <param name="newPassword">The new password for the user's account</param>
 		/// <returns></returns>
-		public async Task<NoContentResult> ChangePasswordAsync(uint userId, string oldPassword, string newPassword)
+		public async Task<NoContentResult> ChangePasswordAsync(uint? userId, string oldPassword, string newPassword)
 		{
-			await _userRepository.ChangePasswordAsync(userId, oldPassword, newPassword);
+			if (!userId.HasValue)
+				throw new StandardExceptions.ImproperInputDataException("user id");
+
+			await _userRepository.ChangePasswordAsync(userId.Value, oldPassword, newPassword);
 			return new NoContentResult();
 		}
 
@@ -372,7 +378,7 @@ The Scripta Qumranica Electronica team</body></html>";
 		}
 
 		/// <summary>
-		/// 	This returns a UserInfo object that will persist only for the life of the current
+		///     This returns a UserInfo object that will persist only for the life of the current
 		///     HTTP request.  The UserInfo object can fetch the permissions if requested, and once
 		///     the permissions have been requested, they are "cached" for the life of the object.
 		/// </summary>
@@ -394,16 +400,16 @@ The Scripta Qumranica Electronica team</body></html>";
 			// Immediately reject requests without proper permissions
 			if (access.Read
 				&& !user.MayRead)
-				throw new StandardErrors.NoReadPermissions(user);
+				throw new StandardExceptions.NoReadPermissionsException(user);
 			if (access.Write
 				&& !user.MayWrite)
-				throw new StandardErrors.NoWritePermissions(user);
+				throw new StandardExceptions.NoWritePermissionsException(user);
 			if (access.Locking
 				&& !user.MayLock)
-				throw new StandardErrors.NoLockPermissions(user);
+				throw new StandardExceptions.NoLockPermissionsException(user);
 			if (access.Admin
 				&& !user.IsAdmin)
-				throw new StandardErrors.NoAdminPermissions(user);
+				throw new StandardExceptions.NoAdminPermissionsException(user);
 
 			return user;
 		}

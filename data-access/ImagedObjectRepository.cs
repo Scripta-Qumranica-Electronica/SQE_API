@@ -30,7 +30,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					sql,
 					new
 					{
-						UserId = editionUser.userId ?? 1, // @UserId is not expanded if userId is null
+						UserId = editionUser.userId,
 						editionUser.EditionId,
 						ObjectId = imagedObjectId
 					}

@@ -122,7 +122,8 @@ namespace SQE.SqeHttpApi.Server.Services
 				var unformattedEdition = editions.First(x => x.EditionId == editionUser.EditionId);
 				//I think we do not get this far if no records were found, `First` will, I think throw an error.
 				//Maybe we should more often make use of try/catch.
-				if (unformattedEdition == null) throw new StandardErrors.DataNotFound("edition", editionUser.EditionId);
+				if (unformattedEdition == null)
+					throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId);
 				edition = EditionModelToDTO(unformattedEdition);
 			}
 

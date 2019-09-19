@@ -55,11 +55,11 @@ SELECT user.user_id AS UserId,
        COALESCE(may_read, public) AS MayRead, 
        COALESCE(is_admin, FALSE) AS IsAdmin,
        locked AS Locked
-FROM user
-LEFT JOIN edition_editor ON edition_editor.user_id = user.user_id
-    AND edition_editor.edition_id = @EditionId
-LEFT JOIN edition ON edition.edition_id = @EditionId
-WHERE user.user_id = @UserId";
+FROM edition
+LEFT JOIN user ON user.user_id = @UserId
+LEFT JOIN edition_editor ON edition_editor.edition_id = @EditionId
+    AND edition_editor.user_id = @UserId
+WHERE edition.edition_id = @EditionId";
 	}
 
 	/// <summary>

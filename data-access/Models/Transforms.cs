@@ -16,14 +16,14 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 		///     A 2d array containing a transform matrix in the format:
 		///     [ [ ScaleX, ShearX, TranslateX ], [ ScaleY, ShearY, TranslateY ] ].
 		/// </param>
-		/// <exception cref="StandardErrors.ImproperInputData"></exception>
+		/// <exception cref="StandardExceptions.ImproperInputDataException"></exception>
 		public TransformMatrix(IReadOnlyList<double[]> matrix)
 		{
 			if (!IsValidRows(matrix))
-				throw new StandardErrors.ImproperInputData("position");
+				throw new StandardExceptions.ImproperInputDataException("position");
 			if (!IsValidValues(matrix[0])
 				|| !IsValidValues(matrix[1]))
-				throw new StandardErrors.ImproperInputData("position");
+				throw new StandardExceptions.ImproperInputDataException("position");
 		}
 
 		// The object must have a "matrix" property that is a 2d array of doubles

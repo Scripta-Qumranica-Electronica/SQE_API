@@ -82,7 +82,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				}
 				catch (InvalidOperationException)
 				{
-					throw new StandardErrors.BadLogin(email);
+					throw new StandardExceptions.BadLoginException(email);
 				}
 			}
 		}
@@ -97,7 +97,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					UserDetails.GetQuery(columns, where),
 					new
 					{
-						UserId = userId ?? 0
+						UserId = userId
 					}
 				);
 			}
@@ -119,7 +119,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				}
 				catch (InvalidOperationException)
 				{
-					throw new StandardErrors.DataNotFound("user", token, "token");
+					throw new StandardExceptions.DataNotFoundException("user", token, "token");
 				}
 			}
 		}
@@ -164,7 +164,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				}
 				catch (InvalidOperationException)
 				{
-					throw new StandardErrors.DataNotFound("user", email, email);
+					throw new StandardExceptions.DataNotFoundException("user", email, email);
 				}
 			}
 		}
@@ -185,14 +185,14 @@ namespace SQE.SqeHttpApi.DataAccess
 						new
 						{
 							editionUser.EditionId,
-							UserId = editionUser.userId ?? 1 // if userID is null we get the permissions for userId 1
+							UserId = editionUser.userId
 						}
 					);
 					return results;
 				}
 				catch (InvalidOperationException)
 				{
-					throw new StandardErrors.NoPermissions(editionUser);
+					throw new StandardExceptions.NoPermissionsException(editionUser);
 				}
 			}
 		}
@@ -239,7 +239,7 @@ namespace SQE.SqeHttpApi.DataAccess
 							}
 						);
 						if (newUser != 1) // Something strange must have gone wrong
-							throw new StandardErrors.DataNotWritten("create user");
+							throw new StandardExceptions.DataNotWrittenException("create user");
 
 						// Everything went well, so create the email token so the
 						// calling function can email the new user.
@@ -278,7 +278,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					foreach (var record in existingUser)
 					{
 						if (record.Activated) // If this user record has been authenticated throw a conflict error
-							throw new StandardErrors.ConflictingData("email");
+							throw new StandardExceptions.ConflictingDataException("email");
 
 						await connection.ExecuteAsync(
 							DeleteUserEmailTokenQuery.GetUserIdQuery,
@@ -335,7 +335,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				);
 
 				if (userUpdate != 1) // The password was wrong
-					throw new StandardErrors.WrongPassword();
+					throw new StandardExceptions.WrongPasswordException();
 			}
 		}
 
@@ -373,7 +373,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					}
 				);
 				if (userEmailConfirmation != 1) // Something strange must have gone wrong
-					throw new StandardErrors.DataNotWritten("create confirmation token");
+					throw new StandardExceptions.DataNotWrittenException("create confirmation token");
 
 				// Everything went well, so add the token to the User object so the calling function
 				// can email the new user.
@@ -398,7 +398,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					{ Token = token }
 				);
 				if (confirmRegistration != 1)
-					throw new StandardErrors.ImproperInputData("user account activation token");
+					throw new StandardExceptions.ImproperInputDataException("user account activation token");
 
 				// Get all Activate tokens for this user
 				var tokens = await connection.QueryAsync<string>(
@@ -440,7 +440,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					}
 				);
 				if (newEmailEntry != 1)
-					throw new StandardErrors.DataNotWritten("update email");
+					throw new StandardExceptions.DataNotWrittenException("update email");
 			}
 		}
 
@@ -466,7 +466,7 @@ namespace SQE.SqeHttpApi.DataAccess
 				);
 
 				if (changePassword != 1)
-					throw new StandardErrors.WrongPassword();
+					throw new StandardExceptions.WrongPasswordException();
 			}
 		}
 
@@ -550,7 +550,7 @@ namespace SQE.SqeHttpApi.DataAccess
 					}
 				);
 				if (resetPassword != 1)
-					throw new StandardErrors.DataNotWritten("reset password");
+					throw new StandardExceptions.DataNotWrittenException("reset password");
 
 				// Get all unused ResetPassword tokens
 				var tokens = await connection.QueryAsync<string>(
