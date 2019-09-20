@@ -113,10 +113,10 @@ namespace SQE.SqeHttpApi.Server.Services
 					// Convert the translation from signed int to the uint used in the database
 					updateArtefact.polygon.transformation.translate == null
 						? null
-						: (uint?)updateArtefact.polygon.transformation.translate.translateX + 2147483647,
+						: (uint?)updateArtefact.polygon.transformation.translate.x,
 					updateArtefact.polygon.transformation.translate == null
 						? null
-						: (uint?)updateArtefact.polygon.transformation.translate.translateY + 2147483647
+						: (uint?)updateArtefact.polygon.transformation.translate.y
 				)
 			);
 
@@ -150,10 +150,10 @@ namespace SQE.SqeHttpApi.Server.Services
 					// Convert the translation from signed int to the uint used in the database
 					createArtefact.polygon.transformation.translate == null
 						? null
-						: (uint?)createArtefact.polygon.transformation.translate.translateX + 2147483647,
+						: (uint?)createArtefact.polygon.transformation.translate.x,
 					createArtefact.polygon.transformation.translate == null
 						? null
-						: (uint?)createArtefact.polygon.transformation.translate.translateY + 2147483647,
+						: (uint?)createArtefact.polygon.transformation.translate.y,
 					createArtefact.statusMessage
 				);
 

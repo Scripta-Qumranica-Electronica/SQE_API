@@ -75,9 +75,9 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 		}
 
 
-		private (float? scale, float? rotate, int translateX, int translateY) ArtefactPosition()
+		private (float? scale, float? rotate, uint translateX, uint translateY) ArtefactPosition()
 		{
-			return ((float?)1.0, (float?)0, 34765, 556);
+			return ((float?)1.0, (float?)0, (uint)34765, (uint)556);
 		}
 
 		/// <summary>
@@ -130,8 +130,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 						rotate = newRotate,
 						translate = new TranslateDTO
 						{
-							translateX = newTranslateX,
-							translateY = newTranslateY
+							x = newTranslateX,
+							y = newTranslateY
 						}
 					}
 				},
@@ -156,8 +156,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(newArtefact.polygon.mask, writtenArtefact.mask.mask);
 			Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
 			Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
-			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.translateX);
-			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.translateY);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
 			Assert.Equal(newArtefact.name, writtenArtefact.name);
 			Assert.Equal(defaultStatusMessage, writtenArtefact.statusMessage);
 
@@ -178,8 +178,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 						rotate = newRotate,
 						translate = new TranslateDTO
 						{
-							translateX = newTranslateX,
-							translateY = newTranslateY
+							x = newTranslateX,
+							y = newTranslateY
 						}
 					}
 				},
@@ -202,8 +202,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(newArtefact.polygon.mask, writtenArtefact.mask.mask);
 			Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
 			Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
-			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.translateX);
-			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.translateY);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
 			Assert.Equal("", writtenArtefact.name);
 
 			// Cleanup
@@ -224,8 +224,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 						rotate = newRotate,
 						translate = new TranslateDTO
 						{
-							translateX = newTranslateX,
-							translateY = newTranslateY
+							x = newTranslateX,
+							y = newTranslateY
 						}
 					}
 				},
@@ -248,8 +248,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal("", writtenArtefact.mask.mask);
 			Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
 			Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
-			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.translateX);
-			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.translateY);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
 			Assert.Equal(newArtefact.name, writtenArtefact.name);
 
 			// Cleanup
@@ -348,8 +348,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 						rotate = newRotate,
 						translate = new TranslateDTO
 						{
-							translateX = newTranslateX,
-							translateY = newTranslateY
+							x = newTranslateX,
+							y = newTranslateY
 						}
 					}
 				},
@@ -503,8 +503,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 								rotate = newRotate,
 								translate = new TranslateDTO
 								{
-									translateX = newTranslateX,
-									translateY = newTranslateY
+									x = newTranslateX,
+									y = newTranslateY
 								}
 							}
 						},
@@ -520,8 +520,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.NotNull(updatedPositionArtefact.mask.transformation.translate);
 			Assert.Equal(newScale, updatedPositionArtefact.mask.transformation.scale);
 			Assert.Equal(newRotate, updatedPositionArtefact.mask.transformation.rotate);
-			Assert.Equal(newTranslateX, updatedPositionArtefact.mask.transformation.translate.translateX);
-			Assert.Equal(newTranslateY, updatedPositionArtefact.mask.transformation.translate.translateY);
+			Assert.Equal(newTranslateX, updatedPositionArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, updatedPositionArtefact.mask.transformation.translate.y);
 			Assert.Equal(newArtefactName, updatedPositionArtefact.name);
 
 			// Act (update shape)
@@ -540,8 +540,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 							rotate = newRotate,
 							translate = new TranslateDTO
 							{
-								translateX = newTranslateX,
-								translateY = newTranslateY
+								x = newTranslateX,
+								y = newTranslateY
 							}
 						}
 					},
@@ -556,8 +556,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(newArtefactShape, updatedShapeArtefact.mask.mask);
 			Assert.Equal(newScale, updatedShapeArtefact.mask.transformation.scale);
 			Assert.Equal(newRotate, updatedShapeArtefact.mask.transformation.rotate);
-			Assert.Equal(newTranslateX, updatedShapeArtefact.mask.transformation.translate.translateX);
-			Assert.Equal(newTranslateY, updatedShapeArtefact.mask.transformation.translate.translateY);
+			Assert.Equal(newTranslateX, updatedShapeArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, updatedShapeArtefact.mask.transformation.translate.y);
 			Assert.Equal(newArtefactName, updatedShapeArtefact.name);
 
 			// Arrange (update all)
@@ -578,8 +578,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 							rotate = otherRotate,
 							translate = new TranslateDTO
 							{
-								translateX = otherTranslateX,
-								translateY = otherTranslateY
+								x = otherTranslateX,
+								y = otherTranslateY
 							}
 						}
 					},
@@ -593,8 +593,8 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			Assert.Equal(artefact.mask.mask, updatedAllArtefact.mask.mask);
 			Assert.Equal(otherScale, updatedAllArtefact.mask.transformation.scale);
 			Assert.Equal(otherRotate, updatedAllArtefact.mask.transformation.rotate);
-			Assert.Equal(otherTranslateX, updatedAllArtefact.mask.transformation.translate.translateX);
-			Assert.Equal(otherTranslateY, updatedAllArtefact.mask.transformation.translate.translateY);
+			Assert.Equal(otherTranslateX, updatedAllArtefact.mask.transformation.translate.x);
+			Assert.Equal(otherTranslateY, updatedAllArtefact.mask.transformation.translate.y);
 			Assert.Equal(artefact.name, updatedAllArtefact.name);
 
 			await EditionHelpers.DeleteEdition(_client, newEdition, true);

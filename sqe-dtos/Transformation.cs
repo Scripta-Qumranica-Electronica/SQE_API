@@ -9,7 +9,7 @@ namespace SQE.SqeHttpApi.Server.DTOs
 
 	public class TranslateDTO
 	{
-		public int translateX { get; set; }
-		public int translateY { get; set; }
+		public uint x { get; set; }
+		public uint y { get; set; }
 	}
 }

@@ -234,8 +234,8 @@ export interface TransformationDTO {
     translate: TranslateDTO;
 }
 export interface TranslateDTO {
-    translateX: number;
-    translateY: number;
+    x: number;
+    y: number;
 }
 export interface LoginRequestDTO {
     email: string;

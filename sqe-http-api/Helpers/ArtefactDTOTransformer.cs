@@ -23,12 +23,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
 					{
 						scale = artefact.Scale,
 						rotate = artefact.Rotate,
-						translate = artefact.TranslateX != null && artefact.TranslateY != null
+						translate = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue
 							? new TranslateDTO
 							{
-								// These are stored as unsigned ints in the DB, convert them to signed ints here
-								translateX = (int)artefact.TranslateX - 2147483647,
-								translateY = (int)artefact.TranslateY - 2147483647
+								x = artefact.TranslateX.Value,
+								y = artefact.TranslateY.Value
 							}
 							: null
 					},
