@@ -45,7 +45,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 			var securityEnum = (SecureSocketOptions)Enum.Parse(typeof(SecureSocketOptions), security);
 
 			if (!EmailValidator.Validate(email))
-				throw new StandardErrors.EmailAddressImproperlyFormatted(email);
+				throw new StandardExceptions.EmailAddressImproperlyFormattedException(email);
 
 			var mimeMessage = new MimeMessage();
 			mimeMessage.From.Add(new MailboxAddress("SQE Webadmin", senderEmail));
@@ -71,11 +71,11 @@ namespace SQE.SqeHttpApi.Server.Helpers
 					// If the status code indicates that the email address is undeliverable, throw a descriptive error
 					if (_env.IsProduction()
 						&& e.StatusCode == SmtpStatusCode.MailboxUnavailable)
-						throw new StandardErrors.EmailAddressUndeliverable(email);
+						throw new StandardExceptions.EmailAddressUndeliverableException(email);
 
 					// Throw a less revealing error when running in production
 					if (_env.IsProduction())
-						throw new StandardErrors.EmailNotSent(email);
+						throw new StandardExceptions.EmailNotSentException(email);
 
 					throw;
 				}
@@ -83,7 +83,7 @@ namespace SQE.SqeHttpApi.Server.Helpers
 				{
 					// Throw a less revealing error when running in production
 					if (_env.IsProduction())
-						throw new StandardErrors.EmailNotSent(email);
+						throw new StandardExceptions.EmailNotSentException(email);
 
 					throw;
 				}

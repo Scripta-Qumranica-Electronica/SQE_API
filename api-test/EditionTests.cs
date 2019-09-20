@@ -476,9 +476,8 @@ namespace SQE.ApiTest
 				null,
 				await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
 			);
-			user2Resp.EnsureSuccessStatusCode();
+			Assert.Equal(HttpStatusCode.Forbidden, user2Resp.StatusCode);
 			Assert.NotNull(user1Msg);
-			Assert.Null(user2Msg);
 
 			// Act (final delete)
 			var (delete2Response, delete2Msg) = await HttpRequest.SendAsync<string, string>(

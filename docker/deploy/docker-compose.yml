@@ -4,7 +4,7 @@ version: '3.7'
 
 services:
     sqe-database:
-        image: qumranica/sqe-database:0.12.6
+        image: qumranica/sqe-database:0.13.1
         container_name: SQE_Database
         environment:
             ## These must be updated when used in production
@@ -37,7 +37,7 @@ services:
             - MYSQL_PASSWORD=mysecretpw
             - MYSQL_DATABASE=SQE
             
-            ## Email settings (account that mails user registration information)
+            ## Email settings (account that mails user registration information), these are required.
             #- MAILER_EMAIL_ADDRESS=
             #- MAILER_EMAIL_USERNAME=
             #- MAILER_EMAIL_PASSWORD=
@@ -45,7 +45,7 @@ services:
             #- MAILER_EMAIL_SMTP_PORT=
             #- MAILER_EMAIL_SMTP_SECURITY=StartTlsWhenAvailable #The options are "None", "Auto", "SslOnConnect", "StartTls", and "StartTlsWhenAvailable"
             
-            ## Partner website settings (website that calls the user registration functions)
+            ## Partner website settings (website that calls the user registration functions), this is required.
             #- WEBSITE_HOST=
               
             ## Dotnet telemetry optout
@@ -53,8 +53,15 @@ services:
               
             ## Secret string for API JWT generation (the API will error if this is too short)
             - SQE_API_SECRET=kjdsavc987342r8gnx%%6bq1@@lknsdciqeurhfwiurbcea-+++
+            
+            ## Logging levels, valid values are: Verbose, Debug, Information, Warning, Error, Fatal
+            - API_LOGLEVEL=Information # Log level for API generated messages
+            - DOTNET_LOGLEVEL=Warning # Log level for dotnet core messages and Microsoft tooling
+            - SYSTEM_LOGLEVEL=Warning # Leg level for system level messages
         depends_on:
             - sqe-database
+        volumes:
+          - ./logs:/app/logs # Logs are written to ./log on the host system (relative to the folder with docker-compose.yml)
         networks:
             - sqe_api
 

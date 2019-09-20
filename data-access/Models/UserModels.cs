@@ -36,90 +36,47 @@ namespace SQE.SqeHttpApi.DataAccess.Models
 		public bool Locked { get; set; }
 	}
 
-	public class UserInfo
+	public class EditionUserInfo
 	{
 		private readonly IUserRepository _userRepo;
 		public readonly uint? userId;
-		private uint? _editionEditorId;
-		private bool? _editionLocked;
-		private bool? _isAdmin;
-		private bool? _mayLock;
-		private bool? _mayWrite;
-		public uint? editionId;
 
-		public UserInfo(uint? userId, uint? editionId, IUserRepository userRepository)
+		public EditionUserInfo(uint? userId, uint editionId, IUserRepository userRepository)
 		{
-			this.editionId = editionId;
+			EditionId = editionId;
 			this.userId = userId;
 			_userRepo = userRepository;
-			_editionLocked = null;
-			_mayWrite = null;
-			_mayLock = null;
-			_isAdmin = null;
 		}
 
-		/// <summary>
-		///     Set the editionId of the user to a new editionID (the permissions are also
-		///     retrieved for the new editionId).
-		/// </summary>
-		/// <param name="editionId">The desired editionId</param>
-		public async void SetEditionId(uint editionId)
+		public uint EditionId { get; private set; }
+
+		public uint? EditionEditorId { get; private set; }
+
+		public bool EditionLocked { get; private set; }
+
+		public bool MayRead { get; private set; }
+
+		public bool MayWrite { get; private set; }
+
+		public bool MayLock { get; private set; }
+
+		public bool IsAdmin { get; private set; }
+
+		public async Task SetEditionId(uint newEditionId)
 		{
-			if (!this.editionId.HasValue
-				|| this.editionId.Value != editionId)
-			{
-				this.editionId = editionId;
-				await SetPermissions();
-			}
+			EditionId = newEditionId;
+			await ReadPermissions();
 		}
 
-		public async Task<uint?> EditionEditorId()
+		public async Task ReadPermissions()
 		{
-			if (!_editionEditorId.HasValue
-				&& editionId.HasValue) await SetPermissions();
-			return _editionEditorId.HasValue && _editionEditorId.Value == 0 ? null : _editionEditorId;
-		}
-
-		public async Task<bool> EditionLocked()
-		{
-			if (!_editionLocked.HasValue) await SetPermissions();
-			return _editionLocked ?? true;
-		}
-
-		public async Task<bool> MayWrite()
-		{
-			if (!_mayWrite.HasValue) await SetPermissions();
-			return _mayWrite ?? false;
-		}
-
-		public async Task<bool> MayLock()
-		{
-			if (!_mayLock.HasValue) await SetPermissions();
-			return _mayLock ?? false;
-		}
-
-		public async Task<bool> IsAdmin()
-		{
-			if (!_isAdmin.HasValue) await SetPermissions();
-			return _isAdmin ?? false;
-		}
-
-		private async Task<bool> SetPermissions()
-		{
-			var completed = false;
-			if (editionId.HasValue
-				&& userId.HasValue)
-			{
-				var permissions = await _userRepo.GetUserEditionPermissionsAsync(this);
-				_mayWrite = permissions.MayWrite && !permissions.Locked;
-				_editionLocked = permissions.Locked;
-				_mayLock = permissions.MayLock;
-				_isAdmin = permissions.IsAdmin;
-				_editionEditorId = permissions.EditionEditionEditorId;
-				completed = true;
-			}
-
-			return completed;
+			var permissions = await _userRepo.GetUserEditionPermissionsAsync(this);
+			MayRead = permissions.MayRead;
+			MayWrite = permissions.MayWrite && !permissions.Locked;
+			EditionLocked = permissions.Locked;
+			MayLock = permissions.MayLock;
+			IsAdmin = permissions.IsAdmin;
+			EditionEditorId = permissions.EditionEditionEditorId;
 		}
 	}
 

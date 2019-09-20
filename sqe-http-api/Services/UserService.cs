@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SQE.SqeHttpApi.DataAccess;
+using SQE.SqeHttpApi.DataAccess.Helpers;
 using SQE.SqeHttpApi.DataAccess.Models;
 using SQE.SqeHttpApi.Server.DTOs;
 using SQE.SqeHttpApi.Server.Helpers;
@@ -24,13 +25,18 @@ namespace SQE.SqeHttpApi.Server.Services
 
 		Task<DetailedUserDTO> GetCurrentUser();
 		uint? GetCurrentUserId();
-		UserInfo GetCurrentUserObject(uint? editionId = null);
+
+		Task<EditionUserInfo> GetCurrentUserObjectAsync(uint editionId,
+			bool write = false,
+			bool locking = false,
+			bool admin = false);
+
 		Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
-		Task<DetailedUserTokenDTO> UpdateUserAsync(UserInfo user, UserUpdateRequestDTO updateUserData);
+		Task<DetailedUserTokenDTO> UpdateUserAsync(uint? userId, UserUpdateRequestDTO updateUserData);
 		Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
 		Task<NoContentResult> ResendActivationEmail(string email);
 		Task<NoContentResult> ConfirmUserRegistrationAsync(string token);
-		Task<NoContentResult> ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword);
+		Task<NoContentResult> ChangePasswordAsync(uint? userId, string oldPassword, string newPassword);
 		Task<NoContentResult> RequestResetLostPasswordAsync(string email);
 		Task<NoContentResult> ResetLostPasswordAsync(string token, string password);
 	}
@@ -91,7 +97,7 @@ namespace SQE.SqeHttpApi.Server.Services
 
 		public async Task<DetailedUserDTO> GetCurrentUser()
 		{
-			var userInfo = await _userRepository.GetDetailedUserByIdAsync(GetCurrentUserObject());
+			var userInfo = await _userRepository.GetDetailedUserByIdAsync(GetCurrentUserId());
 			return new DetailedUserDTO
 			{
 				email = userInfo.Email,
@@ -151,18 +157,21 @@ namespace SQE.SqeHttpApi.Server.Services
 		///     This will update a user account in the database and email an authorization token to the user
 		///     if the email has changed.
 		/// </summary>
-		/// <param name="user"></param>
+		/// <param name="userId"></param>
 		/// <param name="updateUserData">All of the information for the new user.</param>
 		/// <returns>Returns a UserDTO for the newly created user account.</returns>
-		public async Task<DetailedUserTokenDTO> UpdateUserAsync(UserInfo user, UserUpdateRequestDTO updateUserData)
+		public async Task<DetailedUserTokenDTO> UpdateUserAsync(uint? userId, UserUpdateRequestDTO updateUserData)
 		{
+			if (!userId.HasValue)
+				throw new StandardExceptions.ImproperInputDataException("user id");
+
 			// Get current user data
-			var originalUserInfo = await _userRepository.GetDetailedUserByIdAsync(user);
+			var originalUserInfo = await _userRepository.GetDetailedUserByIdAsync(GetCurrentUserId());
 			var resetActivation = updateUserData.email != null && originalUserInfo.Email != updateUserData.email;
 
 			// Ask the repo to update the user (merge nul fields with the new request)
 			await _userRepository.UpdateUserAsync(
-				user,
+				userId.Value,
 				updateUserData.password,
 				updateUserData.email ?? originalUserInfo.Email,
 				resetActivation,
@@ -191,7 +200,7 @@ namespace SQE.SqeHttpApi.Server.Services
 			}
 			else // Collect the updated account info
 			{
-				updatedUserWithInfo = await _userRepository.GetDetailedUserByIdAsync(user);
+				updatedUserWithInfo = await _userRepository.GetDetailedUserByIdAsync(GetCurrentUserId());
 			}
 
 			return DetailedUserModelToDto(updatedUserWithInfo);
@@ -322,13 +331,16 @@ The Scripta Qumranica Electronica team</body></html>";
 		/// <summary>
 		///     Change password from old password to new password for the user's account.
 		/// </summary>
-		/// <param name="user">User object with all information for the user requesting a password change</param>
+		/// <param name="userId"></param>
 		/// <param name="oldPassword">The old password for the user's account</param>
 		/// <param name="newPassword">The new password for the user's account</param>
 		/// <returns></returns>
-		public async Task<NoContentResult> ChangePasswordAsync(UserInfo user, string oldPassword, string newPassword)
+		public async Task<NoContentResult> ChangePasswordAsync(uint? userId, string oldPassword, string newPassword)
 		{
-			await _userRepository.ChangePasswordAsync(user, oldPassword, newPassword);
+			if (!userId.HasValue)
+				throw new StandardExceptions.ImproperInputDataException("user id");
+
+			await _userRepository.ChangePasswordAsync(userId.Value, oldPassword, newPassword);
 			return new NoContentResult();
 		}
 
@@ -370,11 +382,36 @@ The Scripta Qumranica Electronica team</body></html>";
 		///     HTTP request.  The UserInfo object can fetch the permissions if requested, and once
 		///     the permissions have been requested, they are "cached" for the life of the object.
 		/// </summary>
-		/// <param name="editionId">Optional id of the edition the user is requesting to work with</param>
+		/// <param name="editionId">Id of the edition the user will be accessing</param>
+		/// <param name="write">Whether the user must have write access</param>
+		/// <param name="locking">Whether the user must have locking access</param>
+		/// <param name="admin">Whether the user must have admin access</param>
 		/// <returns></returns>
-		public UserInfo GetCurrentUserObject(uint? editionId = null)
+		public async Task<EditionUserInfo> GetCurrentUserObjectAsync(uint editionId,
+			bool write = false,
+			bool locking = false,
+			bool admin = false)
 		{
-			return new UserInfo(GetCurrentUserId(), editionId, _userRepository);
+			var access = new EditionAccessLevels(true, write, locking, admin);
+
+			var user = new EditionUserInfo(GetCurrentUserId(), editionId, _userRepository);
+			await user.ReadPermissions();
+
+			// Immediately reject requests without proper permissions
+			if (access.Read
+				&& !user.MayRead)
+				throw new StandardExceptions.NoReadPermissionsException(user);
+			if (access.Write
+				&& !user.MayWrite)
+				throw new StandardExceptions.NoWritePermissionsException(user);
+			if (access.Locking
+				&& !user.MayLock)
+				throw new StandardExceptions.NoLockPermissionsException(user);
+			if (access.Admin
+				&& !user.IsAdmin)
+				throw new StandardExceptions.NoAdminPermissionsException(user);
+
+			return user;
 		}
 
 		/// <summary>
@@ -463,5 +500,21 @@ The Scripta Qumranica Electronica team</body></html>";
 				email = model.Email
 			};
 		}
+	}
+
+	public class EditionAccessLevels
+	{
+		public EditionAccessLevels(bool read = true, bool write = false, bool locking = false, bool admin = false)
+		{
+			Read = read;
+			Write = write;
+			Locking = locking;
+			Admin = admin;
+		}
+
+		public bool Read { get; }
+		public bool Write { get; }
+		public bool Locking { get; }
+		public bool Admin { get; }
 	}
 }

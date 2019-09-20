@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -28,7 +26,7 @@ namespace SQE.ApiTest
 
 		private const string version = "v1";
 		private const string controller = "artefacts";
-		private static uint artefactCount = 0;
+		private static uint artefactCount;
 
 		/// <summary>
 		///     Searches randomly for an edition with artefacts and returns the artefacts.
@@ -77,11 +75,9 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 		}
 
 
-		private string RandomPosition(bool properlyFormatted = true)
+		private (float? scale, float? rotate, uint translateX, uint translateY) ArtefactPosition()
 		{
-			return properlyFormatted
-				? "{\"matrix\":[[1.3,0,32],[0,0.67,54]]}"
-				: "{\"matrix\":[[1,0,0],[0,1,0,0]]}";
+			return ((float?)1.0, (float?)0, (uint)34765, (uint)556);
 		}
 
 		/// <summary>
@@ -121,15 +117,29 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
-			var newTransform = RandomPosition();
+			var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
 			var newName = "CanCreateArtefacts.artefact א";
 			var newArtefact = new CreateArtefactDTO
 			{
-				mask = newArtefactShape,
-				position = null,
+				polygon = new PolygonDTO
+				{
+					mask = newArtefactShape,
+					transformation = new TransformationDTO
+					{
+						scale = newScale,
+						rotate = newRotate,
+						translate = new TranslateDTO
+						{
+							x = newTranslateX,
+							y = newTranslateY
+						}
+					}
+				},
 				name = newName,
-				masterImageId = masterImageId
+				masterImageId = masterImageId,
+				statusMessage = null
 			};
+			const string defaultStatusMessage = "New";
 
 			// Act
 			var (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(
@@ -143,9 +153,13 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			// Assert
 			response.EnsureSuccessStatusCode();
 			Assert.Equal(newEdition, writtenArtefact.editionId);
-			Assert.Equal(newArtefact.mask, writtenArtefact.mask.mask);
-			Assert.Null(writtenArtefact.mask.transformMatrix);
+			Assert.Equal(newArtefact.polygon.mask, writtenArtefact.mask.mask);
+			Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
+			Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
 			Assert.Equal(newArtefact.name, writtenArtefact.name);
+			Assert.Equal(defaultStatusMessage, writtenArtefact.statusMessage);
 
 			// Cleanup
 			await DeleteArtefact(newEdition, writtenArtefact.id);
@@ -155,8 +169,20 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
 			newArtefact = new CreateArtefactDTO
 			{
-				mask = newArtefactShape,
-				position = newTransform,
+				polygon = new PolygonDTO
+				{
+					mask = newArtefactShape,
+					transformation = new TransformationDTO
+					{
+						scale = newScale,
+						rotate = newRotate,
+						translate = new TranslateDTO
+						{
+							x = newTranslateX,
+							y = newTranslateY
+						}
+					}
+				},
 				name = newName,
 				masterImageId = masterImageId
 			};
@@ -173,20 +199,36 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			// Assert
 			response.EnsureSuccessStatusCode();
 			Assert.Equal(newEdition, writtenArtefact.editionId);
-			Assert.Equal(newArtefact.mask, writtenArtefact.mask.mask);
-			Assert.Equal(newTransform, writtenArtefact.mask.transformMatrix);
+			Assert.Equal(newArtefact.polygon.mask, writtenArtefact.mask.mask);
+			Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
+			Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
 			Assert.Equal("", writtenArtefact.name);
 
 			// Cleanup
 			await DeleteArtefact(newEdition, writtenArtefact.id);
 
 			// Arrange
-			newName = "CanCreateArtefacts.artefact ב"; ;
+			newName = "CanCreateArtefacts.artefact ב";
+			;
 
 			newArtefact = new CreateArtefactDTO
 			{
-				mask = null,
-				position = newTransform,
+				polygon = new PolygonDTO
+				{
+					mask = null,
+					transformation = new TransformationDTO
+					{
+						scale = newScale,
+						rotate = newRotate,
+						translate = new TranslateDTO
+						{
+							x = newTranslateX,
+							y = newTranslateY
+						}
+					}
+				},
 				name = newName,
 				masterImageId = masterImageId
 			};
@@ -204,7 +246,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			response.EnsureSuccessStatusCode();
 			Assert.Equal(newEdition, writtenArtefact.editionId);
 			Assert.Equal("", writtenArtefact.mask.mask);
-			Assert.Equal(newTransform, writtenArtefact.mask.transformMatrix);
+			Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
+			Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
+			Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
 			Assert.Equal(newArtefact.name, writtenArtefact.name);
 
 			// Cleanup
@@ -249,6 +294,30 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			await EditionHelpers.DeleteEdition(_client, newEdition, true);
 		}
 
+		[Fact]
+		public async Task CanGetSuggestedTextFragmentForArtefact()
+		{
+			// Arrange
+			const uint editionId = 894;
+			const uint artefactId = 10058;
+			var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/suggested-text-fragments";
+
+			// Act
+			var (tfResponse, tfData) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(
+				_client,
+				HttpMethod.Get,
+				path,
+				null
+			);
+
+			// Assert
+			tfResponse.EnsureSuccessStatusCode();
+			Assert.NotEmpty(tfData.textFragments);
+			Assert.Equal((uint)10029, tfData.textFragments.First().id);
+			Assert.Equal("frg. 78_79", tfData.textFragments.First().name);
+			Assert.Equal((uint)894, tfData.textFragments.First().editorId);
+		}
+
 		/// <summary>
 		///     Ensure that a new artefact cannot be created in an edition not owned by the current user.
 		/// </summary>
@@ -265,12 +334,25 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
-			var newTransform = RandomPosition();
-			var newName = "CanCreateArtefacts.artefact α"; ;
+			var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
+			var newName = "CanCreateArtefacts.artefact α";
+			;
 			var newArtefact = new CreateArtefactDTO
 			{
-				mask = newArtefactShape,
-				position = newTransform,
+				polygon = new PolygonDTO
+				{
+					mask = newArtefactShape,
+					transformation = new TransformationDTO
+					{
+						scale = newScale,
+						rotate = newRotate,
+						translate = new TranslateDTO
+						{
+							x = newTranslateX,
+							y = newTranslateY
+						}
+					}
+				},
 				name = newName,
 				masterImageId = masterImageId
 			};
@@ -335,8 +417,16 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				$"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
 				new UpdateArtefactDTO
 				{
-					mask = null,
-					position = null,
+					polygon = new PolygonDTO
+					{
+						mask = null,
+						transformation = new TransformationDTO
+						{
+							scale = null,
+							rotate = null,
+							translate = null
+						}
+					},
 					name = newArtefactName
 				}
 			);
@@ -359,29 +449,42 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			var artefact = allArtefacts.First();
 			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 			var newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
-			var newArtefactPosition = RandomPosition();
+			var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
 			const string newArtefactShape =
 				"POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
+			const string statusMessage = "Fully examined";
 
-			// Act (update name)
+			// Act (update name and set status)
 			var (nameResponse, updatedNameArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
 				_client,
 				HttpMethod.Put,
 				$"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
 				new UpdateArtefactDTO
 				{
-					mask = null,
-					position = null,
-					name = newArtefactName
+					polygon = new PolygonDTO
+					{
+						mask = null,
+						transformation = new TransformationDTO
+						{
+							scale = null,
+							rotate = null,
+							translate = null
+						}
+					},
+					name = newArtefactName,
+					statusMessage = statusMessage
 				},
 				await HttpRequest.GetJWTAsync(_client)
 			);
 
-			// Assert (update name)
+			// Assert (update name and set status)
 			nameResponse.EnsureSuccessStatusCode();
-			Assert.Equal(artefact.mask.transformMatrix, updatedNameArtefact.mask.transformMatrix);
+			Assert.Equal(artefact.mask.transformation.scale, updatedNameArtefact.mask.transformation.scale);
+			Assert.Equal(artefact.mask.transformation.rotate, updatedNameArtefact.mask.transformation.rotate);
+			Assert.Null(updatedNameArtefact.mask.transformation.translate);
 			Assert.NotEqual(artefact.name, updatedNameArtefact.name);
 			Assert.Equal(newArtefactName, updatedNameArtefact.name);
+			Assert.Equal(statusMessage, updatedNameArtefact.statusMessage);
 
 			// Act (update position)
 			var (positionResponse, updatedPositionArtefact) =
@@ -391,8 +494,20 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 					$"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
 					new UpdateArtefactDTO
 					{
-						mask = null,
-						position = newArtefactPosition,
+						polygon = new PolygonDTO
+						{
+							mask = null,
+							transformation = new TransformationDTO
+							{
+								scale = newScale,
+								rotate = newRotate,
+								translate = new TranslateDTO
+								{
+									x = newTranslateX,
+									y = newTranslateY
+								}
+							}
+						},
 						name = null
 					},
 					await HttpRequest.GetJWTAsync(_client)
@@ -400,8 +515,13 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
 			// Assert (update position)
 			positionResponse.EnsureSuccessStatusCode();
-			Assert.NotEqual(artefact.mask.transformMatrix, updatedPositionArtefact.mask.transformMatrix);
-			Assert.Equal(newArtefactPosition, updatedPositionArtefact.mask.transformMatrix);
+			Assert.NotEqual(artefact.mask.transformation.scale, updatedPositionArtefact.mask.transformation.scale);
+			Assert.NotEqual(artefact.mask.transformation.rotate, updatedPositionArtefact.mask.transformation.rotate);
+			Assert.NotNull(updatedPositionArtefact.mask.transformation.translate);
+			Assert.Equal(newScale, updatedPositionArtefact.mask.transformation.scale);
+			Assert.Equal(newRotate, updatedPositionArtefact.mask.transformation.rotate);
+			Assert.Equal(newTranslateX, updatedPositionArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, updatedPositionArtefact.mask.transformation.translate.y);
 			Assert.Equal(newArtefactName, updatedPositionArtefact.name);
 
 			// Act (update shape)
@@ -411,8 +531,20 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				$"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
 				new UpdateArtefactDTO
 				{
-					mask = newArtefactShape,
-					position = null,
+					polygon = new PolygonDTO
+					{
+						mask = newArtefactShape,
+						transformation = new TransformationDTO
+						{
+							scale = newScale,
+							rotate = newRotate,
+							translate = new TranslateDTO
+							{
+								x = newTranslateX,
+								y = newTranslateY
+							}
+						}
+					},
 					name = null
 				},
 				await HttpRequest.GetJWTAsync(_client)
@@ -422,11 +554,14 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			shapeResponse.EnsureSuccessStatusCode();
 			Assert.NotEqual(artefact.mask.mask, updatedShapeArtefact.mask.mask);
 			Assert.Equal(newArtefactShape, updatedShapeArtefact.mask.mask);
-			Assert.Equal(newArtefactPosition, updatedShapeArtefact.mask.transformMatrix);
+			Assert.Equal(newScale, updatedShapeArtefact.mask.transformation.scale);
+			Assert.Equal(newRotate, updatedShapeArtefact.mask.transformation.rotate);
+			Assert.Equal(newTranslateX, updatedShapeArtefact.mask.transformation.translate.x);
+			Assert.Equal(newTranslateY, updatedShapeArtefact.mask.transformation.translate.y);
 			Assert.Equal(newArtefactName, updatedShapeArtefact.name);
 
 			// Arrange (update all)
-			var otherTransform = RandomPosition();
+			var (otherScale, otherRotate, otherTranslateX, otherTranslateY) = ArtefactPosition();
 			// Act (update all)
 			var (allResponse, updatedAllArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
 				_client,
@@ -434,8 +569,20 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				$"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
 				new UpdateArtefactDTO
 				{
-					mask = artefact.mask.mask,
-					position = otherTransform,
+					polygon = new PolygonDTO
+					{
+						mask = artefact.mask.mask,
+						transformation = new TransformationDTO
+						{
+							scale = otherScale,
+							rotate = otherRotate,
+							translate = new TranslateDTO
+							{
+								x = otherTranslateX,
+								y = otherTranslateY
+							}
+						}
+					},
 					name = artefact.name
 				},
 				await HttpRequest.GetJWTAsync(_client)
@@ -444,41 +591,11 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 			// Assert (update all)
 			allResponse.EnsureSuccessStatusCode();
 			Assert.Equal(artefact.mask.mask, updatedAllArtefact.mask.mask);
-			Assert.Equal(otherTransform, updatedAllArtefact.mask.transformMatrix);
+			Assert.Equal(otherScale, updatedAllArtefact.mask.transformation.scale);
+			Assert.Equal(otherRotate, updatedAllArtefact.mask.transformation.rotate);
+			Assert.Equal(otherTranslateX, updatedAllArtefact.mask.transformation.translate.x);
+			Assert.Equal(otherTranslateY, updatedAllArtefact.mask.transformation.translate.y);
 			Assert.Equal(artefact.name, updatedAllArtefact.name);
-
-			await EditionHelpers.DeleteEdition(_client, newEdition, true);
-		}
-
-		/// <summary>
-		///     Ensure that improperly formatted artefact position transform matrices are rejected.
-		/// </summary>
-		/// <returns></returns>
-		[Fact]
-		public async Task RejectsUpdateToImproperArtefactPosition()
-		{
-			// Arrange
-			var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
-			var artefact = allArtefacts.First();
-			var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
-			var newArtefactMatrix = RandomPosition(false);
-
-			// Act (update name)
-			var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
-				_client,
-				HttpMethod.Put,
-				$"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
-				new UpdateArtefactDTO
-				{
-					mask = null,
-					position = newArtefactMatrix,
-					name = null
-				},
-				await HttpRequest.GetJWTAsync(_client)
-			);
-
-			// Assert (update name)
-			Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
 
 			await EditionHelpers.DeleteEdition(_client, newEdition, true);
 		}
@@ -504,8 +621,16 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 				$"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
 				new UpdateArtefactDTO
 				{
-					mask = newArtefactShape,
-					position = null,
+					polygon = new PolygonDTO
+					{
+						mask = newArtefactShape,
+						transformation = new TransformationDTO
+						{
+							scale = null,
+							rotate = null,
+							translate = null
+						}
+					},
 					name = null
 				},
 				await HttpRequest.GetJWTAsync(_client)

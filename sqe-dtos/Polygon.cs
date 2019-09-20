@@ -4,7 +4,7 @@
 	{
 		public string mask { get; set; }
 		public uint maskEditorId { get; set; }
-		public string transformMatrix { get; set; } //CAN BE NULL
-		public uint transformMatrixEditorId { get; set; }
+		public TransformationDTO transformation { get; set; }
+		public uint positionEditorId { get; set; }
 	}
 }

@@ -8,7 +8,7 @@ declare -A SETTINGS=(
     [MysqlUsername]=${MYSQL_USER}
     [MysqlPassword]=${MYSQL_PASSWORD}
     [MysqlDatabase]=${MYSQL_DATABASE}
-    
+
     ## Email settings
     [MailerEmailAddress]=${MAILER_EMAIL_ADDRESS}
     [MailerEmailUsername]=${MAILER_EMAIL_USERNAME}
@@ -16,16 +16,21 @@ declare -A SETTINGS=(
     [MailerEmailSmtpUrl]=${MAILER_EMAIL_SMTP_URL}
     [MailerEmailSmtpPort]=${MAILER_EMAIL_SMTP_PORT}
     [MailerEmailSmtpSecurity]=${MAILER_EMAIL_SMTP_SECURITY}
-    
+
     ## Partner website settings
     [WebsiteHost]=${WEBSITE_HOST}
-    
+
     ## Secret for API JWT generation
     [Secret]=${SQE_API_SECRET}
+
+    ## Logging levels
+    [MinimumLevel]=${API_LOGLEVEL}
+    [Microsoft]=${DOTNET_LOGLEVEL}
+    [System]=${SYSTEM_LOGLEVEL}
 )
 
 ## Iterate over each setting and update appsettings.json if the environment variable has a value
-for K in "${!SETTINGS[@]}"; do 
+for K in "${!SETTINGS[@]}"; do
     if [[ ! -z "${SETTINGS[$K]}" ]]; then
         sed -i 's/\"'"${K}"'\":[ ]*\".*\"/\"'"${K}"'\": \"'"${SETTINGS[$K]//\//\\/}"'\"/' appsettings.json
     fi

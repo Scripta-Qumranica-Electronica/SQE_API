@@ -99,16 +99,16 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 	// This is a collection of ready-made errors that can be thrown. They include a standard HTTP status error code
 	// and an internal project error code with accompanying message in English.
-	public static class StandardErrors
+	public static class StandardExceptions
 	{
 		#region System errors
 
-		public class EmailNotSent : ServerErrorException
+		public class EmailNotSentException : ServerErrorException
 		{
 			private const string customMsg =
 				"Failed sending email to $Email. This is probably a server error and should be reported to the webmaster.";
 
-			public EmailNotSent(string email)
+			public EmailNotSentException(string email)
 			{
 				Error = customMsg
 					.Replace("$Email", email);
@@ -119,85 +119,85 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 		#region Permissions errors
 
-		public class NoPermissions : ForbiddenDataAccessException
+		public class NoPermissionsException : ForbiddenDataAccessException
 		{
 			private const string customMsg = "User $UserId has no permissions associated with edition $EditionId.";
 
-			public NoPermissions(UserInfo user)
+			public NoPermissionsException(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
-		public class NoReadPermissions : ForbiddenDataAccessException
+		public class NoReadPermissionsException : ForbiddenDataAccessException
 		{
 			private const string customMsg = "User $UserId does not have read access to edition $EditionId.";
 
-			public NoReadPermissions(UserInfo user)
+			public NoReadPermissionsException(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
-		public class NoWritePermissions : ForbiddenDataAccessException
+		public class NoWritePermissionsException : ForbiddenDataAccessException
 		{
 			private const string customMsg = "User $UserId does not have write access to edition $EditionId.";
 
-			public NoWritePermissions(UserInfo user)
+			public NoWritePermissionsException(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
-		public class NoLockPermissions : ForbiddenDataAccessException
+		public class NoLockPermissionsException : ForbiddenDataAccessException
 		{
 			private const string customMsg = "User $UserId is not allowed to lock edition $EditionId.";
 
-			public NoLockPermissions(UserInfo user)
+			public NoLockPermissionsException(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
-		public class NoAdminPermissions : ForbiddenDataAccessException
+		public class NoAdminPermissionsException : ForbiddenDataAccessException
 		{
 			private const string customMsg = "User $UserId does not have admin privilege for edition $EditionId.";
 
-			public NoAdminPermissions(UserInfo user)
+			public NoAdminPermissionsException(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString());
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString());
 			}
 		}
 
-		public class LockedData : LockedDataException
+		public class LockedDataException : Helpers.LockedDataException
 		{
 			private const string customMsg =
 				"Edition $EditionId is locked. User $UserId $Permission admin privilege to unlock it.";
 
-			public LockedData(UserInfo user)
+			public LockedDataException(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString())
-					.Replace("$Permission", user.IsAdmin().Result ? "has" : "does not have");
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString())
+					.Replace("$Permission", editionUser.IsAdmin ? "has" : "does not have");
 			}
 		}
 
-		public class BadLogin : UnauthorizedException
+		public class BadLoginException : UnauthorizedException
 		{
 			private const string customMsg = "Failed login for $Email.";
 
-			public BadLogin(string email)
+			public BadLoginException(string email)
 			{
 				Error = customMsg.Replace("$Email", email);
 			}
@@ -205,11 +205,11 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 		// Do not use this for login related errors, it is only for actions that require an authenticated user
 		// to resubmit their password.
-		public class WrongPassword : UnauthorizedException
+		public class WrongPasswordException : UnauthorizedException
 		{
 			private const string customMsg = "The password is incorrect.";
 
-			public WrongPassword()
+			public WrongPasswordException()
 			{
 				Error = customMsg;
 			}
@@ -219,14 +219,14 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 		#region Data errors
 
-		public class DataNotFound : DataNotFoundException
+		public class DataNotFoundException : Helpers.DataNotFoundException
 		{
 			private const string customMsg = "Data not found. ";
 
 			private const string reason =
 				"No entries could be found for $DataType, when searching on $SearchEntity with id $Id.";
 
-			public DataNotFound(string datatype = null, string id = "0", string searchEntity = null)
+			public DataNotFoundException(string datatype = null, string id = "0", string searchEntity = null)
 			{
 				if (!string.IsNullOrEmpty(datatype)
 					&& string.IsNullOrEmpty(searchEntity))
@@ -241,86 +241,86 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 				Error = customMsg + fullMsg;
 			}
 
-			public DataNotFound(string datatype = null, uint id = 0, string searchEntity = null)
+			public DataNotFoundException(string datatype = null, uint id = 0, string searchEntity = null)
 				: this(datatype, id.ToString(), searchEntity)
 			{
 			}
 		}
 
 		// This exception should be used sparingly. It is usually better to throw the actual database error.
-		public class DataNotWritten : ServerErrorException
+		public class DataNotWrittenException : ServerErrorException
 		{
 			private const string customMsg = "System failed while trying to $Operation.";
 
-			public DataNotWritten(string operation, string reason = null)
+			public DataNotWrittenException(string operation, string reason = null)
 			{
 				Error = customMsg.Replace("$Operation", operation)
 					.Replace("$Reason", string.IsNullOrEmpty(reason) ? "" : $"This happened because {reason}.");
 			}
 		}
 
-		public class ImproperInputData : BadInputException
+		public class ImproperInputDataException : BadInputException
 		{
 			private const string customMsg = "The input data for $DataType is incorrect or out of date.";
 
-			public ImproperInputData(string datatype)
+			public ImproperInputDataException(string datatype)
 			{
 				Error = customMsg.Replace("$DataType", datatype);
 			}
 		}
 
-		public class InputDataRuleViolation : BadInputException
+		public class InputDataRuleViolationException : BadInputException
 		{
 			private const string customMsg = "The request is not allowed because it violates the rule: $Rule.";
 
-			public InputDataRuleViolation(string rule)
+			public InputDataRuleViolationException(string rule)
 			{
 				Error = customMsg.Replace("$Rule", rule);
 			}
 		}
 
-		public class ConflictingData : ConflictingInputException
+		public class ConflictingDataException : ConflictingInputException
 		{
 			private const string customMsg =
 				"The submitted $DataType conflicts with data already existing in the system.";
 
-			public ConflictingData(string datatype)
+			public ConflictingDataException(string datatype)
 			{
 				Error = customMsg.Replace("$DataType", datatype);
 			}
 		}
 
-		public class EditionCopyLockProtection : ForbiddenDataAccessException
+		public class EditionCopyLockProtectionException : ForbiddenDataAccessException
 		{
 			private const string customMsg =
 				"The edition $EditionId must be locked before attempting to copy it. User $UserId $Permission admin privilege to unlock it.";
 
-			public EditionCopyLockProtection(UserInfo user)
+			public EditionCopyLockProtectionException(EditionUserInfo editionUser)
 			{
 				Error = customMsg
-					.Replace("$UserId", user.userId.ToString())
-					.Replace("$EditionId", user.editionId.ToString())
-					.Replace("$Permission", user.IsAdmin().Result ? "has" : "does not have");
+					.Replace("$UserId", editionUser.userId.ToString())
+					.Replace("$EditionId", editionUser.EditionId.ToString())
+					.Replace("$Permission", editionUser.IsAdmin ? "has" : "does not have");
 			}
 		}
 
-		public class EmailAddressImproperlyFormatted : BadInputException
+		public class EmailAddressImproperlyFormattedException : BadInputException
 		{
 			private const string customMsg = "The email address $Email could not be parsed by the system as a valid.";
 
-			public EmailAddressImproperlyFormatted(string email)
+			public EmailAddressImproperlyFormattedException(string email)
 			{
 				Error = customMsg
 					.Replace("$Email", email);
 			}
 		}
 
-		public class EmailAddressUndeliverable : BadInputException
+		public class EmailAddressUndeliverableException : BadInputException
 		{
 			private const string customMsg =
 				"The email address $Email could not be reached by the system. The email address is almost certainly incorrect.";
 
-			public EmailAddressUndeliverable(string email)
+			public EmailAddressUndeliverableException(string email)
 			{
 				Error = customMsg
 					.Replace("$Email", email);

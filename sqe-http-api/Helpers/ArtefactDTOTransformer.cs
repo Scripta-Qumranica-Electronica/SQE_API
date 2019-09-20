@@ -19,11 +19,23 @@ namespace SQE.SqeHttpApi.Server.Helpers
 				{
 					mask = artefact.Mask,
 					maskEditorId = artefact.MaskEditorId,
-					transformMatrix = artefact.TransformMatrix,
-					transformMatrixEditorId = artefact.TransformMatrixEditorId
+					transformation = new TransformationDTO
+					{
+						scale = artefact.Scale,
+						rotate = artefact.Rotate,
+						translate = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue
+							? new TranslateDTO
+							{
+								x = artefact.TranslateX.Value,
+								y = artefact.TranslateY.Value
+							}
+							: null
+					},
+					positionEditorId = artefact.PositionEditorId
 				},
 
 				imagedObjectId = artefact.ImagedObjectId,
+				statusMessage = artefact.WorkStatusMessage,
 
 				name = artefact.Name,
 				side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso,

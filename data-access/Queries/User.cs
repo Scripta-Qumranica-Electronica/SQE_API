@@ -48,15 +48,18 @@ WHERE $Where";
 	internal static class UserPermissionQuery
 	{
 		public const string GetQuery = @"
-SELECT edition_editor_id AS EditionEditionEditorId, 
-       may_write AS MayWrite, 
-       may_lock AS MayLock, 
-       may_read AS MayRead, 
-       is_admin AS IsAdmin,
+SELECT user.user_id AS UserId,
+       edition_editor_id AS EditionEditionEditorId, 
+       COALESCE(may_write, FALSE) AS MayWrite, 
+       COALESCE(may_lock, FALSE) AS MayLock, 
+       COALESCE(may_read, public) AS MayRead, 
+       COALESCE(is_admin, FALSE) AS IsAdmin,
        locked AS Locked
-FROM edition_editor
-JOIN edition ON edition.edition_id = @EditionId
-WHERE edition_editor.edition_id = @EditionId AND user_id = @UserId";
+FROM edition
+LEFT JOIN user ON user.user_id = @UserId
+LEFT JOIN edition_editor ON edition_editor.edition_id = @EditionId
+    AND edition_editor.user_id = @UserId
+WHERE edition.edition_id = @EditionId";
 	}
 
 	/// <summary>

@@ -64,7 +64,7 @@ namespace SQE.SqeApi.Server.Controllers
 		public async Task<ActionResult> ChangePassword([FromBody] ResetLoggedInUserPasswordRequestDTO payload)
 		{
 			return await _userService.ChangePasswordAsync(
-				_userService.GetCurrentUserObject(),
+				_userService.GetCurrentUserId(),
 				payload.oldPassword,
 				payload.newPassword
 			);
@@ -82,7 +82,10 @@ namespace SQE.SqeApi.Server.Controllers
 		[HttpPut("v1/[controller]s")]
 		public async Task<ActionResult<DetailedUserDTO>> ChangeUserInfo([FromBody] UserUpdateRequestDTO payload)
 		{
-			return await _userService.UpdateUserAsync(_userService.GetCurrentUserObject(), payload);
+			return await _userService.UpdateUserAsync(
+				_userService.GetCurrentUserId(),
+				payload
+			);
 		}
 
 		/// <summary>
@@ -126,7 +129,7 @@ namespace SQE.SqeApi.Server.Controllers
 		/// <returns>Returns a UserDTO for the newly created account</returns>
 		[AllowAnonymous]
 		[HttpPost("v1/[controller]s")]
-		public async Task<ActionResult<UserDTO>> NewUserRequestDTO([FromBody] NewUserRequestDTO payload)
+		public async Task<ActionResult<UserDTO>> NewUserRequest([FromBody] NewUserRequestDTO payload)
 		{
 			return await _userService.CreateNewUserAsync(payload);
 		}

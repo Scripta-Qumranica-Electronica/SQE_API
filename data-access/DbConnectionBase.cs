@@ -94,7 +94,8 @@ namespace SQE.SqeHttpApi.DataAccess
 							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
 							retryCount,
 							delay,
-							exception);
+							exception
+						);
 				}
 			);
 
@@ -110,7 +111,8 @@ namespace SQE.SqeHttpApi.DataAccess
 							"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
 							retryCount,
 							delay,
-							exception);
+							exception
+						);
 				}
 			);
 
@@ -184,7 +186,8 @@ namespace SQE.SqeHttpApi.DataAccess
 								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
 								retryCount,
 								delay,
-								exception);
+								exception
+							);
 					}
 				);
 
@@ -200,7 +203,8 @@ namespace SQE.SqeHttpApi.DataAccess
 								"Exception encountered, retry {retryCount} in {delay} seconds. {@exception}",
 								retryCount,
 								delay,
-								exception);
+								exception
+							);
 					}
 				);
 

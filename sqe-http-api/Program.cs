@@ -1,10 +1,9 @@
 ﻿using System;
+using System.IO;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Serilog;
-using Serilog.Events;
-
-/*using Serilog.Formatting.Compact;*/ // Use this to format log entries as JSON output
 
 namespace SQE.SqeHttpApi.Server
 {
@@ -12,16 +11,15 @@ namespace SQE.SqeHttpApi.Server
 	{
 		public static int Main(string[] args)
 		{
+			var configuration = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				// TODO: when we know the deployment details we will probably need to change the logging settings
+				.AddJsonFile("appsettings.json", true)
+				.AddCommandLine(args)
+				.Build();
+
 			Log.Logger = new LoggerConfiguration()
-				.MinimumLevel.Debug()
-				.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-				.Enrich.FromLogContext()
-				.WriteTo.Async(
-					a => a.File( /*new CompactJsonFormatter(),*/ "logs/sqe-api.log",
-						rollingInterval: RollingInterval.Day,
-						buffered: true
-					)
-				)
+				.ReadFrom.Configuration(configuration)
 				.CreateLogger();
 
 			try

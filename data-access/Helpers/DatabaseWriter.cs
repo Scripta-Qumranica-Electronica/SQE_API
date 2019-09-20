@@ -123,7 +123,7 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 	public interface IDatabaseWriter
 	{
-		Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
+		Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
 			List<MutationRequest> mutationRequests);
 	}
 
@@ -140,19 +140,18 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 		///     A list of AlteredRecord objects containing the details of each mutation.
 		///     The order of the returned list or results matches the order of the list of mutation requests
 		/// </returns>
-		/// <param name="user"></param>
+		/// <param name="editionUser"></param>
 		/// <param name="mutationRequests">List of mutation requests.</param>
-		public async Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo user,
+		public async Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
 			List<MutationRequest> mutationRequests)
 		{
 			// Check if the edition is locked
-			if (await user.EditionLocked())
-				throw new StandardErrors.LockedData(user);
+			if (editionUser.EditionLocked)
+				throw new StandardExceptions.LockedDataException(editionUser);
 
 			// Check the permissions and throw if user has no rights to alter this edition
-			if (!await user.MayWrite()
-				&& !(await user.EditionEditorId()).HasValue)
-				throw new StandardErrors.NoWritePermissions(user);
+			if (!editionUser.MayWrite)
+				throw new StandardExceptions.NoWritePermissionsException(editionUser);
 
 			var alteredRecords = new List<AlteredRecord>();
 
@@ -171,8 +170,8 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 							// Though we accept a List of mutations, we have the restriction that
 							// they all belong to the same editionId and userID.
 							// This way, we only do one permission check for the whole batch.
-							mutationRequest.Parameters.Add("@EditionId", user.editionId);
-							mutationRequest.Parameters.Add("@EditionEditorId", (await user.EditionEditorId()).Value);
+							mutationRequest.Parameters.Add("@EditionId", editionUser.EditionId);
+							mutationRequest.Parameters.Add("@EditionEditorId", editionUser.EditionEditorId);
 							await AddMainActionAsync(connection, mutationRequest);
 							switch (mutationRequest.Action)
 							{
@@ -354,7 +353,10 @@ namespace SQE.SqeHttpApi.DataAccess.Helpers
 
 			// If nothing was changed, then the data was not found, so throw an error.
 			if (results < 1)
-				throw new StandardErrors.DataNotFound(mutationRequest.TableName, mutationRequest.TablePkId ?? 0);
+				throw new StandardExceptions.DataNotFoundException(
+					mutationRequest.TableName,
+					mutationRequest.TablePkId ?? 0
+				);
 		}
 
 		/// <summary>

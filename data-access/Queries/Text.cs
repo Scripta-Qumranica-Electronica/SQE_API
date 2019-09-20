@@ -48,7 +48,8 @@ namespace SQE.SqeHttpApi.DataAccess.Queries
       sign_interpretation_attribute_author.user_id AS signInterpretationAttributeAuthor,
       attribute_numeric.value AS value,
 
-      sign_interpretation_roi.sign_interpretation_id AS SignInterpretationRoiId,
+	  sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
+      sign_interpretation_roi.sign_interpretation_id AS SignInterpretationId,
       sign_interpretation_roi_author.user_id AS SignInterpretationRoiAuthor,
       sign_interpretation_roi.values_set AS ValuesSet,
       sign_interpretation_roi.exceptional AS Exceptional,

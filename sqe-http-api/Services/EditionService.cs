@@ -11,18 +11,21 @@ namespace SQE.SqeHttpApi.Server.Services
 {
 	public interface IEditionService
 	{
-		Task<EditionGroupDTO> GetEditionAsync(UserInfo user, bool artefacts = false, bool fragments = false);
+		Task<EditionGroupDTO> GetEditionAsync(EditionUserInfo editionUser,
+			bool artefacts = false,
+			bool fragments = false);
+
 		Task<EditionListDTO> ListEditionsAsync(uint? userId);
 
-		Task<EditionDTO> UpdateEditionAsync(UserInfo user,
+		Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
 			string name,
 			string copyrightHolder = null,
 			string collaborators = null);
 
-		Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo);
-		Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional);
-		Task<EditorRightsDTO> AddEditionEditor(UserInfo user, EditorRightsDTO newEditor);
-		Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO updatedEditor);
+		Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser, EditionCopyDTO editionInfo);
+		Task<DeleteTokenDTO> DeleteEditionAsync(EditionUserInfo editionUser, string token, List<string> optional);
+		Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser, EditorRightsDTO newEditor);
+		Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser, EditorRightsDTO updatedEditor);
 	}
 
 	public class EditionService : IEditionService
@@ -36,16 +39,17 @@ namespace SQE.SqeHttpApi.Server.Services
 			_userRepo = userRepo;
 		}
 
-		public async Task<EditionGroupDTO> GetEditionAsync(UserInfo user,
+		public async Task<EditionGroupDTO> GetEditionAsync(EditionUserInfo editionUser,
 			bool artefacts = false,
 			bool fragments = false)
 		{
-			var scrollModels = await _editionRepo.ListEditionsAsync(user.userId, user.editionId);
+			var scrollModels = await _editionRepo.ListEditionsAsync(editionUser.userId, editionUser.EditionId);
 
-			var primaryModel = scrollModels.FirstOrDefault(sv => sv.EditionId == user.editionId);
+			var primaryModel = scrollModels.FirstOrDefault(sv => sv.EditionId == editionUser.EditionId);
 			if (primaryModel == null) // User is not allowed to see this scroll version
 				return null;
-			var otherModels = scrollModels.Where(sv => sv.EditionId != user.editionId).OrderBy(sv => sv.EditionId);
+			var otherModels = scrollModels.Where(sv => sv.EditionId != editionUser.EditionId)
+				.OrderBy(sv => sv.EditionId);
 
 			var editionGroup = new EditionGroupDTO
 			{
@@ -68,56 +72,58 @@ namespace SQE.SqeHttpApi.Server.Services
 			};
 		}
 
-		public async Task<EditionDTO> UpdateEditionAsync(UserInfo user,
+		public async Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
 			string name,
 			string copyrightHolder = null,
 			string collaborators = null)
 		{
-			var editionBeforeChanges = (await _editionRepo.ListEditionsAsync(user.userId, user.editionId)).First();
+			var editionBeforeChanges =
+				(await _editionRepo.ListEditionsAsync(editionUser.userId, editionUser.EditionId)).First();
 
 			if (copyrightHolder != null
 				|| editionBeforeChanges.Collaborators != collaborators)
-				await _editionRepo.ChangeEditionCopyrightAsync(user, copyrightHolder, collaborators);
+				await _editionRepo.ChangeEditionCopyrightAsync(editionUser, copyrightHolder, collaborators);
 
-			if (!string.IsNullOrEmpty(name)) await _editionRepo.ChangeEditionNameAsync(user, name);
+			if (!string.IsNullOrEmpty(name)) await _editionRepo.ChangeEditionNameAsync(editionUser, name);
 
 			var editions = await _editionRepo.ListEditionsAsync(
-				user.userId,
-				user.editionId
+				editionUser.userId,
+				editionUser.EditionId
 			); //get wanted edition by edition Id
 
-			return EditionModelToDTO(editions.First(x => x.EditionId == user.editionId));
+			return EditionModelToDTO(editions.First(x => x.EditionId == editionUser.EditionId));
 		}
 
-		public async Task<EditionDTO> CopyEditionAsync(UserInfo user, EditionCopyDTO editionInfo)
+		public async Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser, EditionCopyDTO editionInfo)
 		{
 			EditionDTO edition;
 			// Clone edition
 			var copyToEditionId = await _editionRepo.CopyEditionAsync(
-				user,
+				editionUser,
 				editionInfo.copyrightHolder,
 				editionInfo.collaborators
 			);
-			if (user.editionId == copyToEditionId)
+			if (editionUser.EditionId == copyToEditionId)
 				// Check if is success is true, else throw error.
-				throw new Exception($"Failed to clone {user.editionId}.");
-			user.SetEditionId(copyToEditionId); // Update user object for the new editionId
+				throw new Exception($"Failed to clone {editionUser.EditionId}.");
+			await editionUser.SetEditionId(copyToEditionId); // Update user object for the new editionId
 
 			//Change the Name, if a Name has been passed
 			if (!string.IsNullOrEmpty(editionInfo.name))
 			{
-				edition = await UpdateEditionAsync(user, editionInfo.name); // Change the Name.
+				edition = await UpdateEditionAsync(editionUser, editionInfo.name); // Change the Name.
 			}
 			else
 			{
 				var editions = await _editionRepo.ListEditionsAsync(
-					user.userId,
-					user.editionId
+					editionUser.userId,
+					editionUser.EditionId
 				); //get wanted scroll by Id
-				var unformattedEdition = editions.First(x => x.EditionId == user.editionId);
+				var unformattedEdition = editions.First(x => x.EditionId == editionUser.EditionId);
 				//I think we do not get this far if no records were found, `First` will, I think throw an error.
 				//Maybe we should more often make use of try/catch.
-				if (unformattedEdition == null) throw new StandardErrors.DataNotFound("edition", user.editionId ?? 0);
+				if (unformattedEdition == null)
+					throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId);
 				edition = EditionModelToDTO(unformattedEdition);
 			}
 
@@ -128,11 +134,13 @@ namespace SQE.SqeHttpApi.Server.Services
 		///     Delete all data from the edition that the user is currently subscribed to. The user must be admin and
 		///     provide a valid delete token.
 		/// </summary>
-		/// <param name="user">User object requesting the delete</param>
+		/// <param name="editionUser">User object requesting the delete</param>
 		/// <param name="optional">optional parameters: "deleteForAllEditors"</param>
 		/// <param name="token">token required for optional "deleteForAllEditors"</param>
 		/// <returns></returns>
-		public async Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo user, string token, List<string> optional)
+		public async Task<DeleteTokenDTO> DeleteEditionAsync(EditionUserInfo editionUser,
+			string token,
+			List<string> optional)
 		{
 			_parseOptional(optional, out var deleteForAllEditors);
 
@@ -140,24 +148,24 @@ namespace SQE.SqeHttpApi.Server.Services
 			if (deleteForAllEditors)
 			{
 				// Try to delete the edition fully for all editors
-				var newToken = await _editionRepo.DeleteAllEditionDataAsync(user, token);
+				var newToken = await _editionRepo.DeleteAllEditionDataAsync(editionUser, token);
 
 				// End the request with null for successful delete or a proper token for requests without a confirmation token
 				return string.IsNullOrEmpty(newToken)
 					? null
 					: new DeleteTokenDTO
 					{
-						editionId = user.editionId ?? 0,
+						editionId = editionUser.EditionId,
 						token = newToken
 					};
 			}
 
 			// The edition should only be made inaccessible for the current user
-			var userInfo = await _userRepo.GetDetailedUserByIdAsync(user);
+			var userInfo = await _userRepo.GetDetailedUserByIdAsync(editionUser.userId);
 
 			// Setting all permission to false is how we delete a user's access to an edition.
 			await _editionRepo.ChangeEditionEditorRights(
-				user,
+				editionUser,
 				userInfo.Email,
 				false,
 				false,
@@ -170,13 +178,13 @@ namespace SQE.SqeHttpApi.Server.Services
 		/// <summary>
 		///     Adds a new editor to an edition with the requested access rights
 		/// </summary>
-		/// <param name="user">User object making the request</param>
+		/// <param name="editionUser">User object making the request</param>
 		/// <param name="newEditor">Details of the new editor to be added</param>
 		/// <returns></returns>
-		public async Task<EditorRightsDTO> AddEditionEditor(UserInfo user, EditorRightsDTO newEditor)
+		public async Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser, EditorRightsDTO newEditor)
 		{
 			var newUserPermissions = await _editionRepo.AddEditionEditor(
-				user,
+				editionUser,
 				newEditor.email,
 				newEditor.mayRead,
 				newEditor.mayWrite,
@@ -189,13 +197,14 @@ namespace SQE.SqeHttpApi.Server.Services
 		/// <summary>
 		///     Changes the access rights of an editor
 		/// </summary>
-		/// <param name="user">User object making the request</param>
+		/// <param name="editionUser">User object making the request</param>
 		/// <param name="updatedEditor">Details of the editor and the desired access rights</param>
 		/// <returns></returns>
-		public async Task<EditorRightsDTO> ChangeEditionEditorRights(UserInfo user, EditorRightsDTO updatedEditor)
+		public async Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+			EditorRightsDTO updatedEditor)
 		{
 			var updatedUserPermissions = await _editionRepo.ChangeEditionEditorRights(
-				user,
+				editionUser,
 				updatedEditor.email,
 				updatedEditor.mayRead,
 				updatedEditor.mayWrite,

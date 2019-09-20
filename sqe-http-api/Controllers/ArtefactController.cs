@@ -12,11 +12,13 @@ namespace SQE.SqeApi.Server.Controllers
 	public class ArtefactController : ControllerBase
 	{
 		private readonly IArtefactService _artefactService;
+		private readonly IRoiService _roiService;
 		private readonly IUserService _userService;
 
-		public ArtefactController(IArtefactService artefactService, IUserService userService)
+		public ArtefactController(IArtefactService artefactService, IRoiService roiService, IUserService userService)
 		{
 			_artefactService = artefactService;
+			_roiService = roiService;
 			_userService = userService;
 		}
 
@@ -30,12 +32,8 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromBody] CreateArtefactDTO payload)
 		{
 			return await _artefactService.CreateArtefactAsync(
-				_userService.GetCurrentUserObject(editionId),
-				editionId,
-				payload.masterImageId,
-				payload.mask,
-				payload.name,
-				payload.position
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
+				payload
 			);
 		}
 
@@ -47,7 +45,10 @@ namespace SQE.SqeApi.Server.Controllers
 		[HttpDelete("v1/editions/{editionId}/[controller]s/{artefactId}")]
 		public async Task<ActionResult> DeleteArtefact([FromRoute] uint artefactId, [FromRoute] uint editionId)
 		{
-			return await _artefactService.DeleteArtefactAsync(_userService.GetCurrentUserObject(editionId), artefactId);
+			return await _artefactService.DeleteArtefactAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
+				artefactId
+			);
 		}
 
 		/// <summary>
@@ -63,9 +64,25 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromQuery] List<string> optional)
 		{
 			return await _artefactService.GetEditionArtefactAsync(
-				_userService.GetCurrentUserObject(editionId),
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				artefactId,
 				optional
+			);
+		}
+
+		/// <summary>
+		///     Provides a listing of all rois belonging to an artefact in the specified edition
+		/// </summary>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		[AllowAnonymous]
+		[HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/rois")]
+		public async Task<ActionResult<InterpretationRoiDTOList>> GetArtefactRois([FromRoute] uint artefactId,
+			[FromRoute] uint editionId)
+		{
+			return await _roiService.GetRoisByArtefactIdAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId),
+				artefactId
 			);
 		}
 
@@ -80,9 +97,25 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromQuery] List<string> optional)
 		{
 			return await _artefactService.GetEditionArtefactListingsAsync(
-				_userService.GetCurrentUserId(),
-				editionId,
+				await _userService.GetCurrentUserObjectAsync(editionId),
 				optional
+			);
+		}
+
+		/// <summary>
+		///     Provides a listing of text fragments that may match the specified artefact
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		[AllowAnonymous]
+		[HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/suggested-text-fragments")]
+		public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactSuggestedTextFragments(
+			[FromRoute] uint editionId,
+			[FromRoute] uint artefactId)
+		{
+			return await _artefactService.ArtefactSuggestedTextFragmentsAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId),
+				artefactId
 			);
 		}
 
@@ -98,12 +131,9 @@ namespace SQE.SqeApi.Server.Controllers
 			[FromBody] UpdateArtefactDTO payload)
 		{
 			return await _artefactService.UpdateArtefactAsync(
-				_userService.GetCurrentUserObject(editionId),
-				editionId,
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
 				artefactId,
-				payload.mask,
-				payload.name,
-				payload.position
+				payload
 			);
 		}
 	}

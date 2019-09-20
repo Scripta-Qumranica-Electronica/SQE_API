@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +52,7 @@ namespace SQE.SqeHttpApi.Server
 			services.AddScoped<IArtefactService, ArtefactService>();
 			services.AddScoped<IImageService, ImageService>();
 			services.AddScoped<ITextService, TextService>();
+			services.AddScoped<IRoiService, RoiService>();
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddTransient<IUserRepository, UserRepository>();
 			services.AddTransient<IEditionRepository, EditionRepository>();
@@ -58,6 +61,22 @@ namespace SQE.SqeHttpApi.Server
 			services.AddTransient<IArtefactRepository, ArtefactRepository>();
 			services.AddTransient<IDatabaseWriter, DatabaseWriter>();
 			services.AddTransient<ITextRepository, TextRepository>();
+			services.AddTransient<IRoiRepository, RoiRepository>();
+
+			services.AddResponseCompression();
+			services.Configure<BrotliCompressionProviderOptions>(
+				options =>
+				{
+					// A custom compression level makes a huge difference CompressionLevel.Optimal uses level 11,
+					// which is incredibly slow.  A level between 5–7 gives a similarly sized result at a considerably
+					// faster speed. On one test Broti (CompressionLevel)5 compressed a 9.4 MB file to 1.57 MB, gzip
+					// compressed it to 2.45 MB (albeit a little bit faster).
+					options.Level = (CompressionLevel)5;
+				}
+			);
+			services.Configure<GzipCompressionProviderOptions>(
+				options => { options.Level = CompressionLevel.Optimal; }
+			);
 
 			// When running integration tests, we do not actually send out emails. This checks ASPNETCORE_ENVIRONMENT
 			// and if it is "IntegrationTests", then a Fake for IEmailSender is used instead of the real one.
@@ -142,6 +161,9 @@ namespace SQE.SqeHttpApi.Server
 		public void Configure(IApplicationBuilder app)
 		{
 			if (Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
+
+			// TODO: when we know the deployment details we should reassess the use of compression here. 
+			app.UseResponseCompression();
 
 			app.UseSerilogRequestLogging();
 

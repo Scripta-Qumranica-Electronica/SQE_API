@@ -10,7 +10,7 @@ namespace SQE.SqeHttpApi.DataAccess
 {
 	public interface IImagedObjectRepository
 	{
-		Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(uint? userId, uint editionId, string imagedObjectId);
+		Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(EditionUserInfo editionUser, string imagedObjectId);
 	}
 
 	public class ImagedObjectRepository : DbConnectionBase, IImagedObjectRepository
@@ -19,8 +19,7 @@ namespace SQE.SqeHttpApi.DataAccess
 		{
 		}
 
-		public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(uint? userId,
-			uint editionId,
+		public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(EditionUserInfo editionUser,
 			string imagedObjectId)
 		{
 			var sql = ImagedObjectQueries.GetQuery(imagedObjectId != null);
@@ -31,8 +30,8 @@ namespace SQE.SqeHttpApi.DataAccess
 					sql,
 					new
 					{
-						UserId = userId ?? 1, // @UserId is not expanded if userId is null
-						EditionId = editionId,
+						UserId = editionUser.userId,
+						editionUser.EditionId,
 						ObjectId = imagedObjectId
 					}
 				);
