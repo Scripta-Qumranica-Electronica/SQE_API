@@ -64,7 +64,7 @@ namespace SQE.Utilities.GenerateTypescriptDTOs
 				Console.Error.WriteLine(
 					@"
 Usage:
-GenerateTypescriptDTOs <sqe-dtos.dll> <output-file.ts>
+GenerateTypescriptDTOs <sqe-dto.dll> <output-file.ts>
                                     "
 				);
 			}
