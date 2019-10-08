@@ -5,9 +5,9 @@ dotnet: 2.2
 services: docker
 
 before_install:
-- docker-compose -f docker/dev/docker-compose.yml pull
-- docker-compose -f docker/dev/docker-compose.yml build
-- docker-compose -f docker/dev/docker-compose.yml up -d
+- docker-compose -f docker-http-server/dev/docker-compose.yml pull
+- docker-compose -f docker-http-server/dev/docker-compose.yml build
+- docker-compose -f docker-http-server/dev/docker-compose.yml up -d
 
 install:
 - dotnet restore
