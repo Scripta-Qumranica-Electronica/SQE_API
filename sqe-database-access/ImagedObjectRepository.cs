@@ -3,10 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using SQE.SqeHttpApi.DataAccess.Models;
-using SQE.SqeHttpApi.DataAccess.Queries;
+using SQE.DatabaseAccess.Models;
+using SQE.DatabaseAccess.Queries;
 
-namespace SQE.SqeHttpApi.DataAccess
+namespace SQE.DatabaseAccess
 {
 	public interface IImagedObjectRepository
 	{

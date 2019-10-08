@@ -10,8 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EmailValidation" Version="1.0.3" />
-    <PackageReference Include="MailKit" Version="2.1.4" />
     <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
@@ -28,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\sqe-api-service\sqe-api-service.csproj" />
     <ProjectReference Include="..\sqe-database-access\sqe-database-access.csproj" />
     <ProjectReference Include="..\sqe-dto\sqe-dto.csproj" />
   </ItemGroup>
@@ -38,6 +37,7 @@
 
   <ItemGroup>
     <Folder Include="logs" />
+    <Folder Include="Services" />
   </ItemGroup>
     
   <PropertyGroup>

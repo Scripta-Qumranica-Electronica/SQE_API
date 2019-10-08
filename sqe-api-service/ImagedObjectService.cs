@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Threading.Tasks;
 using SQE.API.DTO;
-using SQE.API.HTTP.Helpers;
+using SQE.API.Services.Helpers;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
-namespace SQE.API.HTTP.Services
+namespace SQE.API.Services
 {
 	public interface IImagedObjectService
 	{
