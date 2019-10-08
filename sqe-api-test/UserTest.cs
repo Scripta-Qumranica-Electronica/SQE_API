@@ -6,9 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
-using SQE.ApiTest.Helpers;
 using SQE.API.DTO;
 using SQE.API.HTTP;
+using SQE.ApiTest.Helpers;
 using Xunit;
 
 namespace SQE.ApiTest
