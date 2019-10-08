@@ -5,8 +5,4 @@
     <RootNamespace>SQE.API.DTO</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-  </ItemGroup>
-
 </Project>

@@ -16,7 +16,6 @@
     <PackageReference Include="Microsoft.AspNetCore.ResponseCompression" Version="2.2.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.0.2105168" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0" />
-    <PackageReference Include="NetTopologySuite.Core" Version="1.15.2" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.0.0-dev-00088" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="1.0.1-dev-00925" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.1-dev-00209" />
