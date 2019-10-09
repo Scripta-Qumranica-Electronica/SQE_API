@@ -95,7 +95,7 @@ namespace SQE.API.HTTP.Controllers
 		/// <returns>Returns a DetailedUserDTO for the confirmed account</returns>
 		[AllowAnonymous]
 		[HttpPost("v1/[controller]s/confirm-registration")]
-		public async Task<ActionResult<DetailedUserDTO>> ConfirmUserRegistration(
+		public async Task<ActionResult> ConfirmUserRegistration(
 			[FromBody] AccountActivationRequestDTO payload)
 		{
 			return await _userService.ConfirmUserRegistrationAsync(payload.token);

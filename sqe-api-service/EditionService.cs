@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
@@ -20,12 +21,22 @@ namespace SQE.API.Services
 		Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
 			string name,
 			string copyrightHolder = null,
-			string collaborators = null);
+			string collaborators = null,
+			string clientId = null);
 
-		Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser, EditionCopyDTO editionInfo);
-		Task<DeleteTokenDTO> DeleteEditionAsync(EditionUserInfo editionUser, string token, List<string> optional);
-		Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser, EditorRightsDTO newEditor);
-		Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser, EditorRightsDTO updatedEditor);
+		Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser,
+			EditionCopyDTO editionInfo,
+			string clientId = null);
+		Task<DeleteTokenDTO> DeleteEditionAsync(EditionUserInfo editionUser,
+			string token,
+			List<string> optional,
+			string clientId = null);
+		Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
+			EditorRightsDTO newEditor,
+			string clientId = null);
+		Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+			EditorRightsDTO updatedEditor,
+			string clientId = null);
 	}
 
 	public class EditionService : IEditionService
@@ -75,7 +86,8 @@ namespace SQE.API.Services
 		public async Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
 			string name,
 			string copyrightHolder = null,
-			string collaborators = null)
+			string collaborators = null,
+			string clientId = null)
 		{
 			var editionBeforeChanges =
 				(await _editionRepo.ListEditionsAsync(editionUser.userId, editionUser.EditionId)).First();
@@ -94,7 +106,9 @@ namespace SQE.API.Services
 			return EditionModelToDTO(editions.First(x => x.EditionId == editionUser.EditionId));
 		}
 
-		public async Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser, EditionCopyDTO editionInfo)
+		public async Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser,
+			EditionCopyDTO editionInfo,
+			string clientId = null)
 		{
 			EditionDTO edition;
 			// Clone edition
@@ -135,12 +149,14 @@ namespace SQE.API.Services
 		///     provide a valid delete token.
 		/// </summary>
 		/// <param name="editionUser">User object requesting the delete</param>
-		/// <param name="optional">optional parameters: "deleteForAllEditors"</param>
 		/// <param name="token">token required for optional "deleteForAllEditors"</param>
+		/// <param name="optional">optional parameters: "deleteForAllEditors"</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
 		public async Task<DeleteTokenDTO> DeleteEditionAsync(EditionUserInfo editionUser,
 			string token,
-			List<string> optional)
+			List<string> optional,
+			string clientId = null)
 		{
 			_parseOptional(optional, out var deleteForAllEditors);
 
@@ -180,8 +196,11 @@ namespace SQE.API.Services
 		/// </summary>
 		/// <param name="editionUser">User object making the request</param>
 		/// <param name="newEditor">Details of the new editor to be added</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser, EditorRightsDTO newEditor)
+		public async Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
+			EditorRightsDTO newEditor,
+			string clientId = null)
 		{
 			var newUserPermissions = await _editionRepo.AddEditionEditor(
 				editionUser,
@@ -199,9 +218,11 @@ namespace SQE.API.Services
 		/// </summary>
 		/// <param name="editionUser">User object making the request</param>
 		/// <param name="updatedEditor">Details of the editor and the desired access rights</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
 		public async Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
-			EditorRightsDTO updatedEditor)
+			EditorRightsDTO updatedEditor,
+			string clientId = null)
 		{
 			var updatedUserPermissions = await _editionRepo.ChangeEditionEditorRights(
 				editionUser,

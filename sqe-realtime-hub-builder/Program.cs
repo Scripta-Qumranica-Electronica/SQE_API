@@ -31,7 +31,7 @@ namespace sqe_realtime_hub_builder
 				var code = new StreamReader(filepath).ReadToEnd();
 				var tree = CSharpSyntaxTree.ParseText(code);
 				var root = tree.GetCompilationUnitRoot();
-				using (var outputFile = new StreamWriter($"{projectRoot}/{controllerName}Hub.cs.txt"))
+				using (var outputFile = new StreamWriter($"{projectRoot}/../sqe-realtime-server/Hubs/{controllerName}Hub.cs"))
 				{
 					outputFile.Write(_autogenFileDisclaimer);
 					foreach (var element in root.Usings.Where(element => element.Name.ToString() != "Microsoft.AspNetCore.Mvc"))
@@ -100,7 +100,8 @@ namespace sqe_realtime_hub_builder
 
 								var methodBody = Regex.Replace(method.Body.ToString()
 									.Replace("\n", "")
-									.Replace("\t", ""),
+									.Replace("\t", "")
+									.Replace("return ", returnType == "Task" ? "" : "return "),
 									@"\s*\)\s*;", httpRequestType == "Get" ? ");" : ", clientId: Context.ConnectionId);");
 								outputFile.WriteLine(methodBody);
 								outputFile.WriteLine("");
@@ -113,6 +114,7 @@ namespace sqe_realtime_hub_builder
 			}
 
 			WriteHubController(classFields, projectRoot);
+			CopySubscriptionHubController(projectRoot);
 		}
 
 		private static List<ControllerField> AnalyzeController(List<MemberDeclarationSyntax> elements)
@@ -180,9 +182,18 @@ namespace sqe_realtime_hub_builder
 				.Replace("$Params", string.Join(", ", fields.Select(x => $"{x.type} {x.name.Replace("_", "")}")))
 				.Replace("$Body", 
 					string.Join("\n", fields.Select(x => $"\t\t\t{x.name} = {x.name.Replace("_", "")};")));
-			using (var outputFile = new StreamWriter($"{projectRoot}/HubConstructor.cs.txt"))
+			using (var outputFile = new StreamWriter($"{projectRoot}/../sqe-realtime-server/Hubs/HubConstructor.cs"))
 			{
 				outputFile.Write(template);
+			}
+		}
+		
+		private static void CopySubscriptionHubController(string projectRoot)
+		{
+			var subscriptionHub = new StreamReader(Path.Combine(projectRoot, "SubscriptionHub.cs.txt")).ReadToEnd();
+			using (var outputFile = new StreamWriter(Path.Combine(projectRoot, "../", "sqe-realtime-server", "Hubs", "SubscriptionHub.cs")))
+			{
+				outputFile.Write(subscriptionHub);
 			}
 		}
 

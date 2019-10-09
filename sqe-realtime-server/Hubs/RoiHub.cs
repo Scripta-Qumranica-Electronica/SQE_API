@@ -81,7 +81,7 @@ public async Task<UpdatedInterpretationRoiDTOList> PutV1EditionsEditionIdRoisBat
 		
 [Authorize]
 public async Task DeleteV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId)
-{return await _roiService.DeleteRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),roiId, clientId: Context.ConnectionId);}
+{await _roiService.DeleteRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),roiId, clientId: Context.ConnectionId);}
 
 	}
 }

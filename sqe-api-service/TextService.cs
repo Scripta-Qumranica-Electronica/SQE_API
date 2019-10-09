@@ -16,7 +16,8 @@ namespace SQE.API.Services
 		Task<TextFragmentDataListDTO> GetFragmentDataAsync(EditionUserInfo editionUser);
 
 		Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
-			CreateTextFragmentDTO createFragment);
+			CreateTextFragmentDTO createFragment,
+			string clientId = null);
 	}
 
 	public class TextService : ITextService
@@ -71,7 +72,8 @@ namespace SQE.API.Services
 		}
 
 		public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
-			CreateTextFragmentDTO createFragment)
+			CreateTextFragmentDTO createFragment,
+			string clientId = null)
 		{
 			var newFragment = await _textRepo.CreateTextFragmentAsync(
 				editionUser,

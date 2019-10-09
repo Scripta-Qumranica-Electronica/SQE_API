@@ -39,7 +39,7 @@ public async Task<DetailedUserTokenDTO> PostV1UsersLogin(LoginRequestDTO payload
 		
 [AllowAnonymous]
 public async Task PostV1UsersChangeUnactivatedEmail(UnactivatedEmailUpdateRequestDTO payload)
-{return await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail, clientId: Context.ConnectionId);}
+{await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail, clientId: Context.ConnectionId);}
 
 
 		/// <summary>
@@ -49,7 +49,7 @@ public async Task PostV1UsersChangeUnactivatedEmail(UnactivatedEmailUpdateReques
 		
 [AllowAnonymous]
 public async Task PostV1UsersChangeForgottenPassword(ResetForgottenUserPasswordRequestDTO payload)
-{return await _userService.ResetLostPasswordAsync(payload.token, payload.password, clientId: Context.ConnectionId);}
+{await _userService.ResetLostPasswordAsync(payload.token, payload.password, clientId: Context.ConnectionId);}
 
 
 		/// <summary>
@@ -59,7 +59,7 @@ public async Task PostV1UsersChangeForgottenPassword(ResetForgottenUserPasswordR
 		
 [Authorize]
 public async Task PostV1UsersChangePassword(ResetLoggedInUserPasswordRequestDTO payload)
-{return await _userService.ChangePasswordAsync(_userService.GetCurrentUserId(),payload.oldPassword,payload.newPassword, clientId: Context.ConnectionId);}
+{await _userService.ChangePasswordAsync(_userService.GetCurrentUserId(),payload.oldPassword,payload.newPassword, clientId: Context.ConnectionId);}
 
 
 		/// <summary>
@@ -84,8 +84,8 @@ public async Task<DetailedUserDTO> PutV1Users(UserUpdateRequestDTO payload)
 		/// <returns>Returns a DetailedUserDTO for the confirmed account</returns>
 		
 [AllowAnonymous]
-public async Task<DetailedUserDTO> PostV1UsersConfirmRegistration(AccountActivationRequestDTO payload)
-{return await _userService.ConfirmUserRegistrationAsync(payload.token, clientId: Context.ConnectionId);}
+public async Task PostV1UsersConfirmRegistration(AccountActivationRequestDTO payload)
+{await _userService.ConfirmUserRegistrationAsync(payload.token, clientId: Context.ConnectionId);}
 
 
 		/// <summary>
@@ -95,7 +95,7 @@ public async Task<DetailedUserDTO> PostV1UsersConfirmRegistration(AccountActivat
 		
 [AllowAnonymous]
 public async Task PostV1UsersForgotPassword(ResetUserPasswordRequestDTO payload)
-{return await _userService.RequestResetLostPasswordAsync(payload.email, clientId: Context.ConnectionId);}
+{await _userService.RequestResetLostPasswordAsync(payload.email, clientId: Context.ConnectionId);}
 
 
 		/// <summary>
@@ -127,7 +127,7 @@ public async Task<UserDTO> PostV1Users(NewUserRequestDTO payload)
 		
 [AllowAnonymous]
 public async Task PostV1UsersResendActivationEmail(ResendUserAccountActivationRequestDTO payload)
-{return await _userService.ResendActivationEmail(payload.email, clientId: Context.ConnectionId);}
+{await _userService.ResendActivationEmail(payload.email, clientId: Context.ConnectionId);}
 
 	}
 }

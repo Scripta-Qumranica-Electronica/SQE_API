@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-api-service", "sqe-api-
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-hub-builder", "sqe-realtime-hub-builder\sqe-realtime-hub-builder.csproj", "{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-server", "sqe-realtime-server\sqe-realtime-server.csproj", "{F7020AF8-9453-481F-9FF1-02AD1EA2F605}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +75,10 @@ Global
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7020AF8-9453-481F-9FF1-02AD1EA2F605}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7020AF8-9453-481F-9FF1-02AD1EA2F605}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7020AF8-9453-481F-9FF1-02AD1EA2F605}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7020AF8-9453-481F-9FF1-02AD1EA2F605}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

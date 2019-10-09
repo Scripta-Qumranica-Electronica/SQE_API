@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>netcoreapp2.2</TargetFramework>
+		<AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+		<RootNamespace>SQE.API.Realtime</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Hubs" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<ProjectReference Include="..\sqe-api-service\sqe-api-service.csproj" />
+		<ProjectReference Include="..\sqe-database-access\sqe-database-access.csproj" />
+		<ProjectReference Include="..\sqe-dto\sqe-dto.csproj" />
+	</ItemGroup>
+
+</Project>

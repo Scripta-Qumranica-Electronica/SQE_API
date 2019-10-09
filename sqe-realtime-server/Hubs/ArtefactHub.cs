@@ -37,7 +37,7 @@ public async Task<ArtefactDTO> PostV1EditionsEditionIdArtefacts(uint editionId, 
 		
 [Authorize]
 public async Task DeleteV1EditionsEditionIdArtefactsArtefactId(uint artefactId, uint editionId)
-{return await _artefactService.DeleteArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),artefactId, clientId: Context.ConnectionId);}
+{await _artefactService.DeleteArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),artefactId, clientId: Context.ConnectionId);}
 
 
 		/// <summary>

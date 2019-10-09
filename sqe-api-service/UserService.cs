@@ -20,8 +20,7 @@ namespace SQE.API.Services
 {
 	public interface IUserService
 	{
-		Task<DetailedUserTokenDTO>
-			AuthenticateAsync(string email, string password); // TODO: Return a User object, not a LoginResponse
+		Task<DetailedUserTokenDTO> AuthenticateAsync(string email, string password, string clientId = null); // TODO: Return a User object, not a LoginResponse
 
 		Task<DetailedUserDTO> GetCurrentUser();
 		uint? GetCurrentUserId();
@@ -31,14 +30,21 @@ namespace SQE.API.Services
 			bool locking = false,
 			bool admin = false);
 
-		Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData);
-		Task<DetailedUserTokenDTO> UpdateUserAsync(uint? userId, UserUpdateRequestDTO updateUserData);
-		Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail);
-		Task<NoContentResult> ResendActivationEmail(string email);
-		Task<NoContentResult> ConfirmUserRegistrationAsync(string token);
-		Task<NoContentResult> ChangePasswordAsync(uint? userId, string oldPassword, string newPassword);
-		Task<NoContentResult> RequestResetLostPasswordAsync(string email);
-		Task<NoContentResult> ResetLostPasswordAsync(string token, string password);
+		Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData, string clientId = null);
+		Task<DetailedUserTokenDTO> UpdateUserAsync(uint? userId,
+			UserUpdateRequestDTO updateUserData,
+			string clientId = null);
+		Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail,
+			string newEmail,
+			string clientId = null);
+		Task<NoContentResult> ResendActivationEmail(string email, string clientId = null);
+		Task<NoContentResult> ConfirmUserRegistrationAsync(string token, string clientId = null);
+		Task<NoContentResult> ChangePasswordAsync(uint? userId,
+			string oldPassword,
+			string newPassword,
+			string clientId = null);
+		Task<NoContentResult> RequestResetLostPasswordAsync(string email, string clientId = null);
+		Task<NoContentResult> ResetLostPasswordAsync(string token, string password, string clientId = null);
 	}
 
 	public class UserService : IUserService
@@ -75,11 +81,12 @@ namespace SQE.API.Services
 		/// </summary>
 		/// <param name="email"></param>
 		/// <param name="password">The user's password</param>
+		/// <param name="clientId"></param>
 		/// <returns>
 		///     Returns a response including a JWT for the user to use as a Bearer token, or an email
 		///     address if the user account has not yet been activated.
 		/// </returns>
-		public async Task<DetailedUserTokenDTO> AuthenticateAsync(string email, string password)
+		public async Task<DetailedUserTokenDTO> AuthenticateAsync(string email, string password, string clientId = null)
 		{
 			var result = await _userRepository.GetUserByPasswordAsync(email, password);
 
@@ -126,8 +133,10 @@ namespace SQE.API.Services
 		///     This will create a new user account in the database and email an authorization token to the user.
 		/// </summary>
 		/// <param name="newUserData">All of the information for the new user.</param>
+		/// <param name="clientId"></param>
 		/// <returns>Returns a UserDTO for the newly created user account.</returns>
-		public async Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData)
+		public async Task<DetailedUserTokenDTO> CreateNewUserAsync(NewUserRequestDTO newUserData,
+			string clientId = null)
 		{
 			// Ask the repo to create the new user
 			var createdUser = await _userRepository.CreateNewUserAsync(
@@ -159,8 +168,11 @@ namespace SQE.API.Services
 		/// </summary>
 		/// <param name="userId"></param>
 		/// <param name="updateUserData">All of the information for the new user.</param>
+		/// <param name="clientId"></param>
 		/// <returns>Returns a UserDTO for the newly created user account.</returns>
-		public async Task<DetailedUserTokenDTO> UpdateUserAsync(uint? userId, UserUpdateRequestDTO updateUserData)
+		public async Task<DetailedUserTokenDTO> UpdateUserAsync(uint? userId,
+			UserUpdateRequestDTO updateUserData,
+			string clientId = null)
 		{
 			if (!userId.HasValue)
 				throw new StandardExceptions.ImproperInputDataException("user id");
@@ -211,8 +223,9 @@ namespace SQE.API.Services
 		///     was sent to the user's email address.
 		/// </summary>
 		/// <param name="token">Secret authentication token for user's new account</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<NoContentResult> ConfirmUserRegistrationAsync(string token)
+		public async Task<NoContentResult> ConfirmUserRegistrationAsync(string token, string clientId = null)
 		{
 			var userInfo = await _userRepository.GetDetailedUserByTokenAsync(token);
 			await _userRepository.ConfirmAccountCreationAsync(token);
@@ -245,8 +258,11 @@ The Scripta Qumranica Electronica team</body></html>";
 		/// </summary>
 		/// <param name="oldEmail">Email address that was originally entered when creating the account</param>
 		/// <param name="newEmail">New email address to use for the account</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail, string newEmail)
+		public async Task<NoContentResult> UpdateUnactivatedAccountEmailAsync(string oldEmail,
+			string newEmail,
+			string clientId = null)
 		{
 			// Check if account is already activated
 			await _userRepository.GetUnactivatedUserByEmailAsync(oldEmail);
@@ -264,8 +280,9 @@ The Scripta Qumranica Electronica team</body></html>";
 		///     Updates the email address for an account that has not yet been activated
 		/// </summary>
 		/// <param name="email">Email address that was originally entered when creating the account</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<NoContentResult> ResendActivationEmail(string email)
+		public async Task<NoContentResult> ResendActivationEmail(string email, string clientId = null)
 		{
 			try
 			{
@@ -287,8 +304,9 @@ The Scripta Qumranica Electronica team</body></html>";
 		///     Creates a token for validating a reset password request.  The token is emailed to the user.
 		/// </summary>
 		/// <param name="email">Email address of the user who has requested reset of a forgotten password</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<NoContentResult> RequestResetLostPasswordAsync(string email)
+		public async Task<NoContentResult> RequestResetLostPasswordAsync(string email, string clientId = null)
 		{
 			try
 			{
@@ -334,8 +352,12 @@ The Scripta Qumranica Electronica team</body></html>";
 		/// <param name="userId"></param>
 		/// <param name="oldPassword">The old password for the user's account</param>
 		/// <param name="newPassword">The new password for the user's account</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<NoContentResult> ChangePasswordAsync(uint? userId, string oldPassword, string newPassword)
+		public async Task<NoContentResult> ChangePasswordAsync(uint? userId,
+			string oldPassword,
+			string newPassword,
+			string clientId = null)
 		{
 			if (!userId.HasValue)
 				throw new StandardExceptions.ImproperInputDataException("user id");
@@ -350,8 +372,9 @@ The Scripta Qumranica Electronica team</body></html>";
 		/// </summary>
 		/// <param name="token">Secret token for validating change password request.</param>
 		/// <param name="password">New password for the user's account</param>
+		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<NoContentResult> ResetLostPasswordAsync(string token, string password)
+		public async Task<NoContentResult> ResetLostPasswordAsync(string token, string password, string clientId = null)
 		{
 			var userInfo = await _userRepository.ResetForgottenPasswordAsync(token, password);
 
