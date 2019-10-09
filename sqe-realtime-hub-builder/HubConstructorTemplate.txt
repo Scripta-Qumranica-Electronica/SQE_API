@@ -1,0 +1,15 @@
+using Microsoft.AspNetCore.SignalR;
+using SQE.API.Services;
+
+namespace SQE.API.Realtime.Hubs
+{
+    public partial class MainHub : Hub
+    {
+$Fields
+
+        public MainHub($Params)
+        {
+$Body
+        }
+     }
+}
