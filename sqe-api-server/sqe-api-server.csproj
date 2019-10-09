@@ -4,16 +4,19 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <RootNamespace>SQE.API.HTTP</RootNamespace>
+    <RootNamespace>SQE.API.Server</RootNamespace>
     <Configurations>Debug;Release</Configurations>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EmailValidation" Version="1.0.3" />
+    <PackageReference Include="MailKit" Version="2.3.1.6" />
     <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.ResponseCompression" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Redis" Version="1.1.5" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.0.2105168" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.0.0-dev-00088" />
@@ -25,7 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\sqe-api-service\sqe-api-service.csproj" />
     <ProjectReference Include="..\sqe-database-access\sqe-database-access.csproj" />
     <ProjectReference Include="..\sqe-dto\sqe-dto.csproj" />
   </ItemGroup>
@@ -35,8 +37,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="RealtimeHubs" />
     <Folder Include="logs" />
-    <Folder Include="Services" />
   </ItemGroup>
     
   <PropertyGroup>

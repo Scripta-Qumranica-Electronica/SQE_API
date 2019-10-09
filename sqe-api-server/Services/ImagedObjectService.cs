@@ -1,13 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
-using SQE.API.Services.Helpers;
+using SQE.API.Server.Helpers;
+using SQE.API.Server.RealtimeHubs;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
-namespace SQE.API.Services
+namespace SQE.API.Server.Services
 {
 	public interface IImagedObjectService
 	{
@@ -28,17 +30,20 @@ namespace SQE.API.Services
 		private readonly IImageRepository _imageRepo;
 		private readonly IImageService _imageService;
 		private readonly IImagedObjectRepository _repo;
+		private readonly IHubContext<MainHub> _hubContext;
 
 		public ImagedObjectService(
 			IImagedObjectRepository repo,
 			IImageRepository imageRepo,
 			IImageService imageService,
-			IArtefactRepository artefactRepository)
+			IArtefactRepository artefactRepository, 
+			IHubContext<MainHub> hubContext)
 		{
 			_repo = repo;
 			_imageRepo = imageRepo;
 			_imageService = imageService;
 			_artefactRepository = artefactRepository;
+			_hubContext = hubContext;
 		}
 
 		// TODO: Fix this and GetImagedObjectsWithArtefactsAsync up to be more DRY and efficient.
