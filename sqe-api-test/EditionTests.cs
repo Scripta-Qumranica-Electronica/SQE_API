@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.HTTP;
+using SQE.API.Server;
 using SQE.ApiTest.Helpers;
 using Xunit;
 

@@ -10,7 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-database-access", "sqe-database-access\sqe-database-access.csproj", "{260192E4-F9FE-4FD5-A478-558A6F611550}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-http-server", "sqe-http-server\sqe-http-server.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-api-server", "sqe-api-server\sqe-api-server.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{2342F74C-D461-45E2-BA99-72BD0C84F64B}"
 	ProjectSection(SolutionItems) = preProject
@@ -35,11 +35,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs", "Utilities\GenerateTypescriptDTOs\GenerateTypescriptDTOs.csproj", "{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-api-service", "sqe-api-service\sqe-api-service.csproj", "{F0FAEED8-0B46-4A94-A45F-AEC58DB34EFB}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-hub-builder", "sqe-realtime-hub-builder\sqe-realtime-hub-builder.csproj", "{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-server", "sqe-realtime-server\sqe-realtime-server.csproj", "{F7020AF8-9453-481F-9FF1-02AD1EA2F605}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,18 +63,10 @@ Global
 		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F0FAEED8-0B46-4A94-A45F-AEC58DB34EFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F0FAEED8-0B46-4A94-A45F-AEC58DB34EFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F0FAEED8-0B46-4A94-A45F-AEC58DB34EFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F0FAEED8-0B46-4A94-A45F-AEC58DB34EFB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F7020AF8-9453-481F-9FF1-02AD1EA2F605}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F7020AF8-9453-481F-9FF1-02AD1EA2F605}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F7020AF8-9453-481F-9FF1-02AD1EA2F605}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F7020AF8-9453-481F-9FF1-02AD1EA2F605}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
