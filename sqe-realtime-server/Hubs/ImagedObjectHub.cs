@@ -9,15 +9,13 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using SQE.API.DTO;
-using SQE.API.Services;
 using Microsoft.AspNetCore.SignalR;
+using SQE.API.DTO;
 
 namespace SQE.API.Realtime.Hubs
 {
-    public partial class MainHub : Hub
-    {
-
+	public partial class MainHub : Hub
+	{
 		/// <summary>
 		///     Provides information for the specified imaged object related to the specified edition, can include images and also
 		///     their masks with optional.
@@ -25,10 +23,17 @@ namespace SQE.API.Realtime.Hubs
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
 		/// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
-		
-[AllowAnonymous]
-public async Task<ImagedObjectDTO> GetV1EditionsEditionIdImagedObjectsImagedObjectId(uint editionId, string imagedObjectId, List<string> optional)
-{return await _imagedObjectService.GetImagedObjectAsync(await _userService.GetCurrentUserObjectAsync(editionId),imagedObjectId,optional);}
+		[AllowAnonymous]
+		public async Task<ImagedObjectDTO> GetV1EditionsEditionIdImagedObjectsImagedObjectId(uint editionId,
+			string imagedObjectId,
+			List<string> optional)
+		{
+			return await _imagedObjectService.GetImagedObjectAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId),
+				imagedObjectId,
+				optional
+			);
+		}
 
 
 		/// <summary>
@@ -37,19 +42,24 @@ public async Task<ImagedObjectDTO> GetV1EditionsEditionIdImagedObjectsImagedObje
 		/// </summary>
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
-		
-[AllowAnonymous]
-public async Task<ImagedObjectListDTO> GetV1EditionsEditionIdImagedObjects(uint editionId, List<string> optional)
-{return await _imagedObjectService.GetImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId),optional);}
+		[AllowAnonymous]
+		public async Task<ImagedObjectListDTO> GetV1EditionsEditionIdImagedObjects(uint editionId,
+			List<string> optional)
+		{
+			return await _imagedObjectService.GetImagedObjectsAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId),
+				optional
+			);
+		}
 
 
 		/// <summary>
 		///     Provides a list of all institutional image providers.
 		/// </summary>
-		
-[AllowAnonymous]
-public async Task<ImageInstitutionListDTO> GetV1ImagedObjectsInstitutions()
-{return await _imageService.GetImageInstitutionsAsync();}
-
+		[AllowAnonymous]
+		public async Task<ImageInstitutionListDTO> GetV1ImagedObjectsInstitutions()
+		{
+			return await _imageService.GetImageInstitutionsAsync();
+		}
 	}
 }

@@ -16,15 +16,9 @@ namespace SQE.API.Realtime
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 		{
-			if (env.IsDevelopment())
-			{
-				app.UseDeveloperExceptionPage();
-			}
-			
-			app.UseSignalR(hubs =>
-			{
-				hubs.MapHub<MainHub>("/signalr");
-			});
+			if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
+
+			app.UseSignalR(hubs => { hubs.MapHub<MainHub>("/signalr"); });
 		}
 	}
 }

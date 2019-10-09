@@ -9,24 +9,27 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using SQE.API.DTO;
-using SQE.API.Services;
 using Microsoft.AspNetCore.SignalR;
+using SQE.API.DTO;
 
 namespace SQE.API.Realtime.Hubs
 {
-    public partial class MainHub : Hub
-    {
-
+	public partial class MainHub : Hub
+	{
 		/// <summary>
 		///     Adds an editor to the specified edition
 		/// </summary>
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="payload">JSON object with the attributes of the new editor</param>
-		
-[Authorize]
-public async Task<EditorRightsDTO> PostV1EditionsEditionIdEditors(uint editionId, EditorRightsDTO payload)
-{return await _editionService.AddEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId, admin: true),payload, clientId: Context.ConnectionId);}
+		[Authorize]
+		public async Task<EditorRightsDTO> PostV1EditionsEditionIdEditors(uint editionId, EditorRightsDTO payload)
+		{
+			return await _editionService.AddEditionEditor(
+				await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
+				payload,
+				Context.ConnectionId
+			);
+		}
 
 
 		/// <summary>
@@ -34,10 +37,15 @@ public async Task<EditorRightsDTO> PostV1EditionsEditionIdEditors(uint editionId
 		/// </summary>
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="payload">JSON object with the attributes of the new editor</param>
-		
-[Authorize]
-public async Task<EditorRightsDTO> PutV1EditionsEditionIdEditors(uint editionId, EditorRightsDTO payload)
-{return await _editionService.ChangeEditionEditorRights(await _userService.GetCurrentUserObjectAsync(editionId, admin: true),payload, clientId: Context.ConnectionId);}
+		[Authorize]
+		public async Task<EditorRightsDTO> PutV1EditionsEditionIdEditors(uint editionId, EditorRightsDTO payload)
+		{
+			return await _editionService.ChangeEditionEditorRights(
+				await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
+				payload,
+				Context.ConnectionId
+			);
+		}
 
 
 		/// <summary>
@@ -45,10 +53,15 @@ public async Task<EditorRightsDTO> PutV1EditionsEditionIdEditors(uint editionId,
 		/// </summary>
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="request">JSON object with the attributes to be changed in the copied edition</param>
-		
-[Authorize]
-public async Task<EditionDTO> PostV1EditionsEditionId(uint editionId, EditionCopyDTO request)
-{return await _editionService.CopyEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId),request, clientId: Context.ConnectionId);}
+		[Authorize]
+		public async Task<EditionDTO> PostV1EditionsEditionId(uint editionId, EditionCopyDTO request)
+		{
+			return await _editionService.CopyEditionAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId),
+				request,
+				Context.ConnectionId
+			);
+		}
 
 
 		/// <summary>
@@ -57,29 +70,37 @@ public async Task<EditionDTO> PostV1EditionsEditionId(uint editionId, EditionCop
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
 		/// <param name="token">token required when using optional 'deleteForAllEditors'</param>
-		
-[Authorize]
-public async Task<DeleteTokenDTO> DeleteV1EditionsEditionId(uint editionId, List<string> optional, string token)
-{return await _editionService.DeleteEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),token,optional, clientId: Context.ConnectionId);}
+		[Authorize]
+		public async Task<DeleteTokenDTO> DeleteV1EditionsEditionId(uint editionId, List<string> optional, string token)
+		{
+			return await _editionService.DeleteEditionAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
+				token,
+				optional,
+				Context.ConnectionId
+			);
+		}
 
 
 		/// <summary>
 		///     Provides details about the specified edition and all accessible alternate editions
 		/// </summary>
 		/// <param name="editionId">Unique Id of the desired edition</param>
-		
-[AllowAnonymous]
-public async Task<EditionGroupDTO> GetV1EditionsEditionId(uint editionId)
-{return await _editionService.GetEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));}
+		[AllowAnonymous]
+		public async Task<EditionGroupDTO> GetV1EditionsEditionId(uint editionId)
+		{
+			return await _editionService.GetEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
+		}
 
 
 		/// <summary>
 		///     Provides a listing of all editions accessible to the current user
 		/// </summary>
-		
-[AllowAnonymous]
-public async Task<EditionListDTO> GetV1Editions()
-{return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());}
+		[AllowAnonymous]
+		public async Task<EditionListDTO> GetV1Editions()
+		{
+			return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
+		}
 
 
 		/// <summary>
@@ -87,10 +108,16 @@ public async Task<EditionListDTO> GetV1Editions()
 		/// </summary>
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="request">JSON object with the attributes to be updated</param>
-		
-[Authorize]
-public async Task<EditionDTO> PutV1EditionsEditionId(uint editionId, EditionUpdateRequestDTO request)
-{return await _editionService.UpdateEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),request.name,request.copyrightHolder,request.collaborators, clientId: Context.ConnectionId);}
-
+		[Authorize]
+		public async Task<EditionDTO> PutV1EditionsEditionId(uint editionId, EditionUpdateRequestDTO request)
+		{
+			return await _editionService.UpdateEditionAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true),
+				request.name,
+				request.copyrightHolder,
+				request.collaborators,
+				Context.ConnectionId
+			);
+		}
 	}
 }
