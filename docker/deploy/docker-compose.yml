@@ -58,6 +58,15 @@ services:
             - API_LOGLEVEL=Information # Log level for API generated messages
             - DOTNET_LOGLEVEL=Warning # Log level for dotnet core messages and Microsoft tooling
             - SYSTEM_LOGLEVEL=Warning # Leg level for system level messages
+
+            ## Redis SignalR backplane settings for horizontal scaling of the realtime API (disabled by default)
+            - Use_Redis=false # Use a Redis backplane to horizontally scale the realtime API
+            #- REDIS_HOST=
+            #- REDIS_PORT=
+            #- REDIS_PASSWORD=
+
+            ## Server options
+            - Http_Server=true # Run the API HTTP server
         depends_on:
             - sqe-database
         volumes:

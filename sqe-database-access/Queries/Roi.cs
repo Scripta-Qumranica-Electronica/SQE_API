@@ -1,24 +1,24 @@
 namespace SQE.DatabaseAccess.Queries
 {
-	internal static class CreateRoiShapeQuery
-	{
-		public const string GetQuery = @"
+    internal static class CreateRoiShapeQuery
+    {
+        public const string GetQuery = @"
 INSERT INTO SQE.roi_shape (path)
 VALUES (ST_GeomFromText(@Path))
 ";
-	}
+    }
 
-	internal static class CreateRoiPositionQuery
-	{
-		public const string GetQuery = @"
+    internal static class CreateRoiPositionQuery
+    {
+        public const string GetQuery = @"
 INSERT INTO SQE.roi_position (artefact_id, transform_matrix)
 VALUES (@ArtefactId, @TransformMatrix)
 ";
-	}
+    }
 
-	internal static class GetSignInterpretationRoiDetailsQuery
-	{
-		public const string GetQuery = @"
+    internal static class GetSignInterpretationRoiDetailsQuery
+    {
+        public const string GetQuery = @"
 SELECT roi_position.artefact_id AS ArtefactId,
        sign_interpretation_roi.sign_interpretation_id AS SignInterpretationId,
        ST_ASTEXT(roi_shape.path) AS Shape,
@@ -37,11 +37,11 @@ JOIN sign_interpretation_roi_owner
 	AND sign_interpretation_roi_owner.edition_id = @EditionId
 WHERE sign_interpretation_roi.sign_interpretation_roi_id = @SignInterpretationRoiId
 ";
-	}
+    }
 
-	internal static class GetSignInterpretationRoiDetailsByArtefactIdQuery
-	{
-		public const string GetQuery = @"
+    internal static class GetSignInterpretationRoiDetailsByArtefactIdQuery
+    {
+        public const string GetQuery = @"
 SELECT roi_position.artefact_id AS ArtefactId,
        sign_interpretation_roi.sign_interpretation_id AS SignInterpretationId,
        ST_ASTEXT(roi_shape.path) AS Shape,
@@ -60,5 +60,5 @@ JOIN sign_interpretation_roi_owner
 	AND sign_interpretation_roi_owner.edition_id = @EditionId
 WHERE roi_position.artefact_id = @ArtefactId
 ";
-	}
+    }
 }
