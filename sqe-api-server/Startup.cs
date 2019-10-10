@@ -165,7 +165,7 @@ namespace SQE.API.Server
             // You must set sticky sessions in the load balancer.
             // Remember that the docs warn to only use a Redis backplane in the same network as the SignalR Hubs,
             // otherwise you may experience latency issues.
-            if (appSettings.UseRedis.ToLower() == "true")
+            if (appSettings.UseRedis.ToLower() == "true" && !Environment.IsEnvironment("IntegrationTests"))
             {
                 if (string.IsNullOrEmpty(Configuration.GetConnectionString("RedisHost")))
                     throw new Exception("Must set a value in appsettings.json for RedisHost");
