@@ -12,9 +12,10 @@ namespace SQE.ApiTest.Helpers
         private static int cloneCount;
 
         /// <summary>
-        ///     Searches randomly for an edition and returns it.
+        ///     Retrieves an Edition object wither randomly or using a specified editionId.
         /// </summary>
-        /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
+        /// <param name="client">The HttpClient used to make the request.</param>
+        /// <param name="editionId">Specifies the editionId to be used.</param>
         /// <param name="jwt">A JWT can be added the request to access private editions.</param>
         /// <returns>a randomly selected EditionDTO</returns>
         public static async Task<EditionDTO> GetEdition(

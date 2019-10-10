@@ -5,7 +5,7 @@ using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub
     {
         // NOTE: Every connected client has a `Context` that (like an HTTP context) lives for the duration
         // of the connection.  The `Items` attribute is a Dict<object, object> container intended for storing
@@ -44,7 +44,7 @@ namespace SQE.API.Server.RealtimeHubs
             }
             else // Create the subcription context item and add the editionId
             {
-                Context.Items["editionId"] = new List<uint>() {editionId};
+                Context.Items["editionId"] = new List<uint> {editionId};
                 // Add it to the editionIdId of this request
                 await Groups.AddToGroupAsync(Context.ConnectionId, editionId.ToString());
             }

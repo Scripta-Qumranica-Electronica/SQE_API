@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub
     {
         /// <summary>
         ///     Creates a new text fragment in the given edition of a scroll

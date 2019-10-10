@@ -7,7 +7,7 @@ namespace SQE.DatabaseAccess.Queries
     {
         internal class AuthorByTableId
         {
-            private readonly string _query = @"
+            private const string _query = @"
 SELECT DISTINCT email
 FROM single_action
 JOIN main_action USING(main_action_id)

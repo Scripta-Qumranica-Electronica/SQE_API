@@ -124,7 +124,7 @@ namespace SQE.DatabaseAccess
             var artefactShapeId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
             if (artefactShapeId == 0)
                 throw new StandardExceptions.DataNotFoundException("artefact mask", artefactId, "artefact_id");
-            var sqeImageId = GetArtefactShapeSqeImageIdAsync(editionUser, editionUser.EditionId, artefactId);
+            var sqeImageId = GetArtefactShapeSqeImageIdAsync(editionUser, artefactId);
 
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
@@ -143,7 +143,7 @@ namespace SQE.DatabaseAccess
             catch (MySqlException e)
             {
                 // Capture any errors caused by improperly formatted WKT shapes, which become null in this query.
-                if (e.Message.IndexOf("Column 'region_in_sqe_image' cannot be null") > -1)
+                if (e.Message.IndexOf("Column 'region_in_sqe_image' cannot be null", StringComparison.Ordinal) > -1)
                     throw new StandardExceptions.ImproperInputDataException("mask");
 
                 throw;
@@ -454,7 +454,6 @@ namespace SQE.DatabaseAccess
         }
 
         private async Task<uint> GetArtefactShapeSqeImageIdAsync(EditionUserInfo editionUser,
-            uint editionId,
             uint artefactId)
         {
             using (var connection = OpenConnection())
@@ -465,7 +464,7 @@ namespace SQE.DatabaseAccess
                         FindArtefactShapeSqeImageId.GetQuery,
                         new
                         {
-                            EditionId = editionId,
+                            EditionId = editionUser.EditionId,
                             ArtefactId = artefactId
                         }
                     );

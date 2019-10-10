@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub
     {
         /// <summary>
         ///     Creates a new artefact with the provided data.

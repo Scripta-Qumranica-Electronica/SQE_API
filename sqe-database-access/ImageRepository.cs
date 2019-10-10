@@ -77,7 +77,7 @@ namespace SQE.DatabaseAccess
             return model;
         }
 
-        private string[] GetWave(ushort start, ushort end)
+        private static string[] GetWave(ushort start, ushort end)
         {
             var str = new string[2];
             str[0] = start.ToString();
@@ -85,7 +85,7 @@ namespace SQE.DatabaseAccess
             return str;
         }
 
-        private ImageInstitution CreateInstitution(ImageInstitutionQuery.Result result)
+        private static ImageInstitution CreateInstitution(ImageInstitutionQuery.Result result)
         {
             var model = new ImageInstitution
             {

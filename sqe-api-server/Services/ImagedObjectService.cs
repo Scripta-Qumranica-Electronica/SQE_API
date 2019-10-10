@@ -175,13 +175,13 @@ namespace SQE.API.Server.Services
                         recto.Add(image);
                         rectoCatalogId = image.catalogNumber;
                         if (image.master)
-                            rectoMasterIndex = recto.Count() - 1;
+                            rectoMasterIndex = recto.Count - 1;
                         break;
                     case "verso":
                         verso.Add(image);
                         versoCatalogId = image.catalogNumber;
                         if (image.master)
-                            versoMasterIndex = verso.Count() - 1;
+                            versoMasterIndex = verso.Count - 1;
                         break;
                 }
 

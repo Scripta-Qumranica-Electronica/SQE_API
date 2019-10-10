@@ -4,10 +4,10 @@ namespace SQE.DatabaseAccess.Queries
     {
         /// <summary>
         ///     Retrieves all textual data for a chunk of text
+        /// 	@startId is the Id of the first sign
+        /// 	@endId is the Id of the last sign
+        /// 	@editionId is the Id of the edition the text is to be taken from
         /// </summary>
-        /// <param name="startId">Id of the first sign</param>
-        /// <param name="endId">Id of the last sign</param>
-        /// <param name="editionId">Id of the edition the text is to be taken from</param>
         public const string GetQuery = @"
     WITH RECURSIVE sign_interpretation_ids
     AS (
@@ -106,9 +106,9 @@ namespace SQE.DatabaseAccess.Queries
     {
         /// <summary>
         ///     Retrieves the first and last sign of a line
+        /// 	@entityId is the Id of line
+        /// 	@editionId is the Id of the edition the line is to be searched
         /// </summary>
-        /// <param name="entityId">Id of line</param>
-        /// <param name="editionId">d of the edition the line is to be taken from</param>
         public const string GetQuery = @"
       SELECT sign_interpretation.sign_interpretation_id
       FROM  line_to_sign
@@ -126,9 +126,9 @@ namespace SQE.DatabaseAccess.Queries
     {
         /// <summary>
         ///     Retrieves the first and last sign of a textFragmentName
+        /// 	@entityId is the Id of line
+        /// 	@editionId is the Id of the edition the line is to be searched
         /// </summary>
-        /// <param name="entityId">Id of line</param>
-        /// <param name="editionId">d of the edition the line is to be taken from</param>
         public const string GetQuery = @"
       SELECT sign_interpretation.sign_interpretation_id
       FROM text_fragment_to_line

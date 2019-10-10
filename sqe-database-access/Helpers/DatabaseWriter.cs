@@ -379,7 +379,7 @@ namespace SQE.DatabaseAccess.Helpers
         private static async Task AddMainActionAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
             // Format and execute the query
-            var query = MainActionInsertQuery.GetQuery;
+            const string query = MainActionInsertQuery.GetQuery;
             await connection.ExecuteAsync(query, mutationRequest.Parameters);
 
             // Get id of new record.

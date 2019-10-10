@@ -122,7 +122,6 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser"></param>
         /// <param name="copyrightHolder"></param>
         /// <param name="collaborators"></param>
-        /// <param name="editionUser">
         ///     User info object contains the editionId that the user wishes to copy and
         ///     all user permissions related to it.
         /// </param>

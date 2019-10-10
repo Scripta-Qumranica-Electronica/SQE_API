@@ -5,7 +5,8 @@ using SQE.DatabaseAccess.Helpers;
 namespace SQE.DatabaseAccess.Queries
 {
     /// <summary>
-    ///     An extensible Us
+    ///     An extensible Query to get user details
+    /// </summary>
     internal static class UserDetails
     {
         private const string _query = @"
@@ -19,11 +20,12 @@ WHERE $Where";
         /// </summary>
         /// <param name="columns">Names of the columns to be retrieved (in snake_case)</param>
         /// <param name="where">Names of the where parameters (in snake_case)</param>
+        /// <param name="whereAnd">True concatenates multiple WHERE statements with AND, false uses OR</param>
         /// <returns>Returns the formatted SQL query string</returns>
         public static string GetQuery(List<string> columns, List<string> where, bool whereAnd = true)
         {
             var join = "";
-            if (columns.Where(x => x == "token").Any())
+            if (columns.Any(x => x == "token"))
                 join = "JOIN user_email_token USING(user_id)";
             return _query.Replace( // Add the columns to the query
                     "$Columns",

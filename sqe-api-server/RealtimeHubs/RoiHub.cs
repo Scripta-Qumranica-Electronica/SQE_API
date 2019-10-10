@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub
     {
         /// <summary>
         ///     Get the details for a ROI in the given edition of a scroll

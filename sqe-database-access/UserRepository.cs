@@ -48,13 +48,8 @@ namespace SQE.DatabaseAccess
 
     public class UserRepository : DbConnectionBase, IUserRepository
     {
-        private readonly int _tokenValidDays;
-
         public UserRepository(IConfiguration config) : base(config)
         {
-            if (!int.TryParse(config.GetSection("AppSettings")?["EmailTokenDaysValid"], out _tokenValidDays))
-                _tokenValidDays =
-                    2; // Set a default of 2 days to expiration if no explicit setting found in AppSettings.
         }
 
         /// <summary>

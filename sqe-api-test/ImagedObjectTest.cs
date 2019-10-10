@@ -134,7 +134,6 @@ LIMIT 50";
 
             // Assert
             response.EnsureSuccessStatusCode();
-            ;
             Assert.NotNull(msg.artefacts);
         }
 

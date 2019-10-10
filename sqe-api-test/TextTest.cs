@@ -17,7 +17,6 @@ namespace SQE.ApiTest
     {
         public TextTest(WebApplicationFactory<Startup> factory) : base(factory)
         {
-            _db = new DatabaseQuery();
             _editionBase = $"/{version}/{editionsController}/$EditionId";
             _getTextFragmentsData = $"{_editionBase}/{controller}";
             _getTextFragments = $"{_getTextFragmentsData}/$TextFragmentId";
@@ -25,8 +24,6 @@ namespace SQE.ApiTest
             _getTextLines = $"{_editionBase}/{linesController}/$LineId";
             _postTextFragment = _getTextFragmentsData;
         }
-
-        private readonly DatabaseQuery _db;
 
         private const string version = "v1";
         private const string editionsController = "editions";

@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub
     {
         /// <summary>
         ///     Provides a JWT bearer token for valid email and password

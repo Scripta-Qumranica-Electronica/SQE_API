@@ -18,11 +18,9 @@ namespace SQE.ApiTest
     {
         public EditionTests(WebApplicationFactory<Startup> factory) : base(factory)
         {
-            _db = new DatabaseQuery();
             _addEditionEditor = $"/{version}/{controller}/$EditionId/editors";
         }
 
-        private readonly DatabaseQuery _db;
         private const string version = "v1";
         private const string controller = "editions";
         private readonly string _addEditionEditor;

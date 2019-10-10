@@ -181,7 +181,7 @@ namespace sqe_realtime_hub_builder
         {
             var cls = elements.OfType<ClassDeclarationSyntax>().ToList();
             // Check for more than one class (there should only ever be one).
-            if (cls.Count() != 1)
+            if (cls.Count != 1)
                 throw new Exception("Error: More than one class in controller");
             var controllerClass = cls.First();
 
@@ -189,7 +189,7 @@ namespace sqe_realtime_hub_builder
 
             var constructors = controllerClass.Members.OfType<ConstructorDeclarationSyntax>().ToList();
             // Check for more than one constructor (there should only ever be one).
-            if (constructors.Count() != 1)
+            if (constructors.Count != 1)
                 throw new Exception("Error: More than one constructor in class");
             var constructor = constructors.First();
 
@@ -221,7 +221,7 @@ namespace sqe_realtime_hub_builder
 
                 var r = new Regex($@"\s*([A-z0-9_]+)\s*=\s*{name}\s*;");
                 var paramMatches = r.Match(cst.Body.ToString());
-                var assignedTo = paramMatches.Success && paramMatches.Groups.Count() >= 2
+                var assignedTo = paramMatches.Success && paramMatches.Groups.Count >= 2
                     ? paramMatches.Groups[1].ToString() : "";
 
                 paramMatchNotFound = tempFieldList.Count(x => x.type == type && x.name == assignedTo) != 1;
@@ -289,7 +289,7 @@ namespace sqe_realtime_hub_builder
 
         private const string _hubClassTemplate = @"namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub
     {";
 
         private const string _autogenFileDisclaimer = @"/*

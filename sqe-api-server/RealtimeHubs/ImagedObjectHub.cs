@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub
     {
         /// <summary>
         ///     Provides information for the specified imaged object related to the specified edition, can include images and also

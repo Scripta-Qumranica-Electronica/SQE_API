@@ -157,7 +157,6 @@ namespace SQE.DatabaseAccess
             Sign lastSign = null;
             NextSignInterpretation lastNextSignInterpretation = null;
             SignInterpretation lastChar = null;
-            CharAttribute lastCharAttribute = null;
             SignInterpretationROI lastInterpretationRoi = null;
 
 
@@ -221,7 +220,6 @@ namespace SQE.DatabaseAccess
 
                         lastChar.nextSignInterpretations.Add(nextSignInterpretation);
 
-                        lastCharAttribute = charAttribute;
                         lastChar.attributes.Add(charAttribute);
 
                         if (roi != null
@@ -272,7 +270,7 @@ namespace SQE.DatabaseAccess
             // Make sure the previousFragmentId exists in the edition
             var previousTextFragment = textFragmentIds.Where(x => x.TextFragmentId == previousFragmentId).ToList();
 
-            if (previousTextFragment.Count() != 1) // The specified previous text fragment does not exist in the edition
+            if (previousTextFragment.Count != 1) // The specified previous text fragment does not exist in the edition
                 throw new StandardExceptions.ImproperInputDataException("textFragmentId");
             var previousPosition = previousTextFragment.First().Position;
 

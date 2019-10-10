@@ -460,7 +460,6 @@ The Scripta Qumranica Electronica team</body></html>";
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-            var s3 = Convert.ToBase64String(key);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {

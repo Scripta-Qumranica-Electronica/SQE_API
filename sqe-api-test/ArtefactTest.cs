@@ -75,7 +75,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
         }
 
 
-        private (float? scale, float? rotate, uint translateX, uint translateY) ArtefactPosition()
+        private static (float? scale, float? rotate, uint translateX, uint translateY) ArtefactPosition()
         {
             return ((float?)1.0, (float?)0, (uint)34765, (uint)556);
         }
@@ -211,7 +211,6 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
             // Arrange
             newName = "CanCreateArtefacts.artefact ב";
-            ;
 
             newArtefact = new CreateArtefactDTO
             {
@@ -335,7 +334,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             const string newArtefactShape =
                 "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
             var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
-            var newName = "CanCreateArtefacts.artefact α";
+            const string newName = "CanCreateArtefacts.artefact α";
             ;
             var newArtefact = new CreateArtefactDTO
             {
@@ -408,7 +407,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
             var artefact = allArtefacts.First();
             var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
-            var newArtefactName = "CannotUpdateUnownedArtefacts.artefact 😈";
+            const string newArtefactName = "CannotUpdateUnownedArtefacts.artefact 😈";
 
             // Act (update name)
             var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
@@ -448,7 +447,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
             var artefact = allArtefacts.First();
             var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
-            var newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
+            const string newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
             var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
             const string newArtefactShape =
                 "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";

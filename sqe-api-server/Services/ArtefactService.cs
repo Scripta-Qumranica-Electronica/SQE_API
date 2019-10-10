@@ -80,7 +80,7 @@ namespace SQE.API.Server.Services
             bool withMask = false)
         {
             var artefactListings = await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMask);
-            var imagedObjectIds = artefactListings.Select(x => x.ImageCatalogId);
+            //var imagedObjectIds = artefactListings.Select(x => x.ImageCatalogId);
 
 
             return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
@@ -115,12 +115,8 @@ namespace SQE.API.Server.Services
                     updateArtefact.polygon.transformation.scale,
                     updateArtefact.polygon.transformation.rotate,
                     // Convert the translation from signed int to the uint used in the database
-                    updateArtefact.polygon.transformation.translate == null
-                        ? null
-                        : (uint?)updateArtefact.polygon.transformation.translate.x,
-                    updateArtefact.polygon.transformation.translate == null
-                        ? null
-                        : (uint?)updateArtefact.polygon.transformation.translate.y
+                    updateArtefact.polygon.transformation.translate?.x,
+                    updateArtefact.polygon.transformation.translate?.y
                 )
             );
 
@@ -157,12 +153,8 @@ namespace SQE.API.Server.Services
                     createArtefact.polygon.transformation.scale,
                     createArtefact.polygon.transformation.rotate,
                     // Convert the translation from signed int to the uint used in the database
-                    createArtefact.polygon.transformation.translate == null
-                        ? null
-                        : (uint?)createArtefact.polygon.transformation.translate.x,
-                    createArtefact.polygon.transformation.translate == null
-                        ? null
-                        : (uint?)createArtefact.polygon.transformation.translate.y,
+                    createArtefact.polygon.transformation.translate?.x,
+                    createArtefact.polygon.transformation.translate?.y,
                     createArtefact.statusMessage
                 );
 
@@ -205,7 +197,7 @@ namespace SQE.API.Server.Services
             );
         }
 
-        private void ParseOptionals(List<string> optionals, out bool images, out bool masks)
+        private static void ParseOptionals(List<string> optionals, out bool images, out bool masks)
         {
             images = masks = false;
             if (optionals == null)

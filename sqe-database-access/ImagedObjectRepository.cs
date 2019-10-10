@@ -41,7 +41,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        private ImagedObject CreateImagedObject(ImagedObjectQueries.Result imagedFragment)
+        private static ImagedObject CreateImagedObject(ImagedObjectQueries.Result imagedFragment)
         {
             var model = new ImagedObject
             {
