@@ -35,6 +35,11 @@ namespace SQE.ApiTest
             _client = _factory.CreateClient();
         }
 
+        /// <summary>
+        /// Provides a SignalR HubConnection.  The connection will be authorized if a JWT is provided
+        /// </summary>
+        /// <param name="token">The JWT used to authorize the connection</param>
+        /// <returns></returns>
         protected async Task<HubConnection> StartConnectionAsync(string token = null)
         {
             var hubConnection = new HubConnectionBuilder()

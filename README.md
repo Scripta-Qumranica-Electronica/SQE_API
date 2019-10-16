@@ -126,5 +126,23 @@ public interface IArtefactService
 }
 ```
 
+## Integration tests
+
+The integration tests require a properly set up, compatible version of the SQE database to be running.
+
+Tests are run from the `*Test.cs` files at the root of the `sqe-api-test` project.  The tests use Xunit, and each one should be a subclass of `WebControllerTest`.  As a subclass of `WebControllerTest` each test class will have access to a variable `_client`, which is an HttpClient that can be used for requests to the API's HTTP server.  It will also have a `StartConnectionAsync` method that will return a HubConnection for SignalR API requests.
+
+Each method tagged with `[Fact]` in these testing classes will be run and all `Assert` statements will need to pass for the test to complete successfully. 
+
+The best way to run the tests is to set up the details of each API endpoint in the ApiRequests class.  That class uses partials and its functions will be spread across several files.  Please refer to them for further documentation and the basic structure.
+
+Each subclassed `RequestObject` can be passed to the `Send` function in the `Request` Helper class, for example:
+```c#
+var arts = new ApiRequests.ApiRequests.Get.V1.Artefacts.EditionId(894, null);
+var (res1, mssg1) = await Request.Send(arts, http: _client, realtime: StartConnectionAsync);
+```
+See the documentation in `Request.Send` for further information about all the options. 
+
+Each test will consist of one or more calls to `Request.Send` along with an analysis of the response.  It can be advantageous to build helper functions for common actions that are reused in several testing scripts.
 
 TODO: add more documentation here

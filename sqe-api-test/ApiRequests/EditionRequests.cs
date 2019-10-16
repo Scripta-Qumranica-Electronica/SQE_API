@@ -26,6 +26,9 @@ namespace SQE.ApiTest.ApiRequests
                 {
                     public class Blank : RequestObject<EmptyInput, EditionListDTO>
                     {
+                        /// <summary>
+                        /// Request a listing of all editions available to the user
+                        /// </summary>
                         public Blank() : base(null)
                         {
                             requestVerb = HttpMethod.Get;
@@ -34,16 +37,20 @@ namespace SQE.ApiTest.ApiRequests
                     }
                     public class EditionId : EditionRequestObject<EmptyInput, EditionGroupDTO>
                     {
-                        public EditionId(uint _editionId) : base(_editionId, null)
+                        /// <summary>
+                        /// Request information about a specific edition
+                        /// </summary>
+                        /// <param name="editionId">The editionId for the desired edition</param>
+                        public EditionId(uint editionId) : base(editionId, null)
                         {
                             requestVerb = HttpMethod.Get;
                             requestPath = "/v1/Editions/EditionId";
-                            httpPath = requestPath.Replace("EditionId", editionId.ToString());
+                            httpPath = requestPath.Replace("EditionId", base._editionId.ToString());
                         }
 
                         public override Func<HubConnection, Task<T>> signalrRequest<T>()
                         {
-                            return (signalR) => signalR.InvokeAsync<T>(this.signalrRequestString(), editionId);
+                            return (signalR) => signalR.InvokeAsync<T>(this.signalrRequestString(), _editionId);
                         }
                     }
                 }
