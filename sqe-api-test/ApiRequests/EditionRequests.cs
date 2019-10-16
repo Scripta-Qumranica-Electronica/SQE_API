@@ -1,8 +1,10 @@
 /*
  * Example Usage:
-var signalR = await StartConnectionAsync();
 var editions = new ApiRequests.ApiRequests.Get.V1.Editions.Blank();
-var (res, mssg) = await Request.Send<string, EditionListDTO>(editions, _client, signalR);
+var (res, mssg) = await Request.Send(editions, http: _client, realtime: StartConnectionAsync);
+
+var editions1 = new ApiRequests.ApiRequests.Get.V1.Editions.EditionId(894);
+var (res1, mssg1) = await Request.Send(editions1, http: _client, realtime: StartConnectionAsync);
  */
 using System;
 using System.Net.Http;
@@ -22,7 +24,7 @@ namespace SQE.ApiTest.ApiRequests
             {
                 public static class Editions
                 {
-                    public class Blank : RequestObject<string, EditionListDTO>
+                    public class Blank : RequestObject<EmptyInput, EditionListDTO>
                     {
                         public Blank() : base(null)
                         {
@@ -30,21 +32,18 @@ namespace SQE.ApiTest.ApiRequests
                             requestPath = "/v1/Editions";
                         }
                     }
-                    public class EditionId : RequestObject<string, EditionGroupDTO>
+                    public class EditionId : EditionRequestObject<EmptyInput, EditionGroupDTO>
                     {
-                        private uint editionId;
-
-                        public EditionId(uint _editionId) : base(null)
+                        public EditionId(uint _editionId) : base(_editionId, null)
                         {
-                            editionId = _editionId;
                             requestVerb = HttpMethod.Get;
                             requestPath = "/v1/Editions/EditionId";
                             httpPath = requestPath.Replace("EditionId", editionId.ToString());
                         }
 
-                        public Func<HubConnection, Task<EditionGroupDTO>> signalrRequest()
+                        public override Func<HubConnection, Task<T>> signalrRequest<T>()
                         {
-                            return (signalR) => signalR.InvokeAsync<EditionGroupDTO>(this.signalrRequestString(), editionId);
+                            return (signalR) => signalR.InvokeAsync<T>(this.signalrRequestString(), editionId);
                         }
                     }
                 }

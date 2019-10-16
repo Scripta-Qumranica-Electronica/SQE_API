@@ -13,8 +13,8 @@ namespace SQE.ApiTest.Helpers
         public static async Task<(HttpResponseMessage, Toutput)> Send<Tinput, Toutput>(
             RequestObject<Tinput, Toutput> request,
             HttpClient http = null,
-            HubConnection realtime = null,
-            HubConnection listener = null, // TODO
+            Func<string, Task<HubConnection>> realtime = null,
+            bool listener = false,
             bool auth = false,
             string jwt = null,
             bool shouldSucceed = true)
@@ -23,12 +23,20 @@ namespace SQE.ApiTest.Helpers
             Toutput msg = default(Toutput);
             Toutput rt = default(Toutput);
             Toutput lt = default(Toutput);
+            HubConnection signalrListener;
 
-            if (listener != null && request.requestVerb != HttpMethod.Get)
+            if (listener
+                && request.requestVerb != HttpMethod.Get
+                && realtime != null
+                && !string.IsNullOrEmpty(request.listenerMethod)
+                && request.GetType().IsSubclassOf(typeof(EditionRequestObject<Tinput, Toutput>)))
             {
-                // Set up listener
-
+                var editionRequest = request as EditionRequestObject<Tinput, Toutput>;
+                signalrListener = await realtime(auth ? jwt : null);
+                await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
+                signalrListener.On<Toutput>(request.listenerMethod, (receivedData) => lt = receivedData);
             }
+
             if (http != null)
             {
                 var httpObj = request.GetHttpResponseObject();
@@ -37,7 +45,7 @@ namespace SQE.ApiTest.Helpers
                     httpObj.requestVerb,
                     httpObj.requestString,
                     httpObj.payload,
-                    jwt
+                    auth ? jwt : null
                 );
                 if (shouldSucceed)
                     resp.EnsureSuccessStatusCode();
@@ -47,7 +55,8 @@ namespace SQE.ApiTest.Helpers
             {
                 try
                 {
-                    rt = await request.signalrRequest()(realtime);
+                    var signalr = await realtime(auth ? jwt : null);
+                    rt = await request.signalrRequest<Toutput>()(signalr);
                 }
                 catch (Exception e)
                 {
@@ -59,24 +68,19 @@ namespace SQE.ApiTest.Helpers
                     rt.ShouldDeepEqual(msg);
             }
 
-            if (listener == null || request.requestVerb == HttpMethod.Get)
+            if (!listener || request.requestVerb == HttpMethod.Get)
             {
-                return http != null ? (resp, msg) : (resp, rt);
+                return (resp, http != null ? msg : rt);
             }
-            else
+
+            var waitTime = 0;
+            while (lt == null && waitTime < 20)
             {
-                if (shouldSucceed)
-                {
-                    var waitTime = 0;
-                    while (lt == null && waitTime < 20)
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(1));
-                        waitTime += 1;
-                    }
-                    Assert.NotNull(lt); // Do not try to listen with requests that return void!
-                }
-                return (resp, lt);
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                waitTime += 1;
             }
+            Assert.NotNull(lt); // Do not try to listen with requests that return void!
+            return (resp, lt);
         }
     }
 }

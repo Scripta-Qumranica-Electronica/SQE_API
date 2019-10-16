@@ -6,6 +6,7 @@ using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
 using SQE.API.Server;
+using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
 

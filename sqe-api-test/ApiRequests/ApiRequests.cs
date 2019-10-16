@@ -18,11 +18,11 @@ namespace SQE.ApiTest.ApiRequests
         protected string requestPath;
         public HttpMethod requestVerb;
         protected string httpPath;
+        public string listenerMethod = null;
         protected Tinput payload;
 
         protected RequestObject(Tinput _payload)
         {
-            httpPath = httpPath ?? requestPath;
             payload = _payload;
         }
 
@@ -31,7 +31,7 @@ namespace SQE.ApiTest.ApiRequests
             return new HttpRequestObject()
             {
                 requestVerb = this.requestVerb,
-                requestString = this.requestPath,
+                requestString = this.httpPath ?? this.requestPath,
                 payload = this.payload
             };
         }
@@ -43,9 +43,10 @@ namespace SQE.ApiTest.ApiRequests
             public Tinput payload { get; set; }
         }
 
-        public Func<HubConnection, Task<Toutput>> signalrRequest()
+        public virtual Func<HubConnection, Task<T>> signalrRequest<T>()
+            where T : Toutput
         {
-            return (signalR) => signalR.InvokeAsync<Toutput>(this.signalrRequestString());
+            return (signalR) => signalR.InvokeAsync<T>(this.signalrRequestString());
         }
 
         protected string signalrRequestString()
@@ -53,4 +54,19 @@ namespace SQE.ApiTest.ApiRequests
             return this.requestVerb.ToString() + this.requestPath.Replace("/", "_").ToPascalCase();
         }
     }
+
+    public class EditionRequestObject<Tinput, Toutput> : RequestObject<Tinput, Toutput>
+    {
+        public readonly uint editionId;
+
+        public EditionRequestObject(uint _editionId, Tinput _payload) : base(_payload)
+        {
+            editionId = _editionId;
+        }
+
+    }
+
+    // The RequestObject class may take either an empty input object or empty output object for its generic classes.
+    public class EmptyInput { }
+    public class EmptyOutput { }
 }
