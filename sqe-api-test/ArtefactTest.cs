@@ -49,7 +49,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
             var editionId = allUserEditions[(int)artefactCount % (allUserEditions.Count + 1)];
             var url = $"/{version}/editions/{editionId}/{controller}?optional=masks";
-            var (response, artefactResponse) = await HttpRequest.SendAsync<string, ArtefactListDTO>(
+            var (response, artefactResponse) = await Request.SendHttpRequestAsync<string, ArtefactListDTO>(
                 _client,
                 HttpMethod.Get,
                 url,
@@ -64,12 +64,12 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
         private async Task DeleteArtefact(uint editionId, uint ArtefactId)
         {
-            var (response, _) = await HttpRequest.SendAsync<string, string>(
+            var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 $"/{version}/editions/{editionId}/{controller}/{ArtefactId}",
                 null,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
             response.EnsureSuccessStatusCode();
         }
@@ -142,12 +142,12 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             const string defaultStatusMessage = "New";
 
             // Act
-            var (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(
+            var (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                 _client,
                 HttpMethod.Post,
                 $"/{version}/editions/{newEdition}/{controller}",
                 newArtefact,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
 
             // Assert
@@ -188,12 +188,12 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             };
 
             // Act
-            (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(
+            (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                 _client,
                 HttpMethod.Post,
                 $"/{version}/editions/{newEdition}/{controller}",
                 newArtefact,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
 
             // Assert
@@ -233,12 +233,12 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             };
 
             // Act
-            (response, writtenArtefact) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(
+            (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                 _client,
                 HttpMethod.Post,
                 $"/{version}/editions/{newEdition}/{controller}",
                 newArtefact,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
 
             // Assert
@@ -268,12 +268,12 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 
             // Act
-            var (response, writtenArtefact) = await HttpRequest.SendAsync<string, string>(
+            var (response, writtenArtefact) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
                 null,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
 
             // Assert
@@ -281,12 +281,12 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             // Ensure successful nocontent status
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
             // Double check that it is really gone
-            var (delResponse, _) = await HttpRequest.SendAsync<string, string>(
+            var (delResponse, _) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Get,
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
                 null,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
             Assert.Equal(HttpStatusCode.NotFound, delResponse.StatusCode);
 
@@ -302,7 +302,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/suggested-text-fragments";
 
             // Act
-            var (tfResponse, tfData) = await HttpRequest.SendAsync<string, TextFragmentDataListDTO>(
+            var (tfResponse, tfData) = await Request.SendHttpRequestAsync<string, TextFragmentDataListDTO>(
                 _client,
                 HttpMethod.Get,
                 path,
@@ -357,7 +357,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             };
 
             // Act
-            var (response, _) = await HttpRequest.SendAsync<CreateArtefactDTO, ArtefactDTO>(
+            var (response, _) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                 _client,
                 HttpMethod.Post,
                 $"/{version}/editions/{newEdition}/{controller}",
@@ -383,7 +383,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
 
             // Act
-            var (response, _) = await HttpRequest.SendAsync<string, string>(
+            var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
@@ -410,7 +410,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             const string newArtefactName = "CannotUpdateUnownedArtefacts.artefact 😈";
 
             // Act (update name)
-            var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
+            var (nameResponse, _) = await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                 _client,
                 HttpMethod.Put,
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
@@ -454,27 +454,28 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             const string statusMessage = "Fully examined";
 
             // Act (update name and set status)
-            var (nameResponse, updatedNameArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
-                _client,
-                HttpMethod.Put,
-                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
-                new UpdateArtefactDTO
-                {
-                    polygon = new PolygonDTO
+            var (nameResponse, updatedNameArtefact) =
+                await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
+                    _client,
+                    HttpMethod.Put,
+                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    new UpdateArtefactDTO
                     {
-                        mask = null,
-                        transformation = new TransformationDTO
+                        polygon = new PolygonDTO
                         {
-                            scale = null,
-                            rotate = null,
-                            translate = null
-                        }
+                            mask = null,
+                            transformation = new TransformationDTO
+                            {
+                                scale = null,
+                                rotate = null,
+                                translate = null
+                            }
+                        },
+                        name = newArtefactName,
+                        statusMessage = statusMessage
                     },
-                    name = newArtefactName,
-                    statusMessage = statusMessage
-                },
-                await HttpRequest.GetJWTAsync(_client)
-            );
+                    await Request.GetJwtViaHttpAsync(_client)
+                );
 
             // Assert (update name and set status)
             nameResponse.EnsureSuccessStatusCode();
@@ -487,7 +488,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
             // Act (update position)
             var (positionResponse, updatedPositionArtefact) =
-                await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
+                await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Put,
                     $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
@@ -509,7 +510,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
                         },
                         name = null
                     },
-                    await HttpRequest.GetJWTAsync(_client)
+                    await Request.GetJwtViaHttpAsync(_client)
                 );
 
             // Assert (update position)
@@ -524,30 +525,31 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             Assert.Equal(newArtefactName, updatedPositionArtefact.name);
 
             // Act (update shape)
-            var (shapeResponse, updatedShapeArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
-                _client,
-                HttpMethod.Put,
-                $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
-                new UpdateArtefactDTO
-                {
-                    polygon = new PolygonDTO
+            var (shapeResponse, updatedShapeArtefact) =
+                await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
+                    _client,
+                    HttpMethod.Put,
+                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    new UpdateArtefactDTO
                     {
-                        mask = newArtefactShape,
-                        transformation = new TransformationDTO
+                        polygon = new PolygonDTO
                         {
-                            scale = newScale,
-                            rotate = newRotate,
-                            translate = new TranslateDTO
+                            mask = newArtefactShape,
+                            transformation = new TransformationDTO
                             {
-                                x = newTranslateX,
-                                y = newTranslateY
+                                scale = newScale,
+                                rotate = newRotate,
+                                translate = new TranslateDTO
+                                {
+                                    x = newTranslateX,
+                                    y = newTranslateY
+                                }
                             }
-                        }
+                        },
+                        name = null
                     },
-                    name = null
-                },
-                await HttpRequest.GetJWTAsync(_client)
-            );
+                    await Request.GetJwtViaHttpAsync(_client)
+                );
 
             // Assert (update shape)
             shapeResponse.EnsureSuccessStatusCode();
@@ -562,7 +564,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             // Arrange (update all)
             var (otherScale, otherRotate, otherTranslateX, otherTranslateY) = ArtefactPosition();
             // Act (update all)
-            var (allResponse, updatedAllArtefact) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
+            var (allResponse, updatedAllArtefact) = await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                 _client,
                 HttpMethod.Put,
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
@@ -584,7 +586,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
                     },
                     name = artefact.name
                 },
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
 
             // Assert (update all)
@@ -614,7 +616,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
                 "POLYGON(0 0,0 200,200 200,0 200,0 0),5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
 
             // Act (update name)
-            var (nameResponse, _) = await HttpRequest.SendAsync<UpdateArtefactDTO, ArtefactDTO>(
+            var (nameResponse, _) = await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                 _client,
                 HttpMethod.Put,
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
@@ -632,7 +634,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
                     },
                     name = null
                 },
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
 
             // Assert (update name)

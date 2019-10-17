@@ -47,7 +47,7 @@ namespace SQE.ApiTest.Helpers
             NewUserRequestDTO user,
             bool shouldSucceed = true)
         {
-            var (response, msg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
                 client,
                 HttpMethod.Post,
                 "/v1/users",
@@ -86,7 +86,7 @@ namespace SQE.ApiTest.Helpers
             var payload = new AccountActivationRequestDTO { token = userToken.token };
 
             var (response, msg) =
-                await HttpRequest.SendAsync<AccountActivationRequestDTO, UserDTO>(
+                await Request.SendHttpRequestAsync<AccountActivationRequestDTO, UserDTO>(
                     client,
                     HttpMethod.Post,
                     "/v1/users/confirm-registration",

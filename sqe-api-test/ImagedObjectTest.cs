@@ -74,7 +74,7 @@ LIMIT 50";
         public async Task CanGetImagedObjectInstitutions()
         {
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, ImageInstitutionListDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, ImageInstitutionListDTO>(
                 _client,
                 HttpMethod.Get,
                 imagedObjectInstitutions,
@@ -99,7 +99,7 @@ LIMIT 50";
                 .Replace("$ImageObjectId", objectId);
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectDTO>(
                 _client,
                 HttpMethod.Get,
                 path,
@@ -125,7 +125,7 @@ LIMIT 50";
                        + "?optional=artefacts";
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectDTO>(
                 _client,
                 HttpMethod.Get,
                 path,
@@ -151,7 +151,7 @@ LIMIT 50";
                        + "?optional=artefacts&optional=masks";
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectDTO>(
                 _client,
                 HttpMethod.Get,
                 path,
@@ -183,7 +183,7 @@ LIMIT 50";
             var path = editionImagedObjects.Replace("$EditionId", editionId.ToString());
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectListDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectListDTO>(
                 _client,
                 HttpMethod.Get,
                 path,
@@ -208,7 +208,7 @@ LIMIT 50";
             var path = editionImagedObjects.Replace("$EditionId", editionId.ToString()) + "?optional=artefacts";
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectListDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectListDTO>(
                 _client,
                 HttpMethod.Get,
                 path,
@@ -242,7 +242,7 @@ LIMIT 50";
                        + "?optional=artefacts&optional=masks";
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, ImagedObjectListDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectListDTO>(
                 _client,
                 HttpMethod.Get,
                 path,

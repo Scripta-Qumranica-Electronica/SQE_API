@@ -34,7 +34,10 @@ namespace SQE.ApiTest
             var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
             var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(
+                _client,
+                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
             var newPermissions = new EditorRightsDTO
             {
                 email = user2.email,
@@ -48,33 +51,38 @@ namespace SQE.ApiTest
             var (shareResponse, shareMsg, _, _) = await Request.Send(
                 add1,
                 _client,
-                StartConnectionAsync,
+                null,
                 auth: true,
-                jwt: await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                user1: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
             );
 
             // Assert
-            shareResponse.EnsureSuccessStatusCode();
             Assert.True(shareMsg.mayRead);
             Assert.True(shareMsg.mayWrite);
             Assert.True(shareMsg.mayLock);
             Assert.True(shareMsg.isAdmin);
 
-            var (user1Resp, user1Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
             user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
             user2Resp.EnsureSuccessStatusCode();
             Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
@@ -94,7 +102,10 @@ namespace SQE.ApiTest
             var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
             var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(
+                _client,
+                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
             var newPermissions = new EditorRightsDTO
             {
                 email = user2.email,
@@ -104,12 +115,15 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var (shareResponse, shareMsg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Post,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
             // Assert
@@ -119,12 +133,15 @@ namespace SQE.ApiTest
             Assert.False(shareMsg.mayLock);
             Assert.False(shareMsg.isAdmin);
 
-            var (user2Resp, user2Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
             user2Resp.EnsureSuccessStatusCode();
             Assert.False(user2Msg.primary.permission.mayWrite);
@@ -133,12 +150,15 @@ namespace SQE.ApiTest
             // Act
             newPermissions.mayWrite = true;
             newPermissions.isAdmin = true;
-            var (share2Response, share2Msg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (share2Response, share2Msg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Put,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
             // Assert
@@ -148,12 +168,15 @@ namespace SQE.ApiTest
             Assert.False(share2Msg.mayLock);
             Assert.True(share2Msg.isAdmin);
 
-            var (user2Resp2, user2Msg2) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user2Resp2, user2Msg2) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
             user2Resp2.EnsureSuccessStatusCode();
             Assert.True(user2Msg2.primary.permission.mayWrite);
@@ -161,12 +184,15 @@ namespace SQE.ApiTest
 
             // Act
             newPermissions.mayLock = true;
-            var (share3Response, share3Msg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (share3Response, share3Msg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Put,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
 
             // Assert
@@ -185,19 +211,25 @@ namespace SQE.ApiTest
             var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
             var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(
+                _client,
+                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
             var newPermissions = new EditorRightsDTO
             {
                 email = user2.email
             };
 
             // Act
-            var (shareResponse, shareMsg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Post,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
             // Assert
@@ -207,21 +239,27 @@ namespace SQE.ApiTest
             Assert.False(shareMsg.mayLock);
             Assert.False(shareMsg.isAdmin);
 
-            var (user1Resp, user1Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
             user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
             user2Resp.EnsureSuccessStatusCode();
             Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
@@ -242,12 +280,12 @@ namespace SQE.ApiTest
             const string url = "/v1/editions";
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, string>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 url + "/" + editionId,
                 null,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
 
             // Assert
@@ -255,12 +293,12 @@ namespace SQE.ApiTest
 
             // Delete the edition for real
             await EditionHelpers.DeleteEdition(_client, editionId, true);
-            var (editionResponse, editionMsg) = await HttpRequest.SendAsync<string, EditionListDTO>(
+            var (editionResponse, editionMsg) = await Request.SendHttpRequestAsync<string, EditionListDTO>(
                 _client,
                 HttpMethod.Get,
                 url,
                 null,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
             editionResponse.EnsureSuccessStatusCode();
             var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
@@ -275,7 +313,10 @@ namespace SQE.ApiTest
             var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
             var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(
+                _client,
+                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
             var newPermissions = new EditorRightsDTO
             {
                 email = user2.email,
@@ -283,12 +324,15 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var (shareResponse, shareMsg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Post,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
             // Assert
@@ -298,21 +342,27 @@ namespace SQE.ApiTest
             Assert.True(shareMsg.mayLock);
             Assert.False(shareMsg.isAdmin);
 
-            var (user1Resp, user1Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
             user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
             user2Resp.EnsureSuccessStatusCode();
             Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
@@ -332,7 +382,10 @@ namespace SQE.ApiTest
             var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
             var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(
+                _client,
+                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
             var newPermissions = new EditorRightsDTO
             {
                 email = user2.email,
@@ -343,12 +396,15 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var (shareResponse, shareMsg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Post,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
             // Assert
@@ -364,7 +420,7 @@ namespace SQE.ApiTest
             const string url = "/v1/editions";
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, string>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 url + "/" + editionId,
@@ -373,12 +429,12 @@ namespace SQE.ApiTest
 
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-            var (editionResponse, editionMsg) = await HttpRequest.SendAsync<string, EditionListDTO>(
+            var (editionResponse, editionMsg) = await Request.SendHttpRequestAsync<string, EditionListDTO>(
                 _client,
                 HttpMethod.Get,
                 url,
                 null,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
             editionResponse.EnsureSuccessStatusCode();
             var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
@@ -395,7 +451,10 @@ namespace SQE.ApiTest
             var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
             var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(
+                _client,
+                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
             var newPermissions = new EditorRightsDTO
             {
                 email = user2.email,
@@ -406,12 +465,15 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var (shareResponse, shareMsg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Post,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
             // Assert
@@ -426,7 +488,10 @@ namespace SQE.ApiTest
             var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
             var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(
+                _client,
+                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
             var newPermissions = new EditorRightsDTO
             {
                 email = user2.email,
@@ -436,20 +501,26 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var (shareResponse, shareMsg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Post,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
-            var (deleteResponse, deleteMsg) = await HttpRequest.SendAsync<string, string>(
+            var (deleteResponse, deleteMsg) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 "/v1/editions/" + newEdition,
                 null,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
 
             // Assert
@@ -460,44 +531,62 @@ namespace SQE.ApiTest
             Assert.False(shareMsg.isAdmin);
             deleteResponse.EnsureSuccessStatusCode();
 
-            var (user1Resp, user1Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
             user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
             Assert.Equal(HttpStatusCode.Forbidden, user2Resp.StatusCode);
             Assert.NotNull(user1Msg);
 
             // Act (final delete)
-            var (delete2Response, delete2Msg) = await HttpRequest.SendAsync<string, string>(
+            var (delete2Response, delete2Msg) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 "/v1/editions/" + newEdition,
                 null,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
                                                                                  // Kill the edition for real
-            await EditionHelpers.DeleteEdition(_client, newEdition, true, true, user1.email, user1Pwd);
-            var (user1Resp2, user1Msg2) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            await EditionHelpers.DeleteEdition(
+                _client,
+                newEdition,
+                true,
+                true,
+                new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
+            var (user1Resp2, user1Msg2) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
             user1Resp2.EnsureSuccessStatusCode();
             Assert.Null(user1Msg2);
@@ -513,7 +602,10 @@ namespace SQE.ApiTest
             var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
             const string user2Pwd = "pwd2";
             var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, username: user1.email, pwd: user1Pwd);
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(
+                _client,
+                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+            );
             var newPermissions = new EditorRightsDTO
             {
                 email = user2.email,
@@ -521,12 +613,15 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var (shareResponse, shareMsg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                 _client,
                 HttpMethod.Post,
                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
                 newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
 
             // Assert
@@ -536,21 +631,27 @@ namespace SQE.ApiTest
             Assert.False(shareMsg.mayLock);
             Assert.False(shareMsg.isAdmin);
 
-            var (user1Resp, user1Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
+                )
             );
             user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 $"/v1/editions/{newEdition}",
                 null,
-                await HttpRequest.GetJWTAsync(_client, user2.email, user2Pwd)
+                await Request.GetJwtViaHttpAsync(
+                    _client,
+                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
+                )
             );
             user2Resp.EnsureSuccessStatusCode();
             Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
@@ -575,15 +676,12 @@ namespace SQE.ApiTest
             var newScrollRequest = new EditionCopyDTO(name, null, null);
 
             //Act
-            // var arts = new ApiRequests.Get.V1.Artefacts.EditionId(894, null);
-            // var (res1, mssg1) = await Request.Send(arts, http: _client, realtime: StartConnectionAsync);
             var newEd = new Post.V1.Editions.EditionId(1, newScrollRequest);
             var (response, msg, rt, lt) = await Request.Send(
                 newEd,
                 _client,
                 StartConnectionAsync,
                 auth: true,
-                jwt: await HttpRequest.GetJWTAsync(_client),
                 deterministic: false
             );
             response.EnsureSuccessStatusCode();
@@ -600,12 +698,12 @@ namespace SQE.ApiTest
             newScrollRequest = new EditionCopyDTO("", null, null);
 
             //Act
-            (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
+            (response, msg) = await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionDTO>(
                 _client,
                 HttpMethod.Post,
                 url,
                 newScrollRequest,
-                await HttpRequest.GetJWTAsync(_client)
+                await Request.GetJwtViaHttpAsync(_client)
             );
             response.EnsureSuccessStatusCode();
 
@@ -630,7 +728,7 @@ namespace SQE.ApiTest
 
             // Act
             var (response, msg) =
-                await HttpRequest.SendAsync<string, EditionListDTO>(_client, HttpMethod.Get, url, null);
+                await Request.SendHttpRequestAsync<string, EditionListDTO>(_client, HttpMethod.Get, url, null);
             response.EnsureSuccessStatusCode();
 
             // Assert
@@ -650,7 +748,7 @@ namespace SQE.ApiTest
             const string url = "/v1/editions/1";
 
             // Act
-            var (response, msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 url,
@@ -672,12 +770,12 @@ namespace SQE.ApiTest
         public async Task GetPrivateEditions()
         {
             // ARRANGE
-            var bearerToken = await HttpRequest.GetJWTAsync(_client);
+            var bearerToken = await Request.GetJwtViaHttpAsync(_client);
             var editionId = await EditionHelpers.CreateCopyOfEdition(_client);
             const string url = "/v1/editions";
 
             // Act (get listings with authentication)
-            var (response, msg) = await HttpRequest.SendAsync<string, EditionListDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, EditionListDTO>(
                 _client,
                 HttpMethod.Get,
                 url,
@@ -696,7 +794,7 @@ namespace SQE.ApiTest
             Assert.Contains(msg.editions.SelectMany(x => x), x => x.id == editionId);
 
             // Act (get listings without authentication)
-            (response, msg) = await HttpRequest.SendAsync<string, EditionListDTO>(
+            (response, msg) = await Request.SendHttpRequestAsync<string, EditionListDTO>(
                 _client,
                 HttpMethod.Get,
                 url,
@@ -726,7 +824,7 @@ namespace SQE.ApiTest
             var payload = new EditionUpdateRequestDTO("none", null, null);
 
             // Act (Create new scroll)
-            var (response, _) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionListDTO>(
+            var (response, _) = await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionListDTO>(
                 _client,
                 HttpMethod.Post,
                 url,
@@ -737,7 +835,7 @@ namespace SQE.ApiTest
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
 
             // Act (change scroll name)
-            (response, _) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionListDTO>(
+            (response, _) = await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionListDTO>(
                 _client,
                 HttpMethod.Put,
                 url,
@@ -756,10 +854,10 @@ namespace SQE.ApiTest
         public async Task UpdateEdition()
         {
             // ARRANGE
-            var bearerToken = await HttpRequest.GetJWTAsync(_client);
+            var bearerToken = await Request.GetJwtViaHttpAsync(_client);
             var editionId = await EditionHelpers.CreateCopyOfEdition(_client);
             var url = "/v1/editions/" + editionId;
-            var (response, msg) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 _client,
                 HttpMethod.Get,
                 url,
@@ -772,7 +870,7 @@ namespace SQE.ApiTest
             var newScrollRequest = new EditionUpdateRequestDTO(name, null, null);
 
             //Act
-            var (response2, msg2) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
+            var (response2, msg2) = await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionDTO>(
                 _client,
                 HttpMethod.Put,
                 url,

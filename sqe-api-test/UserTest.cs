@@ -52,7 +52,7 @@ namespace SQE.ApiTest
         {
             // Act
             var (response, msg) =
-                await HttpRequest.SendAsync<string, DetailedUserDTO>(_client, HttpMethod.Get, url, null);
+                await Request.SendHttpRequestAsync<string, DetailedUserDTO>(_client, HttpMethod.Get, url, null);
 
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -64,7 +64,7 @@ namespace SQE.ApiTest
         {
             // Act
             var (response, msg) =
-                await HttpRequest.SendAsync<string, DetailedUserDTO>(_client, HttpMethod.Post, url, null);
+                await Request.SendHttpRequestAsync<string, DetailedUserDTO>(_client, HttpMethod.Post, url, null);
 
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -76,7 +76,7 @@ namespace SQE.ApiTest
         {
             // Act
             var (response, msg) =
-                await HttpRequest.SendAsync<string, DetailedUserDTO>(_client, HttpMethod.Put, url, null);
+                await Request.SendHttpRequestAsync<string, DetailedUserDTO>(_client, HttpMethod.Put, url, null);
 
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -86,7 +86,7 @@ namespace SQE.ApiTest
             NewUserRequestDTO user,
             bool shouldSucceed = true)
         {
-            var (response, msg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
                 _client,
                 HttpMethod.Post,
                 baseUrl,
@@ -116,7 +116,7 @@ namespace SQE.ApiTest
             var payload = new AccountActivationRequestDTO { token = userToken.token };
 
             var (response, msg) =
-                await HttpRequest.SendAsync<AccountActivationRequestDTO, UserDTO>(
+                await Request.SendHttpRequestAsync<AccountActivationRequestDTO, UserDTO>(
                     _client,
                     HttpMethod.Post,
                     confirmRegistration,
@@ -185,7 +185,7 @@ namespace SQE.ApiTest
 
         private async Task<DetailedUserTokenDTO> Login(NewUserRequestDTO user, bool shouldSucceed = true)
         {
-            var (response, userLogin) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+            var (response, userLogin) = await Request.SendHttpRequestAsync<LoginRequestDTO, DetailedUserTokenDTO>(
                 _client,
                 HttpMethod.Post,
                 login,
@@ -284,7 +284,7 @@ namespace SQE.ApiTest
             var loginDetails = await Login(user);
 
             // Act 
-            var (response, msg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
                 _client,
                 HttpMethod.Put,
                 baseUrl,
@@ -323,7 +323,7 @@ namespace SQE.ApiTest
             };
 
             // Act 
-            var (response, msg) = await HttpRequest.SendAsync<ResetLoggedInUserPasswordRequestDTO, string>(
+            var (response, msg) = await Request.SendHttpRequestAsync<ResetLoggedInUserPasswordRequestDTO, string>(
                 _client,
                 HttpMethod.Post,
                 changePassword,
@@ -367,7 +367,7 @@ namespace SQE.ApiTest
 
             // Act (login)
             var userForLogin = new LoginRequestDTO { email = user.email, password = user.password };
-            var (response, loggedInUser) = await HttpRequest.SendAsync<LoginRequestDTO, DetailedUserTokenDTO>(
+            var (response, loggedInUser) = await Request.SendHttpRequestAsync<LoginRequestDTO, DetailedUserTokenDTO>(
                 _client,
                 HttpMethod.Post,
                 login,
@@ -411,7 +411,7 @@ namespace SQE.ApiTest
             // Act (resend activation)
             Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
             var (response, msg) =
-                await HttpRequest.SendAsync<ResendUserAccountActivationRequestDTO, string>(
+                await Request.SendHttpRequestAsync<ResendUserAccountActivationRequestDTO, string>(
                     _client,
                     HttpMethod.Post,
                     resendActivationEmail,
@@ -495,7 +495,7 @@ namespace SQE.ApiTest
             const string newPassword = "more secure pa$$w0rd";
 
             // Act (change password)
-            var (cpResponse, cpMsg) = await HttpRequest.SendAsync<ResetLoggedInUserPasswordRequestDTO, string>(
+            var (cpResponse, cpMsg) = await Request.SendHttpRequestAsync<ResetLoggedInUserPasswordRequestDTO, string>(
                 _client,
                 HttpMethod.Post,
                 changePassword,
@@ -553,7 +553,7 @@ namespace SQE.ApiTest
             );
 
             // Act (change user details)
-            var (cdResponse, cdMsg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
+            var (cdResponse, cdMsg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
                 _client,
                 HttpMethod.Put,
                 baseUrl,
@@ -619,7 +619,7 @@ namespace SQE.ApiTest
             );
 
             // Act (change user details)
-            var (cdResponse, cdMsg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(
+            var (cdResponse, cdMsg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
                 _client,
                 HttpMethod.Put,
                 baseUrl,
@@ -669,7 +669,7 @@ namespace SQE.ApiTest
 
             // Act
             Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
-            var (response, updatedUser) = await HttpRequest.SendAsync<UnactivatedEmailUpdateRequestDTO, string>(
+            var (response, updatedUser) = await Request.SendHttpRequestAsync<UnactivatedEmailUpdateRequestDTO, string>(
                 _client,
                 HttpMethod.Post,
                 changeUnactivatedEmail,
@@ -786,7 +786,7 @@ namespace SQE.ApiTest
             Assert.NotNull(loggedInUser.token);
 
             // Act (request password reset)
-            var (rpResponse, rpMsg) = await HttpRequest.SendAsync<ResetUserPasswordRequestDTO, string>(
+            var (rpResponse, rpMsg) = await Request.SendHttpRequestAsync<ResetUserPasswordRequestDTO, string>(
                 _client,
                 HttpMethod.Post,
                 forgotPassword,
@@ -801,7 +801,7 @@ namespace SQE.ApiTest
 
             // Act (attempt to reset password with token)
             const string newPassword = "unu$u^l..pw@wierdpr0vider.org";
-            var (cpResponse, cpMsg) = await HttpRequest.SendAsync<ResetForgottenUserPasswordRequestDTO, string>(
+            var (cpResponse, cpMsg) = await Request.SendHttpRequestAsync<ResetForgottenUserPasswordRequestDTO, string>(
                 _client,
                 HttpMethod.Post,
                 changeForgottenPassword,
@@ -842,12 +842,12 @@ namespace SQE.ApiTest
 		[Fact]
 		public async Task ShouldNotCreateAccountWithBadEmail()
 		{
-		    // Arrange
-		    var user = RandomUser();
-		    user.email = _faker.Random.Word(); // This will not be a valid email
-		    
-		    // Act
-		    await CreateUserAccountAsync(user, shouldSucceed: false); // Asserts in method
+			// Arrange
+			var user = RandomUser();
+			user.email = _faker.Random.Word(); // This will not be a valid email
+			
+			// Act
+			await CreateUserAccountAsync(user, shouldSucceed: false); // Asserts in method
 		}
 		
 		/// <summary>
@@ -858,24 +858,24 @@ namespace SQE.ApiTest
 		[Fact]
 		public async Task ShouldNotUpdateUnactivatedAccountWithBadEmail()
 		{
-		    // Arrange
-		    var user = RandomUser();
-		    var (_, newUser) = await CreateUserAccountAsync(user);
-		    var newEmail = _faker.Random.Word(); // This will not be a valid email
-		    
-		    // Act
-		    var (response, msg) = await HttpRequest.SendAsync<UnactivatedEmailUpdateRequestDTO, string>(_client,
-		        HttpMethod.Post, changeUnactivatedEmail, new UnactivatedEmailUpdateRequestDTO()
-		        {
-		            email = user.email,
-		            newEmail = newEmail
-		        });
-		    
-		    // Assert
-		    Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-		    
-		    // Cleanup
-		    await CleanupUserAccountAsync(newUser);
+			// Arrange
+			var user = RandomUser();
+			var (_, newUser) = await CreateUserAccountAsync(user);
+			var newEmail = _faker.Random.Word(); // This will not be a valid email
+			
+			// Act
+			var (response, msg) = await HttpRequest.SendAsync<UnactivatedEmailUpdateRequestDTO, string>(_client,
+				HttpMethod.Post, changeUnactivatedEmail, new UnactivatedEmailUpdateRequestDTO()
+				{
+				    email = user.email,
+				    newEmail = newEmail
+				});
+			
+			// Assert
+			Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+			
+			// Cleanup
+			await CleanupUserAccountAsync(newUser);
 		}
 		
 		/// <summary>
@@ -886,22 +886,22 @@ namespace SQE.ApiTest
 		[Fact]
 		public async Task ShouldNotUpdateActivatedAccountWithBadEmail()
 		{
-		    // Arrange
-		    var user = RandomUser();
-		    await CreateActivatedUserAsync(user);
-		    var newUser = await Login(user);
-		    var newEmail = _faker.Random.Word(); // This will not be a valid email
-		    
-		    // Act
-		    var (response, msg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(_client,
-		        HttpMethod.Put, baseUrl, new NewUserRequestDTO(newEmail, user.password, user.organization, user.forename, user.surname), 
-		        newUser.token);
-		    
-		    // Assert
-		    Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-		    
-		    // Cleanup
-		    await CleanupUserAccountAsync(newUser);
+			// Arrange
+			var user = RandomUser();
+			await CreateActivatedUserAsync(user);
+			var newUser = await Login(user);
+			var newEmail = _faker.Random.Word(); // This will not be a valid email
+			
+			// Act
+			var (response, msg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(_client,
+				HttpMethod.Put, baseUrl, new NewUserRequestDTO(newEmail, user.password, user.organization, user.forename, user.surname), 
+				newUser.token);
+			
+			// Assert
+			Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+			
+			// Cleanup
+			await CleanupUserAccountAsync(newUser);
 		}*/
     }
 }

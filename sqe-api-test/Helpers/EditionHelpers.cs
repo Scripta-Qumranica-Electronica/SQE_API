@@ -24,7 +24,7 @@ namespace SQE.ApiTest.Helpers
             string jwt = null)
         {
             var url = $"/{version}/{controller}/{editionId}";
-            var (response, editionResponse) = await HttpRequest.SendAsync<string, EditionGroupDTO>(
+            var (response, editionResponse) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                 client,
                 HttpMethod.Get,
                 url,
@@ -42,14 +42,12 @@ namespace SQE.ApiTest.Helpers
         /// <param name="client">The HttpClient</param>
         /// <param name="editionId">Optional id of the edition to be cloned</param>
         /// <param name="name">Optional name for the new edition</param>
-        /// <param name="username">Optional username for the user who will own the edition</param>
-        /// <param name="pwd">Optional password for the user who will own the edition</param>
+        /// <param name="userAuthDetails">User object with the user login credentials</param>
         /// <returns>The ID of the new edition</returns>
         public static async Task<uint> CreateCopyOfEdition(HttpClient client,
             uint editionId = 1,
             string name = "",
-            string username = null,
-            string pwd = null)
+            Request.UserAuthDetails userAuthDetails = null)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -58,12 +56,16 @@ namespace SQE.ApiTest.Helpers
             }
 
             var newScrollRequest = new EditionUpdateRequestDTO(name, null, null);
-            var (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
+
+            var (response, msg) = await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionDTO>(
                 client,
                 HttpMethod.Post,
                 $"/v1/editions/{editionId}",
                 newScrollRequest,
-                await HttpRequest.GetJWTAsync(client, username, pwd)
+                await Request.GetJwtViaHttpAsync(
+                    client,
+                    userAuthDetails
+                )
             );
             response.EnsureSuccessStatusCode();
             return msg.id;
@@ -83,27 +85,26 @@ namespace SQE.ApiTest.Helpers
             uint editionId,
             bool authenticated = false,
             bool shouldSucceed = true,
-            string email = null,
-            string pwd = null)
+            Request.UserAuthDetails userAuthDetails = null)
         {
-            var (response, msg) = await HttpRequest.SendAsync<string, DeleteTokenDTO>(
+            var (response, msg) = await Request.SendHttpRequestAsync<string, DeleteTokenDTO>(
                 client,
                 HttpMethod.Delete,
                 $"/v1/editions/{editionId}?optional=deleteForAllEditors",
                 null,
-                authenticated ? await HttpRequest.GetJWTAsync(client, email, pwd) : null
+                authenticated ? await Request.GetJwtViaHttpAsync(client, userAuthDetails) : null
             );
             if (shouldSucceed)
             {
                 response.EnsureSuccessStatusCode();
                 Assert.NotNull(msg.token);
                 Assert.Equal(editionId, msg.editionId);
-                var (response2, msg2) = await HttpRequest.SendAsync<string, DeleteTokenDTO>(
+                var (response2, msg2) = await Request.SendHttpRequestAsync<string, DeleteTokenDTO>(
                     client,
                     HttpMethod.Delete,
                     $"/v1/editions/{msg.editionId}?optional=deleteForAllEditors&token={msg.token}",
                     null,
-                    authenticated ? await HttpRequest.GetJWTAsync(client, email, pwd) : null
+                    authenticated ? await Request.GetJwtViaHttpAsync(client, userAuthDetails) : null
                 );
                 response2.EnsureSuccessStatusCode();
                 Assert.Null(msg2);
