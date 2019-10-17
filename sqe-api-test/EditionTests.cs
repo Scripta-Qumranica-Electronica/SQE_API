@@ -44,12 +44,13 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var (shareResponse, shareMsg) = await HttpRequest.SendAsync<EditorRightsDTO, EditorRightsDTO>(
+            var add1 = new Post.V1.Editions.EditionIdEditors(newEdition, newPermissions);
+            var (shareResponse, shareMsg, _, _) = await Request.Send(
+                add1,
                 _client,
-                HttpMethod.Post,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
+                StartConnectionAsync,
+                auth: true,
+                jwt: await HttpRequest.GetJWTAsync(_client, user1.email, user1Pwd)
             );
 
             // Assert
@@ -571,15 +572,19 @@ namespace SQE.ApiTest
             // ARRANGE (with name)
             const string url = "/v1/editions/1";
             const string name = "interesting-long-test name @3#ח";
-            var newScrollRequest = new EditionUpdateRequestDTO(name, null, null);
+            var newScrollRequest = new EditionCopyDTO(name, null, null);
 
             //Act
-            var (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(
+            // var arts = new ApiRequests.Get.V1.Artefacts.EditionId(894, null);
+            // var (res1, mssg1) = await Request.Send(arts, http: _client, realtime: StartConnectionAsync);
+            var newEd = new Post.V1.Editions.EditionId(1, newScrollRequest);
+            var (response, msg, rt, lt) = await Request.Send(
+                newEd,
                 _client,
-                HttpMethod.Post,
-                url,
-                newScrollRequest,
-                await HttpRequest.GetJWTAsync(_client)
+                StartConnectionAsync,
+                auth: true,
+                jwt: await HttpRequest.GetJWTAsync(_client),
+                deterministic: false
             );
             response.EnsureSuccessStatusCode();
 
@@ -592,7 +597,7 @@ namespace SQE.ApiTest
             Assert.True(msg.id != 1);
 
             // ARRANGE (without name)
-            newScrollRequest = new EditionUpdateRequestDTO("", null, null);
+            newScrollRequest = new EditionCopyDTO("", null, null);
 
             //Act
             (response, msg) = await HttpRequest.SendAsync<EditionUpdateRequestDTO, EditionDTO>(

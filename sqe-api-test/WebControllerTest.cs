@@ -1,11 +1,10 @@
-using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Configuration;
 using SQE.API.Server;
 using Xunit;
 
@@ -36,19 +35,22 @@ namespace SQE.ApiTest
         }
 
         /// <summary>
-        /// Provides a SignalR HubConnection.  The connection will be authorized if a JWT is provided
+        ///     Provides a SignalR HubConnection.  The connection will be authorized if a JWT is provided
         /// </summary>
         /// <param name="token">The JWT used to authorize the connection</param>
         /// <returns></returns>
         protected async Task<HubConnection> StartConnectionAsync(string token = null)
         {
             var hubConnection = new HubConnectionBuilder()
-                .WithUrl($"ws://localhost/signalr", o =>
-                {
-                    o.HttpMessageHandlerFactory = _ => _factory.Server.CreateHandler();
-                    if (!string.IsNullOrEmpty(token))
-                        o.AccessTokenProvider = () => Task.FromResult(token);
-                })
+                .WithUrl(
+                    "ws://localhost/signalr",
+                    o =>
+                    {
+                        o.HttpMessageHandlerFactory = _ => _factory.Server.CreateHandler();
+                        if (!string.IsNullOrEmpty(token))
+                            o.AccessTokenProvider = () => Task.FromResult(token);
+                    }
+                )
                 .Build();
 
             await hubConnection.StartAsync();
