@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -114,20 +115,40 @@ namespace SQE.API.Server
                             ValidateIssuer = false,
                             ValidateAudience = false
                         };
+
+                        // From https://docs.microsoft.com/en-us/aspnet/core/signalr/authn-and-authz?view=aspnetcore-2.2
+                        // We have to hook the OnMessageReceived event in order to
+                        // allow the JWT authentication handler to read the access
+                        // token from the query string when a WebSocket or 
+                        // Server-Sent Events request comes in.
+                        x.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
+                            {
+                                var accessToken = context.Request.Query["access_token"];
+
+                                // If the request is for our hub...
+                                var path = context.HttpContext.Request.Path;
+                                if (!string.IsNullOrEmpty(accessToken) &&
+                                    (path.StartsWithSegments("/signalr")))
+                                {
+                                    // Read the token out of the query string
+                                    context.Token = accessToken;
+                                }
+                                return Task.CompletedTask;
+                            }
+                        };
                     }
                 );
 
-            services.AddAuthorization(
-                options =>
-                {
-                    var defaultAuthorizationPolicyBuilder = new AuthorizationPolicyBuilder(
-                        JwtBearerDefaults.AuthenticationScheme
-                    );
-                    defaultAuthorizationPolicyBuilder =
-                        defaultAuthorizationPolicyBuilder.RequireAuthenticatedUser();
-                    options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
-                }
-            );
+            services.AddAuthorization(options =>
+            {
+                var defaultAuthorizationPolicyBuilder = new AuthorizationPolicyBuilder(
+                    JwtBearerDefaults.AuthenticationScheme);
+                defaultAuthorizationPolicyBuilder =
+                    defaultAuthorizationPolicyBuilder.RequireAuthenticatedUser();
+                options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
+            });
 
             if (appSettings.HttpServer.ToLower() == "true")
             {
@@ -196,9 +217,6 @@ namespace SQE.API.Server
 
             app.UseSerilogRequestLogging();
 
-            // app.UseCors(
-            // 	options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
-            // );
             app.UseCors(
                 builder => builder
                     .AllowAnyHeader()
@@ -206,6 +224,8 @@ namespace SQE.API.Server
                     .SetIsOriginAllowed(host => true)
                     .AllowCredentials()
             );
+
+            app.UseAuthentication();
 
             app.UseHttpException();
 
