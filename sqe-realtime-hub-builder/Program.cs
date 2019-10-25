@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -42,7 +43,7 @@ namespace sqe_realtime_hub_builder
             var files = dir.GetFiles("*.cs");
             var classFields = new List<ControllerField>();
 
-            // Parse each comtroller file
+            // Parse each controller file
             foreach (var file in files)
             {
                 classFields = classFields.Union(ParseSqeHttpControllers(projectRoot, file), new FieldComparer()).ToList();
@@ -133,13 +134,49 @@ namespace sqe_realtime_hub_builder
             return AnalyzeController(members);
         }
 
+        private static void VerifyControllerClassName(List<MemberDeclarationSyntax> members)
+        {
+            var classes = members.OfType<ClassDeclarationSyntax>().ToList();
+            if (classes.Count != 1)
+                throw new Exception($"Each Controller file should have only one class, this file has {classes.Count}.");
+
+            var controllerClass = classes.First();
+            var controllerAttrs = controllerClass.AttributeLists.ToList();
+            if (controllerAttrs.Count > 2)
+                throw new Exception("The SQE API only supports controllers with the [Authorize] and [ApiController] attributes.");
+            
+            var isControllerClass = false;
+            var isAuthorized = false;
+            var hasPath = false;
+            
+            foreach (var attr in controllerAttrs)
+            {
+                if (attr.Attributes.Count(x => x.Name.ToString() == "ApiController") == 1)
+                    isControllerClass = true;
+                if (attr.Attributes.Count(x => x.Name.ToString() == "Authorize") == 1)
+                    isAuthorized = true;
+                if (attr.Attributes.Count(x => 
+                        x.Name.ToString().IndexOf("Route", StringComparison.CurrentCultureIgnoreCase) >= 0
+                        || x.Name.ToString().IndexOf("Http", StringComparison.CurrentCultureIgnoreCase) >= 0
+                        ) > 0)
+                    hasPath = true;
+            }
+
+            if (!isControllerClass)
+                throw new Exception("This controller class must have the attribute [ApiController].");
+            if (!isAuthorized)
+                throw new Exception("This controller class must have the attribute [Authorize].");
+            if (hasPath)
+                throw new Exception("The SQE API does not support controllers with class level routing attributes.");
+        }
+
         private static void WriteMethodCommentsToFile(MethodDeclarationSyntax method, StreamWriter outputFile)
         {
             var comments = method.GetLeadingTrivia().ToString().Trim();
             if (!string.IsNullOrEmpty(comments))
                 outputFile.WriteLine(comments);
         }
-
+        
         private static string ProcessReturnType(MethodDeclarationSyntax method)
         {
             const string actionResultString = "<ActionResult";
