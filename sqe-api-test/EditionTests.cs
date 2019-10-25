@@ -676,7 +676,7 @@ namespace SQE.ApiTest
             var newScrollRequest = new EditionCopyDTO(name, null, null);
 
             //Act
-            var newEd = new Post.V1.Editions.EditionId(1, newScrollRequest);
+            var newEd = new Post.V1.Editions.EditionId.Null(1, newScrollRequest);
             var (response, msg, rt, lt) = await Request.Send(
                 newEd,
                 _client,

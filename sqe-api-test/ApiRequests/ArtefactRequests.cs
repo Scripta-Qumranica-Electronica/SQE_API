@@ -26,13 +26,13 @@ namespace SQE.ApiTest.ApiRequests
                     /// <summary>
                     ///     Request a list of artefacts by their editionId
                     /// </summary>
-                    /// <param name="_editionId">Id of the edition to search for artefacts</param>
+                    /// <param name="editionId">Id of the edition to search for artefacts</param>
                     /// <param name="optional">List of optional parameters: "masks", "images"</param>
                     public EditionId(uint editionId, List<string> optional) : base(editionId, null)
                     {
                         _optional = optional;
                         requestVerb = HttpMethod.Get;
-                        requestPath = "/v1/Editions/EditionId/Artefacts";
+                        requestPath = "v1/editions/{editionId}/artefacts";
                     }
 
                     public override Func<HubConnection, Task<T>> SignalrRequest<T>()

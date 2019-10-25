@@ -13,41 +13,44 @@ namespace SQE.ApiTest.ApiRequests
     {
         public static partial class V1
         {
-            public static class Editions
+            public static partial class Editions
             {
-                public class Blank : RequestObject<EmptyInput, EditionListDTO>
+                public class Null : RequestObject<EmptyInput, EditionListDTO>
                 {
                     /// <summary>
                     ///     Request a listing of all editions available to the user
                     /// </summary>
-                    public Blank() : base(null)
+                    public Null() : base(null)
                     {
                         requestVerb = HttpMethod.Get;
-                        requestPath = "/v1/Editions";
+                        requestPath = "v1/editions";
                     }
                 }
 
-                public class EditionId : EditionRequestObject<EmptyInput, EditionGroupDTO>
+                public static partial class EditionId
                 {
-                    /// <summary>
-                    ///     Request information about a specific edition
-                    /// </summary>
-                    /// <param name="editionId">The editionId for the desired edition</param>
-                    public EditionId(uint editionId) : base(editionId, null)
+                    public class Null : EditionRequestObject<EmptyInput, EditionGroupDTO>
                     {
-                        requestVerb = HttpMethod.Get;
-                        requestPath = "/v1/Editions/EditionId";
+                        /// <summary>
+                        ///     Request information about a specific edition
+                        /// </summary>
+                        /// <param name="editionId">The editionId for the desired edition</param>
+                        public Null(uint editionId) : base(editionId, null)
+                        {
+                            requestVerb = HttpMethod.Get;
+                            requestPath = "v1/editions/{editionId}";
+                        }
                     }
                 }
             }
         }
     }
 
-    public static class Post
+    public static partial class Post
     {
-        public static class V1
+        public static partial class V1
         {
-            public static class Editions
+            public static partial class Editions
             {
                 public class EditionIdEditors : EditionRequestObject<EditorRightsDTO, EditorRightsDTO>
                 {
@@ -59,31 +62,34 @@ namespace SQE.ApiTest.ApiRequests
                     public EditionIdEditors(uint editionId, EditorRightsDTO payload) : base(editionId, payload)
                     {
                         requestVerb = HttpMethod.Post;
-                        requestPath = "/v1/Editions/EditionId/Editors";
+                        requestPath = "v1/editions/{editionId}/editors";
                     }
                 }
 
-                public class EditionId : EditionRequestObject<EditionCopyDTO, EditionDTO>
+                public static partial class EditionId
                 {
-                    /// <summary>
-                    ///     Request to create a copy of an edition
-                    /// </summary>
-                    /// <param name="editionId">Id of the edition to be copied</param>
-                    public EditionId(uint editionId, EditionCopyDTO payload) : base(editionId, payload)
+                    public class Null : EditionRequestObject<EditionCopyDTO, EditionDTO>
                     {
-                        requestVerb = HttpMethod.Post;
-                        requestPath = "/v1/Editions/EditionId";
+                        /// <summary>
+                        ///     Request to create a copy of an edition
+                        /// </summary>
+                        /// <param name="editionId">Id of the edition to be copied</param>
+                        public Null(uint editionId, EditionCopyDTO payload) : base(editionId, payload)
+                        {
+                            requestVerb = HttpMethod.Post;
+                            requestPath = "v1/editions/{editionId}";
+                        }
                     }
                 }
             }
         }
     }
 
-    public static class Put
+    public static partial class Put
     {
-        public static class V1
+        public static partial class V1
         {
-            public static class Editions
+            public static partial class Editions
             {
                 public class EditionIdEditors : EditionRequestObject<EditorRightsDTO, EditorRightsDTO>
                 {
@@ -95,7 +101,7 @@ namespace SQE.ApiTest.ApiRequests
                     public EditionIdEditors(uint editionId, EditorRightsDTO payload) : base(editionId, payload)
                     {
                         requestVerb = HttpMethod.Put;
-                        requestPath = "/v1/Editions/EditionId/Editors";
+                        requestPath = "v1/editions/{editionId}/editors";
                     }
                 }
 
@@ -109,18 +115,18 @@ namespace SQE.ApiTest.ApiRequests
                     public EditionId(uint editionId, EditionUpdateRequestDTO payload) : base(editionId, payload)
                     {
                         requestVerb = HttpMethod.Put;
-                        requestPath = "/v1/Editions/EditionId";
+                        requestPath = "v1/editions/{editionId}";
                     }
                 }
             }
         }
     }
 
-    public static class Delete
+    public static partial class Delete
     {
-        public static class V1
+        public static partial class V1
         {
-            public static class Editions
+            public static partial class Editions
             {
                 public class EditionId : EditionRequestObject<string, DeleteTokenDTO>
                 {
@@ -136,7 +142,7 @@ namespace SQE.ApiTest.ApiRequests
                     public EditionId(uint editionId, List<string> optional, string token) : base(editionId, null)
                     {
                         requestVerb = HttpMethod.Delete;
-                        requestPath = "/v1/Editions/EditionId";
+                        requestPath = "v1/editions/{editionId}";
                         _optional = optional;
                         _token = token;
                     }
