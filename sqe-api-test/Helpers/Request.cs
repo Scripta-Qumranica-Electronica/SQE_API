@@ -127,7 +127,7 @@ namespace SQE.ApiTest.Helpers
             }
 
             // Run the HTTP request if desired and available
-            var httpObj = request.GetHttpResponseObject();
+            var httpObj = request.GetHttpRequestObject();
             if (http != null
                 && httpObj != null)
             {

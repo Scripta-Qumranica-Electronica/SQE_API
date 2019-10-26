@@ -20,11 +20,7 @@ namespace SQE.ApiTest.ApiRequests
                     /// <summary>
                     ///     Request a listing of all editions available to the user
                     /// </summary>
-                    public Null() : base(null)
-                    {
-                        requestVerb = HttpMethod.Get;
-                        requestPath = "v1/editions";
-                    }
+                    public Null() : base(null) { }
                 }
 
                 public static partial class EditionId
@@ -35,11 +31,7 @@ namespace SQE.ApiTest.ApiRequests
                         ///     Request information about a specific edition
                         /// </summary>
                         /// <param name="editionId">The editionId for the desired edition</param>
-                        public Null(uint editionId) : base(editionId, null)
-                        {
-                            requestVerb = HttpMethod.Get;
-                            requestPath = "v1/editions/{editionId}";
-                        }
+                        public Null(uint editionId) : base(editionId, null) { }
                     }
                 }
             }
@@ -52,20 +44,6 @@ namespace SQE.ApiTest.ApiRequests
         {
             public static partial class Editions
             {
-                public class EditionIdEditors : EditionRequestObject<EditorRightsDTO, EditorRightsDTO>
-                {
-                    /// <summary>
-                    ///     Request to add an editor to an edition
-                    /// </summary>
-                    /// <param name="editionId">The editionId for the desired edition</param>
-                    /// <param name="payload">An object containing the settings for the editor and editor rights</param>
-                    public EditionIdEditors(uint editionId, EditorRightsDTO payload) : base(editionId, payload)
-                    {
-                        requestVerb = HttpMethod.Post;
-                        requestPath = "v1/editions/{editionId}/editors";
-                    }
-                }
-
                 public static partial class EditionId
                 {
                     public class Null : EditionRequestObject<EditionCopyDTO, EditionDTO>
@@ -74,11 +52,17 @@ namespace SQE.ApiTest.ApiRequests
                         ///     Request to create a copy of an edition
                         /// </summary>
                         /// <param name="editionId">Id of the edition to be copied</param>
-                        public Null(uint editionId, EditionCopyDTO payload) : base(editionId, payload)
-                        {
-                            requestVerb = HttpMethod.Post;
-                            requestPath = "v1/editions/{editionId}";
-                        }
+                        public Null(uint editionId, EditionCopyDTO payload) : base(editionId, payload) { }
+                    }
+
+                    public class Editors : EditionRequestObject<EditorRightsDTO, EditorRightsDTO>
+                    {
+                        /// <summary>
+                        ///     Request to add an editor to an edition
+                        /// </summary>
+                        /// <param name="editionId">The editionId for the desired edition</param>
+                        /// <param name="payload">An object containing the settings for the editor and editor rights</param>
+                        public Editors(uint editionId, EditorRightsDTO payload) : base(editionId, payload) { }
                     }
                 }
             }
@@ -98,11 +82,7 @@ namespace SQE.ApiTest.ApiRequests
                     /// </summary>
                     /// <param name="editionId">The editionId for the desired edition</param>
                     /// <param name="payload">An object containing the settings for the editor and editor rights</param>
-                    public EditionIdEditors(uint editionId, EditorRightsDTO payload) : base(editionId, payload)
-                    {
-                        requestVerb = HttpMethod.Put;
-                        requestPath = "v1/editions/{editionId}/editors";
-                    }
+                    public EditionIdEditors(uint editionId, EditorRightsDTO payload) : base(editionId, payload) { }
                 }
 
                 public class EditionId : EditionRequestObject<EditionUpdateRequestDTO, EditionDTO>
@@ -112,11 +92,7 @@ namespace SQE.ApiTest.ApiRequests
                     /// </summary>
                     /// <param name="editionId">Unique Id of the desired edition</param>
                     /// <param name="payload">JSON object with the attributes to be updated</param>
-                    public EditionId(uint editionId, EditionUpdateRequestDTO payload) : base(editionId, payload)
-                    {
-                        requestVerb = HttpMethod.Put;
-                        requestPath = "v1/editions/{editionId}";
-                    }
+                    public EditionId(uint editionId, EditionUpdateRequestDTO payload) : base(editionId, payload) { }
                 }
             }
         }
@@ -141,15 +117,13 @@ namespace SQE.ApiTest.ApiRequests
                     /// <param name="token">token required when using optional 'deleteForAllEditors'</param>
                     public EditionId(uint editionId, List<string> optional, string token) : base(editionId, null)
                     {
-                        requestVerb = HttpMethod.Delete;
-                        requestPath = "v1/editions/{editionId}";
                         _optional = optional;
                         _token = token;
                     }
 
                     protected override string HttpPath()
                     {
-                        var http = requestPath.Replace("EditionId", editionId.ToString());
+                        var http = requestPath.Replace("/edition-id", $"/{editionId.ToString()}");
                         if (_optional.Count > 0)
                             http += "?optional[]=" + string.Join("&", _optional);
                         if (!string.IsNullOrEmpty(_token))

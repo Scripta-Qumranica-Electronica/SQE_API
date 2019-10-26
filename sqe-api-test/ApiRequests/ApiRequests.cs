@@ -26,18 +26,36 @@ namespace SQE.ApiTest.ApiRequests
         protected RequestObject(Tinput payload)
         {
             this.payload = payload;
+            var pathElements = this.GetType().ToString().Split(".").Last().Split("+");
+            this.requestPath = "/" + string.Join("/", pathElements.Skip(1).Select(x => x.ToKebabCase()).Where(x => x != "null"));
+            var verb = pathElements.First();
+            switch (verb)
+            {
+                case "Get":
+                    this.requestVerb = HttpMethod.Get;
+                    break;
+                case "Post":
+                    this.requestVerb = HttpMethod.Post;
+                    break;
+                case "Put":
+                    this.requestVerb = HttpMethod.Put;
+                    break;
+                case "Delete":
+                    this.requestVerb = HttpMethod.Get;
+                    break;
+            }
         }
 
         /// <summary>
         ///     Returns an HttpRequestObject with the information needed to make a request to the HTTP server for this API endpoint
         /// </summary>
         /// <returns>May return null if HTTP requests are not possible with this endpoint</returns>
-        public virtual HttpRequestObject GetHttpResponseObject()
+        public virtual HttpRequestObject GetHttpRequestObject()
         {
             return new HttpRequestObject
             {
                 requestVerb = requestVerb,
-                requestString = "/" + HttpPath(),
+                requestString = HttpPath(),
                 payload = payload
             };
         }
@@ -102,7 +120,7 @@ namespace SQE.ApiTest.ApiRequests
 
         protected override string HttpPath()
         {
-            return requestPath.Replace("{editionId}", editionId.ToString());
+            return requestPath.Replace("/edition-id", $"/{editionId.ToString()}");
         }
 
         public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -135,7 +153,7 @@ namespace SQE.ApiTest.ApiRequests
 
         protected override string HttpPath()
         {
-            return base.HttpPath().Replace("{textFragmentId}", textFragmentId.ToString());
+            return base.HttpPath().Replace("/text-fragment-id", $"/{textFragmentId.ToString()}");
         }
 
         public override Func<HubConnection, Task<T>> SignalrRequest<T>()

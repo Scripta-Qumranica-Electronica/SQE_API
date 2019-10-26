@@ -47,7 +47,7 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var add1 = new Post.V1.Editions.EditionIdEditors(newEdition, newPermissions);
+            var add1 = new Post.V1.Editions.EditionId.Editors(newEdition, newPermissions);
             var (shareResponse, shareMsg, _, _) = await Request.Send(
                 add1,
                 _client,

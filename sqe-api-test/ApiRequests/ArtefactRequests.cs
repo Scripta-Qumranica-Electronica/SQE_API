@@ -31,8 +31,6 @@ namespace SQE.ApiTest.ApiRequests
                     public EditionId(uint editionId, List<string> optional) : base(editionId, null)
                     {
                         _optional = optional;
-                        requestVerb = HttpMethod.Get;
-                        requestPath = "v1/editions/{editionId}/artefacts";
                     }
 
                     public override Func<HubConnection, Task<T>> SignalrRequest<T>()
