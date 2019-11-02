@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Newtonsoft.Json;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.Helpers;
@@ -140,6 +141,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
                 statusMessage = null
             };
             const string defaultStatusMessage = "New";
+            var jsonString = JsonConvert.SerializeObject(newArtefact);
 
             // Act
             var (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
@@ -290,7 +292,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             );
             Assert.Equal(HttpStatusCode.NotFound, delResponse.StatusCode);
 
-            await EditionHelpers.DeleteEdition(_client, newEdition, true);
+            await EditionHelpers.DeleteEdition(_client, newEdition);
         }
 
         [Fact]
@@ -367,7 +369,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
 
-            await EditionHelpers.DeleteEdition(_client, newEdition, true);
+            await EditionHelpers.DeleteEdition(_client, newEdition);
         }
 
         /// <summary>
@@ -393,7 +395,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
 
-            await EditionHelpers.DeleteEdition(_client, newEdition, true);
+            await EditionHelpers.DeleteEdition(_client, newEdition);
         }
 
         /// <summary>
@@ -433,7 +435,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             // Assert (update name)
             Assert.Equal(HttpStatusCode.Unauthorized, nameResponse.StatusCode);
 
-            await EditionHelpers.DeleteEdition(_client, newEdition, true);
+            await EditionHelpers.DeleteEdition(_client, newEdition);
         }
 
         /// <summary>
@@ -598,7 +600,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             Assert.Equal(otherTranslateY, updatedAllArtefact.mask.transformation.translate.y);
             Assert.Equal(artefact.name, updatedAllArtefact.name);
 
-            await EditionHelpers.DeleteEdition(_client, newEdition, true);
+            await EditionHelpers.DeleteEdition(_client, newEdition);
         }
 
         /// <summary>
@@ -640,7 +642,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             // Assert (update name)
             Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
 
-            await EditionHelpers.DeleteEdition(_client, newEdition, true);
+            await EditionHelpers.DeleteEdition(_client, newEdition);
         }
     }
 }

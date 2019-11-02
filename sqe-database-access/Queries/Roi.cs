@@ -11,8 +11,8 @@ VALUES (ST_GeomFromText(@Path))
     internal static class CreateRoiPositionQuery
     {
         public const string GetQuery = @"
-INSERT INTO SQE.roi_position (artefact_id, transform_matrix)
-VALUES (@ArtefactId, @TransformMatrix)
+INSERT INTO SQE.roi_position (artefact_id, translate_x, translate_y, stance_rotation)
+VALUES (@ArtefactId, @TranslateX, @TranslateX, @StanceRotation)
 ";
     }
 
@@ -22,7 +22,9 @@ VALUES (@ArtefactId, @TransformMatrix)
 SELECT roi_position.artefact_id AS ArtefactId,
        sign_interpretation_roi.sign_interpretation_id AS SignInterpretationId,
        ST_ASTEXT(roi_shape.path) AS Shape,
-       roi_position.transform_matrix AS Position,
+       roi_position.translate_x AS TranslateX,
+       roi_position.translate_y AS TranslateY,
+       roi_position.stance_rotation AS StanceRotation,
        sign_interpretation_roi.values_set AS ValuesSet,
        sign_interpretation_roi.exceptional AS Exceptional,
        sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
@@ -45,7 +47,9 @@ WHERE sign_interpretation_roi.sign_interpretation_roi_id = @SignInterpretationRo
 SELECT roi_position.artefact_id AS ArtefactId,
        sign_interpretation_roi.sign_interpretation_id AS SignInterpretationId,
        ST_ASTEXT(roi_shape.path) AS Shape,
-       roi_position.transform_matrix AS Position,
+       roi_position.translate_x AS TranslateX,
+       roi_position.translate_y AS TranslateY,
+       roi_position.stance_rotation AS StanceRotation,
        sign_interpretation_roi.values_set AS ValuesSet,
        sign_interpretation_roi.exceptional AS Exceptional,
        sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,

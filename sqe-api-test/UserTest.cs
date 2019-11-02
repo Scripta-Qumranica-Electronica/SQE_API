@@ -867,8 +867,8 @@ namespace SQE.ApiTest
 			var (response, msg) = await HttpRequest.SendAsync<UnactivatedEmailUpdateRequestDTO, string>(_client,
 				HttpMethod.Post, changeUnactivatedEmail, new UnactivatedEmailUpdateRequestDTO()
 				{
-				    email = user.email,
-				    newEmail = newEmail
+					email = user.email,
+					newEmail = newEmail
 				});
 			
 			// Assert

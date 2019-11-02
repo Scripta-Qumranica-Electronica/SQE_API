@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace SQE.API.DTO
 {
     public class TransformationDTO
@@ -9,7 +11,9 @@ namespace SQE.API.DTO
 
     public class TranslateDTO
     {
+        [Required]
         public uint x { get; set; }
+        [Required]
         public uint y { get; set; }
     }
 }

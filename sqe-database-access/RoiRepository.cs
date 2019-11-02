@@ -50,7 +50,7 @@ namespace SQE.DatabaseAccess
                     async x =>
                     {
                         var roiShapeId = CreateRoiShapeAsync(x.Shape);
-                        var roiPositionId = CreateRoiPositionAsync(x.ArtefactId, x.Position);
+                        var roiPositionId = CreateRoiPositionAsync(x.ArtefactId, x.TranslateX, x.TranslateY, x.StanceRotation);
                         var signInterpretationRoiId = await CreateSignInterpretationRoiAsync(
                             editionUser,
                             x.SignInterpretationId,
@@ -92,7 +92,7 @@ namespace SQE.DatabaseAccess
                         // TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
                         var roiPositionId = originalSignRoiInterpretation.Position == x.Position
                             ? originalSignRoiInterpretation.RoiPositionId
-                            : await CreateRoiPositionAsync(x.ArtefactId, x.Position);
+                            : await CreateRoiPositionAsync(x.ArtefactId, x.TranslateX, x.TranslateY, x.StanceRotation);
 
                         var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
                             editionUser,
@@ -201,7 +201,10 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        private async Task<uint> CreateRoiPositionAsync(uint artefactId, string transformMatrix)
+        private async Task<uint> CreateRoiPositionAsync(uint artefactId,
+            uint translateX,
+            uint translateY,
+            ushort stanceRotate)
         {
             using (var connection = OpenConnection())
             {
@@ -210,7 +213,9 @@ namespace SQE.DatabaseAccess
                     new
                     {
                         ArtefactId = artefactId,
-                        TransformMatrix = transformMatrix
+                        TranslateX = translateX,
+                        TranslateY = translateY,
+                        StanceRotation = stanceRotate
                     }
                 );
 

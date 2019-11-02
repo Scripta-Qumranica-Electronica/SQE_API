@@ -26,8 +26,8 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="editionId">Id of the edition</param>
         [HttpPost("v1/editions/{editionId}/text-fragments")]
         public async Task<ActionResult<TextFragmentDataDTO>> CreateTextFragment(
-            [FromBody] CreateTextFragmentDTO createFragment,
-            [FromRoute] uint editionId)
+            [FromRoute] uint editionId,
+            [FromBody] CreateTextFragmentDTO createFragment)
         {
             return await _textService.CreateTextFragmentAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId, true),

@@ -7,7 +7,8 @@ namespace SQE.API.DTO
         public uint artefactId { get; set; }
         public uint? signInterpretationId { get; set; }
         public string shape { get; set; }
-        public string position { get; set; }
+        public TranslateDTO translate { get; set; }
+        public ushort stanceRotation { get; set; }
         public bool exceptional { get; set; }
         public bool valuesSet { get; set; }
     }

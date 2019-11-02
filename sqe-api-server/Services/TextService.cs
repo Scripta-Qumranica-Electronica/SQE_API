@@ -172,7 +172,11 @@ namespace SQE.API.Server.Services
                                                                             editorId = b.SignInterpretationRoiAuthor,
                                                                             artefactId = b.ArtefactId,
                                                                             shape = b.Shape,
-                                                                            position = b.Position,
+                                                                            translate = new TranslateDTO()
+                                                                            {
+                                                                                x = b.TranslateX,
+                                                                                y = b.TranslateY
+                                                                            },
                                                                             exceptional = b.Exceptional,
                                                                             valuesSet = b.ValuesSet
                                                                         }
@@ -261,7 +265,11 @@ namespace SQE.API.Server.Services
                                                     editorId = b.SignInterpretationRoiAuthor,
                                                     artefactId = b.ArtefactId,
                                                     shape = b.Shape,
-                                                    position = b.Position,
+                                                    translate = new TranslateDTO()
+                                                    {
+                                                        x = b.TranslateX,
+                                                        y = b.TranslateY
+                                                    },
                                                     exceptional = b.Exceptional,
                                                     valuesSet = b.ValuesSet
                                                 }

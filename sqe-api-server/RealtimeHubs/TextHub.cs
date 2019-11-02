@@ -22,7 +22,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="createFragment">A JSON object with the details of the new text fragment to be created</param>
         /// <param name="editionId">Id of the edition</param>
         [Authorize]
-        public async Task<TextFragmentDataDTO> PostV1EditionsEditionIdTextFragments(CreateTextFragmentDTO createFragment, uint editionId)
+        public async Task<TextFragmentDataDTO> PostV1EditionsEditionIdTextFragments(uint editionId, CreateTextFragmentDTO createFragment)
         {
             return await _textService.CreateTextFragmentAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), createFragment, clientId: Context.ConnectionId);
         }

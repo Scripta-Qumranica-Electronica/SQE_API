@@ -6,6 +6,9 @@ namespace SQE.DatabaseAccess.Models
         public uint? SignInterpretationId { get; set; }
         public string Shape { get; set; }
         public string Position { get; set; }
+        public uint TranslateX { get; set; }
+        public uint TranslateY { get; set; }
+        public ushort StanceRotation { get; set; }
         public bool ValuesSet { get; set; }
         public bool Exceptional { get; set; }
     }

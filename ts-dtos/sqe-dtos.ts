@@ -26,6 +26,7 @@ export interface UpdateArtefactDTO {
 
 export interface CreateArtefactDTO extends UpdateArtefactDTO {
     masterImageId: number;
+    polygon: PolygonDTO;
 }
 
 export interface EditionDTO {
@@ -134,11 +135,13 @@ export interface PolygonDTO {
     transformation: TransformationDTO;
     positionEditorId: number;
 }
+
 export interface SetInterpretationRoiDTO {
     artefactId: number;
     signInterpretationId?: number;
     shape: string;
-    position: string;
+    translate: TranslateDTO;
+    stanceRotation: number;
     exceptional: boolean;
     valuesSet: boolean;
 }

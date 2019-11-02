@@ -34,7 +34,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
         [Authorize]
-        public async Task DeleteV1EditionsEditionIdArtefactsArtefactId(uint artefactId, uint editionId)
+        public async Task DeleteV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId)
         {
             await _artefactService.DeleteArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactId, clientId: Context.ConnectionId);
         }
@@ -46,7 +46,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
         [AllowAnonymous]
-        public async Task<ArtefactDTO> GetV1EditionsEditionIdArtefactsArtefactId(uint artefactId, uint editionId, List<string> optional)
+        public async Task<ArtefactDTO> GetV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, List<string> optional)
         {
             return await _artefactService.GetEditionArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId, optional);
         }
@@ -57,7 +57,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
         [AllowAnonymous]
-        public async Task<InterpretationRoiDTOList> GetV1EditionsEditionIdArtefactsArtefactIdRois(uint artefactId, uint editionId)
+        public async Task<InterpretationRoiDTOList> GetV1EditionsEditionIdArtefactsArtefactIdRois(uint editionId, uint artefactId)
         {
             return await _roiService.GetRoisByArtefactIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);
         }
@@ -91,7 +91,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
         [Authorize]
-        public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint artefactId, uint editionId, UpdateArtefactDTO payload)
+        public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload)
         {
             return await _artefactService.UpdateArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactId, payload, clientId: Context.ConnectionId);
         }

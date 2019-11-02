@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -26,22 +27,23 @@ namespace SQE.ApiTest.ApiRequests
         protected RequestObject(Tinput payload)
         {
             this.payload = payload;
-            var pathElements = this.GetType().ToString().Split(".").Last().Split("+");
-            this.requestPath = "/" + string.Join("/", pathElements.Skip(1).Select(x => x.ToKebabCase()).Where(x => x != "null"));
+            var pathElements = GetType().ToString().Split(".").Last().Split('+', '_');
+            requestPath =
+                "/" + string.Join("/", pathElements.Skip(1).Select(x => x.ToKebabCase()).Where(x => x != "null"));
             var verb = pathElements.First();
             switch (verb)
             {
                 case "Get":
-                    this.requestVerb = HttpMethod.Get;
+                    requestVerb = HttpMethod.Get;
                     break;
                 case "Post":
-                    this.requestVerb = HttpMethod.Post;
+                    requestVerb = HttpMethod.Post;
                     break;
                 case "Put":
-                    this.requestVerb = HttpMethod.Put;
+                    requestVerb = HttpMethod.Put;
                     break;
                 case "Delete":
-                    this.requestVerb = HttpMethod.Get;
+                    requestVerb = HttpMethod.Get;
                     break;
             }
         }
@@ -107,27 +109,69 @@ namespace SQE.ApiTest.ApiRequests
     public class EditionRequestObject<Tinput, Toutput> : RequestObject<Tinput, Toutput>
     {
         public readonly uint editionId;
+        public readonly List<string> optional;
 
         /// <summary>
         ///     Provides an EditionRequestObject for all API requests made on an edition
         /// </summary>
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public EditionRequestObject(uint editionId, Tinput payload) : base(payload)
+        public EditionRequestObject(uint editionId, List<string> optional = null, Tinput payload = default(Tinput)) :
+            base(payload)
         {
             this.editionId = editionId;
+            this.optional = optional;
         }
 
         protected override string HttpPath()
         {
-            return requestPath.Replace("/edition-id", $"/{editionId.ToString()}");
+            return requestPath.Replace("/edition-id", $"/{editionId.ToString()}")
+                   + (optional != null && optional.Any() ? $"?optional={string.Join(",", optional)}" : "");
         }
 
         public override Func<HubConnection, Task<T>> SignalrRequest<T>()
         {
             return signalR => payload == null
-                ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId)
+                ? optional == null ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, optional)
                 : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, payload);
+        }
+    }
+
+    /// <summary>
+    ///     Subclass of EditionRequestObject for all requests made on an imaged object
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class ImagedObjectRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    {
+        public readonly uint imagedObjectId;
+
+        /// <summary>
+        ///     Provides an ImagedObjectRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="imagedObjectId">The id of the imaged object to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public ImagedObjectRequestObject(uint editionId,
+            uint imagedObjectId,
+            List<string> optional = null,
+            Tinput payload = default(Tinput)) : base(editionId, optional, payload)
+        {
+            this.imagedObjectId = imagedObjectId;
+        }
+
+        protected override string HttpPath()
+        {
+            return base.HttpPath().Replace("/imaged-object-id", $"/{imagedObjectId.ToString()}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? optional == null ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, imagedObjectId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, imagedObjectId, optional)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, imagedObjectId, payload);
         }
     }
 
@@ -146,7 +190,11 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="textFragmentId">The id of the text fragment to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public TextFragmentRequestObject(uint editionId, uint textFragmentId, Tinput payload) : base(editionId, payload)
+        public TextFragmentRequestObject(uint editionId, uint textFragmentId, Tinput payload) : base(
+            editionId,
+            null,
+            payload
+        )
         {
             this.textFragmentId = textFragmentId;
         }
@@ -179,14 +227,14 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="lineId">The id of the line to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public LineRequestObject(uint editionId, uint lineId, Tinput payload) : base(editionId, payload)
+        public LineRequestObject(uint editionId, uint lineId, Tinput payload) : base(editionId, null, payload)
         {
             this.lineId = lineId;
         }
 
         protected override string HttpPath()
         {
-            return base.HttpPath().Replace("{textFragmentId}", lineId.ToString());
+            return base.HttpPath().Replace("/line-id", $"/{lineId.ToString()}");
         }
 
         public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -194,6 +242,39 @@ namespace SQE.ApiTest.ApiRequests
             return signalR => payload == null
                 ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, lineId)
                 : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, lineId, payload);
+        }
+    }
+
+    /// <summary>
+    ///     Subclass of EditionRequestObject for all requests made on a roi
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class RoiRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    {
+        public readonly uint roiId;
+
+        /// <summary>
+        ///     Provides an TextFragmentRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="roiId">The id of the roi to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public RoiRequestObject(uint editionId, uint roiId, Tinput payload) : base(editionId, null, payload)
+        {
+            this.roiId = roiId;
+        }
+
+        protected override string HttpPath()
+        {
+            return base.HttpPath().Replace("/roi-id", $"/{roiId.ToString()}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, roiId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, roiId, payload);
         }
     }
 

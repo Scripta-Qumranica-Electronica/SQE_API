@@ -54,7 +54,9 @@ namespace SQE.DatabaseAccess.Queries
       sign_interpretation_roi.values_set AS ValuesSet,
       sign_interpretation_roi.exceptional AS Exceptional,
       ST_ASTEXT(roi_shape.path) AS Shape,
-      roi_position.transform_matrix AS Position,
+	  roi_position.translate_x AS TranslateX,
+	  roi_position.translate_y AS TranslateY,
+	  roi_position.stance_rotation AS StanceRotation,
       roi_position.artefact_id AS ArtefactId
 
     FROM sign_interpretation_ids

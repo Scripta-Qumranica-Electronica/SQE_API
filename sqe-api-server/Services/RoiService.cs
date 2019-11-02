@@ -61,7 +61,11 @@ namespace SQE.API.Server.Services
                 editorId = roi.SignInterpretationRoiAuthor,
                 exceptional = roi.Exceptional,
                 interpretationRoiId = roi.SignInterpretationRoiId,
-                position = roi.Position,
+                translate = new TranslateDTO()
+                {
+                    x = roi.TranslateX,
+                    y = roi.TranslateY
+                },
                 shape = roi.Shape,
                 signInterpretationId = roi.SignInterpretationId,
                 valuesSet = roi.ValuesSet
@@ -81,7 +85,11 @@ namespace SQE.API.Server.Services
                             editorId = x.SignInterpretationRoiAuthor,
                             exceptional = x.Exceptional,
                             interpretationRoiId = x.SignInterpretationRoiId,
-                            position = x.Position,
+                            translate = new TranslateDTO()
+                            {
+                                x = x.TranslateX,
+                                y = x.TranslateY
+                            },
                             shape = x.Shape,
                             signInterpretationId = x.SignInterpretationId,
                             valuesSet = x.ValuesSet
@@ -117,7 +125,8 @@ namespace SQE.API.Server.Services
                                         SignInterpretationId = x.signInterpretationId,
                                         ArtefactId = x.artefactId,
                                         Exceptional = x.exceptional,
-                                        Position = x.position,
+                                        TranslateX = x.translate.x,
+                                        TranslateY = x.translate.y,
                                         Shape = x.shape,
                                         ValuesSet = x.valuesSet
                                     }
@@ -133,7 +142,11 @@ namespace SQE.API.Server.Services
                             exceptional = x.Exceptional,
                             interpretationRoiId = x.SignInterpretationRoiId,
                             signInterpretationId = x.SignInterpretationId,
-                            position = x.Position,
+                            translate = new TranslateDTO()
+                            {
+                                x = x.TranslateX,
+                                y = x.TranslateY
+                            },
                             shape = x.Shape,
                             valuesSet = x.ValuesSet
                         }
@@ -154,7 +167,7 @@ namespace SQE.API.Server.Services
                 signInterpretationId = updatedRoi.signInterpretationId,
                 exceptional = updatedRoi.exceptional,
                 valuesSet = updatedRoi.valuesSet,
-                position = updatedRoi.position,
+                translate = updatedRoi.translate,
                 shape = updatedRoi.shape
             };
             return (await UpdateRoisAsync(
@@ -180,7 +193,8 @@ namespace SQE.API.Server.Services
                                         SignInterpretationId = x.signInterpretationId,
                                         ArtefactId = x.artefactId,
                                         Exceptional = x.exceptional,
-                                        Position = x.position,
+                                        TranslateX = x.translate.x,
+                                        TranslateY = x.translate.y,
                                         Shape = x.shape,
                                         ValuesSet = x.valuesSet
                                     }
@@ -197,7 +211,11 @@ namespace SQE.API.Server.Services
                             interpretationRoiId = x.SignInterpretationRoiId,
                             oldInterpretationRoiId = x.OldSignInterpretationRoiId,
                             signInterpretationId = x.SignInterpretationId,
-                            position = x.Position,
+                            translate = new TranslateDTO()
+                            {
+                                x = x.TranslateX,
+                                y = x.TranslateY
+                            },
                             shape = x.Shape,
                             valuesSet = x.ValuesSet
                         }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
@@ -29,13 +30,17 @@ namespace SQE.API.DTO
 
     public class UpdateArtefactDTO
     {
-        public PolygonDTO polygon { get; set; }
+        public virtual PolygonDTO polygon { get; set; }
         public string name { get; set; }
         public string statusMessage { get; set; }
     }
 
     public class CreateArtefactDTO : UpdateArtefactDTO
     {
+        [Required]
         public uint masterImageId { get; set; }
+
+        [Required]
+        public override PolygonDTO polygon { get; set; }
     }
 }

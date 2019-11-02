@@ -47,7 +47,7 @@ namespace SQE.ApiTest
             };
 
             // Act
-            var add1 = new Post.V1.Editions.EditionId.Editors(newEdition, newPermissions);
+            var add1 = new Post.V1_Editions_EditionId_Editors(newEdition, newPermissions);
             var (shareResponse, shareMsg, _, _) = await Request.Send(
                 add1,
                 _client,
@@ -292,7 +292,7 @@ namespace SQE.ApiTest
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); // Should fail without confirmation
 
             // Delete the edition for real
-            await EditionHelpers.DeleteEdition(_client, editionId, true);
+            await EditionHelpers.DeleteEdition(_client, editionId);
             var (editionResponse, editionMsg) = await Request.SendHttpRequestAsync<string, EditionListDTO>(
                 _client,
                 HttpMethod.Get,
@@ -440,7 +440,7 @@ namespace SQE.ApiTest
             var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
             Assert.Single(editionMatch);
 
-            await EditionHelpers.DeleteEdition(_client, editionId, true);
+            await EditionHelpers.DeleteEdition(_client, editionId);
         }
 
         [Fact]
@@ -676,7 +676,7 @@ namespace SQE.ApiTest
             var newScrollRequest = new EditionCopyDTO(name, null, null);
 
             //Act
-            var newEd = new Post.V1.Editions.EditionId.Null(1, newScrollRequest);
+            var newEd = new Post.V1_Editions_EditionId(1, newScrollRequest);
             var (response, msg, rt, lt) = await Request.Send(
                 newEd,
                 _client,

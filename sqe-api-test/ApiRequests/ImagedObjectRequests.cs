@@ -1,17 +1,35 @@
-using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
     public static partial class Get
     {
-        public static partial class V1
+        public class V1_ImagedObjects_Institutions : RequestObject<EmptyInput, ImageInstitutionListDTO>
         {
-            public static class ImagedObjects
+            private V1_ImagedObjects_Institutions() : base(null)
+            {
+            }
+        }
+
+        public class V1_Editions_EditionId_ImagedObjects
+            : EditionRequestObject<EmptyInput, ImagedObjectListDTO>
+        {
+            public V1_Editions_EditionId_ImagedObjects(uint editionId,
+                uint imagedObjectId,
+                List<string> optional = null)
+                : base(editionId, optional)
+            {
+            }
+        }
+
+        public class V1_Editions_EditionId_ImagedObjects_ImagedObjectId
+            : ImagedObjectRequestObject<EmptyInput, ImagedObjectDTO>
+        {
+            public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(uint editionId,
+                uint imagedObjectId,
+                List<string> optional = null)
+                : base(editionId, imagedObjectId, optional)
             {
             }
         }
@@ -19,31 +37,13 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-        public static partial class V1
-        {
-            public static class ImagedObjects
-            {
-            }
-        }
     }
 
     public static partial class Put
     {
-        public static partial class V1
-        {
-            public static class ImagedObjects
-            {
-            }
-        }
     }
 
     public static partial class Delete
     {
-        public static partial class V1
-        {
-            public static class ImagedObjects
-            {
-            }
-        }
     }
 }

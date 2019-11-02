@@ -152,7 +152,6 @@ namespace SQE.API.Server.Services
                     createArtefact.name,
                     createArtefact.polygon.transformation.scale,
                     createArtefact.polygon.transformation.rotate,
-                    // Convert the translation from signed int to the uint used in the database
                     createArtefact.polygon.transformation.translate?.x,
                     createArtefact.polygon.transformation.translate?.y,
                     createArtefact.statusMessage

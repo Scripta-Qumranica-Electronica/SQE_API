@@ -1,17 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
     public static partial class Get
     {
-        public static partial class V1
+        public class V1_Users : RequestObject<EmptyInput, UserDTO>
         {
-            public static class User
+            public V1_Users() : base(null)
             {
             }
         }
@@ -19,9 +14,58 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-        public static partial class V1
+        public class V1_Users : RequestObject<NewUserRequestDTO, UserDTO>
         {
-            public static class User
+            public V1_Users(NewUserRequestDTO payload) : base(payload)
+            {
+            }
+        }
+
+        public class V1_Users_Login : RequestObject<LoginRequestDTO, DetailedUserTokenDTO>
+        {
+            public V1_Users_Login(LoginRequestDTO payload) : base(payload)
+            {
+            }
+        }
+
+        public class V1_Users_ChangeUnactivatedEmail : RequestObject<UnactivatedEmailUpdateRequestDTO, EmptyOutput>
+        {
+            public V1_Users_ChangeUnactivatedEmail(UnactivatedEmailUpdateRequestDTO payload) : base(payload)
+            {
+            }
+        }
+
+        public class V1_Users_ChangeForgottenPassword : RequestObject<ResetForgottenUserPasswordRequestDTO, EmptyOutput>
+        {
+            public V1_Users_ChangeForgottenPassword(ResetForgottenUserPasswordRequestDTO payload) : base(payload)
+            {
+            }
+        }
+
+        public class V1_Users_ChangePassword : RequestObject<ResetLoggedInUserPasswordRequestDTO, EmptyOutput>
+        {
+            public V1_Users_ChangePassword(ResetLoggedInUserPasswordRequestDTO payload) : base(payload)
+            {
+            }
+        }
+
+        public class V1_Users_ConfirmRegistration : RequestObject<AccountActivationRequestDTO, EmptyOutput>
+        {
+            public V1_Users_ConfirmRegistration(AccountActivationRequestDTO payload) : base(payload)
+            {
+            }
+        }
+
+        public class V1_Users_ForgotPassword : RequestObject<ResetUserPasswordRequestDTO, EmptyOutput>
+        {
+            public V1_Users_ForgotPassword(ResetUserPasswordRequestDTO payload) : base(payload)
+            {
+            }
+        }
+
+        public class V1_Users_ResendActivationEmail : RequestObject<ResendUserAccountActivationRequestDTO, EmptyOutput>
+        {
+            public V1_Users_ResendActivationEmail(ResendUserAccountActivationRequestDTO payload) : base(payload)
             {
             }
         }
@@ -29,9 +73,9 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
-        public static partial class V1
+        public class V1_Users : RequestObject<UserUpdateRequestDTO, DetailedUserDTO>
         {
-            public static class User
+            public V1_Users(UserUpdateRequestDTO payload) : base(payload)
             {
             }
         }
@@ -39,11 +83,5 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Delete
     {
-        public static partial class V1
-        {
-            public static class User
-            {
-            }
-        }
     }
 }
