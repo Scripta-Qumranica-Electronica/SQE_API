@@ -43,11 +43,13 @@ LIMIT 1
     {
         public const string GetQuery = @"
 INSERT INTO $OwnerTableName ($OwnedTablePkName, edition_editor_id, edition_id)
-SELECT t.$OwnedTablePkName, COALESCE(sda.edition_editor_id, t.edition_editor_id), @EditionId
-FROM (SELECT @OwnedTableId AS $OwnedTablePkName, @EditionEditorId AS edition_editor_id) AS t
-LEFT JOIN $OwnerTableName AS sda
-  ON sda.$OwnedTablePkName = t.$OwnedTablePkName
-  AND sda.edition_id = @EditionId";
+SELECT @OwnedTableId, @EditionEditorId, @EditionId
+FROM dual
+WHERE NOT EXISTS (
+    SELECT $OwnedTablePkName, edition_editor_id, edition_id
+    FROM $OwnerTableName
+    WHERE ($OwnedTablePkName, edition_id) = (@OwnedTableId, @EditionId)
+) LIMIT 1";
     }
 
     internal static class OwnerTableDeleteQuery
