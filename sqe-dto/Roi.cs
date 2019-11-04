@@ -38,4 +38,18 @@ namespace SQE.API.DTO
     {
         public List<UpdatedInterpretationRoiDTO> rois { get; set; }
     }
+
+    public class BatchEditRoiDTO
+    {
+        public List<InterpretationRoiDTO> createRois { get; set; }
+        public List<UpdatedInterpretationRoiDTO> updateRois { get; set; }
+        public List<uint> deleteRois { get; set; }
+    }
+
+    public class BatchEditRoiResponseDTO
+    {
+        public List<InterpretationRoiDTO> createRois { get; set; }
+        public List<UpdatedInterpretationRoiDTO> updateRois { get; set; }
+        public List<uint> deleteRois { get; set; }
+    }
 }

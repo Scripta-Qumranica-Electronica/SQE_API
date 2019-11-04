@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using SQE.API.DTO;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -17,7 +19,13 @@ namespace SQE.DatabaseAccess
         Task<List<UpdatedSignInterpretationROI>> UpdateRoisAsync(EditionUserInfo editionUser,
             List<SignInterpretationROI> updateRois);
 
-        Task DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds);
+        (Task<List<SignInterpretationROI>>, Task<List<UpdatedSignInterpretationROI>>, Task<List<uint>>)
+            BatchEditRoisAsync(EditionUserInfo editionUser,
+                List<SetSignInterpretationROI> newRois,
+                List<SignInterpretationROI> updateRois,
+                List<uint> deleteRois);
+
+        Task<List<uint>> DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds);
 
         Task<DetailedSignInterpretationROI> GetSignInterpretationRoiByIdAsync(EditionUserInfo editionUser,
             uint signInterpretationRoiId);
@@ -66,6 +74,22 @@ namespace SQE.DatabaseAccess
                     }
                 )
             )).ToList();
+        }
+
+        public (Task<List<SignInterpretationROI>>, Task<List<UpdatedSignInterpretationROI>>, Task<List<uint>>)
+            BatchEditRoisAsync(EditionUserInfo editionUser,
+                List<SetSignInterpretationROI> newRois,
+                List<SignInterpretationROI> updateRois,
+                List<uint> deleteRois)
+        {
+            using (var transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
+            {
+                var createdRois = this.CreateRoisAsync(editionUser, newRois);
+                var updatedRois = this.UpdateRoisAsync(editionUser, updateRois);
+                var deletedRois = this.DeletRoisAsync(editionUser, deleteRois);
+                return (createdRois, updatedRois, deletedRois);
+            }
         }
 
         /// <summary>
@@ -137,9 +161,10 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">UserInfo object with user details and edition permissions</param>
         /// <param name="deleteRoiIds">ROI ID's to be deleted'</param>
         /// <returns></returns>
-        public async Task DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds)
+        public async Task<List<uint>> DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds)
         {
             foreach (var deleteRoiId in deleteRoiIds) await DeleteSignInterpretationRoiAsync(editionUser, deleteRoiId);
+            return deleteRoiIds;
         }
 
         public async Task<DetailedSignInterpretationROI> GetSignInterpretationRoiByIdAsync(EditionUserInfo editionUser,

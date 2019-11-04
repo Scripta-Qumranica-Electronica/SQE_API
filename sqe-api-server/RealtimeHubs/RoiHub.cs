@@ -50,6 +50,17 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
         /// <summary>
+        ///     Processes a series of create/update/delete ROI requests in the given edition of a scroll
+        /// </summary>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="rois">A JSON object with all the roi edits to be performed</param>
+        [Authorize]
+        public async Task<BatchEditRoiResponseDTO> PostV1EditionsEditionIdRoisBatchEdit(uint editionId, BatchEditRoiDTO rois)
+        {
+            return await _roiService.BatchEditRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), rois, clientId: Context.ConnectionId);
+        }
+
+        /// <summary>
         ///     Update an existing sign ROI in the given edition of a scroll
         /// </summary>
         /// <param name="editionId">Id of the edition</param>

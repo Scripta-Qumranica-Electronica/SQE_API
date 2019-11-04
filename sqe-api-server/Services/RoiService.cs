@@ -24,6 +24,10 @@ namespace SQE.API.Server.Services
             SetInterpretationRoiDTOList newRois,
             string clientId = null);
 
+        Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(EditionUserInfo editionUser,
+            BatchEditRoiDTO rois,
+            string clientId = null);
+
         Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(EditionUserInfo editionUser,
             uint roiId,
             SetInterpretationRoiDTO updatedRoi,
@@ -120,38 +124,35 @@ namespace SQE.API.Server.Services
                             editionUser,
                             newRois.rois
                                 .Select( // Serialize the SetInterpretationRoiDTOList to a List of SetSignInterpretationROI
-                                    x => new SetSignInterpretationROI
-                                    {
-                                        SignInterpretationId = x.signInterpretationId,
-                                        ArtefactId = x.artefactId,
-                                        Exceptional = x.exceptional,
-                                        TranslateX = x.translate.x,
-                                        TranslateY = x.translate.y,
-                                        Shape = x.shape,
-                                        ValuesSet = x.valuesSet
-                                    }
+                                    _convertSignInterpretationDTOToSetSignInterpretationROI
                                 )
                                 .ToList()
                         )
                     )
                     .Select( // Serialize the ROI Repository response to a List of InterpretationRoiDTO
-                        x => new InterpretationRoiDTO
-                        {
-                            artefactId = x.ArtefactId,
-                            editorId = x.SignInterpretationRoiAuthor,
-                            exceptional = x.Exceptional,
-                            interpretationRoiId = x.SignInterpretationRoiId,
-                            signInterpretationId = x.SignInterpretationId,
-                            translate = new TranslateDTO()
-                            {
-                                x = x.TranslateX,
-                                y = x.TranslateY
-                            },
-                            shape = x.Shape,
-                            valuesSet = x.ValuesSet
-                        }
+                        _convertSignInterpretationROIToInterpretationRoiDTO
                     )
                     .ToList()
+            };
+        }
+
+        public async Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(EditionUserInfo editionUser,
+            BatchEditRoiDTO rois,
+            string clientId = null)
+        {
+            var (createRois, updateRois, deleteRois) = _roiRepository.BatchEditRoisAsync(
+                editionUser,
+                rois.createRois.Select(_convertSignInterpretationDTOToSetSignInterpretationROI).ToList(),
+                rois.updateRois.Select(_convertInterpretationRoiDTOToSignInterpretationROI).ToList(),
+                rois.deleteRois
+            );
+            await Task.WhenAll(createRois, updateRois, deleteRois);
+
+            return new BatchEditRoiResponseDTO()
+            {
+                createRois = (await createRois).Select(_convertSignInterpretationROIToInterpretationRoiDTO).ToList(),
+                updateRois = (await updateRois).Select(_convertUpdatedSignInterpretationROIToUpdatedInterpretationRoiDTO).ToList(),
+                deleteRois = await deleteRois
             };
         }
 
@@ -187,38 +188,13 @@ namespace SQE.API.Server.Services
                             editionUser,
                             updatedRois.rois
                                 .Select( // Serialize the InterpretationRoiDTOList to a List of SignInterpretationROI
-                                    x => new SignInterpretationROI
-                                    {
-                                        SignInterpretationRoiId = x.interpretationRoiId,
-                                        SignInterpretationId = x.signInterpretationId,
-                                        ArtefactId = x.artefactId,
-                                        Exceptional = x.exceptional,
-                                        TranslateX = x.translate.x,
-                                        TranslateY = x.translate.y,
-                                        Shape = x.shape,
-                                        ValuesSet = x.valuesSet
-                                    }
+                                    _convertInterpretationRoiDTOToSignInterpretationROI
                                 )
                                 .ToList()
                         )
                     )
                     .Select( // Serialize the ROI Repository response to a List of InterpretationRoiDTO
-                        x => new UpdatedInterpretationRoiDTO
-                        {
-                            artefactId = x.ArtefactId,
-                            editorId = x.SignInterpretationRoiAuthor,
-                            exceptional = x.Exceptional,
-                            interpretationRoiId = x.SignInterpretationRoiId,
-                            oldInterpretationRoiId = x.OldSignInterpretationRoiId,
-                            signInterpretationId = x.SignInterpretationId,
-                            translate = new TranslateDTO()
-                            {
-                                x = x.TranslateX,
-                                y = x.TranslateY
-                            },
-                            shape = x.Shape,
-                            valuesSet = x.ValuesSet
-                        }
+                        _convertUpdatedSignInterpretationROIToUpdatedInterpretationRoiDTO
                     )
                     .ToList()
             };
@@ -236,6 +212,74 @@ namespace SQE.API.Server.Services
         {
             await _roiRepository.DeletRoisAsync(editionUser, deleteRois);
             return new NoContentResult();
+        }
+
+        private SetSignInterpretationROI _convertSignInterpretationDTOToSetSignInterpretationROI(SetInterpretationRoiDTO x)
+        {
+            return new SetSignInterpretationROI
+            {
+                SignInterpretationId = x.signInterpretationId,
+                ArtefactId = x.artefactId,
+                Exceptional = x.exceptional,
+                TranslateX = x.translate.x,
+                TranslateY = x.translate.y,
+                Shape = x.shape,
+                ValuesSet = x.valuesSet
+            };
+        }
+
+        private SignInterpretationROI _convertInterpretationRoiDTOToSignInterpretationROI(InterpretationRoiDTO x)
+        {
+            return new SignInterpretationROI
+            {
+                SignInterpretationRoiId = x.interpretationRoiId,
+                SignInterpretationId = x.signInterpretationId,
+                ArtefactId = x.artefactId,
+                Exceptional = x.exceptional,
+                TranslateX = x.translate.x,
+                TranslateY = x.translate.y,
+                Shape = x.shape,
+                ValuesSet = x.valuesSet
+            };
+        }
+
+        private InterpretationRoiDTO _convertSignInterpretationROIToInterpretationRoiDTO(SignInterpretationROI x)
+        {
+            return new InterpretationRoiDTO
+            {
+                artefactId = x.ArtefactId,
+                editorId = x.SignInterpretationRoiAuthor,
+                exceptional = x.Exceptional,
+                interpretationRoiId = x.SignInterpretationRoiId,
+                signInterpretationId = x.SignInterpretationId,
+                translate = new TranslateDTO()
+                {
+                    x = x.TranslateX,
+                    y = x.TranslateY
+                },
+                shape = x.Shape,
+                valuesSet = x.ValuesSet
+            };
+        }
+
+        private UpdatedInterpretationRoiDTO _convertUpdatedSignInterpretationROIToUpdatedInterpretationRoiDTO(UpdatedSignInterpretationROI x)
+        {
+            return new UpdatedInterpretationRoiDTO
+            {
+                artefactId = x.ArtefactId,
+                editorId = x.SignInterpretationRoiAuthor,
+                exceptional = x.Exceptional,
+                interpretationRoiId = x.SignInterpretationRoiId,
+                oldInterpretationRoiId = x.OldSignInterpretationRoiId,
+                signInterpretationId = x.SignInterpretationId,
+                translate = new TranslateDTO()
+                {
+                    x = x.TranslateX,
+                    y = x.TranslateY
+                },
+                shape = x.Shape,
+                valuesSet = x.ValuesSet
+            };
         }
     }
 }

@@ -66,6 +66,22 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
+        ///     Processes a series of create/update/delete ROI requests in the given edition of a scroll
+        /// </summary>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="rois">A JSON object with all the roi edits to be performed</param>
+        [HttpPost("v1/editions/{editionId}/rois/batch-edit")]
+        public async Task<ActionResult<BatchEditRoiResponseDTO>> BatchEditRois(
+            [FromRoute] uint editionId,
+            [FromBody] BatchEditRoiDTO rois)
+        {
+            return await _roiService.BatchEditRoisAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                rois
+            );
+        }
+
+        /// <summary>
         ///     Update an existing sign ROI in the given edition of a scroll
         /// </summary>
         /// <param name="editionId">Id of the edition</param>

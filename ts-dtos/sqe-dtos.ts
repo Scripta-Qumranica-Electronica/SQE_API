@@ -173,6 +173,18 @@ export interface UpdatedInterpretationRoiDTOList {
     rois: UpdatedInterpretationRoiDTO[];
 }
 
+export interface BatchEditRoiDTO {
+    createRois: InterpretationRoiDTO[];
+    updateRois: UpdatedInterpretationRoiDTO[];
+    deleteRois: number[];
+}
+
+export interface BatchEditRoiResponseDTO {
+    createRois: InterpretationRoiDTO[];
+    updateRois: UpdatedInterpretationRoiDTO[];
+    deleteRois: number[];
+}
+
 export interface SignDTO {
     signInterpretations: SignInterpretationDTO[];
 }
