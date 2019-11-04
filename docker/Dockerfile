@@ -8,7 +8,6 @@ FROM microsoft/dotnet:2.2-sdk AS build
 WORKDIR /src
 
 COPY ./sqe-api-server/sqe-api-server.csproj ./sqe-api-server/
-COPY ./sqe-api-service/sqe-api-service.csproj ./sqe-api-service/
 COPY ./sqe-database-access/sqe-database-access.csproj ./sqe-database-access/
 COPY ./sqe-dto/sqe-dto.csproj ./sqe-dto/
 
@@ -17,7 +16,6 @@ RUN dotnet restore "sqe-api-server/sqe-api-server.csproj"
 WORKDIR /src/sqe-api-server
 
 COPY ./sqe-api-server /src/sqe-api-server
-COPY ./sqe-api-service /src/sqe-api-service
 COPY ./sqe-database-access /src/sqe-database-access
 COPY ./sqe-dto /src/sqe-dto
 
