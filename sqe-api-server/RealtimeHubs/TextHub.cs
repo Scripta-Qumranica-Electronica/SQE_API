@@ -45,6 +45,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="textFragmentId">Id of the text fragment</param>
         /// <returns>An array of the line ids in the proper sequence</returns>
         [AllowAnonymous]
+        public async Task<ArtefactDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(uint editionId, uint textFragmentId)
+        {
+            return await _textService.GetArtefactsAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId);
+        }
+
+        /// <summary>
+        ///     Retrieves the ids of all lines in the given textFragmentName
+        /// </summary>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="textFragmentId">Id of the text fragment</param>
+        /// <returns>An array of the line ids in the proper sequence</returns>
+        [AllowAnonymous]
         public async Task<LineDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines(uint editionId, uint textFragmentId)
         {
             return await _textService.GetLineIdsAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId);

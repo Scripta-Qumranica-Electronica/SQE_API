@@ -54,6 +54,23 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="textFragmentId">Id of the text fragment</param>
         /// <returns>An array of the line ids in the proper sequence</returns>
         [AllowAnonymous]
+        [HttpGet("v1/editions/{editionId}/text-fragments/{textFragmentId}/artefacts")]
+        public async Task<ActionResult<ArtefactDataListDTO>> RetrieveArtefacts([FromRoute] uint editionId,
+            [FromRoute] uint textFragmentId)
+        {
+            return await _textService.GetArtefactsAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId),
+                textFragmentId
+            );
+        }
+
+        /// <summary>
+        ///     Retrieves the ids of all lines in the given textFragmentName
+        /// </summary>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="textFragmentId">Id of the text fragment</param>
+        /// <returns>An array of the line ids in the proper sequence</returns>
+        [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/text-fragments/{textFragmentId}/lines")]
         public async Task<ActionResult<LineDataListDTO>> RetrieveLineIds([FromRoute] uint editionId,
             [FromRoute] uint textFragmentId)

@@ -1,13 +1,15 @@
 ﻿// This file was generate automatically. DO NOT EDIT.
 /* tslint:disable */
-
-export interface ArtefactDTO {
+export interface ArtefactDataDTO {
     id: number;
+    name: string;
+}
+
+export interface ArtefactDTO extends ArtefactDataDTO {
     editionId: number;
     imagedObjectId: string;
     imageId: number;
     artefactDataEditorId: number;
-    name: string;
     mask: PolygonDTO;
     zOrder: number;
     side: string;
@@ -16,6 +18,10 @@ export interface ArtefactDTO {
 
 export interface ArtefactListDTO {
     artefacts: ArtefactDTO[];
+}
+
+export interface ArtefactDataListDTO {
+    artefacts: ArtefactDataDTO[];
 }
 
 export interface UpdateArtefactDTO {

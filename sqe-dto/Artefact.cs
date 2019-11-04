@@ -3,14 +3,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
-    public class ArtefactDTO
+    public class ArtefactDataDTO
     {
         public uint id { get; set; }
+        public string name { get; set; }
+    }
+
+    public class ArtefactDTO : ArtefactDataDTO
+    {
         public uint editionId { get; set; }
         public string imagedObjectId { get; set; }
         public uint imageId { get; set; }
         public uint artefactDataEditorId { get; set; }
-        public string name { get; set; }
         public PolygonDTO mask { get; set; }
         public short zOrder { get; set; }
         public string side { get; set; }
@@ -26,6 +30,21 @@ namespace SQE.API.DTO
     public class ArtefactListDTO
     {
         public List<ArtefactDTO> artefacts { get; set; }
+
+        public ArtefactListDTO(List<ArtefactDTO> artefacts)
+        {
+            this.artefacts = artefacts;
+        }
+    }
+
+    public class ArtefactDataListDTO
+    {
+        public List<ArtefactDataDTO> artefacts { get; set; }
+
+        public ArtefactDataListDTO(List<ArtefactDataDTO> artefacts)
+        {
+            this.artefacts = artefacts;
+        }
     }
 
     public class UpdateArtefactDTO

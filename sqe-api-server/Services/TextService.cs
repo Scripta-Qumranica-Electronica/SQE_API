@@ -14,6 +14,7 @@ namespace SQE.API.Server.Services
     {
         Task<LineTextDTO> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
         Task<TextEditionDTO> GetFragmentByIdAsync(EditionUserInfo editionUser, uint fragmentId);
+        Task<ArtefactDataListDTO> GetArtefactsAsync(EditionUserInfo editionUser, uint fragmentId);
         Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId);
         Task<TextFragmentDataListDTO> GetFragmentDataAsync(EditionUserInfo editionUser);
 
@@ -55,6 +56,15 @@ namespace SQE.API.Server.Services
                     "text_fragment_id"
                 );
             return _textEditionToDTO(edition, await editionEditors);
+        }
+
+        public async Task<ArtefactDataListDTO> GetArtefactsAsync(EditionUserInfo editionUser, uint fragmentId)
+        {
+            return new ArtefactDataListDTO(
+                (await _textRepo.GetArtefactsAsync(editionUser, fragmentId))
+                .Select(x => new ArtefactDataDTO() { id = x.ArtefactId, name = x.Name })
+                .ToList()
+            );
         }
 
         public async Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId)

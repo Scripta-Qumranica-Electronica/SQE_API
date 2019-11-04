@@ -14,6 +14,7 @@ namespace SQE.DatabaseAccess
     {
         Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
         Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId);
+        Task<List<ArtefactDataModel>> GetArtefactsAsync(EditionUserInfo editionUser, uint textFragmentId);
         Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId);
         Task<List<TextFragmentData>> GetFragmentDataAsync(EditionUserInfo editionUser);
 
@@ -50,6 +51,17 @@ namespace SQE.DatabaseAccess
                 return new TextEdition();
 
             return await _getEntityById(editionUser, terminators[0], terminators[1]);
+        }
+
+        public async Task<List<ArtefactDataModel>> GetArtefactsAsync(EditionUserInfo editionUser, uint textFragmentId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<ArtefactDataModel>(
+                    GetTextFragmentArtefacts.Query,
+                    new { TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId }
+                )).ToList();
+            };
         }
 
         public async Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId)

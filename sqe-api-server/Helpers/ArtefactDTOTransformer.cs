@@ -45,10 +45,7 @@ namespace SQE.API.Server.Helpers
 
         public static ArtefactListDTO QueryArtefactListToArtefactListDTO(List<ArtefactModel> artefacts, uint editionId)
         {
-            return new ArtefactListDTO
-            {
-                artefacts = artefacts.Select(x => QueryArtefactToArtefactDTO(x, editionId)).ToList()
-            };
+            return new ArtefactListDTO(artefacts.Select(x => QueryArtefactToArtefactDTO(x, editionId)).ToList());
         }
     }
 }

@@ -1,10 +1,13 @@
 ﻿namespace SQE.DatabaseAccess.Models
 {
-    public class ArtefactModel
+    public class ArtefactDataModel
     {
         public uint ArtefactId { get; set; }
-        public uint ArtefactDataEditorId { get; set; }
         public string Name { get; set; }
+    }
+    public class ArtefactModel : ArtefactDataModel
+    {
+        public uint ArtefactDataEditorId { get; set; }
         public string Mask { get; set; }
         public uint MaskEditorId { get; set; }
         public float? Scale { get; set; }
