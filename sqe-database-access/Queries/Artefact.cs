@@ -97,6 +97,33 @@ $Order";
                 AND artefact_shape_owner.edition_id = @EditionId";
     }
 
+    internal static class FindArtefactTextFragments
+    {
+        public const string GetQuery = @"
+SELECT DISTINCT text_fragment_id AS TextFragmentId, 
+       text_fragment_data.name AS TextFragmentName, 
+       text_fragment_data_owner.edition_editor_id AS EditionEditorId
+FROM roi_position
+JOIN sign_interpretation_roi USING(roi_position_id)
+JOIN sign_interpretation_roi_owner ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
+    AND sign_interpretation_roi_owner.edition_id = @EditionId
+JOIN sign_interpretation USING(sign_interpretation_id)
+JOIN line_to_sign USING(sign_id)
+JOIN line_to_sign_owner ON line_to_sign_owner.line_to_sign_id = line_to_sign.line_to_sign_id
+    AND line_to_sign_owner.edition_id = @EditionId
+JOIN text_fragment_to_line USING(line_id)
+JOIN text_fragment_to_line_owner ON text_fragment_to_line_owner.text_fragment_to_line_id = text_fragment_to_line.text_fragment_to_line_id
+    AND text_fragment_to_line_owner.edition_id = @EditionId
+JOIN text_fragment_data USING(text_fragment_id)
+JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
+    AND text_fragment_data_owner.edition_id = @EditionId
+JOIN edition ON edition.edition_id = @EditionId
+JOIN edition_editor ON edition_editor.edition_id = @EditionId
+WHERE artefact_id = @ArtefactId
+    AND (edition.public = 1 OR edition_editor.user_id = @UserId)
+";
+    }
+
     internal static class FindSuggestedArtefactTextFragments
     {
         public const string GetQuery = @"

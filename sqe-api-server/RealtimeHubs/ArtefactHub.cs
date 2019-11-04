@@ -79,6 +79,17 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         [AllowAnonymous]
+        public async Task<TextFragmentDataListDTO> GetV1EditionsEditionIdArtefactsArtefactIdTextFragments(uint editionId, uint artefactId)
+        {
+            return await _artefactService.ArtefactSuggestedTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);
+        }
+
+        /// <summary>
+        ///     Provides a listing of text fragments that may match the specified artefact
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactId">Unique Id of the desired artefact</param>
+        [AllowAnonymous]
         public async Task<TextFragmentDataListDTO> GetV1EditionsEditionIdArtefactsArtefactIdSuggestedTextFragments(uint editionId, uint artefactId)
         {
             return await _artefactService.ArtefactSuggestedTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);

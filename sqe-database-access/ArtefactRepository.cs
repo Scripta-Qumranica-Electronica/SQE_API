@@ -54,6 +54,7 @@ namespace SQE.DatabaseAccess
             string workStatus);
 
         Task DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId);
+        Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
         Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
     }
 
@@ -308,6 +309,23 @@ namespace SQE.DatabaseAccess
                 }
 
             var _ = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutations);
+        }
+
+        public async Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
+            uint artefactId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<TextFragmentData>(
+                    FindArtefactTextFragments.GetQuery,
+                    new
+                    {
+                        editionUser.EditionId,
+                        UserId = editionUser.userId,
+                        ArtefactId = artefactId
+                    }
+                )).ToList();
+            }
         }
 
         public async Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser,

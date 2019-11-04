@@ -32,6 +32,7 @@ namespace SQE.API.Server.Services
             string clientId = null);
 
         Task<NoContentResult> DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId, string clientId = null);
+        Task<TextFragmentDataListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
         Task<TextFragmentDataListDTO> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
     }
 
@@ -184,6 +185,16 @@ namespace SQE.API.Server.Services
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
                 .SendAsync("deleteArtefact", artefactId);
             return new NoContentResult();
+        }
+
+        public async Task<TextFragmentDataListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
+            uint artefactId)
+        {
+            return new TextFragmentDataListDTO(
+                (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
+                .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId))
+                .ToList()
+            );
         }
 
         public async Task<TextFragmentDataListDTO> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser,

@@ -197,7 +197,7 @@ namespace SQE.DatabaseAccess
                 );
 
                 return await connection.QuerySingleAsync<uint>(
-                    GetRoiShapeIdQuery.GetQuery, 
+                    GetRoiShapeIdQuery.GetQuery,
                     new
                     {
                         Path = path

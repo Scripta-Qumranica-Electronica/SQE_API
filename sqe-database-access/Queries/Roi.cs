@@ -14,7 +14,7 @@ WHERE NOT EXISTS (
 )
 ";
     }
-    
+
     internal static class GetRoiShapeIdQuery
     {
         // Added here an ad-hoc uniqueness constraint, we may need an index on `path` for better performance
@@ -39,7 +39,7 @@ WHERE NOT EXISTS (
 )
 ";
     }
-    
+
     internal static class GetRoiPositionIdQuery
     {
         public const string GetQuery = @"
