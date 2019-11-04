@@ -89,8 +89,10 @@ namespace SQE.DatabaseAccess
                             ? originalSignRoiInterpretation.RoiShapeId
                             : await CreateRoiShapeAsync(x.Shape);
 
-                        // TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
-                        var roiPositionId = originalSignRoiInterpretation.Position == x.Position
+                        var roiPositionId = originalSignRoiInterpretation.TranslateX == x.TranslateX
+                                            && originalSignRoiInterpretation.TranslateY == x.TranslateY
+                                            && originalSignRoiInterpretation.StanceRotation == x.StanceRotation
+                                            && originalSignRoiInterpretation.ArtefactId == x.ArtefactId
                             ? originalSignRoiInterpretation.RoiPositionId
                             : await CreateRoiPositionAsync(x.ArtefactId, x.TranslateX, x.TranslateY, x.StanceRotation);
 
@@ -105,7 +107,7 @@ namespace SQE.DatabaseAccess
                         );
                         if (!signInterpretationRoiUpdate.NewId.HasValue
                             || !signInterpretationRoiUpdate.OldId.HasValue)
-                            throw new StandardExceptions.DataNotWrittenException("update sign inter");
+                            throw new StandardExceptions.DataNotWrittenException("update sign interpretation");
 
                         var updatedRoi =
                             (SignInterpretationROI)await GetSignInterpretationRoiByIdAsync(
@@ -194,10 +196,12 @@ namespace SQE.DatabaseAccess
                     }
                 );
 
-                if (insertedShape != 1)
-                    throw new StandardExceptions.DataNotWrittenException("Create ROI shape");
-
-                return await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                return await connection.QuerySingleAsync<uint>(
+                    GetRoiShapeIdQuery.GetQuery, 
+                    new
+                    {
+                        Path = path
+                    });
             }
         }
 
@@ -219,10 +223,15 @@ namespace SQE.DatabaseAccess
                     }
                 );
 
-                if (insertedShape != 1)
-                    throw new StandardExceptions.DataNotWrittenException("Create ROI position");
-
-                return await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                return await connection.QuerySingleAsync<uint>(
+                    GetRoiPositionIdQuery.GetQuery,
+                    new
+                    {
+                        ArtefactId = artefactId,
+                        TranslateX = translateX,
+                        TranslateY = translateY,
+                        StanceRotation = stanceRotate
+                    });
             }
         }
 

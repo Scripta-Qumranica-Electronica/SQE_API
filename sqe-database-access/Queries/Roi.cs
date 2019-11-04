@@ -2,17 +2,51 @@ namespace SQE.DatabaseAccess.Queries
 {
     internal static class CreateRoiShapeQuery
     {
+        // Added here an ad-hoc uniqueness constraint, we may need an index on `path` for better performance
         public const string GetQuery = @"
-INSERT INTO SQE.roi_shape (path)
-VALUES (ST_GeomFromText(@Path))
+INSERT INTO roi_shape (path)
+SELECT ST_GeomFromText(@Path)
+FROM dual
+WHERE NOT EXISTS (
+    SELECT path
+    FROM roi_shape
+    WHERE path = ST_GeomFromText(@Path)
+)
+";
+    }
+    
+    internal static class GetRoiShapeIdQuery
+    {
+        // Added here an ad-hoc uniqueness constraint, we may need an index on `path` for better performance
+        public const string GetQuery = @"
+SELECT roi_shape_id
+FROM roi_shape
+WHERE path = ST_GeomFromText(@Path)
 ";
     }
 
     internal static class CreateRoiPositionQuery
     {
         public const string GetQuery = @"
-INSERT INTO SQE.roi_position (artefact_id, translate_x, translate_y, stance_rotation)
-VALUES (@ArtefactId, @TranslateX, @TranslateX, @StanceRotation)
+INSERT INTO roi_position (artefact_id, translate_x, translate_y, stance_rotation)
+SELECT @ArtefactId, @TranslateX, @TranslateY, @StanceRotation
+FROM dual
+WHERE NOT EXISTS (
+    SELECT artefact_id, translate_x, translate_y, stance_rotation
+    FROM roi_position
+    WHERE (artefact_id, translate_x, translate_y, stance_rotation) = 
+          (@ArtefactId, @TranslateX, @TranslateY, @StanceRotation)
+)
+";
+    }
+    
+    internal static class GetRoiPositionIdQuery
+    {
+        public const string GetQuery = @"
+SELECT roi_position_id
+FROM roi_position
+WHERE (artefact_id, translate_x, translate_y, stance_rotation) = 
+      (@ArtefactId, @TranslateX, @TranslateY, @StanceRotation)
 ";
     }
 
