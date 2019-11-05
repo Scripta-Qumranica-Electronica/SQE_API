@@ -109,21 +109,26 @@ namespace SQE.API.Server.Services
             if (!string.IsNullOrEmpty(updateArtefact.name))
                 tasks.Add(_artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, updateArtefact.name));
 
-            tasks.Add(
-                _artefactRepository.UpdateArtefactPositionAsync(
-                    editionUser,
-                    artefactId,
-                    updateArtefact.polygon.transformation.scale,
-                    updateArtefact.polygon.transformation.rotate,
-                    // Convert the translation from signed int to the uint used in the database
-                    updateArtefact.polygon.transformation.translate?.x,
-                    updateArtefact.polygon.transformation.translate?.y
-                )
-            );
+            if (updateArtefact.polygon != null)
+            {
+                tasks.Add(
+                    _artefactRepository.UpdateArtefactPositionAsync(
+                        editionUser,
+                        artefactId,
+                        updateArtefact.polygon.transformation.scale,
+                        updateArtefact.polygon.transformation.rotate,
+                        updateArtefact.polygon.transformation.translate?.x,
+                        updateArtefact.polygon.transformation.translate?.y
+                    )
+                );
+            }
 
-            tasks.Add(
-                _artefactRepository.UpdateArtefactStatusAsync(editionUser, artefactId, updateArtefact.statusMessage)
-            );
+            if (!string.IsNullOrEmpty(updateArtefact.statusMessage))
+            {
+                tasks.Add(
+                    _artefactRepository.UpdateArtefactStatusAsync(editionUser, artefactId, updateArtefact.statusMessage)
+                );
+            }
 
             await Task.WhenAll(tasks);
             var updatedArtefact = await GetEditionArtefactAsync(
@@ -151,10 +156,10 @@ namespace SQE.API.Server.Services
                     createArtefact.masterImageId,
                     createArtefact.polygon.mask,
                     createArtefact.name,
-                    createArtefact.polygon.transformation.scale,
-                    createArtefact.polygon.transformation.rotate,
-                    createArtefact.polygon.transformation.translate?.x,
-                    createArtefact.polygon.transformation.translate?.y,
+                    createArtefact.polygon.transformation?.scale,
+                    createArtefact.polygon.transformation?.rotate,
+                    createArtefact.polygon.transformation?.translate?.x,
+                    createArtefact.polygon.transformation?.translate?.y,
                     createArtefact.statusMessage
                 );
 

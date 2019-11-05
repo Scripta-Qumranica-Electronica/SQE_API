@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
@@ -38,6 +39,8 @@ namespace SQE.API.DTO
 
     public class EditorRightsDTO
     {
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
         public bool? mayRead { get; set; }
         public bool? isAdmin { get; set; }
@@ -91,6 +94,8 @@ namespace SQE.API.DTO
             this.collaborators = collaborators;
         }
 
+
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "The name of the edition must be between 1 and 255 characters long")]
         public string name { get; set; }
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }

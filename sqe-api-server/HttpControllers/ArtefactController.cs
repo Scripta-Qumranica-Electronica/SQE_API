@@ -111,7 +111,7 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactTextFragments([FromRoute] uint editionId,
             [FromRoute] uint artefactId)
         {
-            return await _artefactService.ArtefactSuggestedTextFragmentsAsync(
+            return await _artefactService.ArtefactTextFragmentsAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId),
                 artefactId
             );

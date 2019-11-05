@@ -81,7 +81,7 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task<TextFragmentDataListDTO> GetV1EditionsEditionIdArtefactsArtefactIdTextFragments(uint editionId, uint artefactId)
         {
-            return await _artefactService.ArtefactSuggestedTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);
+            return await _artefactService.ArtefactTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);
         }
 
         /// <summary>

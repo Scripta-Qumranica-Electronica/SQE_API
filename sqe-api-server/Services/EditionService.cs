@@ -19,11 +19,7 @@ namespace SQE.API.Server.Services
 
         Task<EditionListDTO> ListEditionsAsync(uint? userId);
 
-        Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
-            string name,
-            string copyrightHolder = null,
-            string collaborators = null,
-            string clientId = null);
+        Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser, EditionUpdateRequestDTO updatedEdition, string clientId = null);
 
         Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser,
             EditionCopyDTO editionInfo,
@@ -90,19 +86,17 @@ namespace SQE.API.Server.Services
         }
 
         public async Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
-            string name,
-            string copyrightHolder = null,
-            string collaborators = null,
+            EditionUpdateRequestDTO updatedEditionData,
             string clientId = null)
         {
             var editionBeforeChanges =
                 (await _editionRepo.ListEditionsAsync(editionUser.userId, editionUser.EditionId)).First();
 
-            if (copyrightHolder != null
-                || editionBeforeChanges.Collaborators != collaborators)
-                await _editionRepo.ChangeEditionCopyrightAsync(editionUser, copyrightHolder, collaborators);
+            if (updatedEditionData.copyrightHolder != null
+                || editionBeforeChanges.Collaborators != updatedEditionData.collaborators)
+                await _editionRepo.ChangeEditionCopyrightAsync(editionUser, updatedEditionData.copyrightHolder, updatedEditionData.collaborators);
 
-            if (!string.IsNullOrEmpty(name)) await _editionRepo.ChangeEditionNameAsync(editionUser, name);
+            if (!string.IsNullOrEmpty(updatedEditionData.name)) await _editionRepo.ChangeEditionNameAsync(editionUser, updatedEditionData.name);
 
             var editions = await _editionRepo.ListEditionsAsync(
                 editionUser.userId,
@@ -136,7 +130,7 @@ namespace SQE.API.Server.Services
             //Change the Name, if a Name has been passed
             if (!string.IsNullOrEmpty(editionInfo.name))
             {
-                edition = await UpdateEditionAsync(editionUser, editionInfo.name); // Change the Name.
+                edition = await UpdateEditionAsync(editionUser, editionInfo, clientId); // Change the Name.
             }
             else
             {

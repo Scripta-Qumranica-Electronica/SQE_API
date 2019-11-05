@@ -33,6 +33,7 @@ export interface UpdateArtefactDTO {
 export interface CreateArtefactDTO extends UpdateArtefactDTO {
     masterImageId: number;
     polygon: PolygonDTO;
+    name: string;
 }
 
 export interface EditionDTO {

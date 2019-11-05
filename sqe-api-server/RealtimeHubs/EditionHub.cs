@@ -89,7 +89,7 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task<EditionDTO> PutV1EditionsEditionId(uint editionId, EditionUpdateRequestDTO request)
         {
-            return await _editionService.UpdateEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), request.name, request.copyrightHolder, request.collaborators, clientId: Context.ConnectionId);
+            return await _editionService.UpdateEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), request, clientId: Context.ConnectionId);
         }
 
     }

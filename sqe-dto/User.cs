@@ -6,9 +6,13 @@ namespace SQE.API.DTO
 
     public class LoginRequestDTO
     {
-        [Required] public string email { get; set; }
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
+        public string email { get; set; }
 
-        [Required] public string password { get; set; }
+        [Required]
+        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
+        public string password { get; set; }
     }
 
     #region Account update and registration DTO's
@@ -33,7 +37,11 @@ namespace SQE.API.DTO
             this.surname = surname;
         }
 
+        [Required]
+        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
         public string password { get; set; }
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
         public string organization { get; set; }
         public string forename { get; set; }
@@ -43,28 +51,30 @@ namespace SQE.API.DTO
     public class UserUpdateRequestDTO : NewUserRequestDTO
     {
         public UserUpdateRequestDTO(string email, string password, string organization, string forename, string surname)
-            : base(email, password, organization, forename, surname)
-        {
-        }
+            : base(email, password, organization, forename, surname) { }
     }
 
     #endregion Account update and registration DTO's
-
 
     #region Account activation DTO's
 
     public class AccountActivationRequestDTO
     {
+        [Required]
         public string token { get; set; }
     }
 
     public class ResendUserAccountActivationRequestDTO
     {
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
     }
 
     public class UnactivatedEmailUpdateRequestDTO : ResendUserAccountActivationRequestDTO
     {
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string newEmail { get; set; }
     }
 
@@ -74,17 +84,24 @@ namespace SQE.API.DTO
 
     public class ResetUserPasswordRequestDTO
     {
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
     }
 
     public class ResetForgottenUserPasswordRequestDTO : AccountActivationRequestDTO
     {
+        [Required]
+        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
         public string password { get; set; }
     }
 
     public class ResetLoggedInUserPasswordRequestDTO
     {
+        [Required]
         public string oldPassword { get; set; }
+        [Required]
+        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
         public string newPassword { get; set; }
     }
 

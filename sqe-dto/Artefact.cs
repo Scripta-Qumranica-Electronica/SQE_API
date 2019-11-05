@@ -50,6 +50,7 @@ namespace SQE.API.DTO
     public class UpdateArtefactDTO
     {
         public virtual PolygonDTO polygon { get; set; }
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "Artefact names must be between 1 and 255 characters long")]
         public string name { get; set; }
         public string statusMessage { get; set; }
     }
@@ -61,5 +62,9 @@ namespace SQE.API.DTO
 
         [Required]
         public override PolygonDTO polygon { get; set; }
+
+        [Required] // The name is required in a create artefact DTO, but not in the update artefact DTO
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "Artefact names must be between 1 and 255 characters long")]
+        public string name { get; set; }
     }
 }

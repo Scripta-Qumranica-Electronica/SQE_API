@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
@@ -79,6 +80,8 @@ namespace SQE.API.DTO
 
     public class CreateTextFragmentDTO
     {
+        [Required]
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "Text fragment names must be between 1 and 255 characters")]
         public string name { get; set; }
         public uint? previousTextFragmentId { get; set; }
         public uint? nextTextFragmentId { get; set; }
