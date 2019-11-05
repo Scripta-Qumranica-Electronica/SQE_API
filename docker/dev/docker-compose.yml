@@ -4,7 +4,7 @@ version: '3.7'
 
 services:
     sqe-database:
-        image: qumranica/sqe-database:0.13.2
+        image: qumranica/sqe-database:0.13.3
         container_name: SQE_Database
         # These environment variables match the default db connection settings for the project.
         environment:

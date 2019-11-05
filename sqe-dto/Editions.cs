@@ -70,6 +70,12 @@ namespace SQE.API.DTO
         public string token { get; set; }
     }
 
+    public class DeleteEditionEntityDTO
+    {
+        public uint entityId { get; set; }
+        public uint editorId { get; set; }
+    }
+
     #region Request DTO's
 
     public class EditionUpdateRequestDTO

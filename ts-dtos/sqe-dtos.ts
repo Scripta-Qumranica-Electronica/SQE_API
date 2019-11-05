@@ -86,6 +86,10 @@ export interface DeleteTokenDTO {
     editionId: number;
     token: string;
 }
+export interface DeleteEditionEntityDTO {
+    entityId: number;
+    editorId: number;
+}
 export interface EditionUpdateRequestDTO {
     name: string;
     copyrightHolder: string;

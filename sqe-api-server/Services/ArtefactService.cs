@@ -188,7 +188,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("deleteArtefact", artefactId);
+                .SendAsync("deleteArtefact", new DeleteEditionEntityDTO() { entityId = artefactId, editorId = editionUser.EditionEditorId.Value });
             return new NoContentResult();
         }
 
