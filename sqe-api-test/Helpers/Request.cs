@@ -287,8 +287,8 @@ namespace SQE.ApiTest.Helpers
 
         public static class DefaultUsers
         {
-            public static readonly UserAuthDetails User1 = new UserAuthDetails { email = "test", password = "asdf" };
-            public static readonly UserAuthDetails User2 = new UserAuthDetails { email = "test2", password = "asdf" };
+            public static readonly UserAuthDetails User1 = new UserAuthDetails { email = "test@1.com", password = "asdf" };
+            public static readonly UserAuthDetails User2 = new UserAuthDetails { email = "test@2.com", password = "asdf" };
         }
 
         public class UserAuthDetails

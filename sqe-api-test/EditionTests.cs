@@ -695,7 +695,7 @@ namespace SQE.ApiTest
             Assert.True(msg.id != 1);
 
             // ARRANGE (without name)
-            newScrollRequest = new EditionCopyDTO("", null, null);
+            newScrollRequest = new EditionCopyDTO(null, null, null);
 
             //Act
             (response, msg) = await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionDTO>(

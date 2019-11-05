@@ -33,7 +33,6 @@ export interface UpdateArtefactDTO {
 export interface CreateArtefactDTO extends UpdateArtefactDTO {
     masterImageId: number;
     polygon: PolygonDTO;
-    name: string;
 }
 
 export interface EditionDTO {
@@ -263,7 +262,7 @@ export interface LoginRequestDTO {
     email: string;
     password: string;
 }
-export interface NewUserRequestDTO {
+export interface UserUpdateRequestDTO {
     password: string;
     email: string;
     organization: string;
@@ -271,7 +270,9 @@ export interface NewUserRequestDTO {
     surname: string;
 }
 
-export interface UserUpdateRequestDTO extends NewUserRequestDTO {
+export interface NewUserRequestDTO extends UserUpdateRequestDTO {
+    email: string;
+    password: string;
 }
 export interface AccountActivationRequestDTO {
     token: string;

@@ -610,16 +610,16 @@ namespace SQE.ApiTest
             var loggedInUser = await Login(user);
             Assert.NotNull(loggedInUser.token);
 
-            var updatedUser = new NewUserRequestDTO(
+            var updatedUser = new UserUpdateRequestDTO(
                 null,
                 user.password,
-                "Big Company",
-                "Jane",
-                "Doe"
+                "Small Company",
+                "John",
+                "Smith"
             );
 
             // Act (change user details)
-            var (cdResponse, cdMsg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
+            var (cdResponse, cdMsg) = await Request.SendHttpRequestAsync<UserUpdateRequestDTO, DetailedUserDTO>(
                 _client,
                 HttpMethod.Put,
                 baseUrl,
@@ -634,11 +634,10 @@ namespace SQE.ApiTest
             Assert.Equal(updatedUser.organization, cdMsg.organization);
 
             // Act (attempt login for new details)
-            updatedUser.email = user.email;
-            var upMsg = await Login(updatedUser);
+            var upMsg = await Login(user);
 
             // Assert (attempt login for new details)
-            Assert.Equal(updatedUser.email, upMsg.email);
+            Assert.Equal(user.email, upMsg.email);
             Assert.Equal(updatedUser.forename, upMsg.forename);
             Assert.Equal(updatedUser.surname, upMsg.surname);
             Assert.Equal(updatedUser.organization, upMsg.organization);

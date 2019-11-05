@@ -17,7 +17,7 @@ namespace SQE.API.DTO
 
     #region Account update and registration DTO's
 
-    public class NewUserRequestDTO
+    public class UserUpdateRequestDTO
     {
         /// <summary>
         ///     An object containing all data necessary to create a new user account. This is also used
@@ -28,7 +28,7 @@ namespace SQE.API.DTO
         /// <param name="organization">Name of affiliated organization (if any)</param>
         /// <param name="forename">The user's given name (may be empty)</param>
         /// <param name="surname">The user's family name (may be empty)</param>
-        public NewUserRequestDTO(string email, string password, string organization, string forename, string surname)
+        public UserUpdateRequestDTO(string email, string password, string organization, string forename, string surname)
         {
             this.password = password;
             this.email = email;
@@ -37,21 +37,29 @@ namespace SQE.API.DTO
             this.surname = surname;
         }
 
-        [Required]
-        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
         public string password { get; set; }
-        [Required]
-        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
         public string organization { get; set; }
         public string forename { get; set; }
         public string surname { get; set; }
     }
 
-    public class UserUpdateRequestDTO : NewUserRequestDTO
+    public class NewUserRequestDTO : UserUpdateRequestDTO
     {
-        public UserUpdateRequestDTO(string email, string password, string organization, string forename, string surname)
-            : base(email, password, organization, forename, surname) { }
+        public NewUserRequestDTO(string email, string password, string organization, string forename, string surname)
+            : base(email, password, organization, forename, surname)
+        {
+            this.email = email;
+            this.password = password;
+        }
+
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
+        public new string email { get; set; }
+
+        [Required]
+        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
+        public new string password { get; set; }
     }
 
     #endregion Account update and registration DTO's
