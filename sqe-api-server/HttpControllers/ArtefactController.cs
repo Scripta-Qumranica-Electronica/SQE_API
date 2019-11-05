@@ -59,7 +59,8 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
         [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}")]
-        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId,
+        public async Task<ActionResult<ArtefactDTO>> GetArtefact([FromRoute] uint editionId,
+            [FromRoute] uint artefactId,
             [FromQuery] List<string> optional)
         {
             return await _artefactService.GetEditionArtefactAsync(
@@ -124,7 +125,8 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/suggested-text-fragments")]
-        public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactSuggestedTextFragments([FromRoute] uint editionId,
+        public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactSuggestedTextFragments(
+            [FromRoute] uint editionId,
             [FromRoute] uint artefactId)
         {
             return await _artefactService.ArtefactSuggestedTextFragmentsAsync(
@@ -140,7 +142,8 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
         [HttpPut("v1/editions/{editionId}/[controller]s/{artefactId}")]
-        public async Task<ActionResult<ArtefactDTO>> UpdateArtefact([FromRoute] uint editionId, [FromRoute] uint artefactId,
+        public async Task<ActionResult<ArtefactDTO>> UpdateArtefact([FromRoute] uint editionId,
+            [FromRoute] uint artefactId,
             [FromBody] UpdateArtefactDTO payload)
         {
             return await _artefactService.UpdateArtefactAsync(

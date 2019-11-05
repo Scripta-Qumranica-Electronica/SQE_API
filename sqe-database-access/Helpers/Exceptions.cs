@@ -4,7 +4,7 @@ using SQE.DatabaseAccess.Models;
 
 namespace SQE.DatabaseAccess.Helpers
 {
-    #region Exception Base Class 
+    #region Exception Base Class
 
     // Exceptions of this class will be caught by the middleware and thrown back to HTTP requests with the proper
     // response codes.  This enables a RESTful experience regardless of whether a request is made via HTTP or by

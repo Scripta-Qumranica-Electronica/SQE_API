@@ -61,7 +61,9 @@ namespace SQE.DatabaseAccess
                     GetTextFragmentArtefacts.Query,
                     new { TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId }
                 )).ToList();
-            };
+            }
+
+            ;
         }
 
         public async Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId)

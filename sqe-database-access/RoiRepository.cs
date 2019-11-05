@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using SQE.API.DTO;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -59,7 +58,12 @@ namespace SQE.DatabaseAccess
                         async x =>
                         {
                             var roiShapeId = CreateRoiShapeAsync(x.Shape);
-                            var roiPositionId = CreateRoiPositionAsync(x.ArtefactId, x.TranslateX, x.TranslateY, x.StanceRotation);
+                            var roiPositionId = CreateRoiPositionAsync(
+                                x.ArtefactId,
+                                x.TranslateX,
+                                x.TranslateY,
+                                x.StanceRotation
+                            );
                             var signInterpretationRoiId = await CreateSignInterpretationRoiAsync(
                                 editionUser,
                                 x.SignInterpretationId,
@@ -75,7 +79,7 @@ namespace SQE.DatabaseAccess
                         }
                     )
                 )).ToList()
-            : new List<SignInterpretationROI>();
+                : new List<SignInterpretationROI>();
         }
 
         public (Task<List<SignInterpretationROI>>, Task<List<UpdatedSignInterpretationROI>>, Task<List<uint>>)
@@ -87,9 +91,9 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
-                var createdRois = this.CreateRoisAsync(editionUser, newRois);
-                var updatedRois = this.UpdateRoisAsync(editionUser, updateRois);
-                var deletedRois = this.DeletRoisAsync(editionUser, deleteRois);
+                var createdRois = CreateRoisAsync(editionUser, newRois);
+                var updatedRois = UpdateRoisAsync(editionUser, updateRois);
+                var deletedRois = DeletRoisAsync(editionUser, deleteRois);
                 return (createdRois, updatedRois, deletedRois);
             }
         }
@@ -121,7 +125,12 @@ namespace SQE.DatabaseAccess
                                                 && originalSignRoiInterpretation.StanceRotation == x.StanceRotation
                                                 && originalSignRoiInterpretation.ArtefactId == x.ArtefactId
                                 ? originalSignRoiInterpretation.RoiPositionId
-                                : await CreateRoiPositionAsync(x.ArtefactId, x.TranslateX, x.TranslateY, x.StanceRotation);
+                                : await CreateRoiPositionAsync(
+                                    x.ArtefactId,
+                                    x.TranslateX,
+                                    x.TranslateY,
+                                    x.StanceRotation
+                                );
 
                             var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
                                 editionUser,
@@ -156,7 +165,7 @@ namespace SQE.DatabaseAccess
                         }
                     )
                 )).ToList()
-            : new List<UpdatedSignInterpretationROI>();
+                : new List<UpdatedSignInterpretationROI>();
         }
 
         /// <summary>
@@ -233,7 +242,8 @@ namespace SQE.DatabaseAccess
                     new
                     {
                         Path = path
-                    });
+                    }
+                );
             }
         }
 
@@ -263,7 +273,8 @@ namespace SQE.DatabaseAccess
                         TranslateX = translateX,
                         TranslateY = translateY,
                         StanceRotation = stanceRotate
-                    });
+                    }
+                );
             }
         }
 

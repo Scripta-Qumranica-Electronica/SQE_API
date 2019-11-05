@@ -68,8 +68,7 @@ namespace SQE.API.DTO
 
     public class AccountActivationRequestDTO
     {
-        [Required]
-        public string token { get; set; }
+        [Required] public string token { get; set; }
     }
 
     public class ResendUserAccountActivationRequestDTO
@@ -106,8 +105,8 @@ namespace SQE.API.DTO
 
     public class ResetLoggedInUserPasswordRequestDTO
     {
-        [Required]
-        public string oldPassword { get; set; }
+        [Required] public string oldPassword { get; set; }
+
         [Required]
         [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
         public string newPassword { get; set; }

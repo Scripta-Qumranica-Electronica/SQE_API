@@ -62,7 +62,7 @@ namespace SQE.API.Server.Services
         {
             return new ArtefactDataListDTO(
                 (await _textRepo.GetArtefactsAsync(editionUser, fragmentId))
-                .Select(x => new ArtefactDataDTO() { id = x.ArtefactId, name = x.Name })
+                .Select(x => new ArtefactDataDTO { id = x.ArtefactId, name = x.Name })
                 .ToList()
             );
         }
@@ -182,7 +182,7 @@ namespace SQE.API.Server.Services
                                                                             editorId = b.SignInterpretationRoiAuthor,
                                                                             artefactId = b.ArtefactId,
                                                                             shape = b.Shape,
-                                                                            translate = new TranslateDTO()
+                                                                            translate = new TranslateDTO
                                                                             {
                                                                                 x = b.TranslateX,
                                                                                 y = b.TranslateY
@@ -275,7 +275,7 @@ namespace SQE.API.Server.Services
                                                     editorId = b.SignInterpretationRoiAuthor,
                                                     artefactId = b.ArtefactId,
                                                     shape = b.Shape,
-                                                    translate = new TranslateDTO()
+                                                    translate = new TranslateDTO
                                                     {
                                                         x = b.TranslateX,
                                                         y = b.TranslateY

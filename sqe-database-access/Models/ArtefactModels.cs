@@ -5,6 +5,7 @@
         public uint ArtefactId { get; set; }
         public string Name { get; set; }
     }
+
     public class ArtefactModel : ArtefactDataModel
     {
         public uint ArtefactDataEditorId { get; set; }

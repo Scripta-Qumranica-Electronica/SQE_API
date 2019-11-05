@@ -115,7 +115,8 @@ namespace SQE.API.Server.HttpControllers
         {
             return await _editionService.UpdateEditionAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId, true),
-                request);
+                request
+            );
         }
     }
 }

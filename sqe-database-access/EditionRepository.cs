@@ -122,8 +122,8 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser"></param>
         /// <param name="copyrightHolder"></param>
         /// <param name="collaborators"></param>
-        ///     User info object contains the editionId that the user wishes to copy and
-        ///     all user permissions related to it.
+        /// User info object contains the editionId that the user wishes to copy and
+        /// all user permissions related to it.
         /// </param>
         /// <returns>The editionId of the newly created edition.</returns>
         public async Task<uint> CopyEditionAsync(EditionUserInfo editionUser,

@@ -66,7 +66,7 @@ namespace SQE.API.Server.Services
                 editorId = roi.SignInterpretationRoiAuthor,
                 exceptional = roi.Exceptional,
                 interpretationRoiId = roi.SignInterpretationRoiId,
-                translate = new TranslateDTO()
+                translate = new TranslateDTO
                 {
                     x = roi.TranslateX,
                     y = roi.TranslateY
@@ -90,7 +90,7 @@ namespace SQE.API.Server.Services
                             editorId = x.SignInterpretationRoiAuthor,
                             exceptional = x.Exceptional,
                             interpretationRoiId = x.SignInterpretationRoiId,
-                            translate = new TranslateDTO()
+                            translate = new TranslateDTO
                             {
                                 x = x.TranslateX,
                                 y = x.TranslateY
@@ -158,10 +158,12 @@ namespace SQE.API.Server.Services
             );
             await Task.WhenAll(createRois, updateRois, deleteRois);
 
-            var batchEditRoisDTO = new BatchEditRoiResponseDTO()
+            var batchEditRoisDTO = new BatchEditRoiResponseDTO
             {
                 createRois = (await createRois).Select(_convertSignInterpretationROIToInterpretationRoiDTO).ToList(),
-                updateRois = (await updateRois).Select(_convertUpdatedSignInterpretationROIToUpdatedInterpretationRoiDTO).ToList(),
+                updateRois = (await updateRois)
+                    .Select(_convertUpdatedSignInterpretationROIToUpdatedInterpretationRoiDTO)
+                    .ToList(),
                 deleteRois = await deleteRois
             };
 
@@ -239,20 +241,27 @@ namespace SQE.API.Server.Services
         }
 
         public async Task<NoContentResult> DeleteRoisAsync(EditionUserInfo editionUser,
-            List<uint> deleteRois, string clientId = null)
+            List<uint> deleteRois,
+            string clientId = null)
         {
             var deleteRoisDTO = await _roiRepository.DeletRoisAsync(editionUser, deleteRois);
 
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("deleteRois", deleteRoisDTO);
+                .SendAsync(
+                    "deleteRois",
+                    deleteRoisDTO.Select(
+                            x => new DeleteEditionEntityDTO { entityId = x, editorId = editionUser.EditionEditorId.Value }
+                        )
+                        .ToList()
+                );
 
             return new NoContentResult();
         }
 
-        private SetSignInterpretationROI _convertSignInterpretationDTOToSetSignInterpretationROI(SetInterpretationRoiDTO x)
+        private SetSignInterpretationROI _convertSignInterpretationDTOToSetSignInterpretationROI(
+            SetInterpretationRoiDTO x)
         {
             return new SetSignInterpretationROI
             {
@@ -290,7 +299,7 @@ namespace SQE.API.Server.Services
                 exceptional = x.Exceptional,
                 interpretationRoiId = x.SignInterpretationRoiId,
                 signInterpretationId = x.SignInterpretationId,
-                translate = new TranslateDTO()
+                translate = new TranslateDTO
                 {
                     x = x.TranslateX,
                     y = x.TranslateY
@@ -300,7 +309,8 @@ namespace SQE.API.Server.Services
             };
         }
 
-        private UpdatedInterpretationRoiDTO _convertUpdatedSignInterpretationROIToUpdatedInterpretationRoiDTO(UpdatedSignInterpretationROI x)
+        private UpdatedInterpretationRoiDTO _convertUpdatedSignInterpretationROIToUpdatedInterpretationRoiDTO(
+            UpdatedSignInterpretationROI x)
         {
             return new UpdatedInterpretationRoiDTO
             {
@@ -310,7 +320,7 @@ namespace SQE.API.Server.Services
                 interpretationRoiId = x.SignInterpretationRoiId,
                 oldInterpretationRoiId = x.OldSignInterpretationRoiId,
                 signInterpretationId = x.SignInterpretationId,
-                translate = new TranslateDTO()
+                translate = new TranslateDTO
                 {
                     x = x.TranslateX,
                     y = x.TranslateY

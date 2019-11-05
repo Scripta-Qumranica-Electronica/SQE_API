@@ -129,26 +129,27 @@ namespace SQE.API.Server
 
                                 // If the request is for our hub...
                                 var path = context.HttpContext.Request.Path;
-                                if (!string.IsNullOrEmpty(accessToken) &&
-                                    (path.StartsWithSegments("/signalr")))
-                                {
+                                if (!string.IsNullOrEmpty(accessToken)
+                                    && path.StartsWithSegments("/signalr"))
                                     // Read the token out of the query string
                                     context.Token = accessToken;
-                                }
                                 return Task.CompletedTask;
                             }
                         };
                     }
                 );
 
-            services.AddAuthorization(options =>
-            {
-                var defaultAuthorizationPolicyBuilder = new AuthorizationPolicyBuilder(
-                    JwtBearerDefaults.AuthenticationScheme);
-                defaultAuthorizationPolicyBuilder =
-                    defaultAuthorizationPolicyBuilder.RequireAuthenticatedUser();
-                options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
-            });
+            services.AddAuthorization(
+                options =>
+                {
+                    var defaultAuthorizationPolicyBuilder = new AuthorizationPolicyBuilder(
+                        JwtBearerDefaults.AuthenticationScheme
+                    );
+                    defaultAuthorizationPolicyBuilder =
+                        defaultAuthorizationPolicyBuilder.RequireAuthenticatedUser();
+                    options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
+                }
+            );
 
             if (appSettings.HttpServer.ToLower() == "true")
             {
@@ -186,7 +187,8 @@ namespace SQE.API.Server
             // You must set sticky sessions in the load balancer.
             // Remember that the docs warn to only use a Redis backplane in the same network as the SignalR Hubs,
             // otherwise you may experience latency issues.
-            if (appSettings.UseRedis.ToLower() == "true" && !Environment.IsEnvironment("IntegrationTests"))
+            if (appSettings.UseRedis.ToLower() == "true"
+                && !Environment.IsEnvironment("IntegrationTests"))
             {
                 if (string.IsNullOrEmpty(Configuration.GetConnectionString("RedisHost")))
                     throw new Exception("Must set a value in appsettings.json for RedisHost");

@@ -110,7 +110,6 @@ namespace SQE.API.Server.Services
                 tasks.Add(_artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, updateArtefact.name));
 
             if (updateArtefact.polygon != null)
-            {
                 tasks.Add(
                     _artefactRepository.UpdateArtefactPositionAsync(
                         editionUser,
@@ -121,14 +120,11 @@ namespace SQE.API.Server.Services
                         updateArtefact.polygon.transformation.translate?.y
                     )
                 );
-            }
 
             if (!string.IsNullOrEmpty(updateArtefact.statusMessage))
-            {
                 tasks.Add(
                     _artefactRepository.UpdateArtefactStatusAsync(editionUser, artefactId, updateArtefact.statusMessage)
                 );
-            }
 
             await Task.WhenAll(tasks);
             var updatedArtefact = await GetEditionArtefactAsync(
@@ -188,7 +184,10 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("deleteArtefact", new DeleteEditionEntityDTO() { entityId = artefactId, editorId = editionUser.EditionEditorId.Value });
+                .SendAsync(
+                    "deleteArtefact",
+                    new DeleteEditionEntityDTO { entityId = artefactId, editorId = editionUser.EditionEditorId.Value }
+                );
             return new NoContentResult();
         }
 

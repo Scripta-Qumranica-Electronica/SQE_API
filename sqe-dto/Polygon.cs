@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace SQE.API.DTO
+﻿namespace SQE.API.DTO
 {
     public class PolygonDTO
     {

@@ -115,12 +115,12 @@ namespace SQE.DatabaseAccess
             string shape)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
-             write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
-             use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
-             
-            var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
-            var res = string.Join("", binaryMask);
-            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+			 write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
+			 use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
+			 
+			var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
+			var res = string.Join("", binaryMask);
+			var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
             const string tableName = "artefact_shape";
             var artefactShapeId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
             if (artefactShapeId == 0)
@@ -243,12 +243,12 @@ namespace SQE.DatabaseAccess
             string workStatus)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
-             write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
-             use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
-             
-            var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
-            var res = string.Join("", binaryMask);
-            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+			 write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
+			 use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
+			 
+			var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
+			var res = string.Join("", binaryMask);
+			var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
@@ -351,12 +351,12 @@ namespace SQE.DatabaseAccess
             string shape)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
-             write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
-             use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
-             
-            var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
-            var res = string.Join("", binaryMask);
-            var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+			 write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
+			 use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
+			 
+			var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
+			var res = string.Join("", binaryMask);
+			var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
 
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
@@ -482,7 +482,7 @@ namespace SQE.DatabaseAccess
                         FindArtefactShapeSqeImageId.GetQuery,
                         new
                         {
-                            EditionId = editionUser.EditionId,
+                            editionUser.EditionId,
                             ArtefactId = artefactId
                         }
                     );

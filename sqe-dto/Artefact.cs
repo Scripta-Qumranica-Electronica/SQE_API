@@ -29,38 +29,42 @@ namespace SQE.API.DTO
 
     public class ArtefactListDTO
     {
-        public List<ArtefactDTO> artefacts { get; set; }
-
         public ArtefactListDTO(List<ArtefactDTO> artefacts)
         {
             this.artefacts = artefacts;
         }
+
+        public List<ArtefactDTO> artefacts { get; set; }
     }
 
     public class ArtefactDataListDTO
     {
-        public List<ArtefactDataDTO> artefacts { get; set; }
-
         public ArtefactDataListDTO(List<ArtefactDataDTO> artefacts)
         {
             this.artefacts = artefacts;
         }
+
+        public List<ArtefactDataDTO> artefacts { get; set; }
     }
 
     public class UpdateArtefactDTO
     {
         public virtual PolygonDTO polygon { get; set; }
-        [StringLength(255, MinimumLength = 1, ErrorMessage = "Artefact names must be between 1 and 255 characters long")]
+
+        [StringLength(
+            255,
+            MinimumLength = 1,
+            ErrorMessage = "Artefact names must be between 1 and 255 characters long"
+        )]
         public string name { get; set; }
+
         public string statusMessage { get; set; }
     }
 
     public class CreateArtefactDTO : UpdateArtefactDTO
     {
-        [Required]
-        public uint masterImageId { get; set; }
+        [Required] public uint masterImageId { get; set; }
 
-        [Required]
-        public override PolygonDTO polygon { get; set; }
+        [Required] public override PolygonDTO polygon { get; set; }
     }
 }

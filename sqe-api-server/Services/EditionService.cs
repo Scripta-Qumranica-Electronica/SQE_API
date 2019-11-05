@@ -19,7 +19,9 @@ namespace SQE.API.Server.Services
 
         Task<EditionListDTO> ListEditionsAsync(uint? userId);
 
-        Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser, EditionUpdateRequestDTO updatedEdition, string clientId = null);
+        Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
+            EditionUpdateRequestDTO updatedEdition,
+            string clientId = null);
 
         Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser,
             EditionCopyDTO editionInfo,
@@ -94,9 +96,14 @@ namespace SQE.API.Server.Services
 
             if (updatedEditionData.copyrightHolder != null
                 || editionBeforeChanges.Collaborators != updatedEditionData.collaborators)
-                await _editionRepo.ChangeEditionCopyrightAsync(editionUser, updatedEditionData.copyrightHolder, updatedEditionData.collaborators);
+                await _editionRepo.ChangeEditionCopyrightAsync(
+                    editionUser,
+                    updatedEditionData.copyrightHolder,
+                    updatedEditionData.collaborators
+                );
 
-            if (!string.IsNullOrEmpty(updatedEditionData.name)) await _editionRepo.ChangeEditionNameAsync(editionUser, updatedEditionData.name);
+            if (!string.IsNullOrEmpty(updatedEditionData.name))
+                await _editionRepo.ChangeEditionNameAsync(editionUser, updatedEditionData.name);
 
             var editions = await _editionRepo.ListEditionsAsync(
                 editionUser.userId,
@@ -185,10 +192,10 @@ namespace SQE.API.Server.Services
                     await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
                         .SendAsync(
                             "deleteEdition",
-                            new DeleteEditionEntityDTO()
+                            new DeleteEditionEntityDTO
                             {
                                 editorId = editionUser.EditionEditorId.Value,
-                                entityId = editionUser.EditionId,
+                                entityId = editionUser.EditionId
                             }
                         );
                     return null;

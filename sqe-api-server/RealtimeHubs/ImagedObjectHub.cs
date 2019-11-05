@@ -26,9 +26,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
         public async Task<ImagedObjectDTO> GetV1EditionsEditionIdImagedObjectsImagedObjectId(uint editionId, string imagedObjectId, List<string> optional)
-        {
-            return await _imagedObjectService.GetImagedObjectAsync(await _userService.GetCurrentUserObjectAsync(editionId), imagedObjectId, optional);
-        }
+        { return await _imagedObjectService.GetImagedObjectAsync(await _userService.GetCurrentUserObjectAsync(editionId), imagedObjectId, optional); }
 
         /// <summary>
         ///     Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
@@ -38,18 +36,14 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
         public async Task<ImagedObjectListDTO> GetV1EditionsEditionIdImagedObjects(uint editionId, List<string> optional)
-        {
-            return await _imagedObjectService.GetImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
-        }
+        { return await _imagedObjectService.GetImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional); }
 
         /// <summary>
         ///     Provides a list of all institutional image providers.
         /// </summary>
         [AllowAnonymous]
         public async Task<ImageInstitutionListDTO> GetV1ImagedObjectsInstitutions()
-        {
-            return await _imageService.GetImageInstitutionsAsync();
-        }
+        { return await _imageService.GetImageInstitutionsAsync(); }
 
     }
 }

@@ -42,6 +42,7 @@ namespace SQE.API.DTO
         [Required]
         [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
+
         public bool? mayRead { get; set; }
         public bool? isAdmin { get; set; }
         public bool? mayLock { get; set; }
@@ -101,8 +102,13 @@ namespace SQE.API.DTO
         }
 
 
-        [StringLength(255, MinimumLength = 1, ErrorMessage = "The name of the edition must be between 1 and 255 characters long")]
+        [StringLength(
+            255,
+            MinimumLength = 1,
+            ErrorMessage = "The name of the edition must be between 1 and 255 characters long"
+        )]
         public string name { get; set; }
+
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }
     }
