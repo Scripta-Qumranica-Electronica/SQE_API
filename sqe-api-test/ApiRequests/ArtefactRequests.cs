@@ -1,13 +1,4 @@
-/*
- * Example:
-var arts = new ApiRequests.ApiRequests.Get.V1.Artefacts.EditionId(894, null);
-var (res1, mssg1) = await Request.Send(arts, http: _client, realtime: StartConnectionAsync);
- */
-
-using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
@@ -16,21 +7,109 @@ namespace SQE.ApiTest.ApiRequests
     {
         public class V1_Editions_EditionId_Artefacts : EditionRequestObject<EmptyInput, ArtefactListDTO>
         {
-            private readonly List<string> _optional;
-
             /// <summary>
             ///     Request a list of artefacts by their editionId
             /// </summary>
             /// <param name="editionId">Id of the edition to search for artefacts</param>
             /// <param name="optional">List of optional parameters: "masks", "images"</param>
-            public V1_Editions_EditionId_Artefacts(uint editionId, List<string> optional) : base(editionId)
+            public V1_Editions_EditionId_Artefacts(uint editionId, List<string> optional = null) : base(
+                editionId,
+                optional
+            )
             {
-                _optional = optional;
             }
+        }
 
-            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, ArtefactDTO>
+        {
+            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
+                editionId,
+                artefactId,
+                null
+            )
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), editionId, _optional);
+            }
+        }
+
+        public class V1_Editions_EditionId_Artefacts_ArtefactId_Rois
+            : ArtefactRequestObject<EmptyInput, InterpretationRoiDTOList>
+        {
+            public V1_Editions_EditionId_Artefacts_ArtefactId_Rois(uint editionId, uint artefactId) : base(
+                editionId,
+                artefactId,
+                null
+            )
+            {
+            }
+        }
+
+        public class V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments
+            : ArtefactRequestObject<EmptyInput, TextFragmentDataListDTO>
+        {
+            public V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments(uint editionId, uint artefactId) : base(
+                editionId,
+                artefactId,
+                null
+            )
+            {
+            }
+        }
+
+        public class V1_Editions_EditionId_Artefacts_ArtefactId_SuggestedTextFragments
+            : ArtefactRequestObject<EmptyInput, TextFragmentDataListDTO>
+        {
+            public V1_Editions_EditionId_Artefacts_ArtefactId_SuggestedTextFragments(uint editionId, uint artefactId) :
+                base(
+                    editionId,
+                    artefactId,
+                    null
+                )
+            {
+            }
+        }
+    }
+
+    public static partial class Post
+    {
+        public class V1_Editions_EditionId_Artefacts : EditionRequestObject<CreateArtefactDTO, ArtefactDTO>
+        {
+            public V1_Editions_EditionId_Artefacts(uint editionId, CreateArtefactDTO payload) : base(
+                editionId,
+                null,
+                payload
+            )
+            {
+                listenerMethod.Add("createArtefact");
+            }
+        }
+    }
+
+    public static partial class Put
+    {
+        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<UpdateArtefactDTO, ArtefactDTO>
+        {
+            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
+                editionId,
+                artefactId,
+                null
+            )
+            {
+                listenerMethod.Add("updateArtefact");
+            }
+        }
+    }
+
+    public static partial class Delete
+    {
+        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, EmptyOutput>
+        {
+            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
+                editionId,
+                artefactId,
+                null
+            )
+            {
+                listenerMethod.Add("deleteArtefact");
             }
         }
     }

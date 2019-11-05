@@ -116,10 +116,6 @@ namespace SQE.API.Server.Services
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
                 .SendAsync("updateEdition", updatedEdition);
 
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("updateEdition", updatedEdition);
             return updatedEdition;
         }
 

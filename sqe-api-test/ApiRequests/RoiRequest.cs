@@ -32,6 +32,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
+                listenerMethod.Add("createRois");
             }
         }
 
@@ -49,6 +50,27 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
+                listenerMethod.Add("createRois");
+            }
+        }
+
+        public class V1_Editions_EditionId_Rois_BatchEdit
+            : EditionRequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO>
+        {
+            /// <summary>
+            ///     Create one or more new ROIs in an edition
+            /// </summary>
+            /// <param name="editionId">The editionId to create the new ROIs</param>
+            /// <param name="payload">The details of the new ROIs</param>
+            public V1_Editions_EditionId_Rois_BatchEdit(uint editionId, BatchEditRoiDTO payload) : base(
+                editionId,
+                null,
+                payload
+            )
+            {
+                listenerMethod.Add("createRois");
+                listenerMethod.Add("updateRois");
+                listenerMethod.Add("deketeRois");
             }
         }
     }
@@ -69,6 +91,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
+                listenerMethod.Add("updateRois");
             }
         }
 
@@ -86,13 +109,14 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
+                listenerMethod.Add("updateRois");
             }
         }
     }
 
     public static partial class Delete
     {
-        public class V1_Editions_EditionId_Rois_RoiId : RoiRequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO>
+        public class V1_Editions_EditionId_Rois_RoiId : RoiRequestObject<EmptyInput, EmptyOutput>
         {
             /// <summary>
             ///     Deletes a ROI from an edition
@@ -101,6 +125,7 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="roiId">The id of the ROI to delete</param>
             public V1_Editions_EditionId_Rois_RoiId(uint editionId, uint roiId) : base(editionId, roiId, null)
             {
+                listenerMethod.Add("deleteRois");
             }
         }
     }

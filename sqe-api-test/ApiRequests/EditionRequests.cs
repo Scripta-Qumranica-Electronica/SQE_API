@@ -56,6 +56,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
+                listenerMethod.Add("addEditionEditor");
             }
         }
     }
@@ -75,6 +76,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
+                listenerMethod.Add("updateEditionEditor");
             }
         }
 
@@ -91,6 +93,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
+                listenerMethod.Add("updateEdition");
             }
         }
     }
@@ -112,6 +115,7 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _optional = optional;
                 _token = token;
+                listenerMethod.Add("deleteEdition");
             }
 
             protected override string HttpPath()

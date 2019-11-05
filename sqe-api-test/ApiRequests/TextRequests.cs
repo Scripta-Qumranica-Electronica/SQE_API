@@ -76,6 +76,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
+                listenerMethod.Add("createTextFragment");
             }
         }
     }

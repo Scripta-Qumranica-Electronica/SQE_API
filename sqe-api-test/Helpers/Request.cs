@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -101,7 +102,7 @@ namespace SQE.ApiTest.Helpers
             if (listener
                 && request.requestVerb != HttpMethod.Get
                 && realtime != null
-                && !string.IsNullOrEmpty(request.listenerMethod)
+                && request.listenerMethod.Any()
                 && request.GetType().IsSubclassOf(typeof(EditionRequestObject<Tinput, Toutput>)))
             {
                 var editionRequest = request as EditionRequestObject<Tinput, Toutput>;
@@ -109,7 +110,10 @@ namespace SQE.ApiTest.Helpers
                 // Subscribe to messages on the edition
                 await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
                 // Register a listener for messages returned by this API request
-                signalrListener.On<Toutput>(request.listenerMethod, receivedData => listenerResponse = receivedData);
+                request.listenerMethod.Select(
+                    x =>
+                        signalrListener.On<Toutput>(x, receivedData => listenerResponse = receivedData)
+                );
 
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
@@ -118,10 +122,10 @@ namespace SQE.ApiTest.Helpers
                     await signalrListener.StartAsync();
                     // Subscribe to messages on the edition
                     await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
-                    // Register a istener for messages returned by this API request
-                    signalrListener.On<Toutput>(
-                        request.listenerMethod,
-                        receivedData => listenerResponse = receivedData
+                    // Register a listener for messages returned by this API request
+                    request.listenerMethod.Select(
+                        x =>
+                            signalrListener.On<Toutput>(x, receivedData => listenerResponse = receivedData)
                     );
                 };
             }
@@ -288,10 +292,10 @@ namespace SQE.ApiTest.Helpers
         public static class DefaultUsers
         {
             public static readonly UserAuthDetails User1 = new UserAuthDetails
-            { email = "test@1.com", password = "asdf" };
+            { email = "test@1.com", password = "test" };
 
             public static readonly UserAuthDetails User2 = new UserAuthDetails
-            { email = "test@2.com", password = "asdf" };
+            { email = "test@2.com", password = "test" };
         }
 
         public class UserAuthDetails

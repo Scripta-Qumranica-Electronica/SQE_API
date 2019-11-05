@@ -26,7 +26,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// </returns>
         [AllowAnonymous]
         public async Task<DetailedUserTokenDTO> PostV1UsersLogin(LoginRequestDTO payload)
-        { return await _userService.AuthenticateAsync(payload.email, payload.password, clientId: Context.ConnectionId); }
+        {
+            return await _userService.AuthenticateAsync(payload.email, payload.password, clientId: Context.ConnectionId);
+        }
 
         /// <summary>
         ///     Allows a user who has not yet activated their account to change their email address. This will not work if the user
@@ -35,7 +37,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="payload">JSON object with the current email address and the new desired email address</param>
         [AllowAnonymous]
         public async Task PostV1UsersChangeUnactivatedEmail(UnactivatedEmailUpdateRequestDTO payload)
-        { await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail, clientId: Context.ConnectionId); }
+        {
+            await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail, clientId: Context.ConnectionId);
+        }
 
         /// <summary>
         ///     Uses the secret token from /users/forgot-password to validate a reset of the user's password
@@ -43,7 +47,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="payload">A JSON object with the secret token and the new password</param>
         [AllowAnonymous]
         public async Task PostV1UsersChangeForgottenPassword(ResetForgottenUserPasswordRequestDTO payload)
-        { await _userService.ResetLostPasswordAsync(payload.token, payload.password, clientId: Context.ConnectionId); }
+        {
+            await _userService.ResetLostPasswordAsync(payload.token, payload.password, clientId: Context.ConnectionId);
+        }
 
         /// <summary>
         ///     Changes the password for the currently logged in user
@@ -51,7 +57,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="payload">A JSON object with the old password and the new password</param>
         [Authorize]
         public async Task PostV1UsersChangePassword(ResetLoggedInUserPasswordRequestDTO payload)
-        { await _userService.ChangePasswordAsync(_userService.GetCurrentUserId(), payload.oldPassword, payload.newPassword, clientId: Context.ConnectionId); }
+        {
+            await _userService.ChangePasswordAsync(_userService.GetCurrentUserId(), payload.oldPassword, payload.newPassword, clientId: Context.ConnectionId);
+        }
 
         /// <summary>
         ///     Updates a user's registration details.  Note that the if the email address has changed, the account will be set to
@@ -64,7 +72,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns>Returns a DetailedUserDTO with the updated user account details</returns>
         [Authorize]
         public async Task<DetailedUserDTO> PutV1Users(UserUpdateRequestDTO payload)
-        { return await _userService.UpdateUserAsync(_userService.GetCurrentUserId(), payload, clientId: Context.ConnectionId); }
+        {
+            return await _userService.UpdateUserAsync(_userService.GetCurrentUserId(), payload, clientId: Context.ConnectionId);
+        }
 
         /// <summary>
         ///     Confirms registration of new user account.
@@ -73,7 +83,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns>Returns a DetailedUserDTO for the confirmed account</returns>
         [AllowAnonymous]
         public async Task PostV1UsersConfirmRegistration(AccountActivationRequestDTO payload)
-        { await _userService.ConfirmUserRegistrationAsync(payload.token, clientId: Context.ConnectionId); }
+        {
+            await _userService.ConfirmUserRegistrationAsync(payload.token, clientId: Context.ConnectionId);
+        }
 
         /// <summary>
         ///     Sends a secret token to the user's email to allow password reset.
@@ -81,7 +93,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="payload">JSON object with the email address for the user who wants to reset a lost password</param>
         [AllowAnonymous]
         public async Task PostV1UsersForgotPassword(ResetUserPasswordRequestDTO payload)
-        { await _userService.RequestResetLostPasswordAsync(payload.email, clientId: Context.ConnectionId); }
+        {
+            await _userService.RequestResetLostPasswordAsync(payload.email, clientId: Context.ConnectionId);
+        }
 
         /// <summary>
         ///     Provides the user details for a user with valid JWT in the Authorize header
@@ -89,7 +103,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns>A UserDTO for user account.</returns>
         [Authorize]
         public async Task<UserDTO> GetV1Users()
-        { return await _userService.GetCurrentUser(); }
+        {
+            return await _userService.GetCurrentUser();
+        }
 
         /// <summary>
         ///     Creates a new user with the submitted data.
@@ -98,7 +114,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns>Returns a UserDTO for the newly created account</returns>
         [AllowAnonymous]
         public async Task<UserDTO> PostV1Users(NewUserRequestDTO payload)
-        { return await _userService.CreateNewUserAsync(payload, clientId: Context.ConnectionId); }
+        {
+            return await _userService.CreateNewUserAsync(payload, clientId: Context.ConnectionId);
+        }
 
         /// <summary>
         ///     Sends a new activation email for the user's account. This will not work if the user account associated with the
@@ -107,7 +125,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="payload">JSON object with the current email address and the new desired email address</param>
         [AllowAnonymous]
         public async Task PostV1UsersResendActivationEmail(ResendUserAccountActivationRequestDTO payload)
-        { await _userService.ResendActivationEmail(payload.email, clientId: Context.ConnectionId); }
+        {
+            await _userService.ResendActivationEmail(payload.email, clientId: Context.ConnectionId);
+        }
 
     }
 }

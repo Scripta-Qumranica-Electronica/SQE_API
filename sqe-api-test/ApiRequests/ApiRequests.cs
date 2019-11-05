@@ -15,7 +15,7 @@ namespace SQE.ApiTest.ApiRequests
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
     public abstract class RequestObject<Tinput, Toutput>
     {
-        public string listenerMethod = null;
+        public List<string> listenerMethod = new List<string>();
         protected Tinput payload;
         protected string requestPath;
         public HttpMethod requestVerb;
@@ -246,6 +246,39 @@ namespace SQE.ApiTest.ApiRequests
     }
 
     /// <summary>
+    ///     Subclass of EditionRequestObject for all requests made on an artefact
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class ArtefactRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    {
+        public readonly uint artefactId;
+
+        /// <summary>
+        ///     Provides an ArtefactRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="artefactId">The id of the artefact to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public ArtefactRequestObject(uint editionId, uint artefactId, Tinput payload) : base(editionId, null, payload)
+        {
+            this.artefactId = artefactId;
+        }
+
+        protected override string HttpPath()
+        {
+            return base.HttpPath().Replace("/artefact-id", $"/{artefactId.ToString()}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, artefactId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, artefactId, payload);
+        }
+    }
+
+    /// <summary>
     ///     Subclass of EditionRequestObject for all requests made on a roi
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
@@ -255,7 +288,7 @@ namespace SQE.ApiTest.ApiRequests
         public readonly uint roiId;
 
         /// <summary>
-        ///     Provides an TextFragmentRequestObject for all API requests made on an edition
+        ///     Provides an RoiRequestObject for all API requests made on an edition
         /// </summary>
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="roiId">The id of the roi to perform the request on</param>
