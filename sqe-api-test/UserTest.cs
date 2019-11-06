@@ -8,6 +8,7 @@ using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
 using SQE.API.Server;
+using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
 
@@ -45,6 +46,12 @@ namespace SQE.ApiTest
         private readonly string forgotPassword;
         private readonly string changeForgottenPassword;
         private readonly string confirmRegistration;
+
+        private Request.UserAuthDetails UserUpdateRequestDTOToUserAuthDetails(UserUpdateRequestDTO user)
+        {
+            return new Request.UserAuthDetails { email = user.email, password = user.password };
+        }
+
 
         [Theory]
         [InlineData("/v1/users")]
@@ -86,10 +93,11 @@ namespace SQE.ApiTest
             NewUserRequestDTO user,
             bool shouldSucceed = true)
         {
+            const string url = "/v1/users";
             var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
                 _client,
                 HttpMethod.Post,
-                baseUrl,
+                url,
                 user
             );
 
@@ -272,35 +280,39 @@ namespace SQE.ApiTest
         [Fact]
         public async Task AccountDetailsUpdateFailsWithWrongPassword()
         {
-            // Arrange
-            var user = await CreateRandomActivatedUserAsync();
-            var newDetails = new NewUserRequestDTO(
-                "fake1@fake-email.com",
+            var user = new NewUserRequestDTO(
+                "fake1@fake1-email.com",
                 "*****&&&&&",
                 "𒂍𒁾𒁀",
                 "𒁉𒊏𒀭𒊓𒀭",
                 "𒇽𒋛𒀀 𒃻 𒄑𒌁"
             );
-            var loginDetails = await Login(user);
-
-            try
+            using (var userCreator = new UserHelpers.UserCreator(user, _client, _db))
             {
+                // Arrange
+                await userCreator.CreateUser();
+                var loginDetails = await Login(user);
+                var newDetails = new UserUpdateRequestDTO(
+                    "fake1@fake2-email.com",
+                    "WrongPassword",
+                    "Normal Org.",
+                    "Firstname",
+                    "Lastname"
+                );
+
                 // Act 
-                var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
+                var updateUserAccountObject = new Put.V1_Users(newDetails);
+                var userAuth = UserUpdateRequestDTOToUserAuthDetails(user);
+                var (response, msg, _, _) = await Request.Send(
+                    updateUserAccountObject,
                     _client,
-                    HttpMethod.Put,
-                    baseUrl,
-                    newDetails,
-                    loginDetails.token
+                    auth: true,
+                    user1: userAuth,
+                    shouldSucceed: false
                 );
 
                 // Assert
                 Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-            }
-            finally
-            {
-                // Cleanup
-                await CleanupUserAccountAsync(loginDetails);
             }
         }
 
@@ -311,36 +323,38 @@ namespace SQE.ApiTest
         [Fact]
         public async Task AccountPasswordUpdateFailsWithWrongEnteredPassword()
         {
-            // Arrange
-            var user = await CreateRandomActivatedUserAsync();
-            var newDetails = new NewUserRequestDTO(
+            var user = new NewUserRequestDTO(
                 "fake2@fake-email.com",
                 "*****&&&&&",
                 "בת ספר",
                 "שלמה",
                 "בן ציון"
             );
-            var loginDetails = await Login(user);
-            var newPwd = new ResetLoggedInUserPasswordRequestDTO
+            using (var userCreator = new UserHelpers.UserCreator(user, _client, _db))
             {
-                oldPassword = "wrongpasswd",
-                newPassword = "newpasswd"
-            };
+                // Arrange
+                await userCreator.CreateUser();
+                var loginDetails = await Login(user);
+                var authUser = UserUpdateRequestDTOToUserAuthDetails(user);
+                var newPwd = new ResetLoggedInUserPasswordRequestDTO
+                {
+                    oldPassword = "wrongpasswd",
+                    newPassword = "newpasswd"
+                };
 
-            // Act 
-            var (response, msg) = await Request.SendHttpRequestAsync<ResetLoggedInUserPasswordRequestDTO, string>(
-                _client,
-                HttpMethod.Post,
-                changePassword,
-                newPwd,
-                loginDetails.token
-            );
+                // Act 
+                var passwordUpdateRequest = new Post.V1_Users_ChangePassword(newPwd);
+                var (response, msg, _, _) = await Request.Send(
+                    passwordUpdateRequest,
+                    _client,
+                    auth: true,
+                    shouldSucceed: false,
+                    user1: authUser
+                );
 
-            // Assert
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-
-            // Cleanup
-            await CleanupUserAccountAsync(loginDetails);
+                // Assert
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            }
         }
 
         /// <summary>
@@ -361,35 +375,37 @@ namespace SQE.ApiTest
                 "💩",
                 null
             ); // Let's try some modern person with an emoji for a name to ensure unicode multibyte success.
-            var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
+            using (var userCreator = new UserHelpers.UserCreator(user, _client, _db, false))
+            {
+                var userDetails = await userCreator.CreateUser();
 
-            // Assert
-            var createdUser = await GetUserByEmail(user.email); // Get user from DB
-            Assert.False(createdUser.activated);
+                // Assert
+                var createdUser = await GetUserByEmail(user.email); // Get user from DB
+                Assert.False(createdUser.activated);
 
-            // Act (activate user)
-            await ActivatUserAccountAsync(newUser); // Asserts already in this function
+                // Act (activate user)
+                await ActivatUserAccountAsync(userDetails); // Asserts already in this function
 
-            // Act (login)
-            var userForLogin = new LoginRequestDTO { email = user.email, password = user.password };
-            var (response, loggedInUser) = await Request.SendHttpRequestAsync<LoginRequestDTO, DetailedUserTokenDTO>(
-                _client,
-                HttpMethod.Post,
-                login,
-                userForLogin
-            );
+                // Act (login)
+                var userAuth = UserUpdateRequestDTOToUserAuthDetails(user);
+                var userLoginRequest =
+                    new Post.V1_Users_Login(new LoginRequestDTO { email = user.email, password = user.password });
+                var (response, loggedInUser, _, _) = await Request.Send(
+                    userLoginRequest,
+                    _client,
+                    auth: true,
+                    user1: userAuth
+                );
 
-            // Assert (login)
-            response.EnsureSuccessStatusCode();
-            Assert.NotNull(loggedInUser.token);
-            Assert.Equal(createdUser.user_id, loggedInUser.userId);
-            Assert.Equal(createdUser.email, loggedInUser.email);
-            Assert.Equal(createdUser.forename, loggedInUser.forename);
-            Assert.Equal(createdUser.surname, loggedInUser.surname);
-            Assert.Equal(createdUser.organization, loggedInUser.organization);
-
-            // Cleanup (remove user)
-            await CleanupUserAccountAsync(newUser);
+                // Assert (login)
+                response.EnsureSuccessStatusCode();
+                Assert.NotNull(loggedInUser.token);
+                Assert.Equal(createdUser.user_id, loggedInUser.userId);
+                Assert.Equal(createdUser.email, loggedInUser.email);
+                Assert.Equal(createdUser.forename, loggedInUser.forename);
+                Assert.Equal(createdUser.surname, loggedInUser.surname);
+                Assert.Equal(createdUser.organization, loggedInUser.organization);
+            }
         }
 
         /// <summary>
@@ -409,30 +425,35 @@ namespace SQE.ApiTest
             );
             var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
 
-            var tokenCreationTime = await GetToken(user.email);
+            try
+            {
+                var tokenCreationTime = await GetToken(user.email);
 
-            var payload = new ResendUserAccountActivationRequestDTO { email = newUser.email };
+                var payload = new ResendUserAccountActivationRequestDTO { email = newUser.email };
 
-            // Act (resend activation)
-            Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
-            var (response, msg) =
-                await Request.SendHttpRequestAsync<ResendUserAccountActivationRequestDTO, string>(
-                    _client,
-                    HttpMethod.Post,
-                    resendActivationEmail,
-                    payload
-                );
+                // Act (resend activation)
+                Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
+                var (response, msg) =
+                    await Request.SendHttpRequestAsync<ResendUserAccountActivationRequestDTO, string>(
+                        _client,
+                        HttpMethod.Post,
+                        resendActivationEmail,
+                        payload
+                    );
 
-            // Assert (resend activation)
-            response.EnsureSuccessStatusCode();
-            Assert.Null(msg);
-            var newTokenCreationTime = await GetToken(user.email);
-            Assert.True(
-                newTokenCreationTime.date_created >= tokenCreationTime.date_created
-            ); // Make sure the token date the same or higher
-
-            // Cleanup (remove user)
-            await CleanupUserAccountAsync(newUser);
+                // Assert (resend activation)
+                response.EnsureSuccessStatusCode();
+                Assert.Null(msg);
+                var newTokenCreationTime = await GetToken(user.email);
+                Assert.True(
+                    newTokenCreationTime.date_created >= tokenCreationTime.date_created
+                ); // Make sure the token date the same or higher
+            }
+            finally
+            {
+                // Cleanup (remove user)
+                await CleanupUserAccountAsync(newUser);
+            }
         }
 
         /// <summary>
@@ -445,6 +466,8 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanUpdateDetailsBeforeActivation()
         {
+            DetailedUserDTO updatedUser = null;
+
             // Arrange
             var user = new NewUserRequestDTO(
                 "fake6@fake-email.com",
@@ -453,27 +476,35 @@ namespace SQE.ApiTest
                 "Jane",
                 "Doe"
             );
-            var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
-            var tokenCreationTime = await GetToken(user.email);
-            // Update user details
-            var updateUser = new NewUserRequestDTO(user.email, user.password, "ACME", "Joe", "Nobody");
 
-            // Act (update details)
-            Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
-            var (response, updatedUser) = await CreateUserAccountAsync(updateUser); // Asserts already in this function
+            try
+            {
+                var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
+                var tokenCreationTime = await GetToken(user.email);
+                // Update user details
+                var updateUser = new NewUserRequestDTO(user.email, user.password, "ACME", "Joe", "Nobody");
 
-            // Assert (resend activation)
-            response.EnsureSuccessStatusCode();
-            var newTokenCreationTime = await GetToken(user.email);
-            Assert.True(newTokenCreationTime.date_created > tokenCreationTime.date_created);
-            Assert.NotEqual(tokenCreationTime.token, newTokenCreationTime.token);
-            Assert.NotEqual(user.forename, updatedUser.forename);
-            Assert.NotEqual(user.surname, updatedUser.surname);
-            Assert.NotEqual(user.organization, updatedUser.organization);
-            Assert.Equal(user.email, updatedUser.email);
+                // Act (update details)
+                Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
+                HttpResponseMessage response;
+                (response, updatedUser) = await CreateUserAccountAsync(updateUser); // Asserts already in this function
 
-            // Cleanup (remove user)
-            await CleanupUserAccountAsync(updatedUser);
+                // Assert (resend activation)
+                response.EnsureSuccessStatusCode();
+                var newTokenCreationTime = await GetToken(user.email);
+                Assert.True(newTokenCreationTime.date_created > tokenCreationTime.date_created);
+                Assert.NotEqual(tokenCreationTime.token, newTokenCreationTime.token);
+                Assert.NotEqual(user.forename, updatedUser.forename);
+                Assert.NotEqual(user.surname, updatedUser.surname);
+                Assert.NotEqual(user.organization, updatedUser.organization);
+                Assert.Equal(user.email, updatedUser.email);
+            }
+            finally
+            {
+                // Cleanup (remove user)
+                if (updatedUser != null)
+                    await CleanupUserAccountAsync(updatedUser);
+            }
         }
 
         /// <summary>
@@ -832,80 +863,5 @@ namespace SQE.ApiTest
             // Cleanup (remove user)
             await CleanupUserAccountAsync(npLoggedInUser);
         }
-
-        // Note: I had implemented an email tester
-        // https://docs.microsoft.com/en-us/dotnet/standard/base-types/how-to-verify-that-strings-are-in-valid-email-format,
-        // which rejected patterns that it should not have.
-        // Unfortunately, this made some false rejections, so I removed it. Maybe we add something special
-        // when we go to production, then we could use these tests again (perhaps https://emailregex.com/).
-        /* 
-		/// <summary>
-		/// Make sure that the API immediately rejects improperly formatted email addresses.
-		/// </summary>
-		/// <returns></returns>
-		[Fact]
-		public async Task ShouldNotCreateAccountWithBadEmail()
-		{
-			// Arrange
-			var user = RandomUser();
-			user.email = _faker.Random.Word(); // This will not be a valid email
-			
-			// Act
-			await CreateUserAccountAsync(user, shouldSucceed: false); // Asserts in method
-		}
-		
-		/// <summary>
-		/// Make sure that the API immediately rejects improperly formatted email addresses when
-		/// requesting update of unactivated account details.
-		/// </summary>
-		/// <returns></returns>
-		[Fact]
-		public async Task ShouldNotUpdateUnactivatedAccountWithBadEmail()
-		{
-			// Arrange
-			var user = RandomUser();
-			var (_, newUser) = await CreateUserAccountAsync(user);
-			var newEmail = _faker.Random.Word(); // This will not be a valid email
-			
-			// Act
-			var (response, msg) = await HttpRequest.SendAsync<UnactivatedEmailUpdateRequestDTO, string>(_client,
-				HttpMethod.Post, changeUnactivatedEmail, new UnactivatedEmailUpdateRequestDTO()
-				{
-					email = user.email,
-					newEmail = newEmail
-				});
-			
-			// Assert
-			Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-			
-			// Cleanup
-			await CleanupUserAccountAsync(newUser);
-		}
-		
-		/// <summary>
-		/// Make sure that the API immediately rejects improperly formatted email addresses when
-		/// requesting update of activated account details.
-		/// </summary>
-		/// <returns></returns>
-		[Fact]
-		public async Task ShouldNotUpdateActivatedAccountWithBadEmail()
-		{
-			// Arrange
-			var user = RandomUser();
-			await CreateActivatedUserAsync(user);
-			var newUser = await Login(user);
-			var newEmail = _faker.Random.Word(); // This will not be a valid email
-			
-			// Act
-			var (response, msg) = await HttpRequest.SendAsync<NewUserRequestDTO, DetailedUserDTO>(_client,
-				HttpMethod.Put, baseUrl, new NewUserRequestDTO(newEmail, user.password, user.organization, user.forename, user.surname), 
-				newUser.token);
-			
-			// Assert
-			Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-			
-			// Cleanup
-			await CleanupUserAccountAsync(newUser);
-		}*/
     }
 }

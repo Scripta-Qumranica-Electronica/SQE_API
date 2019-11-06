@@ -109,6 +109,22 @@ namespace SQE.ApiTest.Helpers
         }
 
         /// <summary>
+        ///     We don't ever delete users from SQE, this function is used to cleanup testing users.
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        private static async Task CleanupUserAccountAsync(DetailedUserDTO user, DatabaseQuery db)
+        {
+            const string deleteNewUserSQL = "DELETE FROM user WHERE email = @Email";
+            const string deleteEmailTokenSQL = "DELETE FROM user_email_token WHERE user_id = @UserId";
+            var deleteEmailTokenParams = new DynamicParameters();
+            deleteEmailTokenParams.Add("@UserId", user.userId);
+            deleteEmailTokenParams.Add("@Email", user.email);
+            await db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
+            await db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
+        }
+
+        /// <summary>
         ///     Returns the details of the user with the specified email address.
         /// </summary>
         /// <param name="email">The email address of the user to be found</param>
@@ -164,6 +180,44 @@ WHERE email = @Email AND type = @Type";
 
             Assert.Empty(tokens);
             return new Token();
+        }
+
+        public class UserCreator : IDisposable
+        {
+            public UserCreator(NewUserRequestDTO newUser, HttpClient client, DatabaseQuery db, bool activate = true)
+            {
+                _newUser = newUser;
+                _client = client;
+                _db = db;
+                _activate = activate;
+            }
+
+            private DetailedUserDTO user { get; set; }
+            private NewUserRequestDTO _newUser { get; }
+            private HttpClient _client { get; }
+            private DatabaseQuery _db { get; }
+            private bool _activate { get; }
+
+            public void Dispose()
+            {
+                // This seems to work properly even though it is an antipattern.
+                // There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
+                // Maybe using try/finally in the individual tests would ultimately be safer.
+                Task.Run<Task>(async () => await CleanupUserAccountAsync(user, _db)).Wait();
+            }
+
+            public async Task<DetailedUserDTO> CreateUser()
+            {
+                user = await CreateUserAccountAsync(_client, _newUser);
+                if (_activate)
+                    await ActivateUserAccountAsync(_client, user);
+                return user;
+            }
+
+            public void UpdateUserDetails(DetailedUserDTO updatedUser)
+            {
+                user = updatedUser;
+            }
         }
 
         private class UserObj
