@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using SQE.API.DTO;
@@ -69,7 +70,7 @@ namespace SQE.ApiTest.Helpers
 
         /// <summary>
         ///     Get an editionId for an edition with > 2 text fragments and > 2 artefacts.
-        ///     This iterates over a large list is valid edition ids so that the likelihood of
+        ///     This iterates over a large list of valid edition ids so that the likelihood of
         ///     table lock errors in the tests is virtually 0.
         /// </summary>
         /// <returns></returns>
@@ -80,18 +81,20 @@ namespace SQE.ApiTest.Helpers
         }
 
         /// <summary>
-        ///     Retrieves an Edition object wither randomly or using a specified editionId.
+        ///     Retrieves an Edition object either randomly or using a specified editionId.
         /// </summary>
         /// <param name="client">The HttpClient used to make the request.</param>
-        /// <param name="editionId">Specifies the editionId to be used.</param>
+        /// <param name="editionId">Specifies the editionId to be used, or leave black for one to be automatically selected.</param>
         /// <param name="jwt">A JWT can be added the request to access private editions.</param>
-        /// <returns>a randomly selected EditionDTO</returns>
+        /// <returns>an EditionDTO for the desired edition</returns>
         public static async Task<EditionDTO> GetEdition(
             HttpClient client,
-            uint editionId = 3,
+            uint editionId = 0,
             Request.UserAuthDetails user = null,
             bool auth = false)
         {
+            if (editionId == 0)
+                editionId = GetEditionId();
             if (auth && user == null)
                 user = Request.DefaultUsers.User1;
             var getEditionObject = new Get.V1_Editions_EditionId(editionId);
@@ -108,7 +111,49 @@ namespace SQE.ApiTest.Helpers
         }
 
         /// <summary>
-        ///     Creates a new edition. This will be a copy of editionId 1 if no other editionId is entered.
+        /// This class can be used in a using block to clone an edition for tests. At the end of the using block,
+        /// it will automatically delete the newly created edition.
+        /// </summary>
+        public class EditionCreator : IDisposable
+        {
+            private uint _editionId { get; set; }
+            private readonly HttpClient _client;
+            private readonly string _name;
+            private readonly Request.UserAuthDetails _userAuthDetails;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="client">An http client connection</param>
+            /// <param name="editionId">The edition to clone (if blank, one will be selected automatically)</param>
+            /// <param name="name">Optional name for the new edition</param>
+            /// <param name="userAuthDetails">Optional user authentication details (if blank Request.DefaultUsers.User1
+            /// will be used)</param>
+            public EditionCreator(HttpClient client, uint editionId = 0, string name = "",
+                Request.UserAuthDetails userAuthDetails = null)
+            {
+                this._client = client;
+                this._name = name;
+                this._userAuthDetails = userAuthDetails;
+            }
+
+            public async Task<uint> CreateEdition()
+            {
+                _editionId = await CreateCopyOfEdition(_client, _editionId, _name, _userAuthDetails);
+                return _editionId;
+            }
+
+            public void Dispose()
+            {
+                // This seems to work properly even though it is an antipattern.
+                // There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
+                // Maybe using try/finally in the individual tests would ultimately be safer.
+                Task.Run(async () => await DeleteEdition(_client, _editionId, userAuthDetails: _userAuthDetails)).Wait();
+            }
+        }
+
+        /// <summary>
+        ///     Creates a new edition. If no editionId is entered, one will be selected automatically for you.
         /// </summary>
         /// <param name="client">The HttpClient</param>
         /// <param name="editionId">Optional id of the edition to be cloned</param>
@@ -116,10 +161,12 @@ namespace SQE.ApiTest.Helpers
         /// <param name="userAuthDetails">User object with the user login credentials</param>
         /// <returns>The ID of the new edition</returns>
         public static async Task<uint> CreateCopyOfEdition(HttpClient client,
-            uint editionId = 1,
+            uint editionId = 0,
             string name = "",
             Request.UserAuthDetails userAuthDetails = null)
         {
+            if (editionId == 0)
+                editionId = GetEditionId();
             if (string.IsNullOrEmpty(name)) name = "test-name-" + editionCount;
 
             var newScrollRequest = new Post.V1_Editions_EditionId(editionId, new EditionCopyDTO(name, null, null));

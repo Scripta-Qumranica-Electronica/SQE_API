@@ -72,13 +72,12 @@ namespace SQE.ApiTest
             return textFragments;
         }
 
-        private async Task<(uint editionId, TextFragmentDataListDTO textFragments)> _createEditionWithTextFragments()
+        private async Task<(uint editionId, TextFragmentDataListDTO textFragments)> _createEditionWithTextFragments(
+            EditionHelpers.EditionCreator editionCreator)
         {
+            // TODO make this disposable, and use using (we want to delete the new edition regardless of test success)
             var editionId =
-                await EditionHelpers.CreateCopyOfEdition(
-                    _client,
-                    EditionHelpers.GetEditionId()
-                ); // Get a newly cloned edition
+                await editionCreator.CreateEdition(); // Get a newly cloned edition
             var textFragments =
                 await _getEditionTextFragments(editionId, true); // Get all the text fragments in the edition
             return (editionId, textFragments);
@@ -167,7 +166,6 @@ namespace SQE.ApiTest
 
             var editorIds = new List<uint> { msg.editorId };
             foreach (var sign in msg.signs)
-            {
                 foreach (var signInterpretation in sign.signInterpretations)
                 {
                     foreach (var attr in signInterpretation.attributes)
@@ -182,7 +180,6 @@ namespace SQE.ApiTest
                         if (!msg.editors.ContainsKey(nexSign.editorId))
                             editorIds.Add(nexSign.editorId);
                 }
-            }
 
             Assert.NotEmpty(editorIds);
             foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId));
@@ -237,7 +234,6 @@ namespace SQE.ApiTest
                         editorIds.Add(line.editorId);
 
                     foreach (var sign in line.signs)
-                    {
                         foreach (var signInterpretation in sign.signInterpretations)
                         {
                             foreach (var attr in signInterpretation.attributes)
@@ -252,7 +248,6 @@ namespace SQE.ApiTest
                                 if (!msg.editors.ContainsKey(nexSign.editorId))
                                     editorIds.Add(nexSign.editorId);
                         }
-                    }
                 }
             }
 
@@ -263,192 +258,198 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanAddTextFragmentAfter()
         {
-            // Arrange
-            var (editionId, textFragments) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my can add after col";
-            var previousFragmentId =
-                textFragments.textFragments.First().id; // We will make the new text fragment number two
-            var numberOfTextFragments = textFragments.textFragments.Count;
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "my can add after col";
+                var previousFragmentId =
+                    textFragments.textFragments.First().id; // We will make the new text fragment number two
+                var numberOfTextFragments = textFragments.textFragments.Count;
 
-            // Act
-            var newTextFragmentRequestObject = new Post.V1_Editions_EditionId_TextFragments(
-                editionId,
-                new CreateTextFragmentDTO
-                {
-                    previousTextFragmentId = previousFragmentId,
-                    name = textFragmentName,
-                    nextTextFragmentId = null
-                }
-            );
-            var (response, msg, _, _) = await Request.Send(
-                newTextFragmentRequestObject,
-                _client,
-                null,
-                auth: true,
-                deterministic: false
-            );
-
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
-            var updatedTextFragments =
-                await _getEditionTextFragments(
+                // Act
+                var newTextFragmentRequestObject = new Post.V1_Editions_EditionId_TextFragments(
                     editionId,
-                    true
-                ); // Get the updated list of text fragments in the edition
-            Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-            var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
-            Assert.Equal(1, index); //Index 1 would be the second position
-            Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
-            Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
-            Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+                    new CreateTextFragmentDTO
+                    {
+                        previousTextFragmentId = previousFragmentId,
+                        name = textFragmentName,
+                        nextTextFragmentId = null
+                    }
+                );
+                var (response, msg, _, _) = await Request.Send(
+                    newTextFragmentRequestObject,
+                    _client,
+                    null,
+                    auth: true,
+                    deterministic: false
+                );
 
-            // Make sure that nothing else has changed to the pre-existing text fragments
-            for (var i = 0; i < textFragments.textFragments.Count; i++)
-                textFragments.textFragments[i]
-                    .ShouldDeepEqual(
-                        updatedTextFragments.textFragments[
-                            i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
-                        ]
-                    );
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                Assert.Equal(1, index); //Index 1 would be the second position
+                Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i]
+                        .ShouldDeepEqual(
+                            updatedTextFragments.textFragments[
+                                i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
+                            ]
+                        );
+            }
         }
 
         [Fact]
         public async Task CanAddTextFragmentBefore()
         {
-            // Arrange
-            var (editionId, textFragments) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my can add before col";
-            var nextFragmentId =
-                textFragments.textFragments.Last().id; // We will make the new text fragment second to last
-            var numberOfTextFragments = textFragments.textFragments.Count;
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "my can add before col";
+                var nextFragmentId =
+                    textFragments.textFragments.Last().id; // We will make the new text fragment second to last
+                var numberOfTextFragments = textFragments.textFragments.Count;
 
-            // Act
-            var newTextFragmentRequestObject = new Post.V1_Editions_EditionId_TextFragments(
-                editionId,
-                new CreateTextFragmentDTO
-                {
-                    previousTextFragmentId = null,
-                    name = textFragmentName,
-                    nextTextFragmentId = nextFragmentId
-                }
-            );
-            var (response, msg, _, _) = await Request.Send(
-                newTextFragmentRequestObject,
-                _client,
-                null,
-                auth: true,
-                deterministic: false
-            );
-
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
-            var updatedTextFragments =
-                await _getEditionTextFragments(
+                // Act
+                var newTextFragmentRequestObject = new Post.V1_Editions_EditionId_TextFragments(
                     editionId,
-                    true
-                ); // Get the updated list of text fragments in the edition
-            Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-            var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
-            Assert.Equal(updatedTextFragments.textFragments.Count - 2, index); // Check that it is second to last
-            Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
-            Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
-            Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+                    new CreateTextFragmentDTO
+                    {
+                        previousTextFragmentId = null,
+                        name = textFragmentName,
+                        nextTextFragmentId = nextFragmentId
+                    }
+                );
+                var (response, msg, _, _) = await Request.Send(
+                    newTextFragmentRequestObject,
+                    _client,
+                    null,
+                    auth: true,
+                    deterministic: false
+                );
 
-            // Make sure that nothing else has changed to the pre-existing text fragments
-            for (var i = 0; i < textFragments.textFragments.Count; i++)
-                textFragments.textFragments[i]
-                    .ShouldDeepEqual(
-                        updatedTextFragments.textFragments[
-                            i > updatedTextFragments.textFragments.Count - 3
-                                ? i + 1
-                                : i // skip the second to last, which is the new text fragment
-                        ]
-                    );
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                Assert.Equal(updatedTextFragments.textFragments.Count - 2, index); // Check that it is second to last
+                Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i]
+                        .ShouldDeepEqual(
+                            updatedTextFragments.textFragments[
+                                i > updatedTextFragments.textFragments.Count - 3
+                                    ? i + 1
+                                    : i // skip the second to last, which is the new text fragment
+                            ]
+                        );
+            }
         }
 
         [Fact]
         public async Task CanAddTextFragmentBeforeAndAfter()
         {
-            // Arrange
-            var (editionId, textFragments) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my can add before and after col";
-            var previousFragmentId =
-                textFragments.textFragments.First().id; // We will make the new text fragment number two
-            var nextFragmentId = textFragments.textFragments[1].id; // We get the next one in sequence
-            var numberOfTextFragments = textFragments.textFragments.Count;
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                {
+                    const string textFragmentName = "my can add before and after col";
+                    var previousFragmentId =
+                        textFragments.textFragments.First().id; // We will make the new text fragment number two
+                    var nextFragmentId = textFragments.textFragments[1].id; // We get the next one in sequence
+                    var numberOfTextFragments = textFragments.textFragments.Count;
 
-            // Act
-            var (response, msg) = await _createTextFragment(
-                editionId,
-                textFragmentName,
-                previousTextFragmentId: previousFragmentId,
-                nextTextFragmentId: nextFragmentId
-            );
-
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
-            var updatedTextFragments =
-                await _getEditionTextFragments(
-                    editionId,
-                    true
-                ); // Get the updated list of text fragments in the edition
-            Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-            var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
-            Assert.Equal(1, index); //Index 1 would be the second position
-            Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
-            Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
-            Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
-
-            // Make sure that nothing else has changed to the pre-existing text fragments
-            for (var i = 0; i < textFragments.textFragments.Count; i++)
-                textFragments.textFragments[i]
-                    .ShouldDeepEqual(
-                        updatedTextFragments.textFragments[
-                            i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
-                        ]
+                    // Act
+                    var (response, msg) = await _createTextFragment(
+                        editionId,
+                        textFragmentName,
+                        previousTextFragmentId: previousFragmentId,
+                        nextTextFragmentId: nextFragmentId
                     );
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                    // Assert
+                    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                    Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
+                    var updatedTextFragments =
+                        await _getEditionTextFragments(
+                            editionId,
+                            true
+                        ); // Get the updated list of text fragments in the edition
+                    Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                    var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                    Assert.Equal(1, index); //Index 1 would be the second position
+                    Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
+                    Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
+                    Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+
+                    // Make sure that nothing else has changed to the pre-existing text fragments
+                    for (var i = 0; i < textFragments.textFragments.Count; i++)
+                        textFragments.textFragments[i]
+                            .ShouldDeepEqual(
+                                updatedTextFragments.textFragments[
+                                    i > 0 ? i + 1 : i // skip index 1, which is the new text fragment
+                                ]
+                            );
+                }
+            }
         }
 
         [Fact]
         public async Task CanAddTextFragmentToEnd()
         {
-            // Arrange
-            var (editionId, textFragments) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my new can add to end col";
-            var numberOfTextFragments = textFragments.textFragments.Count;
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "my new can add to end col";
+                var numberOfTextFragments = textFragments.textFragments.Count;
 
-            // Act
-            var (_, msg) = await _createTextFragment(
-                editionId,
-                textFragmentName,
-                realtime: true
-            );
-
-            // Assert
-            Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
-            var updatedTextFragments =
-                await _getEditionTextFragments(
+                // Act
+                var (_, msg) = await _createTextFragment(
                     editionId,
-                    true
-                ); // Get the updated list of text fragments in the edition
-            Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-            Assert.Equal(msg.id, updatedTextFragments.textFragments.Last().id);
-            Assert.Equal(msg.name, updatedTextFragments.textFragments.Last().name);
-            Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+                    textFragmentName,
+                    realtime: true
+                );
 
-            for (var i = 0; i < textFragments.textFragments.Count; i++)
-                textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                // Assert
+                Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                Assert.Equal(msg.id, updatedTextFragments.textFragments.Last().id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments.Last().name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+            }
         }
 
         [Fact]
@@ -537,171 +538,176 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotAddTextFragmentAfterTextFragmentNotInEdition()
         {
-            // Arrange
-            var (editionId, textFragments) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my can add after col";
-            const uint previousFragmentId = 0; // There is no text fragments 0 possible
-            var numberOfTextFragments = textFragments.textFragments.Count;
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "my can add after col";
+                const uint previousFragmentId = 0; // There is no text fragments 0 possible
+                var numberOfTextFragments = textFragments.textFragments.Count;
 
-            // Act
-            var (response, msg) = await _createTextFragment(
-                editionId,
-                textFragmentName,
-                previousTextFragmentId: previousFragmentId,
-                shouldSucceed: false
-            );
-
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            var updatedTextFragments =
-                await _getEditionTextFragments(
+                // Act
+                var (response, msg) = await _createTextFragment(
                     editionId,
-                    true
-                ); // Get the list of text fragments in the edition again
-            Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+                    textFragmentName,
+                    previousTextFragmentId: previousFragmentId,
+                    shouldSucceed: false
+                );
 
-            // Make sure that nothing else has changed to the pre-existing text fragments
-            for (var i = 0; i < textFragments.textFragments.Count; i++)
-                textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the list of text fragments in the edition again
+                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+            }
         }
 
         [Fact]
         public async Task CannotAddTextFragmentBeforeTextFragmentNotInEdition()
         {
-            // Arrange
-            var (editionId, textFragments) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my can add after col";
-            const uint nextFragmentId = 0; // There is no text fragments 0 possible
-            var numberOfTextFragments = textFragments.textFragments.Count;
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "my can add after col";
+                const uint nextFragmentId = 0; // There is no text fragments 0 possible
+                var numberOfTextFragments = textFragments.textFragments.Count;
 
-            // Act
-            var (response, msg) = await _createTextFragment(
-                editionId,
-                textFragmentName,
-                nextTextFragmentId: nextFragmentId,
-                shouldSucceed: false
-            );
-
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            var updatedTextFragments =
-                await _getEditionTextFragments(
+                // Act
+                var (response, msg) = await _createTextFragment(
                     editionId,
-                    true
-                ); // Get the list of text fragments in the edition again
-            Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+                    textFragmentName,
+                    nextTextFragmentId: nextFragmentId,
+                    shouldSucceed: false
+                );
 
-            // Make sure that nothing else has changed to the pre-existing text fragments
-            for (var i = 0; i < textFragments.textFragments.Count; i++)
-                textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the list of text fragments in the edition again
+                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+            }
         }
 
         [Fact]
         public async Task CannotAddTextFragmentBetweenNonSequentialTextFragments()
         {
-            // Arrange
-            var (editionId, textFragments) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my can add after col";
-            var nextFragmentId = textFragments.textFragments.First().id; // We get these out of order
-            var previousFragmentId = textFragments.textFragments[1].id; // We get these out of order
-            var numberOfTextFragments = textFragments.textFragments.Count;
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "my can add after col";
+                var nextFragmentId = textFragments.textFragments.First().id; // We get these out of order
+                var previousFragmentId = textFragments.textFragments[1].id; // We get these out of order
+                var numberOfTextFragments = textFragments.textFragments.Count;
 
-            // Act
-            var (response, msg) = await _createTextFragment(
-                editionId,
-                textFragmentName,
-                nextTextFragmentId: nextFragmentId,
-                previousTextFragmentId: previousFragmentId,
-                shouldSucceed: false
-            );
-
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            var updatedTextFragments =
-                await _getEditionTextFragments(
+                // Act
+                var (response, msg) = await _createTextFragment(
                     editionId,
-                    true
-                ); // Get the list of text fragments in the edition again
-            Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+                    textFragmentName,
+                    nextTextFragmentId: nextFragmentId,
+                    previousTextFragmentId: previousFragmentId,
+                    shouldSucceed: false
+                );
 
-            // Make sure that nothing else has changed to the pre-existing text fragments
-            for (var i = 0; i < textFragments.textFragments.Count; i++)
-                textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the list of text fragments in the edition again
+                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+            }
         }
 
         [Fact]
         public async Task CannotAddTextFragmentWithoutPermission()
         {
-            // Arrange
-            var (editionId, _) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my new can add to end col";
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "my new can add to end col";
 
-            // Act
-            var (response, msg) = await _createTextFragment(
-                editionId,
-                textFragmentName,
-                authenticated: false,
-                shouldSucceed: false
-            );
+                // Act
+                var (response, msg) = await _createTextFragment(
+                    editionId,
+                    textFragmentName,
+                    authenticated: false,
+                    shouldSucceed: false
+                );
 
-            // Assert
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                // Assert
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            }
         }
 
         [Fact]
         public async Task CanNotAddTwoTextFragmentsWithTheSameName()
         {
-            // Arrange
-            var (editionId, textFragments) = await _createEditionWithTextFragments();
-            const string textFragmentName = "my new can add to end col";
-            var numberOfTextFragments = textFragments.textFragments.Count;
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "my new can add to end col";
+                var numberOfTextFragments = textFragments.textFragments.Count;
 
-            // Act
-            var (response, msg) = await _createTextFragment(
-                editionId,
-                textFragmentName
-            );
+                // Act
+                var (response, msg) = await _createTextFragment(
+                    editionId,
+                    textFragmentName
+                );
 
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
-            var updatedTextFragments =
-                await _getEditionTextFragments(
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the updated list of text fragments in the edition
+                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+                Assert.Equal(msg.id, updatedTextFragments.textFragments.Last().id);
+                Assert.Equal(msg.name, updatedTextFragments.textFragments.Last().name);
+                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+
+                // Act
+                (response, msg) = await _createTextFragment(
+                    editionId,
+                    textFragmentName,
+                    false
+                );
+
+                // Assert
+                Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+                var secondUpdateTextFragments = await _getEditionTextFragments(
                     editionId,
                     true
                 ); // Get the updated list of text fragments in the edition
-            Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-            Assert.Equal(msg.id, updatedTextFragments.textFragments.Last().id);
-            Assert.Equal(msg.name, updatedTextFragments.textFragments.Last().name);
-            Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
-
-            for (var i = 0; i < textFragments.textFragments.Count; i++)
-                textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
-
-            // Act
-            (response, msg) = await _createTextFragment(
-                editionId,
-                textFragmentName,
-                false
-            );
-
-            // Assert
-            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-            var secondUpdateTextFragments = await _getEditionTextFragments(
-                editionId,
-                true
-            ); // Get the updated list of text fragments in the edition
-            updatedTextFragments.textFragments.ShouldDeepEqual(secondUpdateTextFragments.textFragments);
-
-            await EditionHelpers.DeleteEdition(_client, editionId);
+                updatedTextFragments.textFragments.ShouldDeepEqual(secondUpdateTextFragments.textFragments);
+            }
         }
 
         // TODO: authenticated retrieval and blocking of unauthorized requests

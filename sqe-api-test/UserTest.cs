@@ -283,20 +283,25 @@ namespace SQE.ApiTest
             );
             var loginDetails = await Login(user);
 
-            // Act 
-            var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
-                _client,
-                HttpMethod.Put,
-                baseUrl,
-                newDetails,
-                loginDetails.token
-            );
+            try
+            {
+                // Act 
+                var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
+                    _client,
+                    HttpMethod.Put,
+                    baseUrl,
+                    newDetails,
+                    loginDetails.token
+                );
 
-            // Assert
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-
-            // Cleanup
-            await CleanupUserAccountAsync(loginDetails);
+                // Assert
+                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            }
+            finally
+            {
+                // Cleanup
+                await CleanupUserAccountAsync(loginDetails);
+            }
         }
 
         /// <summary>
