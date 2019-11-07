@@ -27,6 +27,15 @@ declare -A SETTINGS=(
     [MinimumLevel]=${API_LOGLEVEL}
     [Microsoft]=${DOTNET_LOGLEVEL}
     [System]=${SYSTEM_LOGLEVEL}
+    
+    ## Redis SignalR backplane settings
+    [UseRedis]=${USE_REDIS}
+    [RedisHost]=${REDIS_HOST} 
+    [RedisPort]=${REDIS_PORT} 
+    [RedisPassword]=${REDIS_PASSWORD}
+    
+    ## Server protocol support options
+    [HttpServer]=${Http_Server}
 )
 
 ## Iterate over each setting and update appsettings.json if the environment variable has a value

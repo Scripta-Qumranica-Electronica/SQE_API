@@ -7,28 +7,28 @@ function check_docker_vars
 {
     grep -n '\-[[:space:]]'"${1}"'=[^$]' docker/deploy/docker-compose.yml
     if [[ "$?" == 0 ]]; then 
-        echo "Please remove the custom settings for ${1} from docker/deploy/docker-compose.yml"
-        echo "The line should be:"
-        echo "#- ${1}="
+        printf "\e[31mPlease remove the custom settings for ${1} from docker/deploy/docker-compose.yml\n"
+        printf "The line should be:\n"
+        printf "#- ${1}=\e[0m\n"
         exit 1
     fi
 }
 
 function check_appsettings_vars
 {
-    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-http-api/appsettings.json 
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-server/appsettings.json 
     if [[ "$?" == 0 ]]; then 
-        echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.json"
-        echo "The line should be:"
-        echo "\"${1}\": \"\","
+        printf "\e[31mPlease remove the custom settings for ${1} from sqe-api-server/appsettings.json\n"
+        printf "The line should be:\n"
+        printf "\"${1}\": \"\",\e[0m\n"
         exit 1
     fi
     
-    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-http-api/appsettings.Development.json 
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-server/appsettings.Development.json 
     if [[ "$?" == 0 ]]; then 
-        echo "Please remove the custom settings for ${1} from sqe-http-api/appsettings.Development.json"
-        echo "The line should be:"
-        echo "\"${1}\": \"\","
+        printf "\e[31mPlease remove the custom settings for ${1} from sqe-api-server/appsettings.Development.json\n"
+        printf "The line should be:\n"
+        printf "\"${1}\": \"\",\e[0m\n"
         exit 1
     fi
 }
@@ -42,13 +42,28 @@ check_docker_vars "MAILER_EMAIL_SMTP_URL"
 check_docker_vars "MAILER_EMAIL_SMTP_PORT"
 check_docker_vars "WEBSITE_HOST"
 
-## Checking for custom settings in sqe-http-api/appsettings.json
-echo "Checking for private data in sqe-http-api/appsettings.json"
+## Checking for custom settings in sqe-api-server/appsettings.json
+echo "Checking for private data in sqe-api-server/appsettings.json"
 check_appsettings_vars "MailerEmailAddress"
 check_appsettings_vars "MailerEmailUsername"
 check_appsettings_vars "MailerEmailPassword"
 check_appsettings_vars "MailerEmailSmtpUrl"
 check_appsettings_vars "MailerEmailSmtpPort"
+
+## We autogenerate the Hub methods from the Controllers
+function generate_hubs
+{
+    dotnet run --project sqe-realtime-hub-builder/sqe-realtime-hub-builder.csproj
+    if [[ "$?" != 0 ]]; then 
+        printf "\e[31mThere are errors in the HTTP controllers in 'sqe-api-server/HttpControllers'.\n"
+        printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
+        exit 1
+    fi
+}
+
+## Generating Hub Methods
+echo "Autogenerating realtime Hub methods"
+generate_hubs
 
 ## We run the "linter" to ensure the code remains formatted consistently
 function cleanup_code
@@ -69,8 +84,13 @@ cleanup_code
 function generate_ts_from_dtos
 {
     dotnet build Utilities/GenerateTypescriptDTOs
-    dotnet build sqe-dtos
-    dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp2.2/GenerateTypescriptDTOs.dll sqe-dtos/bin/Debug/netcoreapp2.2/sqe-dtos.dll ts-dtos/sqe-dtos.ts 
+    dotnet build sqe-dto
+    dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp2.2/GenerateTypescriptDTOs.dll sqe-dto/bin/Debug/netcoreapp2.2/sqe-dto.dll ts-dtos/sqe-dtos.ts
+    if [[ "$?" != 0 ]]; then 
+        printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
+        printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
+        exit 1
+    fi 
 }
 
 ## Generating typescript definitions
@@ -79,3 +99,11 @@ generate_ts_from_dtos
 
 ## Now add any updated files
 git add -A
+
+if [[ "$?" == 0 ]]; then 
+    printf "\e[32mAll files have been succesfully checked.\e[0m\n\n"
+    exit 0
+else
+    printf "\e[31mAn error occured adding the files for commit.\e[0m\n\n"
+    exit 1
+fi

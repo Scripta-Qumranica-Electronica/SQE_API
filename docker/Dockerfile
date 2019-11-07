@@ -7,22 +7,22 @@ EXPOSE 80
 FROM microsoft/dotnet:2.2-sdk AS build
 WORKDIR /src
 
-COPY ./sqe-http-api/sqe-http-api.csproj ./sqe-http-api/
-COPY ./data-access/data-access.csproj ./data-access/
-COPY ./sqe-dtos/sqe-dtos.csproj ./sqe-dtos/
+COPY ./sqe-api-server/sqe-api-server.csproj ./sqe-api-server/
+COPY ./sqe-database-access/sqe-database-access.csproj ./sqe-database-access/
+COPY ./sqe-dto/sqe-dto.csproj ./sqe-dto/
 
-RUN dotnet restore "sqe-http-api/sqe-http-api.csproj"
+RUN dotnet restore "sqe-api-server/sqe-api-server.csproj"
 
-WORKDIR /src/sqe-http-api
+WORKDIR /src/sqe-api-server
 
-COPY ./sqe-http-api /src/sqe-http-api
-COPY ./data-access /src/data-access
-COPY ./sqe-dtos /src/sqe-dtos
+COPY ./sqe-api-server /src/sqe-api-server
+COPY ./sqe-database-access /src/sqe-database-access
+COPY ./sqe-dto /src/sqe-dto
 
-RUN dotnet build "sqe-http-api.csproj" -c Release -o /app
+RUN dotnet build "sqe-api-server.csproj" -c Release -o /app
 
 FROM build AS publish
-RUN dotnet publish "sqe-http-api.csproj" -c Release -o /app
+RUN dotnet publish "sqe-api-server.csproj" -c Release -o /app
 
 FROM base AS final
 WORKDIR /app
@@ -31,4 +31,4 @@ COPY --from=publish /app .
 # startup.sh picks up settings in environment variables and inserts them
 # into appsettings.json before the program runs.
 COPY ./startup.sh .
-ENTRYPOINT ["/app/startup.sh", "dotnet", "sqe-http-api.dll"]
+ENTRYPOINT ["/app/startup.sh", "dotnet", "sqe-api-server.dll"]
