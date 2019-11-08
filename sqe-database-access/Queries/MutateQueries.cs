@@ -31,12 +31,14 @@ WHERE NOT EXISTS
     // above, but that would mysteriously set the last insert id to something incorrect every other time I ran the
     // query.  Thus, I need to run this after OwnedTableInsertQuery in order to get the correct primary key id.
     // So the cost for not trusting ON DUPLICATE KEY UPDATE is two extra queries (the subquery above and this one here).
+    // Note that the NULL-safe equal to operator must be used here, because we don't want duplicate entries due to 
+    // null values (also, this overcomes the limitations of the unique constraints, since nulls are not unique).
     internal static class OwnedTableIdQuery
     {
         public static string GetQuery { get; } = @"
 SELECT $PrimaryKeyName
 FROM $TableName
-WHERE ($Columns) = ($Values)
+WHERE ($Columns) <=> ($Values)
 LIMIT 1
 ";
     }
