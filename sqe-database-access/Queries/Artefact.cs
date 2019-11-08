@@ -39,6 +39,7 @@ FROM artefact_shape_owner
 	
 	LEFT JOIN artefact_status ON artefact_status.artefact_id = artefact_shape.artefact_id
 	LEFT JOIN artefact_status_owner ON artefact_status_owner.artefact_status_id = artefact_status.artefact_status_id AND artefact_status_owner.edition_id = 1646
+	LEFT JOIN work_status USING(work_status_id)
 	
 	JOIN artefact_data ON artefact_data.artefact_id = artefact_shape.artefact_id
 	JOIN artefact_data_owner ON artefact_data.artefact_data_id = artefact_data_owner.artefact_data_id
