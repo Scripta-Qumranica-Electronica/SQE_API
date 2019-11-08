@@ -11,36 +11,46 @@ namespace SQE.DatabaseAccess.Queries
     // in the database this query would still allow the (however unlikely) situation that two simultaneous transactions
     // could write the same x_id + edition_id, since the query in each transaction would not see the uncommitted
     // mutation from the other (we do not use ReadUncommitted).
-    // Note that the NULL-safe equal to operator must be used here, because we don't want duplicate entries due to 
-    // null values (also, this overcomes the limitations of the unique constraints, since nulls are not unique).
+    // Note that the NULL-safe equal to operator must be used here if we try to insert any null values, because we don't
+    // want duplicate entries due to null values (also, this overcomes the limitations of the unique constraints, since
+    // nulls are not unique). This must be checked upon usage of this query. You will have severe performance problems 
+    // if you have tables with geometry and nullable items. Don't do that!
     internal static class OwnedTableInsertQuery
     {
-        public static string GetQuery { get; } = @"
+        public static string GetQuery(bool hasNulls)
+        {
+            return $@"
 INSERT INTO $TableName ($Columns)
 SELECT $Values
 FROM dual
 WHERE NOT EXISTS
   ( SELECT $Columns                 # This is basically an adhoc uniqueness constraint, which Itay wants to protect
     FROM $TableName                 # against any database schema updates that fail to set a proper uniqueness
-    WHERE ($Columns) <=> ($Values)    # constraint.  It is very fast if the proper uniqueness constraint already exists.
+    WHERE ($Columns) {(hasNulls ? "<=>": "=")} ($Values)    # constraint.  It is very fast if the proper uniqueness constraint already exists.
   ) LIMIT 1
 ";
+        }
     }
 
     // I wanted to do something really clever, which was to use SELECT LAST_INSERT_ID(@PrimaryKeyName) in the subquery
     // above, but that would mysteriously set the last insert id to something incorrect every other time I ran the
     // query.  Thus, I need to run this after OwnedTableInsertQuery in order to get the correct primary key id.
     // So the cost for not trusting ON DUPLICATE KEY UPDATE is two extra queries (the subquery above and this one here).
-    // Note that the NULL-safe equal to operator must be used here, because we don't want duplicate entries due to 
-    // null values (also, this overcomes the limitations of the unique constraints, since nulls are not unique).
+    // Note that the NULL-safe equal to operator must be used here if we try to insert any null values, because we don't
+    // want duplicate entries due to null values (also, this overcomes the limitations of the unique constraints, since
+    // nulls are not unique). This must be checked upon usage of this query. You will have severe performance problems 
+    // if you have tables with geometry and nullable items. Don't do that!
     internal static class OwnedTableIdQuery
     {
-        public static string GetQuery { get; } = @"
+        public static string GetQuery(bool hasNulls)
+        {
+            return $@"
 SELECT $PrimaryKeyName
 FROM $TableName
-WHERE ($Columns) <=> ($Values)
+WHERE ($Columns) {(hasNulls ? "<=>": "=")} ($Values)
 LIMIT 1
-";
+";     
+        } 
     }
 
     internal static class OwnerTableInsertQuery

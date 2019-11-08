@@ -264,7 +264,9 @@ namespace SQE.DatabaseAccess.Helpers
         private static async Task<uint> InsertOwnedTableAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
             // Format query
-            var query = OwnedTableInsertQuery.GetQuery;
+            var hasNulls = (mutationRequest.Parameters.ParameterNames.Any(x =>
+                ((SqlMapper.IParameterLookup) mutationRequest.Parameters)[x] == null));
+            var query = OwnedTableInsertQuery.GetQuery(hasNulls);
             query = query.Replace("$TableName", mutationRequest.TableName);
             query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
             query = query.Replace(
@@ -286,7 +288,7 @@ namespace SQE.DatabaseAccess.Helpers
             if (alteredRecords == 0) // Nothing was inserted because the exact record already existed.
             {
                 // Get id of new record (or the record matching the unique constraints of this request).
-                query = OwnedTableIdQuery.GetQuery;
+                query = OwnedTableIdQuery.GetQuery(hasNulls);
                 query = query.Replace("$TableName", mutationRequest.TableName);
                 query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
                 query = query.Replace(
@@ -301,6 +303,7 @@ namespace SQE.DatabaseAccess.Helpers
                     )
                 );
                 query = query.Replace("$PrimaryKeyName", mutationRequest.TableName + "_id");
+                
                 insertId = await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
             }
             else // A new record was inserted.
