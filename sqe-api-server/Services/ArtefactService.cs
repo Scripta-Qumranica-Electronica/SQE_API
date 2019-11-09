@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -32,8 +33,9 @@ namespace SQE.API.Server.Services
             string clientId = null);
 
         Task<NoContentResult> DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId, string clientId = null);
-        Task<TextFragmentDataListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
-        Task<TextFragmentDataListDTO> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
+        Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
+            uint artefactId,
+            List<string> optional);
     }
 
     public class ArtefactService : IArtefactService
@@ -51,7 +53,7 @@ namespace SQE.API.Server.Services
             uint artefactId,
             List<string> optional)
         {
-            ParseOptionals(optional, out _, out var withMask);
+            ParseImageMaskOptionals(optional, out _, out var withMask);
             var artefact = await _artefactRepository.GetEditionArtefactAsync(editionUser, artefactId, withMask);
             return ArtefactDTOTransformer.QueryArtefactToArtefactDTO(artefact, editionUser.EditionId);
         }
@@ -59,7 +61,7 @@ namespace SQE.API.Server.Services
         public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(EditionUserInfo editionUser,
             List<string> optional)
         {
-            ParseOptionals(optional, out var withImages, out var withMask);
+            ParseImageMaskOptionals(optional, out var withImages, out var withMask);
             ArtefactListDTO artefacts;
             if (withImages)
             {
@@ -191,33 +193,47 @@ namespace SQE.API.Server.Services
             return new NoContentResult();
         }
 
-        public async Task<TextFragmentDataListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
+            uint artefactId,
+            List<string> optional)
+        {
+            ParseTextFragmentOptionals(optional, out var suggestedResults);
+
+            var realMatches = new ArtefactTextFragmentMatchListDTO(
+                (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
+                .Select(x => new ArtefactTextFragmentMatchDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId, false))
+                .ToList()
+            );
+            if (!suggestedResults) return realMatches;
+
+            var suggestedMatches = await _artefactSuggestedTextFragmentsAsync(editionUser, artefactId);
+            realMatches.textFragments.AddRange(suggestedMatches.textFragments);
+            return realMatches;
+        }
+
+        private async Task<ArtefactTextFragmentMatchListDTO> _artefactSuggestedTextFragmentsAsync(
+            EditionUserInfo editionUser,
             uint artefactId)
         {
-            return new TextFragmentDataListDTO(
+            return new ArtefactTextFragmentMatchListDTO(
                 (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
-                .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId))
+                .Select(x => new ArtefactTextFragmentMatchDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId, true))
                 .ToList()
             );
         }
 
-        public async Task<TextFragmentDataListDTO> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser,
-            uint artefactId)
-        {
-            return new TextFragmentDataListDTO(
-                (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
-                .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId))
-                .ToList()
-            );
-        }
-
-        private static void ParseOptionals(List<string> optionals, out bool images, out bool masks)
+        private static void ParseImageMaskOptionals(List<string> optionals, out bool images, out bool masks)
         {
             images = masks = false;
             if (optionals == null)
                 return;
             images = optionals.Contains("images");
             masks = optionals.Contains("masks");
+        }
+
+        private static void ParseTextFragmentOptionals(List<string> optionals, out bool suggestedResults)
+        {
+            suggestedResults = optionals.Contains("suggested");
         }
     }
 }

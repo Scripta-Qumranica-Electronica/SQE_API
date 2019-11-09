@@ -265,7 +265,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             // Format query
             var hasNulls = (mutationRequest.Parameters.ParameterNames.Any(x =>
-                ((SqlMapper.IParameterLookup) mutationRequest.Parameters)[x] == null));
+                ((SqlMapper.IParameterLookup)mutationRequest.Parameters)[x] == null));
             var query = OwnedTableInsertQuery.GetQuery(hasNulls);
             query = query.Replace("$TableName", mutationRequest.TableName);
             query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
@@ -303,7 +303,7 @@ namespace SQE.DatabaseAccess.Helpers
                     )
                 );
                 query = query.Replace("$PrimaryKeyName", mutationRequest.TableName + "_id");
-                
+
                 insertId = await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
             }
             else // A new record was inserted.

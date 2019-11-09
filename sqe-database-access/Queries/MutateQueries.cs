@@ -26,7 +26,7 @@ FROM dual
 WHERE NOT EXISTS
   ( SELECT $Columns                 # This is basically an adhoc uniqueness constraint, which Itay wants to protect
     FROM $TableName                 # against any database schema updates that fail to set a proper uniqueness
-    WHERE ($Columns) {(hasNulls ? "<=>": "=")} ($Values)    # constraint.  It is very fast if the proper uniqueness constraint already exists.
+    WHERE ($Columns) {(hasNulls ? "<=>" : "=")} ($Values)    # constraint.  It is very fast if the proper uniqueness constraint already exists.
   ) LIMIT 1
 ";
         }
@@ -47,10 +47,10 @@ WHERE NOT EXISTS
             return $@"
 SELECT $PrimaryKeyName
 FROM $TableName
-WHERE ($Columns) {(hasNulls ? "<=>": "=")} ($Values)
+WHERE ($Columns) {(hasNulls ? "<=>" : "=")} ($Values)
 LIMIT 1
-";     
-        } 
+";
+        }
     }
 
     internal static class OwnerTableInsertQuery
