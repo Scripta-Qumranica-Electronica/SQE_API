@@ -301,10 +301,10 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             // Arrange
             const uint editionId = 894;
             const uint artefactId = 10058;
-            var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/suggested-text-fragments";
+            var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/text-fragments?optional=suggested";
 
             // Act
-            var (tfResponse, tfData) = await Request.SendHttpRequestAsync<string, TextFragmentDataListDTO>(
+            var (tfResponse, tfData) = await Request.SendHttpRequestAsync<string, ArtefactTextFragmentMatchListDTO>(
                 _client,
                 HttpMethod.Get,
                 path,
