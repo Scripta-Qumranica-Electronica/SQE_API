@@ -103,35 +103,22 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        ///     Provides a listing of text fragments that may match the specified artefact
+        ///     Provides a listing of text fragments that have text in the specified artefact.
+        ///     With the optional query parameter "suggested", this endpoint will also return
+        ///     any text fragment that the system suggests might have text in the artefact.
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
+        /// <param name="optional">Add "suggested" to include possible matches suggested by the system</param>
         [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/text-fragments")]
-        public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactTextFragments([FromRoute] uint editionId,
-            [FromRoute] uint artefactId)
+        public async Task<ActionResult<ArtefactTextFragmentMatchListDTO>> GetArtefactTextFragments([FromRoute] uint editionId,
+            [FromRoute] uint artefactId, [FromQuery] List<string> optional)
         {
             return await _artefactService.ArtefactTextFragmentsAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId),
-                artefactId
-            );
-        }
-
-        /// <summary>
-        ///     Provides a listing of text fragments that may match the specified artefact
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="artefactId">Unique Id of the desired artefact</param>
-        [AllowAnonymous]
-        [HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/suggested-text-fragments")]
-        public async Task<ActionResult<TextFragmentDataListDTO>> GetArtefactSuggestedTextFragments(
-            [FromRoute] uint editionId,
-            [FromRoute] uint artefactId)
-        {
-            return await _artefactService.ArtefactSuggestedTextFragmentsAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId),
-                artefactId
+                artefactId,
+                optional
             );
         }
 

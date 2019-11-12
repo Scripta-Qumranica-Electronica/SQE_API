@@ -74,25 +74,17 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
         /// <summary>
-        ///     Provides a listing of text fragments that may match the specified artefact
+        ///     Provides a listing of text fragments that have text in the specified artefact.
+        ///     With the optional query parameter "suggested", this endpoint will also return
+        ///     any text fragment that the system suggests might have text in the artefact.
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
+        /// <param name="optional">Add "suggested" to include possible matches suggested by the system</param>
         [AllowAnonymous]
-        public async Task<TextFragmentDataListDTO> GetV1EditionsEditionIdArtefactsArtefactIdTextFragments(uint editionId, uint artefactId)
+        public async Task<ArtefactTextFragmentMatchListDTO> GetV1EditionsEditionIdArtefactsArtefactIdTextFragments(uint editionId, uint artefactId, List<string> optional)
         {
-            return await _artefactService.ArtefactTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);
-        }
-
-        /// <summary>
-        ///     Provides a listing of text fragments that may match the specified artefact
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="artefactId">Unique Id of the desired artefact</param>
-        [AllowAnonymous]
-        public async Task<TextFragmentDataListDTO> GetV1EditionsEditionIdArtefactsArtefactIdSuggestedTextFragments(uint editionId, uint artefactId)
-        {
-            return await _artefactService.ArtefactSuggestedTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);
+            return await _artefactService.ArtefactTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId, optional);
         }
 
         /// <summary>

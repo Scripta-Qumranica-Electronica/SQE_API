@@ -217,8 +217,16 @@ export interface TextFragmentDataDTO {
     editorId: number;
 }
 
+export interface ArtefactTextFragmentMatchDTO extends TextFragmentDataDTO {
+    suggested: boolean;
+}
+
 export interface TextFragmentDataListDTO {
     textFragments: TextFragmentDataDTO[];
+}
+
+export interface ArtefactTextFragmentMatchListDTO {
+    textFragments: ArtefactTextFragmentMatchDTO[];
 }
 
 export interface TextFragmentDTO {
