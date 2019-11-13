@@ -60,7 +60,7 @@ services:
             - SYSTEM_LOGLEVEL=Warning # Leg level for system level messages
 
             ## Redis SignalR backplane settings for horizontal scaling of the realtime API (disabled by default)
-            - Use_Redis=false # Use a Redis backplane to horizontally scale the realtime API
+            - USE_REDIS=false # Use a Redis backplane to horizontally scale the realtime API
             #- REDIS_HOST=
             #- REDIS_PORT=
             #- REDIS_PASSWORD=

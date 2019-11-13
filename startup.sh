@@ -35,7 +35,7 @@ declare -A SETTINGS=(
     [RedisPassword]=${REDIS_PASSWORD}
     
     ## Server protocol support options
-    [HttpServer]=${Http_Server}
+    [HttpServer]=${HTTP_SERVER}
 )
 
 ## Iterate over each setting and update appsettings.json if the environment variable has a value

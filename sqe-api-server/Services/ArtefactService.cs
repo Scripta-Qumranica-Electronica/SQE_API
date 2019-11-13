@@ -199,7 +199,7 @@ namespace SQE.API.Server.Services
             ParseTextFragmentOptionals(optional, out var suggestedResults);
 
             var realMatches = new ArtefactTextFragmentMatchListDTO(
-                (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
+                (await _artefactRepository.ArtefactTextFragmentsAsync(editionUser, artefactId))
                 .Select(x => new ArtefactTextFragmentMatchDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId, false))
                 .ToList()
             );
