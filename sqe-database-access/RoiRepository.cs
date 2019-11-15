@@ -94,6 +94,7 @@ namespace SQE.DatabaseAccess
                 var createdRois = CreateRoisAsync(editionUser, newRois);
                 var updatedRois = UpdateRoisAsync(editionUser, updateRois);
                 var deletedRois = DeletRoisAsync(editionUser, deleteRois);
+                transactionScope.Complete();
                 return (createdRois, updatedRois, deletedRois);
             }
         }
