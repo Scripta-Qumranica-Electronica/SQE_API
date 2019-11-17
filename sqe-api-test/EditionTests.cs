@@ -888,5 +888,22 @@ namespace SQE.ApiTest
             Assert.True(msg2.name == name);
             Assert.True(msg2.id == editionId);
         }
-    }
+
+		/// <summary>
+		/// Test copy of copy of edition
+		/// </summary>
+		/// <returns></returns>
+		[Fact]
+		public async Task DuplicateCopy()
+		{
+			// ARRANGE
+			var bearerToken = await Request.GetJwtViaHttpAsync(_client);
+			var editionId = await EditionHelpers.CreateCopyOfEdition(_client, name: "first edition");
+			var secondEditionId = await EditionHelpers.CreateCopyOfEdition(_client, editionId, "second edition");
+
+			Assert.True(secondEditionId != null);
+
+		}
+
+	}
 }
