@@ -163,6 +163,17 @@ namespace SQE.DatabaseAccess
                 }
             }
 
+            // Right now we create all the new rows for the new edition
+            // in one transaction. The benefit of this is that if it fails
+            // for some reason, nothing is committed. The downside is that
+            // it is a long-running process, that touches many rows (thus
+            // locking them up). If we really do run into performance problems,
+            // consider writing each data table in its own transaction,
+            // and be prepared to DELETE all INSERTS in the case an unrecoverable
+            // failure is encountered. The danger of doing that is that you might
+            // end up with "orphaned" INSERTS in the case that the API crashes
+            // in the middle of such a procedure. Then you would need to periodically
+            // check the owner tables for these failed writes, which could be difficult.
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
