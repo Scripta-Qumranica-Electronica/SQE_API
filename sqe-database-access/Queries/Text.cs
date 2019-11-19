@@ -244,6 +244,21 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
    AND (edition.public = 1 OR edition_editor.user_id = @UserId)";
     }
 
+    internal static class TextFragmentAttributes
+    {
+        public const string GetQuery = @"
+SELECT DISTINCT attribute_value.attribute_value_id AS attributeValueId, REGEXP_REPLACE(LOWER(CONCAT(attribute.name, '-', attribute_value.string_value)), '[ _]', '-') AS attributeString
+FROM attribute_value
+JOIN attribute_value_owner 
+	ON attribute_value_owner.attribute_value_id = attribute_value.attribute_value_id 
+	AND attribute_value_owner.edition_id = @EditionId
+JOIN attribute USING(attribute_id)
+JOIN attribute_owner 
+	ON attribute_owner.attribute_id = attribute.attribute_id 
+	AND attribute_owner.edition_id = @EditionId
+";
+    }
+
     internal static class CreateTextFragment
     {
         public const string GetQuery = @"

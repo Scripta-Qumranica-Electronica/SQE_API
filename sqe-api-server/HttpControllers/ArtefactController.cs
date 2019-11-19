@@ -112,8 +112,10 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="optional">Add "suggested" to include possible matches suggested by the system</param>
         [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/[controller]s/{artefactId}/text-fragments")]
-        public async Task<ActionResult<ArtefactTextFragmentMatchListDTO>> GetArtefactTextFragments([FromRoute] uint editionId,
-            [FromRoute] uint artefactId, [FromQuery] List<string> optional)
+        public async Task<ActionResult<ArtefactTextFragmentMatchListDTO>> GetArtefactTextFragments(
+            [FromRoute] uint editionId,
+            [FromRoute] uint artefactId,
+            [FromQuery] List<string> optional)
         {
             return await _artefactService.ArtefactTextFragmentsAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId),

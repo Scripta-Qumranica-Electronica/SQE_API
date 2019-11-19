@@ -111,48 +111,6 @@ namespace SQE.ApiTest.Helpers
         }
 
         /// <summary>
-        /// This class can be used in a using block to clone an edition for tests. At the end of the using block,
-        /// it will automatically delete the newly created edition.
-        /// </summary>
-        public class EditionCreator : IDisposable
-        {
-            private uint _editionId { get; set; }
-            private readonly HttpClient _client;
-            private readonly string _name;
-            private readonly Request.UserAuthDetails _userAuthDetails;
-
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <param name="client">An http client connection</param>
-            /// <param name="editionId">The edition to clone (if blank, one will be selected automatically)</param>
-            /// <param name="name">Optional name for the new edition</param>
-            /// <param name="userAuthDetails">Optional user authentication details (if blank Request.DefaultUsers.User1
-            /// will be used)</param>
-            public EditionCreator(HttpClient client, uint editionId = 0, string name = "",
-                Request.UserAuthDetails userAuthDetails = null)
-            {
-                this._client = client;
-                this._name = name;
-                this._userAuthDetails = userAuthDetails;
-            }
-
-            public async Task<uint> CreateEdition()
-            {
-                _editionId = await CreateCopyOfEdition(_client, _editionId, _name, _userAuthDetails);
-                return _editionId;
-            }
-
-            public void Dispose()
-            {
-                // This seems to work properly even though it is an antipattern.
-                // There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
-                // Maybe using try/finally in the individual tests would ultimately be safer.
-                Task.Run(async () => await DeleteEdition(_client, _editionId, userAuthDetails: _userAuthDetails)).Wait();
-            }
-        }
-
-        /// <summary>
         ///     Creates a new edition. If no editionId is entered, one will be selected automatically for you.
         /// </summary>
         /// <param name="client">The HttpClient</param>
@@ -177,7 +135,8 @@ namespace SQE.ApiTest.Helpers
                 null,
                 user1: userAuthDetails ?? Request.DefaultUsers.User1,
                 auth: true,
-                deterministic: false
+                deterministic: false,
+                shouldSucceed: false
             );
             httpMsg.EnsureSuccessStatusCode();
             return httpResp.id;
@@ -222,6 +181,53 @@ namespace SQE.ApiTest.Helpers
                 );
                 response2.EnsureSuccessStatusCode();
                 Assert.Null(msg2);
+            }
+        }
+
+        /// <summary>
+        ///     This class can be used in a using block to clone an edition for tests. At the end of the using block,
+        ///     it will automatically delete the newly created edition.
+        /// </summary>
+        public class EditionCreator : IDisposable
+        {
+            private readonly HttpClient _client;
+            private readonly string _name;
+            private readonly Request.UserAuthDetails _userAuthDetails;
+
+            /// <summary>
+            /// </summary>
+            /// <param name="client">An http client connection</param>
+            /// <param name="editionId">The edition to clone (if blank, one will be selected automatically)</param>
+            /// <param name="name">Optional name for the new edition</param>
+            /// <param name="userAuthDetails">
+            ///     Optional user authentication details (if blank Request.DefaultUsers.User1
+            ///     will be used)
+            /// </param>
+            public EditionCreator(HttpClient client,
+                uint editionId = 0,
+                string name = "",
+                Request.UserAuthDetails userAuthDetails = null)
+            {
+                _client = client;
+                _name = name;
+                _userAuthDetails = userAuthDetails;
+            }
+
+            private uint _editionId { get; set; }
+
+            public void Dispose()
+            {
+                // This seems to work properly even though it is an antipattern.
+                // There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
+                // Maybe using try/finally in the individual tests would ultimately be safer.
+                Task.Run(async () => await DeleteEdition(_client, _editionId, userAuthDetails: _userAuthDetails))
+                    .Wait();
+            }
+
+            public async Task<uint> CreateEdition()
+            {
+                _editionId = await CreateCopyOfEdition(_client, _editionId, _name, _userAuthDetails);
+                return _editionId;
             }
         }
     }

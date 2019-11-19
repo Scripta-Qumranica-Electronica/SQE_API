@@ -23,9 +23,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Id of the edition</param>
         [Authorize]
         public async Task<TextFragmentDataDTO> PostV1EditionsEditionIdTextFragments(uint editionId, CreateTextFragmentDTO createFragment)
-        {
-            return await _textService.CreateTextFragmentAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), createFragment, clientId: Context.ConnectionId);
-        }
+        { return await _textService.CreateTextFragmentAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), createFragment, clientId: Context.ConnectionId); }
 
         /// <summary>
         ///     Retrieves the ids of all fragments in the given edition of a scroll
@@ -34,9 +32,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns>An array of the text fregment ids in correct sequence</returns>
         [AllowAnonymous]
         public async Task<TextFragmentDataListDTO> GetV1EditionsEditionIdTextFragments(uint editionId)
-        {
-            return await _textService.GetFragmentDataAsync(await _userService.GetCurrentUserObjectAsync(editionId));
-        }
+        { return await _textService.GetFragmentDataAsync(await _userService.GetCurrentUserObjectAsync(editionId)); }
 
         /// <summary>
         ///     Retrieves the ids of all lines in the given textFragmentName
@@ -46,9 +42,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns>An array of the line ids in the proper sequence</returns>
         [AllowAnonymous]
         public async Task<ArtefactDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(uint editionId, uint textFragmentId)
-        {
-            return await _textService.GetArtefactsAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId);
-        }
+        { return await _textService.GetArtefactsAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId); }
 
         /// <summary>
         ///     Retrieves the ids of all lines in the given textFragmentName
@@ -58,9 +52,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns>An array of the line ids in the proper sequence</returns>
         [AllowAnonymous]
         public async Task<LineDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines(uint editionId, uint textFragmentId)
-        {
-            return await _textService.GetLineIdsAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId);
-        }
+        { return await _textService.GetLineIdsAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId); }
 
         /// <summary>
         ///     Retrieves all signs and their data from the given textFragmentName
@@ -73,9 +65,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </returns>
         [AllowAnonymous]
         public async Task<TextEditionDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentId(uint editionId, uint textFragmentId)
-        {
-            return await _textService.GetFragmentByIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId);
-        }
+        { return await _textService.GetFragmentByIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId); }
 
         /// <summary>
         ///     Retrieves all signs and their data from the given line
@@ -88,9 +78,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </returns>
         [AllowAnonymous]
         public async Task<LineTextDTO> GetV1EditionsEditionIdLinesLineId(uint editionId, uint lineId)
-        {
-            return await _textService.GetLineByIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), lineId);
-        }
+        { return await _textService.GetLineByIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), lineId); }
 
     }
 }

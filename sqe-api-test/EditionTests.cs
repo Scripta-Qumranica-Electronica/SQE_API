@@ -30,248 +30,231 @@ namespace SQE.ApiTest
         public async Task CanAdminShareEdition()
         {
             // Arrange
-            const string user1Pwd = "pwd1";
-            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
-            const string user2Pwd = "pwd2";
-            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(
-                _client,
-                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var newPermissions = new EditorRightsDTO
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            try
             {
-                email = user2.email,
-                mayLock = true,
-                mayWrite = true,
-                isAdmin = true
-            };
+                var newPermissions = new EditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = true,
+                    mayWrite = true,
+                    isAdmin = true
+                };
 
-            // Act
-            var add1 = new Post.V1_Editions_EditionId_Editors(newEdition, newPermissions);
-            var (shareResponse, shareMsg, _, _) = await Request.Send(
-                add1,
-                _client,
-                null,
-                auth: true,
-                user1: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-
-            // Assert
-            Assert.True(shareMsg.mayRead);
-            Assert.True(shareMsg.mayWrite);
-            Assert.True(shareMsg.mayLock);
-            Assert.True(shareMsg.isAdmin);
-
-            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                var add1 = new Post.V1_Editions_EditionId_Editors(newEdition, newPermissions);
+                var (_, shareMsg, _, _) = await Request.Send(
+                    add1,
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
-            user1Resp.EnsureSuccessStatusCode();
+                    null,
+                    auth: true
+                );
 
-            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                // Assert
+                Assert.True(shareMsg.mayRead);
+                Assert.True(shareMsg.mayWrite);
+                Assert.True(shareMsg.mayLock);
+                Assert.True(shareMsg.isAdmin);
+
+                var get1 = new Get.V1_Editions_EditionId(newEdition);
+                var (_, user1Msg, _, _) = await Request.Send(
+                    get1,
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
-            user2Resp.EnsureSuccessStatusCode();
-            Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
-            Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
-            Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
-            Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
-            Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
-            Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
-            user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+                    null,
+                    auth: true
+                );
+
+                var (_, user2Msg, _, _) = await Request.Send(
+                    get1,
+                    _client,
+                    null,
+                    auth: true,
+                    user1: Request.DefaultUsers.User2
+                );
+                Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
+                Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
+                Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
+                Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
+                Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
+                Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
+                user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
         }
 
         [Fact]
         public async Task CanChangeEditionSharePermissions()
         {
             // Arrange
-            const string user1Pwd = "pwd1";
-            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
-            const string user2Pwd = "pwd2";
-            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(
-                _client,
-                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var newPermissions = new EditorRightsDTO
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
             {
-                email = user2.email,
-                mayLock = false,
-                mayWrite = false,
-                isAdmin = false
-            };
+                var newPermissions = new EditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = false,
+                    mayWrite = false,
+                    isAdmin = false
+                };
 
-            // Act
-            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Post,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                var add1 = new Post.V1_Editions_EditionId_Editors(newEdition, newPermissions);
+                var (_, shareMsg, _, _) = await Request.Send(
+                    add1,
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    null,
+                    auth: true
+                );
 
-            // Assert
-            shareResponse.EnsureSuccessStatusCode();
-            Assert.True(shareMsg.mayRead);
-            Assert.False(shareMsg.mayWrite);
-            Assert.False(shareMsg.mayLock);
-            Assert.False(shareMsg.isAdmin);
+                // Assert
+                Assert.True(shareMsg.mayRead);
+                Assert.False(shareMsg.mayWrite);
+                Assert.False(shareMsg.mayLock);
+                Assert.False(shareMsg.isAdmin);
 
-            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var get1 = new Get.V1_Editions_EditionId(newEdition);
+                var (_, user2Msg, _, _) = await Request.Send(
+                    get1,
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
-            user2Resp.EnsureSuccessStatusCode();
-            Assert.False(user2Msg.primary.permission.mayWrite);
-            Assert.False(user2Msg.primary.permission.isAdmin);
+                    null,
+                    auth: true,
+                    user1: Request.DefaultUsers.User2
+                );
+                Assert.False(user2Msg.primary.permission.mayWrite);
+                Assert.False(user2Msg.primary.permission.isAdmin);
 
-            // Act
-            newPermissions.mayWrite = true;
-            newPermissions.isAdmin = true;
-            var (share2Response, share2Msg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Put,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                newPermissions.mayWrite = true;
+                newPermissions.isAdmin = true;
+                var add2 = new Put.V1_Editions_EditionId_Editors(newEdition, newPermissions);
+                var (_, share2Msg, _, _) = await Request.Send(
+                    add2,
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    null,
+                    auth: true
+                );
 
-            // Assert
-            share2Response.EnsureSuccessStatusCode();
-            Assert.True(share2Msg.mayRead);
-            Assert.True(share2Msg.mayWrite);
-            Assert.False(share2Msg.mayLock);
-            Assert.True(share2Msg.isAdmin);
+                // Assert
+                Assert.True(share2Msg.mayRead);
+                Assert.True(share2Msg.mayWrite);
+                Assert.False(share2Msg.mayLock);
+                Assert.True(share2Msg.isAdmin);
 
-            var (user2Resp2, user2Msg2) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (_, user2Msg2, _, _) = await Request.Send(
+                    get1,
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
-            user2Resp2.EnsureSuccessStatusCode();
-            Assert.True(user2Msg2.primary.permission.mayWrite);
-            Assert.True(user2Msg2.primary.permission.isAdmin);
+                    null,
+                    auth: true,
+                    user1: Request.DefaultUsers.User2
+                );
+                Assert.True(user2Msg2.primary.permission.mayWrite);
+                Assert.True(user2Msg2.primary.permission.isAdmin);
 
-            // Act
-            newPermissions.mayLock = true;
-            var (share3Response, share3Msg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Put,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                newPermissions.mayLock = true;
+                var add3 = new Put.V1_Editions_EditionId_Editors(newEdition, newPermissions);
+                var (_, share3Msg, _, _) = await Request.Send(
+                    add3,
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
+                    null,
+                    auth: true,
+                    user1: Request.DefaultUsers.User2
+                );
 
-            // Assert
-            share3Response.EnsureSuccessStatusCode();
-            Assert.True(share3Msg.mayRead);
-            Assert.True(share3Msg.mayWrite);
-            Assert.True(share3Msg.mayLock);
-            Assert.True(share3Msg.isAdmin);
+                // Assert
+                Assert.True(share3Msg.mayRead);
+                Assert.True(share3Msg.mayWrite);
+                Assert.True(share3Msg.mayLock);
+                Assert.True(share3Msg.isAdmin);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
         }
 
+        // TODO: finish updating tests to use new request objects.
         [Fact]
         public async Task CanDefaultShareEdition()
         {
             // Arrange
-            const string user1Pwd = "pwd1";
-            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
-            const string user2Pwd = "pwd2";
-            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(
-                _client,
-                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var newPermissions = new EditorRightsDTO
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
             {
-                email = user2.email
-            };
+                var newPermissions = new EditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email
+                };
 
-            // Act
-            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Post,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    HttpMethod.Post,
+                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                    newPermissions,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
 
-            // Assert
-            shareResponse.EnsureSuccessStatusCode();
-            Assert.True(shareMsg.mayRead);
-            Assert.False(shareMsg.mayWrite);
-            Assert.False(shareMsg.mayLock);
-            Assert.False(shareMsg.isAdmin);
+                // Assert
+                shareResponse.EnsureSuccessStatusCode();
+                Assert.True(shareMsg.mayRead);
+                Assert.False(shareMsg.mayWrite);
+                Assert.False(shareMsg.mayLock);
+                Assert.False(shareMsg.isAdmin);
 
-            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
-            user1Resp.EnsureSuccessStatusCode();
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+                user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
-            user2Resp.EnsureSuccessStatusCode();
-            Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
-            Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
-            Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
-            Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
-            Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
-            Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
-            user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                    )
+                );
+                user2Resp.EnsureSuccessStatusCode();
+                Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
+                Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
+                Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
+                Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
+                Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
+                Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
+                user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
         }
 
         // TODO: write the rest of the tests.
+        // TODO: finish updating tests to use new request objects.
         [Fact]
         public async Task CanDeleteEditionAsAdmin()
         {
@@ -305,113 +288,139 @@ namespace SQE.ApiTest
             Assert.Empty(editionMatch);
         }
 
+        // TODO: finish updating test to use new request objects.
+        /// <summary>
+        ///     Test copy of copy of edition
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanDuplicateCopiedEdition()
+        {
+            // ARRANGE
+            var bearerToken = await Request.GetJwtViaHttpAsync(_client);
+            var editionId = await EditionHelpers.CreateCopyOfEdition(_client, name: "first edition");
+            var secondEditionId = await EditionHelpers.CreateCopyOfEdition(_client, editionId, "second edition");
+
+            Assert.True(secondEditionId != null);
+        }
+
+        // TODO: finish updating test to use new request objects.
         [Fact]
         public async Task CanLockableShareEdition()
         {
             // Arrange
-            const string user1Pwd = "pwd1";
-            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
-            const string user2Pwd = "pwd2";
-            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(
-                _client,
-                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var newPermissions = new EditorRightsDTO
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
             {
-                email = user2.email,
-                mayLock = true
-            };
+                var newPermissions = new EditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = true
+                };
 
-            // Act
-            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Post,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    HttpMethod.Post,
+                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                    newPermissions,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
 
-            // Assert
-            shareResponse.EnsureSuccessStatusCode();
-            Assert.True(shareMsg.mayRead);
-            Assert.False(shareMsg.mayWrite);
-            Assert.True(shareMsg.mayLock);
-            Assert.False(shareMsg.isAdmin);
+                // Assert
+                shareResponse.EnsureSuccessStatusCode();
+                Assert.True(shareMsg.mayRead);
+                Assert.False(shareMsg.mayWrite);
+                Assert.True(shareMsg.mayLock);
+                Assert.False(shareMsg.isAdmin);
 
-            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
-            user1Resp.EnsureSuccessStatusCode();
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+                user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
-            user2Resp.EnsureSuccessStatusCode();
-            Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
-            Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
-            Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
-            Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
-            Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
-            Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
-            user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                    )
+                );
+                user2Resp.EnsureSuccessStatusCode();
+                Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
+                Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
+                Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
+                Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
+                Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
+                Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
+                user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
         }
 
+        // TODO: finish updating test to use new request objects.
         [Fact]
         public async Task CanNotAdminWithoutReadShareEdition()
         {
             // Arrange
-            const string user1Pwd = "pwd1";
-            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
-            const string user2Pwd = "pwd2";
-            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(
-                _client,
-                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var newPermissions = new EditorRightsDTO
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
             {
-                email = user2.email,
-                mayRead = false,
-                mayLock = false,
-                mayWrite = false,
-                isAdmin = true
-            };
+                var newPermissions = new EditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayRead = false,
+                    mayLock = false,
+                    mayWrite = false,
+                    isAdmin = true
+                };
 
-            // Act
-            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Post,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    HttpMethod.Post,
+                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                    newPermissions,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
 
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, shareResponse.StatusCode);
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, shareResponse.StatusCode);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
         }
 
-        // TODO: need sharing capability before this can be tested properly
+        // TODO: finish updating test to use new request objects.
         [Fact]
         public async Task CanNotDeleteEditionWhenAnonymous()
         {
@@ -443,226 +452,251 @@ namespace SQE.ApiTest
             await EditionHelpers.DeleteEdition(_client, editionId);
         }
 
+        // TODO: finish updating test to use new request objects.
         [Fact]
         public async Task CanNotWriteWithoutReadShareEdition()
         {
             // Arrange
-            const string user1Pwd = "pwd1";
-            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
-            const string user2Pwd = "pwd2";
-            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(
-                _client,
-                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var newPermissions = new EditorRightsDTO
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
             {
-                email = user2.email,
-                mayRead = false,
-                mayLock = false,
-                mayWrite = true,
-                isAdmin = false
-            };
+                var newPermissions = new EditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayRead = false,
+                    mayLock = false,
+                    mayWrite = true,
+                    isAdmin = false
+                };
 
-            // Act
-            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Post,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    HttpMethod.Post,
+                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                    newPermissions,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
 
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, shareResponse.StatusCode);
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, shareResponse.StatusCode);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
         }
 
+        // TODO: finish updating test to use new request objects.
         [Fact]
         public async Task CanProperlyDeleteSharedEdition()
         {
             // Arrange
-            const string user1Pwd = "pwd1";
-            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
-            const string user2Pwd = "pwd2";
-            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(
-                _client,
-                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var newPermissions = new EditorRightsDTO
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            var notDeleted = true;
+
+            try
             {
-                email = user2.email,
-                mayLock = true,
-                mayWrite = true,
-                isAdmin = false
-            };
+                var newPermissions = new EditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = true,
+                    mayWrite = true,
+                    isAdmin = false
+                };
 
-            // Act
-            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Post,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    HttpMethod.Post,
+                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                    newPermissions,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
 
-            var (deleteResponse, deleteMsg) = await Request.SendHttpRequestAsync<string, string>(
-                _client,
-                HttpMethod.Delete,
-                "/v1/editions/" + newEdition,
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (deleteResponse, deleteMsg) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
+                    HttpMethod.Delete,
+                    "/v1/editions/" + newEdition,
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                    )
+                );
 
-            // Assert
-            shareResponse.EnsureSuccessStatusCode();
-            Assert.True(shareMsg.mayRead);
-            Assert.True(shareMsg.mayWrite);
-            Assert.True(shareMsg.mayLock);
-            Assert.False(shareMsg.isAdmin);
-            deleteResponse.EnsureSuccessStatusCode();
+                // Assert
+                shareResponse.EnsureSuccessStatusCode();
+                Assert.True(shareMsg.mayRead);
+                Assert.True(shareMsg.mayWrite);
+                Assert.True(shareMsg.mayLock);
+                Assert.False(shareMsg.isAdmin);
+                deleteResponse.EnsureSuccessStatusCode();
 
-            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
-            user1Resp.EnsureSuccessStatusCode();
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+                user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
-            Assert.Equal(HttpStatusCode.Forbidden, user2Resp.StatusCode);
-            Assert.NotNull(user1Msg);
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                    )
+                );
+                Assert.Equal(HttpStatusCode.Forbidden, user2Resp.StatusCode);
+                Assert.NotNull(user1Msg);
 
-            // Act (final delete)
-            var (delete2Response, delete2Msg) = await Request.SendHttpRequestAsync<string, string>(
-                _client,
-                HttpMethod.Delete,
-                "/v1/editions/" + newEdition,
-                null,
-                await Request.GetJwtViaHttpAsync(
+                // Act (final delete)
+                var (delete2Response, delete2Msg) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    HttpMethod.Delete,
+                    "/v1/editions/" + newEdition,
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
 
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
-                                                                                 // Kill the edition for real
-            await EditionHelpers.DeleteEdition(
-                _client,
-                newEdition,
-                true,
-                true,
-                new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var (user1Resp2, user1Msg2) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
+                                                                                     // Kill the edition for real
+                await EditionHelpers.DeleteEdition(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
-            user1Resp2.EnsureSuccessStatusCode();
-            Assert.Null(user1Msg2);
+                    newEdition,
+                    true,
+                    true,
+                    new Request.UserAuthDetails
+                    { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                );
+                var (user1Resp2, user1Msg2) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
+                    _client,
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+                if (user1Resp2.StatusCode == HttpStatusCode.NoContent)
+                    notDeleted = false;
+                user1Resp2.EnsureSuccessStatusCode();
+                Assert.Null(user1Msg2);
+            }
+            finally
+            {
+                // Cleanup
+                if (notDeleted)
+                    await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+
 
             //Todo: maybe run a database check here to ensure that all references to newEdition have been removed from all *_owner tables
         }
 
+        // TODO: finish updating test to use new request objects.
         [Fact]
         public async Task CanWriteShareEdition()
         {
             // Arrange
-            const string user1Pwd = "pwd1";
-            var user1 = await UserHelpers.CreateRandomUserAsync(_client, user1Pwd);
-            const string user2Pwd = "pwd2";
-            var user2 = await UserHelpers.CreateRandomUserAsync(_client, user2Pwd);
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(
-                _client,
-                userAuthDetails: new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-            );
-            var newPermissions = new EditorRightsDTO
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            try
             {
-                email = user2.email,
-                mayWrite = true
-            };
+                var newPermissions = new EditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayWrite = true
+                };
 
-            // Act
-            var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
-                _client,
-                HttpMethod.Post,
-                _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                newPermissions,
-                await Request.GetJwtViaHttpAsync(
+                // Act
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
+                    HttpMethod.Post,
+                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                    newPermissions,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
 
-            // Assert
-            shareResponse.EnsureSuccessStatusCode();
-            Assert.True(shareMsg.mayRead);
-            Assert.True(shareMsg.mayWrite);
-            Assert.False(shareMsg.mayLock);
-            Assert.False(shareMsg.isAdmin);
+                // Assert
+                shareResponse.EnsureSuccessStatusCode();
+                Assert.True(shareMsg.mayRead);
+                Assert.True(shareMsg.mayWrite);
+                Assert.False(shareMsg.mayLock);
+                Assert.False(shareMsg.isAdmin);
 
-            var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user1.email, password = user1Pwd }
-                )
-            );
-            user1Resp.EnsureSuccessStatusCode();
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+                user1Resp.EnsureSuccessStatusCode();
 
-            var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                $"/v1/editions/{newEdition}",
-                null,
-                await Request.GetJwtViaHttpAsync(
+                var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
-                    new Request.UserAuthDetails { email = user2.email, password = user2Pwd }
-                )
-            );
-            user2Resp.EnsureSuccessStatusCode();
-            Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
-            Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
-            Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
-            Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
-            Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
-            Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
-            user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                    )
+                );
+                user2Resp.EnsureSuccessStatusCode();
+                Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
+                Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
+                Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
+                Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
+                Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
+                Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
+                user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
         }
 
+        // TODO: finish updating test to use new request objects.
         /// <summary>
         ///     Test copying an edition
         /// </summary>
@@ -716,6 +750,7 @@ namespace SQE.ApiTest
             Assert.True(msg.id != 1);
         }
 
+        // TODO: finish updating test to use new request objects.
         /// <summary>
         ///     Check if we can get editions when unauthenticated
         /// </summary>
@@ -737,6 +772,7 @@ namespace SQE.ApiTest
             Assert.True(msg.editions.Count > 0);
         }
 
+        // TODO: finish updating test to use new request objects.
         /// <summary>
         ///     Check if we can get editions when unauthenticated
         /// </summary>
@@ -762,6 +798,7 @@ namespace SQE.ApiTest
             Assert.NotNull(msg.primary.name);
         }
 
+        // TODO: finish updating test to use new request objects.
         /// <summary>
         ///     Check that we get private editions when authenticated, and don't get them when unauthenticated.
         /// </summary>
@@ -812,6 +849,7 @@ namespace SQE.ApiTest
             Assert.DoesNotContain(msg.editions.SelectMany(x => x), x => x.id == editionId);
         }
 
+        // TODO: finish updating test to use new request objects.
         /// <summary>
         ///     Check if we protect against disallowed unauthenticated requests
         /// </summary>
@@ -846,6 +884,7 @@ namespace SQE.ApiTest
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
+        // TODO: finish updating test to use new request objects.
         /// <summary>
         ///     Test updating an edition
         /// </summary>

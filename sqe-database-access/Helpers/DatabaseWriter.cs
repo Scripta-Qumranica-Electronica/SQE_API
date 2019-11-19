@@ -264,8 +264,10 @@ namespace SQE.DatabaseAccess.Helpers
         private static async Task<uint> InsertOwnedTableAsync(IDbConnection connection, MutationRequest mutationRequest)
         {
             // Format query
-            var hasNulls = (mutationRequest.Parameters.ParameterNames.Any(x =>
-                ((SqlMapper.IParameterLookup)mutationRequest.Parameters)[x] == null));
+            var hasNulls = mutationRequest.Parameters.ParameterNames.Any(
+                x =>
+                    ((SqlMapper.IParameterLookup)mutationRequest.Parameters)[x] == null
+            );
             var query = OwnedTableInsertQuery.GetQuery(hasNulls);
             query = query.Replace("$TableName", mutationRequest.TableName);
             query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));

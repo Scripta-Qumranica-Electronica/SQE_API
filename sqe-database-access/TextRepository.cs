@@ -176,6 +176,13 @@ namespace SQE.DatabaseAccess
 
             using (var connection = OpenConnection())
             {
+                var attributeDict = (await connection.QueryAsync<AttributeDefinition>(
+                    TextFragmentAttributes.GetQuery,
+                    new { editionUser.EditionId }
+                )).ToDictionary(
+                    row => row.attributeValueId,
+                    row => row.attributeString
+                );
                 var scrolls = await connection.QueryAsync(
                     GetTextChunk.GetQuery,
                     new[]
@@ -195,9 +202,9 @@ namespace SQE.DatabaseAccess
                         var charAttribute = objects[6] as CharAttribute;
                         var roi = objects[7] as SignInterpretationROI;
 
-                        var newScroll = manuscript.manuscriptId != lastEdition?.manuscriptId;
+                        var newManuscript = manuscript.manuscriptId != lastEdition?.manuscriptId;
 
-                        if (newScroll) lastEdition = manuscript;
+                        if (newManuscript) lastEdition = manuscript;
 
                         if (fragment.textFragmentId != lastTextFragment?.textFragmentId)
 
@@ -234,6 +241,13 @@ namespace SQE.DatabaseAccess
 
                         lastChar.nextSignInterpretations.Add(nextSignInterpretation);
 
+                        charAttribute.attributeString = attributeDict.TryGetValue(
+                            charAttribute.attributeValueId,
+                            out var val
+                        )
+                            ? val
+                            : null;
+
                         lastChar.attributes.Add(charAttribute);
 
                         if (roi != null
@@ -243,7 +257,7 @@ namespace SQE.DatabaseAccess
                             lastChar.signInterpretationRois.Add(roi);
                         }
 
-                        return newScroll ? manuscript : null;
+                        return newManuscript ? manuscript : null;
                     },
                     new { startId, endId, editionUser.EditionId },
                     splitOn:

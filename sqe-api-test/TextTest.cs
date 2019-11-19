@@ -163,6 +163,7 @@ namespace SQE.ApiTest
                 (uint)0,
                 msg.signs.First().signInterpretations.First().attributes.First().interpretationAttributeId
             );
+            Assert.NotNull(msg.signs.First().signInterpretations.First().attributes.First().attributeValueString);
 
             var editorIds = new List<uint> { msg.editorId };
             foreach (var sign in msg.signs)
@@ -220,6 +221,14 @@ namespace SQE.ApiTest
                     .signInterpretations.First()
                     .attributes.First()
                     .interpretationAttributeId
+            );
+            Assert.NotNull(
+                msg.textFragments.First()
+                    .lines.First()
+                    .signs.First()
+                    .signInterpretations.First()
+                    .attributes.First()
+                    .attributeValueString
             );
 
             var editorIds = new List<uint> { msg.editorId };

@@ -27,6 +27,7 @@ namespace SQE.API.DTO
         public uint interpretationAttributeId { get; set; }
         public byte sequence { get; set; }
         public uint attributeValueId { get; set; }
+        public string attributeValueString { get; set; }
         public uint editorId { get; set; }
         public float value { get; set; }
     }
