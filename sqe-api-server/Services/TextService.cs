@@ -165,6 +165,7 @@ namespace SQE.API.Server.Services
                                                                                 b.interpretationAttributeId,
                                                                             sequence = b.sequence,
                                                                             attributeValueId = b.attributeValueId,
+                                                                            attributeValueString = b.attributeString,
                                                                             editorId = b
                                                                                 .signInterpretationAttributeAuthor,
                                                                             value = b.value
@@ -261,6 +262,7 @@ namespace SQE.API.Server.Services
                                                     interpretationAttributeId = b.interpretationAttributeId,
                                                     sequence = b.sequence,
                                                     attributeValueId = b.attributeValueId,
+                                                    attributeValueString = b.attributeString,
                                                     editorId = b.signInterpretationAttributeAuthor,
                                                     value = b.value
                                                 }

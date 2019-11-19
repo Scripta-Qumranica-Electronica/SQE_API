@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SQE.DatabaseAccess.Queries
 {
@@ -234,6 +236,33 @@ WHERE edition_editor.edition_id = @EditionId
         }
     }
 
+    internal static class GetOwnerTableDataForQuery
+    {
+        // You must add a parameter `@EditionId`.
+        public static string GetQuery(string tableName, string tableIdColumn)
+        {
+            return $@"SELECT {tableIdColumn} 
+            FROM {tableName} 
+            WHERE edition_id = @EditionId";
+        }
+    }
+
+    internal static class WriteOwnerTableData
+    {
+        public static string GetQuery(string tableName,
+            string tableIdColumn,
+            uint editionId,
+            uint editionEditorId,
+            List<uint> dataIds)
+        {
+            return $@"INSERT INTO {tableName} (edition_id, edition_editor_id, {tableIdColumn})
+            VALUES {string.Join(
+                    ",",
+                    dataIds.Select(x => $"({editionId},{editionEditorId},{x.ToString()})"))
+                }";
+        }
+    }
+
     internal static class UpdateEditionLegalDetailsQuery
     {
         // You must add the parameter `@EditionId` and `@Collaborators` to use this, the parameter `@CopyrightHolder` is optional.
@@ -263,5 +292,23 @@ WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
         {
             return _sql.Replace("$Table", table);
         }
+    }
+
+    internal static class LockEditionQuery
+    {
+        internal const string GetQuery = @"
+UPDATE edition
+SET locked = 1
+WHERE edition_id = @EditionId
+";
+    }
+
+    internal static class UnlockEditionQuery
+    {
+        internal const string GetQuery = @"
+UPDATE edition
+SET locked = 0
+WHERE edition_id = @EditionId
+";
     }
 }

@@ -23,15 +23,21 @@ namespace SQE.API.DTO
     public class ArtefactTextFragmentMatchDTO : TextFragmentDataDTO
     {
         /// <summary>
-        /// This DTO contains the data of a text fragment that has been requested via
-        /// artefact id.
+        ///     This DTO contains the data of a text fragment that has been requested via
+        ///     artefact id.
         /// </summary>
         /// <param name="id">Id of the text fragment</param>
         /// <param name="name">Name of the text fragment</param>
         /// <param name="editorId">Id of the editor who sefined the text fragment</param>
-        /// <param name="suggested">Whether this text fragment was suggest by the system (true)
-        /// or is a definite match (false)</param>
-        public ArtefactTextFragmentMatchDTO(uint id, string name, uint editorId, bool suggested) : base(id, name, editorId)
+        /// <param name="suggested">
+        ///     Whether this text fragment was suggest by the system (true)
+        ///     or is a definite match (false)
+        /// </param>
+        public ArtefactTextFragmentMatchDTO(uint id, string name, uint editorId, bool suggested) : base(
+            id,
+            name,
+            editorId
+        )
         {
             this.suggested = suggested;
         }

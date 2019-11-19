@@ -120,8 +120,8 @@ namespace SQE.ApiTest
             // Arrange
             var counter = new Counter { Count = 0 };
             const uint code = 1205;
-            // Currently 175 factorial (_retryCount - 1) - minimum random offset (75 * (_retryCount - 1)), with 1 subtracted
-            const int minExecutionTime = 4374;
+            // See _waitTime method line 126 of DbConnectionBase.cs
+            const int minExecutionTime = 2450;
             var watch = Stopwatch.StartNew();
 
             // Act

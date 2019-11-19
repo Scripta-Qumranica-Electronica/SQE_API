@@ -71,7 +71,7 @@ namespace SQE.DatabaseAccess
     public static class DatabaseCommunicationRetryPolicy
     {
         // There is a +-75 ms randomness added to the retry pause.
-        // The total delay will be somewhere between 4375 and 5425 ms.
+        // The total delay will be somewhere between 2450 and 7350 ms.
         private const int RetryCount = 7;
         private const int WaitBetweenRetriesInMilliseconds = 175;
 
@@ -125,7 +125,8 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         private static int _waitTime(int retryCount)
         {
-            return retryCount * WaitBetweenRetriesInMilliseconds + _random.Next(-75, 75);
+            var waitTime = retryCount * WaitBetweenRetriesInMilliseconds;
+            return waitTime + _random.Next(-1 * waitTime / 2, waitTime / 2);
         }
 
         public static void ExecuteRetry(Action operation)
@@ -232,7 +233,8 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         private int _waitTime(int retryCount)
         {
-            return retryCount * WaitBetweenRetriesInMilliseconds + _random.Next(-100, 100);
+            var waitTime = retryCount * WaitBetweenRetriesInMilliseconds;
+            return waitTime + _random.Next(-1 * waitTime / 2, waitTime / 2);
         }
 
         public void ExecuteRetryWithCircuitBreaker(Action operation)

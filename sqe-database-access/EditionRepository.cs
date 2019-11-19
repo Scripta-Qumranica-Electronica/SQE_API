@@ -116,42 +116,59 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        ///     This creates a new copy of the requested edition, which will be owned with full priveleges
+        ///     This creates a new copy of the requested edition, which will be owned with full privileges
         ///     by the requesting user.
         /// </summary>
-        /// <param name="editionUser"></param>
-        /// <param name="copyrightHolder"></param>
-        /// <param name="collaborators"></param>
-        /// User info object contains the editionId that the user wishes to copy and
-        /// all user permissions related to it.
+        /// <param name="editionUser">
+        ///     User info object contains the editionId that the user wishes to copy and
+        ///     all user permissions related to it.
+        /// </param>
+        /// <param name="copyrightHolder">
+        ///     Name of the person/institution that holds the copyright
+        ///     (automatically created from user when null)
+        /// </param>
+        /// <param name="collaborators">
+        ///     Names of all collaborators
+        ///     (automatically created from user and all editors when null)
         /// </param>
         /// <returns>The editionId of the newly created edition.</returns>
         public async Task<uint> CopyEditionAsync(EditionUserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null)
         {
-            // If we allowed copying of scrolls that are not locked, we would
-            // have to block all transactions on all _owner tables in the DB
-            // until the copy process was complete in order to guard against
-            // creating an inconsistent copy.
-            // TODO: Gather permissions info for all editors of this edition, directly remove Lock/Admin/Write access,
-            // and lock the edition for the duration of the copy (don't bother checking if it is locked first).
-            // Then, when the copy is finished, restore the original permissions.  That procedure should make it safe.
+            var originalEditionData = new List<List<uint>>();
+            List<OwnerTables.Result> ownerTables;
+
+            using (var connection = OpenConnection())
+            {
+                // Collect all the data for the copy in one transaction.
+                // This way we don't care if the edition is locked, the DB
+                // will release the share locks once this relatively quick
+                // transaction is complete, and will not block the copy from
+                // edition during the writing of the new edition.
+                ownerTables = (await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery)).ToList();
+                foreach (var ownerTable in ownerTables)
+                {
+                    var tableName = ownerTable.TableName;
+                    var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
+                    originalEditionData.Add(
+                        (await connection.QueryAsync<uint>(
+                            GetOwnerTableDataForQuery.GetQuery(tableName, tableIdColumn),
+                            new
+                            {
+                                editionUser.EditionId
+                            }
+                        )).ToList()
+                    );
+                }
+            }
+
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
                     using (var transactionScope = new TransactionScope())
                     using (var connection = OpenConnection())
                     {
-                        // Check that edition is locked
-                        var fromVersion =
-                            await connection.QuerySingleAsync<EditionLockQuery.Result>(
-                                EditionLockQuery.GetQuery,
-                                new { editionUser.EditionId }
-                            );
-                        if (!fromVersion.Locked)
-                            throw new StandardExceptions.EditionCopyLockProtectionException(editionUser);
-
                         // Create a new edition
                         connection.Execute(
                             CopyEditionQuery.GetQuery,
@@ -183,24 +200,27 @@ namespace SQE.DatabaseAccess
                         if (toEditionEditorId == 0)
                             throw new StandardExceptions.DataNotWrittenException("create edition_editor");
 
-                        // Copy all owner table references from scroll_version_group of the requested
-                        // scroll_version_id to the newly created scroll_version_id (this is automated
-                        // and will work even if the database schema gets updated).
-                        var ownerTables = await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
-                        foreach (var ownerTable in ownerTables)
-                        {
-                            var tableName = ownerTable.TableName;
-                            var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
-                            connection.Execute(
-                                CopyEditionDataForTableQuery.GetQuery(tableName, tableIdColumn),
-                                new
-                                {
-                                    editionUser.EditionId,
-                                    EditionEditorId = toEditionEditorId,
-                                    CopyToEditionId = toEditionId
-                                }
-                            );
-                        }
+                        // Copy data collected in the previous transaction over to the new edition
+                        var writeTasks = new List<Task<int>>();
+                        foreach (var (ownerTable, index) in ownerTables.Select((v, i) => (v, i)))
+                            if (originalEditionData[index].Count > 0)
+                            {
+                                var tableName = ownerTable.TableName;
+                                var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
+                                writeTasks.Add(
+                                    connection.ExecuteAsync(
+                                        WriteOwnerTableData.GetQuery(
+                                            tableName,
+                                            tableIdColumn,
+                                            toEditionId,
+                                            toEditionEditorId,
+                                            originalEditionData[index]
+                                        )
+                                    )
+                                );
+                            }
+
+                        await Task.WhenAll(writeTasks);
 
                         //Cleanup
                         transactionScope.Complete();

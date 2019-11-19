@@ -32,6 +32,7 @@ namespace SQE.API.Server.Services
             string clientId = null);
 
         Task<NoContentResult> DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId, string clientId = null);
+
         Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
             uint artefactId,
             List<string> optional);
@@ -200,7 +201,14 @@ namespace SQE.API.Server.Services
 
             var realMatches = new ArtefactTextFragmentMatchListDTO(
                 (await _artefactRepository.ArtefactTextFragmentsAsync(editionUser, artefactId))
-                .Select(x => new ArtefactTextFragmentMatchDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId, false))
+                .Select(
+                    x => new ArtefactTextFragmentMatchDTO(
+                        x.TextFragmentId,
+                        x.TextFragmentName,
+                        x.EditionEditorId,
+                        false
+                    )
+                )
                 .ToList()
             );
             if (!suggestedResults) return realMatches;
@@ -216,7 +224,9 @@ namespace SQE.API.Server.Services
         {
             return new ArtefactTextFragmentMatchListDTO(
                 (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
-                .Select(x => new ArtefactTextFragmentMatchDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId, true))
+                .Select(
+                    x => new ArtefactTextFragmentMatchDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId, true)
+                )
                 .ToList()
             );
         }
