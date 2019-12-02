@@ -259,7 +259,7 @@ namespace SQE.DatabaseAccess
 
                         return newManuscript ? manuscript : null;
                     },
-                    new { startId, endId, editionUser.EditionId },
+                    new { StartId = startId, EndId = endId, editionUser.EditionId },
                     splitOn:
                     "textFragmentId, lineId, signId, nextSignInterpretationId, signInterpretationId, interpretationAttributeId, SignInterpretationRoiId"
                 );
