@@ -194,6 +194,9 @@ AS (
 
 		JOIN edition ON edition.edition_id = @EditionId
 	)
+
+SELECT *
+FROM sign_interpretation_ids
 ";
     }
 
