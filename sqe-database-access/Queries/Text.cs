@@ -124,7 +124,7 @@ AS (
 		position_in_stream.next_sign_interpretation_id AS nextSignInterpretationId,
 		sign_sequence_author.user_id AS signSequenceAuthor,
 
-		signInterpretationId,
+		sign_interpretation.sign_interpretation_id AS signInterpretationId,
 		sign_interpretation.`character` AS `character`,
 
 		sign_interpretation_attribute.sign_interpretation_attribute_id AS interpretationAttributeId,
