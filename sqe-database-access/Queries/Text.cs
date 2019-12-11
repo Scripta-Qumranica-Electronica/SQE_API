@@ -132,15 +132,22 @@ ORDER BY sign_interpretation_ids.sequence
         ///     @editionId is the Id of the edition the line is to be searched
         /// </summary>
         public const string GetQuery = @"
-      SELECT sign_interpretation.sign_interpretation_id
-      FROM  line_to_sign
-        JOIN  sign_interpretation USING (sign_id)
-        JOIN   sign_interpretation_attribute USING (sign_interpretation_id)
-        JOIN sign_interpretation_attribute_owner USING (sign_interpretation_attribute_id)
-      WHERE line_id=@entityId
-        AND (attribute_value_id=10 OR attribute_value_id = 11)
-        AND edition_id=@editionId
-
+SELECT sign_interpretation.sign_interpretation_id
+FROM line_to_sign
+	JOIN edition ON edition.edition_id = @EditionId
+	JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
+    JOIN line_to_sign_owner ON line_to_sign_owner.line_to_sign_id = line_to_sign.line_to_sign_id
+    	AND line_to_sign_owner.edition_id = edition.edition_id
+	JOIN sign_interpretation USING (sign_id)
+	JOIN sign_interpretation_attribute USING (sign_interpretation_id)
+	JOIN sign_interpretation_attribute_owner 
+	    ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
+		AND sign_interpretation_attribute_owner.edition_id=edition.edition_id
+        
+WHERE line_id = @EntityId
+	AND (attribute_value_id = 10 OR attribute_value_id = 11)
+	AND (edition_editor.user_id = @UserId OR edition.public = 1)
+ORDER BY attribute_value_id
 ";
     }
 
@@ -152,19 +159,26 @@ ORDER BY sign_interpretation_ids.sequence
         ///     @editionId is the Id of the edition the line is to be searched
         /// </summary>
         public const string GetQuery = @"
-      SELECT sign_interpretation.sign_interpretation_id
-      FROM text_fragment_to_line
-        JOIN line_to_sign USING (line_id)
-        JOIN  sign_interpretation USING (sign_id)
-        JOIN   sign_interpretation_attribute USING (sign_interpretation_id)
-        JOIN sign_interpretation_attribute_owner USING (sign_interpretation_attribute_id)
-        JOIN edition_editor ON edition_editor.edition_editor_id = @EditionId
-        JOIN edition ON edition.edition_id = @EditionId
-      WHERE (attribute_value_id = 12 OR attribute_value_id = 13)
-        AND text_fragment_id=@EntityId
-        AND sign_interpretation_attribute_owner.edition_id=@EditionId
-        AND (edition_editor.user_id = @UserId OR edition.public = 1)
-      ORDER BY attribute_value_id
+SELECT sign_interpretation.sign_interpretation_id
+FROM text_fragment_to_line
+	JOIN edition ON edition.edition_id = @EditionId
+	JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
+    JOIN text_fragment_to_line_owner 
+        ON text_fragment_to_line_owner.text_fragment_to_line_id = text_fragment_to_line.text_fragment_to_line_id
+    	AND text_fragment_to_line_owner.edition_id = edition.edition_id
+	JOIN line_to_sign USING (line_id)
+    JOIN line_to_sign_owner ON line_to_sign_owner.line_to_sign_id = line_to_sign.line_to_sign_id
+    	AND line_to_sign_owner.edition_id = edition.edition_id
+	JOIN  sign_interpretation USING (sign_id)
+	JOIN   sign_interpretation_attribute USING (sign_interpretation_id)
+	JOIN sign_interpretation_attribute_owner 
+	    ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
+		AND sign_interpretation_attribute_owner.edition_id=edition.edition_id
+        
+WHERE text_fragment_id = @EntityId
+	AND (attribute_value_id = 12 OR attribute_value_id = 13)
+	AND (edition_editor.user_id = @UserId OR edition.public = 1)
+ORDER BY attribute_value_id
 ";
     }
 
