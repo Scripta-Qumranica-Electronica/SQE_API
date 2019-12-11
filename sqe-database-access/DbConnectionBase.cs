@@ -31,7 +31,7 @@ namespace SQE.DatabaseAccess
                 var port = _config.GetConnectionString("MysqlPort");
                 var user = _config.GetConnectionString("MysqlUsername");
                 var pwd = _config.GetConnectionString("MysqlPassword");
-                return $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8mb4;";
+                return $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8mb4;AllowUserVariables=True;";
             }
         }
 
