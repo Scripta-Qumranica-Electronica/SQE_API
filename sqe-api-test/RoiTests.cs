@@ -37,142 +37,6 @@ namespace SQE.ApiTest
 			response.EnsureSuccessStatusCode();
 		}
 
-
-		[Fact]
-		private async Task CreateRoiForEdition()
-		{
-			//var artefact = (await GetEditionArtefacts()).artefacts[0];
-
-			//Arrange 
-			const uint editionId = 894;
-			const uint artefactId = 10018;
-			var bearerToken = await Request.GetJwtViaHttpAsync(_client);
-
-			var newEdition = await EditionHelpers.CreateCopyOfEdition
-				(_client,
-				editionId: editionId,
-				userAuthDetails: Request.DefaultUsers.User1);
-
-			var roi = new SetInterpretationRoiDTO
-			{
-				artefactId = artefactId,
-				signInterpretationId = 1410,
-				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
-				translate = new TranslateDTO
-				{
-					x = 200,
-					y = 300
-				},
-				exceptional = false,
-				valuesSet = true
-			};
-
-			//Act
-			var (response, roiRes) = await Request.SendHttpRequestAsync<SetInterpretationRoiDTO, InterpretationRoiDTO>(
-				_client,
-				HttpMethod.Post,
-				$"/{version}/editions/{newEdition}/rois",
-				roi,
-				bearerToken
-			);
-
-			// Assert
-			response.EnsureSuccessStatusCode();
-
-			//Get roi information
-			var (getResponse, roiData) = await Request.SendHttpRequestAsync<string, InterpretationRoiDTO>(
-				_client,
-				HttpMethod.Get,
-				$"/{version}/editions/{newEdition}/rois/{roiRes.interpretationRoiId}",
-				null,
-				bearerToken
-			);
-
-			// Assert
-			getResponse.EnsureSuccessStatusCode();
-			Assert.Equal(roiData.interpretationRoiId, roiRes.interpretationRoiId);
-			Assert.Equal(roiData.artefactId, artefactId);
-			Assert.Equal(roiData.editorId, newEdition);
-
-			//CleanUp
-			await DeleteRoi(roiRes.editorId, roiRes.interpretationRoiId);
-			await EditionHelpers.DeleteEdition(_client, newEdition);
-
-		}
-
-		[Fact]
-		private async Task UpdateRoi()
-		{
-			//Arrange 
-			const uint editionId = 894;
-			const uint artefactId = 10018;
-			var bearerToken = await Request.GetJwtViaHttpAsync(_client);
-
-			var newEdition = await EditionHelpers.CreateCopyOfEdition
-				(_client,
-				editionId: editionId,
-				userAuthDetails: Request.DefaultUsers.User1);
-
-			var roi = new SetInterpretationRoiDTO
-			{
-				artefactId = artefactId,
-				signInterpretationId = 1410,
-				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
-				translate = new TranslateDTO
-				{
-					x = 100,
-					y = 100
-				},
-				exceptional = false,
-				valuesSet = true
-			};
-
-			//Act
-			var (response, roiRes) = await Request.SendHttpRequestAsync<SetInterpretationRoiDTO, InterpretationRoiDTO>(
-				_client,
-				HttpMethod.Post,
-				$"/{version}/editions/{newEdition}/rois",
-				roi,
-				bearerToken
-			);
-
-			// Assert
-			response.EnsureSuccessStatusCode();
-
-			var updatedRoi = new SetInterpretationRoiDTO
-			{
-				artefactId = artefactId,
-				signInterpretationId = 1410,
-				shape = "POLYGON((10 10,10 1200,1200 1200,10 1200,10 10),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
-				translate = new TranslateDTO
-				{
-					x = 230,
-					y = 230
-				},
-				exceptional = false,
-				valuesSet = true
-			};
-
-			//Update Roi
-			var (updateResponse, updatedRoiRes) = await Request.SendHttpRequestAsync<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO>(
-				_client,
-				HttpMethod.Put,
-				$"/{version}/editions/{newEdition}/rois/{roiRes.interpretationRoiId}",
-				updatedRoi,
-				bearerToken
-			);
-
-			// Assert
-			response.EnsureSuccessStatusCode();
-			Assert.Equal(roiRes.interpretationRoiId, updatedRoiRes.oldInterpretationRoiId);
-			Assert.Equal(updatedRoiRes.artefactId, artefactId);
-			Assert.Equal(updatedRoiRes.editorId, newEdition);
-
-			//Clean up
-			await DeleteRoi(newEdition, updatedRoiRes.interpretationRoiId);
-			await EditionHelpers.DeleteEdition(_client, newEdition);
-		}
-
 		[Fact]
 		private async Task CreateListOfRois()
 		{
@@ -240,11 +104,13 @@ namespace SQE.ApiTest
 		}
 
 		[Fact]
-		private async Task UpdateListOfRois()
+		private async Task CreateRoiForEdition()
 		{
+			//var artefact = (await GetEditionArtefacts()).artefacts[0];
+
 			//Arrange 
-			const uint editionId = 100;
-			const uint artefactId = 18;
+			const uint editionId = 894;
+			const uint artefactId = 10018;
 			var bearerToken = await Request.GetJwtViaHttpAsync(_client);
 
 			var newEdition = await EditionHelpers.CreateCopyOfEdition
@@ -252,79 +118,50 @@ namespace SQE.ApiTest
 				editionId: editionId,
 				userAuthDetails: Request.DefaultUsers.User1);
 
-			var roiA = new InterpretationRoiDTO
+			var roi = new SetInterpretationRoiDTO
 			{
 				artefactId = artefactId,
-				signInterpretationId = 250,
+				signInterpretationId = 1410,
 				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
 				translate = new TranslateDTO
 				{
-					x = 120,
-					y = 120
+					x = 200,
+					y = 300
 				},
 				exceptional = false,
-				valuesSet = true,
-				interpretationRoiId = 1501,
-				editorId = 551
+				valuesSet = true
 			};
 
-			var roiB = new InterpretationRoiDTO
-			{
-				artefactId = artefactId,
-				signInterpretationId = 430,
-				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
-				translate = new TranslateDTO
-				{
-					x = 60,
-					y = 60
-				},
-				exceptional = true,
-				valuesSet = false,
-				interpretationRoiId = 1502,
-				editorId = 551
-			};
-
-			var batchRoisList = new BatchEditRoiDTO();
-
-			batchRoisList.createRois = new List<InterpretationRoiDTO>();
-			batchRoisList.createRois.Add(roiA);
-			batchRoisList.createRois.Add(roiB);
-
-			batchRoisList.updateRois = new List<UpdatedInterpretationRoiDTO>();
-
-			var roiC = new UpdatedInterpretationRoiDTO
-			{
-				artefactId = artefactId,
-				signInterpretationId = 430,
-				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
-				translate = new TranslateDTO
-				{
-					x = 560,
-					y = 460
-				},
-				exceptional = true,
-				valuesSet = false,
-				interpretationRoiId = 1506,
-				editorId = 551,
-				oldInterpretationRoiId = 1501
-			};
-			batchRoisList.updateRois.Add(roiC);
-
-			batchRoisList.deleteRois = new List<uint>();
-			batchRoisList.deleteRois.Add(1501);
-			batchRoisList.deleteRois.Add(1502);
-			batchRoisList.deleteRois.Add(1506);
-
-			//update
-			var (responseBatch, dataBatch) = await Request.SendHttpRequestAsync<BatchEditRoiDTO, BatchEditRoiResponseDTO>(
+			//Act
+			var (response, roiRes) = await Request.SendHttpRequestAsync<SetInterpretationRoiDTO, InterpretationRoiDTO>(
 				_client,
 				HttpMethod.Post,
-				$"/{version}/editions/{newEdition}/rois/batch-edit",
-				batchRoisList,
+				$"/{version}/editions/{newEdition}/rois",
+				roi,
 				bearerToken
 			);
 
-			responseBatch.EnsureSuccessStatusCode();
+			// Assert
+			response.EnsureSuccessStatusCode();
+
+			//Get roi information
+			var (getResponse, roiData) = await Request.SendHttpRequestAsync<string, InterpretationRoiDTO>(
+				_client,
+				HttpMethod.Get,
+				$"/{version}/editions/{newEdition}/rois/{roiRes.interpretationRoiId}",
+				null,
+				bearerToken
+			);
+
+			// Assert
+			getResponse.EnsureSuccessStatusCode();
+			Assert.Equal(roiData.interpretationRoiId, roiRes.interpretationRoiId);
+			Assert.Equal(roiData.artefactId, artefactId);
+			Assert.Equal(roiData.editorId, newEdition);
+
+			//CleanUp
+			await DeleteRoi(roiRes.editorId, roiRes.interpretationRoiId);
+			await EditionHelpers.DeleteEdition(_client, newEdition);
 
 		}
 
@@ -408,9 +245,215 @@ namespace SQE.ApiTest
 		}
 
 		[Fact]
-		private async Task permissions()
+		private async Task UpdateListOfRois()
 		{
+			//Arrange 
+			const uint editionId = 100;
+			const uint artefactId = 18;
+			var bearerToken = await Request.GetJwtViaHttpAsync(_client);
+
+			var newEdition = await EditionHelpers.CreateCopyOfEdition
+				(_client,
+				editionId: editionId,
+				userAuthDetails: Request.DefaultUsers.User1);
+
+			//create first roi, just to be sure that we can update and delete roi in batch (need interpretationRoiId)
+			var roi = new SetInterpretationRoiDTO
+			{
+				artefactId = artefactId,
+				signInterpretationId = 1410,
+				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
+				translate = new TranslateDTO
+				{
+					x = 200,
+					y = 300
+				},
+				exceptional = false,
+				valuesSet = true
+			};
+
+			//Act
+			var (response, roiRes) = await Request.SendHttpRequestAsync<SetInterpretationRoiDTO, InterpretationRoiDTO>(
+				_client,
+				HttpMethod.Post,
+				$"/{version}/editions/{newEdition}/rois",
+				roi,
+				bearerToken
+			);
+
+			//create first roi, just to be sure that we can update and delete roi in batch (need interpretationRoiId)
+			var roiToDelete = new SetInterpretationRoiDTO
+			{
+				artefactId = artefactId,
+				signInterpretationId = 1410,
+				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
+				translate = new TranslateDTO
+				{
+					x = 200,
+					y = 300
+				},
+				exceptional = false,
+				valuesSet = true
+			};
+
+			//Act
+			var (responseDel, roiDelRes) = await Request.SendHttpRequestAsync<SetInterpretationRoiDTO, InterpretationRoiDTO>(
+				_client,
+				HttpMethod.Post,
+				$"/{version}/editions/{newEdition}/rois",
+				roi,
+				bearerToken
+			);
+
+
+			var roiA = new InterpretationRoiDTO
+			{
+				artefactId = artefactId,
+				signInterpretationId = 251,
+				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
+				translate = new TranslateDTO
+				{
+					x = 120,
+					y = 120
+				},
+				exceptional = false,
+				valuesSet = true,
+				editorId = 551,
+				interpretationRoiId =888
+			};
+
+			var roiB = new InterpretationRoiDTO
+			{
+				artefactId = artefactId,
+				signInterpretationId = 430,
+				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
+				translate = new TranslateDTO
+				{
+					x = 60,
+					y = 60
+				},
+				exceptional = true,
+				valuesSet = false,
+				interpretationRoiId = 555,
+				editorId = 551
+			};
+
+			var batchRoisList = new BatchEditRoiDTO();
+
+			batchRoisList.createRois = new List<InterpretationRoiDTO>();
+			batchRoisList.createRois.Add(roiA);
+			batchRoisList.createRois.Add(roiB);
+
+			batchRoisList.updateRois = new List<UpdatedInterpretationRoiDTO>();
+
+			var roiC = new UpdatedInterpretationRoiDTO
+			{
+				artefactId = artefactId,
+				signInterpretationId = 252,
+				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
+				translate = new TranslateDTO
+				{
+					x = 560,
+					y = 460
+				},
+				exceptional = true,
+				valuesSet = false,
+				interpretationRoiId = roiRes.interpretationRoiId,
+				editorId = 551,
+				oldInterpretationRoiId = roiRes.interpretationRoiId
+			};
+			batchRoisList.updateRois.Add(roiC);
+		
+			batchRoisList.deleteRois = new List<uint>();
+			batchRoisList.deleteRois.Add(roiDelRes.interpretationRoiId);
+
+			//update batch
+			var (responseBatch, dataBatch) = await Request.SendHttpRequestAsync<BatchEditRoiDTO, BatchEditRoiResponseDTO>(
+				_client,
+				HttpMethod.Post,
+				$"/{version}/editions/{newEdition}/rois/batch-edit",
+				batchRoisList,
+				bearerToken
+			);
+
+			responseBatch.EnsureSuccessStatusCode();
 
 		}
+
+		[Fact]
+		private async Task UpdateRoi()
+		{
+			//Arrange 
+			const uint editionId = 894;
+			const uint artefactId = 10018;
+			var bearerToken = await Request.GetJwtViaHttpAsync(_client);
+
+			var newEdition = await EditionHelpers.CreateCopyOfEdition
+				(_client,
+				editionId: editionId,
+				userAuthDetails: Request.DefaultUsers.User1);
+
+			var roi = new SetInterpretationRoiDTO
+			{
+				artefactId = artefactId,
+				signInterpretationId = 1410,
+				shape = "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
+				translate = new TranslateDTO
+				{
+					x = 100,
+					y = 100
+				},
+				exceptional = false,
+				valuesSet = true
+			};
+
+			//Act
+			var (response, roiRes) = await Request.SendHttpRequestAsync<SetInterpretationRoiDTO, InterpretationRoiDTO>(
+				_client,
+				HttpMethod.Post,
+				$"/{version}/editions/{newEdition}/rois",
+				roi,
+				bearerToken
+			);
+
+			// Assert
+			response.EnsureSuccessStatusCode();
+
+			var updatedRoi = new SetInterpretationRoiDTO
+			{
+				artefactId = artefactId,
+				signInterpretationId = 1410,
+				shape = "POLYGON((10 10,10 1200,1200 1200,10 1200,10 10),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))",
+				translate = new TranslateDTO
+				{
+					x = 230,
+					y = 230
+				},
+				exceptional = false,
+				valuesSet = true
+			};
+
+			//Update Roi
+			var (updateResponse, updatedRoiRes) = await Request.SendHttpRequestAsync<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO>(
+				_client,
+				HttpMethod.Put,
+				$"/{version}/editions/{newEdition}/rois/{roiRes.interpretationRoiId}",
+				updatedRoi,
+				bearerToken
+			);
+
+			// Assert
+			response.EnsureSuccessStatusCode();
+			Assert.Equal(roiRes.interpretationRoiId, updatedRoiRes.oldInterpretationRoiId);
+			Assert.Equal(updatedRoiRes.artefactId, artefactId);
+			Assert.Equal(updatedRoiRes.editorId, newEdition);
+
+			//Clean up
+			await DeleteRoi(newEdition, updatedRoiRes.interpretationRoiId);
+			await EditionHelpers.DeleteEdition(_client, newEdition);
+		}
+
+
+
 	}
 }
