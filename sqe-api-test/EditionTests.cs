@@ -696,6 +696,41 @@ namespace SQE.ApiTest
 			}
 		}
 
+		/// <summary>
+		/// Check if user2 can get a clone edition by user1
+		/// </summary>
+		/// <returns></returns>
+		[Fact]
+		public async Task CheckPermission()
+		{
+			//Arrange
+
+			var newEdition = await EditionHelpers.CreateCopyOfEdition
+				(_client,
+				userAuthDetails: Request.DefaultUsers.User1);
+			try
+			{
+				var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
+					_client,
+					HttpMethod.Get,
+					$"/v1/editions/{newEdition}",
+					null,
+					await Request.GetJwtViaHttpAsync(
+						_client,
+						new Request.UserAuthDetails
+						{ email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+					)
+				);
+				user2Resp.EnsureSuccessStatusCode();
+			}
+			finally
+			{
+				// Cleanup
+				await EditionHelpers.DeleteEdition(_client, newEdition);
+			}
+
+		}
+
 		// TODO: finish updating test to use new request objects.
 		/// <summary>
 		///     Test copying an edition
@@ -928,36 +963,5 @@ namespace SQE.ApiTest
 			Assert.True(msg2.id == editionId);
 		}
 
-	[Fact]
-	public async Task CheckPermission()
-		{
-			//Arrange
-
-			var newEdition = await EditionHelpers.CreateCopyOfEdition
-				(_client, 
-				userAuthDetails: Request.DefaultUsers.User1);
-			try
-			{
-				var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-					_client,
-					HttpMethod.Get,
-					$"/v1/editions/{newEdition}",
-					null,
-					await Request.GetJwtViaHttpAsync(
-						_client,
-						new Request.UserAuthDetails
-						{ email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-					)
-				);
-				user2Resp.EnsureSuccessStatusCode();
-			}
-			finally
-			{
-				// Cleanup
-				await EditionHelpers.DeleteEdition(_client, newEdition);
-			}
-
-
-		}
 	}
 }

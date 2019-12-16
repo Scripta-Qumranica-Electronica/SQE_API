@@ -22,4 +22,8 @@
   <ItemGroup>
     <ProjectReference Include="..\sqe-api-server\sqe-api-server.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
 </Project>
