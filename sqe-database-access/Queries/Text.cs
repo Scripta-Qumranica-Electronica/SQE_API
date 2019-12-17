@@ -66,16 +66,16 @@ SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 		sign_interpretation_attribute_author.user_id AS signInterpretationAttributeAuthor,
 		attribute_numeric.value AS value,
 
-		sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
-		sign_interpretation_roi.sign_interpretation_id AS SignInterpretationId,
-		sign_interpretation_roi_author.user_id AS SignInterpretationRoiAuthor,
-		sign_interpretation_roi.values_set AS ValuesSet,
-		sign_interpretation_roi.exceptional AS Exceptional,
-		ST_ASTEXT(roi_shape.path) AS Shape,
-		roi_position.translate_x AS TranslateX,
-		roi_position.translate_y AS TranslateY,
-		roi_position.stance_rotation AS StanceRotation,
-		roi_position.artefact_id AS ArtefactId
+		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
+		roi.sign_interpretation_id AS SignInterpretationId,
+		roi.user_id AS SignInterpretationRoiAuthor,
+		roi.values_set AS ValuesSet,
+		roi.exceptional AS Exceptional,
+		ST_ASTEXT(roi.path) AS Shape,
+		roi.translate_x AS TranslateX,
+		roi.translate_y AS TranslateY,
+		roi.stance_rotation AS StanceRotation,
+		roi.artefact_id AS ArtefactId
 
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
@@ -109,14 +109,28 @@ FROM sign_interpretation_ids
 	  
 	JOIN edition_editor AS sign_sequence_author ON sign_interpretation_ids.edition_editor_id = sign_sequence_author.edition_editor_id
 
-	LEFT JOIN sign_interpretation_roi ON sign_interpretation_roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
-	LEFT JOIN sign_interpretation_roi_owner 
-		ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
-		AND sign_interpretation_roi_owner.edition_id = sign_interpretation_ids.edition_id
-	LEFT JOIN roi_shape ON roi_shape.roi_shape_id = sign_interpretation_roi.roi_shape_id
-	LEFT JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
-	LEFT JOIN edition_editor AS sign_interpretation_roi_author 
-		ON sign_interpretation_roi_author.edition_editor_id = sign_interpretation_roi_owner.edition_editor_id
+	LEFT JOIN 
+		(SELECT	sign_interpretation_roi.sign_interpretation_roi_id,
+				sign_interpretation_roi.sign_interpretation_id,
+				sign_interpretation_roi_author.user_id,
+				sign_interpretation_roi.values_set,
+				sign_interpretation_roi.exceptional,
+				roi_shape.path AS path,
+				roi_position.translate_x,
+				roi_position.translate_y,
+				roi_position.stance_rotation,
+				roi_position.artefact_id,
+				sign_interpretation_roi_owner.edition_id
+		FROM sign_interpretation_roi
+			JOIN sign_interpretation_roi_owner 
+				ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
+			JOIN roi_shape ON roi_shape.roi_shape_id = sign_interpretation_roi.roi_shape_id
+			JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
+			JOIN edition_editor AS sign_interpretation_roi_author 
+				ON sign_interpretation_roi_author.edition_editor_id = sign_interpretation_roi_owner.edition_editor_id) 
+		AS roi 
+			ON roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
+				AND roi.edition_id = sign_interpretation_ids.edition_id
 
 	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
   
