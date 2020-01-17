@@ -360,6 +360,7 @@ namespace SQE.DatabaseAccess
             return createTextFragmentResponse.First().NewId.Value;
         }
 
+        // TODO: Ingo is rewriting this for the new text-fragment ordering database schema.
         private async Task<uint> _createTextFragmentPosition(EditionUserInfo editionUser,
             uint textFragmentId,
             ushort position)

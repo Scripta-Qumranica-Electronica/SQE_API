@@ -248,19 +248,50 @@ ORDER BY attribute_value_id
     internal static class GetFragmentData
     {
         public const string GetQuery = @"
-SELECT text_fragment_id AS TextFragmentId, name AS TextFragmentName, text_fragment_sequence.position AS Position, 
-       text_fragment_sequence.text_fragment_sequence_id AS TextFragmentSequenceId, 
-       text_fragment_data_owner.edition_editor_id AS EditionEditorId
-FROM text_fragment_data
-  JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
-    AND text_fragment_data_owner.edition_id = @EditionId
-  JOIN text_fragment_sequence USING(text_fragment_id)
-  JOIN text_fragment_sequence_owner ON text_fragment_sequence_owner.text_fragment_sequence_id = text_fragment_sequence.text_fragment_sequence_id
-    AND text_fragment_sequence_owner.edition_id = @EditionId
-  JOIN edition_editor ON edition_editor.edition_id = @EditionId
-  JOIN edition ON edition.edition_id = @EditionId
+WITH RECURSIVE text_fragment_ids
+	AS (
+	    SELECT 	position_in_text_fragment_stream.text_fragment_id AS textFragmentId, 
+		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
+		    position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
+		    position_in_text_fragment_stream_owner.edition_id AS editionId,
+		    @X := 0 AS sequence
+	    FROM position_in_text_fragment_stream_owner
+			JOIN position_in_text_fragment_stream USING(position_in_text_fragment_stream_id)
+		WHERE edition_id = @EditionId
+			AND (position_in_text_fragment_stream.text_fragment_id NOT IN (
+				SELECT position_in_text_fragment_stream.next_text_fragment_id
+				FROM position_in_text_fragment_stream_owner
+				JOIN position_in_text_fragment_stream USING(position_in_text_fragment_stream_id)
+				WHERE edition_id = @EditionId
+				)
+			)
+
+		UNION
+		
+		SELECT 	text_fragment_ids.nextTextFragmentId AS textFragmentId, 
+		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
+			position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
+		    position_in_text_fragment_stream_owner.edition_id AS editionId,
+			@X := @X + 1 AS sequence
+		FROM text_fragment_ids
+		LEFT JOIN position_in_text_fragment_stream 
+			ON position_in_text_fragment_stream.text_fragment_id = text_fragment_ids.nextTextFragmentId
+		JOIN position_in_text_fragment_stream_owner 
+			ON position_in_text_fragment_stream_owner.edition_id = text_fragment_ids.editionId
+				AND position_in_text_fragment_stream_owner.position_in_text_fragment_stream_id = text_fragment_ids.textFragmentPositionId
+	)
+
+SELECT	text_fragment_id AS TextFragmentId, name AS TextFragmentName, 
+		text_fragment_ids.sequence AS Position, 
+		text_fragment_data_owner.edition_editor_id AS EditionEditorId
+FROM text_fragment_ids
+	JOIN text_fragment_data ON text_fragment_data.text_fragment_id = text_fragment_ids.textFragmentId
+	JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
+		AND text_fragment_data_owner.edition_id = text_fragment_ids.editionId
+	JOIN edition_editor ON edition_editor.edition_id = text_fragment_ids.editionId
+	JOIN edition ON edition.edition_id = text_fragment_ids.editionId
 WHERE edition_editor.user_id = @UserId OR edition.public = 1
-ORDER BY text_fragment_sequence.position
+ORDER BY text_fragment_ids.sequence
       ";
     }
 
