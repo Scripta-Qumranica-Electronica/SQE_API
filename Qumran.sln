@@ -37,6 +37,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs", "U
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-hub-builder", "sqe-realtime-hub-builder\sqe-realtime-hub-builder.csproj", "{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "qwb-to-sqe", "qwb-to-sqe\qwb-to-sqe.csproj", "{A5C337B7-A222-4E74-827B-09E9270C6FEB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ingo_test", "ingo_test\ingo_test.csproj", "{51E6B0F2-6EF7-40D1-8B10-A9E696430112}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +71,14 @@ Global
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5C337B7-A222-4E74-827B-09E9270C6FEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5C337B7-A222-4E74-827B-09E9270C6FEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5C337B7-A222-4E74-827B-09E9270C6FEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5C337B7-A222-4E74-827B-09E9270C6FEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51E6B0F2-6EF7-40D1-8B10-A9E696430112}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51E6B0F2-6EF7-40D1-8B10-A9E696430112}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51E6B0F2-6EF7-40D1-8B10-A9E696430112}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51E6B0F2-6EF7-40D1-8B10-A9E696430112}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
