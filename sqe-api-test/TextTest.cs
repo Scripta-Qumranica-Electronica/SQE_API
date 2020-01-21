@@ -544,6 +544,7 @@ namespace SQE.ApiTest
             Assert.NotEqual((uint)0, msg.lines[0].lineId);
         }
 
+        // TODO: Fix API so this test passes
         [Fact]
         public async Task CannotAddTextFragmentAfterTextFragmentNotInEdition()
         {
@@ -578,6 +579,7 @@ namespace SQE.ApiTest
             }
         }
 
+        // TODO: fix API so this test passes.
         [Fact]
         public async Task CannotAddTextFragmentBeforeTextFragmentNotInEdition()
         {
@@ -612,6 +614,7 @@ namespace SQE.ApiTest
             }
         }
 
+        // TODO: it is probably best from the perspective of the API consumer that this test should pass.
         [Fact]
         public async Task CannotAddTextFragmentBetweenNonSequentialTextFragments()
         {
@@ -670,6 +673,7 @@ namespace SQE.ApiTest
             }
         }
 
+        // TODO: Ingo changed the logic so two text fragments with the same name are allowed, so probably remove this test.
         [Fact]
         public async Task CanNotAddTwoTextFragmentsWithTheSameName()
         {

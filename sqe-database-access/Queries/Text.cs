@@ -242,7 +242,8 @@ WITH RECURSIVE cte_fragment AS (
 )
 
 SELECT text_fragment_id AS TextFragmentId,
-       name AS TextFragmentName
+       name AS TextFragmentName,
+	   tfdo.edition_editor_id AS EditionEditorId
 FROM cte_fragment
     JOIN text_fragment_data USING(text_fragment_id)
     JOIN text_fragment_data_owner tfdo USING (text_fragment_data_id)
@@ -303,7 +304,7 @@ INSERT INTO text_fragment () VALUES()
 
     internal static class GetTextFragmentByName
     {
-	    public const string GetQuery = @"
+        public const string GetQuery = @"
 SELECT text_fragment_id AS TextFragmentId,
        name AS TextFragmentName
 FROM text_fragment_data
@@ -320,5 +321,5 @@ FROM edition
 WHERE edition_id = @EditionId
 ";
     }
-    
+
 }

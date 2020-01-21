@@ -36,7 +36,7 @@ namespace SQE.DatabaseAccess
             _databaseWriter = databaseWriter;
         }
 
-       public async Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
+        public async Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
         {
             var terminators = _getTerminators(editionUser, GetLineTerminators.GetQuery, lineId);
 
@@ -101,14 +101,14 @@ namespace SQE.DatabaseAccess
                 {
                     using (var transactionScope = new TransactionScope())
                     {
-                        
+
                         // Check to make sure the new named text fragment doesn't conflict with existing ones (the frontend will resolve this)
                         // TODO We don't need this - in fact, there can be different text-fragments with the same name
                         // Thus delete and also _textFragmentNameExistAsync
-                       // if (await _textFragmentNameExistAsync(editionUser, fragmentName))
-                       //     throw new StandardExceptions.ConflictingDataException("textFragmentName");
+                        // if (await _textFragmentNameExistAsync(editionUser, fragmentName))
+                        //     throw new StandardExceptions.ConflictingDataException("textFragmentName");
 
-                       // Create the new text fragment abstract id
+                        // Create the new text fragment abstract id
                         var newTextFragmentId = await _createTextFragmentIdAsync();
 
                         // Add the new text fragment to the edition manuscript
@@ -118,10 +118,10 @@ namespace SQE.DatabaseAccess
                         await _createTextFragmentDataAsync(editionUser, newTextFragmentId, fragmentName);
 
                         // Now set the position for the new text fragment
-                        
+
                         await _createTextFragmentPosition(
-                            editionUser, 
-                            previousFragmentId, 
+                            editionUser,
+                            previousFragmentId,
                             newTextFragmentId,
                             nextFragmentId);
 
@@ -372,25 +372,63 @@ namespace SQE.DatabaseAccess
         private async Task<uint> _createTextFragmentPosition(EditionUserInfo editionUser,
             uint? anchorBefore,
             uint textFragmentId,
-            uint? anchorBehind)
+            uint? anchorAfter)
         {
             List<MutationRequest> requests;
             using (var connection = OpenConnection())
             {
-                var positionDataRequestFactory = new PositionDataRequestFactory(
+                var positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
                     connection,
                     StreamType.TextFragmentStream,
                     textFragmentId,
                     editionUser.EditionId);
                 positionDataRequestFactory.AddAction(PositionAction.Break);
                 positionDataRequestFactory.AddAction(PositionAction.Add);
-                if (anchorBefore != null) positionDataRequestFactory.AddAnchorBefore(anchorBefore.Value);
-                if (anchorBehind != null) positionDataRequestFactory.AddAnchorBehind(anchorBehind.Value);
-                requests = positionDataRequestFactory.CreateRequests();
+                if (!anchorBefore.HasValue)
+                {
+                    // If no before or after text fragment id were provided, add the new one after the last text fragment
+                    if (!anchorAfter.HasValue)
+                    {
+                        var fragments = await GetFragmentDataAsync(editionUser);
+                        if (fragments.Any())
+                            anchorBefore = fragments.Last().TextFragmentId;
+                    } // Otherwise, find the text fragment before anchorAfter and insert the new text fragment between these two
+                    else
+                    {
+                        var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
+                            connection,
+                            StreamType.TextFragmentStream,
+                            anchorAfter.Value,
+                            editionUser.EditionId,
+                            true);
+                        var before = tempFac.getAnchorsBefore();
+                        if (before.Any())
+                            anchorBefore = before.First();
+                    }
+                }
+                positionDataRequestFactory.AddAnchorBefore(anchorBefore.Value);
+
+                // If no anchorAfter has been specified, set it to the text fragment following anchorBefore
+                if (!anchorAfter.HasValue)
+                {
+                    var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
+                        connection,
+                        StreamType.TextFragmentStream,
+                        anchorBefore.Value,
+                        editionUser.EditionId,
+                        true);
+                    var after = tempFac.getAnchorsAfter();
+                    if (after.Any())
+                        anchorAfter = after.First();
+                }
+
+                if (anchorAfter.HasValue)
+                    positionDataRequestFactory.AddAnchorAfter(anchorAfter.Value);
+                requests = await positionDataRequestFactory.CreateRequestsAsync();
                 connection.Close();
             }
-            
-           // Commit the mutation
+
+            // Commit the mutation
             var textFragmentMutationResults =
                 await _databaseWriter.WriteToDatabaseAsync(
                     editionUser,
@@ -408,9 +446,9 @@ namespace SQE.DatabaseAccess
 
             return textFragmentMutationResults.Last().NewId.Value;
         }
-        
-        
-        
+
+
+
         // TODO We have create a different functions using MoveTo action in PositionDataRequestFactory
         // I add some _move...-Functions
         /*
@@ -454,9 +492,10 @@ namespace SQE.DatabaseAccess
                 );
         }
         */
+
         /// <summary>
         /// Moves a text fragment(_path) to different place.
-        /// If one sets newAnchorBefore or -Behind null and keeps retrieveMissingData false
+        /// If one sets newAnchorBefore or -After null and keeps retrieveMissingData false
         /// than the item-path will be added only after or before the anchor provided and leave the other end unconnected.
         /// If retrieveMissingData is true than for the missing anchors the corresponding items, the existing anchor
         /// is connected to are used and the item-path is inserted at this point as is the case if one provides both anchors.
@@ -464,15 +503,15 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser"></param>
         /// <param name="textFragmentList"></param>
         /// <param name="newAnchorBefore"></param>
-        /// <param name="newAnchorBehind"></param>
+        /// <param name="newAnchorAfter"></param>
         /// <param name="retrieveMissingData"></param>
         /// <returns></returns>
         /// <exception cref="DataNotWrittenException"></exception>
         private async Task _moveTextFragments(EditionUserInfo editionUser,
             IReadOnlyCollection<TextFragmentData> textFragmentList,
             TextFragmentData newAnchorBefore,
-            TextFragmentData newAnchorBehind,
-            bool retrieveMissingData=false)
+            TextFragmentData newAnchorAfter,
+            bool retrieveMissingData = false)
         {
             var itemIds = textFragmentList.ToList().Select(i => i.TextFragmentId);
             PositionDataRequestFactory posDataFac;
@@ -484,42 +523,42 @@ namespace SQE.DatabaseAccess
                     itemIds.ToList(),
                     editionUser.EditionId
                 );
-                if (newAnchorBefore != null || newAnchorBehind != null)
+                if (newAnchorBefore != null || newAnchorAfter != null)
                 {
                     if (newAnchorBefore != null)
                         posDataFac.AddAnchorBefore(newAnchorBefore.TextFragmentId);
-                    else if (retrieveMissingData && newAnchorBehind != null)
+                    else if (retrieveMissingData && newAnchorAfter != null)
                     {
-                        var temp = new PositionDataRequestFactory(
+                        var temp = await PositionDataRequestFactory.CreateInstanceAsync(
                             connection,
                             StreamType.TextFragmentStream,
-                            newAnchorBehind.TextFragmentId,
+                            newAnchorAfter.TextFragmentId,
                             editionUser.EditionId,
                             true
                         );
                         posDataFac.AddAnchorsBefore(temp.getAnchorsBefore());
                     }
 
-                    if (newAnchorBehind != null)
-                        posDataFac.AddAnchorBefore(newAnchorBehind.TextFragmentId);
+                    if (newAnchorAfter != null)
+                        posDataFac.AddAnchorBefore(newAnchorAfter.TextFragmentId);
                     else if (retrieveMissingData && newAnchorBefore != null)
                     {
-                        var temp = new PositionDataRequestFactory(
+                        var temp = await PositionDataRequestFactory.CreateInstanceAsync(
                             connection,
                             StreamType.TextFragmentStream,
                             newAnchorBefore.TextFragmentId,
                             editionUser.EditionId,
                             true
                         );
-                        posDataFac.AddAnchorsBefore(temp.getAnchorsBehind());
+                        posDataFac.AddAnchorsBefore(temp.getAnchorsAfter());
                     }
                 }
 
-                
+
                 connection.Close();
             }
             posDataFac.AddAction(PositionAction.MoveTo);
-            List<MutationRequest> requests = posDataFac.CreateRequests();
+            List<MutationRequest> requests = await posDataFac.CreateRequestsAsync();
             var shiftTextFragmentMutationResults =
                 await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
@@ -563,9 +602,9 @@ namespace SQE.DatabaseAccess
                     throw new StandardExceptions.DataNotWrittenException("manuscript id to new text fragment link");
             }
         }
-        
-        
-        
+
+
+
 
         #endregion Text Fragment
 

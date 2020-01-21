@@ -15,14 +15,14 @@ namespace SQE.DatabaseAccess.Models
     {
         public uint nextSignInterpretationId { get; }
         public uint signSequenceAuthor { get; }
-        
+
         // The override for Equals and GetHashCode methods here enable the
         // HashSet nextSignInterpretations of the SignInterpretation object
         // to ensure that no duplicate values will be inserted into the set.
         public override bool Equals(object obj)
         {
-            return obj is NextSignInterpretation q 
-                   && q.nextSignInterpretationId == this.nextSignInterpretationId 
+            return obj is NextSignInterpretation q
+                   && q.nextSignInterpretationId == this.nextSignInterpretationId
                    && q.signSequenceAuthor == this.signSequenceAuthor;
         }
 
