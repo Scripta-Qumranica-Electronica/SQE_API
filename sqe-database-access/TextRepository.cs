@@ -374,9 +374,36 @@ namespace SQE.DatabaseAccess
             uint textFragmentId,
             uint? anchorAfter)
         {
+            // Verify that anchorBefore and anchorAfter are valid values if they exist
+            var fragments = await GetFragmentDataAsync(editionUser);
+            var anchorBeforeExists = false;
+            var anchorAfterExists = false;
+            int? anchorBeforeIdx = null;
+            foreach (var (fragment, idx) in fragments.Select((v, i) => (v, i)))
+            {
+                if (fragment.TextFragmentId == anchorBefore)
+                {
+                    anchorBeforeExists = true;
+                    anchorBeforeIdx = idx;
+                }
+                if (fragment.TextFragmentId == anchorAfter)
+                {
+                    anchorAfterExists = true;
+                    // Check for correct sequence of anchors if applicable
+                    if (anchorBefore.HasValue && (!anchorBeforeIdx.HasValue || anchorBeforeIdx.Value + 1 != idx))
+                        throw new StandardExceptions.InputDataRuleViolationException("the previous and next text fragment ids must be sequential");
+                }
+            }
+            if (anchorBefore.HasValue && !anchorBeforeExists)
+                throw new StandardExceptions.ImproperInputDataException("previous text fragment id");
+            if (anchorAfter.HasValue && !anchorAfterExists)
+                throw new StandardExceptions.ImproperInputDataException("next text fragment id");
+
+            // Prepare the response object
             List<MutationRequest> requests;
             using (var connection = OpenConnection())
             {
+                // Set the current text fragment position factory
                 var positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
                     connection,
                     StreamType.TextFragmentStream,
@@ -384,48 +411,56 @@ namespace SQE.DatabaseAccess
                     editionUser.EditionId);
                 positionDataRequestFactory.AddAction(PositionAction.Break);
                 positionDataRequestFactory.AddAction(PositionAction.Add);
+
+                // Determine the anchorBefore if none was provided
                 if (!anchorBefore.HasValue)
                 {
-                    // If no before or after text fragment id were provided, add the new one after the last text fragment
+                    // If no before or after text fragment id were provided, add the new text fragment after the last
+                    // text fragment in the edition (append it).
                     if (!anchorAfter.HasValue)
                     {
-                        var fragments = await GetFragmentDataAsync(editionUser);
                         if (fragments.Any())
                             anchorBefore = fragments.Last().TextFragmentId;
-                    } // Otherwise, find the text fragment before anchorAfter and insert the new text fragment between these two
+                    }
+                    // Otherwise, find the text fragment before anchorAfter, since the new text fragment will be
+                    // inserted between these two
                     else
                     {
+                        // Use the position data factory with the anchorAfter text fragment
                         var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
                             connection,
                             StreamType.TextFragmentStream,
                             anchorAfter.Value,
                             editionUser.EditionId,
                             true);
-                        var before = tempFac.getAnchorsBefore();
+                        var before = tempFac.getAnchorsBefore(); // Get the text fragment(s) directly before it
                         if (before.Any())
-                            anchorBefore = before.First();
+                            anchorBefore = before.First(); // We will work with a non-branching stream for now
                     }
                 }
-                positionDataRequestFactory.AddAnchorBefore(anchorBefore.Value);
+                // Add the before anchor for the new text fragment
+                if (anchorBefore.HasValue)
+                    positionDataRequestFactory.AddAnchorBefore(anchorBefore.Value);
 
                 // If no anchorAfter has been specified, set it to the text fragment following anchorBefore
                 if (!anchorAfter.HasValue)
                 {
+                    // Use the position data factory with the anchorBefore text fragment
                     var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
                         connection,
                         StreamType.TextFragmentStream,
                         anchorBefore.Value,
                         editionUser.EditionId,
                         true);
-                    var after = tempFac.getAnchorsAfter();
+                    var after = tempFac.getAnchorsAfter(); // Get the text fragment(s) directly after it
                     if (after.Any())
-                        anchorAfter = after.First();
+                        anchorAfter = after.First(); // We will work with a non-branching stream for now
                 }
 
+                // Add the after anchor for the new text fragment
                 if (anchorAfter.HasValue)
                     positionDataRequestFactory.AddAnchorAfter(anchorAfter.Value);
                 requests = await positionDataRequestFactory.CreateRequestsAsync();
-                connection.Close();
             }
 
             // Commit the mutation

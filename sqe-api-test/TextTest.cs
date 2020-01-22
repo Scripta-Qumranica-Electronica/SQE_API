@@ -674,54 +674,54 @@ namespace SQE.ApiTest
         }
 
         // TODO: Ingo changed the logic so two text fragments with the same name are allowed, so probably remove this test.
-        [Fact]
-        public async Task CanNotAddTwoTextFragmentsWithTheSameName()
-        {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
-            {
-                // Arrange
-                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
-                const string textFragmentName = "my new can add to end col";
-                var numberOfTextFragments = textFragments.textFragments.Count;
-
-                // Act
-                var (response, msg) = await _createTextFragment(
-                    editionId,
-                    textFragmentName
-                );
-
-                // Assert
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
-                var updatedTextFragments =
-                    await _getEditionTextFragments(
-                        editionId,
-                        true
-                    ); // Get the updated list of text fragments in the edition
-                Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-                Assert.Equal(msg.id, updatedTextFragments.textFragments.Last().id);
-                Assert.Equal(msg.name, updatedTextFragments.textFragments.Last().name);
-                Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
-
-                for (var i = 0; i < textFragments.textFragments.Count; i++)
-                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
-
-                // Act
-                (response, msg) = await _createTextFragment(
-                    editionId,
-                    textFragmentName,
-                    false
-                );
-
-                // Assert
-                Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-                var secondUpdateTextFragments = await _getEditionTextFragments(
-                    editionId,
-                    true
-                ); // Get the updated list of text fragments in the edition
-                updatedTextFragments.textFragments.ShouldDeepEqual(secondUpdateTextFragments.textFragments);
-            }
-        }
+        // [Fact]
+        // public async Task CanNotAddTwoTextFragmentsWithTheSameName()
+        // {
+        //     using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+        //     {
+        //         // Arrange
+        //         var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+        //         const string textFragmentName = "my new can add to end col";
+        //         var numberOfTextFragments = textFragments.textFragments.Count;
+        //
+        //         // Act
+        //         var (response, msg) = await _createTextFragment(
+        //             editionId,
+        //             textFragmentName
+        //         );
+        //
+        //         // Assert
+        //         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        //         Assert.Empty(textFragments.textFragments.Where(x => x.id == msg.id || x.name == msg.name));
+        //         var updatedTextFragments =
+        //             await _getEditionTextFragments(
+        //                 editionId,
+        //                 true
+        //             ); // Get the updated list of text fragments in the edition
+        //         Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
+        //         Assert.Equal(msg.id, updatedTextFragments.textFragments.Last().id);
+        //         Assert.Equal(msg.name, updatedTextFragments.textFragments.Last().name);
+        //         Assert.Equal(numberOfTextFragments + 1, updatedTextFragments.textFragments.Count);
+        //
+        //         for (var i = 0; i < textFragments.textFragments.Count; i++)
+        //             textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+        //
+        //         // Act
+        //         (response, msg) = await _createTextFragment(
+        //             editionId,
+        //             textFragmentName,
+        //             false
+        //         );
+        //
+        //         // Assert
+        //         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        //         var secondUpdateTextFragments = await _getEditionTextFragments(
+        //             editionId,
+        //             true
+        //         ); // Get the updated list of text fragments in the edition
+        //         updatedTextFragments.textFragments.ShouldDeepEqual(secondUpdateTextFragments.textFragments);
+        //     }
+        // }
 
         // TODO: authenticated retrieval and blocking of unauthorized requests
     }
