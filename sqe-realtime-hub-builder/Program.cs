@@ -13,6 +13,9 @@
  * directly in the `sqe-api-server` project.
  */
 
+// Bronson: Do you think we can turn this into a step in the build process, instead of having to run it explicitly each time
+// a controller is updated?
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -151,6 +154,10 @@ namespace sqe_realtime_hub_builder
                     outputFile.WriteLine(anonymousAllowed ? "[AllowAnonymous]" : "[Authorize]");
                     outputFile.WriteLine(methodSignature);
 
+                    // Bronson: I don't think the client ID needs to be passed to the service methods at all.
+                    // It's available through the public HubContext, so service methods can use it (I guess it will be
+                    // null if there's no current HubContext).
+                    //
                     // Format the method body and add clientId to mutate requests
                     var methodBody = Regex.Replace(
                         method.Body.ToString()
