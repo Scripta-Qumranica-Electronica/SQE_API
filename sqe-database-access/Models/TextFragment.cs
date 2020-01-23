@@ -14,6 +14,8 @@ namespace SQE.DatabaseAccess.Models
     {
         public string TextFragmentName { get; set; }
         public uint TextFragmentId { get; set; }
+        public uint? PreviousTextFragmentId { get; set; }
+        public uint? NextTextFragmentId { get; set; }
         public uint EditionEditorId { get; set; }
     }
 }

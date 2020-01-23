@@ -252,6 +252,20 @@ ORDER BY cte_fragment.sequence
       ";
     }
 
+    internal static class GetFragmentNameById
+    {
+        public const string GetQuery = @"
+SELECT text_fragment_data.name
+FROM text_fragment_data
+JOIN text_fragment_data_owner USING(text_fragment_data_id)
+JOIN edition USING(edition_id)
+JOIN edition_editor USING(edition_id)
+WHERE text_fragment_data.text_fragment_id = @TextFragmentId 
+  AND edition_id = @EditionId 
+  AND (edition_editor.user_id = @UserId OR edition.public = 1)
+";
+    }
+
     internal static class GetTextFragmentArtefacts
     {
         public const string Query = @"
@@ -310,6 +324,17 @@ SELECT text_fragment_id AS TextFragmentId,
 FROM text_fragment_data
 JOIN text_fragment_data_owner tfdo USING (text_fragment_data_id)
 WHERE name LIKE @Name and edition_id=@EditionId
+";
+    }
+
+    internal static class GetTextFragmentDataId
+    {
+        public const string GetQuery = @"
+SELECT text_fragment_data_id
+FROM text_fragment_data
+JOIN text_fragment_data_owner USING (text_fragment_data_id)
+WHERE text_fragment_data.text_fragment_id = @TextFragmentId 
+  AND text_fragment_data_owner.edition_id=@EditionId
 ";
     }
 

@@ -113,7 +113,14 @@ namespace SQE.API.DTO
 
     #region Input DTOs
 
-    public class CreateTextFragmentDTO
+    public class UpdateTextFragmentDTO
+    {
+        public virtual string name { get; set; }
+        public uint? previousTextFragmentId { get; set; }
+        public uint? nextTextFragmentId { get; set; }
+    }
+
+    public class CreateTextFragmentDTO : UpdateTextFragmentDTO
     {
         [Required]
         [StringLength(
@@ -121,10 +128,7 @@ namespace SQE.API.DTO
             MinimumLength = 1,
             ErrorMessage = "Text fragment names must be between 1 and 255 characters"
         )]
-        public string name { get; set; }
-
-        public uint? previousTextFragmentId { get; set; }
-        public uint? nextTextFragmentId { get; set; }
+        public override string name { get; set; }
     }
 
     #endregion

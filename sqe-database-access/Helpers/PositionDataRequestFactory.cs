@@ -24,52 +24,52 @@ namespace SQE.DatabaseAccess.Helpers
     ///     PositionData:
     ///     Principally, from all items given a sub-stream is created which is treated like a single item in respect to the
     ///     anchors.
-    /// 
-    ///     Add:
-    ///     Creates a path from the items.
-    ///     If anchors and/after before are set, the path will be connected to those anchors.
-    ///     Thus, to insert an item(-path) into an existing path, simply give the items
-    ///     between the path should be inserted as anchors before and after.
-    ///     Accordingly, to prepend or append a path simply do not specify an anchor after or before.
-    ///     It leaves already existing connections untouched.
-    ///     If already existing connections of the anchors should be deleted, simply add break to the list of actions.
-    /// 
-    ///     Break:
-    ///     Removes all connections between the anchors - items are ignored.
-    ///     If anchorsAfter is empty than all following connections of anchorsBefore are deleted,
-    ///     if anchorsBefore is empty than all preceding connections of anchorsAfter are deleted.
-    /// 
-    ///     Connect:
-    ///     Connects each anchor of anchorsBefore with each of anchorsAfter.
-    /// 
-    ///     Delete:
-    ///     Deletes the item(-stream)  from the stream.
-    ///     If no anchors are given, all instances of the item(-stream) are deleted,
-    ///     if anchors are given, only those connected with the anchors are deleted:
-    ///     a->b->c, a->b->d, e->b->d with delete b and without anchors => a, c, d, e,
-    ///     with delete b and anchorBefore a will leave e->b->d untouched
-    ///     with delete b and anchorsAfter c will leave a->b->d and e->b->d untouched
-    ///     with delete b and anchorBefore a and anchorsAfter d will leave a->b->c untouched.
-    /// 
-    ///     DeleteAndClose:
-    ///     Like Delete but in case the items form a straight path without any forks,
-    ///     the now orphaned anchors before and after will be connected (if both exist):
-    ///     a->b->c, a->b->d, e->b->d with delete b and without anchors => a->c, e->d, e->d.
-    ///     Note: If the items form a path with fork,  anchors behind are
-    ///     left without a predecessor because if they are not connected to a branch nt affected by the delete.
-    /// 
-    ///     MoveTo:
-    ///     Takes the path described by the itemIds out and inserts it between the new anchors provided as Ids
-    ///     If the new anchors are adjacent, then they are split up: a->b => a->c->b
-    ///     The gap between the old anchors is closed.
     /// </summary>
     public enum PositionAction
     {
+        /// <summary>
+        /// Creates a path from the items.
+        /// If anchors and/after before are set, the path will be connected to those anchors.
+        /// Thus, to insert an item(-path) into an existing path, simply give the items
+        /// between the path should be inserted as anchors before and after.
+        /// Accordingly, to prepend or append a path simply do not specify an anchor after or before.
+        /// It leaves already existing connections untouched.
+        /// If already existing connections of the anchors should be deleted, simply add break to the list of actions.
+        /// </summary>
         Add,
+        /// <summary>
+        /// Removes all connections between the anchors - items are ignored.
+        /// If anchorsAfter is empty than all following connections of anchorsBefore are deleted,
+        /// if anchorsBefore is empty than all preceding connections of anchorsAfter are deleted.
+        /// </summary>
         Break,
+        /// <summary>
+        /// Connects each anchor of anchorsBefore with each of anchorsAfter.
+        /// </summary>
         Connect,
+        /// <summary>
+        /// Deletes the item(-stream)  from the stream.
+        /// If no anchors are given, all instances of the item(-stream) are deleted,
+        /// if anchors are given, only those connected with the anchors are deleted:
+        /// a->b->c, a->b->d, e->b->d with delete b and without anchors => a, c, d, e,
+        /// with delete b and anchorBefore a will leave e->b->d untouched
+        /// with delete b and anchorsAfter c will leave a->b->d and e->b->d untouched
+        /// with delete b and anchorBefore a and anchorsAfter d will leave a->b->c untouched.
+        /// </summary>
         Delete,
+        /// <summary>
+        /// Like Delete but in case the items form a straight path without any forks,
+        /// the now orphaned anchors before and after will be connected (if both exist):
+        /// a->b->c, a->b->d, e->b->d with delete b and without anchors => a->c, e->d, e->d.
+        /// Note: If the items form a path with fork,  anchors behind are
+        /// left without a predecessor because if they are not connected to a branch nt affected by the delete.
+        /// </summary>
         DeleteAndClose,
+        /// <summary>
+        /// Takes the path described by the itemIds out and inserts it between the new anchors provided as Ids
+        /// If the new anchors are adjacent, then they are split up: a->b => a->c->b
+        /// The gap between the old anchors is closed.
+        /// </summary>
         MoveTo
     }
 
@@ -183,7 +183,7 @@ namespace SQE.DatabaseAccess.Helpers
             _anchorsBefore.AddRange(anchorsBefore);
         }
 
-        public void AddAnchorsrBehind(List<uint> anchorsAfter)
+        public void AddAnchorsAfter(List<uint> anchorsAfter)
         {
             _anchorsAfter.AddRange(anchorsAfter);
         }

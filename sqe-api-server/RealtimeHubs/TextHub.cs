@@ -28,10 +28,23 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
         /// <summary>
+        /// Updates the specified text fragment with the submitted properties
+        /// </summary>
+        /// <param name="editionId">Edition of the text fragment being updates</param>
+        /// <param name="textFragmentId">Id of the text fragment being updates</param>
+        /// <param name="updatedTextFragment">Details of the updated text fragment</param>
+        /// <returns>The details of the updated text fragment</returns>
+        [Authorize]
+        public async Task<TextFragmentDataDTO> PutV1EditionsEditionIdTextFragmentsTextFragmentId(uint editionId, uint textFragmentId, UpdateTextFragmentDTO updatedTextFragment)
+        {
+            return await _textService.UpdateTextFragmentAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId, updatedTextFragment, clientId: Context.ConnectionId);
+        }
+
+        /// <summary>
         ///     Retrieves the ids of all fragments in the given edition of a scroll
         /// </summary>
         /// <param name="editionId">Id of the edition</param>
-        /// <returns>An array of the text fregment ids in correct sequence</returns>
+        /// <returns>An array of the text fragment ids in correct sequence</returns>
         [AllowAnonymous]
         public async Task<TextFragmentDataListDTO> GetV1EditionsEditionIdTextFragments(uint editionId)
         {

@@ -256,10 +256,14 @@ export interface LineTextDTO extends LineDTO {
     licence: string;
     editors: { [key: number] : EditorDTO };
 }
-export interface CreateTextFragmentDTO {
+export interface UpdateTextFragmentDTO {
     name: string;
     previousTextFragmentId?: number;
     nextTextFragmentId?: number;
+}
+
+export interface CreateTextFragmentDTO extends UpdateTextFragmentDTO {
+    name: string;
 }
 
 export interface TransformationDTO {

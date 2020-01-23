@@ -21,6 +21,10 @@ namespace SQE.API.Server.Services
         Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
             CreateTextFragmentDTO createFragment,
             string clientId = null);
+        Task<TextFragmentDataDTO> UpdateTextFragmentAsync(EditionUserInfo editionUser,
+            uint textFragmentId,
+            UpdateTextFragmentDTO updatedFragment,
+            string clientId = null);
     }
 
     public class TextService : ITextService
@@ -85,6 +89,15 @@ namespace SQE.API.Server.Services
             );
         }
 
+        /// <summary>
+        /// Create a new text fragment in an edition.
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="createFragment">Values for the new text fragment</param>
+        /// <param name="clientId">SignalR client Id</param>
+        /// <returns>Details of the newly created text fragment.
+        /// TODO: decide if we will return info about the previous/next text fragment id's
+        /// </returns>
         public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
             CreateTextFragmentDTO createFragment,
             string clientId = null)
@@ -108,6 +121,47 @@ namespace SQE.API.Server.Services
             return newTextFragmentData;
         }
 
+        /// <summary>
+        /// Update the name and/or position of a text fragment
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="textFragmentId">Text fragment to be updated</param>
+        /// <param name="updatedFragment">Details of the new values for the text fragment</param>
+        /// <param name="clientId">SignalR client Id</param>
+        /// <returns>Details of the updated text fragment.
+        /// TODO: decide if we will return info about the previous/next text fragment id's
+        /// </returns>
+        public async Task<TextFragmentDataDTO> UpdateTextFragmentAsync(EditionUserInfo editionUser,
+            uint textFragmentId,
+            UpdateTextFragmentDTO updatedFragment,
+            string clientId = null)
+        {
+            var newFragment = await _textRepo.UpdateTextFragmentAsync(
+                editionUser,
+                textFragmentId,
+                updatedFragment.name,
+                updatedFragment.previousTextFragmentId,
+                updatedFragment.nextTextFragmentId
+            );
+
+            var newTextFragmentData = new TextFragmentDataDTO(
+                newFragment.TextFragmentId,
+                newFragment.TextFragmentName,
+                newFragment.EditionEditorId
+            );
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
+            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+                .SendAsync("createTextFragment", newTextFragmentData);
+            return newTextFragmentData;
+        }
+
+        /// <summary>
+        /// Serialize a TextEdition and the list of its editors to a TextEditionDTO.
+        /// </summary>
+        /// <param name="ed">Text edition to be serialized</param>
+        /// <param name="editors">List of edition editors</param>
+        /// <returns>A TextEditionDTO</returns>
         private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)
         {
             var editorList = new Dictionary<uint, EditorDTO>();
