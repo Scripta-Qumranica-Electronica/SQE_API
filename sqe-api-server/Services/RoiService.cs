@@ -140,6 +140,11 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             // TODO: make a DTO for the delete object.
+
+            // Bronson: I guess there are a lot of these calls throughout the services.
+            // I would create one NotifyEditionListeners function somewhere Hub related, that will get an EditionId and
+            // the parameters to SendAsync, and willl call it. It can get the clientId from the current HubContext,
+            // so there's no need in passing it along
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
                 .SendAsync("createRois", newRoisDTO);
 
