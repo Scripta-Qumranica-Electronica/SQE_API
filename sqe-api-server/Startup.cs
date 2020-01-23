@@ -231,6 +231,17 @@ namespace SQE.API.Server
 
             app.UseHttpException();
 
+            // Bronson: Do we want one Hub (with method names that are hard to understand, since they contain
+            // the controller's name), or multiple Hubs? Also, and I think we've discussed this before, we use signal R 
+            // for both updating the data and sending notifications to the client, although we also implement the same
+            // update mechanism with HTTPS. Although you've done an excellent job minimizing the changes as much as possible,
+            // I'm thinking maybe we should keep  SignalR just for notifications, and keep using HTTP for updates and for
+            // explicit queries - since HTTP just works fine there. I'll do a little reading.
+            //
+            // Of course, choosing to use HTTP for updates and SignalR for notifications can be a client-side decision -
+            // nothing prevents the client from sending HTTP *and* SignalR. This will allow, for instance, non-logged in users
+            // to use HTTP, and not take SignalR resources at all (they're read only anyway, can only see public data, and if
+            // the public data is updated while they see it - they'll miss an update, it's really fine).
             app.UseSignalR(hubs => { hubs.MapHub<MainHub>("/signalr"); });
 
             // Get app settings
