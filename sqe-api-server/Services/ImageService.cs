@@ -17,10 +17,10 @@ namespace SQE.API.Server.Services
 
     public class ImageService : IImageService
     {
-        private readonly IHubContext<MainHub> _hubContext;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IImageRepository _repo;
 
-        public ImageService(IImageRepository repo, IHubContext<MainHub> hubContext)
+        public ImageService(IImageRepository repo, IHubContext<MainHub, ISQEClient> hubContext)
         {
             _repo = repo;
             _hubContext = hubContext;

@@ -30,11 +30,11 @@ namespace SQE.API.Server.Services
 
     public class TextService : ITextService
     {
-        private readonly IHubContext<MainHub> _hubContext;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly ITextRepository _textRepo;
         private readonly IUserRepository _userRepo;
 
-        public TextService(ITextRepository textRepo, IUserRepository userRepo, IHubContext<MainHub> hubContext)
+        public TextService(ITextRepository textRepo, IUserRepository userRepo, IHubContext<MainHub, ISQEClient> hubContext)
         {
             _textRepo = textRepo;
             _userRepo = userRepo;
@@ -119,7 +119,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("createTextFragment", newTextFragmentData);
+                .CreateTextFragment(newTextFragmentData);
             return newTextFragmentData;
         }
 
@@ -155,7 +155,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("createTextFragment", newTextFragmentData);
+                .CreateTextFragment(newTextFragmentData);
             return newTextFragmentData;
         }
 
