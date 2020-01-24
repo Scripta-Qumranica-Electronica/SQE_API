@@ -63,14 +63,17 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
-        public class V1_Editions_EditionId_Editors_EditorEmailId : EditionEditorRequestObject<UpdateEditorRightsDTO, CreateEditorRightsDTO>
+        public class V1_Editions_EditionId_Editors_EditorEmailId
+            : EditionEditorRequestObject<UpdateEditorRightsDTO, CreateEditorRightsDTO>
         {
             /// <summary>
             ///     Request to change the access rights of an editor to an edition
             /// </summary>
             /// <param name="editionId">The editionId for the desired edition</param>
             /// <param name="payload">An object containing the settings for the editor and editor rights</param>
-            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId, string editorEmail, UpdateEditorRightsDTO payload) : base(
+            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId,
+                string editorEmail,
+                UpdateEditorRightsDTO payload) : base(
                 editionId,
                 editorEmail,
                 null,

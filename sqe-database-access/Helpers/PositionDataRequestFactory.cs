@@ -28,47 +28,52 @@ namespace SQE.DatabaseAccess.Helpers
     public enum PositionAction
     {
         /// <summary>
-        /// Creates a path from the items.
-        /// If anchors and/after before are set, the path will be connected to those anchors.
-        /// Thus, to insert an item(-path) into an existing path, simply give the items
-        /// between the path should be inserted as anchors before and after.
-        /// Accordingly, to prepend or append a path simply do not specify an anchor after or before.
-        /// It leaves already existing connections untouched.
-        /// If already existing connections of the anchors should be deleted, simply add break to the list of actions.
+        ///     Creates a path from the items.
+        ///     If anchors and/after before are set, the path will be connected to those anchors.
+        ///     Thus, to insert an item(-path) into an existing path, simply give the items
+        ///     between the path should be inserted as anchors before and after.
+        ///     Accordingly, to prepend or append a path simply do not specify an anchor after or before.
+        ///     It leaves already existing connections untouched.
+        ///     If already existing connections of the anchors should be deleted, simply add break to the list of actions.
         /// </summary>
         Add,
+
         /// <summary>
-        /// Removes all connections between the anchors - items are ignored.
-        /// If anchorsAfter is empty than all following connections of anchorsBefore are deleted,
-        /// if anchorsBefore is empty than all preceding connections of anchorsAfter are deleted.
+        ///     Removes all connections between the anchors - items are ignored.
+        ///     If anchorsAfter is empty than all following connections of anchorsBefore are deleted,
+        ///     if anchorsBefore is empty than all preceding connections of anchorsAfter are deleted.
         /// </summary>
         Break,
+
         /// <summary>
-        /// Connects each anchor of anchorsBefore with each of anchorsAfter.
+        ///     Connects each anchor of anchorsBefore with each of anchorsAfter.
         /// </summary>
         Connect,
+
         /// <summary>
-        /// Deletes the item(-stream)  from the stream.
-        /// If no anchors are given, all instances of the item(-stream) are deleted,
-        /// if anchors are given, only those connected with the anchors are deleted:
-        /// a->b->c, a->b->d, e->b->d with delete b and without anchors => a, c, d, e,
-        /// with delete b and anchorBefore a will leave e->b->d untouched
-        /// with delete b and anchorsAfter c will leave a->b->d and e->b->d untouched
-        /// with delete b and anchorBefore a and anchorsAfter d will leave a->b->c untouched.
+        ///     Deletes the item(-stream)  from the stream.
+        ///     If no anchors are given, all instances of the item(-stream) are deleted,
+        ///     if anchors are given, only those connected with the anchors are deleted:
+        ///     a->b->c, a->b->d, e->b->d with delete b and without anchors => a, c, d, e,
+        ///     with delete b and anchorBefore a will leave e->b->d untouched
+        ///     with delete b and anchorsAfter c will leave a->b->d and e->b->d untouched
+        ///     with delete b and anchorBefore a and anchorsAfter d will leave a->b->c untouched.
         /// </summary>
         Delete,
+
         /// <summary>
-        /// Like Delete but in case the items form a straight path without any forks,
-        /// the now orphaned anchors before and after will be connected (if both exist):
-        /// a->b->c, a->b->d, e->b->d with delete b and without anchors => a->c, e->d, e->d.
-        /// Note: If the items form a path with fork,  anchors behind are
-        /// left without a predecessor because if they are not connected to a branch nt affected by the delete.
+        ///     Like Delete but in case the items form a straight path without any forks,
+        ///     the now orphaned anchors before and after will be connected (if both exist):
+        ///     a->b->c, a->b->d, e->b->d with delete b and without anchors => a->c, e->d, e->d.
+        ///     Note: If the items form a path with fork,  anchors behind are
+        ///     left without a predecessor because if they are not connected to a branch nt affected by the delete.
         /// </summary>
         DeleteAndClose,
+
         /// <summary>
-        /// Takes the path described by the itemIds out and inserts it between the new anchors provided as Ids
-        /// If the new anchors are adjacent, then they are split up: a->b => a->c->b
-        /// The gap between the old anchors is closed.
+        ///     Takes the path described by the itemIds out and inserts it between the new anchors provided as Ids
+        ///     If the new anchors are adjacent, then they are split up: a->b => a->c->b
+        ///     The gap between the old anchors is closed.
         /// </summary>
         MoveTo
     }
@@ -76,8 +81,8 @@ namespace SQE.DatabaseAccess.Helpers
     public class PositionDataRequestFactory
     {
         private readonly List<PositionAction> _actions = new List<PositionAction>();
-        private readonly List<uint> _anchorsBefore = new List<uint>();
         private readonly List<uint> _anchorsAfter = new List<uint>();
+        private readonly List<uint> _anchorsBefore = new List<uint>();
         private readonly IDbConnection _dbConnection;
         private readonly uint _editionId;
         private readonly List<uint> _itemIds;
@@ -88,7 +93,9 @@ namespace SQE.DatabaseAccess.Helpers
         private readonly StreamType _streamType;
         private readonly string _tableName;
 
-        public PositionDataRequestFactory(IDbConnection dbConnection, StreamType streamType, List<uint> itemIds,
+        public PositionDataRequestFactory(IDbConnection dbConnection,
+            StreamType streamType,
+            List<uint> itemIds,
             uint editionId)
         {
             _dbConnection = dbConnection;
@@ -113,7 +120,8 @@ namespace SQE.DatabaseAccess.Helpers
             }
         }
 
-        public PositionDataRequestFactory(IDbConnection dbConnection, StreamType streamType,
+        public PositionDataRequestFactory(IDbConnection dbConnection,
+            StreamType streamType,
             uint itemId,
             uint editionId) : this(
             dbConnection,
@@ -125,19 +133,23 @@ namespace SQE.DatabaseAccess.Helpers
         }
 
         /// <summary>
-        /// Create a new PositionDataRequestFactory object. We use an async factory method since we may need to await the
-        /// response from AddExistingAnchors().
+        ///     Create a new PositionDataRequestFactory object. We use an async factory method since we may need to await the
+        ///     response from AddExistingAnchors().
         /// </summary>
         /// <param name="dbConnection">IDbConnection for making queries to the database</param>
         /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
         /// <param name="itemIds">A list of item ids already arranged as a path</param>
         /// <param name="editionId">Id of the edition</param>
-        /// <param name="addExistingAnchors">Boolean whether or not to automatically add the anchors before and after
-        /// the itemIds to the factory</param>
+        /// <param name="addExistingAnchors">
+        ///     Boolean whether or not to automatically add the anchors before and after
+        ///     the itemIds to the factory
+        /// </param>
         /// <returns></returns>
-        public static async Task<PositionDataRequestFactory> CreateInstanceAsync(IDbConnection dbConnection, StreamType streamType,
+        public static async Task<PositionDataRequestFactory> CreateInstanceAsync(IDbConnection dbConnection,
+            StreamType streamType,
             List<uint> itemIds,
-            uint editionId, bool addExistingAnchors = false)
+            uint editionId,
+            bool addExistingAnchors = false)
         {
             var newObject =
                 new PositionDataRequestFactory(dbConnection, streamType, itemIds, editionId);
@@ -146,20 +158,31 @@ namespace SQE.DatabaseAccess.Helpers
         }
 
         /// <summary>
-        /// Create a new PositionDataRequestFactory object. We use an async factory method since we may need to await the
-        /// response from AddExistingAnchors().
+        ///     Create a new PositionDataRequestFactory object. We use an async factory method since we may need to await the
+        ///     response from AddExistingAnchors().
         /// </summary>
         /// <param name="dbConnection">IDbConnection for making queries to the database</param>
         /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
         /// <param name="itemId">Id of the item to be manipulated</param>
         /// <param name="editionId">Id of the edition</param>
-        /// <param name="addExistingAnchors">Boolean whether or not to automatically add the anchors before and after
-        /// the itemIds to the factory</param>
+        /// <param name="addExistingAnchors">
+        ///     Boolean whether or not to automatically add the anchors before and after
+        ///     the itemIds to the factory
+        /// </param>
         /// <returns></returns>
-        public static async Task<PositionDataRequestFactory> CreateInstanceAsync(IDbConnection dbConnection, StreamType streamType,
-            uint itemId, uint editionId, bool addExistingAnchors = false)
+        public static async Task<PositionDataRequestFactory> CreateInstanceAsync(IDbConnection dbConnection,
+            StreamType streamType,
+            uint itemId,
+            uint editionId,
+            bool addExistingAnchors = false)
         {
-            return await CreateInstanceAsync(dbConnection, streamType, new List<uint> { itemId }, editionId, addExistingAnchors);
+            return await CreateInstanceAsync(
+                dbConnection,
+                streamType,
+                new List<uint> { itemId },
+                editionId,
+                addExistingAnchors
+            );
         }
 
         public async Task AddExistingAnchorsAsync()
@@ -248,27 +271,35 @@ namespace SQE.DatabaseAccess.Helpers
                     var itemId = _itemIds[i];
                     var nextItemId = _itemIds[i + 1];
                     if (_getExistingPairAsync(itemId, nextItemId) == null)
-                        requests.Add(new MutationRequest(
-                            MutateType.Create,
-                            _createParameters(itemId, nextItemId),
-                            _tableName
-                        ));
+                        requests.Add(
+                            new MutationRequest(
+                                MutateType.Create,
+                                _createParameters(itemId, nextItemId),
+                                _tableName
+                            )
+                        );
                 }
 
             foreach (var anchorBefore in _anchorsBefore)
-                requests.Add(new MutationRequest(
-                    MutateType.Create,
-                    _createParameters(anchorBefore,
-                        _itemIds.First()),
-                    _tableName
-                ));
+                requests.Add(
+                    new MutationRequest(
+                        MutateType.Create,
+                        _createParameters(
+                            anchorBefore,
+                            _itemIds.First()
+                        ),
+                        _tableName
+                    )
+                );
 
             foreach (var anchorBehind in _anchorsAfter)
-                requests.Add(new MutationRequest(
-                    MutateType.Create,
-                    _createParameters(_itemIds.Last(), anchorBehind),
-                    _tableName
-                ));
+                requests.Add(
+                    new MutationRequest(
+                        MutateType.Create,
+                        _createParameters(_itemIds.Last(), anchorBehind),
+                        _tableName
+                    )
+                );
 
             return requests;
         }
@@ -277,7 +308,8 @@ namespace SQE.DatabaseAccess.Helpers
         {
             var requests = new List<MutationRequest>();
             List<PositionDataPair> pairs;
-            if (_anchorsBefore.Any() && _anchorsAfter.Any())
+            if (_anchorsBefore.Any()
+                && _anchorsAfter.Any())
                 pairs = await _getExistingPairsAsync(_anchorsBefore, _anchorsAfter);
             else if (_anchorsBefore.Any())
                 pairs = await _getExistingPairsFromItemsAsync(_anchorsBefore);
@@ -285,10 +317,14 @@ namespace SQE.DatabaseAccess.Helpers
 
             var paramName = $"@{_tableName}_id";
             foreach (var positionInStreamId in pairs.Select(p => p.PositionInStreamId))
-                requests.Add(new MutationRequest(MutateType.Delete,
-                    new DynamicParameters(),
-                    _tableName,
-                    positionInStreamId));
+                requests.Add(
+                    new MutationRequest(
+                        MutateType.Delete,
+                        new DynamicParameters(),
+                        _tableName,
+                        positionInStreamId
+                    )
+                );
 
             return requests;
         }
@@ -299,9 +335,13 @@ namespace SQE.DatabaseAccess.Helpers
 
             foreach (var anchor in _anchorsBefore)
                 foreach (var itemId in _anchorsAfter)
-                    requests.Add(new MutationRequest(MutateType.Create,
-                        _createParameters(anchor, itemId),
-                        _tableName));
+                    requests.Add(
+                        new MutationRequest(
+                            MutateType.Create,
+                            _createParameters(anchor, itemId),
+                            _tableName
+                        )
+                    );
 
             return requests;
         }
@@ -341,18 +381,24 @@ namespace SQE.DatabaseAccess.Helpers
                     // Mark this part of the path to be deleted
                     var pair = await _getExistingPairAsync(itemId, nextItemId);
                     if (pair != null)
-                        requests.Add(new MutationRequest(MutateType.Delete,
-                            new DynamicParameters(),
-                            _tableName,
-                            pair.PositionInStreamId));
+                        requests.Add(
+                            new MutationRequest(
+                                MutateType.Delete,
+                                new DynamicParameters(),
+                                _tableName,
+                                pair.PositionInStreamId
+                            )
+                        );
                 }
 
             // Now we have to check, whether there are anchors required for the path.
             if (_anchorsBefore.Any()) // There are anchors requested before
             {
                 // First get all anchors which in fact are connected to the path
-                var connections = await _getExistingPairsAsync(_anchorsBefore,
-                    _itemIds.GetRange(0, 1));
+                var connections = await _getExistingPairsAsync(
+                    _anchorsBefore,
+                    _itemIds.GetRange(0, 1)
+                );
                 if (connections.Count == 0)
                 // If no such connections exist, the path is broken, 
                 // thus we finish here without any mutations to be done
@@ -365,10 +411,14 @@ namespace SQE.DatabaseAccess.Helpers
                     // If we have a straight path,
                     // we must also delete the connections to the anchor
                     foreach (var pair in connections)
-                        requests.Add(new MutationRequest(MutateType.Delete,
-                            new DynamicParameters(),
-                            _tableName,
-                            pair.PositionInStreamId));
+                        requests.Add(
+                            new MutationRequest(
+                                MutateType.Delete,
+                                new DynamicParameters(),
+                                _tableName,
+                                pair.PositionInStreamId
+                            )
+                        );
             }
 
             if (_anchorsAfter.Any()) // There are anchors requested behind
@@ -376,7 +426,8 @@ namespace SQE.DatabaseAccess.Helpers
                 // First get all anchors which in fact are connected to the path
                 var connections = await _getExistingPairsAsync(
                     _itemIds.GetRange(_itemIds.Count() - 1, 1),
-                    _anchorsAfter);
+                    _anchorsAfter
+                );
                 if (connections.Count() == 0)
                 // If no such connections exist, the path is broken, 
                 // thus we finish here without any mutations to be done
@@ -387,10 +438,14 @@ namespace SQE.DatabaseAccess.Helpers
 
                 // Delete the connections to the anchors behind
                 foreach (var pair in connections)
-                    requests.Add(new MutationRequest(MutateType.Delete,
-                        new DynamicParameters(),
-                        _tableName,
-                        pair.PositionInStreamId));
+                    requests.Add(
+                        new MutationRequest(
+                            MutateType.Delete,
+                            new DynamicParameters(),
+                            _tableName,
+                            pair.PositionInStreamId
+                        )
+                    );
             }
 
             if (connect && singlePath)
@@ -409,13 +464,15 @@ namespace SQE.DatabaseAccess.Helpers
                     _streamType,
                     itemId,
                     _editionId,
-                    true);
+                    true
+                );
                 tempData.AddAction(PositionAction.DeleteAndClose);
                 requests.AddRange(await tempData.CreateRequestsAsync());
             }
 
 
-            if (_anchorsBefore.Any() && _anchorsAfter.Any())
+            if (_anchorsBefore.Any()
+                && _anchorsAfter.Any())
                 foreach (var anchorBefore in _anchorsBefore)
                     foreach (var anchorBehind in _anchorsAfter)
                     {
@@ -488,7 +545,8 @@ namespace SQE.DatabaseAccess.Helpers
         {
             var result = await _getExistingPairsAsync(
                 new List<uint> { itemId },
-                new List<uint> { nextItemId });
+                new List<uint> { nextItemId }
+            );
             return result.Any() ? result.First() : null;
         }
 

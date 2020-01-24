@@ -33,7 +33,7 @@ namespace SQE.ApiTest
             var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
             try
             {
-                var newPermissions = new CreateEditorRightsDTO()
+                var newPermissions = new CreateEditorRightsDTO
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayLock = true,
@@ -131,7 +131,11 @@ namespace SQE.ApiTest
                 // Act
                 newPermissions.mayWrite = true;
                 newPermissions.isAdmin = true;
-                var add2 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(newEdition, newPermissions.email, newPermissions);
+                var add2 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(
+                    newEdition,
+                    newPermissions.email,
+                    newPermissions
+                );
                 var (_, share2Msg, _, _) = await Request.Send(
                     add2,
                     _client,
@@ -157,7 +161,11 @@ namespace SQE.ApiTest
 
                 // Act
                 newPermissions.mayLock = true;
-                var add3 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(newEdition, newPermissions.email, newPermissions);
+                var add3 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(
+                    newEdition,
+                    newPermissions.email,
+                    newPermissions
+                );
                 var (_, share3Msg, _, _) = await Request.Send(
                     add3,
                     _client,
@@ -194,17 +202,21 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-                    _client,
-                    HttpMethod.Post,
-                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                    newPermissions,
-                    await Request.GetJwtViaHttpAsync(
+                var (shareResponse, shareMsg) =
+                    await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                         _client,
-                        new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-                    )
-                );
+                        HttpMethod.Post,
+                        _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                        newPermissions,
+                        await Request.GetJwtViaHttpAsync(
+                            _client,
+                            new Request.UserAuthDetails
+                            {
+                                email = Request.DefaultUsers.User1.email,
+                                password = Request.DefaultUsers.User1.password
+                            }
+                        )
+                    );
 
                 // Assert
                 shareResponse.EnsureSuccessStatusCode();
@@ -320,17 +332,21 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-                    _client,
-                    HttpMethod.Post,
-                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                    newPermissions,
-                    await Request.GetJwtViaHttpAsync(
+                var (shareResponse, shareMsg) =
+                    await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                         _client,
-                        new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-                    )
-                );
+                        HttpMethod.Post,
+                        _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                        newPermissions,
+                        await Request.GetJwtViaHttpAsync(
+                            _client,
+                            new Request.UserAuthDetails
+                            {
+                                email = Request.DefaultUsers.User1.email,
+                                password = Request.DefaultUsers.User1.password
+                            }
+                        )
+                    );
 
                 // Assert
                 shareResponse.EnsureSuccessStatusCode();
@@ -398,17 +414,21 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-                    _client,
-                    HttpMethod.Post,
-                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                    newPermissions,
-                    await Request.GetJwtViaHttpAsync(
+                var (shareResponse, shareMsg) =
+                    await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                         _client,
-                        new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-                    )
-                );
+                        HttpMethod.Post,
+                        _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                        newPermissions,
+                        await Request.GetJwtViaHttpAsync(
+                            _client,
+                            new Request.UserAuthDetails
+                            {
+                                email = Request.DefaultUsers.User1.email,
+                                password = Request.DefaultUsers.User1.password
+                            }
+                        )
+                    );
 
                 // Assert
                 Assert.Equal(HttpStatusCode.BadRequest, shareResponse.StatusCode);
@@ -471,17 +491,21 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-                    _client,
-                    HttpMethod.Post,
-                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                    newPermissions,
-                    await Request.GetJwtViaHttpAsync(
+                var (shareResponse, shareMsg) =
+                    await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                         _client,
-                        new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-                    )
-                );
+                        HttpMethod.Post,
+                        _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                        newPermissions,
+                        await Request.GetJwtViaHttpAsync(
+                            _client,
+                            new Request.UserAuthDetails
+                            {
+                                email = Request.DefaultUsers.User1.email,
+                                password = Request.DefaultUsers.User1.password
+                            }
+                        )
+                    );
 
                 // Assert
                 Assert.Equal(HttpStatusCode.BadRequest, shareResponse.StatusCode);
@@ -512,17 +536,21 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-                    _client,
-                    HttpMethod.Post,
-                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                    newPermissions,
-                    await Request.GetJwtViaHttpAsync(
+                var (shareResponse, shareMsg) =
+                    await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                         _client,
-                        new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-                    )
-                );
+                        HttpMethod.Post,
+                        _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                        newPermissions,
+                        await Request.GetJwtViaHttpAsync(
+                            _client,
+                            new Request.UserAuthDetails
+                            {
+                                email = Request.DefaultUsers.User1.email,
+                                password = Request.DefaultUsers.User1.password
+                            }
+                        )
+                    );
 
                 var (deleteResponse, deleteMsg) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
@@ -637,17 +665,21 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-                    _client,
-                    HttpMethod.Post,
-                    _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-                    newPermissions,
-                    await Request.GetJwtViaHttpAsync(
+                var (shareResponse, shareMsg) =
+                    await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                         _client,
-                        new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-                    )
-                );
+                        HttpMethod.Post,
+                        _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
+                        newPermissions,
+                        await Request.GetJwtViaHttpAsync(
+                            _client,
+                            new Request.UserAuthDetails
+                            {
+                                email = Request.DefaultUsers.User1.email,
+                                password = Request.DefaultUsers.User1.password
+                            }
+                        )
+                    );
 
                 // Assert
                 shareResponse.EnsureSuccessStatusCode();

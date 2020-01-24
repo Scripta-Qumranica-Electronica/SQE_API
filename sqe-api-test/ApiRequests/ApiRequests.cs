@@ -154,7 +154,10 @@ namespace SQE.ApiTest.ApiRequests
         /// </summary>
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public EditionEditorRequestObject(uint editionId, string editorEmail, List<string> optional = null, Tinput payload = default(Tinput)) :
+        public EditionEditorRequestObject(uint editionId,
+            string editorEmail,
+            List<string> optional = null,
+            Tinput payload = default(Tinput)) :
             base(editionId, optional, payload)
         {
             this.editionId = editionId;

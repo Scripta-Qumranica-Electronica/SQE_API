@@ -22,13 +22,13 @@ namespace SQE.DatabaseAccess.Models
         public override bool Equals(object obj)
         {
             return obj is NextSignInterpretation q
-                   && q.nextSignInterpretationId == this.nextSignInterpretationId
-                   && q.signSequenceAuthor == this.signSequenceAuthor;
+                   && q.nextSignInterpretationId == nextSignInterpretationId
+                   && q.signSequenceAuthor == signSequenceAuthor;
         }
 
         public override int GetHashCode()
         {
-            return this.nextSignInterpretationId.GetHashCode() ^ this.signSequenceAuthor.GetHashCode();
+            return nextSignInterpretationId.GetHashCode() ^ signSequenceAuthor.GetHashCode();
         }
     }
 }

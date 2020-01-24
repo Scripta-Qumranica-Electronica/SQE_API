@@ -21,6 +21,7 @@ namespace SQE.API.Server.Services
         Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
             CreateTextFragmentDTO createFragment,
             string clientId = null);
+
         Task<TextFragmentDataDTO> UpdateTextFragmentAsync(EditionUserInfo editionUser,
             uint textFragmentId,
             UpdateTextFragmentDTO updatedFragment,
@@ -90,13 +91,14 @@ namespace SQE.API.Server.Services
         }
 
         /// <summary>
-        /// Create a new text fragment in an edition.
+        ///     Create a new text fragment in an edition.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="createFragment">Values for the new text fragment</param>
         /// <param name="clientId">SignalR client Id</param>
-        /// <returns>Details of the newly created text fragment.
-        /// TODO: decide if we will return info about the previous/next text fragment id's
+        /// <returns>
+        ///     Details of the newly created text fragment.
+        ///     TODO: decide if we will return info about the previous/next text fragment id's
         /// </returns>
         public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
             CreateTextFragmentDTO createFragment,
@@ -122,14 +124,15 @@ namespace SQE.API.Server.Services
         }
 
         /// <summary>
-        /// Update the name and/or position of a text fragment
+        ///     Update the name and/or position of a text fragment
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Text fragment to be updated</param>
         /// <param name="updatedFragment">Details of the new values for the text fragment</param>
         /// <param name="clientId">SignalR client Id</param>
-        /// <returns>Details of the updated text fragment.
-        /// TODO: decide if we will return info about the previous/next text fragment id's
+        /// <returns>
+        ///     Details of the updated text fragment.
+        ///     TODO: decide if we will return info about the previous/next text fragment id's
         /// </returns>
         public async Task<TextFragmentDataDTO> UpdateTextFragmentAsync(EditionUserInfo editionUser,
             uint textFragmentId,
@@ -157,7 +160,7 @@ namespace SQE.API.Server.Services
         }
 
         /// <summary>
-        /// Serialize a TextEdition and the list of its editors to a TextEditionDTO.
+        ///     Serialize a TextEdition and the list of its editors to a TextEditionDTO.
         /// </summary>
         /// <param name="ed">Text edition to be serialized</param>
         /// <param name="editors">List of edition editors</param>

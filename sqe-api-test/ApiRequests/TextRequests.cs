@@ -92,7 +92,9 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="editionId">The edition to add the text fragment to</param>
             /// <param name="textFragmentId">The text fragment to alter</param>
             /// <param name="payload">The details of the new text fragment</param>
-            public V1_Editions_EditionId_TextFragments_TextFragmentId(uint editionId, uint textFragmentId, UpdateTextFragmentDTO payload) : base(
+            public V1_Editions_EditionId_TextFragments_TextFragmentId(uint editionId,
+                uint textFragmentId,
+                UpdateTextFragmentDTO payload) : base(
                 editionId,
                 textFragmentId,
                 payload

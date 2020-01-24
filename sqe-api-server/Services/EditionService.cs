@@ -48,7 +48,9 @@ namespace SQE.API.Server.Services
         private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IUserRepository _userRepo;
 
-        public EditionService(IEditionRepository editionRepo, IUserRepository userRepo, IHubContext<MainHub, ISQEClient> hubContext)
+        public EditionService(IEditionRepository editionRepo,
+            IUserRepository userRepo,
+            IHubContext<MainHub, ISQEClient> hubContext)
         {
             _editionRepo = editionRepo;
             _userRepo = userRepo;

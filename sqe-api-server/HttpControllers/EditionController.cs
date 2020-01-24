@@ -42,7 +42,8 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
         [HttpPut("v1/[controller]s/{editionId}/editors/{editorEmailId}")]
-        public async Task<ActionResult<CreateEditorRightsDTO>> AlterEditionEditor([FromRoute] uint editionId, [FromRoute] string editorEmailId,
+        public async Task<ActionResult<CreateEditorRightsDTO>> AlterEditionEditor([FromRoute] uint editionId,
+            [FromRoute] string editorEmailId,
             [FromBody] UpdateEditorRightsDTO payload)
         {
             return await _editionService.ChangeEditionEditorRights(

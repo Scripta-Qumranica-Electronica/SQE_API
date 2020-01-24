@@ -346,5 +346,4 @@ FROM edition
 WHERE edition_id = @EditionId
 ";
     }
-
 }

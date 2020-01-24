@@ -49,8 +49,11 @@ namespace sqe_realtime_hub_builder
  */
 
 ";
-        private static Regex _rx = new Regex(@"Task?<(?<return>.*)?>",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private static readonly Regex _rx = new Regex(
+            @"Task?<(?<return>.*)?>",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
 
         private static void Main(string[] args)
         {
@@ -153,7 +156,8 @@ namespace sqe_realtime_hub_builder
                     var hubInterface = ParseHubInterface(
                         httpRequestType,
                         httpPath.Replace("[controller]", controllerName),
-                        returnType);
+                        returnType
+                    );
                     if (!string.IsNullOrEmpty(hubInterface))
                         hubInterfaces.Add(hubInterface);
 
@@ -410,13 +414,15 @@ namespace sqe_realtime_hub_builder
                 // For a delete (item =, e.g., .../rois/{roiId} -> roi)
                 case "Delete":
                     type = "Delete";
-                    responseType = responseType ?? "uint"; // Assume a delete just returns the uint id of the deleted item
+                    responseType =
+                        responseType ?? "uint"; // Assume a delete just returns the uint id of the deleted item
                     item = httpPath.Split("{").LastOrDefault()?.Split("Id}").FirstOrDefault();
                     break;
             }
 
             // Give up if we don't have a type or responseType
-            if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(responseType))
+            if (string.IsNullOrEmpty(type)
+                || string.IsNullOrEmpty(responseType))
                 return null;
 
             // Change item to PascalCase for use as a method name

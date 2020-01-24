@@ -36,7 +36,7 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        /// Updates the specified text fragment with the submitted properties
+        ///     Updates the specified text fragment with the submitted properties
         /// </summary>
         /// <param name="editionId">Edition of the text fragment being updates</param>
         /// <param name="textFragmentId">Id of the text fragment being updates</param>
@@ -44,7 +44,8 @@ namespace SQE.API.Server.HttpControllers
         /// <returns>The details of the updated text fragment</returns>
         [HttpPut("v1/editions/{editionId}/text-fragments/{textFragmentId}")]
         public async Task<ActionResult<TextFragmentDataDTO>> UpdateTextFragmentById([FromRoute] uint editionId,
-            [FromRoute] uint textFragmentId, [FromBody] UpdateTextFragmentDTO updatedTextFragment)
+            [FromRoute] uint textFragmentId,
+            [FromBody] UpdateTextFragmentDTO updatedTextFragment)
         {
             return await _textService.UpdateTextFragmentAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId),
