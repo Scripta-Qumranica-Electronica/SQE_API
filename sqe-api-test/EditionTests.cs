@@ -33,7 +33,7 @@ namespace SQE.ApiTest
             var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
             try
             {
-                var newPermissions = new EditorRightsDTO
+                var newPermissions = new CreateEditorRightsDTO()
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayLock = true,
@@ -94,7 +94,7 @@ namespace SQE.ApiTest
 
             try
             {
-                var newPermissions = new EditorRightsDTO
+                var newPermissions = new CreateEditorRightsDTO
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayLock = false,
@@ -131,7 +131,7 @@ namespace SQE.ApiTest
                 // Act
                 newPermissions.mayWrite = true;
                 newPermissions.isAdmin = true;
-                var add2 = new Put.V1_Editions_EditionId_Editors(newEdition, newPermissions);
+                var add2 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(newEdition, newPermissions.email, newPermissions);
                 var (_, share2Msg, _, _) = await Request.Send(
                     add2,
                     _client,
@@ -157,7 +157,7 @@ namespace SQE.ApiTest
 
                 // Act
                 newPermissions.mayLock = true;
-                var add3 = new Put.V1_Editions_EditionId_Editors(newEdition, newPermissions);
+                var add3 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(newEdition, newPermissions.email, newPermissions);
                 var (_, share3Msg, _, _) = await Request.Send(
                     add3,
                     _client,
@@ -188,13 +188,13 @@ namespace SQE.ApiTest
 
             try
             {
-                var newPermissions = new EditorRightsDTO
+                var newPermissions = new CreateEditorRightsDTO
                 {
                     email = Request.DefaultUsers.User2.email
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                     _client,
                     HttpMethod.Post,
                     _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
@@ -313,14 +313,14 @@ namespace SQE.ApiTest
 
             try
             {
-                var newPermissions = new EditorRightsDTO
+                var newPermissions = new CreateEditorRightsDTO
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayLock = true
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                     _client,
                     HttpMethod.Post,
                     _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
@@ -388,7 +388,7 @@ namespace SQE.ApiTest
 
             try
             {
-                var newPermissions = new EditorRightsDTO
+                var newPermissions = new CreateEditorRightsDTO
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayRead = false,
@@ -398,7 +398,7 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                     _client,
                     HttpMethod.Post,
                     _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
@@ -461,7 +461,7 @@ namespace SQE.ApiTest
 
             try
             {
-                var newPermissions = new EditorRightsDTO
+                var newPermissions = new CreateEditorRightsDTO
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayRead = false,
@@ -471,7 +471,7 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                     _client,
                     HttpMethod.Post,
                     _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
@@ -503,7 +503,7 @@ namespace SQE.ApiTest
 
             try
             {
-                var newPermissions = new EditorRightsDTO
+                var newPermissions = new CreateEditorRightsDTO
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayLock = true,
@@ -512,7 +512,7 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                     _client,
                     HttpMethod.Post,
                     _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
@@ -630,14 +630,14 @@ namespace SQE.ApiTest
             var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
             try
             {
-                var newPermissions = new EditorRightsDTO
+                var newPermissions = new CreateEditorRightsDTO
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayWrite = true
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<EditorRightsDTO, EditorRightsDTO>(
+                var (shareResponse, shareMsg) = await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
                     _client,
                     HttpMethod.Post,
                     _addEditionEditor.Replace("$EditionId", newEdition.ToString()),

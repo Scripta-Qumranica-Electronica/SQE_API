@@ -41,9 +41,9 @@ namespace SQE.API.Server.Services
     public class ArtefactService : IArtefactService
     {
         private readonly IArtefactRepository _artefactRepository;
-        private readonly IHubContext<MainHub> _hubContext;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 
-        public ArtefactService(IArtefactRepository artefactRepository, IHubContext<MainHub> hubContext)
+        public ArtefactService(IArtefactRepository artefactRepository, IHubContext<MainHub, ISQEClient> hubContext)
         {
             _artefactRepository = artefactRepository;
             _hubContext = hubContext;
@@ -138,7 +138,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("updateArtefact", updatedArtefact);
+                .UpdateArtefact(updatedArtefact);
 
             return updatedArtefact;
         }
@@ -172,7 +172,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("createArtefact", createArtefactnewArtefact);
+                .CreateArtefact(createArtefactnewArtefact);
 
             return createArtefactnewArtefact;
         }
@@ -186,10 +186,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync(
-                    "deleteArtefact",
-                    new DeleteEditionEntityDTO { entityId = artefactId, editorId = editionUser.EditionEditorId.Value }
-                );
+                .DeleteArtefact(artefactId);
             return new NoContentResult();
         }
 

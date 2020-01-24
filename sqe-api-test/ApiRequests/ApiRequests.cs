@@ -139,6 +139,46 @@ namespace SQE.ApiTest.ApiRequests
     }
 
     /// <summary>
+    ///     Subclass of RequestObject for all requests made on an edition
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class EditionEditorRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    {
+        public readonly uint editionId;
+        public readonly string editorEmail;
+        public readonly List<string> optional;
+
+        /// <summary>
+        ///     Provides an EditionRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public EditionEditorRequestObject(uint editionId, string editorEmail, List<string> optional = null, Tinput payload = default(Tinput)) :
+            base(editionId, optional, payload)
+        {
+            this.editionId = editionId;
+            this.editorEmail = editorEmail;
+            this.optional = optional;
+        }
+
+        protected override string HttpPath()
+        {
+            return requestPath.Replace("/edition-id", $"/{editionId.ToString()}")
+                       .Replace("/editor-email-id", $"/{editorEmail}")
+                   + (optional != null && optional.Any() ? $"?optional={string.Join(",", optional)}" : "");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? optional == null ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, optional)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, payload);
+        }
+    }
+
+    /// <summary>
     ///     Subclass of EditionRequestObject for all requests made on an imaged object
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>

@@ -11,7 +11,7 @@ using SQE.API.Server.Services;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub : Hub<ISQEClient>
     {
         private readonly IArtefactService _artefactService;
         private readonly IRoiService _roiService;

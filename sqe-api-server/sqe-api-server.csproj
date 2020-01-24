@@ -44,4 +44,7 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="dotnet run -p $(ProjectDir)../sqe-realtime-hub-builder/" />
+  </Target>
 </Project>

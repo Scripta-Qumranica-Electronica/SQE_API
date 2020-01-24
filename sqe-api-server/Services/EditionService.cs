@@ -32,22 +32,23 @@ namespace SQE.API.Server.Services
             List<string> optional,
             string clientId = null);
 
-        Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
-            EditorRightsDTO newEditor,
+        Task<CreateEditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
+            CreateEditorRightsDTO newEditor,
             string clientId = null);
 
-        Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
-            EditorRightsDTO updatedEditor,
+        Task<CreateEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+            string editorEmail,
+            UpdateEditorRightsDTO updatedEditor,
             string clientId = null);
     }
 
     public class EditionService : IEditionService
     {
         private readonly IEditionRepository _editionRepo;
-        private readonly IHubContext<MainHub> _hubContext;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IUserRepository _userRepo;
 
-        public EditionService(IEditionRepository editionRepo, IUserRepository userRepo, IHubContext<MainHub> hubContext)
+        public EditionService(IEditionRepository editionRepo, IUserRepository userRepo, IHubContext<MainHub, ISQEClient> hubContext)
         {
             _editionRepo = editionRepo;
             _userRepo = userRepo;
@@ -114,7 +115,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("updateEdition", updatedEdition);
+                .UpdateEdition(updatedEdition);
 
             return updatedEdition;
         }
@@ -186,14 +187,7 @@ namespace SQE.API.Server.Services
                     // made the request, that client directly received the response.
                     // TODO: make a DTO for the delete object.
                     await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                        .SendAsync(
-                            "deleteEdition",
-                            new DeleteEditionEntityDTO
-                            {
-                                editorId = editionUser.EditionEditorId.Value,
-                                entityId = editionUser.EditionId
-                            }
-                        );
+                        .DeleteEdition(null);
                     return null;
                 }
 
@@ -227,8 +221,8 @@ namespace SQE.API.Server.Services
         /// <param name="newEditor">Details of the new editor to be added</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
-            EditorRightsDTO newEditor,
+        public async Task<CreateEditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
+            CreateEditorRightsDTO newEditor,
             string clientId = null)
         {
             var newUserPermissions = await _editionRepo.AddEditionEditor(
@@ -245,7 +239,7 @@ namespace SQE.API.Server.Services
             // made the request, that client directly received the response.
             // TODO: make a DTO for the delete object.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("addEditionEditor", newEditorDTO);
+                .CreateEditor(newEditorDTO);
             return newEditorDTO;
         }
 
@@ -253,27 +247,28 @@ namespace SQE.API.Server.Services
         ///     Changes the access rights of an editor
         /// </summary>
         /// <param name="editionUser">User object making the request</param>
+        /// <param name="editorEmail"></param>
         /// <param name="updatedEditor">Details of the editor and the desired access rights</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
-            EditorRightsDTO updatedEditor,
+        public async Task<CreateEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+            string editorEmail,
+            UpdateEditorRightsDTO updatedEditor,
             string clientId = null)
         {
             var updatedUserPermissions = await _editionRepo.ChangeEditionEditorRights(
                 editionUser,
-                updatedEditor.email,
+                editorEmail,
                 updatedEditor.mayRead,
                 updatedEditor.mayWrite,
                 updatedEditor.mayLock,
                 updatedEditor.isAdmin
             );
-            var updatedEditorDTO = _permissionsToEditorRightsDTO(updatedEditor.email, updatedUserPermissions);
+            var updatedEditorDTO = _permissionsToEditorRightsDTO(editorEmail, updatedUserPermissions);
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("updateEditionEditor", updatedEditorDTO);
+                .UpdateEditorEmail(updatedEditorDTO);
             return updatedEditorDTO;
         }
 
@@ -321,9 +316,9 @@ namespace SQE.API.Server.Services
             };
         }
 
-        private static EditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail, Permission permissions)
+        private static CreateEditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail, Permission permissions)
         {
-            return new EditorRightsDTO
+            return new CreateEditorRightsDTO
             {
                 email = editorEmail,
                 mayRead = permissions.MayRead,

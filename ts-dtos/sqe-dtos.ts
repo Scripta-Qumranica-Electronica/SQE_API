@@ -61,12 +61,15 @@ export interface PermissionDTO {
     mayWrite: boolean;
     isAdmin: boolean;
 }
-export interface EditorRightsDTO {
-    email: string;
+export interface UpdateEditorRightsDTO {
     mayRead?: boolean;
     isAdmin?: boolean;
     mayLock?: boolean;
     mayWrite?: boolean;
+}
+
+export interface CreateEditorRightsDTO extends UpdateEditorRightsDTO {
+    email: string;
 }
 
 export interface TextEditionDTO {

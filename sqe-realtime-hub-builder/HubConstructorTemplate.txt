@@ -3,7 +3,7 @@ using SQE.API.Server.Services;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub : Hub<ISQEClient>
     {
 $Fields
 

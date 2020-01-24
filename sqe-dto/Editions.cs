@@ -37,16 +37,19 @@ namespace SQE.API.DTO
         public bool isAdmin { get; set; }
     }
 
-    public class EditorRightsDTO
+    public class UpdateEditorRightsDTO
     {
-        [Required]
-        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
-        public string email { get; set; }
-
         public bool? mayRead { get; set; }
         public bool? isAdmin { get; set; }
         public bool? mayLock { get; set; }
         public bool? mayWrite { get; set; }
+    }
+
+    public class CreateEditorRightsDTO : UpdateEditorRightsDTO
+    {
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
+        public string email { get; set; }
     }
 
     public class TextEditionDTO

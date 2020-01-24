@@ -50,21 +50,6 @@ check_appsettings_vars "MailerEmailPassword"
 check_appsettings_vars "MailerEmailSmtpUrl"
 check_appsettings_vars "MailerEmailSmtpPort"
 
-## We autogenerate the Hub methods from the Controllers
-function generate_hubs
-{
-    dotnet run --project sqe-realtime-hub-builder/sqe-realtime-hub-builder.csproj
-    if [[ "$?" != 0 ]]; then 
-        printf "\e[31mThere are errors in the HTTP controllers in 'sqe-api-server/HttpControllers'.\n"
-        printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
-        exit 1
-    fi
-}
-
-## Generating Hub Methods
-echo "Autogenerating realtime Hub methods"
-generate_hubs
-
 ## We run the "linter" to ensure the code remains formatted consistently
 function cleanup_code
 {
