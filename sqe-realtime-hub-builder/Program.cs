@@ -383,6 +383,8 @@ namespace sqe_realtime_hub_builder
                 );
         }
 
+        // TODO: I am not really happy with automatically creating the interface for the remote methods called by
+        // SignalR hub. Probably these should be manually created.
         private static string ParseHubInterface(string responseHttpType, string httpPath, string responseType)
         {
             string type = null;

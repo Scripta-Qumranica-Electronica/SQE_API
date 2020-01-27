@@ -9,6 +9,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
+using SQE.API.Server.Services;
+using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
@@ -25,7 +27,7 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task<DetailedUserTokenDTO> PostV1UsersLogin(LoginRequestDTO payload)
         {
-            return await _userService.AuthenticateAsync(payload.email, payload.password, Context.ConnectionId);
+            return await _userService.AuthenticateAsync(payload.email, payload.password, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -36,11 +38,7 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task PostV1UsersChangeUnactivatedEmail(UnactivatedEmailUpdateRequestDTO payload)
         {
-            await _userService.UpdateUnactivatedAccountEmailAsync(
-                payload.email,
-                payload.newEmail,
-                Context.ConnectionId
-            );
+            await _userService.UpdateUnactivatedAccountEmailAsync(payload.email, payload.newEmail, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -50,7 +48,7 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task PostV1UsersChangeForgottenPassword(ResetForgottenUserPasswordRequestDTO payload)
         {
-            await _userService.ResetLostPasswordAsync(payload.token, payload.password, Context.ConnectionId);
+            await _userService.ResetLostPasswordAsync(payload.token, payload.password, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -60,12 +58,7 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task PostV1UsersChangePassword(ResetLoggedInUserPasswordRequestDTO payload)
         {
-            await _userService.ChangePasswordAsync(
-                _userService.GetCurrentUserId(),
-                payload.oldPassword,
-                payload.newPassword,
-                Context.ConnectionId
-            );
+            await _userService.ChangePasswordAsync(_userService.GetCurrentUserId(), payload.oldPassword, payload.newPassword, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -80,7 +73,7 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task<DetailedUserDTO> PutV1Users(UserUpdateRequestDTO payload)
         {
-            return await _userService.UpdateUserAsync(_userService.GetCurrentUserId(), payload, Context.ConnectionId);
+            return await _userService.UpdateUserAsync(_userService.GetCurrentUserId(), payload, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -91,7 +84,7 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task PostV1UsersConfirmRegistration(AccountActivationRequestDTO payload)
         {
-            await _userService.ConfirmUserRegistrationAsync(payload.token, Context.ConnectionId);
+            await _userService.ConfirmUserRegistrationAsync(payload.token, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -101,7 +94,7 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task PostV1UsersForgotPassword(ResetUserPasswordRequestDTO payload)
         {
-            await _userService.RequestResetLostPasswordAsync(payload.email, Context.ConnectionId);
+            await _userService.RequestResetLostPasswordAsync(payload.email, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -122,7 +115,7 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task<UserDTO> PostV1Users(NewUserRequestDTO payload)
         {
-            return await _userService.CreateNewUserAsync(payload, Context.ConnectionId);
+            return await _userService.CreateNewUserAsync(payload, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -133,7 +126,8 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task PostV1UsersResendActivationEmail(ResendUserAccountActivationRequestDTO payload)
         {
-            await _userService.ResendActivationEmail(payload.email, Context.ConnectionId);
+            await _userService.ResendActivationEmail(payload.email, clientId: Context.ConnectionId);
         }
+
     }
 }

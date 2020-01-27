@@ -588,7 +588,7 @@ namespace SQE.DatabaseAccess
             {
                 // Verify that anchorBefore and anchorAfter are valid values if they exist
                 var fragments = await GetFragmentDataAsync(editionUser);
-                await _verifyTextFragmentsSequence(fragments, anchorBefore, anchorAfter);
+                _verifyTextFragmentsSequence(fragments, anchorBefore, anchorAfter);
 
                 // Set the current text fragment position factory
                 positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
@@ -689,7 +689,7 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         /// <exception cref="InputDataRuleViolationException"></exception>
         /// <exception cref="ImproperInputDataException"></exception>
-        private async Task _verifyTextFragmentsSequence(
+        private static void _verifyTextFragmentsSequence(
             List<TextFragmentData> fragments,
             uint? anchorBefore,
             uint? anchorAfter)

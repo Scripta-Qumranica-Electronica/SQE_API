@@ -77,7 +77,7 @@ export interface TextEditionDTO {
     editionName: string;
     editorId: number;
     licence: string;
-    editors: { [key: number] : EditorDTO };
+    editors: { [key: string] : EditorDTO };
     textFragments: TextFragmentDTO[];
 }
 
@@ -257,7 +257,7 @@ export interface LineDTO {
 
 export interface LineTextDTO extends LineDTO {
     licence: string;
-    editors: { [key: number] : EditorDTO };
+    editors: { [key: string] : EditorDTO };
 }
 export interface UpdateTextFragmentDTO {
     name: string;

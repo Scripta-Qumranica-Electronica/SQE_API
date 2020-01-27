@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore.Internal;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
@@ -170,20 +169,20 @@ namespace SQE.ApiTest
                 foreach (var signInterpretation in sign.signInterpretations)
                 {
                     foreach (var attr in signInterpretation.attributes)
-                        if (!msg.editors.ContainsKey(attr.editorId))
+                        if (!msg.editors.ContainsKey(attr.editorId.ToString()))
                             editorIds.Add(attr.editorId);
 
                     foreach (var roi in signInterpretation.rois)
-                        if (!msg.editors.ContainsKey(roi.editorId))
+                        if (!msg.editors.ContainsKey(roi.editorId.ToString()))
                             editorIds.Add(roi.editorId);
 
                     foreach (var nexSign in signInterpretation.nextSignInterpretations)
-                        if (!msg.editors.ContainsKey(nexSign.editorId))
+                        if (!msg.editors.ContainsKey(nexSign.editorId.ToString()))
                             editorIds.Add(nexSign.editorId);
                 }
 
             Assert.NotEmpty(editorIds);
-            foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId));
+            foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId.ToString()));
         }
 
         private static void _verifyTextEditionDTO(TextEditionDTO msg)
@@ -234,34 +233,34 @@ namespace SQE.ApiTest
             var editorIds = new List<uint> { msg.editorId };
             foreach (var textFragment in msg.textFragments)
             {
-                if (!msg.editors.ContainsKey(textFragment.editorId))
+                if (!msg.editors.ContainsKey(textFragment.editorId.ToString()))
                     editorIds.Add(textFragment.editorId);
 
                 foreach (var line in textFragment.lines)
                 {
-                    if (!msg.editors.ContainsKey(line.editorId))
+                    if (!msg.editors.ContainsKey(line.editorId.ToString()))
                         editorIds.Add(line.editorId);
 
                     foreach (var sign in line.signs)
                         foreach (var signInterpretation in sign.signInterpretations)
                         {
                             foreach (var attr in signInterpretation.attributes)
-                                if (!msg.editors.ContainsKey(attr.editorId))
+                                if (!msg.editors.ContainsKey(attr.editorId.ToString()))
                                     editorIds.Add(attr.editorId);
 
                             foreach (var roi in signInterpretation.rois)
-                                if (!msg.editors.ContainsKey(roi.editorId))
+                                if (!msg.editors.ContainsKey(roi.editorId.ToString()))
                                     editorIds.Add(roi.editorId);
 
                             foreach (var nexSign in signInterpretation.nextSignInterpretations)
-                                if (!msg.editors.ContainsKey(nexSign.editorId))
+                                if (!msg.editors.ContainsKey(nexSign.editorId.ToString()))
                                     editorIds.Add(nexSign.editorId);
                         }
                 }
             }
 
             Assert.NotEmpty(editorIds);
-            foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId));
+            foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId.ToString()));
         }
 
         [Fact]
@@ -303,7 +302,7 @@ namespace SQE.ApiTest
                         true
                     ); // Get the updated list of text fragments in the edition
                 Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                var index = updatedTextFragments.textFragments.Select(x => x.id).ToList().IndexOf(msg.id);
                 Assert.Equal(1, index); //Index 1 would be the second position
                 Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
                 Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
@@ -359,7 +358,7 @@ namespace SQE.ApiTest
                         true
                     ); // Get the updated list of text fragments in the edition
                 Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                var index = updatedTextFragments.textFragments.Select(x => x.id).ToList().IndexOf(msg.id);
                 Assert.Equal(updatedTextFragments.textFragments.Count - 2, index); // Check that it is second to last
                 Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
                 Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
@@ -409,7 +408,7 @@ namespace SQE.ApiTest
                             true
                         ); // Get the updated list of text fragments in the edition
                     Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-                    var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                    var index = updatedTextFragments.textFragments.Select(x => x.id).ToList().IndexOf(msg.id);
                     Assert.Equal(1, index); //Index 1 would be the second position
                     Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
                     Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);

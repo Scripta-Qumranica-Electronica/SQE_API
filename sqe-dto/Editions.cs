@@ -58,7 +58,7 @@ namespace SQE.API.DTO
         public string editionName { get; set; }
         public uint editorId { get; set; }
         public string licence { get; set; }
-        public Dictionary<uint, EditorDTO> editors { get; set; }
+        public Dictionary<string, EditorDTO> editors { get; set; }
         public List<TextFragmentDTO> textFragments { get; set; }
     }
 
@@ -104,6 +104,8 @@ namespace SQE.API.DTO
             this.collaborators = collaborators;
         }
 
+        public EditionUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty) { }
+
 
         [StringLength(
             255,
@@ -122,6 +124,8 @@ namespace SQE.API.DTO
             : base(name, copyrightHolder, collaborators)
         {
         }
+
+        public EditionCopyDTO() : this(string.Empty, string.Empty, string.Empty) { }
     }
 
     #endregion Request DTO's

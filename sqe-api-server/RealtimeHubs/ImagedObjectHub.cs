@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
+using SQE.API.Server.Services;
+using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
@@ -23,15 +25,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
         /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
-        public async Task<ImagedObjectDTO> GetV1EditionsEditionIdImagedObjectsImagedObjectId(uint editionId,
-            string imagedObjectId,
-            List<string> optional)
+        public async Task<ImagedObjectDTO> GetV1EditionsEditionIdImagedObjectsImagedObjectId(uint editionId, string imagedObjectId, List<string> optional)
         {
-            return await _imagedObjectService.GetImagedObjectAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId),
-                imagedObjectId,
-                optional
-            );
+            return await _imagedObjectService.GetImagedObjectAsync(await _userService.GetCurrentUserObjectAsync(editionId), imagedObjectId, optional);
         }
 
         /// <summary>
@@ -41,13 +37,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
-        public async Task<ImagedObjectListDTO> GetV1EditionsEditionIdImagedObjects(uint editionId,
-            List<string> optional)
+        public async Task<ImagedObjectListDTO> GetV1EditionsEditionIdImagedObjects(uint editionId, List<string> optional)
         {
-            return await _imagedObjectService.GetImagedObjectsAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId),
-                optional
-            );
+            return await _imagedObjectService.GetImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
         }
 
         /// <summary>
@@ -58,5 +50,6 @@ namespace SQE.API.Server.RealtimeHubs
         {
             return await _imageService.GetImageInstitutionsAsync();
         }
+
     }
 }

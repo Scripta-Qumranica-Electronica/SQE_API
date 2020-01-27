@@ -167,10 +167,10 @@ namespace SQE.API.Server.Services
         /// <returns>A TextEditionDTO</returns>
         private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)
         {
-            var editorList = new Dictionary<uint, EditorDTO>();
+            var editorList = new Dictionary<string, EditorDTO>();
             foreach (var editor in editors)
                 editorList.Add(
-                    editor.UserId,
+                    editor.UserId.ToString(),
                     new EditorDTO
                     {
                         forename = editor.Forename,
@@ -278,10 +278,10 @@ namespace SQE.API.Server.Services
 
         private static LineTextDTO _textEditionLineToDTO(TextEdition ed, List<EditorInfo> editors)
         {
-            var editorList = new Dictionary<uint, EditorDTO>();
+            var editorList = new Dictionary<string, EditorDTO>();
             foreach (var editor in editors)
                 editorList.Add(
-                    editor.UserId,
+                    editor.UserId.ToString(),
                     new EditorDTO
                     {
                         forename = editor.Forename,

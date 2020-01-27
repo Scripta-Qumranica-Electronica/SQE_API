@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
@@ -37,6 +38,8 @@ namespace SQE.API.DTO
             this.surname = surname;
         }
 
+        public UserUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty) { }
+
         public string password { get; set; }
         public string email { get; set; }
         public string organization { get; set; }
@@ -52,6 +55,7 @@ namespace SQE.API.DTO
             this.email = email;
             this.password = password;
         }
+        public NewUserRequestDTO() : this(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty) { }
 
         [Required]
         [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]

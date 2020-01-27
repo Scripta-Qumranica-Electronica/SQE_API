@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
 using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
@@ -22,7 +23,7 @@ namespace SQE.API.Server.RealtimeHubs
         // associated with a user_id, only the client.
 
         /// <summary>
-        ///     The client subscribes to all changes for the specified editionId.
+        /// The client subscribes to all changes for the specified editionId.
         /// </summary>
         /// <param name="editionId">The ID of the edition to receive updates</param>
         /// <returns></returns>
@@ -55,7 +56,7 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
         /// <summary>
-        ///     The client unsubscribes to all changes for the specified editionId.
+        /// The client unsubscribes to all changes for the specified editionId.
         /// </summary>
         /// <param name="editionId">The ID of the edition to stop receiving updates</param>
         /// <returns></returns>
@@ -71,22 +72,24 @@ namespace SQE.API.Server.RealtimeHubs
                 if (clientSubscriptions.Contains(editionId))
                 {
                     await Groups.RemoveFromGroupAsync(Context.ConnectionId, editionId.ToString());
-                    clientSubscriptions.RemoveAll(x => x == editionId);
+                    clientSubscriptions.RemoveAll((x) => x == editionId);
                 }
             }
         }
 
         /// <summary>
-        ///     Get a list of all editions the client is currently subscribed to.
+        /// Get a list of all editions the client is currently subscribed to.
         /// </summary>
         /// <returns>A list of every editionId for which the client receives update</returns>
         public List<uint> ListEditionSubscriptions()
         {
             // If client is already subscribed to at least one editionId
             if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
+            {
                 // It seems that Context.Items is hardcoded as Dict<object, object>.
                 // Too bad I don't know a better way to deal with that.
                 return clientSubscriptionsObject as List<uint>;
+            }
 
             return null;
         }

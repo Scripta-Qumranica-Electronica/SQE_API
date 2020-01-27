@@ -277,7 +277,7 @@ namespace SQE.DatabaseAccess
         public ReliableMySqlConnection(DatabaseCommunicationCircuitBreakPolicy circuitBreakPolicy)
         {
             _circuitBreakPolicy = circuitBreakPolicy;
-            _underlyingConnection = new MySqlConnection(ConnectionString);
+            _underlyingConnection = new MySqlConnection("");
         }
 
         public ReliableMySqlConnection(string connectionString,
