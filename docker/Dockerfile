@@ -10,7 +10,7 @@ WORKDIR /src
 COPY ./sqe-api-server/sqe-api-server.csproj ./sqe-api-server/
 COPY ./sqe-database-access/sqe-database-access.csproj ./sqe-database-access/
 COPY ./sqe-dto/sqe-dto.csproj ./sqe-dto/
-COPY ./Utilities/sqe-realtime-hub-builder/sqe-realtime-hub-builder.csproj ./sqe-realtime-hub-builder/
+COPY ./sqe-realtime-hub-builder/sqe-realtime-hub-builder.csproj ./sqe-realtime-hub-builder/
 
 RUN dotnet restore "sqe-api-server/sqe-api-server.csproj"
 
@@ -19,7 +19,7 @@ WORKDIR /src/sqe-api-server
 COPY ./sqe-api-server /src/sqe-api-server
 COPY ./sqe-database-access /src/sqe-database-access
 COPY ./sqe-dto /src/sqe-dto
-COPY ./Utilities/sqe-realtime-hub-builder /src/sqe-realtime-hub-builder
+COPY ./sqe-realtime-hub-builder /src/sqe-realtime-hub-builder
 
 RUN dotnet build "sqe-api-server.csproj" -c Release -o /app
 
