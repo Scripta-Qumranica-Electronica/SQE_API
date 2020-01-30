@@ -79,21 +79,25 @@ namespace sqe_realtime_hub_builder
             // Delete any existing Realtime Hubs
             Console.WriteLine($"Deleting any existing realtime hub methods from {hubFolder}.");
             var folderInfo = new DirectoryInfo(hubFolder);
-            foreach (var file in folderInfo.GetFiles()) file.Delete();
+            foreach (var file in folderInfo.GetFiles())
+            {
+                if (file.Name != "HubInterface.cs")
+                    file.Delete();
+            }
 
             // Parse each controller file
             foreach (var file in files)
             {
                 var (tempClassFields, tempHubInterfaces) = ParseSqeHttpControllers(hubFolder, file);
                 classFields = classFields.Union(tempClassFields, new FieldComparer()).ToList();
-                hubInterfaces = hubInterfaces.Union(tempHubInterfaces).ToList();
+                //hubInterfaces = hubInterfaces.Union(tempHubInterfaces).ToList(); // We don't do this now
             }
 
             // Format and write the Hub controller
             WriteHubController(classFields, projectRoot, hubFolder);
 
-            // Format and write the Hub interface
-            WriteHubInterface(hubInterfaces, projectRoot, hubFolder);
+            // Format and write the Hub interface——We do not do this now
+            //WriteHubInterface(hubInterfaces, projectRoot, hubFolder);
 
             // Format and write the custom subscription controller
             CopySubscriptionHubController(projectRoot, hubFolder);

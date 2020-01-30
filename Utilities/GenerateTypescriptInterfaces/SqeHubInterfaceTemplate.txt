@@ -1,0 +1,16 @@
+import { 
+$IMPORTS
+} from "@/dtos/sqe-dtos"
+
+interface SignalRSQE extends SignalR {  
+    sqeHub: SQEHub;  
+}  
+
+interface SQEHub extends HubConnection {  
+    client: {  // callbacks on client side through server
+$CLIENTMETHODS  
+    };  
+    server: {  // Calling of server side hubs
+$SERVERMETHODS  
+    }  
+} 
