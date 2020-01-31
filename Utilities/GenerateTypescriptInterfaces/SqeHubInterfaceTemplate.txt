@@ -2,15 +2,62 @@ import {
 $IMPORTS
 } from "@/dtos/sqe-dtos"
 
-interface SignalRSQE extends SignalR {  
-    sqeHub: SQEHub;  
-}  
+import { HubConnectionBuilder, LogLevel, HubConnection } from '@microsoft/signalr'; 
 
-interface SQEHub extends HubConnection {  
-    client: {  // callbacks on client side through server
-$CLIENTMETHODS  
-    };  
-    server: {  // Calling of server side hubs
-$SERVERMETHODS  
-    }  
+export class SignalRSQE {  
+    private _connection?: HubConnection;
+    private _onConnectionClosed = (error?: Error) => { 
+        console.debug(`Closed connection.`);
+        if (error)
+            throw error;
+    };
+
+    public async start(url: string, logging: LogLevel, token: string | null) {
+        if (this._connection) {
+            this._connection.stop();
+        }
+
+        this._connection = new HubConnectionBuilder()
+            .withUrl(url, {
+                accessTokenFactory: () => token || ''
+            }).configureLogging(logging)
+            .build();
+
+        try {
+            await this._connection.start();
+            this._connection!.onclose(this._onConnectionClosed);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    public async stop() {
+        if (this._connection) {
+            await this._connection!.stop();
+        }
+    }
+
+    public setOnConnectionClosed(func: (error?: Error) => void): void {
+        this._onConnectionClosed = func;
+        if (this._connection) {
+            this._connection!.onclose(this._onConnectionClosed);
+        }
+    }
+
+    /*
+     * Server methods.
+     */
+$SERVERMETHODS
+
+    /*
+     * Client methods.
+     */
+$CLIENTMETHODS
+    public OnUpdatedEdition(func: (returnedData: EditionDTO) => {}): void {
+        this._connection!.on('UpdatedEdition', func)
+    }
+
+    public OffUpdatedEdition(func: (returnedData: EditionDTO) => {}): void {
+        this._connection!.off('UpdatedEdition', func)
+    }
 } 

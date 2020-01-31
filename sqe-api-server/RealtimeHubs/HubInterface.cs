@@ -1,4 +1,3 @@
-// I stayed alive!!!
 using System.Threading.Tasks;
 using SQE.API.DTO;
 
