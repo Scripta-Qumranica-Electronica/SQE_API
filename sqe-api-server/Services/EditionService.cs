@@ -117,7 +117,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .UpdateEdition(updatedEdition);
+                .UpdatedEdition(updatedEdition);
 
             return updatedEdition;
         }
@@ -189,7 +189,7 @@ namespace SQE.API.Server.Services
                     // made the request, that client directly received the response.
                     // TODO: make a DTO for the delete object.
                     await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                        .DeleteEdition(null);
+                        .DeletedEdition(null);
                     return null;
                 }
 
@@ -241,7 +241,7 @@ namespace SQE.API.Server.Services
             // made the request, that client directly received the response.
             // TODO: make a DTO for the delete object.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreateEditor(newEditorDTO);
+                .CreatedEditor(newEditorDTO);
             return newEditorDTO;
         }
 
@@ -270,7 +270,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .UpdateEditorEmail(updatedEditorDTO);
+                .UpdatedEditorEmail(updatedEditorDTO);
             return updatedEditorDTO;
         }
 

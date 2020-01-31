@@ -5,23 +5,23 @@ namespace SQE.API.Server.RealtimeHubs
 {
     public interface ISQEClient
     {
-        Task CreateTextFragment(TextFragmentDataDTO returnedData);
+        Task CreatedTextFragment(TextFragmentDataDTO returnedData);
         Task UpdateTextFragment(TextFragmentDataDTO returnedData);
-        Task CreateEditor(CreateEditorRightsDTO returnedData);
-        Task UpdateEditorEmail(CreateEditorRightsDTO returnedData);
+        Task CreatedEditor(CreateEditorRightsDTO returnedData);
+        Task UpdatedEditorEmail(CreateEditorRightsDTO returnedData);
         Task CreateEditionId(EditionDTO returnedData);
-        Task DeleteEdition(DeleteTokenDTO returnedData);
-        Task UpdateEdition(EditionDTO returnedData);
-        Task CreateLogin(DetailedUserTokenDTO returnedData);
-        Task CreateUser(UserDTO returnedData);
-        Task CreateRoi(InterpretationRoiDTO returnedData);
-        Task CreateRoisBatch(InterpretationRoiDTOList returnedData);
-        Task CreateRoisBatchEdit(BatchEditRoiResponseDTO returnedData);
-        Task UpdateRoi(UpdatedInterpretationRoiDTO returnedData);
-        Task UpdateRoisBatch(UpdatedInterpretationRoiDTOList returnedData);
-        Task DeleteRoi(uint returnedData);
-        Task CreateArtefact(ArtefactDTO returnedData);
-        Task DeleteArtefact(uint returnedData);
-        Task UpdateArtefact(ArtefactDTO returnedData);
+        Task DeletedEdition(DeleteTokenDTO returnedData);
+        Task UpdatedEdition(EditionDTO returnedData);
+        Task CreatedLogin(DetailedUserTokenDTO returnedData);
+        Task CreatedUser(UserDTO returnedData);
+        Task CreatedRoi(InterpretationRoiDTO returnedData);
+        Task CreatedRoisBatch(InterpretationRoiDTOList returnedData);
+        Task CreatedRoisBatchEdit(BatchEditRoiResponseDTO returnedData);
+        Task UpdatedRoi(UpdatedInterpretationRoiDTO returnedData);
+        Task UpdatedRoisBatch(UpdatedInterpretationRoiDTOList returnedData);
+        Task DeletedRoi(uint returnedData);
+        Task CreatedArtefact(ArtefactDTO returnedData);
+        Task DeletedArtefact(uint returnedData);
+        Task UpdatedArtefact(ArtefactDTO returnedData);
     }
 }

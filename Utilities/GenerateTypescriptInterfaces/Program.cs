@@ -36,11 +36,11 @@ namespace GenerateTypescriptInterfaces
     }";
 
         private const string _clientMethodTemplate = @"
-    public on$METHODNAME(func: ($METHODRETURN) => {}): void {
+    public on$METHODNAME(func: ($METHODRETURN) => void): void {
         this._connection!.on('$METHODNAME', func)
     }
 
-    public off$METHODNAME(func: ($METHODRETURN) => {}): void {
+    public off$METHODNAME(func: ($METHODRETURN) => void): void {
         this._connection!.off('$METHODNAME', func)
     }
 ";
@@ -87,7 +87,6 @@ namespace GenerateTypescriptInterfaces
             {
                 if (file.Name != "HubInterface.cs")
                 {
-                    Console.WriteLine(file.Name);
                     var tmpHubMethods = ParseSqeHttpControllers(file);
                     hubMethods = hubMethods.Union(tmpHubMethods).ToList();
                 }
@@ -95,21 +94,12 @@ namespace GenerateTypescriptInterfaces
                     hubInterfaceMethods = ParseSqeHttpControllers(file);
             }
 
-            foreach (var hubMethod in hubMethods)
-                Console.WriteLine(hubMethod);
-
-            Console.WriteLine("Interface");
-            foreach (var hubMethod in hubInterfaceMethods)
-                Console.WriteLine(hubMethod);
-
             WriteTsHub(hubMethods, hubInterfaceMethods, tsFolder, projectRoot);
-
+            Console.WriteLine("Finished creating the SQE signalr typescript interface.");
         }
 
         private static List<MethodDesc> ParseSqeHttpControllers(FileInfo file)
         {
-            Console.WriteLine($"Parsing {file.FullName}");
-
             // Parse the code to the relevant members
             var code = new StreamReader(file.FullName).ReadToEnd();
             var tree = CSharpSyntaxTree.ParseText(code);
@@ -202,11 +192,8 @@ namespace GenerateTypescriptInterfaces
             var rgx = new Regex(@"(\w+?):");
             var types = new StreamReader($"{tsFolder}/sqe-dtos.ts").ReadToEnd();
             var matches = _rxi.Matches(types);
-            //type = matches.Count >= 1 ? ConvertToTypescriptType(matches[0].Groups["return"].Value) : "void";
-            foreach (var match in matches.ToList())
-                Console.WriteLine(match.Groups["type"].Value);
             var template = new StreamReader($"{baseFolder}/SqeHubInterfaceTemplate.txt").ReadToEnd();
-            using (var outputFile = new StreamWriter(Path.Combine(tsFolder, "sqe-hub-types.ts")))
+            using (var outputFile = new StreamWriter(Path.Combine(tsFolder, "sqe-signalr.ts")))
             {
                 outputFile.Write(_autogenFileDisclaimer);
                 outputFile.Write(template

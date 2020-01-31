@@ -299,165 +299,165 @@ export class SignalRSQE {
      * Client methods.
      */
 
-    public onCreateTextFragment(func: (returnedData: TextFragmentDataDTO) => {}): void {
-        this._connection!.on('CreateTextFragment', func)
+    public onCreatedTextFragment(func: (returnedData: TextFragmentDataDTO) => void): void {
+        this._connection!.on('CreatedTextFragment', func)
     }
 
-    public offCreateTextFragment(func: (returnedData: TextFragmentDataDTO) => {}): void {
-        this._connection!.off('CreateTextFragment', func)
+    public offCreatedTextFragment(func: (returnedData: TextFragmentDataDTO) => void): void {
+        this._connection!.off('CreatedTextFragment', func)
     }
 
 
-    public onUpdateTextFragment(func: (returnedData: TextFragmentDataDTO) => {}): void {
+    public onUpdateTextFragment(func: (returnedData: TextFragmentDataDTO) => void): void {
         this._connection!.on('UpdateTextFragment', func)
     }
 
-    public offUpdateTextFragment(func: (returnedData: TextFragmentDataDTO) => {}): void {
+    public offUpdateTextFragment(func: (returnedData: TextFragmentDataDTO) => void): void {
         this._connection!.off('UpdateTextFragment', func)
     }
 
 
-    public onCreateEditor(func: (returnedData: CreateEditorRightsDTO) => {}): void {
-        this._connection!.on('CreateEditor', func)
+    public onCreatedEditor(func: (returnedData: CreateEditorRightsDTO) => void): void {
+        this._connection!.on('CreatedEditor', func)
     }
 
-    public offCreateEditor(func: (returnedData: CreateEditorRightsDTO) => {}): void {
-        this._connection!.off('CreateEditor', func)
-    }
-
-
-    public onUpdateEditorEmail(func: (returnedData: CreateEditorRightsDTO) => {}): void {
-        this._connection!.on('UpdateEditorEmail', func)
-    }
-
-    public offUpdateEditorEmail(func: (returnedData: CreateEditorRightsDTO) => {}): void {
-        this._connection!.off('UpdateEditorEmail', func)
+    public offCreatedEditor(func: (returnedData: CreateEditorRightsDTO) => void): void {
+        this._connection!.off('CreatedEditor', func)
     }
 
 
-    public onCreateEditionId(func: (returnedData: EditionDTO) => {}): void {
+    public onUpdatedEditorEmail(func: (returnedData: CreateEditorRightsDTO) => void): void {
+        this._connection!.on('UpdatedEditorEmail', func)
+    }
+
+    public offUpdatedEditorEmail(func: (returnedData: CreateEditorRightsDTO) => void): void {
+        this._connection!.off('UpdatedEditorEmail', func)
+    }
+
+
+    public onCreateEditionId(func: (returnedData: EditionDTO) => void): void {
         this._connection!.on('CreateEditionId', func)
     }
 
-    public offCreateEditionId(func: (returnedData: EditionDTO) => {}): void {
+    public offCreateEditionId(func: (returnedData: EditionDTO) => void): void {
         this._connection!.off('CreateEditionId', func)
     }
 
 
-    public onDeleteEdition(func: (returnedData: DeleteTokenDTO) => {}): void {
-        this._connection!.on('DeleteEdition', func)
+    public onDeletedEdition(func: (returnedData: DeleteTokenDTO) => void): void {
+        this._connection!.on('DeletedEdition', func)
     }
 
-    public offDeleteEdition(func: (returnedData: DeleteTokenDTO) => {}): void {
-        this._connection!.off('DeleteEdition', func)
-    }
-
-
-    public onUpdateEdition(func: (returnedData: EditionDTO) => {}): void {
-        this._connection!.on('UpdateEdition', func)
-    }
-
-    public offUpdateEdition(func: (returnedData: EditionDTO) => {}): void {
-        this._connection!.off('UpdateEdition', func)
+    public offDeletedEdition(func: (returnedData: DeleteTokenDTO) => void): void {
+        this._connection!.off('DeletedEdition', func)
     }
 
 
-    public onCreateLogin(func: (returnedData: DetailedUserTokenDTO) => {}): void {
-        this._connection!.on('CreateLogin', func)
+    public onUpdatedEdition(func: (returnedData: EditionDTO) => void): void {
+        this._connection!.on('UpdatedEdition', func)
     }
 
-    public offCreateLogin(func: (returnedData: DetailedUserTokenDTO) => {}): void {
-        this._connection!.off('CreateLogin', func)
-    }
-
-
-    public onCreateUser(func: (returnedData: UserDTO) => {}): void {
-        this._connection!.on('CreateUser', func)
-    }
-
-    public offCreateUser(func: (returnedData: UserDTO) => {}): void {
-        this._connection!.off('CreateUser', func)
+    public offUpdatedEdition(func: (returnedData: EditionDTO) => void): void {
+        this._connection!.off('UpdatedEdition', func)
     }
 
 
-    public onCreateRoi(func: (returnedData: InterpretationRoiDTO) => {}): void {
-        this._connection!.on('CreateRoi', func)
+    public onCreatedLogin(func: (returnedData: DetailedUserTokenDTO) => void): void {
+        this._connection!.on('CreatedLogin', func)
     }
 
-    public offCreateRoi(func: (returnedData: InterpretationRoiDTO) => {}): void {
-        this._connection!.off('CreateRoi', func)
-    }
-
-
-    public onCreateRoisBatch(func: (returnedData: InterpretationRoiDTOList) => {}): void {
-        this._connection!.on('CreateRoisBatch', func)
-    }
-
-    public offCreateRoisBatch(func: (returnedData: InterpretationRoiDTOList) => {}): void {
-        this._connection!.off('CreateRoisBatch', func)
+    public offCreatedLogin(func: (returnedData: DetailedUserTokenDTO) => void): void {
+        this._connection!.off('CreatedLogin', func)
     }
 
 
-    public onCreateRoisBatchEdit(func: (returnedData: BatchEditRoiResponseDTO) => {}): void {
-        this._connection!.on('CreateRoisBatchEdit', func)
+    public onCreatedUser(func: (returnedData: UserDTO) => void): void {
+        this._connection!.on('CreatedUser', func)
     }
 
-    public offCreateRoisBatchEdit(func: (returnedData: BatchEditRoiResponseDTO) => {}): void {
-        this._connection!.off('CreateRoisBatchEdit', func)
-    }
-
-
-    public onUpdateRoi(func: (returnedData: UpdatedInterpretationRoiDTO) => {}): void {
-        this._connection!.on('UpdateRoi', func)
-    }
-
-    public offUpdateRoi(func: (returnedData: UpdatedInterpretationRoiDTO) => {}): void {
-        this._connection!.off('UpdateRoi', func)
+    public offCreatedUser(func: (returnedData: UserDTO) => void): void {
+        this._connection!.off('CreatedUser', func)
     }
 
 
-    public onUpdateRoisBatch(func: (returnedData: UpdatedInterpretationRoiDTOList) => {}): void {
-        this._connection!.on('UpdateRoisBatch', func)
+    public onCreatedRoi(func: (returnedData: InterpretationRoiDTO) => void): void {
+        this._connection!.on('CreatedRoi', func)
     }
 
-    public offUpdateRoisBatch(func: (returnedData: UpdatedInterpretationRoiDTOList) => {}): void {
-        this._connection!.off('UpdateRoisBatch', func)
-    }
-
-
-    public onDeleteRoi(func: (returnedData: number) => {}): void {
-        this._connection!.on('DeleteRoi', func)
-    }
-
-    public offDeleteRoi(func: (returnedData: number) => {}): void {
-        this._connection!.off('DeleteRoi', func)
+    public offCreatedRoi(func: (returnedData: InterpretationRoiDTO) => void): void {
+        this._connection!.off('CreatedRoi', func)
     }
 
 
-    public onCreateArtefact(func: (returnedData: ArtefactDTO) => {}): void {
-        this._connection!.on('CreateArtefact', func)
+    public onCreatedRoisBatch(func: (returnedData: InterpretationRoiDTOList) => void): void {
+        this._connection!.on('CreatedRoisBatch', func)
     }
 
-    public offCreateArtefact(func: (returnedData: ArtefactDTO) => {}): void {
-        this._connection!.off('CreateArtefact', func)
-    }
-
-
-    public onDeleteArtefact(func: (returnedData: number) => {}): void {
-        this._connection!.on('DeleteArtefact', func)
-    }
-
-    public offDeleteArtefact(func: (returnedData: number) => {}): void {
-        this._connection!.off('DeleteArtefact', func)
+    public offCreatedRoisBatch(func: (returnedData: InterpretationRoiDTOList) => void): void {
+        this._connection!.off('CreatedRoisBatch', func)
     }
 
 
-    public onUpdateArtefact(func: (returnedData: ArtefactDTO) => {}): void {
-        this._connection!.on('UpdateArtefact', func)
+    public onCreatedRoisBatchEdit(func: (returnedData: BatchEditRoiResponseDTO) => void): void {
+        this._connection!.on('CreatedRoisBatchEdit', func)
     }
 
-    public offUpdateArtefact(func: (returnedData: ArtefactDTO) => {}): void {
-        this._connection!.off('UpdateArtefact', func)
+    public offCreatedRoisBatchEdit(func: (returnedData: BatchEditRoiResponseDTO) => void): void {
+        this._connection!.off('CreatedRoisBatchEdit', func)
+    }
+
+
+    public onUpdatedRoi(func: (returnedData: UpdatedInterpretationRoiDTO) => void): void {
+        this._connection!.on('UpdatedRoi', func)
+    }
+
+    public offUpdatedRoi(func: (returnedData: UpdatedInterpretationRoiDTO) => void): void {
+        this._connection!.off('UpdatedRoi', func)
+    }
+
+
+    public onUpdatedRoisBatch(func: (returnedData: UpdatedInterpretationRoiDTOList) => void): void {
+        this._connection!.on('UpdatedRoisBatch', func)
+    }
+
+    public offUpdatedRoisBatch(func: (returnedData: UpdatedInterpretationRoiDTOList) => void): void {
+        this._connection!.off('UpdatedRoisBatch', func)
+    }
+
+
+    public onDeletedRoi(func: (returnedData: number) => void): void {
+        this._connection!.on('DeletedRoi', func)
+    }
+
+    public offDeletedRoi(func: (returnedData: number) => void): void {
+        this._connection!.off('DeletedRoi', func)
+    }
+
+
+    public onCreatedArtefact(func: (returnedData: ArtefactDTO) => void): void {
+        this._connection!.on('CreatedArtefact', func)
+    }
+
+    public offCreatedArtefact(func: (returnedData: ArtefactDTO) => void): void {
+        this._connection!.off('CreatedArtefact', func)
+    }
+
+
+    public onDeletedArtefact(func: (returnedData: number) => void): void {
+        this._connection!.on('DeletedArtefact', func)
+    }
+
+    public offDeletedArtefact(func: (returnedData: number) => void): void {
+        this._connection!.off('DeletedArtefact', func)
+    }
+
+
+    public onUpdatedArtefact(func: (returnedData: ArtefactDTO) => void): void {
+        this._connection!.on('UpdatedArtefact', func)
+    }
+
+    public offUpdatedArtefact(func: (returnedData: ArtefactDTO) => void): void {
+        this._connection!.off('UpdatedArtefact', func)
     }
 
     public OnUpdatedEdition(func: (returnedData: EditionDTO) => {}): void {

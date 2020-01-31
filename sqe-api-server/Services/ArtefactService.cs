@@ -138,7 +138,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .UpdateArtefact(updatedArtefact);
+                .UpdatedArtefact(updatedArtefact);
 
             return updatedArtefact;
         }
@@ -172,7 +172,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreateArtefact(createArtefactnewArtefact);
+                .CreatedArtefact(createArtefactnewArtefact);
 
             return createArtefactnewArtefact;
         }
@@ -186,7 +186,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .DeleteArtefact(artefactId);
+                .DeletedArtefact(artefactId);
             return new NoContentResult();
         }
 

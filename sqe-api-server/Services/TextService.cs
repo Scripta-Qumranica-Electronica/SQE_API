@@ -119,7 +119,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreateTextFragment(newTextFragmentData);
+                .CreatedTextFragment(newTextFragmentData);
             return newTextFragmentData;
         }
 
@@ -155,7 +155,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreateTextFragment(newTextFragmentData);
+                .CreatedTextFragment(newTextFragmentData);
             return newTextFragmentData;
         }
 

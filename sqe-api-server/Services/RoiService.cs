@@ -141,7 +141,7 @@ namespace SQE.API.Server.Services
             // made the request, that client directly received the response.
             // TODO: make a DTO for the delete object.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreateRoisBatch(newRoisDTO);
+                .CreatedRoisBatch(newRoisDTO);
 
             return newRoisDTO;
         }
@@ -171,7 +171,7 @@ namespace SQE.API.Server.Services
             // made the request, that client directly received the response.
             // TODO: make a DTO for the delete object.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreateRoisBatchEdit(batchEditRoisDTO);
+                .CreatedRoisBatchEdit(batchEditRoisDTO);
 
             return batchEditRoisDTO;
         }
@@ -224,7 +224,7 @@ namespace SQE.API.Server.Services
             // made the request, that client directly received the response.
             // TODO: make a DTO for the delete object.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .UpdateRoisBatch(updateRoisDTO);
+                .UpdatedRoisBatch(updateRoisDTO);
 
             return updateRoisDTO;
         }
@@ -237,7 +237,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .DeleteRoi(resp.FirstOrDefault());
+                .DeletedRoi(resp.FirstOrDefault());
             return new NoContentResult();
         }
 
