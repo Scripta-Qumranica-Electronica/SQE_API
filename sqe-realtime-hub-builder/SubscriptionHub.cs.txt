@@ -5,18 +5,18 @@ using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
 {
+    // NOTE: Every connected client has a `Context` that (like an HTTP context) lives for the duration
+    // of the connection.  The `Items` attribute is a Dict<object, object> container intended for storing
+    // any data that should persist for the life of that connection. `Items` is used here to maintain a record
+    // of which groups the client is currently subscribed to.  It is not possible to poll the `Groups` directly
+    // to see which, if any, the client is registered to (via its client ID), thus `Context.Items` provides
+    // this information. Such data could also be stored in any other type of datastore, but subscriptions for
+    // for updates to an edition seemed so ephemeral that using some other store appeared unnecessary or
+    // even undesirable—we want these connections to be as disposable as possible and we do not want subscriptions
+    // associated with a user_id, only the client.
+    
     public partial class MainHub
     {
-        // NOTE: Every connected client has a `Context` that (like an HTTP context) lives for the duration
-        // of the connection.  The `Items` attribute is a Dict<object, object> container intended for storing
-        // any data that should persist for the life of that connection. `Items` is used here to maintain a record
-        // of which groups the client is currently subscribed to.  It is not possible to poll the `Groups` directly
-        // to see which, if any, the client is registered to (via its client ID), thus `Context.Items` provides
-        // this information. Such data could also be stored in any other type of datastore, but subscriptions for
-        // for updates to an edition seemed so ephemeral that using some other store appeared unnecessary or
-        // even undesirable—we want these connections to be as disposable as possible and we do not want subscriptions
-        // associated with a user_id, only the client.
-
         /// <summary>
         /// The client subscribes to all changes for the specified editionId.
         /// </summary>

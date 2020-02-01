@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml;
 using CaseExtensions;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -31,19 +32,26 @@ namespace GenerateTypescriptInterfaces
 ";
 
         private const string _serverMethodTemplate = @"
+    $COMMENT
     public async $METHODNAMELC($METHODPARAMS): Promise<$METHODRETURN> {
         return await this._connection!.invoke($METHODNAME);
     }";
 
         private const string _clientMethodTemplate = @"
+    $ONCOMMENT
     public on$METHODNAME(func: ($METHODRETURN) => void): void {
         this._connection!.on('$METHODNAME', func)
     }
 
+    $OFFCOMMENT
     public off$METHODNAME(func: ($METHODRETURN) => void): void {
         this._connection!.off('$METHODNAME', func)
     }
 ";
+
+        private const string _onListener = "/**\n\t * Add a listener for when the server";
+
+        private const string _offListener = "/**\n\t * Remove an existing listener that triggers when the server";
 
         private static readonly Regex _rx = new Regex(
             @"Task?<(?<return>.*)?>",
@@ -111,7 +119,10 @@ namespace GenerateTypescriptInterfaces
             foreach (var method in members.OfType<MethodDeclarationSyntax>().ToList())
             {
                 // Copy the comments
-                //WriteMethodCommentsToFile(method, outputFile);
+                var comments = method.GetLeadingTrivia().ToString().Trim();
+                if (!string.IsNullOrEmpty(comments))
+                    comments = ParseComments(comments);
+
                 var methodName = method.Identifier.Text;
                 //Console.WriteLine(methodName);
 
@@ -133,9 +144,34 @@ namespace GenerateTypescriptInterfaces
                 );
                 //Console.WriteLine(methodParams);
                 var typescriptSig = $"\t\t{methodName}({methodParams}): {returnType}";
-                hubMethods.Add(new MethodDesc(methodName, methodParams, returnType));
+                hubMethods.Add(new MethodDesc(methodName, methodParams, returnType, comments));
             }
             return hubMethods;
+        }
+
+        private static string ParseComments(string comment)
+        {
+            var xDoc = new XmlDocument();
+            xDoc.LoadXml($"<root>{comment.Replace("///", "")}</root>");
+
+            // Get the summary text for the method
+            var summary = xDoc.GetElementsByTagName("summary");
+            var summaryText = "";
+            if (summary.Count == 1)
+                summaryText = "\n " + Regex.Replace(summary[0].InnerText, @" +", " ").Trim() + "\n";
+
+            // Get the comments for the parameters
+            var parameters = xDoc.GetElementsByTagName("param");
+            var parameterText = string.Join("\n",
+                parameters.Cast<XmlNode>().Select(x => $" @param {x.Attributes["name"].Value} - {x.InnerText}"));
+
+            // Get the comments for the returns
+            var returns = xDoc.GetElementsByTagName("returns");
+            var returnText = "";
+            if (returns.Count == 1)
+                returnText = returns[0].InnerText;
+
+            return $"/**{summaryText}\n{parameterText}\n{(!string.IsNullOrEmpty(returnText) ? " @returns - " + returnText : "")}\n/".Replace("\n", "\n\t *");
         }
 
         private static string ConvertToTypescriptType(string type)
@@ -199,10 +235,12 @@ namespace GenerateTypescriptInterfaces
                 outputFile.Write(template
                     .Replace("$IMPORTS", string.Join("\n", matches.ToList().Select(x => $"\t{x.Groups["type"].Value},")))
                     .Replace("$CLIENTMETHODS", string.Join("\n", hubInterfaceMethods.Select(x =>
-                        _clientMethodTemplate.Replace("$METHODNAME", x.name)
+                        _clientMethodTemplate.Replace("$ONCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : x.comment.Replace("/**\n\t *", _onListener))
+                            .Replace("$OFFCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : x.comment.Replace("/**\n\t *", _offListener))
+                            .Replace("$METHODNAME", x.name)
                             .Replace("$METHODRETURN", x.parameters))))
                     .Replace("$SERVERMETHODS", string.Join("\n", hubMethods.Select(x =>
-                        _serverMethodTemplate
+                        _serverMethodTemplate.Replace("$COMMENT", x.comment)
                             .Replace("$METHODNAMELC", x.name.ToCamelCase())
                             .Replace("$METHODNAME", $"'{x.name}'" +
                                                     $"{string.Join("", rgx.Matches(x.parameters).ToList().Select(x => ", " + x.Value.Replace(":", "")))}")
@@ -215,15 +253,17 @@ namespace GenerateTypescriptInterfaces
 
     public class MethodDesc
     {
-        public MethodDesc(string name, string parameters, string returnType)
+        public MethodDesc(string name, string parameters, string returnType, string comment)
         {
             this.name = name;
             this.parameters = parameters;
             this.returnType = returnType;
+            this.comment = comment;
         }
 
         public string name { get; set; }
         public string parameters { get; set; }
         public string returnType { get; set; }
+        public string comment { get; set; }
     }
 }

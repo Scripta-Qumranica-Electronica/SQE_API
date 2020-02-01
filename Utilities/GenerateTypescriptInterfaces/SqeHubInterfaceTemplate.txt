@@ -53,11 +53,4 @@ $SERVERMETHODS
      * Client methods.
      */
 $CLIENTMETHODS
-    public OnUpdatedEdition(func: (returnedData: EditionDTO) => {}): void {
-        this._connection!.on('UpdatedEdition', func)
-    }
-
-    public OffUpdatedEdition(func: (returnedData: EditionDTO) => {}): void {
-        this._connection!.off('UpdatedEdition', func)
-    }
 } 

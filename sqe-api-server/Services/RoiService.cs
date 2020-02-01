@@ -171,7 +171,7 @@ namespace SQE.API.Server.Services
             // made the request, that client directly received the response.
             // TODO: make a DTO for the delete object.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreatedRoisBatchEdit(batchEditRoisDTO);
+                .EditedRoisBatch(batchEditRoisDTO);
 
             return batchEditRoisDTO;
         }
