@@ -39,14 +39,19 @@ namespace GenerateTypescriptInterfaces
 
         private const string _clientMethodTemplate = @"
     $ONCOMMENT
-    public on$METHODNAME(func: ($METHODRETURN) => void): void {
-        this._connection!.on('$METHODNAME', func)
+    public connect$METHODNAME(handler: NotificationHandler): void {
+        this._connection!.on('$METHODNAME', handler.handle$METHODNAME)
     }
 
     $OFFCOMMENT
-    public off$METHODNAME(func: ($METHODRETURN) => void): void {
-        this._connection!.off('$METHODNAME', func)
+    public disconnect$METHODNAME(handler: NotificationHandler): void {
+        this._connection!.off('$METHODNAME', handler.handle$METHODNAME)
     }
+";
+        
+        private const string _methodHandlerTemplate = @"
+    $COMMENT
+    public handle$METHODNAME($METHODPARAMS): void {}
 ";
 
         private const string _onListener = "/**\n\t * Add a listener for when the server";
@@ -65,6 +70,11 @@ namespace GenerateTypescriptInterfaces
 
         private static readonly Regex _rxi = new Regex(
             @"interface (?<type>.*?) ",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        
+        private static readonly Regex _rxp = new Regex(
+            @"\*\n\t \* @param.*\n\t \*",
             RegexOptions.Compiled | RegexOptions.IgnoreCase
         );
 
@@ -234,9 +244,15 @@ namespace GenerateTypescriptInterfaces
                 outputFile.Write(_autogenFileDisclaimer);
                 outputFile.Write(template
                     .Replace("$IMPORTS", string.Join("\n", matches.ToList().Select(x => $"\t{x.Groups["type"].Value},")))
+                    .Replace("$CLIENTMETHODHANDLERS", string.Join("\n", hubInterfaceMethods.Select(x =>
+                        _methodHandlerTemplate.Replace("$COMMENT", x.comment.Replace("broadcasts", "runs when"))
+                            .Replace("$METHODNAME", x.name)
+                            .Replace("$METHODPARAMS", x.parameters))))
                     .Replace("$CLIENTMETHODS", string.Join("\n", hubInterfaceMethods.Select(x =>
-                        _clientMethodTemplate.Replace("$ONCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : x.comment.Replace("/**\n\t *", _onListener))
-                            .Replace("$OFFCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : x.comment.Replace("/**\n\t *", _offListener))
+                        _clientMethodTemplate.Replace("$ONCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : _rxp.Replace(
+                                x.comment.Replace("/**\n\t *", _onListener), "*"))
+                            .Replace("$OFFCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : _rxp.Replace(
+                                x.comment.Replace("/**\n\t *", _offListener), "*"))
                             .Replace("$METHODNAME", x.name)
                             .Replace("$METHODRETURN", x.parameters))))
                     .Replace("$SERVERMETHODS", string.Join("\n", hubMethods.Select(x =>

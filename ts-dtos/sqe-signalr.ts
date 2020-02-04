@@ -73,46 +73,160 @@ import {
 	ArtefactSide,
 } from "@/dtos/sqe-dtos"
 
-import { HubConnectionBuilder, LogLevel, HubConnection } from '@microsoft/signalr'; 
+import { HubConnection } from '@microsoft/signalr'; 
 
-export class SignalRSQE {  
+export abstract class NotificationHandler {
+    
+    /**
+	 * runs when a new text fragment has been created
+	 *
+	 * @param returnedData - Details of the newly created text fragment
+	 *
+	 */
+    public handleCreatedTextFragment(returnedData: TextFragmentDataDTO): void {}
+
+
+    /**
+	 * runs when a text fragment has been updated
+	 *
+	 * @param returnedData - Details of the updated text fragment
+	 *
+	 */
+    public handleUpdatedTextFragment(returnedData: TextFragmentDataDTO): void {}
+
+
+    /**
+	 * runs when a editor has been added to the edition
+	 *
+	 * @param returnedData - Details of the new editor
+	 *
+	 */
+    public handleCreatedEditor(returnedData: CreateEditorRightsDTO): void {}
+
+
+    /**
+	 * runs when an editor's permissions have been updated
+	 *
+	 * @param returnedData - Details of the editor's updated permissions
+	 *
+	 */
+    public handleUpdatedEditorEmail(returnedData: CreateEditorRightsDTO): void {}
+
+
+    /**
+	 * runs when a new text edition has been created
+	 *
+	 * @param returnedData - Details of the newly created edition
+	 *
+	 */
+    public handleCreatedEdition(returnedData: EditionDTO): void {}
+
+
+    /**
+	 * runs when an edition has been deleted
+	 *
+	 * @param returnedData - Details of the deleted edition
+	 *
+	 */
+    public handleDeletedEdition(returnedData: DeleteTokenDTO): void {}
+
+
+    /**
+	 * runs when an edition's details have been updated
+	 *
+	 * @param returnedData - Details of the updated edition
+	 *
+	 */
+    public handleUpdatedEdition(returnedData: EditionDTO): void {}
+
+
+    /**
+	 * runs when a new ROI has been created
+	 *
+	 * @param returnedData - Details of the newly created ROI
+	 *
+	 */
+    public handleCreatedRoi(returnedData: InterpretationRoiDTO): void {}
+
+
+    /**
+	 * runs when one or more new ROI's have been created
+	 *
+	 * @param returnedData - Details of the newly created ROI's
+	 *
+	 */
+    public handleCreatedRoisBatch(returnedData: InterpretationRoiDTOList): void {}
+
+
+    /**
+	 * runs when one or more new ROI's have been updated
+	 *
+	 * @param returnedData - Details of the updated ROI's
+	 *
+	 */
+    public handleEditedRoisBatch(returnedData: BatchEditRoiResponseDTO): void {}
+
+
+    /**
+	 * runs when a ROI has been updated
+	 *
+	 * @param returnedData - Details of the updated ROI
+	 *
+	 */
+    public handleUpdatedRoi(returnedData: UpdatedInterpretationRoiDTO): void {}
+
+
+    /**
+	 * runs when one or more new ROI's have been updated
+	 *
+	 * @param returnedData - Details of the updated ROI's
+	 *
+	 */
+    public handleUpdatedRoisBatch(returnedData: UpdatedInterpretationRoiDTOList): void {}
+
+
+    /**
+	 * runs when a ROI has been deleted
+	 *
+	 * @param returnedData - Details of the deleted ROI
+	 *
+	 */
+    public handleDeletedRoi(returnedData: number): void {}
+
+
+    /**
+	 * runs when an artefact has been created
+	 *
+	 * @param returnedData - Details of the newly created artefact
+	 *
+	 */
+    public handleCreatedArtefact(returnedData: ArtefactDTO): void {}
+
+
+    /**
+	 * runs when an artefact has been deleted
+	 *
+	 * @param returnedData - Details of the deleted artefact
+	 *
+	 */
+    public handleDeletedArtefact(returnedData: number): void {}
+
+
+    /**
+	 * runs when an artefact has been updated
+	 *
+	 * @param returnedData - Details of the updated artefact
+	 *
+	 */
+    public handleUpdatedArtefact(returnedData: ArtefactDTO): void {}
+
+}
+
+export class SignalRUtilities {  
     private _connection?: HubConnection;
-    private _onConnectionClosed = (error?: Error) => { 
-        console.debug(`Closed connection.`);
-        if (error)
-            throw error;
-    };
-
-    public async start(url: string, logging: LogLevel, token: string | null) {
-        if (this._connection) {
-            this._connection.stop();
-        }
-
-        this._connection = new HubConnectionBuilder()
-            .withUrl(url, {
-                accessTokenFactory: () => token || ''
-            }).configureLogging(logging)
-            .build();
-
-        try {
-            await this._connection.start();
-            this._connection!.onclose(this._onConnectionClosed);
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    public async stop() {
-        if (this._connection) {
-            await this._connection!.stop();
-        }
-    }
-
-    public setOnConnectionClosed(func: (error?: Error) => void): void {
-        this._onConnectionClosed = func;
-        if (this._connection) {
-            this._connection!.onclose(this._onConnectionClosed);
-        }
+    
+    public constructor(connection: HubConnection) {
+        this._connection = connection;
     }
 
     /*
@@ -620,336 +734,272 @@ export class SignalRSQE {
     /**
 	 * Add a listener for when the server broadcasts a new text fragment has been created
 	 *
-	 * @param returnedData - Details of the newly created text fragment
-	 *
 	 */
-    public onCreatedTextFragment(func: (returnedData: TextFragmentDataDTO) => void): void {
-        this._connection!.on('CreatedTextFragment', func)
+    public connectCreatedTextFragment(handler: NotificationHandler): void {
+        this._connection!.on('CreatedTextFragment', handler.handleCreatedTextFragment)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a new text fragment has been created
 	 *
-	 * @param returnedData - Details of the newly created text fragment
-	 *
 	 */
-    public offCreatedTextFragment(func: (returnedData: TextFragmentDataDTO) => void): void {
-        this._connection!.off('CreatedTextFragment', func)
+    public disconnectCreatedTextFragment(handler: NotificationHandler): void {
+        this._connection!.off('CreatedTextFragment', handler.handleCreatedTextFragment)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts a text fragment has been updated
 	 *
-	 * @param returnedData - Details of the updated text fragment
-	 *
 	 */
-    public onUpdateTextFragment(func: (returnedData: TextFragmentDataDTO) => void): void {
-        this._connection!.on('UpdateTextFragment', func)
+    public connectUpdatedTextFragment(handler: NotificationHandler): void {
+        this._connection!.on('UpdatedTextFragment', handler.handleUpdatedTextFragment)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a text fragment has been updated
 	 *
-	 * @param returnedData - Details of the updated text fragment
-	 *
 	 */
-    public offUpdateTextFragment(func: (returnedData: TextFragmentDataDTO) => void): void {
-        this._connection!.off('UpdateTextFragment', func)
+    public disconnectUpdatedTextFragment(handler: NotificationHandler): void {
+        this._connection!.off('UpdatedTextFragment', handler.handleUpdatedTextFragment)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts a editor has been added to the edition
 	 *
-	 * @param returnedData - Details of the new editor
-	 *
 	 */
-    public onCreatedEditor(func: (returnedData: CreateEditorRightsDTO) => void): void {
-        this._connection!.on('CreatedEditor', func)
+    public connectCreatedEditor(handler: NotificationHandler): void {
+        this._connection!.on('CreatedEditor', handler.handleCreatedEditor)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a editor has been added to the edition
 	 *
-	 * @param returnedData - Details of the new editor
-	 *
 	 */
-    public offCreatedEditor(func: (returnedData: CreateEditorRightsDTO) => void): void {
-        this._connection!.off('CreatedEditor', func)
+    public disconnectCreatedEditor(handler: NotificationHandler): void {
+        this._connection!.off('CreatedEditor', handler.handleCreatedEditor)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts an editor's permissions have been updated
 	 *
-	 * @param returnedData - Details of the editor's updated permissions
-	 *
 	 */
-    public onUpdatedEditorEmail(func: (returnedData: CreateEditorRightsDTO) => void): void {
-        this._connection!.on('UpdatedEditorEmail', func)
+    public connectUpdatedEditorEmail(handler: NotificationHandler): void {
+        this._connection!.on('UpdatedEditorEmail', handler.handleUpdatedEditorEmail)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an editor's permissions have been updated
 	 *
-	 * @param returnedData - Details of the editor's updated permissions
-	 *
 	 */
-    public offUpdatedEditorEmail(func: (returnedData: CreateEditorRightsDTO) => void): void {
-        this._connection!.off('UpdatedEditorEmail', func)
+    public disconnectUpdatedEditorEmail(handler: NotificationHandler): void {
+        this._connection!.off('UpdatedEditorEmail', handler.handleUpdatedEditorEmail)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts a new text edition has been created
 	 *
-	 * @param returnedData - Details of the newly created edition
-	 *
 	 */
-    public onCreatedEdition(func: (returnedData: EditionDTO) => void): void {
-        this._connection!.on('CreatedEdition', func)
+    public connectCreatedEdition(handler: NotificationHandler): void {
+        this._connection!.on('CreatedEdition', handler.handleCreatedEdition)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a new text edition has been created
 	 *
-	 * @param returnedData - Details of the newly created edition
-	 *
 	 */
-    public offCreatedEdition(func: (returnedData: EditionDTO) => void): void {
-        this._connection!.off('CreatedEdition', func)
+    public disconnectCreatedEdition(handler: NotificationHandler): void {
+        this._connection!.off('CreatedEdition', handler.handleCreatedEdition)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts an edition has been deleted
 	 *
-	 * @param returnedData - Details of the deleted edition
-	 *
 	 */
-    public onDeletedEdition(func: (returnedData: DeleteTokenDTO) => void): void {
-        this._connection!.on('DeletedEdition', func)
+    public connectDeletedEdition(handler: NotificationHandler): void {
+        this._connection!.on('DeletedEdition', handler.handleDeletedEdition)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an edition has been deleted
 	 *
-	 * @param returnedData - Details of the deleted edition
-	 *
 	 */
-    public offDeletedEdition(func: (returnedData: DeleteTokenDTO) => void): void {
-        this._connection!.off('DeletedEdition', func)
+    public disconnectDeletedEdition(handler: NotificationHandler): void {
+        this._connection!.off('DeletedEdition', handler.handleDeletedEdition)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts an edition's details have been updated
 	 *
-	 * @param returnedData - Details of the updated edition
-	 *
 	 */
-    public onUpdatedEdition(func: (returnedData: EditionDTO) => void): void {
-        this._connection!.on('UpdatedEdition', func)
+    public connectUpdatedEdition(handler: NotificationHandler): void {
+        this._connection!.on('UpdatedEdition', handler.handleUpdatedEdition)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an edition's details have been updated
 	 *
-	 * @param returnedData - Details of the updated edition
-	 *
 	 */
-    public offUpdatedEdition(func: (returnedData: EditionDTO) => void): void {
-        this._connection!.off('UpdatedEdition', func)
+    public disconnectUpdatedEdition(handler: NotificationHandler): void {
+        this._connection!.off('UpdatedEdition', handler.handleUpdatedEdition)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts a new ROI has been created
 	 *
-	 * @param returnedData - Details of the newly created ROI
-	 *
 	 */
-    public onCreatedRoi(func: (returnedData: InterpretationRoiDTO) => void): void {
-        this._connection!.on('CreatedRoi', func)
+    public connectCreatedRoi(handler: NotificationHandler): void {
+        this._connection!.on('CreatedRoi', handler.handleCreatedRoi)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a new ROI has been created
 	 *
-	 * @param returnedData - Details of the newly created ROI
-	 *
 	 */
-    public offCreatedRoi(func: (returnedData: InterpretationRoiDTO) => void): void {
-        this._connection!.off('CreatedRoi', func)
+    public disconnectCreatedRoi(handler: NotificationHandler): void {
+        this._connection!.off('CreatedRoi', handler.handleCreatedRoi)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts one or more new ROI's have been created
 	 *
-	 * @param returnedData - Details of the newly created ROI's
-	 *
 	 */
-    public onCreatedRoisBatch(func: (returnedData: InterpretationRoiDTOList) => void): void {
-        this._connection!.on('CreatedRoisBatch', func)
+    public connectCreatedRoisBatch(handler: NotificationHandler): void {
+        this._connection!.on('CreatedRoisBatch', handler.handleCreatedRoisBatch)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts one or more new ROI's have been created
 	 *
-	 * @param returnedData - Details of the newly created ROI's
-	 *
 	 */
-    public offCreatedRoisBatch(func: (returnedData: InterpretationRoiDTOList) => void): void {
-        this._connection!.off('CreatedRoisBatch', func)
+    public disconnectCreatedRoisBatch(handler: NotificationHandler): void {
+        this._connection!.off('CreatedRoisBatch', handler.handleCreatedRoisBatch)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts one or more new ROI's have been updated
 	 *
-	 * @param returnedData - Details of the updated ROI's
-	 *
 	 */
-    public onEditedRoisBatch(func: (returnedData: BatchEditRoiResponseDTO) => void): void {
-        this._connection!.on('EditedRoisBatch', func)
+    public connectEditedRoisBatch(handler: NotificationHandler): void {
+        this._connection!.on('EditedRoisBatch', handler.handleEditedRoisBatch)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts one or more new ROI's have been updated
 	 *
-	 * @param returnedData - Details of the updated ROI's
-	 *
 	 */
-    public offEditedRoisBatch(func: (returnedData: BatchEditRoiResponseDTO) => void): void {
-        this._connection!.off('EditedRoisBatch', func)
+    public disconnectEditedRoisBatch(handler: NotificationHandler): void {
+        this._connection!.off('EditedRoisBatch', handler.handleEditedRoisBatch)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts a ROI has been updated
 	 *
-	 * @param returnedData - Details of the updated ROI
-	 *
 	 */
-    public onUpdatedRoi(func: (returnedData: UpdatedInterpretationRoiDTO) => void): void {
-        this._connection!.on('UpdatedRoi', func)
+    public connectUpdatedRoi(handler: NotificationHandler): void {
+        this._connection!.on('UpdatedRoi', handler.handleUpdatedRoi)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a ROI has been updated
 	 *
-	 * @param returnedData - Details of the updated ROI
-	 *
 	 */
-    public offUpdatedRoi(func: (returnedData: UpdatedInterpretationRoiDTO) => void): void {
-        this._connection!.off('UpdatedRoi', func)
+    public disconnectUpdatedRoi(handler: NotificationHandler): void {
+        this._connection!.off('UpdatedRoi', handler.handleUpdatedRoi)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts one or more new ROI's have been updated
 	 *
-	 * @param returnedData - Details of the updated ROI's
-	 *
 	 */
-    public onUpdatedRoisBatch(func: (returnedData: UpdatedInterpretationRoiDTOList) => void): void {
-        this._connection!.on('UpdatedRoisBatch', func)
+    public connectUpdatedRoisBatch(handler: NotificationHandler): void {
+        this._connection!.on('UpdatedRoisBatch', handler.handleUpdatedRoisBatch)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts one or more new ROI's have been updated
 	 *
-	 * @param returnedData - Details of the updated ROI's
-	 *
 	 */
-    public offUpdatedRoisBatch(func: (returnedData: UpdatedInterpretationRoiDTOList) => void): void {
-        this._connection!.off('UpdatedRoisBatch', func)
+    public disconnectUpdatedRoisBatch(handler: NotificationHandler): void {
+        this._connection!.off('UpdatedRoisBatch', handler.handleUpdatedRoisBatch)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts a ROI has been deleted
 	 *
-	 * @param returnedData - Details of the deleted ROI
-	 *
 	 */
-    public onDeletedRoi(func: (returnedData: number) => void): void {
-        this._connection!.on('DeletedRoi', func)
+    public connectDeletedRoi(handler: NotificationHandler): void {
+        this._connection!.on('DeletedRoi', handler.handleDeletedRoi)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a ROI has been deleted
 	 *
-	 * @param returnedData - Details of the deleted ROI
-	 *
 	 */
-    public offDeletedRoi(func: (returnedData: number) => void): void {
-        this._connection!.off('DeletedRoi', func)
+    public disconnectDeletedRoi(handler: NotificationHandler): void {
+        this._connection!.off('DeletedRoi', handler.handleDeletedRoi)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts an artefact has been created
 	 *
-	 * @param returnedData - Details of the newly created artefact
-	 *
 	 */
-    public onCreatedArtefact(func: (returnedData: ArtefactDTO) => void): void {
-        this._connection!.on('CreatedArtefact', func)
+    public connectCreatedArtefact(handler: NotificationHandler): void {
+        this._connection!.on('CreatedArtefact', handler.handleCreatedArtefact)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an artefact has been created
 	 *
-	 * @param returnedData - Details of the newly created artefact
-	 *
 	 */
-    public offCreatedArtefact(func: (returnedData: ArtefactDTO) => void): void {
-        this._connection!.off('CreatedArtefact', func)
+    public disconnectCreatedArtefact(handler: NotificationHandler): void {
+        this._connection!.off('CreatedArtefact', handler.handleCreatedArtefact)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts an artefact has been deleted
 	 *
-	 * @param returnedData - Details of the deleted artefact
-	 *
 	 */
-    public onDeletedArtefact(func: (returnedData: number) => void): void {
-        this._connection!.on('DeletedArtefact', func)
+    public connectDeletedArtefact(handler: NotificationHandler): void {
+        this._connection!.on('DeletedArtefact', handler.handleDeletedArtefact)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an artefact has been deleted
 	 *
-	 * @param returnedData - Details of the deleted artefact
-	 *
 	 */
-    public offDeletedArtefact(func: (returnedData: number) => void): void {
-        this._connection!.off('DeletedArtefact', func)
+    public disconnectDeletedArtefact(handler: NotificationHandler): void {
+        this._connection!.off('DeletedArtefact', handler.handleDeletedArtefact)
     }
 
 
     /**
 	 * Add a listener for when the server broadcasts an artefact has been updated
 	 *
-	 * @param returnedData - Details of the updated artefact
-	 *
 	 */
-    public onUpdatedArtefact(func: (returnedData: ArtefactDTO) => void): void {
-        this._connection!.on('UpdatedArtefact', func)
+    public connectUpdatedArtefact(handler: NotificationHandler): void {
+        this._connection!.on('UpdatedArtefact', handler.handleUpdatedArtefact)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an artefact has been updated
 	 *
-	 * @param returnedData - Details of the updated artefact
-	 *
 	 */
-    public offUpdatedArtefact(func: (returnedData: ArtefactDTO) => void): void {
-        this._connection!.off('UpdatedArtefact', func)
+    public disconnectUpdatedArtefact(handler: NotificationHandler): void {
+        this._connection!.off('UpdatedArtefact', handler.handleUpdatedArtefact)
     }
 
 } 

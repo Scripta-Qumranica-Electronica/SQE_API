@@ -22,7 +22,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="returnedData">Details of the updated text fragment</param>
         /// <returns></returns>
-        Task UpdateTextFragment(TextFragmentDataDTO returnedData);
+        Task UpdatedTextFragment(TextFragmentDataDTO returnedData);
 
         /// <summary>
         /// broadcasts a editor has been added to the edition
