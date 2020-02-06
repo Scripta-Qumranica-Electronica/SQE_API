@@ -48,7 +48,7 @@ namespace GenerateTypescriptInterfaces
         this._connection!.off('$METHODNAME', handler.handle$METHODNAME)
     }
 ";
-        
+
         private const string _methodHandlerTemplate = @"
     $COMMENT
     public handle$METHODNAME($METHODPARAMS): void {}
@@ -72,7 +72,7 @@ namespace GenerateTypescriptInterfaces
             @"interface (?<type>.*?) ",
             RegexOptions.Compiled | RegexOptions.IgnoreCase
         );
-        
+
         private static readonly Regex _rxp = new Regex(
             @"\*\n\t \* @param.*\n\t \*",
             RegexOptions.Compiled | RegexOptions.IgnoreCase

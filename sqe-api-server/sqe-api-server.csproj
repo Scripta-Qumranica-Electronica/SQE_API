@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Redis" Version="1.1.5" />
+    <PackageReference Include="NetTopologySuite" Version="2.0.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.2.0" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.1-dev-00216" />
@@ -43,7 +44,7 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="dotnet run -p $(ProjectDir)../sqe-realtime-hub-builder/" />
-  </Target>
+<!--  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">-->
+<!--    <Exec Command="dotnet run -p $(ProjectDir)../sqe-realtime-hub-builder/" />-->
+<!--  </Target>-->
 </Project>

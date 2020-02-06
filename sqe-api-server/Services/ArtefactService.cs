@@ -3,6 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using NetTopologySuite;
+using NetTopologySuite.IO;
+using NetTopologySuite.Simplify;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
@@ -76,6 +79,14 @@ namespace SQE.API.Server.Services
                 );
             }
 
+            var wkr = new WKTReader();
+            var wkw = new WKTWriter();
+            artefacts.artefacts = artefacts.artefacts.Select(x =>
+                {
+                    x.mask.mask = wkw.Write(DouglasPeuckerSimplifier.Simplify(wkr.Read(x.mask.mask), 10)).Replace(", ", ",").Replace("POLYGON (", "POLYGON(");
+                    return x;
+                }
+            ).ToList();
             return artefacts;
         }
 
