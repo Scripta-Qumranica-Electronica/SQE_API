@@ -41,6 +41,8 @@ namespace SQE.DatabaseAccess
             bool? mayWrite,
             bool? mayLock,
             bool? isAdmin);
+
+        Task<List<LetterShape>> GetEditionScriptCollection(EditionUserInfo editonUser);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
@@ -500,6 +502,21 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
             }
 
             // In the future should we email the editor about their change in status?
+        }
+
+        public async Task<List<LetterShape>> GetEditionScriptCollection(EditionUserInfo editonUser)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<LetterShape>(
+                    EditionScriptQuery.GetQuery,
+                    new
+                    {
+                        editonUser.EditionId,
+                        UserId = editonUser.userId ?? 0
+                    }
+                )).ToList();
+            }
         }
 
         private static Edition CreateEdition(EditionGroupQuery.Result result, uint? currentUserId)

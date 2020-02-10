@@ -121,5 +121,17 @@ namespace SQE.API.Server.HttpControllers
                 request
             );
         }
+
+        /// <summary>
+        ///     Provides spatial data for all letters in the edition 
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <returns></returns>
+        [HttpGet("/v1/[controller]s/{editionId}/script-collection")]
+        public async Task<ActionResult<EditionScriptCollectionDTO>> GetEditionScriptCollection(
+            [FromRoute] uint editionId)
+        {
+            return await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));
+        }
     }
 }

@@ -80,6 +80,11 @@ namespace SQE.API.DTO
         public uint editorId { get; set; }
     }
 
+    public class EditionScriptCollectionDTO
+    {
+        public List<LetterDTO> letters { get; set; }
+    }
+
     #region Request DTO's
 
     public class EditionUpdateRequestDTO
