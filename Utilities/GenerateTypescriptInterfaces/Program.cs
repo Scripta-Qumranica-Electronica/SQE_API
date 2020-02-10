@@ -34,21 +34,21 @@ namespace GenerateTypescriptInterfaces
         private const string _serverMethodTemplate = @"
     $COMMENT
     public async $METHODNAMELC($METHODPARAMS): Promise<$METHODRETURN> {
-        return await this._connection!.invoke($METHODNAME);
+        return await this._connection.invoke($METHODNAME);
     }";
 
         private const string _clientMethodTemplate = @"
     $ONCOMMENT
     public connect$METHODNAME(handler: NotificationHandler): void {
-        this._connection!.on('$METHODNAME', handler.handle$METHODNAME)
+        this._connection.on('$METHODNAME', handler.handle$METHODNAME)
     }
 
     $OFFCOMMENT
     public disconnect$METHODNAME(handler: NotificationHandler): void {
-        this._connection!.off('$METHODNAME', handler.handle$METHODNAME)
+        this._connection.off('$METHODNAME', handler.handle$METHODNAME)
     }
 ";
-        
+
         private const string _methodHandlerTemplate = @"
     $COMMENT
     public handle$METHODNAME($METHODPARAMS): void {}
@@ -72,7 +72,7 @@ namespace GenerateTypescriptInterfaces
             @"interface (?<type>.*?) ",
             RegexOptions.Compiled | RegexOptions.IgnoreCase
         );
-        
+
         private static readonly Regex _rxp = new Regex(
             @"\*\n\t \* @param.*\n\t \*",
             RegexOptions.Compiled | RegexOptions.IgnoreCase

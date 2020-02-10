@@ -223,7 +223,7 @@ export abstract class NotificationHandler {
 }
 
 export class SignalRUtilities {  
-    private _connection?: HubConnection;
+    private _connection: HubConnection;
     
     public constructor(connection: HubConnection) {
         this._connection = connection;
@@ -241,7 +241,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1EditionsEditionIdEditors(editionId: number, payload: CreateEditorRightsDTO): Promise<CreateEditorRightsDTO> {
-        return await this._connection!.invoke('PostV1EditionsEditionIdEditors', editionId, payload);
+        return await this._connection.invoke('PostV1EditionsEditionIdEditors', editionId, payload);
     }
 
     /**
@@ -253,7 +253,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async putV1EditionsEditionIdEditorsEditorEmailId(editionId: number, editorEmailId: string, payload: UpdateEditorRightsDTO): Promise<CreateEditorRightsDTO> {
-        return await this._connection!.invoke('PutV1EditionsEditionIdEditorsEditorEmailId', editionId, editorEmailId, payload);
+        return await this._connection.invoke('PutV1EditionsEditionIdEditorsEditorEmailId', editionId, editorEmailId, payload);
     }
 
     /**
@@ -264,7 +264,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1EditionsEditionId(editionId: number, request: EditionCopyDTO): Promise<EditionDTO> {
-        return await this._connection!.invoke('PostV1EditionsEditionId', editionId, request);
+        return await this._connection.invoke('PostV1EditionsEditionId', editionId, request);
     }
 
     /**
@@ -276,7 +276,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async deleteV1EditionsEditionId(editionId: number, optional: string[], token: string): Promise<DeleteTokenDTO> {
-        return await this._connection!.invoke('DeleteV1EditionsEditionId', editionId, optional, token);
+        return await this._connection.invoke('DeleteV1EditionsEditionId', editionId, optional, token);
     }
 
     /**
@@ -286,7 +286,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1EditionsEditionId(editionId: number): Promise<EditionGroupDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionId', editionId);
+        return await this._connection.invoke('GetV1EditionsEditionId', editionId);
     }
 
     /**
@@ -296,7 +296,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1Editions(): Promise<EditionListDTO> {
-        return await this._connection!.invoke('GetV1Editions');
+        return await this._connection.invoke('GetV1Editions');
     }
 
     /**
@@ -307,7 +307,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async putV1EditionsEditionId(editionId: number, request: EditionUpdateRequestDTO): Promise<EditionDTO> {
-        return await this._connection!.invoke('PutV1EditionsEditionId', editionId, request);
+        return await this._connection.invoke('PutV1EditionsEditionId', editionId, request);
     }
 
     /**
@@ -320,7 +320,7 @@ export class SignalRUtilities {
 	 *         
 	 */
     public async postV1UsersLogin(payload: LoginRequestDTO): Promise<DetailedUserTokenDTO> {
-        return await this._connection!.invoke('PostV1UsersLogin', payload);
+        return await this._connection.invoke('PostV1UsersLogin', payload);
     }
 
     /**
@@ -331,7 +331,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1UsersChangeUnactivatedEmail(payload: UnactivatedEmailUpdateRequestDTO): Promise<void> {
-        return await this._connection!.invoke('PostV1UsersChangeUnactivatedEmail', payload);
+        return await this._connection.invoke('PostV1UsersChangeUnactivatedEmail', payload);
     }
 
     /**
@@ -341,7 +341,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1UsersChangeForgottenPassword(payload: ResetForgottenUserPasswordRequestDTO): Promise<void> {
-        return await this._connection!.invoke('PostV1UsersChangeForgottenPassword', payload);
+        return await this._connection.invoke('PostV1UsersChangeForgottenPassword', payload);
     }
 
     /**
@@ -351,7 +351,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1UsersChangePassword(payload: ResetLoggedInUserPasswordRequestDTO): Promise<void> {
-        return await this._connection!.invoke('PostV1UsersChangePassword', payload);
+        return await this._connection.invoke('PostV1UsersChangePassword', payload);
     }
 
     /**
@@ -365,7 +365,7 @@ export class SignalRUtilities {
 	 * @returns - Returns a DetailedUserDTO with the updated user account details
 	 */
     public async putV1Users(payload: UserUpdateRequestDTO): Promise<DetailedUserDTO> {
-        return await this._connection!.invoke('PutV1Users', payload);
+        return await this._connection.invoke('PutV1Users', payload);
     }
 
     /**
@@ -375,7 +375,7 @@ export class SignalRUtilities {
 	 * @returns - Returns a DetailedUserDTO for the confirmed account
 	 */
     public async postV1UsersConfirmRegistration(payload: AccountActivationRequestDTO): Promise<void> {
-        return await this._connection!.invoke('PostV1UsersConfirmRegistration', payload);
+        return await this._connection.invoke('PostV1UsersConfirmRegistration', payload);
     }
 
     /**
@@ -385,7 +385,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1UsersForgotPassword(payload: ResetUserPasswordRequestDTO): Promise<void> {
-        return await this._connection!.invoke('PostV1UsersForgotPassword', payload);
+        return await this._connection.invoke('PostV1UsersForgotPassword', payload);
     }
 
     /**
@@ -395,7 +395,7 @@ export class SignalRUtilities {
 	 * @returns - A UserDTO for user account.
 	 */
     public async getV1Users(): Promise<UserDTO> {
-        return await this._connection!.invoke('GetV1Users');
+        return await this._connection.invoke('GetV1Users');
     }
 
     /**
@@ -405,7 +405,7 @@ export class SignalRUtilities {
 	 * @returns - Returns a UserDTO for the newly created account
 	 */
     public async postV1Users(payload: NewUserRequestDTO): Promise<UserDTO> {
-        return await this._connection!.invoke('PostV1Users', payload);
+        return await this._connection.invoke('PostV1Users', payload);
     }
 
     /**
@@ -416,7 +416,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1UsersResendActivationEmail(payload: ResendUserAccountActivationRequestDTO): Promise<void> {
-        return await this._connection!.invoke('PostV1UsersResendActivationEmail', payload);
+        return await this._connection.invoke('PostV1UsersResendActivationEmail', payload);
     }
 
     /**
@@ -427,7 +427,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1EditionsEditionIdTextFragments(editionId: number, createFragment: CreateTextFragmentDTO): Promise<TextFragmentDataDTO> {
-        return await this._connection!.invoke('PostV1EditionsEditionIdTextFragments', editionId, createFragment);
+        return await this._connection.invoke('PostV1EditionsEditionIdTextFragments', editionId, createFragment);
     }
 
     /**
@@ -439,7 +439,7 @@ export class SignalRUtilities {
 	 * @returns - The details of the updated text fragment
 	 */
     public async putV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number, updatedTextFragment: UpdateTextFragmentDTO): Promise<TextFragmentDataDTO> {
-        return await this._connection!.invoke('PutV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId, updatedTextFragment);
+        return await this._connection.invoke('PutV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId, updatedTextFragment);
     }
 
     /**
@@ -449,7 +449,7 @@ export class SignalRUtilities {
 	 * @returns - An array of the text fragment ids in correct sequence
 	 */
     public async getV1EditionsEditionIdTextFragments(editionId: number): Promise<TextFragmentDataListDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdTextFragments', editionId);
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragments', editionId);
     }
 
     /**
@@ -460,7 +460,7 @@ export class SignalRUtilities {
 	 * @returns - An array of the line ids in the proper sequence
 	 */
     public async getV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(editionId: number, textFragmentId: number): Promise<ArtefactDataListDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts', editionId, textFragmentId);
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts', editionId, textFragmentId);
     }
 
     /**
@@ -471,7 +471,7 @@ export class SignalRUtilities {
 	 * @returns - An array of the line ids in the proper sequence
 	 */
     public async getV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number): Promise<LineDataListDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId);
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId);
     }
 
     /**
@@ -485,7 +485,7 @@ export class SignalRUtilities {
 	 *         
 	 */
     public async getV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number): Promise<TextEditionDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
     }
 
     /**
@@ -499,7 +499,7 @@ export class SignalRUtilities {
 	 *         
 	 */
     public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
+        return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
     }
 
     /**
@@ -509,7 +509,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async subscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection!.invoke('SubscribeToEdition', editionId);
+        return await this._connection.invoke('SubscribeToEdition', editionId);
     }
 
     /**
@@ -519,7 +519,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async unsubscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection!.invoke('UnsubscribeToEdition', editionId);
+        return await this._connection.invoke('UnsubscribeToEdition', editionId);
     }
 
     /**
@@ -529,7 +529,7 @@ export class SignalRUtilities {
 	 * @returns - A list of every editionId for which the client receives update
 	 */
     public async listEditionSubscriptions(): Promise<number[]> {
-        return await this._connection!.invoke('ListEditionSubscriptions');
+        return await this._connection.invoke('ListEditionSubscriptions');
     }
 
     /**
@@ -542,7 +542,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1EditionsEditionIdImagedObjectsImagedObjectId(editionId: number, imagedObjectId: string, optional: string[]): Promise<ImagedObjectDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdImagedObjectsImagedObjectId', editionId, imagedObjectId, optional);
+        return await this._connection.invoke('GetV1EditionsEditionIdImagedObjectsImagedObjectId', editionId, imagedObjectId, optional);
     }
 
     /**
@@ -554,7 +554,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1EditionsEditionIdImagedObjects(editionId: number, optional: string[]): Promise<ImagedObjectListDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdImagedObjects', editionId, optional);
+        return await this._connection.invoke('GetV1EditionsEditionIdImagedObjects', editionId, optional);
     }
 
     /**
@@ -564,7 +564,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1ImagedObjectsInstitutions(): Promise<ImageInstitutionListDTO> {
-        return await this._connection!.invoke('GetV1ImagedObjectsInstitutions');
+        return await this._connection.invoke('GetV1ImagedObjectsInstitutions');
     }
 
     /**
@@ -575,7 +575,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number): Promise<InterpretationRoiDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdRoisRoiId', editionId, roiId);
+        return await this._connection.invoke('GetV1EditionsEditionIdRoisRoiId', editionId, roiId);
     }
 
     /**
@@ -586,7 +586,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1EditionsEditionIdRois(editionId: number, newRoi: SetInterpretationRoiDTO): Promise<InterpretationRoiDTO> {
-        return await this._connection!.invoke('PostV1EditionsEditionIdRois', editionId, newRoi);
+        return await this._connection.invoke('PostV1EditionsEditionIdRois', editionId, newRoi);
     }
 
     /**
@@ -597,7 +597,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1EditionsEditionIdRoisBatch(editionId: number, newRois: SetInterpretationRoiDTOList): Promise<InterpretationRoiDTOList> {
-        return await this._connection!.invoke('PostV1EditionsEditionIdRoisBatch', editionId, newRois);
+        return await this._connection.invoke('PostV1EditionsEditionIdRoisBatch', editionId, newRois);
     }
 
     /**
@@ -608,7 +608,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1EditionsEditionIdRoisBatchEdit(editionId: number, rois: BatchEditRoiDTO): Promise<BatchEditRoiResponseDTO> {
-        return await this._connection!.invoke('PostV1EditionsEditionIdRoisBatchEdit', editionId, rois);
+        return await this._connection.invoke('PostV1EditionsEditionIdRoisBatchEdit', editionId, rois);
     }
 
     /**
@@ -620,7 +620,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async putV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number, updateRoi: SetInterpretationRoiDTO): Promise<UpdatedInterpretationRoiDTO> {
-        return await this._connection!.invoke('PutV1EditionsEditionIdRoisRoiId', editionId, roiId, updateRoi);
+        return await this._connection.invoke('PutV1EditionsEditionIdRoisRoiId', editionId, roiId, updateRoi);
     }
 
     /**
@@ -631,7 +631,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async putV1EditionsEditionIdRoisBatch(editionId: number, updateRois: InterpretationRoiDTOList): Promise<UpdatedInterpretationRoiDTOList> {
-        return await this._connection!.invoke('PutV1EditionsEditionIdRoisBatch', editionId, updateRois);
+        return await this._connection.invoke('PutV1EditionsEditionIdRoisBatch', editionId, updateRois);
     }
 
     /**
@@ -642,7 +642,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async deleteV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number): Promise<void> {
-        return await this._connection!.invoke('DeleteV1EditionsEditionIdRoisRoiId', editionId, roiId);
+        return await this._connection.invoke('DeleteV1EditionsEditionIdRoisRoiId', editionId, roiId);
     }
 
     /**
@@ -653,7 +653,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async postV1EditionsEditionIdArtefacts(editionId: number, payload: CreateArtefactDTO): Promise<ArtefactDTO> {
-        return await this._connection!.invoke('PostV1EditionsEditionIdArtefacts', editionId, payload);
+        return await this._connection.invoke('PostV1EditionsEditionIdArtefacts', editionId, payload);
     }
 
     /**
@@ -664,7 +664,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async deleteV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number): Promise<void> {
-        return await this._connection!.invoke('DeleteV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId);
+        return await this._connection.invoke('DeleteV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId);
     }
 
     /**
@@ -676,7 +676,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, optional);
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, optional);
     }
 
     /**
@@ -687,7 +687,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1EditionsEditionIdArtefactsArtefactIdRois(editionId: number, artefactId: number): Promise<InterpretationRoiDTOList> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdArtefactsArtefactIdRois', editionId, artefactId);
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdRois', editionId, artefactId);
     }
 
     /**
@@ -698,7 +698,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1EditionsEditionIdArtefacts(editionId: number, optional: string[]): Promise<ArtefactListDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdArtefacts', editionId, optional);
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefacts', editionId, optional);
     }
 
     /**
@@ -712,7 +712,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async getV1EditionsEditionIdArtefactsArtefactIdTextFragments(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactTextFragmentMatchListDTO> {
-        return await this._connection!.invoke('GetV1EditionsEditionIdArtefactsArtefactIdTextFragments', editionId, artefactId, optional);
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdTextFragments', editionId, artefactId, optional);
     }
 
     /**
@@ -724,7 +724,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public async putV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, payload: UpdateArtefactDTO): Promise<ArtefactDTO> {
-        return await this._connection!.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload);
+        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload);
     }
 
     /*
@@ -736,7 +736,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectCreatedTextFragment(handler: NotificationHandler): void {
-        this._connection!.on('CreatedTextFragment', handler.handleCreatedTextFragment)
+        this._connection.on('CreatedTextFragment', handler.handleCreatedTextFragment)
     }
 
     /**
@@ -744,7 +744,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectCreatedTextFragment(handler: NotificationHandler): void {
-        this._connection!.off('CreatedTextFragment', handler.handleCreatedTextFragment)
+        this._connection.off('CreatedTextFragment', handler.handleCreatedTextFragment)
     }
 
 
@@ -753,7 +753,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectUpdatedTextFragment(handler: NotificationHandler): void {
-        this._connection!.on('UpdatedTextFragment', handler.handleUpdatedTextFragment)
+        this._connection.on('UpdatedTextFragment', handler.handleUpdatedTextFragment)
     }
 
     /**
@@ -761,7 +761,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectUpdatedTextFragment(handler: NotificationHandler): void {
-        this._connection!.off('UpdatedTextFragment', handler.handleUpdatedTextFragment)
+        this._connection.off('UpdatedTextFragment', handler.handleUpdatedTextFragment)
     }
 
 
@@ -770,7 +770,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectCreatedEditor(handler: NotificationHandler): void {
-        this._connection!.on('CreatedEditor', handler.handleCreatedEditor)
+        this._connection.on('CreatedEditor', handler.handleCreatedEditor)
     }
 
     /**
@@ -778,7 +778,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectCreatedEditor(handler: NotificationHandler): void {
-        this._connection!.off('CreatedEditor', handler.handleCreatedEditor)
+        this._connection.off('CreatedEditor', handler.handleCreatedEditor)
     }
 
 
@@ -787,7 +787,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectUpdatedEditorEmail(handler: NotificationHandler): void {
-        this._connection!.on('UpdatedEditorEmail', handler.handleUpdatedEditorEmail)
+        this._connection.on('UpdatedEditorEmail', handler.handleUpdatedEditorEmail)
     }
 
     /**
@@ -795,7 +795,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectUpdatedEditorEmail(handler: NotificationHandler): void {
-        this._connection!.off('UpdatedEditorEmail', handler.handleUpdatedEditorEmail)
+        this._connection.off('UpdatedEditorEmail', handler.handleUpdatedEditorEmail)
     }
 
 
@@ -804,7 +804,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectCreatedEdition(handler: NotificationHandler): void {
-        this._connection!.on('CreatedEdition', handler.handleCreatedEdition)
+        this._connection.on('CreatedEdition', handler.handleCreatedEdition)
     }
 
     /**
@@ -812,7 +812,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectCreatedEdition(handler: NotificationHandler): void {
-        this._connection!.off('CreatedEdition', handler.handleCreatedEdition)
+        this._connection.off('CreatedEdition', handler.handleCreatedEdition)
     }
 
 
@@ -821,7 +821,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectDeletedEdition(handler: NotificationHandler): void {
-        this._connection!.on('DeletedEdition', handler.handleDeletedEdition)
+        this._connection.on('DeletedEdition', handler.handleDeletedEdition)
     }
 
     /**
@@ -829,7 +829,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectDeletedEdition(handler: NotificationHandler): void {
-        this._connection!.off('DeletedEdition', handler.handleDeletedEdition)
+        this._connection.off('DeletedEdition', handler.handleDeletedEdition)
     }
 
 
@@ -838,7 +838,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectUpdatedEdition(handler: NotificationHandler): void {
-        this._connection!.on('UpdatedEdition', handler.handleUpdatedEdition)
+        this._connection.on('UpdatedEdition', handler.handleUpdatedEdition)
     }
 
     /**
@@ -846,7 +846,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectUpdatedEdition(handler: NotificationHandler): void {
-        this._connection!.off('UpdatedEdition', handler.handleUpdatedEdition)
+        this._connection.off('UpdatedEdition', handler.handleUpdatedEdition)
     }
 
 
@@ -855,7 +855,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectCreatedRoi(handler: NotificationHandler): void {
-        this._connection!.on('CreatedRoi', handler.handleCreatedRoi)
+        this._connection.on('CreatedRoi', handler.handleCreatedRoi)
     }
 
     /**
@@ -863,7 +863,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectCreatedRoi(handler: NotificationHandler): void {
-        this._connection!.off('CreatedRoi', handler.handleCreatedRoi)
+        this._connection.off('CreatedRoi', handler.handleCreatedRoi)
     }
 
 
@@ -872,7 +872,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectCreatedRoisBatch(handler: NotificationHandler): void {
-        this._connection!.on('CreatedRoisBatch', handler.handleCreatedRoisBatch)
+        this._connection.on('CreatedRoisBatch', handler.handleCreatedRoisBatch)
     }
 
     /**
@@ -880,7 +880,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectCreatedRoisBatch(handler: NotificationHandler): void {
-        this._connection!.off('CreatedRoisBatch', handler.handleCreatedRoisBatch)
+        this._connection.off('CreatedRoisBatch', handler.handleCreatedRoisBatch)
     }
 
 
@@ -889,7 +889,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectEditedRoisBatch(handler: NotificationHandler): void {
-        this._connection!.on('EditedRoisBatch', handler.handleEditedRoisBatch)
+        this._connection.on('EditedRoisBatch', handler.handleEditedRoisBatch)
     }
 
     /**
@@ -897,7 +897,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectEditedRoisBatch(handler: NotificationHandler): void {
-        this._connection!.off('EditedRoisBatch', handler.handleEditedRoisBatch)
+        this._connection.off('EditedRoisBatch', handler.handleEditedRoisBatch)
     }
 
 
@@ -906,7 +906,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectUpdatedRoi(handler: NotificationHandler): void {
-        this._connection!.on('UpdatedRoi', handler.handleUpdatedRoi)
+        this._connection.on('UpdatedRoi', handler.handleUpdatedRoi)
     }
 
     /**
@@ -914,7 +914,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectUpdatedRoi(handler: NotificationHandler): void {
-        this._connection!.off('UpdatedRoi', handler.handleUpdatedRoi)
+        this._connection.off('UpdatedRoi', handler.handleUpdatedRoi)
     }
 
 
@@ -923,7 +923,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectUpdatedRoisBatch(handler: NotificationHandler): void {
-        this._connection!.on('UpdatedRoisBatch', handler.handleUpdatedRoisBatch)
+        this._connection.on('UpdatedRoisBatch', handler.handleUpdatedRoisBatch)
     }
 
     /**
@@ -931,7 +931,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectUpdatedRoisBatch(handler: NotificationHandler): void {
-        this._connection!.off('UpdatedRoisBatch', handler.handleUpdatedRoisBatch)
+        this._connection.off('UpdatedRoisBatch', handler.handleUpdatedRoisBatch)
     }
 
 
@@ -940,7 +940,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectDeletedRoi(handler: NotificationHandler): void {
-        this._connection!.on('DeletedRoi', handler.handleDeletedRoi)
+        this._connection.on('DeletedRoi', handler.handleDeletedRoi)
     }
 
     /**
@@ -948,7 +948,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectDeletedRoi(handler: NotificationHandler): void {
-        this._connection!.off('DeletedRoi', handler.handleDeletedRoi)
+        this._connection.off('DeletedRoi', handler.handleDeletedRoi)
     }
 
 
@@ -957,7 +957,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectCreatedArtefact(handler: NotificationHandler): void {
-        this._connection!.on('CreatedArtefact', handler.handleCreatedArtefact)
+        this._connection.on('CreatedArtefact', handler.handleCreatedArtefact)
     }
 
     /**
@@ -965,7 +965,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectCreatedArtefact(handler: NotificationHandler): void {
-        this._connection!.off('CreatedArtefact', handler.handleCreatedArtefact)
+        this._connection.off('CreatedArtefact', handler.handleCreatedArtefact)
     }
 
 
@@ -974,7 +974,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectDeletedArtefact(handler: NotificationHandler): void {
-        this._connection!.on('DeletedArtefact', handler.handleDeletedArtefact)
+        this._connection.on('DeletedArtefact', handler.handleDeletedArtefact)
     }
 
     /**
@@ -982,7 +982,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectDeletedArtefact(handler: NotificationHandler): void {
-        this._connection!.off('DeletedArtefact', handler.handleDeletedArtefact)
+        this._connection.off('DeletedArtefact', handler.handleDeletedArtefact)
     }
 
 
@@ -991,7 +991,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public connectUpdatedArtefact(handler: NotificationHandler): void {
-        this._connection!.on('UpdatedArtefact', handler.handleUpdatedArtefact)
+        this._connection.on('UpdatedArtefact', handler.handleUpdatedArtefact)
     }
 
     /**
@@ -999,7 +999,7 @@ export class SignalRUtilities {
 	 *
 	 */
     public disconnectUpdatedArtefact(handler: NotificationHandler): void {
-        this._connection!.off('UpdatedArtefact', handler.handleUpdatedArtefact)
+        this._connection.off('UpdatedArtefact', handler.handleUpdatedArtefact)
     }
 
 } 

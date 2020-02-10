@@ -9,7 +9,7 @@ export abstract class NotificationHandler {
 }
 
 export class SignalRUtilities {  
-    private _connection?: HubConnection;
+    private _connection: HubConnection;
     
     public constructor(connection: HubConnection) {
         this._connection = connection;
