@@ -80,10 +80,8 @@ namespace sqe_realtime_hub_builder
             Console.WriteLine($"Deleting any existing realtime hub methods from {hubFolder}.");
             var folderInfo = new DirectoryInfo(hubFolder);
             foreach (var file in folderInfo.GetFiles())
-            {
                 if (file.Name != "HubInterface.cs")
                     file.Delete();
-            }
 
             // Parse each controller file
             foreach (var file in files)

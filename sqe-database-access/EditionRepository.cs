@@ -38,8 +38,7 @@ namespace SQE.DatabaseAccess
             bool? mayLock,
             bool? isAdmin);
 
-        Task<AddEditorJWT> AddEditionEditor(EditionUserInfo editionUser,
-            string token);
+        Task<AddEditorJWT> AddEditionEditor(string token, uint userId);
 
         Task<Permission> ChangeEditionEditorRights(EditionUserInfo editionUser,
             string editorEmail,
@@ -53,8 +52,8 @@ namespace SQE.DatabaseAccess
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
     {
-        private readonly IDatabaseWriter _databaseWriter;
         private readonly IConfiguration _config;
+        private readonly IDatabaseWriter _databaseWriter;
 
         public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
@@ -370,8 +369,8 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Initiate a request for a user to be added as editor to an edition. This creates a token, which
-        /// the requested editor can use to confirm the request.
+        ///     Initiate a request for a user to be added as editor to an edition. This creates a token, which
+        ///     the requested editor can use to confirm the request.
         /// </summary>
         /// <param name="editionUser">User object requesting the new editor</param>
         /// <param name="editorEmail">New editor's email address</param>
@@ -418,8 +417,9 @@ namespace SQE.DatabaseAccess
                 // Add the editor
                 var editorInfo = await connection.QuerySingleAsync<DetailedUserWithToken>(
                     UserDetails.GetQuery(
-                        new List<string>() { "user_id", "forename", "surname", "organization" },
-                        new List<string>() { "email" }),
+                        new List<string> { "user_id", "forename", "surname", "organization" },
+                        new List<string> { "email" }
+                    ),
                     new { Email = editorEmail }
                 );
 
@@ -434,6 +434,7 @@ namespace SQE.DatabaseAccess
                     .AddClaim("mayLock", permissions.MayLock)
                     .AddClaim("isAdmin", permissions.IsAdmin)
                     .AddClaim("editionId", editionUser.EditionId)
+                    .AddClaim("userId", editorInfo.UserId)
                     .Encode();
 
                 // TODO: Decide if we want to use the database user email token system rather than a JWT for this.
@@ -455,8 +456,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<AddEditorJWT> AddEditionEditor(EditionUserInfo editionUser,
-            string token)
+        public async Task<AddEditorJWT> AddEditionEditor(string token, uint userId)
         {
             AddEditorJWT editorJwt;
             try
@@ -470,15 +470,19 @@ namespace SQE.DatabaseAccess
             }
             catch (TokenExpiredException)
             {
-                throw new StandardExceptions.ImproperInputDataException("JWT");
+                throw new StandardExceptions.ImproperInputDataException("JWT token");
             }
             catch (SignatureVerificationException)
             {
-                throw new StandardExceptions.NoPermissionsException(editionUser);
+                throw new StandardExceptions.NoAuthorizationException();
             }
 
+            // Make sure the JWT matches the requesting users ID
+            if (userId != editorJwt.userId)
+                throw new StandardExceptions.NoAuthorizationException();
+
             // Check if the editor already exists, don't attempt to re-add
-            if ((await _getEditionEditors(editionUser.EditionId)).Any(x => x.Email == editorJwt.email))
+            if ((await _getEditionEditors(editorJwt.editionId)).Any(x => x.Email == editorJwt.email))
                 throw new StandardExceptions.ConflictingDataException("editor email");
 
             using (var connection = OpenConnection())
@@ -590,9 +594,9 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
         }
 
         /// <summary>
-        /// Gets the user id's of each editor working on an edition.  This is useful for
-        /// collecting the user id's to which a SignalR message must be broadcast.  This
-        /// data is not intended to be made public to any clients.
+        ///     Gets the user id's of each editor working on an edition.  This is useful for
+        ///     collecting the user id's to which a SignalR message must be broadcast.  This
+        ///     data is not intended to be made public to any clients.
         /// </summary>
         /// <param name="editionUser">User object requesting the delete</param>
         /// <returns></returns>

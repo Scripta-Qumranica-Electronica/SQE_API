@@ -38,14 +38,12 @@ namespace SQE.API.Server.HttpControllers
         /// <summary>
         ///     Confirma addition of an editor to the specified edition
         /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="token">JWT for verifying the request confirmation</param>
-        [HttpPost("v1/[controller]s/{editionId}/confirm-editorship/{token}")]
-        public async Task<ActionResult<CreateEditorRightsDTO>> ConfirmAddEditionEditor([FromRoute] uint editionId,
-            [FromRoute] string token)
+        [HttpPost("v1/[controller]s/confirm-editorship/{token}")]
+        public async Task<ActionResult<CreateEditorRightsDTO>> ConfirmAddEditionEditor([FromRoute] string token)
         {
             return await _editionService.AddEditionEditor(
-                await _userService.GetCurrentUserObjectAsync(editionId),
+                _userService.GetCurrentUserId(),
                 token
             );
         }

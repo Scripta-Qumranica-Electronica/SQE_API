@@ -100,12 +100,11 @@ export class SignalRUtilities {
     /**
 	 * Confirma addition of an editor to the specified edition
 	 *
-	 * @param editionId - Unique Id of the desired edition
 	 * @param token - JWT for verifying the request confirmation
 	 *
 	 */
-    public async postV1EditionsEditionIdConfirmEditorshipToken(editionId: number, token: string): Promise<CreateEditorRightsDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdConfirmEditorshipToken', editionId, token);
+    public async postV1EditionsConfirmEditorshipToken(token: string): Promise<CreateEditorRightsDTO> {
+        return await this._connection.invoke('PostV1EditionsConfirmEditorshipToken', token);
     }
 
     /**

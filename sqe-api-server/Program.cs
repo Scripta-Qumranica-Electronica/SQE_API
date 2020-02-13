@@ -11,7 +11,6 @@ namespace SQE.API.Server
     {
         public static int Main(string[] args)
         {
-
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 // TODO: when we know the deployment details we will probably need to change the logging settings
@@ -40,15 +39,19 @@ namespace SQE.API.Server
             }
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder
-                    .UseStartup<Startup>()
-                    .UseSerilog()
-                    .UseUrls(urls: "http://*:5000");
-                });
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(
+                    webBuilder =>
+                    {
+                        webBuilder
+                            .UseStartup<Startup>()
+                            .UseSerilog()
+                            .UseUrls(urls: "http://*:5000");
+                    }
+                );
+        }
 
         // return WebHost.CreateDefaultBuilder(args)
         //     .UseStartup<Startup>()
@@ -59,5 +62,4 @@ namespace SQE.API.Server
 
     // public static IHostBuilder CreateHostBuilder(string[] args) => Host.CreateDefaultBuilder(args)
     //     .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
-
 }

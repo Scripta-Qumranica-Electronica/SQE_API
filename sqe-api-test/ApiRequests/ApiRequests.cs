@@ -116,7 +116,7 @@ namespace SQE.ApiTest.ApiRequests
         /// </summary>
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public EditionRequestObject(uint editionId, List<string> optional = null, Tinput payload = default(Tinput)) :
+        public EditionRequestObject(uint editionId, List<string> optional = null, Tinput payload = default) :
             base(payload)
         {
             this.editionId = editionId;
@@ -157,7 +157,7 @@ namespace SQE.ApiTest.ApiRequests
         public EditionEditorRequestObject(uint editionId,
             string editorEmail,
             List<string> optional = null,
-            Tinput payload = default(Tinput)) :
+            Tinput payload = default) :
             base(editionId, optional, payload)
         {
             this.editionId = editionId;
@@ -199,7 +199,7 @@ namespace SQE.ApiTest.ApiRequests
         public ImagedObjectRequestObject(uint editionId,
             uint imagedObjectId,
             List<string> optional = null,
-            Tinput payload = default(Tinput)) : base(editionId, optional, payload)
+            Tinput payload = default) : base(editionId, optional, payload)
         {
             this.imagedObjectId = imagedObjectId;
         }

@@ -34,7 +34,9 @@ namespace SQE.API.Server.Services
         private readonly ITextRepository _textRepo;
         private readonly IUserRepository _userRepo;
 
-        public TextService(ITextRepository textRepo, IUserRepository userRepo, IHubContext<MainHub, ISQEClient> hubContext)
+        public TextService(ITextRepository textRepo,
+            IUserRepository userRepo,
+            IHubContext<MainHub, ISQEClient> hubContext)
         {
             _textRepo = textRepo;
             _userRepo = userRepo;

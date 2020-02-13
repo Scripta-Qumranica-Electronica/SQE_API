@@ -39,7 +39,7 @@ namespace SQE.API.Server.Services
             CreateEditorRightsDTO newEditor,
             string clientId = null);
 
-        Task<CreateEditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
+        Task<CreateEditorRightsDTO> AddEditionEditor(uint? userId,
             string token,
             string clientId = null);
 
@@ -52,22 +52,25 @@ namespace SQE.API.Server.Services
     public class EditionService : IEditionService
     {
         private readonly IEditionRepository _editionRepo;
+        private readonly IEmailSender _emailSender;
         private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IUserRepository _userRepo;
-        private readonly IEmailSender _emailSender;
+        private readonly IUserService _userService;
         private readonly string webServer;
 
         public EditionService(IEditionRepository editionRepo,
             IUserRepository userRepo,
+            IUserService userService,
             IHubContext<MainHub, ISQEClient> hubContext,
-            IConfiguration config,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            IConfiguration config)
         {
             _editionRepo = editionRepo;
             _userRepo = userRepo;
+            _userService = userService;
             _hubContext = hubContext;
-            webServer = config.GetConnectionString("WebsiteHost");
             _emailSender = emailSender;
+            webServer = config.GetConnectionString("WebsiteHost");
         }
 
         public async Task<EditionGroupDTO> GetEditionAsync(EditionUserInfo editionUser,
@@ -131,10 +134,8 @@ namespace SQE.API.Server.Services
             // made the request, that client directly received the response.
             var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
             foreach (var userId in editionUsers)
-            {
                 await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
                     .UpdatedEdition(updatedEdition);
-            }
 
             return updatedEdition;
         }
@@ -218,10 +219,8 @@ namespace SQE.API.Server.Services
                     // made the request, that client directly received the response.
                     // TODO: make a DTO for the delete object.
                     foreach (var userId in editionUsers)
-                    {
                         await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
                             .DeletedEdition(deleteResponse);
-                    }
                     return deleteResponse;
                 }
 
@@ -287,10 +286,12 @@ part and the offer will expire in $ExpirationPeriod.<br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
             const string emailSubject = "Invitation to edit $EditionName in Scripta Qumranica Electronica";
-            var newEditorName = !string.IsNullOrEmpty(newUserToken.Forename) || !string.IsNullOrEmpty(newUserToken.Surname)
+            var newEditorName = !string.IsNullOrEmpty(newUserToken.Forename)
+                                || !string.IsNullOrEmpty(newUserToken.Surname)
                 ? (newUserToken.Forename + " " + newUserToken.Surname).Trim()
                 : newUserToken.Email;
-            var adminName = !string.IsNullOrEmpty(requestingUser.Forename) || !string.IsNullOrEmpty(requestingUser.Surname)
+            var adminName = !string.IsNullOrEmpty(requestingUser.Forename)
+                            || !string.IsNullOrEmpty(requestingUser.Surname)
                 ? (requestingUser.Forename + " " + requestingUser.Surname).Trim()
                 : requestingUser.Email;
             await _emailSender.SendEmailAsync(
@@ -314,25 +315,35 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <summary>
         ///     Adds a new editor to an edition with the requested access rights
         /// </summary>
-        /// <param name="editionUser">User object making the request</param>
+        /// <param name="userId"></param>
         /// <param name="token">JWT to verify the request</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<CreateEditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
+        public async Task<CreateEditorRightsDTO> AddEditionEditor(uint? userId,
             string token,
             string clientId = null)
         {
+            if (!userId.HasValue)
+                throw new StandardExceptions.NoAuthorizationException();
             var newUserPermissions = await _editionRepo.AddEditionEditor(
-                editionUser,
-                token
+                token,
+                userId.Value
             );
 
-            var newEditorDTO = _permissionsToEditorRightsDTO(newUserPermissions.email, newUserPermissions.mayRead, newUserPermissions.mayWrite, newUserPermissions.mayLock, newUserPermissions.isAdmin);
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            var newEditorDTO = _permissionsToEditorRightsDTO(
+                newUserPermissions.email,
+                newUserPermissions.mayRead,
+                newUserPermissions.mayWrite,
+                newUserPermissions.mayLock,
+                newUserPermissions.isAdmin
+            );
+            // Broadcast the change to all editors of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreatedEditor(newEditorDTO);
+            var editionUser = await _userService.GetCurrentUserObjectAsync(newUserPermissions.editionId);
+            var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+            foreach (var editionUserId in editionUsers)
+                await _hubContext.Clients.GroupExcept($"user-{editionUserId.ToString()}", clientId)
+                    .CreatedEditor(newEditorDTO);
             return newEditorDTO;
         }
 
@@ -357,7 +368,13 @@ The Scripta Qumranica Electronica team</body></html>";
                 updatedEditor.mayLock,
                 updatedEditor.isAdmin
             );
-            var updatedEditorDTO = _permissionsToEditorRightsDTO(editorEmail, updatedUserPermissions.MayRead, updatedUserPermissions.MayWrite, updatedUserPermissions.MayLock, updatedUserPermissions.IsAdmin);
+            var updatedEditorDTO = _permissionsToEditorRightsDTO(
+                editorEmail,
+                updatedUserPermissions.MayRead,
+                updatedUserPermissions.MayWrite,
+                updatedUserPermissions.MayLock,
+                updatedUserPermissions.IsAdmin
+            );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
@@ -409,7 +426,11 @@ The Scripta Qumranica Electronica team</body></html>";
             };
         }
 
-        private static CreateEditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail, bool mayRead, bool mayWrite, bool mayLock, bool isAdmin)
+        private static CreateEditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail,
+            bool mayRead,
+            bool mayWrite,
+            bool mayLock,
+            bool isAdmin)
         {
             return new CreateEditorRightsDTO
             {

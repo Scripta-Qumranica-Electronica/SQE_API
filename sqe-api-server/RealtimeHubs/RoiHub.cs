@@ -9,8 +9,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
-using SQE.API.Server.Services;
-using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
@@ -33,9 +31,14 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Id of the edition</param>
         /// <param name="newRoi">A JSON object with the new ROI to be created</param>
         [Authorize]
-        public async Task<InterpretationRoiDTO> PostV1EditionsEditionIdRois(uint editionId, SetInterpretationRoiDTO newRoi)
+        public async Task<InterpretationRoiDTO> PostV1EditionsEditionIdRois(uint editionId,
+            SetInterpretationRoiDTO newRoi)
         {
-            return await _roiService.CreateRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newRoi, clientId: Context.ConnectionId);
+            return await _roiService.CreateRoiAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                newRoi,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -44,9 +47,14 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Id of the edition</param>
         /// <param name="newRois">A JSON object with an array of the new ROI's to be created</param>
         [Authorize]
-        public async Task<InterpretationRoiDTOList> PostV1EditionsEditionIdRoisBatch(uint editionId, SetInterpretationRoiDTOList newRois)
+        public async Task<InterpretationRoiDTOList> PostV1EditionsEditionIdRoisBatch(uint editionId,
+            SetInterpretationRoiDTOList newRois)
         {
-            return await _roiService.CreateRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newRois, clientId: Context.ConnectionId);
+            return await _roiService.CreateRoisAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                newRois,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -55,9 +63,14 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Id of the edition</param>
         /// <param name="rois">A JSON object with all the roi edits to be performed</param>
         [Authorize]
-        public async Task<BatchEditRoiResponseDTO> PostV1EditionsEditionIdRoisBatchEdit(uint editionId, BatchEditRoiDTO rois)
+        public async Task<BatchEditRoiResponseDTO> PostV1EditionsEditionIdRoisBatchEdit(uint editionId,
+            BatchEditRoiDTO rois)
         {
-            return await _roiService.BatchEditRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), rois, clientId: Context.ConnectionId);
+            return await _roiService.BatchEditRoisAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                rois,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -67,9 +80,16 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="roiId">Id of the ROI to be updated</param>
         /// <param name="updateRoi">A JSON object with the updated ROI details</param>
         [Authorize]
-        public async Task<UpdatedInterpretationRoiDTO> PutV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId, SetInterpretationRoiDTO updateRoi)
+        public async Task<UpdatedInterpretationRoiDTO> PutV1EditionsEditionIdRoisRoiId(uint editionId,
+            uint roiId,
+            SetInterpretationRoiDTO updateRoi)
         {
-            return await _roiService.UpdateRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), roiId, updateRoi, clientId: Context.ConnectionId);
+            return await _roiService.UpdateRoiAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                roiId,
+                updateRoi,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -78,9 +98,14 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Id of the edition</param>
         /// <param name="updateRois">A JSON object with an array of the updated ROI details</param>
         [Authorize]
-        public async Task<UpdatedInterpretationRoiDTOList> PutV1EditionsEditionIdRoisBatch(uint editionId, InterpretationRoiDTOList updateRois)
+        public async Task<UpdatedInterpretationRoiDTOList> PutV1EditionsEditionIdRoisBatch(uint editionId,
+            InterpretationRoiDTOList updateRois)
         {
-            return await _roiService.UpdateRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), updateRois, clientId: Context.ConnectionId);
+            return await _roiService.UpdateRoisAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                updateRois,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -91,8 +116,11 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task DeleteV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId)
         {
-            await _roiService.DeleteRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), roiId, clientId: Context.ConnectionId);
+            await _roiService.DeleteRoiAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                roiId,
+                Context.ConnectionId
+            );
         }
-
     }
 }

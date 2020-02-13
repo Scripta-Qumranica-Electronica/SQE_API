@@ -14,7 +14,9 @@ namespace SQE.API.DTO
             this.editorId = editorId;
         }
 
-        public TextFragmentDataDTO() : this(uint.MinValue, string.Empty, uint.MinValue) { }
+        public TextFragmentDataDTO() : this(uint.MinValue, string.Empty, uint.MinValue)
+        {
+        }
 
         public uint id { get; set; }
         public string name { get; set; }
@@ -54,7 +56,9 @@ namespace SQE.API.DTO
             this.textFragments = textFragments;
         }
 
-        public TextFragmentDataListDTO() : this(null) { }
+        public TextFragmentDataListDTO() : this(null)
+        {
+        }
 
         public List<TextFragmentDataDTO> textFragments { get; set; }
     }
@@ -85,7 +89,9 @@ namespace SQE.API.DTO
             this.lineName = lineName;
         }
 
-        public LineDataDTO() : this(uint.MinValue, string.Empty) { }
+        public LineDataDTO() : this(uint.MinValue, string.Empty)
+        {
+        }
 
         public uint lineId { get; set; }
         public string lineName { get; set; }
@@ -98,7 +104,9 @@ namespace SQE.API.DTO
             this.lines = lines;
         }
 
-        public LineDataListDTO() : this(null) { }
+        public LineDataListDTO() : this(null)
+        {
+        }
 
         public List<LineDataDTO> lines { get; set; }
     }

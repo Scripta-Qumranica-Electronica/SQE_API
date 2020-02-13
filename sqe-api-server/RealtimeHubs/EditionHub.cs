@@ -10,8 +10,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
-using SQE.API.Server.Services;
-using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
@@ -25,18 +23,21 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task PostV1EditionsEditionIdAddEditorRequest(uint editionId, CreateEditorRightsDTO payload)
         {
-            await _editionService.RequestNewEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), payload, clientId: Context.ConnectionId);
+            await _editionService.RequestNewEditionEditor(
+                await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
+                payload,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
         ///     Confirma addition of an editor to the specified edition
         /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="token">JWT for verifying the request confirmation</param>
         [Authorize]
-        public async Task<CreateEditorRightsDTO> PostV1EditionsEditionIdConfirmEditorshipToken(uint editionId, string token)
+        public async Task<CreateEditorRightsDTO> PostV1EditionsConfirmEditorshipToken(string token)
         {
-            return await _editionService.AddEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId), token, clientId: Context.ConnectionId);
+            return await _editionService.AddEditionEditor(_userService.GetCurrentUserId(), token, Context.ConnectionId);
         }
 
         /// <summary>
@@ -46,9 +47,16 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
         [Authorize]
-        public async Task<CreateEditorRightsDTO> PutV1EditionsEditionIdEditorsEditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
+        public async Task<CreateEditorRightsDTO> PutV1EditionsEditionIdEditorsEditorEmailId(uint editionId,
+            string editorEmailId,
+            UpdateEditorRightsDTO payload)
         {
-            return await _editionService.ChangeEditionEditorRights(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), editorEmailId, payload, clientId: Context.ConnectionId);
+            return await _editionService.ChangeEditionEditorRights(
+                await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
+                editorEmailId,
+                payload,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -59,7 +67,11 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task<EditionDTO> PostV1EditionsEditionId(uint editionId, EditionCopyDTO request)
         {
-            return await _editionService.CopyEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId), request, clientId: Context.ConnectionId);
+            return await _editionService.CopyEditionAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId),
+                request,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -71,7 +83,12 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task<DeleteTokenDTO> DeleteV1EditionsEditionId(uint editionId, List<string> optional, string token)
         {
-            return await _editionService.DeleteEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), token, optional, clientId: Context.ConnectionId);
+            return await _editionService.DeleteEditionAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                token,
+                optional,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -101,8 +118,11 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task<EditionDTO> PutV1EditionsEditionId(uint editionId, EditionUpdateRequestDTO request)
         {
-            return await _editionService.UpdateEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), request, clientId: Context.ConnectionId);
+            return await _editionService.UpdateEditionAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                request,
+                Context.ConnectionId
+            );
         }
-
     }
 }

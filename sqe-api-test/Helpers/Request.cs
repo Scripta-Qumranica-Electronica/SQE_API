@@ -242,7 +242,7 @@ namespace SQE.ApiTest.Helpers
                 }
             }
 
-            return (response: response, msg: parsedClass);
+            return (response, msg: parsedClass);
         }
 
         /// <summary>

@@ -171,24 +171,25 @@ namespace SQE.API.Server
                                 Type = SecuritySchemeType.ApiKey
                             }
                         );
-                        c.AddSecurityRequirement(new OpenApiSecurityRequirement()
-                        {
+                        c.AddSecurityRequirement(
+                            new OpenApiSecurityRequirement
                             {
-                                new OpenApiSecurityScheme
                                 {
-                                    Reference = new OpenApiReference
+                                    new OpenApiSecurityScheme
                                     {
-                                        Type = ReferenceType.SecurityScheme,
-                                        Id = "Bearer"
+                                        Reference = new OpenApiReference
+                                        {
+                                            Type = ReferenceType.SecurityScheme,
+                                            Id = "Bearer"
+                                        },
+                                        Scheme = "apikey",
+                                        Name = "Bearer",
+                                        In = ParameterLocation.Header
                                     },
-                                    Scheme = "apikey",
-                                    Name = "Bearer",
-                                    In = ParameterLocation.Header,
-
-                                },
-                                new List<string>()
+                                    new List<string>()
+                                }
                             }
-                        });
+                        );
                     }
                 );
 
@@ -265,12 +266,9 @@ namespace SQE.API.Server
                 endpoints =>
                 {
                     endpoints.MapHub<MainHub>("/signalr");
-                    if (appSettings.HttpServer.ToLower() == "true")
-                    {
-                        endpoints.MapControllers();
-                    }
+                    if (appSettings.HttpServer.ToLower() == "true") endpoints.MapControllers();
                 }
-                );
+            );
         }
     }
 }

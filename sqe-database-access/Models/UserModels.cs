@@ -38,6 +38,7 @@ namespace SQE.DatabaseAccess.Models
 
     public class AddEditorJWT
     {
+        public uint userId { get; set; }
         public uint editionId { get; set; }
         public string email { get; set; }
         public bool mayWrite { get; set; }

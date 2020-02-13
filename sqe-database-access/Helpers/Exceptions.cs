@@ -119,6 +119,16 @@ namespace SQE.DatabaseAccess.Helpers
 
         #region Permissions errors
 
+        public class NoAuthorizationException : ForbiddenDataAccessException
+        {
+            private const string customMsg = "The client must be authorized (logged in) for this request.";
+
+            public NoAuthorizationException()
+            {
+                Error = customMsg;
+            }
+        }
+
         public class NoPermissionsException : ForbiddenDataAccessException
         {
             private const string customMsg = "User $UserId has no permissions associated with edition $EditionId.";

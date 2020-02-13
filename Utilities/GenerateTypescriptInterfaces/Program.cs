@@ -102,15 +102,15 @@ namespace GenerateTypescriptInterfaces
             // Process the Realtime Hub methods
             Console.WriteLine($"Processing realtime hub methods from {hubFolder}.");
             foreach (var file in files)
-            {
                 if (file.Name != "HubInterface.cs")
                 {
                     var tmpHubMethods = ParseSqeHttpControllers(file);
                     hubMethods = hubMethods.Union(tmpHubMethods).ToList();
                 }
                 else
+                {
                     hubInterfaceMethods = ParseSqeHttpControllers(file);
-            }
+                }
 
             WriteTsHub(hubMethods, hubInterfaceMethods, tsFolder, projectRoot);
             Console.WriteLine("Finished creating the SQE signalr typescript interface.");
@@ -156,6 +156,7 @@ namespace GenerateTypescriptInterfaces
                 var typescriptSig = $"\t\t{methodName}({methodParams}): {returnType}";
                 hubMethods.Add(new MethodDesc(methodName, methodParams, returnType, comments));
             }
+
             return hubMethods;
         }
 
@@ -172,8 +173,10 @@ namespace GenerateTypescriptInterfaces
 
             // Get the comments for the parameters
             var parameters = xDoc.GetElementsByTagName("param");
-            var parameterText = string.Join("\n",
-                parameters.Cast<XmlNode>().Select(x => $" @param {x.Attributes["name"].Value} - {x.InnerText}"));
+            var parameterText = string.Join(
+                "\n",
+                parameters.Cast<XmlNode>().Select(x => $" @param {x.Attributes["name"].Value} - {x.InnerText}")
+            );
 
             // Get the comments for the returns
             var returns = xDoc.GetElementsByTagName("returns");
@@ -181,7 +184,9 @@ namespace GenerateTypescriptInterfaces
             if (returns.Count == 1)
                 returnText = returns[0].InnerText;
 
-            return $"/**{summaryText}\n{parameterText}\n{(!string.IsNullOrEmpty(returnText) ? " @returns - " + returnText : "")}\n/".Replace("\n", "\n\t *");
+            return
+                $"/**{summaryText}\n{parameterText}\n{(!string.IsNullOrEmpty(returnText) ? " @returns - " + returnText : "")}\n/"
+                    .Replace("\n", "\n\t *");
         }
 
         private static string ConvertToTypescriptType(string type)
@@ -207,12 +212,16 @@ namespace GenerateTypescriptInterfaces
                 case "bool":
                     return "boolean";
             }
-            if (type != null && type.Contains("Task"))
+
+            if (type != null
+                && type.Contains("Task"))
             {
                 var matches = _rx.Matches(type);
                 type = matches.Count >= 1 ? ConvertToTypescriptType(matches[0].Groups["return"].Value) : "void";
             }
-            if (type != null && type.Contains("List<"))
+
+            if (type != null
+                && type.Contains("List<"))
             {
                 var matches = _rxl.Matches(type);
                 type = matches.Count >= 1 ? ConvertToTypescriptType(matches[0].Groups["return"].Value) + "[]" : "[]";
@@ -233,7 +242,10 @@ namespace GenerateTypescriptInterfaces
                 : method.ReturnType.ToString();
         }
 
-        private static void WriteTsHub(List<MethodDesc> hubMethods, List<MethodDesc> hubInterfaceMethods, string tsFolder, string baseFolder)
+        private static void WriteTsHub(List<MethodDesc> hubMethods,
+            List<MethodDesc> hubInterfaceMethods,
+            string tsFolder,
+            string baseFolder)
         {
             var rgx = new Regex(@"(\w+?):");
             var types = new StreamReader($"{tsFolder}/sqe-dtos.ts").ReadToEnd();
@@ -242,22 +254,59 @@ namespace GenerateTypescriptInterfaces
             using (var outputFile = new StreamWriter(Path.Combine(tsFolder, "sqe-signalr.ts")))
             {
                 outputFile.Write(_autogenFileDisclaimer);
-                outputFile.Write(template
-                    .Replace("$IMPORTS", string.Join("\n", matches.ToList().Select(x => $"\t{x.Groups["type"].Value},")))
-                    .Replace("$CLIENTMETHODS", string.Join("\n", hubInterfaceMethods.Select(x =>
-                        _clientMethodTemplate.Replace("$ONCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : _rxp.Replace(
-                                x.comment.Replace("/**\n\t *", _onListener), "*"))
-                            .Replace("$OFFCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : _rxp.Replace(
-                                x.comment.Replace("/**\n\t *", _offListener), "*"))
-                            .Replace("$METHODNAME", x.name)
-                            .Replace("$METHODRETURN", x.parameters.Replace("returnedData", "msg")))))
-                    .Replace("$SERVERMETHODS", string.Join("\n", hubMethods.Select(x =>
-                        _serverMethodTemplate.Replace("$COMMENT", x.comment)
-                            .Replace("$METHODNAMELC", x.name.ToCamelCase())
-                            .Replace("$METHODNAME", $"'{x.name}'" +
-                                                    $"{string.Join("", rgx.Matches(x.parameters).ToList().Select(x => ", " + x.Value.Replace(":", "")))}")
-                            .Replace("$METHODPARAMS", x.parameters)
-                            .Replace("$METHODRETURN", x.returnType))))
+                outputFile.Write(
+                    template
+                        .Replace(
+                            "$IMPORTS",
+                            string.Join("\n", matches.ToList().Select(x => $"\t{x.Groups["type"].Value},"))
+                        )
+                        .Replace(
+                            "$CLIENTMETHODS",
+                            string.Join(
+                                "\n",
+                                hubInterfaceMethods.Select(
+                                    x =>
+                                        _clientMethodTemplate.Replace(
+                                                "$ONCOMMENT",
+                                                string.IsNullOrEmpty(x.comment)
+                                                    ? ""
+                                                    : _rxp.Replace(
+                                                        x.comment.Replace("/**\n\t *", _onListener),
+                                                        "*"
+                                                    )
+                                            )
+                                            .Replace(
+                                                "$OFFCOMMENT",
+                                                string.IsNullOrEmpty(x.comment)
+                                                    ? ""
+                                                    : _rxp.Replace(
+                                                        x.comment.Replace("/**\n\t *", _offListener),
+                                                        "*"
+                                                    )
+                                            )
+                                            .Replace("$METHODNAME", x.name)
+                                            .Replace("$METHODRETURN", x.parameters.Replace("returnedData", "msg"))
+                                )
+                            )
+                        )
+                        .Replace(
+                            "$SERVERMETHODS",
+                            string.Join(
+                                "\n",
+                                hubMethods.Select(
+                                    x =>
+                                        _serverMethodTemplate.Replace("$COMMENT", x.comment)
+                                            .Replace("$METHODNAMELC", x.name.ToCamelCase())
+                                            .Replace(
+                                                "$METHODNAME",
+                                                $"'{x.name}'"
+                                                + $"{string.Join("", rgx.Matches(x.parameters).ToList().Select(x => ", " + x.Value.Replace(":", "")))}"
+                                            )
+                                            .Replace("$METHODPARAMS", x.parameters)
+                                            .Replace("$METHODRETURN", x.returnType)
+                                )
+                            )
+                        )
                 );
             }
         }

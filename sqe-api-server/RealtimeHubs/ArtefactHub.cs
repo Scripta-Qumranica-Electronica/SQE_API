@@ -10,8 +10,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
-using SQE.API.Server.Services;
-using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
@@ -25,7 +23,11 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task<ArtefactDTO> PostV1EditionsEditionIdArtefacts(uint editionId, CreateArtefactDTO payload)
         {
-            return await _artefactService.CreateArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), payload, clientId: Context.ConnectionId);
+            return await _artefactService.CreateArtefactAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                payload,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -36,7 +38,11 @@ namespace SQE.API.Server.RealtimeHubs
         [Authorize]
         public async Task DeleteV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId)
         {
-            await _artefactService.DeleteArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactId, clientId: Context.ConnectionId);
+            await _artefactService.DeleteArtefactAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                artefactId,
+                Context.ConnectionId
+            );
         }
 
         /// <summary>
@@ -46,9 +52,15 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
         [AllowAnonymous]
-        public async Task<ArtefactDTO> GetV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, List<string> optional)
+        public async Task<ArtefactDTO> GetV1EditionsEditionIdArtefactsArtefactId(uint editionId,
+            uint artefactId,
+            List<string> optional)
         {
-            return await _artefactService.GetEditionArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId, optional);
+            return await _artefactService.GetEditionArtefactAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId),
+                artefactId,
+                optional
+            );
         }
 
         /// <summary>
@@ -57,9 +69,13 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
         [AllowAnonymous]
-        public async Task<InterpretationRoiDTOList> GetV1EditionsEditionIdArtefactsArtefactIdRois(uint editionId, uint artefactId)
+        public async Task<InterpretationRoiDTOList> GetV1EditionsEditionIdArtefactsArtefactIdRois(uint editionId,
+            uint artefactId)
         {
-            return await _roiService.GetRoisByArtefactIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);
+            return await _roiService.GetRoisByArtefactIdAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId),
+                artefactId
+            );
         }
 
         /// <summary>
@@ -70,7 +86,10 @@ namespace SQE.API.Server.RealtimeHubs
         [AllowAnonymous]
         public async Task<ArtefactListDTO> GetV1EditionsEditionIdArtefacts(uint editionId, List<string> optional)
         {
-            return await _artefactService.GetEditionArtefactListingsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
+            return await _artefactService.GetEditionArtefactListingsAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId),
+                optional
+            );
         }
 
         /// <summary>
@@ -82,9 +101,16 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="optional">Add "suggested" to include possible matches suggested by the system</param>
         [AllowAnonymous]
-        public async Task<ArtefactTextFragmentMatchListDTO> GetV1EditionsEditionIdArtefactsArtefactIdTextFragments(uint editionId, uint artefactId, List<string> optional)
+        public async Task<ArtefactTextFragmentMatchListDTO> GetV1EditionsEditionIdArtefactsArtefactIdTextFragments(
+            uint editionId,
+            uint artefactId,
+            List<string> optional)
         {
-            return await _artefactService.ArtefactTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId, optional);
+            return await _artefactService.ArtefactTextFragmentsAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId),
+                artefactId,
+                optional
+            );
         }
 
         /// <summary>
@@ -94,10 +120,16 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
         [Authorize]
-        public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload)
+        public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint editionId,
+            uint artefactId,
+            UpdateArtefactDTO payload)
         {
-            return await _artefactService.UpdateArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactId, payload, clientId: Context.ConnectionId);
+            return await _artefactService.UpdateArtefactAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                artefactId,
+                payload,
+                Context.ConnectionId
+            );
         }
-
     }
 }

@@ -374,13 +374,13 @@ namespace SQE.DatabaseAccess
         // TODO Delete? cf. above (Ingo)
         /*
 		private async Task<bool> _textFragmentNameExistAsync(EditionUserInfo editionUser,
-		    string textFragmentName)
+			string textFragmentName)
 		{
-		    using (var connection = OpenConnection())
-		    {
-		        return (await connection.QueryAsync<TextFragmentData>(GetTextFragmentByName.GetQuery)).Any();
-		    }
-		    
+			using (var connection = OpenConnection())
+			{
+				return (await connection.QueryAsync<TextFragmentData>(GetTextFragmentByName.GetQuery)).Any();
+			}
+			
 		}
 		*/
 

@@ -104,7 +104,9 @@ namespace SQE.API.DTO
             this.collaborators = collaborators;
         }
 
-        public EditionUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty) { }
+        public EditionUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty)
+        {
+        }
 
 
         [StringLength(
@@ -125,7 +127,9 @@ namespace SQE.API.DTO
         {
         }
 
-        public EditionCopyDTO() : this(string.Empty, string.Empty, string.Empty) { }
+        public EditionCopyDTO() : this(string.Empty, string.Empty, string.Empty)
+        {
+        }
     }
 
     #endregion Request DTO's
