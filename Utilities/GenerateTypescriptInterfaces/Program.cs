@@ -39,13 +39,13 @@ namespace GenerateTypescriptInterfaces
 
         private const string _clientMethodTemplate = @"
     $ONCOMMENT
-    public connect$METHODNAME(handler: NotificationHandler): void {
-        this._connection.on('$METHODNAME', handler.handle$METHODNAME)
+    public connect$METHODNAME(handler: ($METHODRETURN) => void): void {
+        this._connection.on('$METHODNAME', handler)
     }
 
     $OFFCOMMENT
-    public disconnect$METHODNAME(handler: NotificationHandler): void {
-        this._connection.off('$METHODNAME', handler.handle$METHODNAME)
+    public disconnect$METHODNAME(handler: ($METHODRETURN) => void): void {
+        this._connection.off('$METHODNAME', handler)
     }
 ";
 
@@ -244,17 +244,13 @@ namespace GenerateTypescriptInterfaces
                 outputFile.Write(_autogenFileDisclaimer);
                 outputFile.Write(template
                     .Replace("$IMPORTS", string.Join("\n", matches.ToList().Select(x => $"\t{x.Groups["type"].Value},")))
-                    .Replace("$CLIENTMETHODHANDLERS", string.Join("\n", hubInterfaceMethods.Select(x =>
-                        _methodHandlerTemplate.Replace("$COMMENT", x.comment.Replace("broadcasts", "runs when"))
-                            .Replace("$METHODNAME", x.name)
-                            .Replace("$METHODPARAMS", x.parameters))))
                     .Replace("$CLIENTMETHODS", string.Join("\n", hubInterfaceMethods.Select(x =>
                         _clientMethodTemplate.Replace("$ONCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : _rxp.Replace(
                                 x.comment.Replace("/**\n\t *", _onListener), "*"))
                             .Replace("$OFFCOMMENT", string.IsNullOrEmpty(x.comment) ? "" : _rxp.Replace(
                                 x.comment.Replace("/**\n\t *", _offListener), "*"))
                             .Replace("$METHODNAME", x.name)
-                            .Replace("$METHODRETURN", x.parameters))))
+                            .Replace("$METHODRETURN", x.parameters.Replace("returnedData", "msg")))))
                     .Replace("$SERVERMETHODS", string.Join("\n", hubMethods.Select(x =>
                         _serverMethodTemplate.Replace("$COMMENT", x.comment)
                             .Replace("$METHODNAMELC", x.name.ToCamelCase())

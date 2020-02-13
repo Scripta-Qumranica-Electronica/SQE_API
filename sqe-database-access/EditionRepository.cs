@@ -5,6 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
+using JWT;
+using JWT.Algorithms;
+using JWT.Builder;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -28,12 +31,15 @@ namespace SQE.DatabaseAccess
         Task<string> DeleteAllEditionDataAsync(EditionUserInfo editionUser, string token);
         Task<string> GetDeleteToken(EditionUserInfo editionUser);
 
-        Task<Permission> AddEditionEditor(EditionUserInfo editionUser,
+        Task<DetailedUserWithToken> RequestAddEditionEditor(EditionUserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
             bool? mayLock,
             bool? isAdmin);
+
+        Task<AddEditorJWT> AddEditionEditor(EditionUserInfo editionUser,
+            string token);
 
         Task<Permission> ChangeEditionEditorRights(EditionUserInfo editionUser,
             string editorEmail,
@@ -41,14 +47,18 @@ namespace SQE.DatabaseAccess
             bool? mayWrite,
             bool? mayLock,
             bool? isAdmin);
+
+        Task<List<uint>> GetEditionEditorUserIds(EditionUserInfo editionUser);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
     {
         private readonly IDatabaseWriter _databaseWriter;
+        private readonly IConfiguration _config;
 
         public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
+            _config = config;
             _databaseWriter = databaseWriter;
         }
 
@@ -359,7 +369,18 @@ namespace SQE.DatabaseAccess
             return token;
         }
 
-        public async Task<Permission> AddEditionEditor(EditionUserInfo editionUser,
+        /// <summary>
+        /// Initiate a request for a user to be added as editor to an edition. This creates a token, which
+        /// the requested editor can use to confirm the request.
+        /// </summary>
+        /// <param name="editionUser">User object requesting the new editor</param>
+        /// <param name="editorEmail">New editor's email address</param>
+        /// <param name="mayRead">Permission to read</param>
+        /// <param name="mayWrite">Permission to write</param>
+        /// <param name="mayLock">Permission to lock</param>
+        /// <param name="isAdmin">Permission to admin</param>
+        /// <returns></returns>
+        public async Task<DetailedUserWithToken> RequestAddEditionEditor(EditionUserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
@@ -395,27 +416,93 @@ namespace SQE.DatabaseAccess
             using (var connection = OpenConnection())
             {
                 // Add the editor
+                var editorInfo = await connection.QuerySingleAsync<DetailedUserWithToken>(
+                    UserDetails.GetQuery(
+                        new List<string>() { "user_id", "forename", "surname", "organization" },
+                        new List<string>() { "email" }),
+                    new { Email = editorEmail }
+                );
+
+                var secret = _config.GetSection("AppSettings").GetSection("Secret").Value;
+
+                editorInfo.Token = new JwtBuilder()
+                    .WithAlgorithm(new HMACSHA256Algorithm())
+                    .WithSecret(secret)
+                    .AddClaim("email", editorEmail)
+                    .AddClaim("mayRead", permissions.MayRead)
+                    .AddClaim("mayWrite", permissions.MayWrite)
+                    .AddClaim("mayLock", permissions.MayLock)
+                    .AddClaim("isAdmin", permissions.IsAdmin)
+                    .AddClaim("editionId", editionUser.EditionId)
+                    .Encode();
+
+                // TODO: Decide if we want to use the database user email token system rather than a JWT for this.
+                // var writtenToken = await connection.ExecuteAsync(
+                //     CreateUserEmailTokenQuery.GetQuery(),
+                //     new
+                //     {
+                //         editorInfo.UserId,
+                //         editorInfo.Token,
+                //         Type = CreateUserEmailTokenQuery.Activate
+                //     }
+                // );
+                //
+                // if (writtenToken != 1)
+                //     throw new StandardExceptions.DataNotWrittenException($"create editor invite token for {editorEmail}");
+
+                // Return the results
+                return editorInfo;
+            }
+        }
+
+        public async Task<AddEditorJWT> AddEditionEditor(EditionUserInfo editionUser,
+            string token)
+        {
+            AddEditorJWT editorJwt;
+            try
+            {
+                var secret = _config.GetSection("AppSettings").GetSection("Secret").Value;
+                editorJwt = new JwtBuilder()
+                    .WithAlgorithm(new HMACSHA256Algorithm())
+                    .WithSecret(secret)
+                    .MustVerifySignature()
+                    .Decode<AddEditorJWT>(token);
+            }
+            catch (TokenExpiredException)
+            {
+                throw new StandardExceptions.ImproperInputDataException("JWT");
+            }
+            catch (SignatureVerificationException)
+            {
+                throw new StandardExceptions.NoPermissionsException(editionUser);
+            }
+
+            // Check if the editor already exists, don't attempt to re-add
+            if ((await _getEditionEditors(editionUser.EditionId)).Any(x => x.Email == editorJwt.email))
+                throw new StandardExceptions.ConflictingDataException("editor email");
+
+            using (var connection = OpenConnection())
+            {
+                // Add the editor
                 var editorUpdateExecution = await connection.ExecuteAsync(
                     CreateDetailedEditionEditorQuery.GetQuery,
                     new
                     {
-                        editionUser.EditionId,
-                        Email = editorEmail,
-                        permissions.MayRead,
-                        permissions.MayWrite,
-                        permissions.MayLock,
-                        permissions.IsAdmin
+                        EditionId = editorJwt.editionId,
+                        Email = editorJwt.email,
+                        MayRead = editorJwt.mayRead,
+                        MayWrite = editorJwt.mayWrite,
+                        MayLock = editorJwt.mayLock,
+                        IsAdmin = editorJwt.isAdmin
                     }
                 );
 
                 if (editorUpdateExecution != 1)
-                    throw new StandardExceptions.DataNotWrittenException($"update permissions for {editorEmail}");
+                    throw new StandardExceptions.DataNotWrittenException($"update permissions for {editorJwt.email}");
 
                 // Return the results
-                return permissions;
+                return editorJwt;
             }
-
-            // In the future should we email the editor to confirm adding?
         }
 
         public async Task<Permission> ChangeEditionEditorRights(EditionUserInfo editionUser,
@@ -500,6 +587,28 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
             }
 
             // In the future should we email the editor about their change in status?
+        }
+
+        /// <summary>
+        /// Gets the user id's of each editor working on an edition.  This is useful for
+        /// collecting the user id's to which a SignalR message must be broadcast.  This
+        /// data is not intended to be made public to any clients.
+        /// </summary>
+        /// <param name="editionUser">User object requesting the delete</param>
+        /// <returns></returns>
+        public async Task<List<uint>> GetEditionEditorUserIds(EditionUserInfo editionUser)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<uint>(
+                    EditionEditorUserIds.GetQuery,
+                    new
+                    {
+                        editionUser.EditionId,
+                        UserId = editionUser.userId
+                    }
+                )).ToList();
+            }
         }
 
         private static Edition CreateEdition(EditionGroupQuery.Result result, uint? currentUserId)

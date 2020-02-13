@@ -4,10 +4,6 @@ $IMPORTS
 
 import { HubConnection } from '@microsoft/signalr'; 
 
-export abstract class NotificationHandler {
-    $CLIENTMETHODHANDLERS
-}
-
 export class SignalRUtilities {  
     private _connection: HubConnection;
     

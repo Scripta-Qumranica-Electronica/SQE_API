@@ -25,6 +25,13 @@ namespace SQE.API.Server.RealtimeHubs
         Task UpdatedTextFragment(TextFragmentDataDTO returnedData);
 
         /// <summary>
+        /// broadcasts a editor has been requested for the edition
+        /// </summary>
+        /// <param name="returnedData">Details of the new editor</param>
+        /// <returns></returns>
+        Task RequestedEditor(EditionDTO returnedData);
+
+        /// <summary>
         /// broadcasts a editor has been added to the edition
         /// </summary>
         /// <param name="returnedData">Details of the new editor</param>

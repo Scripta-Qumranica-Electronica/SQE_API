@@ -311,4 +311,16 @@ SET locked = 0
 WHERE edition_id = @EditionId
 ";
     }
+
+    internal static class EditionEditorUserIds
+    {
+        internal const string GetQuery = @"
+SELECT user_id
+FROM (  SELECT edition_id 
+        FROM SQE.edition_editor
+        WHERE edition_id = @EditionId AND user_id = @UserId
+    ) as valid_user
+JOIN SQE.edition_editor USING(edition_id)
+";
+    }
 }

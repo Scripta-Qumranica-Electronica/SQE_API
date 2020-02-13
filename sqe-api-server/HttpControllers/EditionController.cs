@@ -25,13 +25,28 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
-        [HttpPost("v1/[controller]s/{editionId}/editors")]
-        public async Task<ActionResult<CreateEditorRightsDTO>> AddEditionEditor([FromRoute] uint editionId,
+        [HttpPost("v1/[controller]s/{editionId}/add-editor-request")]
+        public async Task<ActionResult> RequestAddEditionEditor([FromRoute] uint editionId,
             [FromBody] CreateEditorRightsDTO payload)
         {
-            return await _editionService.AddEditionEditor(
+            return await _editionService.RequestNewEditionEditor(
                 await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
                 payload
+            );
+        }
+
+        /// <summary>
+        ///     Confirma addition of an editor to the specified edition
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="token">JWT for verifying the request confirmation</param>
+        [HttpPost("v1/[controller]s/{editionId}/confirm-editorship/{token}")]
+        public async Task<ActionResult<CreateEditorRightsDTO>> ConfirmAddEditionEditor([FromRoute] uint editionId,
+            [FromRoute] string token)
+        {
+            return await _editionService.AddEditionEditor(
+                await _userService.GetCurrentUserObjectAsync(editionId),
+                token
             );
         }
 

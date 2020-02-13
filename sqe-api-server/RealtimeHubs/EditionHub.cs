@@ -23,9 +23,20 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
         [Authorize]
-        public async Task<CreateEditorRightsDTO> PostV1EditionsEditionIdEditors(uint editionId, CreateEditorRightsDTO payload)
+        public async Task PostV1EditionsEditionIdAddEditorRequest(uint editionId, CreateEditorRightsDTO payload)
         {
-            return await _editionService.AddEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), payload, clientId: Context.ConnectionId);
+            await _editionService.RequestNewEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), payload, clientId: Context.ConnectionId);
+        }
+
+        /// <summary>
+        ///     Confirma addition of an editor to the specified edition
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="token">JWT for verifying the request confirmation</param>
+        [Authorize]
+        public async Task<CreateEditorRightsDTO> PostV1EditionsEditionIdConfirmEditorshipToken(uint editionId, string token)
+        {
+            return await _editionService.AddEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId), token, clientId: Context.ConnectionId);
         }
 
         /// <summary>

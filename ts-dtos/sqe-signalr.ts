@@ -75,153 +75,6 @@ import {
 
 import { HubConnection } from '@microsoft/signalr'; 
 
-export abstract class NotificationHandler {
-    
-    /**
-	 * runs when a new text fragment has been created
-	 *
-	 * @param returnedData - Details of the newly created text fragment
-	 *
-	 */
-    public handleCreatedTextFragment(returnedData: TextFragmentDataDTO): void {}
-
-
-    /**
-	 * runs when a text fragment has been updated
-	 *
-	 * @param returnedData - Details of the updated text fragment
-	 *
-	 */
-    public handleUpdatedTextFragment(returnedData: TextFragmentDataDTO): void {}
-
-
-    /**
-	 * runs when a editor has been added to the edition
-	 *
-	 * @param returnedData - Details of the new editor
-	 *
-	 */
-    public handleCreatedEditor(returnedData: CreateEditorRightsDTO): void {}
-
-
-    /**
-	 * runs when an editor's permissions have been updated
-	 *
-	 * @param returnedData - Details of the editor's updated permissions
-	 *
-	 */
-    public handleUpdatedEditorEmail(returnedData: CreateEditorRightsDTO): void {}
-
-
-    /**
-	 * runs when a new text edition has been created
-	 *
-	 * @param returnedData - Details of the newly created edition
-	 *
-	 */
-    public handleCreatedEdition(returnedData: EditionDTO): void {}
-
-
-    /**
-	 * runs when an edition has been deleted
-	 *
-	 * @param returnedData - Details of the deleted edition
-	 *
-	 */
-    public handleDeletedEdition(returnedData: DeleteTokenDTO): void {}
-
-
-    /**
-	 * runs when an edition's details have been updated
-	 *
-	 * @param returnedData - Details of the updated edition
-	 *
-	 */
-    public handleUpdatedEdition(returnedData: EditionDTO): void {}
-
-
-    /**
-	 * runs when a new ROI has been created
-	 *
-	 * @param returnedData - Details of the newly created ROI
-	 *
-	 */
-    public handleCreatedRoi(returnedData: InterpretationRoiDTO): void {}
-
-
-    /**
-	 * runs when one or more new ROI's have been created
-	 *
-	 * @param returnedData - Details of the newly created ROI's
-	 *
-	 */
-    public handleCreatedRoisBatch(returnedData: InterpretationRoiDTOList): void {}
-
-
-    /**
-	 * runs when one or more new ROI's have been updated
-	 *
-	 * @param returnedData - Details of the updated ROI's
-	 *
-	 */
-    public handleEditedRoisBatch(returnedData: BatchEditRoiResponseDTO): void {}
-
-
-    /**
-	 * runs when a ROI has been updated
-	 *
-	 * @param returnedData - Details of the updated ROI
-	 *
-	 */
-    public handleUpdatedRoi(returnedData: UpdatedInterpretationRoiDTO): void {}
-
-
-    /**
-	 * runs when one or more new ROI's have been updated
-	 *
-	 * @param returnedData - Details of the updated ROI's
-	 *
-	 */
-    public handleUpdatedRoisBatch(returnedData: UpdatedInterpretationRoiDTOList): void {}
-
-
-    /**
-	 * runs when a ROI has been deleted
-	 *
-	 * @param returnedData - Details of the deleted ROI
-	 *
-	 */
-    public handleDeletedRoi(returnedData: number): void {}
-
-
-    /**
-	 * runs when an artefact has been created
-	 *
-	 * @param returnedData - Details of the newly created artefact
-	 *
-	 */
-    public handleCreatedArtefact(returnedData: ArtefactDTO): void {}
-
-
-    /**
-	 * runs when an artefact has been deleted
-	 *
-	 * @param returnedData - Details of the deleted artefact
-	 *
-	 */
-    public handleDeletedArtefact(returnedData: number): void {}
-
-
-    /**
-	 * runs when an artefact has been updated
-	 *
-	 * @param returnedData - Details of the updated artefact
-	 *
-	 */
-    public handleUpdatedArtefact(returnedData: ArtefactDTO): void {}
-
-}
-
 export class SignalRUtilities {  
     private _connection: HubConnection;
     
@@ -240,8 +93,19 @@ export class SignalRUtilities {
 	 * @param payload - JSON object with the attributes of the new editor
 	 *
 	 */
-    public async postV1EditionsEditionIdEditors(editionId: number, payload: CreateEditorRightsDTO): Promise<CreateEditorRightsDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdEditors', editionId, payload);
+    public async postV1EditionsEditionIdAddEditorRequest(editionId: number, payload: CreateEditorRightsDTO): Promise<void> {
+        return await this._connection.invoke('PostV1EditionsEditionIdAddEditorRequest', editionId, payload);
+    }
+
+    /**
+	 * Confirma addition of an editor to the specified edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param token - JWT for verifying the request confirmation
+	 *
+	 */
+    public async postV1EditionsEditionIdConfirmEditorshipToken(editionId: number, token: string): Promise<CreateEditorRightsDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdConfirmEditorshipToken', editionId, token);
     }
 
     /**
@@ -503,6 +367,18 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Override the default OnConnectedAsync to add the connection to the user's user_id
+	 * group if the user is authenticated. The user_id group is used for messages that
+	 * are above the level of a single edition.
+	 *
+	 *
+	 *
+	 */
+    public async onConnectedAsync(): Promise<void> {
+        return await this._connection.invoke('OnConnectedAsync');
+    }
+
+    /**
 	 * The client subscribes to all changes for the specified editionId.
 	 *
 	 * @param editionId - The ID of the edition to receive updates
@@ -735,16 +611,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a new text fragment has been created
 	 *
 	 */
-    public connectCreatedTextFragment(handler: NotificationHandler): void {
-        this._connection.on('CreatedTextFragment', handler.handleCreatedTextFragment)
+    public connectCreatedTextFragment(handler: (msg: TextFragmentDataDTO) => void): void {
+        this._connection.on('CreatedTextFragment', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a new text fragment has been created
 	 *
 	 */
-    public disconnectCreatedTextFragment(handler: NotificationHandler): void {
-        this._connection.off('CreatedTextFragment', handler.handleCreatedTextFragment)
+    public disconnectCreatedTextFragment(handler: (msg: TextFragmentDataDTO) => void): void {
+        this._connection.off('CreatedTextFragment', handler)
     }
 
 
@@ -752,16 +628,33 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a text fragment has been updated
 	 *
 	 */
-    public connectUpdatedTextFragment(handler: NotificationHandler): void {
-        this._connection.on('UpdatedTextFragment', handler.handleUpdatedTextFragment)
+    public connectUpdatedTextFragment(handler: (msg: TextFragmentDataDTO) => void): void {
+        this._connection.on('UpdatedTextFragment', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a text fragment has been updated
 	 *
 	 */
-    public disconnectUpdatedTextFragment(handler: NotificationHandler): void {
-        this._connection.off('UpdatedTextFragment', handler.handleUpdatedTextFragment)
+    public disconnectUpdatedTextFragment(handler: (msg: TextFragmentDataDTO) => void): void {
+        this._connection.off('UpdatedTextFragment', handler)
+    }
+
+
+    /**
+	 * Add a listener for when the server broadcasts a editor has been requested for the edition
+	 *
+	 */
+    public connectRequestedEditor(handler: (msg: EditionDTO) => void): void {
+        this._connection.on('RequestedEditor', handler)
+    }
+
+    /**
+	 * Remove an existing listener that triggers when the server broadcasts a editor has been requested for the edition
+	 *
+	 */
+    public disconnectRequestedEditor(handler: (msg: EditionDTO) => void): void {
+        this._connection.off('RequestedEditor', handler)
     }
 
 
@@ -769,16 +662,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a editor has been added to the edition
 	 *
 	 */
-    public connectCreatedEditor(handler: NotificationHandler): void {
-        this._connection.on('CreatedEditor', handler.handleCreatedEditor)
+    public connectCreatedEditor(handler: (msg: CreateEditorRightsDTO) => void): void {
+        this._connection.on('CreatedEditor', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a editor has been added to the edition
 	 *
 	 */
-    public disconnectCreatedEditor(handler: NotificationHandler): void {
-        this._connection.off('CreatedEditor', handler.handleCreatedEditor)
+    public disconnectCreatedEditor(handler: (msg: CreateEditorRightsDTO) => void): void {
+        this._connection.off('CreatedEditor', handler)
     }
 
 
@@ -786,16 +679,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts an editor's permissions have been updated
 	 *
 	 */
-    public connectUpdatedEditorEmail(handler: NotificationHandler): void {
-        this._connection.on('UpdatedEditorEmail', handler.handleUpdatedEditorEmail)
+    public connectUpdatedEditorEmail(handler: (msg: CreateEditorRightsDTO) => void): void {
+        this._connection.on('UpdatedEditorEmail', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an editor's permissions have been updated
 	 *
 	 */
-    public disconnectUpdatedEditorEmail(handler: NotificationHandler): void {
-        this._connection.off('UpdatedEditorEmail', handler.handleUpdatedEditorEmail)
+    public disconnectUpdatedEditorEmail(handler: (msg: CreateEditorRightsDTO) => void): void {
+        this._connection.off('UpdatedEditorEmail', handler)
     }
 
 
@@ -803,16 +696,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a new text edition has been created
 	 *
 	 */
-    public connectCreatedEdition(handler: NotificationHandler): void {
-        this._connection.on('CreatedEdition', handler.handleCreatedEdition)
+    public connectCreatedEdition(handler: (msg: EditionDTO) => void): void {
+        this._connection.on('CreatedEdition', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a new text edition has been created
 	 *
 	 */
-    public disconnectCreatedEdition(handler: NotificationHandler): void {
-        this._connection.off('CreatedEdition', handler.handleCreatedEdition)
+    public disconnectCreatedEdition(handler: (msg: EditionDTO) => void): void {
+        this._connection.off('CreatedEdition', handler)
     }
 
 
@@ -820,16 +713,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts an edition has been deleted
 	 *
 	 */
-    public connectDeletedEdition(handler: NotificationHandler): void {
-        this._connection.on('DeletedEdition', handler.handleDeletedEdition)
+    public connectDeletedEdition(handler: (msg: DeleteTokenDTO) => void): void {
+        this._connection.on('DeletedEdition', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an edition has been deleted
 	 *
 	 */
-    public disconnectDeletedEdition(handler: NotificationHandler): void {
-        this._connection.off('DeletedEdition', handler.handleDeletedEdition)
+    public disconnectDeletedEdition(handler: (msg: DeleteTokenDTO) => void): void {
+        this._connection.off('DeletedEdition', handler)
     }
 
 
@@ -837,16 +730,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts an edition's details have been updated
 	 *
 	 */
-    public connectUpdatedEdition(handler: NotificationHandler): void {
-        this._connection.on('UpdatedEdition', handler.handleUpdatedEdition)
+    public connectUpdatedEdition(handler: (msg: EditionDTO) => void): void {
+        this._connection.on('UpdatedEdition', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an edition's details have been updated
 	 *
 	 */
-    public disconnectUpdatedEdition(handler: NotificationHandler): void {
-        this._connection.off('UpdatedEdition', handler.handleUpdatedEdition)
+    public disconnectUpdatedEdition(handler: (msg: EditionDTO) => void): void {
+        this._connection.off('UpdatedEdition', handler)
     }
 
 
@@ -854,16 +747,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a new ROI has been created
 	 *
 	 */
-    public connectCreatedRoi(handler: NotificationHandler): void {
-        this._connection.on('CreatedRoi', handler.handleCreatedRoi)
+    public connectCreatedRoi(handler: (msg: InterpretationRoiDTO) => void): void {
+        this._connection.on('CreatedRoi', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a new ROI has been created
 	 *
 	 */
-    public disconnectCreatedRoi(handler: NotificationHandler): void {
-        this._connection.off('CreatedRoi', handler.handleCreatedRoi)
+    public disconnectCreatedRoi(handler: (msg: InterpretationRoiDTO) => void): void {
+        this._connection.off('CreatedRoi', handler)
     }
 
 
@@ -871,16 +764,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts one or more new ROI's have been created
 	 *
 	 */
-    public connectCreatedRoisBatch(handler: NotificationHandler): void {
-        this._connection.on('CreatedRoisBatch', handler.handleCreatedRoisBatch)
+    public connectCreatedRoisBatch(handler: (msg: InterpretationRoiDTOList) => void): void {
+        this._connection.on('CreatedRoisBatch', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts one or more new ROI's have been created
 	 *
 	 */
-    public disconnectCreatedRoisBatch(handler: NotificationHandler): void {
-        this._connection.off('CreatedRoisBatch', handler.handleCreatedRoisBatch)
+    public disconnectCreatedRoisBatch(handler: (msg: InterpretationRoiDTOList) => void): void {
+        this._connection.off('CreatedRoisBatch', handler)
     }
 
 
@@ -888,16 +781,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts one or more new ROI's have been updated
 	 *
 	 */
-    public connectEditedRoisBatch(handler: NotificationHandler): void {
-        this._connection.on('EditedRoisBatch', handler.handleEditedRoisBatch)
+    public connectEditedRoisBatch(handler: (msg: BatchEditRoiResponseDTO) => void): void {
+        this._connection.on('EditedRoisBatch', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts one or more new ROI's have been updated
 	 *
 	 */
-    public disconnectEditedRoisBatch(handler: NotificationHandler): void {
-        this._connection.off('EditedRoisBatch', handler.handleEditedRoisBatch)
+    public disconnectEditedRoisBatch(handler: (msg: BatchEditRoiResponseDTO) => void): void {
+        this._connection.off('EditedRoisBatch', handler)
     }
 
 
@@ -905,16 +798,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a ROI has been updated
 	 *
 	 */
-    public connectUpdatedRoi(handler: NotificationHandler): void {
-        this._connection.on('UpdatedRoi', handler.handleUpdatedRoi)
+    public connectUpdatedRoi(handler: (msg: UpdatedInterpretationRoiDTO) => void): void {
+        this._connection.on('UpdatedRoi', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a ROI has been updated
 	 *
 	 */
-    public disconnectUpdatedRoi(handler: NotificationHandler): void {
-        this._connection.off('UpdatedRoi', handler.handleUpdatedRoi)
+    public disconnectUpdatedRoi(handler: (msg: UpdatedInterpretationRoiDTO) => void): void {
+        this._connection.off('UpdatedRoi', handler)
     }
 
 
@@ -922,16 +815,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts one or more new ROI's have been updated
 	 *
 	 */
-    public connectUpdatedRoisBatch(handler: NotificationHandler): void {
-        this._connection.on('UpdatedRoisBatch', handler.handleUpdatedRoisBatch)
+    public connectUpdatedRoisBatch(handler: (msg: UpdatedInterpretationRoiDTOList) => void): void {
+        this._connection.on('UpdatedRoisBatch', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts one or more new ROI's have been updated
 	 *
 	 */
-    public disconnectUpdatedRoisBatch(handler: NotificationHandler): void {
-        this._connection.off('UpdatedRoisBatch', handler.handleUpdatedRoisBatch)
+    public disconnectUpdatedRoisBatch(handler: (msg: UpdatedInterpretationRoiDTOList) => void): void {
+        this._connection.off('UpdatedRoisBatch', handler)
     }
 
 
@@ -939,16 +832,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a ROI has been deleted
 	 *
 	 */
-    public connectDeletedRoi(handler: NotificationHandler): void {
-        this._connection.on('DeletedRoi', handler.handleDeletedRoi)
+    public connectDeletedRoi(handler: (msg: number) => void): void {
+        this._connection.on('DeletedRoi', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts a ROI has been deleted
 	 *
 	 */
-    public disconnectDeletedRoi(handler: NotificationHandler): void {
-        this._connection.off('DeletedRoi', handler.handleDeletedRoi)
+    public disconnectDeletedRoi(handler: (msg: number) => void): void {
+        this._connection.off('DeletedRoi', handler)
     }
 
 
@@ -956,16 +849,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts an artefact has been created
 	 *
 	 */
-    public connectCreatedArtefact(handler: NotificationHandler): void {
-        this._connection.on('CreatedArtefact', handler.handleCreatedArtefact)
+    public connectCreatedArtefact(handler: (msg: ArtefactDTO) => void): void {
+        this._connection.on('CreatedArtefact', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an artefact has been created
 	 *
 	 */
-    public disconnectCreatedArtefact(handler: NotificationHandler): void {
-        this._connection.off('CreatedArtefact', handler.handleCreatedArtefact)
+    public disconnectCreatedArtefact(handler: (msg: ArtefactDTO) => void): void {
+        this._connection.off('CreatedArtefact', handler)
     }
 
 
@@ -973,16 +866,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts an artefact has been deleted
 	 *
 	 */
-    public connectDeletedArtefact(handler: NotificationHandler): void {
-        this._connection.on('DeletedArtefact', handler.handleDeletedArtefact)
+    public connectDeletedArtefact(handler: (msg: number) => void): void {
+        this._connection.on('DeletedArtefact', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an artefact has been deleted
 	 *
 	 */
-    public disconnectDeletedArtefact(handler: NotificationHandler): void {
-        this._connection.off('DeletedArtefact', handler.handleDeletedArtefact)
+    public disconnectDeletedArtefact(handler: (msg: number) => void): void {
+        this._connection.off('DeletedArtefact', handler)
     }
 
 
@@ -990,16 +883,16 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts an artefact has been updated
 	 *
 	 */
-    public connectUpdatedArtefact(handler: NotificationHandler): void {
-        this._connection.on('UpdatedArtefact', handler.handleUpdatedArtefact)
+    public connectUpdatedArtefact(handler: (msg: ArtefactDTO) => void): void {
+        this._connection.on('UpdatedArtefact', handler)
     }
 
     /**
 	 * Remove an existing listener that triggers when the server broadcasts an artefact has been updated
 	 *
 	 */
-    public disconnectUpdatedArtefact(handler: NotificationHandler): void {
-        this._connection.off('UpdatedArtefact', handler.handleUpdatedArtefact)
+    public disconnectUpdatedArtefact(handler: (msg: ArtefactDTO) => void): void {
+        this._connection.off('UpdatedArtefact', handler)
     }
 
 } 

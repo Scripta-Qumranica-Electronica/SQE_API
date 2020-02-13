@@ -23,6 +23,22 @@ namespace SQE.API.Server.RealtimeHubs
     public partial class MainHub
     {
         /// <summary>
+        /// Override the default OnConnectedAsync to add the connection to the user's user_id
+        /// group if the user is authenticated. The user_id group is used for messages that
+        /// are above the level of a single edition.
+        /// </summary>
+        /// <returns></returns>
+        public override async Task OnConnectedAsync()
+        {
+            var user = _userService.GetCurrentUserId(); // Get the user_id if possible
+
+            // If the user is authenticated, add this connection to the user's user_id group.
+            if (user.HasValue)
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"user-{user.Value.ToString()}");
+            await base.OnConnectedAsync();
+        }
+
+        /// <summary>
         /// The client subscribes to all changes for the specified editionId.
         /// </summary>
         /// <param name="editionId">The ID of the edition to receive updates</param>
