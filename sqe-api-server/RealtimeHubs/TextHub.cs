@@ -9,6 +9,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
+using SQE.API.Server.Services;
+using Microsoft.AspNetCore.SignalR;
 
 namespace SQE.API.Server.RealtimeHubs
 {
@@ -20,14 +22,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="createFragment">A JSON object with the details of the new text fragment to be created</param>
         /// <param name="editionId">Id of the edition</param>
         [Authorize]
-        public async Task<TextFragmentDataDTO> PostV1EditionsEditionIdTextFragments(uint editionId,
-            CreateTextFragmentDTO createFragment)
+        public async Task<TextFragmentDataDTO> PostV1EditionsEditionIdTextFragments(uint editionId, CreateTextFragmentDTO createFragment)
         {
-            return await _textService.CreateTextFragmentAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId, true),
-                createFragment,
-                Context.ConnectionId
-            );
+            return await _textService.CreateTextFragmentAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), createFragment, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -38,16 +35,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="updatedTextFragment">Details of the updated text fragment</param>
         /// <returns>The details of the updated text fragment</returns>
         [Authorize]
-        public async Task<TextFragmentDataDTO> PutV1EditionsEditionIdTextFragmentsTextFragmentId(uint editionId,
-            uint textFragmentId,
-            UpdateTextFragmentDTO updatedTextFragment)
+        public async Task<TextFragmentDataDTO> PutV1EditionsEditionIdTextFragmentsTextFragmentId(uint editionId, uint textFragmentId, UpdateTextFragmentDTO updatedTextFragment)
         {
-            return await _textService.UpdateTextFragmentAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId),
-                textFragmentId,
-                updatedTextFragment,
-                Context.ConnectionId
-            );
+            return await _textService.UpdateTextFragmentAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId, updatedTextFragment, clientId: Context.ConnectionId);
         }
 
         /// <summary>
@@ -68,14 +58,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="textFragmentId">Id of the text fragment</param>
         /// <returns>An array of the line ids in the proper sequence</returns>
         [AllowAnonymous]
-        public async Task<ArtefactDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(
-            uint editionId,
-            uint textFragmentId)
+        public async Task<ArtefactDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(uint editionId, uint textFragmentId)
         {
-            return await _textService.GetArtefactsAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId),
-                textFragmentId
-            );
+            return await _textService.GetArtefactsAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId);
         }
 
         /// <summary>
@@ -85,13 +70,9 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="textFragmentId">Id of the text fragment</param>
         /// <returns>An array of the line ids in the proper sequence</returns>
         [AllowAnonymous]
-        public async Task<LineDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines(uint editionId,
-            uint textFragmentId)
+        public async Task<LineDataListDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines(uint editionId, uint textFragmentId)
         {
-            return await _textService.GetLineIdsAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId),
-                textFragmentId
-            );
+            return await _textService.GetLineIdsAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId);
         }
 
         /// <summary>
@@ -104,13 +85,9 @@ namespace SQE.API.Server.RealtimeHubs
         ///     sequence
         /// </returns>
         [AllowAnonymous]
-        public async Task<TextEditionDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentId(uint editionId,
-            uint textFragmentId)
+        public async Task<TextEditionDTO> GetV1EditionsEditionIdTextFragmentsTextFragmentId(uint editionId, uint textFragmentId)
         {
-            return await _textService.GetFragmentByIdAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId),
-                textFragmentId
-            );
+            return await _textService.GetFragmentByIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), textFragmentId);
         }
 
         /// <summary>
@@ -127,5 +104,6 @@ namespace SQE.API.Server.RealtimeHubs
         {
             return await _textService.GetLineByIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), lineId);
         }
+
     }
 }
