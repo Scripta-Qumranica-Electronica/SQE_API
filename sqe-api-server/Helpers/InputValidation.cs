@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -60,30 +61,81 @@ namespace SQE.API.Server.Helpers
         /// <param name="wktPolygon">A wkt polygon</param>
         /// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
         /// <returns>A WKT string with the cleaned polygon</returns>
-        /// <exception cref="InputDataRuleViolationException"></exception>
+        /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static string _cleanPolygon(string wktPolygon, string entityName)
         {
+            Geometry polygon;
             // Load Polygon
-            var polygon = _wkr.Read(wktPolygon);
-
-            // Check that the submitted mask is a proper WKT Polygon geometry
-            if (polygon.GetType() != typeof(Polygon))
-                throw new StandardExceptions.InputDataRuleViolationException(
-                    $"The {entityName} shape must be a well-formed WKT Polygon geometry."
-                );
+            try
+            {
+                polygon = _wkr.Read(wktPolygon);
+                // Check that the submitted mask is a proper WKT Polygon geometry
+                if (polygon.GetType() != typeof(Polygon))
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        $"The {entityName} shape must be a well-formed WKT Polygon geometry."
+                    );
+            }
+            catch
+            {
+                polygon = _simpleClean(wktPolygon);
+            }
 
             // If it is valid, send it back
             if (polygon.IsValid)
-                return polygon.ToText();
+                return polygon.Normalized().ToText();
 
-            // The polygon is apparently invalid, first try a simple fix
+            // The polygon is apparently invalid, first try a simple fix and check if it is acceptable
             var bufferedPoly = polygon.Buffer(0);
-            if (bufferedPoly.IsValid && bufferedPoly.GetType() == typeof(Polygon))
-                return bufferedPoly.ToText();
+            if (bufferedPoly.IsValid && bufferedPoly.GetType() == typeof(Polygon) && Math.Abs(bufferedPoly.Area - polygon.Area) < 1)
+                return bufferedPoly.Normalized().ToText();
 
             // The polygon rather seriously invalid, so let's try to clean it up with more serious intervention.
+            var fullGeom = _simpleClean(polygon.ToText());
+
+            // Check to see if we get a single polygon extracted from the operation
+            var cleanedPoly = GeometryExtracter.Extract<Polygon>(fullGeom);
+            if (cleanedPoly.Count == 1 && cleanedPoly.First().IsValid)
+                return cleanedPoly.First().Normalized().ToText();
+
+            // If not we make a last ditch effort to union the resulting polygons. This operation
+            // could result in some (small but) noticeable change in the polygon.
+            var repairedPoly = default(Polygon);
+            try
+            {
+                repairedPoly = _repairIntersectingOrMultiPolygon(fullGeom);
+
+                // Apparently all attempts to repair the polygon have failed
+                if (!repairedPoly.IsValid
+                    || repairedPoly.GetType() != typeof(Polygon))
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        $"the {entityName} {(repairedPoly.IsValid ? $"has {cleanedPoly.Count} separate polygons" : "is invalid")} and could not be repaired: {wktPolygon}"
+                    );
+
+                return repairedPoly.Normalized().ToText();
+            }
+            catch (StandardExceptions.InputDataRuleViolationException)
+            {
+                throw new StandardExceptions.InputDataRuleViolationException(
+                    $"the {entityName} {(repairedPoly.IsValid ? $"has {cleanedPoly.Count} separate polygons" : "is invalid")} and could not be repaired: {wktPolygon}"
+                );
+            }
+        }
+
+        /// <summary>
+        /// This makes a quick pass of the geometry and fixes unclosed polygons as well
+        /// as trying to fix improperly ordered path elements within the Polygon
+        /// </summary>
+        /// <param name="wkt">A Wkt Polygon string</param>
+        /// <returns></returns>
+        /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
+        private static Geometry _simpleClean(string wkt)
+        {
+            // Verify the request is declared as "POLYGON"
+            if (wkt.Substring(0, 7) != "POLYGON")
+                throw new StandardExceptions.InputDataRuleViolationException("A shape path must be a POLYGON type");
+
             // We break the string into the individual paths the loop over them, repairing each path as we go.
-            var polyStrings = bufferedPoly.ToText().Split("),(").Select(z =>
+            var polyStrings = wkt.Split("),(").Select(z =>
             {
                 // Strip extraneous character
                 var saniString = z.Replace("POLYGON", "")
@@ -103,16 +155,21 @@ namespace SQE.API.Server.Helpers
                 var geom = _wkr.Read(singlePath);
 
                 // Check if geom is valid
-                if (!geom.IsValid)
+                if (geom.IsValid) return geom;
+                var bufferedGeom = geom.Buffer(0);
+                if (!bufferedGeom.IsValid
+                    || !bufferedGeom.Area.Equals(geom.Area))
                 {
                     // Last ditch attempt to repair the path using buffer 0 (usually fixes self intersection)
-                    geom = geom.Buffer(0);
+                    geom = _repairIntersectingOrMultiPolygon(geom);
 
                     // If still invalid, we give up
                     if (!geom.IsValid)
-                        throw new StandardExceptions.InputDataRuleViolationException(
-                            $"The {entityName} shape is invalid and cannot be repaired: {wktPolygon}"
-                        );
+                        throw new StandardExceptions.InputDataRuleViolationException($"");
+                }
+                else
+                {
+                    geom = bufferedGeom;
                 }
 
                 // The Polygon is now valid
@@ -131,33 +188,8 @@ namespace SQE.API.Server.Helpers
                 fullGeom = op.GetResultGeometry(SpatialFunction.SymDifference);
             }
 
-            // Check to see if we get a single polygon extracted from the operation
-            var cleanedPoly = GeometryExtracter.Extract<Polygon>(fullGeom);
-            if (cleanedPoly.Count == 1 && cleanedPoly.First().IsValid)
-                return cleanedPoly.First().ToText();
-
-            // If not we make a last ditch effort to union the resulting polygons. This operation
-            // could result in some (small but) noticeable change in the polygon.
-            var repairedPoly = default(Polygon);
-            try
-            {
-                repairedPoly = _repairIntersectingOrMultiPolygon(fullGeom);
-
-                // Apparently all attempts to repair the polygon have failed
-                if (!repairedPoly.IsValid
-                    || repairedPoly.GetType() != typeof(Polygon))
-                    throw new StandardExceptions.InputDataRuleViolationException(
-                        $"the {entityName} {(repairedPoly.IsValid ? $"has {cleanedPoly.Count} separate polygons" : "is invalid")} and could not be repaired: {wktPolygon}"
-                    );
-
-                return repairedPoly.ToText();
-            }
-            catch (StandardExceptions.InputDataRuleViolationException)
-            {
-                throw new StandardExceptions.InputDataRuleViolationException(
-                    $"the {entityName} {(repairedPoly.IsValid ? $"has {cleanedPoly.Count} separate polygons" : "is invalid")} and could not be repaired: {wktPolygon}"
-                );
-            }
+            // Return the reconstructed geometry
+            return fullGeom;
         }
 
         /// <summary>
@@ -167,30 +199,91 @@ namespace SQE.API.Server.Helpers
         /// </summary>
         /// <param name="poly">A self-intersecting polygon or a multi-polygon</param>
         /// <returns>A single valid polygon most closely approximating the input</returns>
-        /// <exception cref="InputDataRuleViolationException"></exception>
+        /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static Polygon _repairIntersectingOrMultiPolygon(Geometry poly)
         {
             // Separate the geom into its discrete polygon entities
             var discretePolys = GeometryExtracter.Extract<Polygon>(poly);
             // If there is only one, our job is done
             if (discretePolys.Count == 1)
-                return (Polygon)discretePolys[0];
+            {
+                if (discretePolys[0].IsValid)
+                    return (Polygon)discretePolys[0];
+
+                // Probably the polygon is invalid due to self intersection
+                // Let's grab every outer line in the polygon
+                var coords = poly.Boundary.Coordinates;
+                var lines = coords.Select(
+                    (t, i) => new LineString(new[] { t, coords[i + 1 == coords.Length ? 0 : i + 1] })
+                ).ToList();
+
+                // Now let's build n polygons by looking for intersecting lines
+                var intersectionPoints = new Dictionary<Coordinate, int>();
+                var intersectedLines = new List<LineString>();
+                var lineCount = 0;
+                foreach (var line in lines)
+                {
+                    var points = new List<Coordinate>();
+                    if (lineCount == intersectedLines.Count)
+                        intersectedLines.Add(new LineString(null));
+                    else
+                        points = intersectedLines[lineCount].Coordinates.ToList();
+
+                    points.Add(line.Coordinates[0]);
+
+
+                    var foundIntersect = false;
+                    foreach (var compLine in lines)
+                    {
+                        if (line.Coordinates.Contains(compLine.Coordinates[0])
+                            || line.Coordinates.Contains(compLine.Coordinates[1])
+                            || !line.Intersects(compLine))
+                            continue;
+
+                        var point = line.Intersection(compLine);
+                        points.Add(point.Coordinate);
+                        intersectedLines[lineCount] = new LineString(points.ToArray());
+                        foundIntersect = true;
+
+                        if (intersectionPoints.TryGetValue(point.Coordinate, out var val))
+                        {
+                            // Let's continue building this preexisting polygon
+                            lineCount = val;
+                            continue;
+                        }
+
+                        // Record where the old polygon stopped
+                        intersectionPoints[point.Coordinate] = lineCount;
+
+                        // Start a new polygon
+                        lineCount = intersectedLines.Count;
+                        intersectedLines.Add(new LineString(new Coordinate[] { point.Coordinate, line.Coordinates[1] }));
+                    }
+                    if (foundIntersect) continue;
+                    // If an intersection was not found, add the endpoint to the points list and update intersectedLines
+                    points.Add(line.Coordinates[1]);
+                    intersectedLines[lineCount] = new LineString(points.ToArray());
+                }
+
+                // Convert the line strings into polygons
+                discretePolys = intersectedLines.Select(x => (Geometry)new Polygon(new LinearRing(x.Coordinates))).ToList();
+            }
 
             // Firstly let us find pairs of the closest polygon to each polygon in cleanedPoly.
-            Geometry repairedPoly = _wkr.Read("POLYGON((0 0,0 0,0 0,0 0))");
+            var repairedPoly = discretePolys[0];
             var polyMovePairs = new List<int>();
             for (var i = 0; i < discretePolys.Count; ++i)
             {
-                // Skip polys that we've already matched
-                if (polyMovePairs.Contains(i))
+                // Skip polys that we've already matched or are empty
+                if (polyMovePairs.Contains(i) || discretePolys[i].Area.Equals(0))
                     continue;
 
                 double distance = 0;
                 var nearestPoly = -1;
                 for (var j = 0; j < discretePolys.Count; ++j)
                 {
-                    // Skip the same polygon
-                    if (j == i)
+                    // Skip the same polygon or empty polygons
+                    if (j == i || discretePolys[j].Area.Equals(0))
                         continue;
 
                     var currentDistance = DistanceOp.Distance(discretePolys[i], discretePolys[j]);
@@ -198,10 +291,14 @@ namespace SQE.API.Server.Helpers
                     if (nearestPoly != -1
                         && distance < currentDistance) continue;
 
-                    // Since thisis the closest, set this as the new closest poly
+                    // Since this is the closest, set this as the new closest poly
                     distance = currentDistance;
                     nearestPoly = j;
                 }
+
+                // Bail out if no close poly was found
+                if (nearestPoly == -1)
+                    continue;
 
                 // Now that we know the closest poly, attempt to join the two
                 var points = DistanceOp.NearestPoints(discretePolys[i], discretePolys[nearestPoly]);
@@ -221,9 +318,20 @@ namespace SQE.API.Server.Helpers
             }
 
             // Make sure our combined poly is valid and return it
-            if (!repairedPoly.IsValid || repairedPoly.GetType() != typeof(Polygon))
+            if (repairedPoly.GetType() != typeof(Polygon))
                 throw new StandardExceptions.InputDataRuleViolationException($"");
-            return (Polygon)repairedPoly;
+
+            // If we are really valid, return the poly
+            if (repairedPoly.IsValid)
+                return (Polygon)repairedPoly;
+
+            // Finally try to buffer it
+            var bufferedPoly = repairedPoly.Buffer(0);
+            // Throw an error if buffering changed the dimensions significantly
+            if (Math.Abs(bufferedPoly.Area - repairedPoly.Area) > 1)
+                throw new StandardExceptions.InputDataRuleViolationException($"");
+
+            return (Polygon)bufferedPoly;
         }
 
         /// <summary>
@@ -235,7 +343,7 @@ namespace SQE.API.Server.Helpers
         /// <param name="poly1Point">Point in first polygon that is closest to the second polygon</param>
         /// <param name="poly2Point">Point in second polygon that is closest to the first polygon</param>
         /// <returns>A single polygon union of the two input polygons</returns>
-        /// <exception cref="InputDataRuleViolationException"></exception>
+        /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static Polygon _joinPolys(Polygon poly1, Polygon poly2, Coordinate poly1Point, Coordinate poly2Point)
         {
             // If the two closest points are the same, then we need to do something fancy
