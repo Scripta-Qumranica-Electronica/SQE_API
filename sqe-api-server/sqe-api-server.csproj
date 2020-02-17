@@ -23,6 +23,7 @@
     <PackageReference Include="Serilog.Sinks.Async" Version="1.4.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,7 +45,7 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="dotnet run -p $(ProjectDir)../sqe-realtime-hub-builder/" />
-  </Target>
+<!--  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">-->
+<!--    <Exec Command="dotnet run -p $(ProjectDir)../sqe-realtime-hub-builder/" />-->
+<!--  </Target>-->
 </Project>

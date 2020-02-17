@@ -48,6 +48,8 @@ namespace SQE.DatabaseAccess
             bool? isAdmin);
 
         Task<List<uint>> GetEditionEditorUserIds(EditionUserInfo editionUser);
+
+        Task<List<LetterShape>> GetEditionScriptCollection(EditionUserInfo editonUser);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
@@ -610,6 +612,21 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                     {
                         editionUser.EditionId,
                         UserId = editionUser.userId
+                    }
+                )).ToList();
+            }
+        }
+
+        public async Task<List<LetterShape>> GetEditionScriptCollection(EditionUserInfo editonUser)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<LetterShape>(
+                    EditionScriptQuery.GetQuery,
+                    new
+                    {
+                        editonUser.EditionId,
+                        UserId = editonUser.userId ?? 0
                     }
                 )).ToList();
             }

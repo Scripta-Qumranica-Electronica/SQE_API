@@ -1,16 +1,26 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.Geometries.Utilities;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
+using NetTopologySuite.IO;
+using NetTopologySuite.Operation.Overlay;
+using NetTopologySuite.Operation.Union;
+using NetTopologySuite.Precision;
+using NetTopologySuite.Utilities;
+using Matrix = System.Drawing.Drawing2D.Matrix;
 
 namespace SQE.API.Server.Services
 {
@@ -47,6 +57,8 @@ namespace SQE.API.Server.Services
             string editorEmail,
             UpdateEditorRightsDTO updatedEditor,
             string clientId = null);
+
+        Task<EditionScriptCollectionDTO> GetEditionScriptCollection(EditionUserInfo editionUser);
     }
 
     public class EditionService : IEditionService
@@ -380,6 +392,91 @@ The Scripta Qumranica Electronica team</body></html>";
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
                 .UpdatedEditorEmail(updatedEditorDTO);
             return updatedEditorDTO;
+        }
+
+        public async Task<EditionScriptCollectionDTO> GetEditionScriptCollection(EditionUserInfo editionUser)
+        {
+            var letters = await _editionRepo.GetEditionScriptCollection(editionUser);
+            var lettersSorted = letters.GroupBy(x => x.Id).ToList();
+            var wkbr = new WKBReader();
+            var wkr = new WKTReader();
+            var wkw = new WKTWriter();
+            return new EditionScriptCollectionDTO()
+            {
+                letters = lettersSorted.Select(
+                        x =>
+                        {
+                            var polys = x.Select(
+                                y =>
+                                {
+                                    // var matrix = new Matrix();
+                                    // matrix.Rotate(y.LetterRotation, MatrixOrder.Append);
+                                    // matrix.Translate(y.TranslateX, y.TranslateY, MatrixOrder.Append);
+                                    var poly = wkbr.Read(y.Polygon);
+                                    var tr = new AffineTransformation();
+                                    tr.Rotate(y.LetterRotation);
+                                    tr.Translate(y.TranslateX, y.TranslateY);
+                                    poly = tr.Transform(poly);
+                                    // if (!poly.IsValid)
+                                    // {
+                                    //     var polyString = wkw.Write(poly);
+                                    //     var polyStrings = polyString.Split("),(").Select(z =>
+                                    //     {
+                                    //         var saniString = z.Replace("POLYGON", "")
+                                    //             .Replace("(", "")
+                                    //             .Replace(")", "");
+                                    //         var coords = saniString.Split(",").ToList();
+                                    //         if (coords.First() != coords.Last())
+                                    //             coords.Add(coords.First());
+                                    //         return @$"POLYGON(({string.Join(",", coords)}))";
+                                    //     }).ToList();
+                                    //     var fullGeom = wkr.Read(polyStrings[0]);
+                                    //     for (var i = 1; i < polyStrings.Count(); i++)
+                                    //     {
+                                    //         var newGeom = wkr.Read(polyStrings[i]);
+                                    //         var op = new OverlayOp(fullGeom, newGeom);
+                                    //         fullGeom = op.GetResultGeometry(SpatialFunction.SymDifference);
+                                    //     }
+                                    //
+                                    //     poly = fullGeom;
+                                    // }
+                                    // return poly.IsValid ? poly : poly.Buffer(0);
+                                    return poly;
+                                }).Where(x => x.IsValid && !x.IsEmpty).ToList();
+                            var cpu = new CascadedPolygonUnion(polys);
+                            var combinedPoly = cpu.Union();
+                            var envelope = polys.Any() ? combinedPoly.EnvelopeInternal : new Envelope(0, 0, 0, 0);
+                            if (polys.Any())
+                            {
+                                var tr = new AffineTransformation();
+                                tr.Translate(-envelope.MinX, -envelope.MinY);
+                                combinedPoly = tr.Transform(combinedPoly);
+                                tr = new AffineTransformation();
+                                tr.Rotate(Degrees.ToRadians(x.First().ImageRotation), envelope.Width / 2, envelope.Height / 2);
+                                if (Math.Abs(x.First().ImageRotation) > 0)
+                                {
+                                    var test = tr.Transform(combinedPoly);
+                                    var info1 = wkw.Write(combinedPoly);
+                                    var info2 = wkw.Write(test);
+                                    var junk = "";
+                                }
+                                combinedPoly = tr.Transform(combinedPoly);
+                            }
+                            
+                            return new LetterDTO()
+                            {
+                                id = x.First().Id,
+                                letter = x.First().Letter,
+                                rotation = x.First().ImageRotation,
+                                imageURL = x.First().ImageURL
+                                           + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/pct:99/{x.First().ImageRotation}/"
+                                           + x.First().ImageSuffix,
+                                polygon = polys.Any() ? wkw.Write(combinedPoly) : null
+                            };
+                        }
+                    )
+                    .ToList()
+            };
         }
 
         private static EditionDTO EditionModelToDTO(Edition model)

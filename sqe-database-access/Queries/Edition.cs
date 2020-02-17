@@ -312,6 +312,43 @@ WHERE edition_id = @EditionId
 ";
     }
 
+    internal static class EditionScriptQuery
+    {
+        internal const string GetQuery = @"
+SELECT sign_interpretation_roi.sign_interpretation_id AS Id,
+    sign_interpretation.character AS Letter,
+    AsWKB(roi_shape.path) AS Polygon,
+    roi_position.translate_x AS TranslateX,
+    roi_position.translate_y AS TranslateY,
+    roi_position.stance_rotation AS LetterRotation,
+    artefact_position.rotate AS ImageRotation,
+    CONCAT(image_urls.proxy, image_urls.url, SQE_image.filename) AS ImageURL,
+    image_urls.suffix AS ImageSuffix
+FROM sign_interpretation_roi_owner
+JOIN sign_interpretation_roi USING(sign_interpretation_roi_id)
+JOIN roi_position USING(roi_position_id)
+JOIN roi_shape USING(roi_shape_id)
+JOIN artefact_position USING(artefact_id)
+JOIN artefact_position_owner ON artefact_position_owner.artefact_position_id = artefact_position.artefact_position_id
+    AND artefact_position_owner.edition_id = sign_interpretation_roi_owner.edition_id
+JOIN artefact_shape USING(artefact_id)
+JOIN artefact_shape_owner ON artefact_shape_owner.artefact_shape_id = artefact_shape.artefact_shape_id
+    AND artefact_shape_owner.edition_id = sign_interpretation_roi_owner.edition_id
+JOIN SQE_image USING(sqe_image_id)
+JOIN image_urls USING(image_urls_id)
+JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
+JOIN position_in_stream ON position_in_stream.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
+JOIN position_in_stream_owner ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
+    AND position_in_stream_owner.edition_id = sign_interpretation_roi_owner.edition_id
+JOIN edition ON edition.edition_id = sign_interpretation_roi_owner.edition_id
+JOIN edition_editor ON edition_editor.edition_id = sign_interpretation_roi_owner.edition_id
+
+WHERE sign_interpretation_roi_owner.edition_id = @EditionId
+    AND (edition.public OR edition_editor.user_id = @UserId)
+ORDER BY sign_interpretation_roi.sign_interpretation_id
+";
+    }
+
     internal static class EditionEditorUserIds
     {
         internal const string GetQuery = @"
