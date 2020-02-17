@@ -233,7 +233,7 @@ namespace SQE.API.Server.Services
                     foreach (var userId in editionUsers)
                         await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
                             .DeletedEdition(deleteResponse);
-                    return deleteResponse;
+                    return null;
                 }
 
                 deleteResponse.token = newToken;
@@ -462,7 +462,7 @@ The Scripta Qumranica Electronica team</body></html>";
                                 }
                                 combinedPoly = tr.Transform(combinedPoly);
                             }
-                            
+
                             return new LetterDTO()
                             {
                                 id = x.First().Id,

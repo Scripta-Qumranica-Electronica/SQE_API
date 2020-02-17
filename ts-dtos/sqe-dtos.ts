@@ -93,6 +93,10 @@ export interface DeleteEditionEntityDTO {
     entityId: number;
     editorId: number;
 }
+
+export interface EditionScriptCollectionDTO {
+    letters: LetterDTO[];
+}
 export interface EditionUpdateRequestDTO {
     name: string;
     copyrightHolder: string;
@@ -190,6 +194,13 @@ export interface BatchEditRoiResponseDTO {
     createRois: InterpretationRoiDTO[];
     updateRois: UpdatedInterpretationRoiDTO[];
     deleteRois: number[];
+}
+export interface LetterDTO {
+    id: number;
+    letter: string;
+    polygon: string;
+    imageURL: string;
+    rotation: number;
 }
 
 export interface SignDTO {

@@ -23,6 +23,7 @@ import {
 	ShareDTO,
 	DeleteTokenDTO,
 	DeleteEditionEntityDTO,
+	EditionScriptCollectionDTO,
 	EditionUpdateRequestDTO,
 	EditionCopyDTO,
 	ImageDTO,
@@ -40,6 +41,7 @@ import {
 	UpdatedInterpretationRoiDTOList,
 	BatchEditRoiDTO,
 	BatchEditRoiResponseDTO,
+	LetterDTO,
 	SignDTO,
 	NextSignInterpretationDTO,
 	SignInterpretationDTO,
@@ -171,6 +173,16 @@ export class SignalRUtilities {
 	 */
     public async putV1EditionsEditionId(editionId: number, request: EditionUpdateRequestDTO): Promise<EditionDTO> {
         return await this._connection.invoke('PutV1EditionsEditionId', editionId, request);
+    }
+
+    /**
+	 * Provides spatial data for all letters in the edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 *
+	 */
+    public async getV1EditionsEditionIdScriptCollection(editionId: number): Promise<EditionScriptCollectionDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdScriptCollection', editionId);
     }
 
     /**

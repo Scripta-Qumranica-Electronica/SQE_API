@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Utilities;
@@ -17,6 +18,7 @@ namespace SQE.API.Server.Helpers
     {
 
         private static readonly WKTReader _wkr = new WKTReader();
+        private static readonly Regex _asymmetricNesting = new Regex(@"\),\s(?!\()");
 
         /// <summary>
         ///     The validator checks that the transformMatrix is indeed valid JSON that can be successfully
@@ -64,21 +66,26 @@ namespace SQE.API.Server.Helpers
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static string _cleanPolygon(string wktPolygon, string entityName)
         {
+            // Bail immediately on null/blank input
+            if (string.IsNullOrEmpty(wktPolygon))
+                return null;
+
             Geometry polygon;
             // Load Polygon
             try
             {
                 polygon = _wkr.Read(wktPolygon);
-                // Check that the submitted mask is a proper WKT Polygon geometry
-                if (polygon.GetType() != typeof(Polygon))
-                    throw new StandardExceptions.InputDataRuleViolationException(
-                        $"The {entityName} shape must be a well-formed WKT Polygon geometry."
-                    );
             }
             catch
             {
                 polygon = _simpleClean(wktPolygon);
             }
+
+            // Check that the submitted mask is a proper WKT Polygon geometry
+            if (polygon.GetType() != typeof(Polygon))
+                throw new StandardExceptions.InputDataRuleViolationException(
+                    $"The {entityName} shape must be a well-formed WKT Polygon geometry."
+                );
 
             // If it is valid, send it back
             if (polygon.IsValid)
@@ -133,6 +140,9 @@ namespace SQE.API.Server.Helpers
             // Verify the request is declared as "POLYGON"
             if (wkt.Substring(0, 7) != "POLYGON")
                 throw new StandardExceptions.InputDataRuleViolationException("A shape path must be a POLYGON type");
+
+            if (_asymmetricNesting.Matches(wkt).Count > 0)
+                throw new StandardExceptions.InputDataRuleViolationException("The submitted POLYGON has an improperly nested ring");
 
             // We break the string into the individual paths the loop over them, repairing each path as we go.
             var polyStrings = wkt.Split("),(").Select(z =>
