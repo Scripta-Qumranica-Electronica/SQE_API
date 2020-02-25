@@ -413,10 +413,27 @@ The Scripta Qumranica Electronica team</body></html>";
                                     // matrix.Rotate(y.LetterRotation, MatrixOrder.Append);
                                     // matrix.Translate(y.TranslateX, y.TranslateY, MatrixOrder.Append);
                                     var poly = wkbr.Read(y.Polygon);
+                                    foreach (var point in poly.Coordinates)
+                                    {
+                                        if (point.X < 0
+                                            || point.Y < 0)
+                                        {
+                                            Console.WriteLine("This point goes outside of bounds");
+                                        }
+                                    }
                                     var tr = new AffineTransformation();
-                                    tr.Rotate(y.LetterRotation);
+                                    var rotation = y.LetterRotation;
+                                    tr.Rotate(rotation, poly.Centroid.X, poly.Centroid.Y);
                                     tr.Translate(y.TranslateX, y.TranslateY);
                                     poly = tr.Transform(poly);
+                                    foreach (var point in poly.Coordinates)
+                                    {
+                                        if (point.X < 0
+                                            || point.Y < 0)
+                                        {
+                                            Console.WriteLine("This point goes outside of bounds");
+                                        }
+                                    }
                                     // if (!poly.IsValid)
                                     // {
                                     //     var polyString = wkw.Write(poly);
@@ -442,25 +459,44 @@ The Scripta Qumranica Electronica team</body></html>";
                                     // }
                                     // return poly.IsValid ? poly : poly.Buffer(0);
                                     return poly;
-                                }).Where(x => x.IsValid && !x.IsEmpty).ToList();
+                                }).Where(z => z.IsValid && !z.IsEmpty).ToList();
                             var cpu = new CascadedPolygonUnion(polys);
                             var combinedPoly = cpu.Union();
                             var envelope = polys.Any() ? combinedPoly.EnvelopeInternal : new Envelope(0, 0, 0, 0);
                             if (polys.Any())
                             {
-                                var tr = new AffineTransformation();
-                                tr.Translate(-envelope.MinX, -envelope.MinY);
-                                combinedPoly = tr.Transform(combinedPoly);
-                                tr = new AffineTransformation();
-                                tr.Rotate(Degrees.ToRadians(x.First().ImageRotation), envelope.Width / 2, envelope.Height / 2);
                                 if (Math.Abs(x.First().ImageRotation) > 0)
                                 {
-                                    var test = tr.Transform(combinedPoly);
                                     var info1 = wkw.Write(combinedPoly);
-                                    var info2 = wkw.Write(test);
-                                    var junk = "";
                                 }
-                                combinedPoly = tr.Transform(combinedPoly);
+                                foreach (var point in combinedPoly.Coordinates)
+                                {
+                                    if (point.X < 0
+                                        || point.Y < 0)
+                                    {
+                                        Console.WriteLine("This point goes outside of bounds");
+                                    }
+                                }
+                                var tr = new AffineTransformation();
+                                tr.Rotate(Degrees.ToRadians(x.First().ImageRotation));
+                                var rotatedPoly = tr.Transform(combinedPoly);
+                                var envelope1 = rotatedPoly.EnvelopeInternal;
+
+                                tr = new AffineTransformation();
+                                tr.Translate(-envelope1.MinX, -envelope1.MinY);
+                                var translatedPoly = tr.Transform(rotatedPoly);
+
+                                var envelope2 = translatedPoly.EnvelopeInternal;
+                                foreach (var point in translatedPoly.Coordinates)
+                                {
+                                    if (point.X < 0
+                                        || point.Y < 0)
+                                    {
+                                        Console.WriteLine("This point goes outside of bounds");
+                                    }
+                                }
+
+                                combinedPoly = translatedPoly;
                             }
 
                             return new LetterDTO()

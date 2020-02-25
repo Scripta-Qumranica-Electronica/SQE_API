@@ -276,7 +276,15 @@ namespace SQE.API.Server.Helpers
                 }
 
                 // Convert the line strings into polygons
-                discretePolys = intersectedLines.Select(x => (Geometry)new Polygon(new LinearRing(x.Coordinates))).ToList();
+                discretePolys = intersectedLines.Select(x =>
+                {
+                    var coordsList = x.Coordinates.ToList();
+                    if (!coordsList.First().Equals(coordsList.Last()))
+                        coordsList.Add(coordsList.First());
+
+                    var coords = coordsList.ToArray();
+                    return (Geometry)new Polygon(new LinearRing(coords));
+                }).ToList();
             }
 
             // Firstly let us find pairs of the closest polygon to each polygon in cleanedPoly.
