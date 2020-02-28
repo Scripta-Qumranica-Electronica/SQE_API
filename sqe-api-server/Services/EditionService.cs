@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,7 @@ using SQE.API.Server.RealtimeHubs;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
+using SQE.API.Server.Helpers;
 using NetTopologySuite.IO;
 using NetTopologySuite.Operation.Overlay;
 using NetTopologySuite.Operation.Union;
@@ -389,8 +391,11 @@ The Scripta Qumranica Electronica team</body></html>";
             );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .UpdatedEditorEmail(updatedEditorDTO);
+            var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+            foreach (var editionUserId in editionUsers)
+                await _hubContext.Clients.GroupExcept($"user-{editionUserId.ToString()}", clientId)
+                    .CreatedEditor(updatedEditorDTO);
+            
             return updatedEditorDTO;
         }
 
@@ -403,98 +408,36 @@ The Scripta Qumranica Electronica team</body></html>";
             var wkw = new WKTWriter();
             return new EditionScriptCollectionDTO()
             {
-                letters = lettersSorted.Select(
-                        x =>
+                letters = (await Task.WhenAll(lettersSorted.Select(
+                        async x =>
                         {
-                            var polys = x.Select(
-                                y =>
+                            var polys = (await Task.WhenAll(x.Select(
+                                async y =>
                                 {
-                                    // var matrix = new Matrix();
-                                    // matrix.Rotate(y.LetterRotation, MatrixOrder.Append);
-                                    // matrix.Translate(y.TranslateX, y.TranslateY, MatrixOrder.Append);
+                                    //var poly = wkbr.Read(Encoding.ASCII.GetBytes(await GeometryValidation.CleanPolygonAsync(Encoding.ASCII.GetString(y.Polygon), "ROI")));
                                     var poly = wkbr.Read(y.Polygon);
-                                    foreach (var point in poly.Coordinates)
-                                    {
-                                        if (point.X < 0
-                                            || point.Y < 0)
-                                        {
-                                            Console.WriteLine("This point goes outside of bounds");
-                                        }
-                                    }
                                     var tr = new AffineTransformation();
                                     var rotation = y.LetterRotation;
                                     tr.Rotate(rotation, poly.Centroid.X, poly.Centroid.Y);
                                     tr.Translate(y.TranslateX, y.TranslateY);
                                     poly = tr.Transform(poly);
-                                    foreach (var point in poly.Coordinates)
-                                    {
-                                        if (point.X < 0
-                                            || point.Y < 0)
-                                        {
-                                            Console.WriteLine("This point goes outside of bounds");
-                                        }
-                                    }
-                                    // if (!poly.IsValid)
-                                    // {
-                                    //     var polyString = wkw.Write(poly);
-                                    //     var polyStrings = polyString.Split("),(").Select(z =>
-                                    //     {
-                                    //         var saniString = z.Replace("POLYGON", "")
-                                    //             .Replace("(", "")
-                                    //             .Replace(")", "");
-                                    //         var coords = saniString.Split(",").ToList();
-                                    //         if (coords.First() != coords.Last())
-                                    //             coords.Add(coords.First());
-                                    //         return @$"POLYGON(({string.Join(",", coords)}))";
-                                    //     }).ToList();
-                                    //     var fullGeom = wkr.Read(polyStrings[0]);
-                                    //     for (var i = 1; i < polyStrings.Count(); i++)
-                                    //     {
-                                    //         var newGeom = wkr.Read(polyStrings[i]);
-                                    //         var op = new OverlayOp(fullGeom, newGeom);
-                                    //         fullGeom = op.GetResultGeometry(SpatialFunction.SymDifference);
-                                    //     }
-                                    //
-                                    //     poly = fullGeom;
-                                    // }
-                                    // return poly.IsValid ? poly : poly.Buffer(0);
                                     return poly;
-                                }).Where(z => z.IsValid && !z.IsEmpty).ToList();
+                                }))).Where(z => z.IsValid && !z.IsEmpty).ToList();
                             var cpu = new CascadedPolygonUnion(polys);
                             var combinedPoly = cpu.Union();
                             var envelope = polys.Any() ? combinedPoly.EnvelopeInternal : new Envelope(0, 0, 0, 0);
                             if (polys.Any())
                             {
-                                if (Math.Abs(x.First().ImageRotation) > 0)
-                                {
-                                    var info1 = wkw.Write(combinedPoly);
-                                }
-                                foreach (var point in combinedPoly.Coordinates)
-                                {
-                                    if (point.X < 0
-                                        || point.Y < 0)
-                                    {
-                                        Console.WriteLine("This point goes outside of bounds");
-                                    }
-                                }
-                                var tr = new AffineTransformation();
-                                tr.Rotate(Degrees.ToRadians(x.First().ImageRotation));
-                                var rotatedPoly = tr.Transform(combinedPoly);
-                                var envelope1 = rotatedPoly.EnvelopeInternal;
+                                // var tr = new AffineTransformation();
+                                // tr.Rotate(Degrees.ToRadians(x.First().ImageRotation));
+                                // var rotatedPoly = tr.Transform(combinedPoly);
+                                // var envelope1 = rotatedPoly.EnvelopeInternal;
 
-                                tr = new AffineTransformation();
-                                tr.Translate(-envelope1.MinX, -envelope1.MinY);
-                                var translatedPoly = tr.Transform(rotatedPoly);
+                                var tr = new AffineTransformation();
+                                tr.Translate(-envelope.MinX, -envelope.MinY);
+                                var translatedPoly = tr.Transform(combinedPoly);
 
                                 var envelope2 = translatedPoly.EnvelopeInternal;
-                                foreach (var point in translatedPoly.Coordinates)
-                                {
-                                    if (point.X < 0
-                                        || point.Y < 0)
-                                    {
-                                        Console.WriteLine("This point goes outside of bounds");
-                                    }
-                                }
 
                                 combinedPoly = translatedPoly;
                             }
@@ -505,12 +448,12 @@ The Scripta Qumranica Electronica team</body></html>";
                                 letter = x.First().Letter,
                                 rotation = x.First().ImageRotation,
                                 imageURL = x.First().ImageURL
-                                           + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/pct:99/{x.First().ImageRotation}/"
+                                           + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/pct:99/0/"
                                            + x.First().ImageSuffix,
                                 polygon = polys.Any() ? wkw.Write(combinedPoly) : null
                             };
                         }
-                    )
+                    )))
                     .ToList()
             };
         }
