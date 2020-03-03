@@ -86,6 +86,15 @@ namespace SQE.DatabaseAccess.Helpers
         }
     }
 
+    public abstract class UnprocessableInputException : ApiException
+    {
+        private const HttpStatusCode httpStatusCode = HttpStatusCode.UnprocessableEntity;
+
+        protected UnprocessableInputException() : base(httpStatusCode)
+        {
+        }
+    }
+
     public abstract class ServerErrorException : ApiException
     {
         private const HttpStatusCode httpStatusCode = HttpStatusCode.InternalServerError;
@@ -297,6 +306,18 @@ namespace SQE.DatabaseAccess.Helpers
             public ConflictingDataException(string datatype)
             {
                 Error = customMsg.Replace("$DataType", datatype);
+            }
+        }
+
+        public class MalformedDataException : UnprocessableInputException
+        {
+            private const string customMsg =
+                "The submitted $DataType is malformed. Check the data property of this error message for a possible valid substitute.";
+
+            public MalformedDataException(string datatype, object example)
+            {
+                Error = customMsg.Replace("$DataType", datatype);
+                Data.Add(datatype, example);
             }
         }
 

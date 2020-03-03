@@ -33,6 +33,7 @@ import {
 	ImagedObjectDTO,
 	ImagedObjectListDTO,
 	PolygonDTO,
+	WktPolygonDTO,
 	SetInterpretationRoiDTO,
 	InterpretationRoiDTO,
 	UpdatedInterpretationRoiDTO,
@@ -452,6 +453,18 @@ export class SignalRUtilities {
 	 */
     public async getV1ImagedObjectsInstitutions(): Promise<ImageInstitutionListDTO> {
         return await this._connection.invoke('GetV1ImagedObjectsInstitutions');
+    }
+
+    /**
+	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
+	 * it attempts to construct a valid polygon that matches the original
+	 * as closely as possible.
+	 *
+	 * @param payload - JSON object with the WKT polygon to validate
+	 *
+	 */
+    public async postV1UtilsValidateWkt(payload: WktPolygonDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UtilsValidateWkt', payload);
     }
 
     /**

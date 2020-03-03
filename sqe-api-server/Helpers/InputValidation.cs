@@ -71,6 +71,7 @@ namespace SQE.API.Server.Helpers
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static string _cleanPolygonNew(string wktPolygon, string entityName, bool fix)
         {
+            var fixedPoly = false;
             // Bail immediately on null/blank input
             if (string.IsNullOrEmpty(wktPolygon))
                 return null;
@@ -84,18 +85,23 @@ namespace SQE.API.Server.Helpers
             catch
             {
                 if (!fix)
-                    throw new StandardExceptions.InputDataRuleViolationException("The submitted POLYGON is invalid, try using the repair polygon endpoint to fix it");
+                    throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the repair API's validate-wkt endpoint to fix it");
 
                 polygon = _repairPolygon(wktPolygon);
+                fixedPoly = true;
             }
 
             if (!polygon.IsValid)
             {
                 if (!fix)
-                    throw new StandardExceptions.InputDataRuleViolationException("The submitted POLYGON is invalid, try using the repair polygon endpoint to fix it");
+                    throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the repair API's validate-wkt endpoint to fix it");
 
                 polygon = _repairPolygon(wktPolygon);
+                fixedPoly = true;
             }
+
+            if (fixedPoly)
+                throw new StandardExceptions.MalformedDataException("wkt-polygon", polygon.Normalized().ToString());
 
             return polygon.Normalized().ToString();
         }

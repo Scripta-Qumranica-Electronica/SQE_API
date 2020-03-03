@@ -152,6 +152,9 @@ export interface PolygonDTO {
     transformation: TransformationDTO;
     positionEditorId: number;
 }
+export interface WktPolygonDTO {
+    wktPolygon: string;
+}
 
 export interface SetInterpretationRoiDTO {
     artefactId: number;

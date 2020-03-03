@@ -54,6 +54,7 @@ namespace SQE.API.Server
             services.AddScoped<IImageService, ImageService>();
             services.AddScoped<ITextService, TextService>();
             services.AddScoped<IRoiService, RoiService>();
+            services.AddScoped<IUtilService, UtilService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IEditionRepository, EditionRepository>();
