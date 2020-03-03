@@ -13,25 +13,25 @@ namespace SQE.API.Server.RealtimeHubs
 {
     public partial class MainHub : Hub<ISQEClient>
     {
-        private readonly ITextService _textService;
-        private readonly IUserService _userService;
-        private readonly IEditionService _editionService;
-        private readonly IImagedObjectService _imagedObjectService;
-        private readonly IImageService _imageService;
-        private readonly IRoiService _roiService;
-        private readonly IArtefactService _artefactService;
-        private readonly IUtilService _utilService;
+		private readonly ITextService _textService;
+		private readonly IUserService _userService;
+		private readonly IEditionService _editionService;
+		private readonly IImagedObjectService _imagedObjectService;
+		private readonly IImageService _imageService;
+		private readonly IRoiService _roiService;
+		private readonly IArtefactService _artefactService;
+		private readonly IUtilService _utilService;
 
         public MainHub(ITextService textService, IUserService userService, IEditionService editionService, IImagedObjectService imagedObjectService, IImageService imageService, IRoiService roiService, IArtefactService artefactService, IUtilService utilService)
         {
-            _textService = textService;
-            _userService = userService;
-            _editionService = editionService;
-            _imagedObjectService = imagedObjectService;
-            _imageService = imageService;
-            _roiService = roiService;
-            _artefactService = artefactService;
-            _utilService = utilService;
+			_textService = textService;
+			_userService = userService;
+			_editionService = editionService;
+			_imagedObjectService = imagedObjectService;
+			_imageService = imageService;
+			_roiService = roiService;
+			_artefactService = artefactService;
+			_utilService = utilService;
         }
-    }
+     }
 }

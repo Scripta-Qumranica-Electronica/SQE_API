@@ -101,7 +101,7 @@ namespace SQE.API.Server.Helpers
             }
 
             if (fixedPoly)
-                throw new StandardExceptions.MalformedDataException("wkt-polygon", polygon.Normalized().ToString());
+                throw new StandardExceptions.MalformedDataException("wktPolygon", polygon.Normalized().ToString());
 
             return polygon.Normalized().ToString();
         }

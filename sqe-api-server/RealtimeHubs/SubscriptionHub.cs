@@ -19,7 +19,7 @@ namespace SQE.API.Server.RealtimeHubs
     // for updates to an edition seemed so ephemeral that using some other store appeared unnecessary or
     // even undesirable—we want these connections to be as disposable as possible and we do not want subscriptions
     // associated with a user_id, only the client.
-
+    
     public partial class MainHub
     {
         /// <summary>
@@ -31,7 +31,7 @@ namespace SQE.API.Server.RealtimeHubs
         public override async Task OnConnectedAsync()
         {
             var user = _userService.GetCurrentUserId(); // Get the user_id if possible
-
+            
             // If the user is authenticated, add this connection to the user's user_id group.
             if (user.HasValue)
                 await Groups.AddToGroupAsync(Context.ConnectionId, $"user-{user.Value.ToString()}");
@@ -65,7 +65,7 @@ namespace SQE.API.Server.RealtimeHubs
             }
             else // Create the subcription context item and add the editionId
             {
-                Context.Items["editionId"] = new List<uint> { editionId };
+                Context.Items["editionId"] = new List<uint> {editionId};
                 // Add it to the editionIdId of this request
                 await Groups.AddToGroupAsync(Context.ConnectionId, editionId.ToString());
             }
