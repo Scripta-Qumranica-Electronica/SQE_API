@@ -395,7 +395,7 @@ The Scripta Qumranica Electronica team</body></html>";
             foreach (var editionUserId in editionUsers)
                 await _hubContext.Clients.GroupExcept($"user-{editionUserId.ToString()}", clientId)
                     .CreatedEditor(updatedEditorDTO);
-            
+
             return updatedEditorDTO;
         }
 
