@@ -51,7 +51,7 @@ namespace SQE.API.Server.Helpers
         /// <returns>A WKT string with the cleaned polygon</returns>
         public static async Task<string> CleanPolygonAsync(string wktPolygon, string entityName)
         {
-            return await Task.Run(() => _cleanPolygon(wktPolygon, entityName));
+            return await Task.Run(() => _cleanPolygonNew(wktPolygon, entityName));
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace SQE.API.Server.Helpers
                 polygon = _simpleCleanNew(wktPolygon);
             }
 
-            return polygon.ToString();
+            return polygon.Normalized().ToString();
         }
 
         /// <summary>
@@ -93,10 +93,6 @@ namespace SQE.API.Server.Helpers
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static Geometry _simpleCleanNew(string wkt)
         {
-            // Verify the request is declared as "POLYGON"
-            // if (wkt.Substring(0, 7) != "POLYGON")
-            //     throw new StandardExceptions.InputDataRuleViolationException("A shape path must be a POLYGON type");
-
             if (_asymmetricNesting.Matches(wkt).Count > 0)
                 throw new StandardExceptions.InputDataRuleViolationException("The submitted POLYGON has an improperly nested ring");
 
@@ -126,11 +122,18 @@ namespace SQE.API.Server.Helpers
                 if (!bufferedGeom.IsValid
                     || !bufferedGeom.Area.Equals(geom.Area))
                 {
-                    geom = _repairIntersectingOrMultiPolygon(geom);
+                    // We have a function to fix self-intersecting polys,
+                    // Should we check here also for multipolys and
+                    // run the algorithm to fix that?
+
+
+                    // At this point we are going to throw an error, but we will send back
+                    // the attempted repair (so maybe set a flag here and catch it at the end)
+                    geom = _repairSelfInterectingPolygon(geom);
 
                     // If still invalid, we give up
                     if (!geom.IsValid)
-                        throw new StandardExceptions.InputDataRuleViolationException($"");
+                        throw new StandardExceptions.InputDataRuleViolationException($"The new repair method couldnt fix the poly: {geom}");
                 }
                 else
                 {
@@ -155,6 +158,106 @@ namespace SQE.API.Server.Helpers
 
             // Return the reconstructed geometry
             return fullGeom;
+        }
+
+        /// <summary>
+        /// Fixes a self-intersecting polygon by changing the point of intersection to
+        /// very thin open area. 
+        /// </summary>
+        /// <param name="poly">The self-intersecting polygon to fix</param>
+        /// <returns>A repaired version of the self-intersecting polygon</returns>
+        private static Polygon _repairSelfInterectingPolygon(Geometry poly) 
+        {
+            // Separate the geom into its discrete polygon entities
+            var discretePolys = GeometryExtracter.Extract<Polygon>(poly);
+            // If there is only one, our job is done
+            if (discretePolys.Count != 1)
+                throw new StandardExceptions.ImproperInputDataException("polygon");
+
+            
+            if (discretePolys[0].IsValid)
+                return (Polygon)discretePolys[0];
+
+            // Probably the polygon is invalid due to self intersection
+            // Let's grab every outer line in the polygon
+            var coords = poly.Boundary.Coordinates;
+            var lines = coords.Select(
+                (t, i) => new LineString(new[] { t, coords[i + 1 == coords.Length ? 0 : i + 1] })
+            ).ToList();
+
+            // Now let's build n polygons by looking for intersecting lines
+            var intersectionPoints = new Dictionary<Coordinate, _linePair>();
+            var intersectedLines = new List<LineString>();
+            var lineOrder = new List<Coordinate>();
+            var lineCount = 0;
+            foreach (var line in lines)
+            {
+                var points = new List<Coordinate>();
+                if (lineCount == intersectedLines.Count)
+                    intersectedLines.Add(new LineString(null));
+                else
+                    points = intersectedLines[lineCount].Coordinates.ToList();
+
+                points.Add(line.Coordinates[0]);
+
+
+                var foundIntersect = false;
+                foreach (var compLine in lines)
+                {
+                    if (line.Coordinates.Contains(compLine.Coordinates[0])
+                        || line.Coordinates.Contains(compLine.Coordinates[1])
+                        || !line.Intersects(compLine))
+                        continue;
+
+                    var point = line.Intersection(compLine);
+                    points.Add(point.Coordinate);
+                    intersectedLines[lineCount] = new LineString(points.ToArray());
+                    foundIntersect = true;
+
+                    if (intersectionPoints.TryGetValue(point.Coordinate, out var val))
+                    {
+                        val.line2 = intersectedLines.Count;
+                        intersectedLines.Add(new LineString(null));
+                        lineCount = val.line2;
+                        continue;
+                    }
+
+                    // Record where the old polygon stopped
+                    intersectionPoints[point.Coordinate].line1 = lineCount;
+                    lineOrder.Add(point.Coordinate);
+
+                    // Start a new polygon
+                    lineCount = intersectedLines.Count;
+                    intersectedLines.Add(new LineString(new Coordinate[] { point.Coordinate, line.Coordinates[1] }));
+                }
+                if (foundIntersect) continue;
+                // If an intersection was not found, add the endpoint to the points list and update intersectedLines
+                points.Add(line.Coordinates[1]);
+                intersectedLines[lineCount] = new LineString(points.ToArray());
+            }
+
+            // Convert the line strings into polygons
+            var fixedIntersecting = new List<Coordinate>();
+            foreach (var coord in lineOrder) {
+                var rev = intersectedLines[intersectionPoints[coord].line2].Coordinates.Reverse().ToList();
+                rev.RemoveAt(0);
+                var first = intersectedLines[intersectionPoints[coord].line1].Coordinates.ToList();
+                first.RemoveAt(first.Count - 1);
+                foreach (var pt in first)
+                    fixedIntersecting.Add(pt);
+
+                // Add my specially calculated coordinate
+                var midPoint = new Coordinate(Math.Abs(first.Last().X - rev.First().X), Math.Abs(first.Last().Y - rev.First().Y));
+                var newMidPoint = new Coordinate(coord.X + (midPoint.X * 0.01), coord.Y + (midPoint.Y * 0.01));
+                fixedIntersecting.Add(newMidPoint);
+
+                foreach (var pt in rev)
+                    fixedIntersecting.Add(pt);
+            }
+
+            if (!fixedIntersecting.First().Equals(fixedIntersecting.Last()))
+                fixedIntersecting.Add(fixedIntersecting.First());
+            return new Polygon(new LinearRing(fixedIntersecting.ToArray()));
         }
 
         /// <summary>
@@ -183,8 +286,9 @@ namespace SQE.API.Server.Helpers
                 ).ToList();
 
                 // Now let's build n polygons by looking for intersecting lines
-                var intersectionPoints = new Dictionary<Coordinate, int>();
+                var intersectionPoints = new Dictionary<Coordinate, _linePair>();
                 var intersectedLines = new List<LineString>();
+                var lineOrder = new List<Coordinate>();
                 var lineCount = 0;
                 foreach (var line in lines)
                 {
@@ -212,13 +316,15 @@ namespace SQE.API.Server.Helpers
 
                         if (intersectionPoints.TryGetValue(point.Coordinate, out var val))
                         {
-                            // Let's continue building this preexisting polygon
-                            lineCount = val;
+                            val.line2 = intersectedLines.Count;
+                            intersectedLines.Add(new LineString(null));
+                            lineCount = val.line2;
                             continue;
                         }
 
                         // Record where the old polygon stopped
-                        intersectionPoints[point.Coordinate] = lineCount;
+                        intersectionPoints[point.Coordinate].line1 = lineCount;
+                        lineOrder.Add(point.Coordinate);
 
                         // Start a new polygon
                         lineCount = intersectedLines.Count;
@@ -231,6 +337,23 @@ namespace SQE.API.Server.Helpers
                 }
 
                 // Convert the line strings into polygons
+                var fixedIntersecting = new List<Coordinate>();
+                foreach (var coord in lineOrder) {
+                    var rev = intersectedLines[intersectionPoints[coord].line2].Coordinates.Reverse().ToList();
+                    rev.RemoveAt(0);
+                    var first = intersectedLines[intersectionPoints[coord].line1].Coordinates.ToList();
+                    first.RemoveAt(first.Count - 1);
+                    foreach (var pt in first)
+                        fixedIntersecting.Add(pt);
+
+                    // Add my specially calculated coordinate
+                    var midPoint = new Coordinate(Math.Abs(first.Last().X - rev.First().X), Math.Abs(first.Last().Y - rev.First().Y));
+                    var newMidPoint = new Coordinate(coord.X + (midPoint.X * 0.01), coord.Y + (midPoint.Y * 0.01));
+                    fixedIntersecting.Add(newMidPoint);
+
+                    foreach (var pt in rev)
+                        fixedIntersecting.Add(pt);
+                }
                 discretePolys = intersectedLines.Select(x =>
                 {
                     var coordsList = x.Coordinates.ToList();
@@ -292,7 +415,7 @@ namespace SQE.API.Server.Helpers
 
             // Make sure our combined poly is valid and return it
             if (repairedPoly.GetType() != typeof(Polygon))
-                throw new StandardExceptions.InputDataRuleViolationException($"");
+                throw new StandardExceptions.InputDataRuleViolationException($"Combined poly is invalid: {repairedPoly}");
 
             // If we are really valid, return the poly
             if (repairedPoly.IsValid)
@@ -706,6 +829,10 @@ namespace SQE.API.Server.Helpers
                     ? (Polygon)repaired1.Buffer(0)
                     : (Polygon)repaired2.Buffer(0);
             return (Polygon)combined;
+        }
+        private class _linePair {
+            public int line1 {get; set;}
+            public int line2 {get; set;}
         }
     }
 }
