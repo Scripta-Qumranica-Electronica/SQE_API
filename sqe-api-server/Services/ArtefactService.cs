@@ -119,7 +119,7 @@ namespace SQE.API.Server.Services
             var tasks = new List<Task<List<AlteredRecord>>>();
             if (!string.IsNullOrEmpty(updateArtefact.polygon.mask))
             {
-                var cleanedPoly = await GeometryValidation.CleanPolygonAsync(updateArtefact.polygon.mask, "artefact");
+                var cleanedPoly = await GeometryValidation.ValidatePolygonAsync(updateArtefact.polygon.mask, "artefact");
                 tasks.Add(
                     _artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, cleanedPoly)
                 );
@@ -165,7 +165,7 @@ namespace SQE.API.Server.Services
             CreateArtefactDTO createArtefact,
             string clientId = null)
         {
-            var cleanedPoly = await GeometryValidation.CleanPolygonAsync(createArtefact.polygon.mask, "artefact");
+            var cleanedPoly = await GeometryValidation.ValidatePolygonAsync(createArtefact.polygon.mask, "artefact");
 
             var newArtefact = await _artefactRepository.CreateNewArtefactAsync(
                 editionUser,

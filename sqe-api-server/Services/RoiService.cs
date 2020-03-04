@@ -119,7 +119,7 @@ namespace SQE.API.Server.Services
             SetInterpretationRoiDTO newRoi,
             string clientId = null)
         {
-            newRoi.shape = await GeometryValidation.CleanPolygonAsync(newRoi.shape, "roi");
+            newRoi.shape = await GeometryValidation.ValidatePolygonAsync(newRoi.shape, "roi");
             return (await CreateRoisAsync(
                 editionUser,
                 new SetInterpretationRoiDTOList { rois = new List<SetInterpretationRoiDTO> { newRoi } },
@@ -201,7 +201,7 @@ namespace SQE.API.Server.Services
                 exceptional = updatedRoi.exceptional,
                 valuesSet = updatedRoi.valuesSet,
                 translate = updatedRoi.translate,
-                shape = await GeometryValidation.CleanPolygonAsync(updatedRoi.shape, "roi")
+                shape = await GeometryValidation.ValidatePolygonAsync(updatedRoi.shape, "roi")
             };
             return (await UpdateRoisAsync(
                 editionUser,
@@ -270,7 +270,7 @@ namespace SQE.API.Server.Services
                 Exceptional = x.exceptional,
                 TranslateX = x.translate.x,
                 TranslateY = x.translate.y,
-                Shape = await GeometryValidation.CleanPolygonAsync(x.shape, "roi"),
+                Shape = await GeometryValidation.ValidatePolygonAsync(x.shape, "roi"),
                 ValuesSet = x.valuesSet
             };
         }
@@ -285,7 +285,7 @@ namespace SQE.API.Server.Services
                 Exceptional = x.exceptional,
                 TranslateX = x.translate.x,
                 TranslateY = x.translate.y,
-                Shape = await GeometryValidation.CleanPolygonAsync(x.shape, "roi"),
+                Shape = await GeometryValidation.ValidatePolygonAsync(x.shape, "roi"),
                 ValuesSet = x.valuesSet
             };
         }

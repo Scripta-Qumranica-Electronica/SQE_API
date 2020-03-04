@@ -50,6 +50,19 @@ namespace sqe_realtime_hub_builder
 
 ";
 
+        private const string _hubMethod = @"
+    {
+        try
+        {
+             $Method       
+        }
+        catch (ApiException err)
+        {
+        throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
+";
+
         private static readonly Regex _rx = new Regex(
             @"Task?<(?<return>.*)?>",
             RegexOptions.Compiled | RegexOptions.IgnoreCase
@@ -134,6 +147,9 @@ namespace sqe_realtime_hub_builder
                 ))
                     outputFile.WriteLine($"using {element.Name};");
                 outputFile.WriteLine("using Microsoft.AspNetCore.SignalR;\n");
+                outputFile.WriteLine("using SQE.DatabaseAccess.Helpers;\n");
+                outputFile.WriteLine("using System.Text.Json;\n");
+                outputFile.WriteLine("using SQE.API.Server.Helpers;\n");
 
                 // Write hub class declaration
                 outputFile.WriteLine(_hubClassTemplate);
@@ -181,15 +197,15 @@ namespace sqe_realtime_hub_builder
                         method.Body.ToString()
                             .Replace("\n", "")
                             .Replace("\t", "")
-                            .Replace("{ ", "{\n")
-                            .Replace(" }", "\n}")
+                            .Replace("{ ", "")
+                            .Replace(" }", "")
                             .Replace("return ", returnType == "Task" ? "" : "return "),
                         @"\s*\)\s*;",
                         httpRequestType == "Get" ? ");" : ", clientId: Context.ConnectionId);"
                     );
 
                     // Write the method body
-                    outputFile.WriteLine(methodBody);
+                    outputFile.WriteLine(_hubMethod.Replace("$Method", methodBody));
                     outputFile.WriteLine("");
                 }
 

@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using SQE.DatabaseAccess.Helpers;
+using System.Text.Json;
+using SQE.API.Server.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
 {
@@ -19,7 +21,7 @@ namespace SQE.API.Server.RealtimeHubs
     // for updates to an edition seemed so ephemeral that using some other store appeared unnecessary or
     // even undesirable—we want these connections to be as disposable as possible and we do not want subscriptions
     // associated with a user_id, only the client.
-    
+
     public partial class MainHub
     {
         /// <summary>
@@ -30,12 +32,19 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns></returns>
         public override async Task OnConnectedAsync()
         {
-            var user = _userService.GetCurrentUserId(); // Get the user_id if possible
-            
-            // If the user is authenticated, add this connection to the user's user_id group.
-            if (user.HasValue)
-                await Groups.AddToGroupAsync(Context.ConnectionId, $"user-{user.Value.ToString()}");
-            await base.OnConnectedAsync();
+            try
+            {
+                var user = _userService.GetCurrentUserId(); // Get the user_id if possible
+
+                // If the user is authenticated, add this connection to the user's user_id group.
+                if (user.HasValue)
+                    await Groups.AddToGroupAsync(Context.ConnectionId, $"user-{user.Value.ToString()}");
+                await base.OnConnectedAsync();
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
 
         /// <summary>
@@ -45,29 +54,36 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns></returns>
         public async Task SubscribeToEdition(uint editionId)
         {
-            var user = await _userService.GetCurrentUserObjectAsync(editionId);
-
-            if (!user.MayRead)
-                throw new StandardExceptions.NoReadPermissionsException(user);
-
-            // If client is already subscribed to at least one editionId
-            if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
+            try
             {
-                // It seems that Context.Items is hardcoded as Dict<object, object>.
-                // Too bad I don't know a better way to deal with that.
-                var clientSubscriptions = clientSubscriptionsObject as List<uint>;
-                // If not already subscribed to this edition, then add it
-                if (!clientSubscriptions.Contains(editionId))
+                var user = await _userService.GetCurrentUserObjectAsync(editionId);
+
+                if (!user.MayRead)
+                    throw new StandardExceptions.NoReadPermissionsException(user);
+
+                // If client is already subscribed to at least one editionId
+                if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
                 {
-                    clientSubscriptions.Add(editionId);
+                    // It seems that Context.Items is hardcoded as Dict<object, object>.
+                    // Too bad I don't know a better way to deal with that.
+                    var clientSubscriptions = clientSubscriptionsObject as List<uint>;
+                    // If not already subscribed to this edition, then add it
+                    if (!clientSubscriptions.Contains(editionId))
+                    {
+                        clientSubscriptions.Add(editionId);
+                        await Groups.AddToGroupAsync(Context.ConnectionId, editionId.ToString());
+                    }
+                }
+                else // Create the subcription context item and add the editionId
+                {
+                    Context.Items["editionId"] = new List<uint> { editionId };
+                    // Add it to the editionIdId of this request
                     await Groups.AddToGroupAsync(Context.ConnectionId, editionId.ToString());
                 }
             }
-            else // Create the subcription context item and add the editionId
+            catch (ApiException err)
             {
-                Context.Items["editionId"] = new List<uint> {editionId};
-                // Add it to the editionIdId of this request
-                await Groups.AddToGroupAsync(Context.ConnectionId, editionId.ToString());
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
             }
         }
 
@@ -78,18 +94,25 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns></returns>
         public async Task UnsubscribeToEdition(uint editionId)
         {
-            // If client is already subscribed to at least one editionId
-            if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
+            try
             {
-                // It seems that Context.Items is hardcoded as Dict<object, object>.
-                // Too bad I don't know a better way to deal with that.
-                var clientSubscriptions = clientSubscriptionsObject as List<uint>;
-                // If not already subscribed to this edition, then add it
-                if (clientSubscriptions.Contains(editionId))
+                // If client is already subscribed to at least one editionId
+                if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
                 {
-                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, editionId.ToString());
-                    clientSubscriptions.RemoveAll((x) => x == editionId);
+                    // It seems that Context.Items is hardcoded as Dict<object, object>.
+                    // Too bad I don't know a better way to deal with that.
+                    var clientSubscriptions = clientSubscriptionsObject as List<uint>;
+                    // If not already subscribed to this edition, then add it
+                    if (clientSubscriptions.Contains(editionId))
+                    {
+                        await Groups.RemoveFromGroupAsync(Context.ConnectionId, editionId.ToString());
+                        clientSubscriptions.RemoveAll((x) => x == editionId);
+                    }
                 }
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
             }
         }
 
@@ -99,15 +122,22 @@ namespace SQE.API.Server.RealtimeHubs
         /// <returns>A list of every editionId for which the client receives update</returns>
         public List<uint> ListEditionSubscriptions()
         {
-            // If client is already subscribed to at least one editionId
-            if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
+            try
             {
-                // It seems that Context.Items is hardcoded as Dict<object, object>.
-                // Too bad I don't know a better way to deal with that.
-                return clientSubscriptionsObject as List<uint>;
-            }
+                // If client is already subscribed to at least one editionId
+                if (Context.Items.TryGetValue("subscriptions", out var clientSubscriptionsObject))
+                {
+                    // It seems that Context.Items is hardcoded as Dict<object, object>.
+                    // Too bad I don't know a better way to deal with that.
+                    return clientSubscriptionsObject as List<uint>;
+                }
 
-            return null;
+                return null;
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
     }
 }

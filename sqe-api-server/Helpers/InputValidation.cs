@@ -44,32 +44,35 @@ namespace SQE.API.Server.Helpers
         }
 
         /// <summary>
-        /// Validate that the wkt polygon is indeed valid. If it is not, the method will
-        /// try to repair it. If the polygon cannot be repaired, then an error is thrown.
-        /// The method always returns a List of wkt Polygons, since the process of repairing
-        /// a geometry may result in more than one polygon.
+        /// Validate that the wkt polygon is indeed correct. If it is not, the method will
+        /// throw an error. When the fix parameter is set to true, it will try to repair it and
+        /// send the repaired version of the polygon back with the error.  If the polygon cannot be
+        /// repaired at all, then a descriptive error about the polygon is thrown.
         /// </summary>
         /// <param name="wktPolygon">A wkt polygon</param>
         /// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
-        /// <param name="fix">Declare whether to throw an error or with invalid polygons or to try to repair them</param>
+        /// <param name="fix">Invalid polygons always throw an error, this flag determines whether to try to return a repaired
+        /// version of the polygon with that error</param>
         /// <returns>A WKT string with the cleaned polygon</returns>
-        public static async Task<string> CleanPolygonAsync(string wktPolygon, string entityName, bool fix = true)
+        public static async Task<string> ValidatePolygonAsync(string wktPolygon, string entityName, bool fix = false)
         {
-            return await Task.Run(() => _cleanPolygonNew(wktPolygon, entityName, fix));
+            // Wrap the private validation method in a Task so we can asynchronously call this non-trivial method
+            return await Task.Run(() => _validatePolygon(wktPolygon, entityName, fix));
         }
 
         /// <summary>
-        /// Validate that the wkt polygon is indeed valid. If it is not, the method will
-        /// try to repair it. If the polygon cannot be repaired, then an error is thrown.
-        /// The method always returns a List of wkt Polygons, since the process of repairing
-        /// a geometry may result in more than one polygon.
+        /// Private method to validate that the wkt polygon is indeed correct. If it is not, the method will
+        /// throw an error. When the fix parameter is set to true, it will try to repair it and
+        /// send the repaired version of the polygon back with the error.  If the polygon cannot be
+        /// repaired at all, then a descriptive error about the polygon is thrown.
         /// </summary>
         /// <param name="wktPolygon">A wkt polygon</param>
         /// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
-        /// <param name="fix">Declare whether to throw an error or with invalid polygons or to try to repair them</param>
+        /// <param name="fix">Invalid polygons always throw an error, this flag determines whether to try to return a repaired
+        /// version of the polygon with that error</param>
         /// <returns>A WKT string with the cleaned polygon</returns>
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
-        private static string _cleanPolygonNew(string wktPolygon, string entityName, bool fix)
+        private static string _validatePolygon(string wktPolygon, string entityName, bool fix)
         {
             var fixedPoly = false;
             // Bail immediately on null/blank input
@@ -177,9 +180,14 @@ namespace SQE.API.Server.Helpers
                 fullGeom = op.GetResultGeometry(SpatialFunction.SymDifference);
             }
 
-            // Return the reconstructed geometry
-            if (fullGeom.GeometryType == "MultiPolygon")
+            // If the result is a multipolygon try to repair that
+            if (fullGeom.GetType() == typeof(MultiPolygon))
                 fullGeom = _repairMultiPolygon(fullGeom);
+
+            // Throw an error if we still couldn't compose a single polygon from the input 
+            if (fullGeom.GetType() != typeof(Polygon))
+                throw new StandardExceptions.InputDataRuleViolationException($"The new repair method couldn't fix the poly, it does not appear possible to compose it into a single POLYGON: {fullGeom}");
+
             return fullGeom;
         }
 
@@ -353,7 +361,7 @@ namespace SQE.API.Server.Helpers
                 polyMovePairs.Add(nearestPoly);
             }
 
-            // Make sure our combined poly is valid and return it
+            // Throw an error if we still could not produce a valid Polygon type
             if (repairedPoly.GetType() != typeof(Polygon))
                 throw new StandardExceptions.InputDataRuleViolationException($"Combined poly is invalid: {repairedPoly}");
 
@@ -387,25 +395,54 @@ namespace SQE.API.Server.Helpers
             // If the two closest points are the same, then we need to do something fancy
             if (poly1Point.Equals(poly2Point))
             {
+                // TODO: maybe we can rewrite this to be a little better
+                // We can grab each closest point, remove each from the polygon and add
+                // two points instead, each a little closer to the previous/next point.
+                // Then make a thin bridge joining the two sets of new points.
                 var point = new Point(poly1Point.X, poly1Point.Y + 1);
                 var (biggerPoly, smallerPoly) = poly1.Area > poly2.Area
                     ? (poly1, poly2)
                     : (poly2, poly1);
-                // Try nudging the point in 4 cardinal directions to find a point inside the larger poly
+                // Try nudging the point in 8 cardinal directions to find a point inside the larger poly
                 Point fittingPoint = null;
-                // Up
+                // North
                 if (biggerPoly.Contains(point))
                     fittingPoint = point;
-                // Down
+
+                // Northeast
+                point = new Point(point.X + 0.5, point.Y - 0.5);
+                if (biggerPoly.Contains(point))
+                    fittingPoint = point;
+
+                // East
+                point = new Point(point.X + 0.5, point.Y - 0.5);
+                if (biggerPoly.Contains(point))
+                    fittingPoint = point;
+
+                // SouthEast
+                point = new Point(point.X - 0.5, point.Y - 0.5);
                 point = new Point(poly1Point.X, poly1Point.Y - 2);
                 if (biggerPoly.Contains(point))
                     fittingPoint = point;
                 point = new Point(poly1Point.X + 1, poly1Point.Y + 1);
-                // Right
+
+                // South
+                point = new Point(point.X - 0.5, point.Y - 0.5);
                 if (biggerPoly.Contains(point))
                     fittingPoint = point;
-                // Left
-                point = new Point(poly1Point.X - 2, poly1Point.Y);
+
+                // SouthWest
+                point = new Point(point.X - 0.5, point.Y + 0.5);
+                if (biggerPoly.Contains(point))
+                    fittingPoint = point;
+
+                // West
+                point = new Point(point.X - 0.5, point.Y + 0.5);
+                if (biggerPoly.Contains(point))
+                    fittingPoint = point;
+
+                // NorthWest
+                point = new Point(point.X + 0.5, point.Y - 0.5);
                 if (biggerPoly.Contains(point))
                     fittingPoint = point;
 

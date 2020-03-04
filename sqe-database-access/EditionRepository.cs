@@ -425,8 +425,10 @@ namespace SQE.DatabaseAccess
                     new { Email = editorEmail }
                 );
 
+                // TODO: Use the database user email token system rather than a JWT for this (see commented code below.
+                // That way, we can query for "open" editor requests. Must wait to update the database before we can
+                // implement this functionality.
                 var secret = _config.GetSection("AppSettings").GetSection("Secret").Value;
-
                 editorInfo.Token = new JwtBuilder()
                     .WithAlgorithm(new HMACSHA256Algorithm())
                     .WithSecret(secret)
@@ -439,7 +441,6 @@ namespace SQE.DatabaseAccess
                     .AddClaim("userId", editorInfo.UserId)
                     .Encode();
 
-                // TODO: Decide if we want to use the database user email token system rather than a JWT for this.
                 // var writtenToken = await connection.ExecuteAsync(
                 //     CreateUserEmailTokenQuery.GetQuery(),
                 //     new

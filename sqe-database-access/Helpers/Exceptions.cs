@@ -1,9 +1,20 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using SQE.DatabaseAccess.Models;
 
 namespace SQE.DatabaseAccess.Helpers
 {
+    public interface IExceptionWithData
+    {
+        // Property declaration:
+        Dictionary<string, object> CustomReturnedData
+        {
+            get;
+            set;
+        }
+    }
+
     #region Exception Base Class
 
     // Exceptions of this class will be caught by the middleware and thrown back to HTTP requests with the proper
@@ -264,6 +275,8 @@ namespace SQE.DatabaseAccess.Helpers
                 : this(datatype, id.ToString(), searchEntity)
             {
             }
+
+            public Dictionary<string, object> customReturnedData { get; set; }
         }
 
         // This exception should be used sparingly. It is usually better to throw the actual database error.
@@ -309,15 +322,17 @@ namespace SQE.DatabaseAccess.Helpers
             }
         }
 
-        public class MalformedDataException : UnprocessableInputException
+        public class MalformedDataException : UnprocessableInputException, IExceptionWithData
         {
             private const string customMsg =
                 "The submitted $DataType is malformed. Check the data property of this error message for a possible valid substitute.";
 
+            public Dictionary<string, object> CustomReturnedData { get; set; } = new Dictionary<string, object>();
+
             public MalformedDataException(string datatype, object example)
             {
                 Error = customMsg.Replace("$DataType", datatype);
-                Data.Add(datatype, example);
+                CustomReturnedData.Add(datatype, example);
             }
         }
 
@@ -360,4 +375,6 @@ namespace SQE.DatabaseAccess.Helpers
 
         #endregion Data errors
     }
+
+
 }

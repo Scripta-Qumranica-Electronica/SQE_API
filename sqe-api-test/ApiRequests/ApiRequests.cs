@@ -76,7 +76,9 @@ namespace SQE.ApiTest.ApiRequests
         public virtual Func<HubConnection, Task<T>> SignalrRequest<T>()
             where T : Toutput
         {
-            return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString())
+                : signalR.InvokeAsync<T>(SignalrRequestString(), payload);
         }
 
         /// <summary>

@@ -408,11 +408,11 @@ The Scripta Qumranica Electronica team</body></html>";
             var wkw = new WKTWriter();
             return new EditionScriptCollectionDTO()
             {
-                letters = (await Task.WhenAll(lettersSorted.Select(
-                        async x =>
+                letters = lettersSorted.Select(
+                        x =>
                         {
-                            var polys = (await Task.WhenAll(x.Select(
-                                async y =>
+                            var polys = x.Select(
+                                y =>
                                 {
                                     //var poly = wkbr.Read(Encoding.ASCII.GetBytes(await GeometryValidation.CleanPolygonAsync(Encoding.ASCII.GetString(y.Polygon), "ROI")));
                                     var poly = wkbr.Read(y.Polygon);
@@ -422,7 +422,7 @@ The Scripta Qumranica Electronica team</body></html>";
                                     tr.Translate(y.TranslateX, y.TranslateY);
                                     poly = tr.Transform(poly);
                                     return poly;
-                                }))).Where(z => z.IsValid && !z.IsEmpty).ToList();
+                                }).Where(z => z.IsValid && !z.IsEmpty).ToList();
                             var cpu = new CascadedPolygonUnion(polys);
                             var combinedPoly = cpu.Union();
                             var envelope = polys.Any() ? combinedPoly.EnvelopeInternal : new Envelope(0, 0, 0, 0);
@@ -453,8 +453,7 @@ The Scripta Qumranica Electronica team</body></html>";
                                 polygon = polys.Any() ? wkw.Write(combinedPoly) : null
                             };
                         }
-                    )))
-                    .ToList()
+                    ).ToList()
             };
         }
 

@@ -22,7 +22,7 @@ namespace SQE.API.Server.Services
 
         public async Task<NoContentResult> ValidateWktPolygonAsync(string wktPolygon, string clientId = null)
         {
-            await GeometryValidation.CleanPolygonAsync(wktPolygon, "polygon", true);
+            await GeometryValidation.ValidatePolygonAsync(wktPolygon, "polygon", true);
             return new NoContentResult();
         }
     }
