@@ -3,10 +3,9 @@
 # We check here that private settings have not accidentally been left in appsettings.json,
 # or in docker-compose.yml.
 
-function check_docker_vars
-{
+check_docker_vars () {
     grep -n '\-[[:space:]]'"${1}"'=[^$]' docker/deploy/docker-compose.yml
-    if [[ "$?" == 0 ]]; then 
+    if test "$?" -eq 0; then 
         printf "\e[31mPlease remove the custom settings for ${1} from docker/deploy/docker-compose.yml\n"
         printf "The line should be:\n"
         printf "#- ${1}=\e[0m\n"
@@ -14,10 +13,9 @@ function check_docker_vars
     fi
 }
 
-function check_appsettings_vars
-{
+check_appsettings_vars () {
     grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-server/appsettings.json 
-    if [[ "$?" == 0 ]]; then 
+    if test "$?" -eq 0; then 
         printf "\e[31mPlease remove the custom settings for ${1} from sqe-api-server/appsettings.json\n"
         printf "The line should be:\n"
         printf "\"${1}\": \"\",\e[0m\n"
@@ -25,7 +23,7 @@ function check_appsettings_vars
     fi
     
     grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-server/appsettings.Development.json 
-    if [[ "$?" == 0 ]]; then 
+    if test "$?" -eq 0; then 
         printf "\e[31mPlease remove the custom settings for ${1} from sqe-api-server/appsettings.Development.json\n"
         printf "The line should be:\n"
         printf "\"${1}\": \"\",\e[0m\n"
@@ -51,8 +49,7 @@ check_appsettings_vars "MailerEmailSmtpUrl"
 check_appsettings_vars "MailerEmailSmtpPort"
 
 ## We run the "linter" to ensure the code remains formatted consistently
-function cleanup_code
-{
+cleanup_code () {
     ## Check that dotnet-format is installed
     if ! dotnet tool list -g | grep "dotnet-format"; then
         dotnet tool install -g dotnet-format
@@ -66,12 +63,11 @@ echo "Cleaning up code formatting"
 cleanup_code
 
 ## We generate the ts definitions for the C# DTOs before pushing
-function generate_ts_from_dtos
-{
+generate_ts_from_dtos () {
     dotnet build Utilities/GenerateTypescriptDTOs
     dotnet build sqe-dto
     dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp3.1/GenerateTypescriptDTOs.dll sqe-dto/bin/Debug/netcoreapp3.1/sqe-dto.dll ts-dtos/sqe-dtos.ts
-    if [[ "$?" != 0 ]]; then 
+    if test "$?" -ne 0; then 
         printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
         exit 1
@@ -83,11 +79,10 @@ echo "Generating typescript dto definitions"
 generate_ts_from_dtos
 
 ## We generate the ts signals interface for the C# signal methods before pushing
-function generate_ts_interfaces
-{
+generate_ts_interfaces () {
     dotnet build Utilities/GenerateTypescriptInterfaces
     dotnet Utilities/GenerateTypescriptInterfaces/bin/Debug/netcoreapp3.1/GenerateTypescriptInterfaces.dll
-    if [[ "$?" != 0 ]]; then 
+    if test "$?" -ne 0; then 
         printf "\e[31mThere was an error generating the SQE typescript SignalR interface.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
         exit 1
@@ -101,7 +96,7 @@ generate_ts_interfaces
 ## Now add any updated files
 git add -A
 
-if [[ "$?" == 0 ]]; then 
+if test "$?" -eq 0; then 
     printf "\e[32mAll files have been succesfully checked.\e[0m\n\n"
     exit 0
 else
