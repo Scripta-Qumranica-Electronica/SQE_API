@@ -8,11 +8,34 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "data-access", "data-access\data-access.csproj", "{260192E4-F9FE-4FD5-A478-558A6F611550}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-database-access", "sqe-database-access\sqe-database-access.csproj", "{260192E4-F9FE-4FD5-A478-558A6F611550}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-http-api", "sqe-http-api\sqe-http-api.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-api-server", "sqe-api-server\sqe-api-server.csproj", "{36E20416-174C-4DD7-87F4-E35C6C39AD46}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-signalr-api", "sqe-signalr-api\sqe-signalr-api.csproj", "{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{2342F74C-D461-45E2-BA99-72BD0C84F64B}"
+	ProjectSection(SolutionItems) = preProject
+		docker\Dockerfile = docker\Dockerfile
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dev", "dev", "{645057D9-6167-4A7B-AF1C-4232A2CCAEC2}"
+	ProjectSection(SolutionItems) = preProject
+		docker\dev\docker-compose.yml = docker\dev\docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{39232745-6408-429E-8726-5F5D4A44EC72}"
+	ProjectSection(SolutionItems) = preProject
+		docker\deploy\docker-compose.yml = docker\deploy\docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqe-api-test", "sqe-api-test\sqe-api-test.csproj", "{C195B450-C6DE-40FE-A4D6-A44CC7978700}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-dto", "sqe-dto\sqe-dto.csproj", "{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{055DC416-8BED-4A81-9E30-C802D05C9B50}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs", "Utilities\GenerateTypescriptDTOs\GenerateTypescriptDTOs.csproj", "{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-hub-builder", "sqe-realtime-hub-builder\sqe-realtime-hub-builder.csproj", "{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,17 +51,33 @@ Global
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36E20416-174C-4DD7-87F4-E35C6C39AD46}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ED8AF3AC-8165-4D7C-ADE0-9AEA00FFC3EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C195B450-C6DE-40FE-A4D6-A44CC7978700}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F8259A5-620B-41E9-A61F-424FC4A4AA6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2342F74C-D461-45E2-BA99-72BD0C84F64B} = {4F9B458A-4566-4386-9253-0E0CDE844376}
+		{645057D9-6167-4A7B-AF1C-4232A2CCAEC2} = {2342F74C-D461-45E2-BA99-72BD0C84F64B}
+		{39232745-6408-429E-8726-5F5D4A44EC72} = {2342F74C-D461-45E2-BA99-72BD0C84F64B}
+		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC} = {055DC416-8BED-4A81-9E30-C802D05C9B50}
+	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28758AAA-F471-4702-917C-C7D7D498BA0C}
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 EndGlobal
