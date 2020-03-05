@@ -147,9 +147,7 @@ namespace SQE.ApiTest.ApiRequests
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
     public class EditionEditorRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
     {
-        public readonly uint editionId;
         public readonly string editorEmail;
-        public readonly List<string> optional;
 
         /// <summary>
         ///     Provides an EditionRequestObject for all API requests made on an edition
@@ -162,9 +160,7 @@ namespace SQE.ApiTest.ApiRequests
             Tinput payload = default) :
             base(editionId, optional, payload)
         {
-            this.editionId = editionId;
             this.editorEmail = editorEmail;
-            this.optional = optional;
         }
 
         protected override string HttpPath()

@@ -312,11 +312,8 @@ namespace SQE.ApiTest
         public async Task CanDuplicateCopiedEdition()
         {
             // ARRANGE
-            var bearerToken = await Request.GetJwtViaHttpAsync(_client);
             var editionId = await EditionHelpers.CreateCopyOfEdition(_client, name: "first edition");
-            var secondEditionId = await EditionHelpers.CreateCopyOfEdition(_client, editionId, "second edition");
-
-            Assert.True(secondEditionId != null);
+            await EditionHelpers.CreateCopyOfEdition(_client, editionId, "second edition");
         }
 
         // TODO: finish updating test to use new request objects.
