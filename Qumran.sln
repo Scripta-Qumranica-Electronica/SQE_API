@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.329
@@ -37,10 +37,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs", "U
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-hub-builder", "sqe-realtime-hub-builder\sqe-realtime-hub-builder.csproj", "{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "qwb-to-sqe", "qwb-to-sqe\qwb-to-sqe.csproj", "{A5C337B7-A222-4E74-827B-09E9270C6FEB}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ingo_test", "ingo_test\ingo_test.csproj", "{51E6B0F2-6EF7-40D1-8B10-A9E696430112}"
-EndProject
+#Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "qwb-to-sqe", "qwb-to-sqe\qwb-to-sqe.csproj", "{A5C337B7-A222-4E74-827B-09E9270C6FEB}"
+#EndProject
+#Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ingo_test", "ingo_test\ingo_test.csproj", "{51E6B0F2-6EF7-40D1-8B10-A9E696430112}"
+#EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptInterfaces", "Utilities\GenerateTypescriptInterfaces\GenerateTypescriptInterfaces.csproj", "{298627C6-72BB-409D-92EE-EC5605078557}"
 EndProject
 Global
