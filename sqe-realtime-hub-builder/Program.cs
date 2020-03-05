@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This program reads in all the HTTP controller files in the HttpController folder
  * of the `sqe-api-server` project. It parses them using Roslyn and automatically builds
  * corresponding SignalR real time hub methods from them.
@@ -50,6 +50,13 @@ namespace sqe_realtime_hub_builder
 
 ";
 
+        // I wrapped the hub service method calls in a try ... catch(ApiException err) in order send some meaningful
+        // error message back to the client. SignalR core doesn't currently have a nice pipeline that we can plug into
+        // like we do for handling errors in the HTTP client code (IHubPipelineModule does not exist yet in SignalR core).
+        // Also it does not seem to expose DefaultHubManager for writing in some custom overrides.
+        // Currently, the only option appears to be using `throw new HubException`, and passing the error as a string,
+        // (see https://github.com/dotnet/aspnetcore/issues/12633). This is really suboptimal, but I see no other
+        // solution in the sort term.
         private const string _hubMethod = @"
     {
         try
@@ -58,7 +65,7 @@ namespace sqe_realtime_hub_builder
         }
         catch (ApiException err)
         {
-        throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
         }
     }
 ";
