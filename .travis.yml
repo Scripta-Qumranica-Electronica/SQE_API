@@ -3,6 +3,10 @@ dist: bionic
 mono: none
 dotnet: 3.1
 services: docker
+addons:
+  apt:
+    packages:
+    - dotnet-sdk-2.1
 
 before_install:
 - docker-compose -f docker/dev/docker-compose.yml pull
