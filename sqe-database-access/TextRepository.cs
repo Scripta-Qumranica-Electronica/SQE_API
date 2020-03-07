@@ -269,7 +269,7 @@ namespace SQE.DatabaseAccess
             TextFragment lastTextFragment = null;
             Line lastLine = null;
             Sign lastSign = null;
-            NextSignInterpretation lastNextSignInterpretation = null;
+            // NextSignInterpretation lastNextSignInterpretation = null;
             SignInterpretation lastChar = null;
             SignInterpretationROI lastInterpretationRoi = null;
 
@@ -329,9 +329,9 @@ namespace SQE.DatabaseAccess
                             lastLine.signs.Add(sign);
                         }
 
-                        if (nextSignInterpretation.nextSignInterpretationId
-                            != lastNextSignInterpretation?.nextSignInterpretationId)
-                            lastNextSignInterpretation = nextSignInterpretation;
+                        // if (nextSignInterpretation.nextSignInterpretationId
+                        //     != lastNextSignInterpretation?.nextSignInterpretationId)
+                        //     lastNextSignInterpretation = nextSignInterpretation;
 
                         if (signInterpretation.signInterpretationId != lastChar?.signInterpretationId)
                         {
