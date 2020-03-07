@@ -18,11 +18,6 @@ namespace SQE.API.Server.Helpers
 {
     public static class GeometryValidation
     {
-
-        private static readonly WKTReader _wkr = new WKTReader();
-        private static readonly Regex _asymmetricNesting = new Regex(@"\),\s(?!\()");
-        private static readonly Regex _wktSplit = new Regex(@"\)\s?,\s?\(");
-
         /// <summary>
         ///     The validator checks that the transformMatrix is indeed valid JSON that can be successfully
         ///     parsed into the SQE.SqeHttpApi.DataAccess.Models.TransformMatrix class.
@@ -74,6 +69,7 @@ namespace SQE.API.Server.Helpers
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static string _validatePolygon(string wktPolygon, string entityName, bool fix)
         {
+            var wkr = new WKTReader();
             var fixedPoly = false;
             // Bail immediately on null/blank input
             if (string.IsNullOrEmpty(wktPolygon))
@@ -83,7 +79,7 @@ namespace SQE.API.Server.Helpers
             // Load Polygon
             try
             {
-                polygon = _wkr.Read(wktPolygon);
+                polygon = wkr.Read(wktPolygon);
             }
             catch
             {
@@ -118,11 +114,14 @@ namespace SQE.API.Server.Helpers
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static Geometry _repairPolygon(string wkt)
         {
-            if (_asymmetricNesting.Matches(wkt).Count > 0)
+            var wkr = new WKTReader();
+            var asymmetricNesting = new Regex(@"\),\s(?!\()");
+            var wktSplit = new Regex(@"\)\s?,\s?\(");
+            if (asymmetricNesting.Matches(wkt).Count > 0)
                 throw new StandardExceptions.InputDataRuleViolationException("The submitted POLYGON has an improperly nested ring");
 
             // We break the string into the individual paths the loop over them, repairing each path as we go.
-            var polyStrings = _wktSplit.Split(wkt).Select(z =>
+            var polyStrings = wktSplit.Split(wkt).Select(z =>
             {
                 // Strip extraneous character
                 var saniString = z.Replace("POLYGON", "")
@@ -139,7 +138,7 @@ namespace SQE.API.Server.Helpers
                 var singlePath = @$"POLYGON(({string.Join(",", coords)}))";
 
                 // Read the single path into net topology suite
-                var geom = _wkr.Read(singlePath);
+                var geom = wkr.Read(singlePath);
 
                 // Check if geom is valid
                 if (geom.IsValid) return geom;
@@ -150,10 +149,9 @@ namespace SQE.API.Server.Helpers
                     // We have a function to fix self-intersecting polys,
                     // Should we check here also for multipolys and
                     // run the algorithm to fix that?
-                    if (geom.GeometryType == "MultiPolygon")
-                        geom = _repairMultiPolygon(geom);
-                    else
-                        geom = _repairSelfInterectingPolygon(geom);
+                    geom = geom.GeometryType == "MultiPolygon"
+                        ? _repairMultiPolygon(geom)
+                        : _repairSelfInterectingPolygon(geom);
 
                     // If still invalid, we give up
                     if (!geom.IsValid)
@@ -392,6 +390,7 @@ namespace SQE.API.Server.Helpers
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static Polygon _joinPolys(Polygon poly1, Polygon poly2, Coordinate poly1Point, Coordinate poly2Point)
         {
+            var wkr = new WKTReader();
             // If the two closest points are the same, then we need to do something fancy
             if (poly1Point.Equals(poly2Point))
             {
@@ -421,10 +420,8 @@ namespace SQE.API.Server.Helpers
 
                 // SouthEast
                 point = new Point(point.X - 0.5, point.Y - 0.5);
-                point = new Point(poly1Point.X, poly1Point.Y - 2);
                 if (biggerPoly.Contains(point))
                     fittingPoint = point;
-                point = new Point(poly1Point.X + 1, poly1Point.Y + 1);
 
                 // South
                 point = new Point(point.X - 0.5, point.Y - 0.5);
@@ -452,7 +449,7 @@ namespace SQE.API.Server.Helpers
 
                 // Alter to smaller polygon so it intersects the larger one
                 // TODO: find a way to do this without string manipulation
-                var adjSmallerPoly = _wkr.Read(smallerPoly
+                var adjSmallerPoly = wkr.Read(smallerPoly
                     .ToText()
                     .Replace(
                         $"{poly2Point.X} {poly2Point.Y}",
@@ -469,7 +466,7 @@ namespace SQE.API.Server.Helpers
             // Apparently the two polygons just have close points, but don't share the same point.
             // So let's just swap the two closest points between the polygons and call it a day...
             // TODO: Find a way to do this without string manipulation.
-            var repaired1 = _wkr.Read(poly1
+            var repaired1 = wkr.Read(poly1
                 .ToText()
                 .Replace(
                     $"{poly1Point.X} {poly1Point.Y}",
@@ -483,7 +480,7 @@ namespace SQE.API.Server.Helpers
                 // If we still aren't valid, then give up
                 throw new StandardExceptions.InputDataRuleViolationException($"");
 
-            var repaired2 = _wkr.Read(poly2
+            var repaired2 = wkr.Read(poly2
                 .ToText()
                 .Replace(
                     $"{poly2Point.X} {poly2Point.Y}",
@@ -510,19 +507,6 @@ namespace SQE.API.Server.Helpers
                     ? (Polygon)repaired1.Buffer(0)
                     : (Polygon)repaired2.Buffer(0);
             return (Polygon)combined;
-        }
-        private class LinePair
-        {
-            public LinePair(int line1, int? line2, int line3)
-            {
-                this.line1 = line1;
-                this.line2 = line2;
-                this.line3 = line3;
-            }
-
-            public int line1 { get; set; }
-            public int? line2 { get; set; }
-            public int line3 { get; set; }
         }
     }
 }
