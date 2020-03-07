@@ -49,9 +49,6 @@ namespace SQE.API.Server.Services
     {
         private readonly IArtefactRepository _artefactRepository;
         private readonly IHubContext<MainHub, ISQEClient> _hubContext;
-        private readonly WKTReader _wkr = new WKTReader();
-        private readonly WKTWriter _wkw = new WKTWriter();
-        private readonly Regex _removeDecimals = new Regex(@"\.\d+");
 
         public ArtefactService(IArtefactRepository artefactRepository, IHubContext<MainHub, ISQEClient> hubContext)
         {
@@ -86,14 +83,14 @@ namespace SQE.API.Server.Services
                 );
             }
 
-            var wkr = new WKTReader();
-            var wkw = new WKTWriter();
-            artefacts.artefacts = artefacts.artefacts.Select(x =>
-                {
-                    x.mask.mask = wkw.Write(DouglasPeuckerSimplifier.Simplify(wkr.Read(x.mask.mask), 10)).Replace(", ", ",").Replace("POLYGON (", "POLYGON(");
-                    return x;
-                }
-            ).ToList();
+            // var wkr = new WKTReader();
+            // var wkw = new WKTWriter();
+            // artefacts.artefacts = artefacts.artefacts.Select(x =>
+            //     {
+            //         x.mask.mask = wkw.Write(DouglasPeuckerSimplifier.Simplify(wkr.Read(x.mask.mask), 10)).Replace(", ", ",").Replace("POLYGON (", "POLYGON(");
+            //         return x;
+            //     }
+            // ).ToList();
             return artefacts;
         }
 
