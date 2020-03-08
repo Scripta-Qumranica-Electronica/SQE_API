@@ -1,0 +1,23 @@
+import { 
+$IMPORTS
+} from "@/dtos/sqe-dtos"
+
+import { HubConnection } from '@microsoft/signalr'; 
+
+export class SignalRUtilities {  
+    private _connection: HubConnection;
+    
+    public constructor(connection: HubConnection) {
+        this._connection = connection;
+    }
+
+    /*
+     * Server methods.
+     */
+$SERVERMETHODS
+
+    /*
+     * Client methods.
+     */
+$CLIENTMETHODS
+} 

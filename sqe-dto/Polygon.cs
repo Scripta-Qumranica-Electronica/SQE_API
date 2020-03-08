@@ -7,4 +7,9 @@
         public TransformationDTO transformation { get; set; }
         public uint positionEditorId { get; set; }
     }
+
+    public class WktPolygonDTO
+    {
+        public string wktPolygon { get; set; }
+    }
 }

@@ -1,10 +1,11 @@
 using System;
+using System.Linq;
 using Dapper;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using MySql.Data.MySqlClient;
 using Polly;
 using Serilog;
@@ -14,7 +15,7 @@ namespace SQE.API.Server.Helpers
 {
     public static class StartupChecks
     {
-        public static void RunAllChecks(IConfiguration configuration, IHostingEnvironment env)
+        public static void RunAllChecks(IConfiguration configuration, IWebHostEnvironment env)
         {
             // Always test the database connection
             DatabaseConnector(configuration);

@@ -37,6 +37,10 @@ namespace SQE.API.DTO
             this.surname = surname;
         }
 
+        public UserUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty)
+        {
+        }
+
         public string password { get; set; }
         public string email { get; set; }
         public string organization { get; set; }
@@ -51,6 +55,10 @@ namespace SQE.API.DTO
         {
             this.email = email;
             this.password = password;
+        }
+
+        public NewUserRequestDTO() : this(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty)
+        {
         }
 
         [Required]

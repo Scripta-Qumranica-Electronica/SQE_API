@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SQE.API.DTO;
@@ -63,8 +64,8 @@ namespace SQE.API.Server.Services
         private readonly AppSettings _appSettings;
         private readonly IConfiguration _config;
         private readonly IEmailSender _emailSender;
-        private readonly IHostingEnvironment _env;
-        private readonly IHubContext<MainHub> _hubContext;
+        private readonly IWebHostEnvironment _env;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IUserRepository _userRepository;
         private readonly string webServer;
 
@@ -74,8 +75,8 @@ namespace SQE.API.Server.Services
                 IHttpContextAccessor accessor,
                 IEmailSender emailSender,
                 IConfiguration config,
-                IHostingEnvironment env,
-                IHubContext<MainHub> hubContext)
+                IWebHostEnvironment env,
+                IHubContext<MainHub, ISQEClient> hubContext)
 
         // http://jasonwatmore.com/post/2018/08/14/aspnet-core-21-jwt-authentication-tutorial-with-example-api
         {

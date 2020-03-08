@@ -83,6 +83,26 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
+        public class V1_Editions_EditionId_TextFragments_TextFragmentId
+            : TextFragmentRequestObject<UpdateTextFragmentDTO, TextFragmentDataDTO>
+        {
+            /// <summary>
+            ///     Alter a text fragment in an edition
+            /// </summary>
+            /// <param name="editionId">The edition to add the text fragment to</param>
+            /// <param name="textFragmentId">The text fragment to alter</param>
+            /// <param name="payload">The details of the new text fragment</param>
+            public V1_Editions_EditionId_TextFragments_TextFragmentId(uint editionId,
+                uint textFragmentId,
+                UpdateTextFragmentDTO payload) : base(
+                editionId,
+                textFragmentId,
+                payload
+            )
+            {
+                listenerMethod.Add("updateTextFragment");
+            }
+        }
     }
 
     public static partial class Delete

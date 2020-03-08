@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This program reads in all the HTTP controller files in the HttpController folder
  * of the `sqe-api-server` project. It parses them using Roslyn and automatically builds
  * corresponding SignalR real time hub methods from them.
@@ -50,6 +50,31 @@ namespace sqe_realtime_hub_builder
 
 ";
 
+        // I wrapped the hub service method calls in a try ... catch(ApiException err) in order send some meaningful
+        // error message back to the client. SignalR core doesn't currently have a nice pipeline that we can plug into
+        // like we do for handling errors in the HTTP client code (IHubPipelineModule does not exist yet in SignalR core).
+        // Also it does not seem to expose DefaultHubManager for writing in some custom overrides.
+        // Currently, the only option appears to be using `throw new HubException`, and passing the error as a string,
+        // (see https://github.com/dotnet/aspnetcore/issues/12633). This is really suboptimal, but I see no other
+        // solution in the sort term.
+        private const string _hubMethod = @"
+    {
+        try
+        {
+             $Method       
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
+";
+
+        private static readonly Regex _rx = new Regex(
+            @"Task?<(?<return>.*)?>",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+
         private static void Main(string[] args)
         {
             ParseSqeHttpControllers();
@@ -69,24 +94,34 @@ namespace sqe_realtime_hub_builder
             var dir = new DirectoryInfo(controllerFolder);
             var files = dir.GetFiles("*.cs");
             var classFields = new List<ControllerField>();
+            var hubInterfaces = new List<string>();
 
             // Delete any existing Realtime Hubs
             Console.WriteLine($"Deleting any existing realtime hub methods from {hubFolder}.");
             var folderInfo = new DirectoryInfo(hubFolder);
-            foreach (var file in folderInfo.GetFiles()) file.Delete();
+            foreach (var file in folderInfo.GetFiles())
+                if (file.Name != "HubInterface.cs")
+                    file.Delete();
 
             // Parse each controller file
             foreach (var file in files)
-                classFields = classFields.Union(ParseSqeHttpControllers(hubFolder, file), new FieldComparer()).ToList();
+            {
+                var (tempClassFields, tempHubInterfaces) = ParseSqeHttpControllers(hubFolder, file);
+                classFields = classFields.Union(tempClassFields, new FieldComparer()).ToList();
+                //hubInterfaces = hubInterfaces.Union(tempHubInterfaces).ToList(); // We don't do this now
+            }
 
             // Format and write the Hub controller
             WriteHubController(classFields, projectRoot, hubFolder);
+
+            // Format and write the Hub interface——We do not do this now
+            //WriteHubInterface(hubInterfaces, projectRoot, hubFolder);
 
             // Format and write the custom subscription controller
             CopySubscriptionHubController(projectRoot, hubFolder);
         }
 
-        private static List<ControllerField> ParseSqeHttpControllers(string hubFolder, FileInfo file)
+        private static (List<ControllerField>, List<string>) ParseSqeHttpControllers(string hubFolder, FileInfo file)
         {
             /*
 			 * Note: I believe we now catch all instances of attribute routing that cannot
@@ -101,6 +136,7 @@ namespace sqe_realtime_hub_builder
             var tree = CSharpSyntaxTree.ParseText(code);
             var root = tree.GetCompilationUnitRoot();
             var members = root.DescendantNodes().OfType<MemberDeclarationSyntax>().ToList();
+            var hubInterfaces = new List<string>();
 
             // Verify the controller is properly formatted with no disallowed attributes
             VerifyControllerClassName(members);
@@ -118,6 +154,9 @@ namespace sqe_realtime_hub_builder
                 ))
                     outputFile.WriteLine($"using {element.Name};");
                 outputFile.WriteLine("using Microsoft.AspNetCore.SignalR;\n");
+                outputFile.WriteLine("using SQE.DatabaseAccess.Helpers;\n");
+                outputFile.WriteLine("using System.Text.Json;\n");
+                outputFile.WriteLine("using SQE.API.Server.Helpers;\n");
 
                 // Write hub class declaration
                 outputFile.WriteLine(_hubClassTemplate);
@@ -135,8 +174,17 @@ namespace sqe_realtime_hub_builder
                     var returnType = ProcessReturnType(method);
 
                     // Format the method name and grab authorization
-                    var (anonymousAllowed, methodName, httpRequestType) =
+                    var (anonymousAllowed, methodName, httpRequestType, httpPath) =
                         GetMethodNameAndAuthorization(method, controllerName);
+
+                    // Find mutate requests for Hub interface
+                    var hubInterface = ParseHubInterface(
+                        httpRequestType,
+                        httpPath.Replace("[controller]", controllerName),
+                        returnType
+                    );
+                    if (!string.IsNullOrEmpty(hubInterface))
+                        hubInterfaces.Add(hubInterface);
 
                     // Format the method parameters
                     var methodParams = string.Join(
@@ -156,15 +204,15 @@ namespace sqe_realtime_hub_builder
                         method.Body.ToString()
                             .Replace("\n", "")
                             .Replace("\t", "")
-                            .Replace("{ ", "{\n")
-                            .Replace(" }", "\n}")
+                            .Replace("{ ", "")
+                            .Replace(" }", "")
                             .Replace("return ", returnType == "Task" ? "" : "return "),
                         @"\s*\)\s*;",
                         httpRequestType == "Get" ? ");" : ", clientId: Context.ConnectionId);"
                     );
 
                     // Write the method body
-                    outputFile.WriteLine(methodBody);
+                    outputFile.WriteLine(_hubMethod.Replace("$Method", methodBody));
                     outputFile.WriteLine("");
                 }
 
@@ -173,7 +221,7 @@ namespace sqe_realtime_hub_builder
             }
 
             // return info for any dependency injected fields
-            return AnalyzeController(members);
+            return (AnalyzeController(members), hubInterfaces);
         }
 
         private static void VerifyControllerClassName(List<MemberDeclarationSyntax> members)
@@ -241,12 +289,13 @@ namespace sqe_realtime_hub_builder
                 : method.ReturnType.ToString();
         }
 
-        private static (bool, string, string) GetMethodNameAndAuthorization(MethodDeclarationSyntax method,
+        private static (bool, string, string, string) GetMethodNameAndAuthorization(MethodDeclarationSyntax method,
             string controllerName)
         {
             var validPathAttrs = new List<string> { "HttpGet", "HttpPost", "HttpPut", "HttpDelete" };
             var httpRequestType = "";
             var httpPath = "";
+            var formattedPath = "";
             var anonymousAllowed = false;
             var attributes = method.AttributeLists.SelectMany(attributeList => attributeList.Attributes);
 
@@ -274,9 +323,10 @@ namespace sqe_realtime_hub_builder
                     httpRequestType = attributeName.Replace("Http", "");
                     foreach (var argument in attribute.ArgumentList.Arguments)
                     {
-                        httpPath = string.Join(
+                        httpPath = argument.ToString();
+                        formattedPath = string.Join(
                             "",
-                            argument.ToString()
+                            httpPath
                                 .Replace("[controller]", controllerName)
                                 .Replace("[action]", method.Identifier.Text)
                                 .Replace("{", "")
@@ -287,15 +337,15 @@ namespace sqe_realtime_hub_builder
                         );
 
                         // Reject any routes using token replacement with tokens other than [controller] or [action].
-                        if (httpPath.Contains("[")
-                            || httpPath.Contains("]"))
+                        if (formattedPath.Contains("[")
+                            || formattedPath.Contains("]"))
                             throw new Exception(
                                 $"The SQE API only allows paths using token replacement with the [controller] and [action] tokens. The method {method.Identifier.Text} violates this policy."
                             );
                     }
                 }
 
-            return (anonymousAllowed, $"{httpRequestType}{httpPath}", httpRequestType);
+            return (anonymousAllowed, $"{httpRequestType}{formattedPath}", httpRequestType, httpPath);
         }
 
         private static List<ControllerField> AnalyzeController(List<MemberDeclarationSyntax> elements)
@@ -358,6 +408,59 @@ namespace sqe_realtime_hub_builder
                 );
         }
 
+        // TODO: I am not really happy with automatically creating the interface for the remote methods called by
+        // SignalR hub. Probably these should be manually created.
+        private static string ParseHubInterface(string responseHttpType, string httpPath, string responseType)
+        {
+            string type = null;
+            string item = null;
+
+            // Get the response object type 
+            var matches = _rx.Matches(responseType);
+            if (matches.Count > 1)
+                return null;
+            responseType = matches.Count == 1 ? matches[0].Groups["return"].Value : null;
+
+            // Format the method HTTP type and the method item name
+            switch (responseHttpType)
+            {
+                // For a post (item =, e.g., .../rois/batch -> rois-batch; .../rois -> roi)
+                case "Post":
+                    type = "Create";
+                    item = httpPath.Contains("/batch")
+                        ? string.Join("-", httpPath.Split("/").Reverse().Take(2).Reverse())
+                        : httpPath.Split("/").LastOrDefault()?.TrimEnd('"').TrimEnd('s');
+                    break;
+                // For a put (item =, e.g., .../rois/batch -> rois-batch; .../rois/{roiId} -> roi)
+                case "Put":
+                    type = "Update";
+                    item = httpPath.Contains("/batch")
+                        ? string.Join("-", httpPath.Split("/").Reverse().Take(2).Reverse())
+                        : httpPath.Split("{").LastOrDefault()?.Split("Id}").FirstOrDefault();
+                    break;
+                // For a delete (item =, e.g., .../rois/{roiId} -> roi)
+                case "Delete":
+                    type = "Delete";
+                    responseType =
+                        responseType ?? "uint"; // Assume a delete just returns the uint id of the deleted item
+                    item = httpPath.Split("{").LastOrDefault()?.Split("Id}").FirstOrDefault();
+                    break;
+            }
+
+            // Give up if we don't have a type or responseType
+            if (string.IsNullOrEmpty(type)
+                || string.IsNullOrEmpty(responseType))
+                return null;
+
+            // Change item to PascalCase for use as a method name
+            item = item.ToPascalCase().Replace("{", "").Replace("}", "").Replace("\"", "");
+
+            // Return null if item is null or some improperly formatted string
+            return string.IsNullOrEmpty(item) || item.Contains("/")
+                ? null
+                : $"\t\tTask {type}{char.ToUpper(item[0]) + item.Substring(1)}({responseType} returnedData);";
+        }
+
         private static void WriteHubController(List<ControllerField> fields, string projectRoot, string hubFolder)
         {
             var template = new StreamReader($"{projectRoot}/HubConstructorTemplate.txt").ReadToEnd();
@@ -374,6 +477,20 @@ namespace sqe_realtime_hub_builder
             using (var outputFile = new StreamWriter($"{hubFolder}/HubConstructor.cs"))
             {
                 outputFile.Write(_autogenFileDisclaimer);
+                outputFile.Write(template);
+            }
+        }
+
+        private static void WriteHubInterface(List<string> methods, string projectRoot, string hubFolder)
+        {
+            var template = new StreamReader($"{projectRoot}/HubInterfaceTemplate.txt").ReadToEnd();
+            template = template
+                .Replace(
+                    "$Methods",
+                    string.Join("\n", methods)
+                );
+            using (var outputFile = new StreamWriter($"{hubFolder}/HubInterface.cs"))
+            {
                 outputFile.Write(template);
             }
         }

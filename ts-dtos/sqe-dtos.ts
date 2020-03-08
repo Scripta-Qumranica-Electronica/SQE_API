@@ -61,12 +61,15 @@ export interface PermissionDTO {
     mayWrite: boolean;
     isAdmin: boolean;
 }
-export interface EditorRightsDTO {
-    email: string;
+export interface UpdateEditorRightsDTO {
     mayRead?: boolean;
     isAdmin?: boolean;
     mayLock?: boolean;
     mayWrite?: boolean;
+}
+
+export interface CreateEditorRightsDTO extends UpdateEditorRightsDTO {
+    email: string;
 }
 
 export interface TextEditionDTO {
@@ -74,7 +77,7 @@ export interface TextEditionDTO {
     editionName: string;
     editorId: number;
     licence: string;
-    editors: { [key: number] : EditorDTO };
+    editors: { [key: string] : EditorDTO };
     textFragments: TextFragmentDTO[];
 }
 
@@ -89,6 +92,10 @@ export interface DeleteTokenDTO {
 export interface DeleteEditionEntityDTO {
     entityId: number;
     editorId: number;
+}
+
+export interface EditionScriptCollectionDTO {
+    letters: LetterDTO[];
 }
 export interface EditionUpdateRequestDTO {
     name: string;
@@ -145,6 +152,9 @@ export interface PolygonDTO {
     transformation: TransformationDTO;
     positionEditorId: number;
 }
+export interface WktPolygonDTO {
+    wktPolygon: string;
+}
 
 export interface SetInterpretationRoiDTO {
     artefactId: number;
@@ -187,6 +197,13 @@ export interface BatchEditRoiResponseDTO {
     createRois: InterpretationRoiDTO[];
     updateRois: UpdatedInterpretationRoiDTO[];
     deleteRois: number[];
+}
+export interface LetterDTO {
+    id: number;
+    letter: string;
+    polygon: string;
+    imageURL: string;
+    rotation: number;
 }
 
 export interface SignDTO {
@@ -254,12 +271,16 @@ export interface LineDTO {
 
 export interface LineTextDTO extends LineDTO {
     licence: string;
-    editors: { [key: number] : EditorDTO };
+    editors: { [key: string] : EditorDTO };
 }
-export interface CreateTextFragmentDTO {
+export interface UpdateTextFragmentDTO {
     name: string;
     previousTextFragmentId?: number;
     nextTextFragmentId?: number;
+}
+
+export interface CreateTextFragmentDTO extends UpdateTextFragmentDTO {
+    name: string;
 }
 
 export interface TransformationDTO {

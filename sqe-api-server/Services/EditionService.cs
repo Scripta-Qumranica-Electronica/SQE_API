@@ -1,13 +1,28 @@
-﻿using System;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.Geometries.Utilities;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
+using SQE.API.Server.Helpers;
+using NetTopologySuite.IO;
+using NetTopologySuite.Operation.Overlay;
+using NetTopologySuite.Operation.Union;
+using NetTopologySuite.Precision;
+using NetTopologySuite.Utilities;
+using Matrix = System.Drawing.Drawing2D.Matrix;
 
 namespace SQE.API.Server.Services
 {
@@ -32,26 +47,44 @@ namespace SQE.API.Server.Services
             List<string> optional,
             string clientId = null);
 
-        Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
-            EditorRightsDTO newEditor,
+        Task<NoContentResult> RequestNewEditionEditor(EditionUserInfo editionUser,
+            CreateEditorRightsDTO newEditor,
             string clientId = null);
 
-        Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
-            EditorRightsDTO updatedEditor,
+        Task<CreateEditorRightsDTO> AddEditionEditor(uint? userId,
+            string token,
             string clientId = null);
+
+        Task<CreateEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+            string editorEmail,
+            UpdateEditorRightsDTO updatedEditor,
+            string clientId = null);
+
+        Task<EditionScriptCollectionDTO> GetEditionScriptCollection(EditionUserInfo editionUser);
     }
 
     public class EditionService : IEditionService
     {
         private readonly IEditionRepository _editionRepo;
-        private readonly IHubContext<MainHub> _hubContext;
+        private readonly IEmailSender _emailSender;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IUserRepository _userRepo;
+        private readonly IUserService _userService;
+        private readonly string webServer;
 
-        public EditionService(IEditionRepository editionRepo, IUserRepository userRepo, IHubContext<MainHub> hubContext)
+        public EditionService(IEditionRepository editionRepo,
+            IUserRepository userRepo,
+            IUserService userService,
+            IHubContext<MainHub, ISQEClient> hubContext,
+            IEmailSender emailSender,
+            IConfiguration config)
         {
             _editionRepo = editionRepo;
             _userRepo = userRepo;
+            _userService = userService;
             _hubContext = hubContext;
+            _emailSender = emailSender;
+            webServer = config.GetConnectionString("WebsiteHost");
         }
 
         public async Task<EditionGroupDTO> GetEditionAsync(EditionUserInfo editionUser,
@@ -113,8 +146,10 @@ namespace SQE.API.Server.Services
             var updatedEdition = EditionModelToDTO(editions.First(x => x.EditionId == editionUser.EditionId));
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("updateEdition", updatedEdition);
+            var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+            foreach (var userId in editionUsers)
+                await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
+                    .UpdatedEdition(updatedEdition);
 
             return updatedEdition;
         }
@@ -154,6 +189,10 @@ namespace SQE.API.Server.Services
                 edition = EditionModelToDTO(unformattedEdition);
             }
 
+            // Broadcast edition creation notification to all connections of this user
+            await _hubContext.Clients.GroupExcept($"user-{editionUser.userId.ToString()}", clientId)
+                .CreatedEdition(edition);
+
             return edition; //need to return the updated scroll
         }
 
@@ -173,9 +212,17 @@ namespace SQE.API.Server.Services
         {
             _parseOptional(optional, out var deleteForAllEditors);
 
+            var deleteResponse = new DeleteTokenDTO
+            {
+                editionId = editionUser.EditionId,
+                token = null
+            };
+
             // Check if the edition should be deleted for all users
             if (deleteForAllEditors)
             {
+                var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+
                 // Try to delete the edition fully for all editors
                 var newToken = await _editionRepo.DeleteAllEditionDataAsync(editionUser, token);
 
@@ -185,23 +232,14 @@ namespace SQE.API.Server.Services
                     // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
                     // made the request, that client directly received the response.
                     // TODO: make a DTO for the delete object.
-                    await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                        .SendAsync(
-                            "deleteEdition",
-                            new DeleteEditionEntityDTO
-                            {
-                                editorId = editionUser.EditionEditorId.Value,
-                                entityId = editionUser.EditionId
-                            }
-                        );
+                    foreach (var userId in editionUsers)
+                        await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
+                            .DeletedEdition(deleteResponse);
                     return null;
                 }
 
-                return new DeleteTokenDTO
-                {
-                    editionId = editionUser.EditionId,
-                    token = newToken
-                };
+                deleteResponse.token = newToken;
+                return deleteResponse;
             }
 
             // The edition should only be made inaccessible for the current user
@@ -217,21 +255,27 @@ namespace SQE.API.Server.Services
                 false
             );
 
-            return null;
+            // Broadcast edition creation notification to all connections of this user
+            await _hubContext.Clients.GroupExcept($"user-{editionUser.userId.ToString()}", clientId)
+                .DeletedEdition(deleteResponse);
+
+            return deleteResponse;
         }
 
         /// <summary>
-        ///     Adds a new editor to an edition with the requested access rights
+        ///     Sends a request to a user to become an editor of the editionUser edition
+        ///     with the specified permissions
         /// </summary>
         /// <param name="editionUser">User object making the request</param>
         /// <param name="newEditor">Details of the new editor to be added</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<EditorRightsDTO> AddEditionEditor(EditionUserInfo editionUser,
-            EditorRightsDTO newEditor,
+        public async Task<NoContentResult> RequestNewEditionEditor(EditionUserInfo editionUser,
+            CreateEditorRightsDTO newEditor,
             string clientId = null)
         {
-            var newUserPermissions = await _editionRepo.AddEditionEditor(
+            var requestingUser = await _userRepo.GetDetailedUserByIdAsync(editionUser.userId);
+            var newUserToken = await _editionRepo.RequestAddEditionEditor(
                 editionUser,
                 newEditor.email,
                 newEditor.mayRead,
@@ -240,12 +284,80 @@ namespace SQE.API.Server.Services
                 newEditor.isAdmin
             );
 
-            var newEditorDTO = _permissionsToEditorRightsDTO(newEditor.email, newUserPermissions);
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            var editions = await _editionRepo.ListEditionsAsync(
+                editionUser.userId,
+                editionUser.EditionId
+            ); //get wanted edition by edition Id
+            var edition = EditionModelToDTO(editions.First(x => x.EditionId == editionUser.EditionId));
+
+            const string emailBody = @"
+<html><body>Dear $User,<br>
+<br>
+$Admin has invited you to become an editor on $EditionName. To accept the invitation, please click 
+<a href=""$WebServer/acceptEditor/token/$Token"">here</a>. If you do not wish to accept this invitation, no action is necessary on your 
+part and the offer will expire in $ExpirationPeriod.<br>
+<br>
+Best wishes,<br>
+The Scripta Qumranica Electronica team</body></html>";
+            const string emailSubject = "Invitation to edit $EditionName in Scripta Qumranica Electronica";
+            var newEditorName = !string.IsNullOrEmpty(newUserToken.Forename)
+                                || !string.IsNullOrEmpty(newUserToken.Surname)
+                ? (newUserToken.Forename + " " + newUserToken.Surname).Trim()
+                : newUserToken.Email;
+            var adminName = !string.IsNullOrEmpty(requestingUser.Forename)
+                            || !string.IsNullOrEmpty(requestingUser.Surname)
+                ? (requestingUser.Forename + " " + requestingUser.Surname).Trim()
+                : requestingUser.Email;
+            await _emailSender.SendEmailAsync(
+                newEditor.email,
+                emailSubject.Replace("$EditionName", edition.name),
+                emailBody.Replace("$User", newEditorName)
+                    .Replace("$Admin", adminName)
+                    .Replace("$WebServer", webServer)
+                    .Replace("$Token", newUserToken.Token)
+                    .Replace("$EditionName", edition.name)
+                    .Replace("$ExpirationPeriod", "no current expiration period set")
+            );
+
+            // Broadcast the request to the potential editor.
+            await _hubContext.Clients.Group($"user-{newUserToken.UserId.ToString()}")
+                .RequestedEditor(edition);
+
+            return new NoContentResult();
+        }
+
+        /// <summary>
+        ///     Adds a new editor to an edition with the requested access rights
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="token">JWT to verify the request</param>
+        /// <param name="clientId"></param>
+        /// <returns></returns>
+        public async Task<CreateEditorRightsDTO> AddEditionEditor(uint? userId,
+            string token,
+            string clientId = null)
+        {
+            if (!userId.HasValue)
+                throw new StandardExceptions.NoAuthorizationException();
+            var newUserPermissions = await _editionRepo.AddEditionEditor(
+                token,
+                userId.Value
+            );
+
+            var newEditorDTO = _permissionsToEditorRightsDTO(
+                newUserPermissions.email,
+                newUserPermissions.mayRead,
+                newUserPermissions.mayWrite,
+                newUserPermissions.mayLock,
+                newUserPermissions.isAdmin
+            );
+            // Broadcast the change to all editors of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("addEditionEditor", newEditorDTO);
+            var editionUser = await _userService.GetCurrentUserObjectAsync(newUserPermissions.editionId);
+            var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+            foreach (var editionUserId in editionUsers)
+                await _hubContext.Clients.GroupExcept($"user-{editionUserId.ToString()}", clientId)
+                    .CreatedEditor(newEditorDTO);
             return newEditorDTO;
         }
 
@@ -253,28 +365,96 @@ namespace SQE.API.Server.Services
         ///     Changes the access rights of an editor
         /// </summary>
         /// <param name="editionUser">User object making the request</param>
+        /// <param name="editorEmail"></param>
         /// <param name="updatedEditor">Details of the editor and the desired access rights</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<EditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
-            EditorRightsDTO updatedEditor,
+        public async Task<CreateEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+            string editorEmail,
+            UpdateEditorRightsDTO updatedEditor,
             string clientId = null)
         {
             var updatedUserPermissions = await _editionRepo.ChangeEditionEditorRights(
                 editionUser,
-                updatedEditor.email,
+                editorEmail,
                 updatedEditor.mayRead,
                 updatedEditor.mayWrite,
                 updatedEditor.mayLock,
                 updatedEditor.isAdmin
             );
-            var updatedEditorDTO = _permissionsToEditorRightsDTO(updatedEditor.email, updatedUserPermissions);
+            var updatedEditorDTO = _permissionsToEditorRightsDTO(
+                editorEmail,
+                updatedUserPermissions.MayRead,
+                updatedUserPermissions.MayWrite,
+                updatedUserPermissions.MayLock,
+                updatedUserPermissions.IsAdmin
+            );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("updateEditionEditor", updatedEditorDTO);
+            var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+            foreach (var editionUserId in editionUsers)
+                await _hubContext.Clients.GroupExcept($"user-{editionUserId.ToString()}", clientId)
+                    .CreatedEditor(updatedEditorDTO);
+
             return updatedEditorDTO;
+        }
+
+        public async Task<EditionScriptCollectionDTO> GetEditionScriptCollection(EditionUserInfo editionUser)
+        {
+            var letters = await _editionRepo.GetEditionScriptCollection(editionUser);
+            var lettersSorted = letters.GroupBy(x => x.Id).ToList();
+            var wkbr = new WKBReader();
+            var wkr = new WKTReader();
+            var wkw = new WKTWriter();
+            return new EditionScriptCollectionDTO()
+            {
+                letters = lettersSorted.Select(
+                        x =>
+                        {
+                            var polys = x.Select(
+                                y =>
+                                {
+                                    //var poly = wkbr.Read(Encoding.ASCII.GetBytes(await GeometryValidation.CleanPolygonAsync(Encoding.ASCII.GetString(y.Polygon), "ROI")));
+                                    var poly = wkbr.Read(y.Polygon);
+                                    var tr = new AffineTransformation();
+                                    var rotation = y.LetterRotation;
+                                    tr.Rotate(rotation, poly.Centroid.X, poly.Centroid.Y);
+                                    tr.Translate(y.TranslateX, y.TranslateY);
+                                    poly = tr.Transform(poly);
+                                    return poly;
+                                }).Where(z => z.IsValid && !z.IsEmpty).ToList();
+                            var cpu = new CascadedPolygonUnion(polys);
+                            var combinedPoly = cpu.Union();
+                            var envelope = polys.Any() ? combinedPoly.EnvelopeInternal : new Envelope(0, 0, 0, 0);
+                            if (polys.Any())
+                            {
+                                // var tr = new AffineTransformation();
+                                // tr.Rotate(Degrees.ToRadians(x.First().ImageRotation));
+                                // var rotatedPoly = tr.Transform(combinedPoly);
+                                // var envelope1 = rotatedPoly.EnvelopeInternal;
+
+                                var tr = new AffineTransformation();
+                                tr.Translate(-envelope.MinX, -envelope.MinY);
+                                var translatedPoly = tr.Transform(combinedPoly);
+
+                                var envelope2 = translatedPoly.EnvelopeInternal;
+
+                                combinedPoly = translatedPoly;
+                            }
+
+                            return new LetterDTO()
+                            {
+                                id = x.First().Id,
+                                letter = x.First().Letter,
+                                rotation = x.First().ImageRotation,
+                                imageURL = x.First().ImageURL
+                                           + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/pct:99/0/"
+                                           + x.First().ImageSuffix,
+                                polygon = polys.Any() ? wkw.Write(combinedPoly) : null
+                            };
+                        }
+                    ).ToList()
+            };
         }
 
         private static EditionDTO EditionModelToDTO(Edition model)
@@ -321,15 +501,19 @@ namespace SQE.API.Server.Services
             };
         }
 
-        private static EditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail, Permission permissions)
+        private static CreateEditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail,
+            bool mayRead,
+            bool mayWrite,
+            bool mayLock,
+            bool isAdmin)
         {
-            return new EditorRightsDTO
+            return new CreateEditorRightsDTO
             {
                 email = editorEmail,
-                mayRead = permissions.MayRead,
-                mayWrite = permissions.MayWrite,
-                mayLock = permissions.MayLock,
-                isAdmin = permissions.IsAdmin
+                mayRead = mayRead,
+                mayWrite = mayWrite,
+                mayLock = mayLock,
+                isAdmin = isAdmin
             };
         }
 

@@ -8,3 +8,6 @@ obj/
 *.user
 /Utilities/GenerateTypescriptDTOs/Properties/launchSettings.json
 **/logs
+/ingo_test/
+/qwb-to-sqe/
+

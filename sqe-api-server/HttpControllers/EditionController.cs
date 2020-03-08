@@ -25,13 +25,26 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
-        [HttpPost("v1/[controller]s/{editionId}/editors")]
-        public async Task<ActionResult<EditorRightsDTO>> AddEditionEditor([FromRoute] uint editionId,
-            [FromBody] EditorRightsDTO payload)
+        [HttpPost("v1/[controller]s/{editionId}/add-editor-request")]
+        public async Task<ActionResult> RequestAddEditionEditor([FromRoute] uint editionId,
+            [FromBody] CreateEditorRightsDTO payload)
         {
-            return await _editionService.AddEditionEditor(
+            return await _editionService.RequestNewEditionEditor(
                 await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
                 payload
+            );
+        }
+
+        /// <summary>
+        ///     Confirma addition of an editor to the specified edition
+        /// </summary>
+        /// <param name="token">JWT for verifying the request confirmation</param>
+        [HttpPost("v1/[controller]s/confirm-editorship/{token}")]
+        public async Task<ActionResult<CreateEditorRightsDTO>> ConfirmAddEditionEditor([FromRoute] string token)
+        {
+            return await _editionService.AddEditionEditor(
+                _userService.GetCurrentUserId(),
+                token
             );
         }
 
@@ -39,13 +52,16 @@ namespace SQE.API.Server.HttpControllers
         ///     Changes the rights for an editor of the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
-        [HttpPut("v1/[controller]s/{editionId}/editors")]
-        public async Task<ActionResult<EditorRightsDTO>> AlterEditionEditor([FromRoute] uint editionId,
-            [FromBody] EditorRightsDTO payload)
+        [HttpPut("v1/[controller]s/{editionId}/editors/{editorEmailId}")]
+        public async Task<ActionResult<CreateEditorRightsDTO>> AlterEditionEditor([FromRoute] uint editionId,
+            [FromRoute] string editorEmailId,
+            [FromBody] UpdateEditorRightsDTO payload)
         {
             return await _editionService.ChangeEditionEditorRights(
                 await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
+                editorEmailId,
                 payload
             );
         }
@@ -117,6 +133,18 @@ namespace SQE.API.Server.HttpControllers
                 await _userService.GetCurrentUserObjectAsync(editionId, true),
                 request
             );
+        }
+
+        /// <summary>
+        ///     Provides spatial data for all letters in the edition 
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <returns></returns>
+        [HttpGet("/v1/[controller]s/{editionId}/script-collection")]
+        public async Task<ActionResult<EditionScriptCollectionDTO>> GetEditionScriptCollection(
+            [FromRoute] uint editionId)
+        {
+            return await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));
         }
     }
 }

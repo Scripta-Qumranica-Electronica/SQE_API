@@ -1,8 +1,15 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using NetTopologySuite;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.Geometries.Utilities;
+using NetTopologySuite.IO;
+using NetTopologySuite.Operation.Overlay;
+using NetTopologySuite.Simplify;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
@@ -41,9 +48,9 @@ namespace SQE.API.Server.Services
     public class ArtefactService : IArtefactService
     {
         private readonly IArtefactRepository _artefactRepository;
-        private readonly IHubContext<MainHub> _hubContext;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 
-        public ArtefactService(IArtefactRepository artefactRepository, IHubContext<MainHub> hubContext)
+        public ArtefactService(IArtefactRepository artefactRepository, IHubContext<MainHub, ISQEClient> hubContext)
         {
             _artefactRepository = artefactRepository;
             _hubContext = hubContext;
@@ -76,6 +83,14 @@ namespace SQE.API.Server.Services
                 );
             }
 
+            // var wkr = new WKTReader();
+            // var wkw = new WKTWriter();
+            // artefacts.artefacts = artefacts.artefacts.Select(x =>
+            //     {
+            //         x.mask.mask = wkw.Write(DouglasPeuckerSimplifier.Simplify(wkr.Read(x.mask.mask), 10)).Replace(", ", ",").Replace("POLYGON (", "POLYGON(");
+            //         return x;
+            //     }
+            // ).ToList();
             return artefacts;
         }
 
@@ -101,9 +116,9 @@ namespace SQE.API.Server.Services
             var tasks = new List<Task<List<AlteredRecord>>>();
             if (!string.IsNullOrEmpty(updateArtefact.polygon.mask))
             {
-                // UpdateArtefactShapeAsync will inform us if the WKT mask is in an invalid format
+                var cleanedPoly = await GeometryValidation.ValidatePolygonAsync(updateArtefact.polygon.mask, "artefact");
                 tasks.Add(
-                    _artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, updateArtefact.polygon.mask)
+                    _artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, cleanedPoly)
                 );
                 withMask = true;
             }
@@ -138,7 +153,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("updateArtefact", updatedArtefact);
+                .UpdatedArtefact(updatedArtefact);
 
             return updatedArtefact;
         }
@@ -147,34 +162,32 @@ namespace SQE.API.Server.Services
             CreateArtefactDTO createArtefact,
             string clientId = null)
         {
-            uint newArtefactId = 0;
-            if (editionUser.userId.HasValue)
-                newArtefactId = await _artefactRepository.CreateNewArtefactAsync(
-                    editionUser,
-                    createArtefact.masterImageId,
-                    createArtefact.polygon.mask,
-                    createArtefact.name,
-                    createArtefact.polygon.transformation?.scale,
-                    createArtefact.polygon.transformation?.rotate,
-                    createArtefact.polygon.transformation?.translate?.x,
-                    createArtefact.polygon.transformation?.translate?.y,
-                    createArtefact.statusMessage
-                );
+            var cleanedPoly = await GeometryValidation.ValidatePolygonAsync(createArtefact.polygon.mask, "artefact");
+
+            var newArtefact = await _artefactRepository.CreateNewArtefactAsync(
+                editionUser,
+                createArtefact.masterImageId,
+                cleanedPoly,
+                createArtefact.name,
+                createArtefact.polygon.transformation?.scale,
+                createArtefact.polygon.transformation?.rotate,
+                createArtefact.polygon.transformation?.translate?.x,
+                createArtefact.polygon.transformation?.translate?.y,
+                createArtefact.statusMessage
+            );
 
             var optional = string.IsNullOrEmpty(createArtefact.polygon.mask)
                 ? new List<string>()
                 : new List<string> { "masks" };
 
-            var createArtefactnewArtefact = newArtefactId != 0
-                ? await GetEditionArtefactAsync(editionUser, newArtefactId, optional)
-                : null;
+            var newlyCreatedArtefact = await GetEditionArtefactAsync(editionUser, newArtefact, optional);
 
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("createArtefact", createArtefactnewArtefact);
+                .CreatedArtefact(newlyCreatedArtefact);
 
-            return createArtefactnewArtefact;
+            return newlyCreatedArtefact;
         }
 
         public async Task<NoContentResult> DeleteArtefactAsync(EditionUserInfo editionUser,
@@ -186,10 +199,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync(
-                    "deleteArtefact",
-                    new DeleteEditionEntityDTO { entityId = artefactId, editorId = editionUser.EditionEditorId.Value }
-                );
+                .DeletedArtefact(artefactId);
             return new NoContentResult();
         }
 

@@ -12,6 +12,12 @@ using SQE.API.DTO;
 using SQE.API.Server.Services;
 using Microsoft.AspNetCore.SignalR;
 
+using SQE.DatabaseAccess.Helpers;
+
+using System.Text.Json;
+
+using SQE.API.Server.Helpers;
+
 namespace SQE.API.Server.RealtimeHubs
 {
     public partial class MainHub
@@ -23,7 +29,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="roiId">A JSON object with the new ROI to be created</param>
         [AllowAnonymous]
         public async Task<InterpretationRoiDTO> GetV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId)
-        { return await _roiService.GetRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId), roiId); }
+
+        {
+            try
+            {
+                return await _roiService.GetRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId), roiId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
 
         /// <summary>
         ///     Creates new sign ROI in the given edition of a scroll
@@ -32,7 +49,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="newRoi">A JSON object with the new ROI to be created</param>
         [Authorize]
         public async Task<InterpretationRoiDTO> PostV1EditionsEditionIdRois(uint editionId, SetInterpretationRoiDTO newRoi)
-        { return await _roiService.CreateRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newRoi, clientId: Context.ConnectionId); }
+
+        {
+            try
+            {
+                return await _roiService.CreateRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newRoi, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
 
         /// <summary>
         ///     Creates new sign ROI's in the given edition of a scroll
@@ -41,7 +69,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="newRois">A JSON object with an array of the new ROI's to be created</param>
         [Authorize]
         public async Task<InterpretationRoiDTOList> PostV1EditionsEditionIdRoisBatch(uint editionId, SetInterpretationRoiDTOList newRois)
-        { return await _roiService.CreateRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newRois, clientId: Context.ConnectionId); }
+
+        {
+            try
+            {
+                return await _roiService.CreateRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newRois, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
 
         /// <summary>
         ///     Processes a series of create/update/delete ROI requests in the given edition of a scroll
@@ -50,7 +89,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="rois">A JSON object with all the roi edits to be performed</param>
         [Authorize]
         public async Task<BatchEditRoiResponseDTO> PostV1EditionsEditionIdRoisBatchEdit(uint editionId, BatchEditRoiDTO rois)
-        { return await _roiService.BatchEditRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), rois, clientId: Context.ConnectionId); }
+
+        {
+            try
+            {
+                return await _roiService.BatchEditRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), rois, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
 
         /// <summary>
         ///     Update an existing sign ROI in the given edition of a scroll
@@ -60,7 +110,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="updateRoi">A JSON object with the updated ROI details</param>
         [Authorize]
         public async Task<UpdatedInterpretationRoiDTO> PutV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId, SetInterpretationRoiDTO updateRoi)
-        { return await _roiService.UpdateRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), roiId, updateRoi, clientId: Context.ConnectionId); }
+
+        {
+            try
+            {
+                return await _roiService.UpdateRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), roiId, updateRoi, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
 
         /// <summary>
         ///     Update existing sign ROI's in the given edition of a scroll
@@ -69,7 +130,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="updateRois">A JSON object with an array of the updated ROI details</param>
         [Authorize]
         public async Task<UpdatedInterpretationRoiDTOList> PutV1EditionsEditionIdRoisBatch(uint editionId, InterpretationRoiDTOList updateRois)
-        { return await _roiService.UpdateRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), updateRois, clientId: Context.ConnectionId); }
+
+        {
+            try
+            {
+                return await _roiService.UpdateRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), updateRois, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
 
         /// <summary>
         ///     Deletes a sign ROI from the given edition of a scroll
@@ -78,7 +150,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Id of the edition</param>
         [Authorize]
         public async Task DeleteV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId)
-        { await _roiService.DeleteRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), roiId, clientId: Context.ConnectionId); }
+
+        {
+            try
+            {
+                await _roiService.DeleteRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), roiId, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
 
     }
 }

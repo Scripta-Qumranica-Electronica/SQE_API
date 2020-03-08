@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace SQE.API.Server
@@ -25,7 +25,7 @@ namespace SQE.API.Server
             try
             {
                 Log.Information("Starting web host");
-                CreateWebHostBuilder(args).Build().Run();
+                CreateHostBuilder(args).Build().Run();
                 return 0;
             }
             catch (Exception ex)
@@ -39,12 +39,27 @@ namespace SQE.API.Server
             }
         }
 
-        private static IWebHostBuilder CreateWebHostBuilder(string[] args)
+        public static IHostBuilder CreateHostBuilder(string[] args)
         {
-            return WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .UseSerilog()
-                .UseUrls(urls: "http://*:5000");
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(
+                    webBuilder =>
+                    {
+                        webBuilder
+                            .UseStartup<Startup>()
+                            .UseSerilog()
+                            .UseUrls(urls: "http://*:5000");
+                    }
+                );
         }
+
+        // return WebHost.CreateDefaultBuilder(args)
+        //     .UseStartup<Startup>()
+        //     .UseSerilog()
+        //     .UseUrls(urls: "http://*:5000");
     }
+
+
+    // public static IHostBuilder CreateHostBuilder(string[] args) => Host.CreateDefaultBuilder(args)
+    //     .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
 }
