@@ -125,6 +125,7 @@ namespace SQE.DatabaseAccess.Helpers
     {
         Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
             List<MutationRequest> mutationRequests);
+        
     }
 
     public class DatabaseWriter : DbConnectionBase, IDatabaseWriter
@@ -132,6 +133,7 @@ namespace SQE.DatabaseAccess.Helpers
         public DatabaseWriter(IConfiguration config) : base(config)
         {
         }
+        
 
         /// <summary>
         ///     Performs a list mutation requests for a single scroll version and user.
@@ -415,6 +417,8 @@ namespace SQE.DatabaseAccess.Helpers
             // Execute query
             await connection.ExecuteAsync(query, mutationRequest.Parameters);
         }
+        
+        
 
         /// <summary>
         ///     Enum for allowed actions in the single_action database table.

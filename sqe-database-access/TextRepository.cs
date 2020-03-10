@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
-using System.Net.Mime;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
@@ -10,37 +10,170 @@ using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
+using static SQE.DatabaseAccess.Helpers.SignFactory;
 
 namespace SQE.DatabaseAccess
 {
     public interface ITextRepository
     {
+        #region Line
+        Task<LineData> CreateLineAsync(EditionUserInfo editionUser,
+            LineData lineData,
+            uint fragmentId,
+            uint anchorBefore=0,
+            uint anchorAfter=0);
         Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
-        Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId);
-        Task<List<ArtefactDataModel>> GetArtefactsAsync(EditionUserInfo editionUser, uint textFragmentId);
         Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId);
-        Task<List<TextFragmentData>> GetFragmentDataAsync(EditionUserInfo editionUser);
+        Task<uint> RemoveLineAsync(EditionUserInfo editionUser, uint lineId);
+        Task<LineData> UpdateLineAsync(EditionUserInfo editionUser,
+            uint lineId,
+            string lineName);
+        #endregion
 
+        #region Sign and its Interpretation
+
+        Task<List<SignInterpretationData>> AddSignInterpretationsAsync(EditionUserInfo editionUser,
+            uint? signId,
+            List<SignInterpretationData> signInterpretations,
+            List<uint> anchorsBefore,
+            List<uint> anchorsAfter);
+
+
+        Task<List<SignData>> CreateSignsAsync(EditionUserInfo editionUser,
+            uint lineId,
+            List<SignData> signs,
+            List<uint> anchorsBefore,
+            List<uint> anchorsAfter
+        );
+
+        Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(EditionUserInfo editionUser, uint signId);
+
+        Task<uint> RemoveSignInterpretationAsync(EditionUserInfo editionUser,
+            uint signInterpretationId);
+
+        Task<uint> RemoveSignAsync(EditionUserInfo editionUser, uint signId);
+        
+        
+        
+
+        #endregion
+
+        #region Text fragment
+       
         Task<TextFragmentData> CreateTextFragmentAsync(EditionUserInfo editionUser,
-            string fragmentName,
+            TextFragmentData textFragmentData,
             uint? previousFragmentId,
             uint? nextFragmentId);
+        Task<List<ArtefactDataModel>> GetArtefactsAsync(EditionUserInfo editionUser, uint textFragmentId);
+        Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId);
+        Task<List<TextFragmentData>> GetFragmentDataAsync(EditionUserInfo editionUser);
+        Task<uint> RemoveTextFragmentAsync(EditionUserInfo editionUser, uint textFragmentId);
         Task<TextFragmentData> UpdateTextFragmentAsync(EditionUserInfo editionUser,
             uint textFragmentId,
             string fragmentName,
             uint? previousFragmentId,
             uint? nextFragmentId);
+
+        #endregion
     }
 
     public class TextRepository : DbConnectionBase, ITextRepository
     {
+
+        #region Interna
+        
         private readonly IDatabaseWriter _databaseWriter;
+
+        private readonly AttributeRepository _attributeRepository;
+        private readonly SignInterpretationCommentaryRepository _commentaryRepository;
+        private readonly RoiRepository _roiRepository;
+
 
         public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
             _databaseWriter = databaseWriter;
+            
+            // Because some functions set or remove attributes, commentaries, or ROIs we sometimes need
+            // objects of the repositories. If we don't want to create them from the beginning,
+            // we would have to store the configuration to make it accessible for creation the object elsewhere
+            _attributeRepository = new AttributeRepository(config, databaseWriter);
+            _commentaryRepository= new SignInterpretationCommentaryRepository(config,databaseWriter);
+            _roiRepository = new RoiRepository(config,databaseWriter);
+
+
         }
 
+        public IDbConnection Connection => OpenConnection();
+        #endregion
+        
+
+        #region Public Methods
+
+        #region Line
+
+        /// <summary>
+        /// Creates a new line in an edition and inserts it into the fragment identified by fragmentId.
+        /// It automatically creates the line start and end signs
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="lineData">line data object which must contain the line name and may contain
+        /// signs automatically added to to the line (except terminators, which are automatically
+        /// set)</param>
+        /// <param name="fragmentId">Id of the fragment the line should be inserted into</param>
+        /// <param name="anchorBefore">The interpretation id anchor before</param>
+        /// <param name="anchorAfter">The interpretation id anchor aftere</param>
+        /// <returns>An instance of Line</returns>
+        public async Task<LineData> CreateLineAsync(EditionUserInfo editionUser,
+            LineData lineData,
+            uint fragmentId,
+            uint anchorBefore=0,
+            uint anchorAfter=0)
+        {
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                async () =>
+                {
+                    using (var transactionScope = new TransactionScope())
+                    {
+                        // Create the new text fragment abstract id
+                        var newLineId = await _simpleInsertAsync(
+                            TableData.Table.Line);
+                        ;
+
+                        lineData.LineId = newLineId;
+
+                        // Add the new text fragment to the edition manuscript
+                        await _addLineToTextFragment(editionUser, newLineId, fragmentId);
+
+                        // Create the data entry for the new text fragment
+                        await _setLineDataAsync(editionUser, newLineId, lineData.LineName);
+                        
+                       lineData.Signs.Insert(0,
+                           CreateTerminatorSign(TableData.Table.Line,TableData.TerminatorType.Start));
+                        lineData.Signs.Add(CreateTerminatorSign(TableData.Table.Line, 
+                            TableData.TerminatorType.End));
+
+                        lineData.Signs = await CreateSignsAsync(editionUser,
+                            lineData.LineId.GetValueOrDefault(),
+                            lineData.Signs,
+                            anchorBefore > 0 ?
+                                new List<uint>() {anchorBefore}:
+                                new List<uint>(),
+                            anchorAfter > 0 ?
+                                new List<uint>() {anchorAfter}:
+                                new List<uint>());
+                        
+                        
+                        // End the transaction (it was all or nothing)
+                        transactionScope.Complete();
+
+                        // Return the new line to user
+                        return lineData;
+                    }
+                }
+            );
+            return null;
+        }
+        
         /// <summary>
         /// Gets the text of a line in an edition
         /// </summary>
@@ -49,47 +182,14 @@ namespace SQE.DatabaseAccess
         /// <returns>A detailed text object</returns>
         public async Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
         {
-            var terminators = _getTerminators(editionUser, GetLineTerminators.GetQuery, lineId);
+            var terminators = _getTerminators(editionUser, TableData.Table.Line, lineId);
 
-            if (terminators.Length != 2)
+            if (!terminators.IsValid)
                 return new TextEdition();
 
-            return await _getEntityById(editionUser, terminators[0], terminators[1]);
+            return await _getEntityById(editionUser, terminators);
         }
-
-        /// <summary>
-        /// Gets the text of a text fragment in an edition
-        /// </summary>
-        /// <param name="editionUser">Edition user object</param>
-        /// <param name="textFragmentId">Text fragment id</param>
-        /// <returns>A detailed text object</returns>
-        public async Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId)
-        {
-            var terminators = _getTerminators(editionUser, GetFragmentTerminators.GetQuery, textFragmentId);
-
-            if (terminators.Length != 2)
-                return new TextEdition();
-
-            return await _getEntityById(editionUser, terminators[0], terminators[1]);
-        }
-
-        /// <summary>
-        /// Gets a list of all artefacts with ROI's linked to text in the text fragment
-        /// </summary>
-        /// <param name="editionUser">Edition user object</param>
-        /// <param name="textFragmentId">Text fragment id</param>
-        /// <returns>A list of artefacts</returns>
-        public async Task<List<ArtefactDataModel>> GetArtefactsAsync(EditionUserInfo editionUser, uint textFragmentId)
-        {
-            using (var connection = OpenConnection())
-            {
-                return (await connection.QueryAsync<ArtefactDataModel>(
-                    GetTextFragmentArtefacts.Query,
-                    new { TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId }
-                )).ToList();
-            };
-        }
-
+        
         /// <summary>
         /// Get a list of all lines in a text fragment.
         /// </summary>
@@ -102,11 +202,413 @@ namespace SQE.DatabaseAccess
             {
                 return (await connection.QueryAsync<LineData>(
                     GetLineData.Query,
-                    new { TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId }
+                    new {TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId}
                 )).ToList();
             }
         }
+        
 
+        /// <summary>
+        /// Removes the line with the given Id together with all its signs.
+        /// </summary>
+        /// <param name="editionUser"></param>
+        /// <param name="lineId">Id of line</param>
+        /// <returns>Id of removed line</returns>
+        public async Task<uint> RemoveLineAsync(EditionUserInfo editionUser, uint lineId)
+        {
+            var signIds = await _getChildrenIds(editionUser, TableData.Table.Line, lineId);
+            foreach (var signId in signIds)
+            {
+                await RemoveSignAsync(editionUser, signId);   
+            }
+            return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.Line), lineId);
+        }
+
+        public async Task<LineData> UpdateLineAsync(EditionUserInfo editionUser,
+            uint lineId,
+            string lineName)
+        {
+            
+            await _setLineDataAsync(
+                editionUser,
+                lineId,
+                lineName,
+                false);
+            return new LineData(){LineId = lineId, LineName = lineName};
+
+        }
+
+        #endregion
+
+        #region Sign and its interpretation
+
+        
+        public async Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(EditionUserInfo editionUser, uint signId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<uint>(
+                    GetSignInterpretationIdsForSignIdQuery.GetQuery,
+                    new
+                    {
+                        editionUser.EditionId, SignId=signId
+                    })).ToList();
+            }
+        }
+
+
+
+        /// <summary>
+        /// Creates the signs from the information provided by the sign objects and adds them as
+        /// a path between the given anchors.
+        /// If more than one sign interpretation is provided for a sign, forking paths are created
+        /// fromthe different interpretations
+        /// </summary>
+        /// <param name="editionUser"></param>
+        /// <param name="lineId"></param>
+        /// <param name="signs"></param>
+        /// <param name="anchorsBefore"></param>
+        /// <param name="anchorsAfter"></param>
+        /// <returns></returns>
+        public async Task<List<SignData>> CreateSignsAsync(EditionUserInfo editionUser,
+            uint lineId,
+            List<SignData> signs,
+            List<uint> anchorsBefore,
+            List<uint> anchorsAfter
+        )
+        {
+            var newSigns = new List<SignData>();
+            SignData previousSignData = null;
+            // Stores for each sign the actual anchors afte which it should be injected
+            // into th reading stream
+            var internalAnchorsBefore = anchorsBefore;
+            foreach (var sign in signs)
+            {
+                
+                // First, create a simple entry in the sign table
+                var newSignData = await _createSignAsync(editionUser, lineId);
+                // Add the given sign interpretations which also inject the sign in the reading stream
+                newSignData.SignInterpretations = await AddSignInterpretationsAsync(editionUser,
+                    newSignData.SignId, 
+                    sign.SignInterpretations,
+                    internalAnchorsBefore, 
+                    anchorsAfter);
+                
+                // Set the new sign interpretation ids as anchors before the next sign
+                internalAnchorsBefore = newSignData.SignInterpretations.Select(
+                    si => si.SignInterpretationId.GetValueOrDefault()).ToList();
+                
+                // If already a sign had been set adhjust its nextSignInterpretations
+                // TODO do we need this here? (Ingo)
+                if (previousSignData != null)
+                {
+                    // Create an hashset of next sign interpretations from the new anchors before
+                    var nextSignInterpretations = internalAnchorsBefore.Select(
+                        signInterpretationId => new NextSignInterpretation(
+                        signInterpretationId,
+                        (uint) editionUser.EditionEditorId)).Distinct().ToHashSet();
+                    
+                    // Store this hashset into each signInterpretation of the previous set sign 
+                    previousSignData.SignInterpretations.ForEach(
+                        signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
+                    
+                }
+                previousSignData = newSignData;
+                newSigns.Add(newSignData);
+            }
+
+            return newSigns;
+        }
+
+
+        /// <summary>
+        /// Adds interpretations to an existing sign.
+        /// The given interpretations are connected as parallel paths to the given anchors.
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="signId">Id of the sign</param>
+        /// <param name="signInterpretations">List of sign interpretation objects</param>
+        /// <param name="anchorsBefore">Ids of the anchors before</param>
+        /// <param name="anchorsAfter">Ids of the ancors after</param>
+        /// <returns>List of sign Interpretation objects with the new ids</returns>
+        /// <exception cref="DataNotWrittenException"></exception>
+        public async Task<List<SignInterpretationData>> AddSignInterpretationsAsync(EditionUserInfo editionUser,
+            uint? signId,
+            List<SignInterpretationData> signInterpretations,
+            List<uint> anchorsBefore,
+            List<uint> anchorsAfter)
+        {
+  
+            using (var connection = OpenConnection()) 
+            {
+                foreach (var signInterpretation in signInterpretations)
+                {
+                    // Flag which marks if the sign interpretation had to be created from the scratch
+                    var newSignInterpretation = true;
+                    var createSignInterpretationIdParameters = new DynamicParameters();
+                    createSignInterpretationIdParameters.Add("@SignId", signId);
+                    createSignInterpretationIdParameters.Add("@Character", signInterpretation.Character);
+
+                    var addSignInterpretationResult = await connection.ExecuteAsync(
+                        AddSignInterpretationQuery.GetQuery, createSignInterpretationIdParameters
+                    );
+
+                    // If the creation fails than the raw sign interpretation could could already exist
+                    if (addSignInterpretationResult == 0)
+                    {
+                        signInterpretation.SignInterpretationId = await connection.QuerySingleOrDefaultAsync<uint>(
+                            GetSignInterpretationIdQuery.GetQuery,
+                            createSignInterpretationIdParameters);
+
+                        // If no fitting sign interpretation is found throw an error
+                        if (signInterpretation.SignInterpretationId == null)
+                        {
+                            throw new StandardExceptions.DataNotWrittenException($"add new sign interpretation");
+                        }
+                        
+
+                        newSignInterpretation = false;
+
+                    }
+                    else // Store the new sign interpretation id
+                    {
+                        signInterpretation.SignInterpretationId =
+                            await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                    }
+
+                    // Now insert the new sign interpretation into the path
+                    var positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
+                        connection,
+                        StreamType.SignInterpretationStream,
+                        signInterpretation.SignInterpretationId.GetValueOrDefault(),
+                        editionUser.EditionId,
+                        false);
+                    
+                    // If the sign interpretation already existed than we have to move it.
+                    positionDataRequestFactory.AddAction(
+                        newSignInterpretation? PositionAction.Add : PositionAction.MoveTo);
+                    positionDataRequestFactory.AddAnchorsAfter(anchorsAfter);
+                    positionDataRequestFactory.AddAnchorsBefore(anchorsBefore);
+                    var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
+                    await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+                    
+                    // Add the attributes
+                    var attributes = newSignInterpretation ?
+                        await _attributeRepository.CreateAttributesAsync(
+                            editionUser,
+                            signInterpretation.SignInterpretationId.GetValueOrDefault(),
+                        signInterpretation.Attributes)
+                        :  await _attributeRepository.ReplaceSignInterpretationAttributesAsync(
+                            editionUser,
+                            signInterpretation.SignInterpretationId.GetValueOrDefault(),
+                            signInterpretation.Attributes);
+                    // We have to store the create attributes  because the now contain also the new ids.
+                    signInterpretation.Attributes.Clear();
+                    signInterpretation.Attributes.AddRange(attributes);
+
+                    // Do the same with the commentaries
+                    var commentaries = newSignInterpretation ?
+                        await _commentaryRepository.CreateCommentariesAsync(
+                        editionUser,
+                        signInterpretation.SignInterpretationId.GetValueOrDefault(),
+                        signInterpretation.Commentaries)
+                        : await _commentaryRepository.ReplaceSignInterpretationCommentaries(
+                            editionUser,
+                            signInterpretation.SignInterpretationId.GetValueOrDefault(),
+                            signInterpretation.Commentaries);
+                    signInterpretation.Commentaries.Clear();
+                    signInterpretation.Commentaries.AddRange(commentaries);
+
+                    // Do the same with ROIs
+                    if (signInterpretation.SignInterpretationRois.Count <= 0) continue;
+                    signInterpretation.SignInterpretationRois.ForEach(
+                        roi => roi.SignInterpretationId = signInterpretation.SignInterpretationId);
+                    var rois = newSignInterpretation
+                        ? await _roiRepository.CreateRoisAsync(
+                            editionUser,
+                            signInterpretation.SignInterpretationRois)
+                        : await _roiRepository.ReplaceSignInterpretationRoisAsync(
+                            editionUser,
+                            signInterpretation.SignInterpretationRois);
+                    signInterpretation.Commentaries.Clear();
+                    signInterpretation.Commentaries.AddRange(commentaries);
+
+                }
+            }
+
+            return signInterpretations;
+        }
+
+        /// <summary>
+        /// Removes all attributes, commentaries, rois, and position data of the sign interpretation
+        /// connected with the given edition and by this removing
+        /// it from the given edition without touching it in respect to other editions
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="signInterpretationId">Id of sign interpretation</param>
+        /// <returns>Id of the sign interpretation</returns>
+        public async Task<uint> RemoveSignInterpretationAsync(EditionUserInfo editionUser,
+            uint signInterpretationId)
+        {
+            // Remove all attributes
+            await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(editionUser, signInterpretationId);
+            // Remove all commentaries
+            await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(editionUser,
+                signInterpretationId);
+            // Remove all ROIs
+            await _roiRepository.DeleteAllRoisForSignInterpretationAsync(editionUser, signInterpretationId);
+
+            // Take out from path
+            using (var connection = OpenConnection())
+            {
+                var positionDataRequest = await PositionDataRequestFactory.CreateInstanceAsync(
+                    connection,
+                    StreamType.SignInterpretationStream,
+                    signInterpretationId,
+                    editionUser.EditionId,
+                    true);
+                positionDataRequest.AddAction(PositionAction.Delete);
+                var requests = await positionDataRequest.CreateRequestsAsync();
+                _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+            }
+
+            return signInterpretationId;
+        }
+
+        /// <summary>
+        /// Removes the sign with the given Id together with all its interpretation.s
+        /// </summary>
+        /// <param name="editionUser"></param>
+        /// <param name="signId">Id of sign</param>
+        /// <returns>Id of removed sign</returns>
+        public async Task<uint> RemoveSignAsync(EditionUserInfo editionUser, uint signId)
+        {
+            var signInterpretationIds = await GetAllSignInterpretationIdsForSignIdAsync(editionUser, signId);
+            foreach (var signInterpretationId in signInterpretationIds)
+            {
+                await RemoveSignInterpretationAsync(editionUser, signInterpretationId);
+            }
+            return await _removeElementAsync(editionUser, "line_to_sign", signId);
+            return signId;
+        }
+
+        #endregion
+
+        #region Text Fragment
+        
+        
+        /// <summary>
+        /// Creates a new text fragment in an edition. If previousFragmentId or nextFragmentId are null, the missing
+        /// value will be automatically calculated. If both are null, then the new text fragment is added to the end
+        /// of the list of text fragments.
+        /// Each text fragment must have at least one line to hold break signs and to be accessible
+        /// by the textual system; thus the function automatically creates an empty line.
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="textFragmentData">Text fragment data object which must have set the
+        /// name of the text fragments. If it contains lines they will be automatically injected,
+        /// otherwise an empty line with name "1" is added. Terminators are automatically set
+        /// and thus should not be included in this data object.</param>
+        /// <param name="previousFragmentId">Id of the text fragment that should directly precede the new text fragment,
+        /// may be null</param>
+        /// <param name="nextFragmentId">Id of the text fragment that should directly follow the new text fragment,
+        /// <param name="firstLineName">name of the first, empty line</param>
+        /// may be null</param>
+        /// <returns></returns>
+        public async Task<TextFragmentData> CreateTextFragmentAsync(EditionUserInfo editionUser,
+            TextFragmentData textFragmentData,
+            uint? previousFragmentId,
+            uint? nextFragmentId)
+        {
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                async () =>
+                {
+                    using (var transactionScope = new TransactionScope())
+                    {
+                        // Create the new text fragment abstract id
+                        var newTextFragmentId = await _simpleInsertAsync(
+                            TableData.Table.TextFragment);
+
+                        // Add the new text fragment to the edition manuscript
+                        await _addTextFragmentToManuscript(editionUser, newTextFragmentId);
+
+                        // Create the data entry for the new text fragment
+                        await _setTextFragmentDataAsync(editionUser, 
+                            newTextFragmentId, 
+                            textFragmentData.TextFragmentName);
+
+                        // Now set the position for the new text fragment
+                        (previousFragmentId, nextFragmentId) = await _createTextFragmentPosition(
+                            editionUser,
+                            previousFragmentId,
+                            newTextFragmentId,
+                            nextFragmentId);
+
+                        
+                        var newLines = new List<LineData>();
+                        foreach (var line in textFragmentData.Lines)
+                        {
+                            newLines.Add(await CreateLineAsync(
+                                editionUser,
+                                line, 
+                                newTextFragmentId));
+                        }
+
+                       
+          
+                        // End the transaction (it was all or nothing)
+                        transactionScope.Complete();
+
+                        // Set the new values to the text fragment
+                        textFragmentData.Lines = newLines;
+                        textFragmentData.TextFragmentId = newTextFragmentId;
+                        textFragmentData.EditionEditorId = editionUser.EditionEditorId;
+
+                        return textFragmentData;
+
+
+                    }
+                }
+            );
+        }
+
+        
+        /// <summary>
+        /// Gets a list of all artefacts with ROI's linked to text in the text fragment
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="textFragmentId">Text fragment id</param>
+        /// <returns>A list of artefacts</returns>
+        public async Task<List<ArtefactDataModel>> GetArtefactsAsync(EditionUserInfo editionUser, uint textFragmentId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<ArtefactDataModel>(
+                    GetTextFragmentArtefacts.Query,
+                    new {TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId}
+                )).ToList();
+            }
+
+            ;
+        }
+
+        
+        /// <summary>
+        /// Gets the text of a text fragment in an edition
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="textFragmentId">Text fragment id</param>
+        /// <returns>A detailed text object</returns>
+        public async Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId)
+        {
+            var terminators = _getTerminators(editionUser, TableData.Table.TextFragment, textFragmentId);
+
+            if (!terminators.IsValid)
+                return new TextEdition();
+
+            return await _getEntityById(editionUser, terminators);
+        }
+        
         /// <summary>
         /// Get a list of all the text fragments in an edition
         /// </summary>
@@ -118,65 +620,27 @@ namespace SQE.DatabaseAccess
             {
                 return (await connection.QueryAsync<TextFragmentData>(
                     GetFragmentData.GetQuery,
-                    new { editionUser.EditionId }
+                    new {editionUser.EditionId}
                 )).ToList();
             }
         }
 
         /// <summary>
-        /// Creates a new text fragment in an edition. If previousFragmentId or nextFragmentId are null, the missing
-        /// value will be automatically calculated. If both are null, then the new text fragment is added to the end
-        /// of the list of text fragments.
+        /// Removes the text fragmen with the given Id together with all its ligns and their signs.
         /// </summary>
-        /// <param name="editionUser">Edition user object</param>
-        /// <param name="fragmentName">Name of the new fragment</param>
-        /// <param name="previousFragmentId">Id of the text fragment that should directly precede the new text fragment,
-        /// may be null</param>
-        /// <param name="nextFragmentId">Id of the text fragment that should directly follow the new text fragment,
-        /// may be null</param>
-        /// <returns></returns>
-        public async Task<TextFragmentData> CreateTextFragmentAsync(EditionUserInfo editionUser,
-            string fragmentName,
-            uint? previousFragmentId,
-            uint? nextFragmentId)
+        /// <param name="editionUser"></param>
+        /// <param name="textFragmentId">Id of text frgament</param>
+        /// <returns>Id of removed text fragment</returns>
+        public async Task<uint> RemoveTextFragmentAsync(EditionUserInfo editionUser, uint textFragmentId)
         {
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
-                async () =>
-                {
-                    using (var transactionScope = new TransactionScope())
-                    {
-                        // Create the new text fragment abstract id
-                        var newTextFragmentId = await _createTextFragmentIdAsync();
-
-                        // Add the new text fragment to the edition manuscript
-                        await _addTextFragmentToManuscript(editionUser, newTextFragmentId);
-
-                        // Create the data entry for the new text fragment
-                        await _setTextFragmentDataAsync(editionUser, newTextFragmentId, fragmentName);
-
-                        // Now set the position for the new text fragment
-                        (previousFragmentId, nextFragmentId) = await _createTextFragmentPosition(
-                            editionUser,
-                            previousFragmentId,
-                            newTextFragmentId,
-                            nextFragmentId);
-
-                        // End the transaction (it was all or nothing)
-                        transactionScope.Complete();
-
-                        // Package the new text fragment to return to user
-                        return new TextFragmentData
-                        {
-                            TextFragmentId = newTextFragmentId,
-                            TextFragmentName = fragmentName,
-                            PreviousTextFragmentId = previousFragmentId,
-                            NextTextFragmentId = nextFragmentId,
-                            EditionEditorId = editionUser.EditionEditorId.Value
-                        };
-                    }
-                }
-            );
+            var lineIds = await _getChildrenIds(editionUser, TableData.Table.TextFragment, textFragmentId);
+            foreach (var lineId in lineIds)
+            {
+                await RemoveLineAsync(editionUser, lineId);   
+            }
+            return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.TextFragment), textFragmentId);;
         }
+
 
         /// <summary>
         /// Updates the details of a text fragment. If previousFragmentId or nextFragmentId are null, the missing
@@ -208,7 +672,7 @@ namespace SQE.DatabaseAccess
                     {
                         fragmentName = await connection.QuerySingleAsync<string>(
                             GetFragmentNameById.GetQuery,
-                            new { editionUser.EditionId, UserId = editionUser.userId, TextFragmentId = textFragmentId }
+                            new {editionUser.EditionId, UserId = editionUser.userId, TextFragmentId = textFragmentId}
                         );
                     }
                 }
@@ -216,7 +680,8 @@ namespace SQE.DatabaseAccess
                 // Set the new position if it exists
                 if (previousFragmentId.HasValue
                     || nextFragmentId.HasValue)
-                    (previousFragmentId, nextFragmentId) = await _moveTextFragments(editionUser, textFragmentId, previousFragmentId, nextFragmentId);
+                    (previousFragmentId, nextFragmentId) = await _moveTextFragments(editionUser, textFragmentId,
+                        previousFragmentId, nextFragmentId);
 
                 // End the transaction (it was all or nothing)
                 transactionScope.Complete();
@@ -233,40 +698,53 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        #region Private methods
+        #endregion
+        
+        #endregion
 
-        private uint[] _getTerminators(EditionUserInfo editionUser, string query, uint entityId)
+        #region Private methods
+        
+        #region Common helpers
+
+        private Terminators _getTerminators(EditionUserInfo editionUser, TableData.Table table, uint elementId)
         {
-            uint[] terminators;
+            
+            var query = $@"SELECT DISTINCT sign_interpretation_id 
+                        {TableData.FromQueryPart(table, addPublicEdition: true)}
+                        AND attribute_value_id in @Breaks
+                        ORDER BY attribute_value_id";
             using (var connection = OpenConnection())
             {
-                terminators = connection.Query<uint>(
+                return new Terminators(connection.Query<uint>(
                         query,
-                        new { EntityId = entityId, editionUser.EditionId, UserId = editionUser.userId }
+                        new
+                        {
+                            ElementId = elementId,
+                            UserId = editionUser.userId, 
+                            Breaks = TableData.Terminators(table)
+                        }
                     )
-                    .ToArray();
-                connection.Close();
+                    .ToArray());
             }
-
-            return terminators;
         }
-
-        private async Task<TextEdition> _getEntityById(EditionUserInfo editionUser, uint startId, uint endId)
+        
+        
+        private async Task<TextEdition> _getEntityById(EditionUserInfo editionUser, Terminators terminators)
         {
             TextEdition lastEdition = null;
-            TextFragment lastTextFragment = null;
-            Line lastLine = null;
-            Sign lastSign = null;
+            TextFragmentData lastTextFragment = null;
+            LineData lastLineData = null;
+            SignData lastSignData = null;
             NextSignInterpretation lastNextSignInterpretation = null;
-            SignInterpretation lastChar = null;
-            SignInterpretationROI lastInterpretationRoi = null;
+            SignInterpretationData lastChar = null;
+            SignInterpretationRoiData lastInterpretationRoi = null;
 
 
             using (var connection = OpenConnection())
             {
                 var attributeDict = (await connection.QueryAsync<AttributeDefinition>(
                     TextFragmentAttributes.GetQuery,
-                    new { editionUser.EditionId }
+                    new {editionUser.EditionId}
                 )).ToDictionary(
                     row => row.attributeValueId,
                     row => row.attributeString
@@ -275,79 +753,79 @@ namespace SQE.DatabaseAccess
                     GetTextChunk.GetQuery,
                     new[]
                     {
-                        typeof(TextEdition), typeof(TextFragment), typeof(Line), typeof(Sign),
-                        typeof(NextSignInterpretation), typeof(SignInterpretation), typeof(CharAttribute),
-                        typeof(SignInterpretationROI)
+                        typeof(TextEdition), typeof(TextFragmentData), typeof(LineData), typeof(SignData),
+                        typeof(NextSignInterpretation), typeof(SignInterpretationData), typeof(SignInterpretationAttributeData),
+                        typeof(SignInterpretationRoiData)
                     },
                     objects =>
                     {
                         var manuscript = objects[0] as TextEdition;
-                        var fragment = objects[1] as TextFragment;
-                        var line = objects[2] as Line;
-                        var sign = objects[3] as Sign;
+                        var fragment = objects[1] as TextFragmentData;
+                        var line = objects[2] as LineData;
+                        var sign = objects[3] as SignData;
                         var nextSignInterpretation = objects[4] as NextSignInterpretation;
-                        var signInterpretation = objects[5] as SignInterpretation;
-                        var charAttribute = objects[6] as CharAttribute;
-                        var roi = objects[7] as SignInterpretationROI;
+                        var signInterpretation = objects[5] as SignInterpretationData;
+                        var charAttribute = objects[6] as SignInterpretationAttributeData;
+                        var roi = objects[7] as SignInterpretationRoiData;
 
                         var newManuscript = manuscript.manuscriptId != lastEdition?.manuscriptId;
 
                         if (newManuscript) lastEdition = manuscript;
 
-                        if (fragment.textFragmentId != lastTextFragment?.textFragmentId)
+                        if (fragment.TextFragmentId != lastTextFragment?.TextFragmentId)
 
                             lastEdition = manuscript.manuscriptId == lastEdition?.manuscriptId
                                 ? lastEdition
                                 : manuscript;
-                        if (fragment.textFragmentId != lastTextFragment?.textFragmentId)
+                        if (fragment.TextFragmentId != lastTextFragment?.TextFragmentId)
                         {
                             lastTextFragment = fragment;
                             lastEdition.fragments.Add(fragment);
                         }
 
-                        if (line.lineId != lastLine?.lineId)
+                        if (line.LineId != lastLineData?.LineId)
                         {
-                            lastLine = line;
-                            lastTextFragment.lines.Add(line);
+                            lastLineData = line;
+                            lastTextFragment.Lines.Add(line);
                         }
 
-                        if (sign.signId != lastSign?.signId)
+                        if (sign.SignId != lastSignData?.SignId)
                         {
-                            lastSign = sign;
-                            lastLine.signs.Add(sign);
+                            lastSignData = sign;
+                            lastLineData.Signs.Add(sign);
                         }
 
-                        if (nextSignInterpretation.nextSignInterpretationId
-                            != lastNextSignInterpretation?.nextSignInterpretationId)
+                        if (nextSignInterpretation.NextSignInterpretationId
+                            != lastNextSignInterpretation?.NextSignInterpretationId)
                             lastNextSignInterpretation = nextSignInterpretation;
 
-                        if (signInterpretation.signInterpretationId != lastChar?.signInterpretationId)
+                        if (signInterpretation.SignInterpretationId != lastChar?.SignInterpretationId)
                         {
                             lastChar = signInterpretation;
-                            lastSign.signInterpretations.Add(signInterpretation);
+                            lastSignData.SignInterpretations.Add(signInterpretation);
                         }
 
-                        lastChar.nextSignInterpretations.Add(nextSignInterpretation);
+                        lastChar.NextSignInterpretations.Add(nextSignInterpretation);
 
-                        charAttribute.attributeString = attributeDict.TryGetValue(
-                            charAttribute.attributeValueId,
+                        charAttribute.AttributeString = attributeDict.TryGetValue(
+                            charAttribute.AttributeValueId.GetValueOrDefault(),
                             out var val
                         )
                             ? val
                             : null;
 
-                        lastChar.attributes.Add(charAttribute);
+                        lastChar.Attributes.Add(charAttribute);
 
-                        if (roi != null
-                            && roi.SignInterpretationRoiId != lastInterpretationRoi?.SignInterpretationRoiId)
-                        {
-                            lastInterpretationRoi = roi;
-                            lastChar.signInterpretationRois.Add(roi);
-                        }
+                        if (roi == null 
+                            || roi.SignInterpretationRoiId == lastInterpretationRoi?.SignInterpretationRoiId
+                        ) return newManuscript ? manuscript : null;
+                        
+                        lastInterpretationRoi = roi;
+                        lastChar.SignInterpretationRois.Add(roi);
 
                         return newManuscript ? manuscript : null;
                     },
-                    new { StartId = startId, EndId = endId, editionUser.EditionId },
+                    new {terminators.StartId, terminators.EndId, editionUser.EditionId},
                     splitOn:
                     "textFragmentId, lineId, signId, nextSignInterpretationId, signInterpretationId, interpretationAttributeId, SignInterpretationRoiId"
                 );
@@ -357,43 +835,324 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        #region Text Fragment
-
-        // TODO Delete? cf. above (Ingo)
-        /*
-        private async Task<bool> _textFragmentNameExistAsync(EditionUserInfo editionUser,
-            string textFragmentName)
+        private async Task<List<uint>> _getChildrenIds(EditionUserInfo user, TableData.Table table, uint elementId)
         {
+            
             using (var connection = OpenConnection())
             {
-                return (await connection.QueryAsync<TextFragmentData>(GetTextFragmentByName.GetQuery)).Any();
+                return (await connection.QueryAsync<uint>(
+                    TableData.GetChildrenIdsQuery(table),
+                    new {user.EditionId, ElementId=elementId}
+                )).ToList();
             }
-            
         }
-        */
 
         /// <summary>
-        /// Created a new text fragment id in the system
+        /// Gets the  data id for an element id
         /// </summary>
-        /// <returns>Id of the newly created text fragment</returns>
-        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
-        private async Task<uint> _createTextFragmentIdAsync()
+        /// <param name="user">Edition user object</param>
+        /// <param name="table">Name of the table</param>
+        /// <param name="elementId">Id of the text fragment</param>
+        /// <returns>Text fragment data id of the text fragment</returns>
+        private async Task<uint> _getElementDataId(EditionUserInfo user, TableData.Table table, uint elementId)
         {
             using (var connection = OpenConnection())
             {
-                // Create the new text fragment id
-                var createNewTextFragmentId = await connection.ExecuteAsync(CreateTextFragment.GetQuery);
-                if (createNewTextFragmentId == 0)
-                    throw new StandardExceptions.DataNotWrittenException("create new textFragment");
-
-                // Get the new text fragmentid
-                var getNewTextFragmentId = (await connection.QueryAsync<uint>(LastInsertId.GetQuery)).ToList();
-                if (getNewTextFragmentId.Count != 1)
-                    throw new StandardExceptions.DataNotWrittenException("create new textFragment");
-
-                return getNewTextFragmentId.First();
+                return await connection.QuerySingleAsync<uint>(
+                    TableData.GetDataIdQuery(table),
+                    new {user.EditionId, ElementId=elementId}
+                );
             }
         }
+
+
+        private async Task<uint> _removeElementAsync(EditionUserInfo editionUser, string tableName, uint elementId)
+        {
+            
+            var removeRequest = new MutationRequest(
+                MutateType.Delete,
+                new DynamicParameters(),
+                tableName,
+                elementId
+            );
+
+            var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+                editionUser,
+                new List<MutationRequest> { removeRequest }
+            );
+
+            if (writeResults.Count != 1)
+                throw new StandardExceptions.DataNotWrittenException($"delete {tableName}");
+
+            return elementId;
+
+        }
+
+        /// <summary>
+        /// Helper to create a new record of those tables which only have an id-field like Line, Sign ...."
+        /// The error string is created automatically using the table namen
+        /// </summary>
+        /// <param name="table">TableData reference</param>
+        /// <returns>New id</returns>
+        private async Task<uint> _simpleInsertAsync(TableData.Table table)
+        {
+            var tableName = TableData.Name(table);
+            var insertQuery = $"INSERT INTO {tableName} () VALUES ()";
+            using (var connection = OpenConnection())
+            {
+                // Create the new t id
+                var createTableId = await connection.ExecuteAsync(insertQuery);
+                if (createTableId == 0)
+                    throw new StandardExceptions.DataNotWrittenException($"create new {tableName}");
+
+                // Get the new id
+                var getNewTableId = (await connection.QueryAsync<uint>(LastInsertId.GetQuery)).ToList();
+                if (getNewTableId.Count != 1)
+                    throw new StandardExceptions.DataNotWrittenException($"create new {tableName}");
+
+                return getNewTableId.First();
+            }
+        }
+
+        /// <summary>
+        /// Adds an element of text (sign, line, fragment) to its parent element.
+        /// The text of the error is automatically set using the names of the tables.
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="table">Name of the element table</param>
+        /// <param name="elementId">Id of the element</param>
+        /// <param name="parentId">Id of parent</param>
+        /// <returns></returns>
+        /// <exception cref="DataNotWrittenException"></exception>
+        private async Task _addElementToParentAsync(EditionUserInfo editionUser,
+            TableData.Table table, uint? elementId, uint? parentId)
+        {
+            using (var connection = OpenConnection())
+            {
+                // Link the parent to the element
+                var parentTable = TableData.Parent(table);
+                var parentToElementParameters = new DynamicParameters();
+                parentToElementParameters.Add($"@{parentTable}_id", parentId);
+                parentToElementParameters.Add($"@{table}_id", elementId);
+                var manuscriptToTextFragmentResults =
+                    await _databaseWriter.WriteToDatabaseAsync(
+                        editionUser,
+                        new List<MutationRequest>
+                        {
+                            new MutationRequest(
+                                MutateType.Create,
+                                parentToElementParameters,
+                                $"{parentTable}_to_{table}e"
+                            )
+                        }
+                    );
+
+                // Check for success
+                if (manuscriptToTextFragmentResults.Count != 1)
+                    throw new StandardExceptions.DataNotWrittenException(
+                        $"{parentTable} id to new {table} link");
+            }
+        }
+
+        /// <summary>
+        /// Set the name of an element
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="table">The name of the table of the element</param>
+        /// <param name="elementId">Id of the element to set</param>
+        /// <param name="elementName">Name to be set</param>
+        /// <param name="create">Boolean whether a new text fragment should be created for this name. Set to
+        /// false if you are updating existing data.</param>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
+        private async Task _setElementDataAsync(EditionUserInfo editionUser,
+            TableData.Table table,
+            uint elementId,
+            string elementName,
+            bool create = true)
+        {
+            // Set the parameters for the mutation object
+            var createTextFragmentParameters = new DynamicParameters();
+            createTextFragmentParameters.Add("@name", elementName);
+            createTextFragmentParameters.Add($"@{table}_id", elementId);
+
+            // Create the mutation object
+            var createElementMutation = new MutationRequest(
+                create ? MutateType.Create : MutateType.Update,
+                createTextFragmentParameters,
+                $"{table}_data",
+                create ? null : (uint?) (await _getElementDataId(editionUser, table, elementId))
+            );
+
+            // Commit the mutation
+            var createElementResponse = await _databaseWriter.WriteToDatabaseAsync(
+                editionUser,
+                new List<MutationRequest> {createElementMutation}
+            );
+
+            // Ensure that the entry was created
+            if (createElementResponse.Count != 1
+                || (create && !createElementResponse.First().NewId.HasValue))
+                throw new StandardExceptions.DataNotWrittenException($"create new {TableData.Name(table)} data");
+        }
+
+
+        /// <summary>
+        /// Creates a new element in an edition and inserts it into the parent identified by parentId.
+        /// If an name of the element is given, the name is also set
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="parentId">Id of the fragment the line should be inserted into</param>
+        /// <param name="elementName">Name of the new line;
+        /// may be null</param>
+        /// <returns>Id of the created Element</returns>
+        public async Task<uint> _createElementAsync(EditionUserInfo editionUser,
+            TableData.Table table,
+            string elementName,
+            uint parentId)
+        {
+            // Create the new element abstract id
+            var newElementId = await _simpleInsertAsync(
+                table);
+
+            // Add the new element to the parent
+            await _addElementToParentAsync(
+                editionUser,
+                table,
+                newElementId,
+                parentId);
+
+            // Create the data entry for the new element
+            if (elementName != null)
+                await _setElementDataAsync(editionUser, table, newElementId, elementName);
+
+
+            return newElementId;
+        }
+
+        #endregion
+
+        #region Line
+
+        /// <summary>
+        /// Adds a line to a fragment.
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="lineId">Id of line</param>
+        /// <param name="textFragmentId">Id of the text fragment to be added</param>
+        /// <returns></returns>
+        private async Task _addLineToTextFragment(EditionUserInfo editionUser, uint lineId, uint textFragmentId)
+        {
+            _addElementToParentAsync(editionUser,
+                TableData.Table.Line,
+                lineId,
+                textFragmentId);
+        }
+
+        /// <summary>
+        /// Gets the line data id for a line id
+        /// </summary>
+        /// <param name="user">Edition user object</param>
+        /// <param name="lineId">Id of the line</param>
+        /// <returns>Line data id of the line</returns>
+        private async Task<uint> _getLineDataId(EditionUserInfo user, uint lineId)
+        {
+            return await _getElementDataId(user, TableData.Table.Line, lineId);
+        }
+
+        /// <summary>
+        /// Set the name of a line
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="lineId">Id of the text fragment to set</param>
+        /// <param name="lineName">Name to be set</param>
+        /// <param name="create">Boolean whether a new text fragment should be created for this name. Set to
+        /// false if you are updating existing data.</param>
+        private async Task _setLineDataAsync(EditionUserInfo editionUser,
+            uint lineId,
+            string lineName,
+            bool create = true)
+        {
+            await _setElementDataAsync(
+                editionUser,
+                TableData.Table.Line,
+                lineId,
+                lineName,
+                create);
+        }
+        
+       
+
+        #endregion
+
+        #region Sign and sign interpretation
+
+        /// <summary>
+        /// Adds a sign to a line.
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="signId">Id of the sign</param>
+        /// <param name="lineId">Id of the line</param>
+        /// <returns></returns>
+        private async Task _addSignToLine(EditionUserInfo editionUser, uint? signId, uint? lineId)
+        {
+            _addElementToParentAsync(editionUser,
+                TableData.Table.Sign,
+                signId,
+                lineId);
+        }
+        
+        /// <summary>
+        /// Creates a new sign without all other sign data.
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="lineId">Id of line to which the sign should belong</param>
+        /// <returns></returns>
+        public async Task<SignData> _createSignAsync(EditionUserInfo editionUser,
+            uint lineId
+        )
+        {
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                async () =>
+                {
+                    using (var transactionScope = new TransactionScope())
+                    {
+                        // Create the new text fragment abstract id
+                        var newSignId = await _simpleInsertAsync(
+                            TableData.Table.Sign);
+                        ;
+
+                        // Add the new text fragment to the edition manuscript
+                        await _addSignToLine(editionUser, newSignId, lineId);
+                        
+                        // End the transaction (it was all or nothing)
+                        transactionScope.Complete();
+
+                        // Package the new text fragment to return to user
+                        return new SignData
+                        {
+                            SignId = newSignId
+                        };
+                    }
+                }
+            );
+            return null;
+        }
+
+        
+        
+
+        
+        
+        
+
+        #endregion
+
+
+        #region Text Fragment
+
+        
+
+        
 
         /// <summary>
         /// Set the name of a text fragment
@@ -409,29 +1168,13 @@ namespace SQE.DatabaseAccess
             string textFragmentName,
             bool create = true)
         {
-            // Set the parameters for the mutation object
-            var createTextFragmentParameters = new DynamicParameters();
-            createTextFragmentParameters.Add("@name", textFragmentName);
-            createTextFragmentParameters.Add("@text_fragment_id", textFragmentId);
-
-            // Create the mutation object
-            var createTextFragmentMutation = new MutationRequest(
-                create ? MutateType.Create : MutateType.Update,
-                createTextFragmentParameters,
-                "text_fragment_data",
-                create ? null : (uint?)(await _getTextFragmentDataId(editionUser, textFragmentId))
-            );
-
-            // Commit the mutation
-            var createTextFragmentResponse = await _databaseWriter.WriteToDatabaseAsync(
+            await _setElementDataAsync(
                 editionUser,
-                new List<MutationRequest> { createTextFragmentMutation }
-            );
-
-            // Ensure that the entry was created
-            if (createTextFragmentResponse.Count != 1
-                || (create && !createTextFragmentResponse.First().NewId.HasValue))
-                throw new StandardExceptions.DataNotWrittenException("create new textFragment data");
+                TableData.Table.TextFragment,
+                textFragmentId,
+                textFragmentName,
+                create);
+            
         }
 
         /// <summary>
@@ -445,7 +1188,8 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorAfter">Id of the directly following text fragment, may be null</param>
         /// <returns>The id of the preceding and following text fragments</returns>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
-        private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _createTextFragmentPosition(EditionUserInfo editionUser,
+        private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _createTextFragmentPosition(
+            EditionUserInfo editionUser,
             uint? anchorBefore,
             uint textFragmentId,
             uint? anchorAfter)
@@ -492,7 +1236,8 @@ namespace SQE.DatabaseAccess
         /// <param name="newAnchorAfter">Id of the directly following text fragment, may be null</param>
         /// <returns>The id of the preceding and following text fragments</returns>
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
-        private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(EditionUserInfo editionUser,
+        private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(
+            EditionUserInfo editionUser,
             List<uint> textFragmentIds,
             uint? newAnchorBefore,
             uint? newAnchorAfter)
@@ -504,12 +1249,13 @@ namespace SQE.DatabaseAccess
                 );
 
             PositionDataRequestFactory positionDataRequestFactory;
-            (positionDataRequestFactory, newAnchorBefore, newAnchorAfter) = await _createTextFragmentPositionRequestFactory(
-                editionUser,
-                newAnchorBefore,
-                textFragmentIds,
-                newAnchorAfter
-            );
+            (positionDataRequestFactory, newAnchorBefore, newAnchorAfter) =
+                await _createTextFragmentPositionRequestFactory(
+                    editionUser,
+                    newAnchorBefore,
+                    textFragmentIds,
+                    newAnchorAfter
+                );
             positionDataRequestFactory.AddAction(PositionAction.MoveTo);
             List<MutationRequest> requests = await positionDataRequestFactory.CreateRequestsAsync();
             var shiftTextFragmentMutationResults =
@@ -534,14 +1280,15 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorAfter">Id of the directly following text fragment, may be null</param>
         /// <returns>The id of the preceding and following text fragments</returns>
         /// <exception cref="DataNotWrittenException"></exception>
-        private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(EditionUserInfo editionUser,
+        private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(
+            EditionUserInfo editionUser,
             uint textFragmentId,
             uint? newAnchorBefore,
             uint? newAnchorAfter)
         {
             return await _moveTextFragments(
                 editionUser,
-                new List<uint>() { textFragmentId },
+                new List<uint>() {textFragmentId},
                 newAnchorBefore,
                 newAnchorAfter
             );
@@ -557,11 +1304,12 @@ namespace SQE.DatabaseAccess
         /// <param name="textFragmentIds">Text fragments to be positioned</param>
         /// <param name="anchorAfter">Id of the text fragment following the text fragments being positioned, may be null</param>
         /// <returns>A PositionDataRequestFactory along with the ids of the previous and next text fragments</returns>
-        private async Task<(PositionDataRequestFactory positionDataRequestFactory, uint? previousTextFragmentId, uint? nextTextFragmentId)>
+        private async Task<(PositionDataRequestFactory positionDataRequestFactory, uint? previousTextFragmentId, uint?
+                nextTextFragmentId)>
             _createTextFragmentPositionRequestFactory(EditionUserInfo editionUser,
-            uint? anchorBefore,
-            List<uint> textFragmentIds,
-            uint? anchorAfter)
+                uint? anchorBefore,
+                List<uint> textFragmentIds,
+                uint? anchorAfter)
         {
             // Prepare the response object
             PositionDataRequestFactory positionDataRequestFactory;
@@ -599,11 +1347,12 @@ namespace SQE.DatabaseAccess
                             anchorAfter.Value,
                             editionUser.EditionId,
                             true);
-                        var before = tempFac.getAnchorsBefore(); // Get the text fragment(s) directly before it
+                        var before = tempFac.AnchorsBefore; // Get the text fragment(s) directly before it
                         if (before.Any())
                             anchorBefore = before.First(); // We will work with a non-branching stream for now
                     }
                 }
+
                 // Add the before anchor for the new text fragment
                 if (anchorBefore.HasValue)
                     positionDataRequestFactory.AddAnchorBefore(anchorBefore.Value);
@@ -618,7 +1367,7 @@ namespace SQE.DatabaseAccess
                         anchorBefore.Value,
                         editionUser.EditionId,
                         true);
-                    var after = tempFac.getAnchorsAfter(); // Get the text fragment(s) directly after it
+                    var after = tempFac.AnchorsAfter; // Get the text fragment(s) directly after it
                     if (after.Any())
                         anchorAfter = after.First(); // We will work with a non-branching stream for now
                 }
@@ -651,7 +1400,7 @@ namespace SQE.DatabaseAccess
             return await _createTextFragmentPositionRequestFactory(
                 editionUser,
                 anchorBefore,
-                new List<uint>() { textFragmentId },
+                new List<uint>() {textFragmentId},
                 anchorAfter
             );
         }
@@ -681,14 +1430,15 @@ namespace SQE.DatabaseAccess
                     anchorBeforeExists = true;
                     anchorBeforeIdx = idx;
                 }
-                if (fragment.TextFragmentId == anchorAfter)
-                {
-                    anchorAfterExists = true;
-                    // Check for correct sequence of anchors if applicable
-                    if (anchorBefore.HasValue && (!anchorBeforeIdx.HasValue || anchorBeforeIdx.Value + 1 != idx))
-                        throw new StandardExceptions.InputDataRuleViolationException("the previous and next text fragment ids must be sequential");
-                }
+
+                if (fragment.TextFragmentId != anchorAfter) continue;
+                anchorAfterExists = true;
+                // Check for correct sequence of anchors if applicable
+                if (anchorBefore.HasValue && (!anchorBeforeIdx.HasValue || anchorBeforeIdx.Value + 1 != idx))
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        "the previous and next text fragment ids must be sequential");
             }
+
             if (anchorBefore.HasValue && !anchorBeforeExists)
                 throw new StandardExceptions.ImproperInputDataException("previous text fragment id");
             if (anchorAfter.HasValue && !anchorAfterExists)
@@ -704,35 +1454,22 @@ namespace SQE.DatabaseAccess
         /// <exception cref="DataNotWrittenException"></exception>
         private async Task _addTextFragmentToManuscript(EditionUserInfo editionUser, uint textFragmentId)
         {
+            uint manuscriptId;
             using (var connection = OpenConnection())
             {
                 // Get the manuscript id of the current edition
-                var manuscriptId = await connection.QueryAsync<uint>(
+                manuscriptId = await connection.QuerySingleAsync<uint>(
                     ManuscriptOfEdition.GetQuery,
-                    new { editionUser.EditionId }
+                    new {editionUser.EditionId}
                 );
-
-                // Link the manuscript to the new text fragment
-                var manuscriptToTextFragmentParameters = new DynamicParameters();
-                manuscriptToTextFragmentParameters.Add("@manuscript_id", manuscriptId);
-                manuscriptToTextFragmentParameters.Add("@text_fragment_id", textFragmentId);
-                var manuscriptToTextFragmentResults =
-                    await _databaseWriter.WriteToDatabaseAsync(
-                        editionUser,
-                        new List<MutationRequest>
-                        {
-                            new MutationRequest(
-                                MutateType.Create,
-                                manuscriptToTextFragmentParameters,
-                                "manuscript_to_text_fragment"
-                            )
-                        }
-                    );
-
-                // Check for success
-                if (manuscriptToTextFragmentResults.Count != 1)
-                    throw new StandardExceptions.DataNotWrittenException("manuscript id to new text fragment link");
             }
+
+            _addElementToParentAsync(editionUser,
+                TableData.Table.TextFragment,
+                textFragmentId,
+                manuscriptId
+            );
+            
         }
 
         /// <summary>
@@ -743,19 +1480,8 @@ namespace SQE.DatabaseAccess
         /// <returns>Text fragment data id of the text fragment</returns>
         private async Task<uint> _getTextFragmentDataId(EditionUserInfo user, uint textFragmentId)
         {
-            using (var connection = OpenConnection())
-            {
-                return await connection.QuerySingleAsync<uint>(
-                    GetTextFragmentDataId.GetQuery,
-                    new
-                    {
-                        user.EditionId,
-                        TextFragmentId = textFragmentId
-                    }
-                );
-            }
+            return await _getElementDataId(user, TableData.Table.TextFragment, textFragmentId);
         }
-
 
         #endregion Text Fragment
 

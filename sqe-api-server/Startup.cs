@@ -23,6 +23,7 @@ using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Services;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
+using SQE.DatabaseAccess.Models;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace SQE.API.Server
@@ -63,6 +64,8 @@ namespace SQE.API.Server
             services.AddTransient<IDatabaseWriter, DatabaseWriter>();
             services.AddTransient<ITextRepository, TextRepository>();
             services.AddTransient<IRoiRepository, RoiRepository>();
+            services.AddTransient<ISignInterpretationCommentaryRepository, SignInterpretationCommentaryRepository>();
+            services.AddTransient<IAttributeRepository, AttributeRepository>();
 
             services.AddResponseCompression();
             services.Configure<BrotliCompressionProviderOptions>(

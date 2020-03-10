@@ -44,7 +44,7 @@ namespace SQE.DatabaseAccess.Models
 
     public class TextEdition
     {
-        public readonly List<TextFragment> fragments = new List<TextFragment>();
+        public readonly List<TextFragmentData> fragments = new List<TextFragmentData>();
         public uint manuscriptId { get; set; }
         public string editionName { get; set; }
         public string copyrightHolder { get; set; }

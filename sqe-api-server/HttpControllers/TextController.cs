@@ -54,7 +54,7 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        ///     Retrieves the ids of all fragments in the given edition of a scroll
+        ///     Retrieves the ids of all Fragments of all fragments in the given edition of a scroll
         /// </summary>
         /// <param name="editionId">Id of the edition</param>
         /// <returns>An array of the text fragment ids in correct sequence</returns>
@@ -66,7 +66,7 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        ///     Retrieves the ids of all lines in the given textFragmentName
+        ///     Retrieves the ids of all Artefacts in the given textFragmentName
         /// </summary>
         /// <param name="editionId">Id of the edition</param>
         /// <param name="textFragmentId">Id of the text fragment</param>
