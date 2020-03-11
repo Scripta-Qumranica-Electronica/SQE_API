@@ -13,6 +13,12 @@ using SQE.API.DTO;
 using SQE.API.Server.Services;
 using Microsoft.AspNetCore.SignalR;
 
+using SQE.DatabaseAccess.Helpers;
+
+using System.Text.Json;
+
+using SQE.API.Server.Helpers;
+
 namespace SQE.API.Server.RealtimeHubs
 {
     public partial class MainHub
@@ -26,9 +32,18 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
         public async Task<ImagedObjectDTO> GetV1EditionsEditionIdImagedObjectsImagedObjectId(uint editionId, string imagedObjectId, List<string> optional)
+
         {
-            return await _imagedObjectService.GetImagedObjectAsync(await _userService.GetCurrentUserObjectAsync(editionId), imagedObjectId, optional);
+            try
+            {
+                return await _imagedObjectService.GetImagedObjectAsync(await _userService.GetCurrentUserObjectAsync(editionId), imagedObjectId, optional);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
+
 
         /// <summary>
         ///     Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
@@ -38,18 +53,36 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
         public async Task<ImagedObjectListDTO> GetV1EditionsEditionIdImagedObjects(uint editionId, List<string> optional)
+
         {
-            return await _imagedObjectService.GetImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
+            try
+            {
+                return await _imagedObjectService.GetImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
+
 
         /// <summary>
         ///     Provides a list of all institutional image providers.
         /// </summary>
         [AllowAnonymous]
         public async Task<ImageInstitutionListDTO> GetV1ImagedObjectsInstitutions()
+
         {
-            return await _imageService.GetImageInstitutionsAsync();
+            try
+            {
+                return await _imageService.GetImageInstitutionsAsync();
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
+
 
     }
 }

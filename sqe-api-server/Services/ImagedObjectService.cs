@@ -27,7 +27,7 @@ namespace SQE.API.Server.Services
     public class ImagedObjectService : IImagedObjectService
     {
         private readonly IArtefactRepository _artefactRepository;
-        private readonly IHubContext<MainHub> _hubContext;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IImageRepository _imageRepo;
         private readonly IImageService _imageService;
         private readonly IImagedObjectRepository _repo;
@@ -37,7 +37,7 @@ namespace SQE.API.Server.Services
             IImageRepository imageRepo,
             IImageService imageService,
             IArtefactRepository artefactRepository,
-            IHubContext<MainHub> hubContext)
+            IHubContext<MainHub, ISQEClient> hubContext)
         {
             _repo = repo;
             _imageRepo = imageRepo;

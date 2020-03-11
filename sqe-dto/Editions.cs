@@ -37,16 +37,19 @@ namespace SQE.API.DTO
         public bool isAdmin { get; set; }
     }
 
-    public class EditorRightsDTO
+    public class UpdateEditorRightsDTO
     {
-        [Required]
-        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
-        public string email { get; set; }
-
         public bool? mayRead { get; set; }
         public bool? isAdmin { get; set; }
         public bool? mayLock { get; set; }
         public bool? mayWrite { get; set; }
+    }
+
+    public class CreateEditorRightsDTO : UpdateEditorRightsDTO
+    {
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
+        public string email { get; set; }
     }
 
     public class TextEditionDTO
@@ -55,7 +58,7 @@ namespace SQE.API.DTO
         public string editionName { get; set; }
         public uint editorId { get; set; }
         public string licence { get; set; }
-        public Dictionary<uint, EditorDTO> editors { get; set; }
+        public Dictionary<string, EditorDTO> editors { get; set; }
         public List<TextFragmentDTO> textFragments { get; set; }
     }
 
@@ -75,6 +78,11 @@ namespace SQE.API.DTO
     {
         public uint entityId { get; set; }
         public uint editorId { get; set; }
+    }
+
+    public class EditionScriptCollectionDTO
+    {
+        public List<LetterDTO> letters { get; set; }
     }
 
     #region Request DTO's
@@ -101,6 +109,10 @@ namespace SQE.API.DTO
             this.collaborators = collaborators;
         }
 
+        public EditionUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty)
+        {
+        }
+
 
         [StringLength(
             255,
@@ -117,6 +129,10 @@ namespace SQE.API.DTO
     {
         public EditionCopyDTO(string name, string copyrightHolder, string collaborators)
             : base(name, copyrightHolder, collaborators)
+        {
+        }
+
+        public EditionCopyDTO() : this(string.Empty, string.Empty, string.Empty)
         {
         }
     }

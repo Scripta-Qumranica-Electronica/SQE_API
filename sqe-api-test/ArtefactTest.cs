@@ -4,9 +4,11 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
+using NetTopologySuite.IO;
 using Newtonsoft.Json;
 using SQE.API.DTO;
 using SQE.API.Server;
+using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
 
@@ -24,6 +26,7 @@ namespace SQE.ApiTest
         }
 
         private readonly DatabaseQuery _db;
+        private readonly WKTReader _wkr = new WKTReader();
 
         private const string version = "v1";
         private const string controller = "artefacts";
@@ -117,7 +120,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             const string masterImageSQL = "SELECT sqe_image_id FROM SQE_image WHERE type = 0 ORDER BY RAND() LIMIT 1";
             var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
             const string newArtefactShape =
-                "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
+                "POLYGON((0 0,0 200,200 200,200 0,0 0),(5 5,25 5,25 25,5 25,5 5),(77 80,102 80,102 92,77 92,77 80))";
             var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
             var newName = "CanCreateArtefacts.artefact א";
             var newArtefact = new CreateArtefactDTO
@@ -373,6 +376,61 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
         }
 
         /// <summary>
+        /// Ensure that attempts to write invalid polygons are rejected
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CannotCreateMalformedArtefact()
+        {
+            // Arrange
+            var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
+            var newEdition =
+                await EditionHelpers.CreateCopyOfEdition(_client, allArtefacts.First().editionId); // Clone it
+
+            const string masterImageSQL = "SELECT sqe_image_id FROM SQE_image WHERE type = 0 ORDER BY RAND() LIMIT 1";
+            var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
+            // This is a self-intersecting polygon
+            const string newArtefactShape =
+                "POLYGON ((0 0, 30 110, 95 109, 146 64, 195 127, 150 210, 280 240, 150 170, 144 105, 75 84, 63 25, 0 0))";
+            var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
+            var newName = "CannotCreateMalformedArtefact.artefact א";
+            var newArtefact = new CreateArtefactDTO
+            {
+                polygon = new PolygonDTO
+                {
+                    mask = newArtefactShape,
+                    transformation = new TransformationDTO
+                    {
+                        scale = newScale,
+                        rotate = newRotate,
+                        translate = new TranslateDTO
+                        {
+                            x = newTranslateX,
+                            y = newTranslateY
+                        }
+                    }
+                },
+                name = newName,
+                masterImageId = masterImageId,
+                statusMessage = null
+            };
+
+            // Act
+            var newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
+            var (artefactResponse, artefact, _, _) =
+                await Request.Send(
+                    newArtefactObject,
+                    _client,
+                    auth: true,
+                    shouldSucceed: false
+                );
+
+            // Assert
+            // The response should indicate a bad request
+            Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
+        }
+
+        /// <summary>
         ///     Ensure that a existing artefact cannot be deleted by a use who does not have access to it.
         /// </summary>
         /// <returns></returns>
@@ -452,7 +510,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             const string newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
             var (newScale, newRotate, newTranslateX, newTranslateY) = ArtefactPosition();
             const string newArtefactShape =
-                "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
+                "POLYGON((0 0,0 200,200 200,200 0,0 0),(5 5,25 5,25 25,5 25,5 5),(77 80,102 80,102 92,77 92,77 80))";
             const string statusMessage = "Fully examined";
 
             // Act (update name and set status)
@@ -593,7 +651,7 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
 
             // Assert (update all)
             allResponse.EnsureSuccessStatusCode();
-            Assert.Equal(artefact.mask.mask, updatedAllArtefact.mask.mask);
+            Assert.True(_wkr.Read(artefact.mask.mask).EqualsNormalized(_wkr.Read(updatedAllArtefact.mask.mask)));
             Assert.Equal(otherScale, updatedAllArtefact.mask.transformation.scale);
             Assert.Equal(otherRotate, updatedAllArtefact.mask.transformation.rotate);
             Assert.Equal(otherTranslateX, updatedAllArtefact.mask.transformation.translate.x);

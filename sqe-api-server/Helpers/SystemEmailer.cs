@@ -6,6 +6,7 @@ using MailKit.Security;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using MimeKit;
 using SQE.DatabaseAccess.Helpers;
 
@@ -14,9 +15,9 @@ namespace SQE.API.Server.Helpers
     public class EmailSender : IEmailSender
     {
         private readonly IConfiguration _config;
-        private readonly IHostingEnvironment _env;
+        private readonly IWebHostEnvironment _env;
 
-        public EmailSender(IConfiguration config, IHostingEnvironment env)
+        public EmailSender(IConfiguration config, IWebHostEnvironment env)
         {
             _config = config;
             _env = env;

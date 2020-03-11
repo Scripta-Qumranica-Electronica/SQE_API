@@ -36,6 +36,17 @@ namespace SQE.DatabaseAccess.Models
         public bool Locked { get; set; }
     }
 
+    public class AddEditorJWT
+    {
+        public uint userId { get; set; }
+        public uint editionId { get; set; }
+        public string email { get; set; }
+        public bool mayWrite { get; set; }
+        public bool mayLock { get; set; }
+        public bool mayRead { get; set; }
+        public bool isAdmin { get; set; }
+    }
+
     public class EditionUserInfo
     {
         private readonly IUserRepository _userRepo;

@@ -542,7 +542,8 @@ namespace SQE.DatabaseAccess
                             editionUser,
                             previousFragmentId,
                             newTextFragmentId,
-                            nextFragmentId);
+                            nextFragmentId
+                        );
 
                         
                         var newLines = new List<LineData>();
@@ -650,10 +651,14 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">id of the text fragment to change</param>
         /// <param name="fragmentName">New name for the text fragment, may be null or ""</param>
-        /// <param name="previousFragmentId">Id of the text fragment that should precede the updated text fragment,
-        /// may be null</param>
-        /// <param name="nextFragmentId">Id of the text fragment that should follow the updated text fragment,
-        /// may be null</param>
+        /// <param name="previousFragmentId">
+        ///     Id of the text fragment that should precede the updated text fragment,
+        ///     may be null
+        /// </param>
+        /// <param name="nextFragmentId">
+        ///     Id of the text fragment that should follow the updated text fragment,
+        ///     may be null
+        /// </param>
         /// <returns>Details of the updated text fragment</returns>
         public async Task<TextFragmentData> UpdateTextFragmentAsync(EditionUserInfo editionUser,
             uint textFragmentId,
@@ -667,7 +672,6 @@ namespace SQE.DatabaseAccess
                 if (!string.IsNullOrEmpty(fragmentName))
                     await _setTextFragmentDataAsync(editionUser, textFragmentId, fragmentName, false);
                 else // Get the current name
-                {
                     using (var connection = OpenConnection())
                     {
                         fragmentName = await connection.QuerySingleAsync<string>(
@@ -675,7 +679,6 @@ namespace SQE.DatabaseAccess
                             new {editionUser.EditionId, UserId = editionUser.userId, TextFragmentId = textFragmentId}
                         );
                     }
-                }
 
                 // Set the new position if it exists
                 if (previousFragmentId.HasValue
@@ -1227,8 +1230,8 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Updates the position of a text fragment, if anchorBefore or anchorAfter are null, they
-        /// will be automatically created.  If both are null, then an error is thrown.
+        ///     Updates the position of a text fragment, if anchorBefore or anchorAfter are null, they
+        ///     will be automatically created.  If both are null, then an error is thrown.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="newAnchorBefore">Id of the directly preceding text fragment, may be null</param>
@@ -1257,7 +1260,7 @@ namespace SQE.DatabaseAccess
                     newAnchorAfter
                 );
             positionDataRequestFactory.AddAction(PositionAction.MoveTo);
-            List<MutationRequest> requests = await positionDataRequestFactory.CreateRequestsAsync();
+            var requests = await positionDataRequestFactory.CreateRequestsAsync();
             var shiftTextFragmentMutationResults =
                 await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
@@ -1271,8 +1274,8 @@ namespace SQE.DatabaseAccess
 
 
         /// <summary>
-        /// Updates the position of a text fragment, if anchorBefore or anchorAfter are null, they
-        /// will be automatically created.  If both are null, then an error is thrown.
+        ///     Updates the position of a text fragment, if anchorBefore or anchorAfter are null, they
+        ///     will be automatically created.  If both are null, then an error is thrown.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="anchorBefore">Id of the directly preceding text fragment, may be null</param>
@@ -1295,9 +1298,9 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Create a PositionDataRequestFactory from the submitted data. If anchorBefore or anchorAfter are null,
-        /// the missing data will be automatically calculated. If both are null, the submitted text fragments 
-        /// will be positioned at the end of the list of text fragments for the edition.
+        ///     Create a PositionDataRequestFactory from the submitted data. If anchorBefore or anchorAfter are null,
+        ///     the missing data will be automatically calculated. If both are null, the submitted text fragments
+        ///     will be positioned at the end of the list of text fragments for the edition.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="anchorBefore">Id of the text fragment preceding the text fragments being positioned, may be null</param>
@@ -1317,14 +1320,15 @@ namespace SQE.DatabaseAccess
             {
                 // Verify that anchorBefore and anchorAfter are valid values if they exist
                 var fragments = await GetFragmentDataAsync(editionUser);
-                await _verifyTextFragmentsSequence(fragments, anchorBefore, anchorAfter);
+                _verifyTextFragmentsSequence(fragments, anchorBefore, anchorAfter);
 
                 // Set the current text fragment position factory
                 positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
                     connection,
                     StreamType.TextFragmentStream,
                     textFragmentIds,
-                    editionUser.EditionId);
+                    editionUser.EditionId
+                );
 
                 // Determine the anchorBefore if none was provided
                 if (!anchorBefore.HasValue)
@@ -1381,9 +1385,9 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Create a PositionDataRequestFactory from the submitted data. If anchorBefore or anchorAfter are null,
-        /// the missing data will be automatically calculated. If both are null, the submitted text fragments 
-        /// will be positioned at the end of the list of text fragments for the edition.
+        ///     Create a PositionDataRequestFactory from the submitted data. If anchorBefore or anchorAfter are null,
+        ///     the missing data will be automatically calculated. If both are null, the submitted text fragments
+        ///     will be positioned at the end of the list of text fragments for the edition.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="anchorBefore">Id of the text fragment preceding the text fragments being positioned, may be null</param>
@@ -1406,8 +1410,8 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Ensures that anchorBefore and anchorAfter are either null or part of the current edition. If
-        /// both exist, this verifies that they are indeed sequential.
+        ///     Ensures that anchorBefore and anchorAfter are either null or part of the current edition. If
+        ///     both exist, this verifies that they are indeed sequential.
         /// </summary>
         /// <param name="fragments">List of all fragments in the edition</param>
         /// <param name="anchorBefore">Id of the first text fragment</param>
@@ -1415,7 +1419,7 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         /// <exception cref="InputDataRuleViolationException"></exception>
         /// <exception cref="ImproperInputDataException"></exception>
-        private async Task _verifyTextFragmentsSequence(
+        private static void _verifyTextFragmentsSequence(
             List<TextFragmentData> fragments,
             uint? anchorBefore,
             uint? anchorAfter)
@@ -1441,12 +1445,13 @@ namespace SQE.DatabaseAccess
 
             if (anchorBefore.HasValue && !anchorBeforeExists)
                 throw new StandardExceptions.ImproperInputDataException("previous text fragment id");
-            if (anchorAfter.HasValue && !anchorAfterExists)
+            if (anchorAfter.HasValue
+                && !anchorAfterExists)
                 throw new StandardExceptions.ImproperInputDataException("next text fragment id");
         }
 
         /// <summary>
-        /// Adds a text fragment to an edition.
+        ///     Adds a text fragment to an edition.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Id of the text fragment to be added</param>
@@ -1473,7 +1478,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Gets the text fragment data id for a text fragment id
+        ///     Gets the text fragment data id for a text fragment id
         /// </summary>
         /// <param name="user">Edition user object</param>
         /// <param name="textFragmentId">Id of the text fragment</param>

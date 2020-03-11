@@ -50,6 +50,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// simply add break to the list of actions.
         /// </summary>
         Add,
+
         /// <summary>
         /// Removes all connections between the anchors - items are ignored.
         /// If anchorsAfter is empty than all following connections of anchorsBefore are deleted and
@@ -58,20 +59,22 @@ namespace SQE.DatabaseAccess.Helpers
         /// the original neighbours are anchorsBefore
         /// </summary>
         Break,
+
         /// <summary>
-        /// Connects each anchor of anchorsBefore with each of anchorsAfter.
+        ///     Connects each anchor of anchorsBefore with each of anchorsAfter.
         /// </summary>
         ConnectAnchors,
         /// <summary>
-        /// Deletes the item(-stream)  from the stream.
-        /// If no anchors are given, all instances of the item(-stream) are deleted,
-        /// if anchors are given, only those connected with the anchors are deleted:
-        /// a->b->c, a->b->d, e->b->d with delete b and without anchors => a, c, d, e,
-        /// with delete b and anchorBefore a will leave e->b->d untouched
-        /// with delete b and anchorsAfter c will leave a->b->d and e->b->d untouched
-        /// with delete b and anchorBefore a and anchorsAfter d will leave a->b->c untouched.
+        ///     Deletes the item(-stream)  from the stream.
+        ///     If no anchors are given, all instances of the item(-stream) are deleted,
+        ///     if anchors are given, only those connected with the anchors are deleted:
+        ///     a->b->c, a->b->d, e->b->d with delete b and without anchors => a, c, d, e,
+        ///     with delete b and anchorBefore a will leave e->b->d untouched
+        ///     with delete b and anchorsAfter c will leave a->b->d and e->b->d untouched
+        ///     with delete b and anchorBefore a and anchorsAfter d will leave a->b->c untouched.
         /// </summary>
         Delete,
+
         /// <summary>
         /// Like Delete but in case the items form a straight path without any forks,
         /// the now orphaned anchors before and after will be connected (if both exist):
@@ -81,10 +84,11 @@ namespace SQE.DatabaseAccess.Helpers
         /// which had not been affected by the delete.
         /// </summary>
         DeleteAndClose,
+
         /// <summary>
-        /// Takes the path described by the itemIds out and inserts it between the new anchors provided as Ids
-        /// If the new anchors are adjacent, then they are split up: a->b => a->c->b
-        /// The gap between the old anchors is closed.
+        ///     Takes the path described by the itemIds out and inserts it between the new anchors provided as Ids
+        ///     If the new anchors are adjacent, then they are split up: a->b => a->c->b
+        ///     The gap between the old anchors is closed.
         /// </summary>
         MoveTo
     }
@@ -148,8 +152,10 @@ namespace SQE.DatabaseAccess.Helpers
         /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
         /// <param name="itemIds">A list of item ids which should form a path</param>
         /// <param name="editionId">Id of the edition</param>
-        /// <param name="addExistingAnchors">Boolean whether or not to automatically add the anchors before and after
-        /// the itemIds to the factory</param>
+        /// <param name="addExistingAnchors">
+        ///     Boolean whether or not to automatically add the anchors before and after
+        ///     the itemIds to the factory
+        /// </param>
         /// <returns></returns>
         public static async Task<PositionDataRequestFactory> CreateInstanceAsync(
             IDbConnection dbConnection, 
@@ -569,7 +575,8 @@ namespace SQE.DatabaseAccess.Helpers
                     _streamType,
                     itemId,
                     _editionId,
-                    true);
+                    true
+                );
                 tempData.AddAction(PositionAction.DeleteAndClose);
                 requests.AddRange(await tempData.CreateRequestsAsync());
             }
@@ -662,7 +669,8 @@ namespace SQE.DatabaseAccess.Helpers
         {
             var result = await _getExistingPairsAsync(
                 new List<uint> { itemId },
-                new List<uint> { nextItemId });
+                new List<uint> { nextItemId }
+            );
             return result.Any() ? result.First() : null;
         }
 

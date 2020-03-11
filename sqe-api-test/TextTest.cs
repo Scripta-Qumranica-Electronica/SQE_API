@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore.Internal;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
@@ -170,20 +169,20 @@ namespace SQE.ApiTest
                 foreach (var signInterpretation in sign.signInterpretations)
                 {
                     foreach (var attr in signInterpretation.attributes)
-                        if (!msg.editors.ContainsKey(attr.editorId))
+                        if (!msg.editors.ContainsKey(attr.editorId.ToString()))
                             editorIds.Add(attr.editorId);
 
                     foreach (var roi in signInterpretation.rois)
-                        if (!msg.editors.ContainsKey(roi.editorId))
+                        if (!msg.editors.ContainsKey(roi.editorId.ToString()))
                             editorIds.Add(roi.editorId);
 
                     foreach (var nexSign in signInterpretation.nextSignInterpretations)
-                        if (!msg.editors.ContainsKey(nexSign.editorId))
+                        if (!msg.editors.ContainsKey(nexSign.editorId.ToString()))
                             editorIds.Add(nexSign.editorId);
                 }
 
             Assert.NotEmpty(editorIds);
-            foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId));
+            foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId.ToString()));
         }
 
         private static void _verifyTextEditionDTO(TextEditionDTO msg)
@@ -234,34 +233,34 @@ namespace SQE.ApiTest
             var editorIds = new List<uint> { msg.editorId };
             foreach (var textFragment in msg.textFragments)
             {
-                if (!msg.editors.ContainsKey(textFragment.editorId))
+                if (!msg.editors.ContainsKey(textFragment.editorId.ToString()))
                     editorIds.Add(textFragment.editorId);
 
                 foreach (var line in textFragment.lines)
                 {
-                    if (!msg.editors.ContainsKey(line.editorId))
+                    if (!msg.editors.ContainsKey(line.editorId.ToString()))
                         editorIds.Add(line.editorId);
 
                     foreach (var sign in line.signs)
                         foreach (var signInterpretation in sign.signInterpretations)
                         {
                             foreach (var attr in signInterpretation.attributes)
-                                if (!msg.editors.ContainsKey(attr.editorId))
+                                if (!msg.editors.ContainsKey(attr.editorId.ToString()))
                                     editorIds.Add(attr.editorId);
 
                             foreach (var roi in signInterpretation.rois)
-                                if (!msg.editors.ContainsKey(roi.editorId))
+                                if (!msg.editors.ContainsKey(roi.editorId.ToString()))
                                     editorIds.Add(roi.editorId);
 
                             foreach (var nexSign in signInterpretation.nextSignInterpretations)
-                                if (!msg.editors.ContainsKey(nexSign.editorId))
+                                if (!msg.editors.ContainsKey(nexSign.editorId.ToString()))
                                     editorIds.Add(nexSign.editorId);
                         }
                 }
             }
 
             Assert.NotEmpty(editorIds);
-            foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId));
+            foreach (var editorId in editorIds) Assert.True(msg.editors.ContainsKey(editorId.ToString()));
         }
 
         [Fact]
@@ -303,7 +302,7 @@ namespace SQE.ApiTest
                         true
                     ); // Get the updated list of text fragments in the edition
                 Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                var index = updatedTextFragments.textFragments.Select(x => x.id).ToList().IndexOf(msg.id);
                 Assert.Equal(1, index); //Index 1 would be the second position
                 Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
                 Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
@@ -359,7 +358,7 @@ namespace SQE.ApiTest
                         true
                     ); // Get the updated list of text fragments in the edition
                 Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-                var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                var index = updatedTextFragments.textFragments.Select(x => x.id).ToList().IndexOf(msg.id);
                 Assert.Equal(updatedTextFragments.textFragments.Count - 2, index); // Check that it is second to last
                 Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
                 Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
@@ -409,7 +408,7 @@ namespace SQE.ApiTest
                             true
                         ); // Get the updated list of text fragments in the edition
                     Assert.NotEmpty(updatedTextFragments.textFragments.Where(x => x.id == msg.id));
-                    var index = updatedTextFragments.textFragments.Select(x => x.id).IndexOf(msg.id);
+                    var index = updatedTextFragments.textFragments.Select(x => x.id).ToList().IndexOf(msg.id);
                     Assert.Equal(1, index); //Index 1 would be the second position
                     Assert.Equal(msg.id, updatedTextFragments.textFragments[index].id);
                     Assert.Equal(msg.name, updatedTextFragments.textFragments[index].name);
@@ -458,140 +457,6 @@ namespace SQE.ApiTest
 
                 for (var i = 0; i < textFragments.textFragments.Count; i++)
                     textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
-            }
-        }
-
-        [Fact]
-        public async Task CanMoveTextFragmentAfter()
-        {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
-            {
-                // Arrange
-                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
-
-                // Act
-                var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
-                    editionId,
-                    textFragments.textFragments.First().id,
-                    new UpdateTextFragmentDTO()
-                    {
-                        previousTextFragmentId = textFragments.textFragments.Last().id,
-                        name = null,
-                        nextTextFragmentId = null
-                    }
-                );
-                var (response, msg, _, _) = await Request.Send(
-                    newTextFragmentRequestObject,
-                    _client,
-                    null,
-                    auth: true,
-                    deterministic: false
-                );
-
-                // Assert
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                var updatedTextFragments =
-                    await _getEditionTextFragments(
-                        editionId,
-                        true
-                    ); // Get the updated list of text fragments in the edition
-                // Check that nothing has changed for the moved text fragment
-                textFragments.textFragments.First().ShouldDeepEqual(updatedTextFragments.textFragments.Last());
-
-                // Make sure that nothing else has changed to the pre-existing text fragments
-                var originalShifted = textFragments.textFragments.Skip(1);
-                var updatedShifted =
-                    updatedTextFragments.textFragments.Take(updatedTextFragments.textFragments.Count - 1);
-                originalShifted.ShouldDeepEqual(updatedShifted);
-            }
-        }
-
-        [Fact]
-        public async Task CanMoveTextFragmentBefore()
-        {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
-            {
-                // Arrange
-                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
-
-                // Act
-                var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
-                    editionId,
-                    textFragments.textFragments.Last().id,
-                    new UpdateTextFragmentDTO()
-                    {
-                        previousTextFragmentId = null,
-                        name = null,
-                        nextTextFragmentId = textFragments.textFragments.First().id
-                    }
-                );
-                var (response, msg, _, _) = await Request.Send(
-                    newTextFragmentRequestObject,
-                    _client,
-                    null,
-                    auth: true,
-                    deterministic: false
-                );
-
-                // Assert
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                var updatedTextFragments =
-                    await _getEditionTextFragments(
-                        editionId,
-                        true
-                    ); // Get the updated list of text fragments in the edition
-                // Check that nothing has changed for the moved text fragment
-                textFragments.textFragments.Last().ShouldDeepEqual(updatedTextFragments.textFragments.First());
-
-                // Make sure that nothing else has changed to the pre-existing text fragments
-                var originalShifted = textFragments.textFragments.Take(textFragments.textFragments.Count - 1);
-                var updatedShifted =
-                    updatedTextFragments.textFragments.Skip(1);
-                originalShifted.ShouldDeepEqual(updatedShifted);
-            }
-        }
-
-        [Fact]
-        public async Task CanMoveTextFragmentBeforeAndAfter()
-        {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
-            {
-                // Arrange
-                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
-
-                // Act
-                var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
-                    editionId,
-                    textFragments.textFragments.First().id,
-                    new UpdateTextFragmentDTO()
-                    {
-                        previousTextFragmentId = textFragments.textFragments[1].id,
-                        name = null,
-                        nextTextFragmentId = textFragments.textFragments[2].id
-                    }
-                );
-                var (response, msg, _, _) = await Request.Send(
-                    newTextFragmentRequestObject,
-                    _client,
-                    null,
-                    auth: true,
-                    deterministic: false
-                );
-
-                // Assert
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                var updatedTextFragments =
-                    await _getEditionTextFragments(
-                        editionId,
-                        true
-                    ); // Get the updated list of text fragments in the edition
-                // Check that nothing has changed for the moved text fragment
-                textFragments.textFragments.First().ShouldDeepEqual(updatedTextFragments.textFragments[1]);
-
-                // Make sure that nothing else has changed to the pre-existing text fragments
-                var originalShifted = textFragments.textFragments.Skip(1).ToList();
-                var updatedShifted = updatedTextFragments.textFragments.Take(1).ToList().Concat(updatedTextFragments.textFragments.Skip(2).ToList());
-                originalShifted.ShouldDeepEqual(updatedShifted);
             }
         }
 
@@ -679,70 +544,178 @@ namespace SQE.ApiTest
         }
 
         [Fact]
-        public async Task CannotAddTextFragmentWithBlankName()
+        public async Task CanMoveTextFragmentAfter()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
-                const string textFragmentName = "";
-                const uint previousFragmentId = 0; // There is no text fragments 0 possible
-                var numberOfTextFragments = textFragments.textFragments.Count;
 
                 // Act
-                var (response, msg) = await _createTextFragment(
+                var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
                     editionId,
-                    textFragmentName,
-                    previousTextFragmentId: previousFragmentId,
-                    shouldSucceed: false
+                    textFragments.textFragments.First().id,
+                    new UpdateTextFragmentDTO
+                    {
+                        previousTextFragmentId = textFragments.textFragments.Last().id,
+                        name = null,
+                        nextTextFragmentId = null
+                    }
+                );
+                var (response, msg, _, _) = await Request.Send(
+                    newTextFragmentRequestObject,
+                    _client,
+                    null,
+                    auth: true,
+                    deterministic: false
                 );
 
                 // Assert
-                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 var updatedTextFragments =
                     await _getEditionTextFragments(
                         editionId,
                         true
-                    ); // Get the list of text fragments in the edition again
-                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+                    ); // Get the updated list of text fragments in the edition
+                       // Check that nothing has changed for the moved text fragment
+                textFragments.textFragments.First().ShouldDeepEqual(updatedTextFragments.textFragments.Last());
 
                 // Make sure that nothing else has changed to the pre-existing text fragments
-                for (var i = 0; i < textFragments.textFragments.Count; i++)
-                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                var originalShifted = textFragments.textFragments.Skip(1);
+                var updatedShifted =
+                    updatedTextFragments.textFragments.Take(updatedTextFragments.textFragments.Count - 1);
+                originalShifted.ShouldDeepEqual(updatedShifted);
             }
         }
 
         [Fact]
-        public async Task CannotAddTextFragmentWithNullName()
+        public async Task CanMoveTextFragmentBefore()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
-                const string textFragmentName = null;
-                const uint previousFragmentId = 0; // There is no text fragments 0 possible
-                var numberOfTextFragments = textFragments.textFragments.Count;
 
                 // Act
-                var (response, msg) = await _createTextFragment(
+                var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
                     editionId,
-                    textFragmentName,
-                    previousTextFragmentId: previousFragmentId,
+                    textFragments.textFragments.Last().id,
+                    new UpdateTextFragmentDTO
+                    {
+                        previousTextFragmentId = null,
+                        name = null,
+                        nextTextFragmentId = textFragments.textFragments.First().id
+                    }
+                );
+                var (response, msg, _, _) = await Request.Send(
+                    newTextFragmentRequestObject,
+                    _client,
+                    null,
+                    auth: true,
+                    deterministic: false
+                );
+
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the updated list of text fragments in the edition
+                       // Check that nothing has changed for the moved text fragment
+                textFragments.textFragments.Last().ShouldDeepEqual(updatedTextFragments.textFragments.First());
+
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                var originalShifted = textFragments.textFragments.Take(textFragments.textFragments.Count - 1);
+                var updatedShifted =
+                    updatedTextFragments.textFragments.Skip(1);
+                originalShifted.ShouldDeepEqual(updatedShifted);
+            }
+        }
+
+        [Fact]
+        public async Task CanMoveTextFragmentBeforeAndAfter()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+
+                // Act
+                var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
+                    editionId,
+                    textFragments.textFragments.First().id,
+                    new UpdateTextFragmentDTO
+                    {
+                        previousTextFragmentId = textFragments.textFragments[1].id,
+                        name = null,
+                        nextTextFragmentId = textFragments.textFragments[2].id
+                    }
+                );
+                var (response, msg, _, _) = await Request.Send(
+                    newTextFragmentRequestObject,
+                    _client,
+                    null,
+                    auth: true,
+                    deterministic: false
+                );
+
+                // Assert
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the updated list of text fragments in the edition
+                       // Check that nothing has changed for the moved text fragment
+                textFragments.textFragments.First().ShouldDeepEqual(updatedTextFragments.textFragments[1]);
+
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                var originalShifted = textFragments.textFragments.Skip(1).ToList();
+                var updatedShifted = updatedTextFragments.textFragments.Take(1)
+                    .ToList()
+                    .Concat(updatedTextFragments.textFragments.Skip(2).ToList());
+                originalShifted.ShouldDeepEqual(updatedShifted);
+            }
+        }
+
+        [Fact]
+        public async Task CanMoveTextFragmentBetweenNonsequentialTextFragments()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+
+                // Act
+                var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
+                    editionId,
+                    textFragments.textFragments.First().id,
+                    new UpdateTextFragmentDTO
+                    {
+                        previousTextFragmentId = textFragments.textFragments.Last().id,
+                        name = null,
+                        nextTextFragmentId = textFragments.textFragments.First().id
+                    }
+                );
+                var (response, msg, _, _) = await Request.Send(
+                    newTextFragmentRequestObject,
+                    _client,
+                    null,
+                    auth: true,
+                    deterministic: false,
                     shouldSucceed: false
                 );
 
                 // Assert
                 Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
                 var updatedTextFragments =
                     await _getEditionTextFragments(
                         editionId,
                         true
                     ); // Get the list of text fragments in the edition again
-                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
-
-                // Make sure that nothing else has changed to the pre-existing text fragments
-                for (var i = 0; i < textFragments.textFragments.Count; i++)
-                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+                textFragments.ShouldDeepEqual(updatedTextFragments);
             }
         }
 
@@ -852,6 +825,74 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        public async Task CannotAddTextFragmentWithBlankName()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = "";
+                const uint previousFragmentId = 0; // There is no text fragments 0 possible
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(
+                    editionId,
+                    textFragmentName,
+                    previousTextFragmentId: previousFragmentId,
+                    shouldSucceed: false
+                );
+
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the list of text fragments in the edition again
+                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+            }
+        }
+
+        [Fact]
+        public async Task CannotAddTextFragmentWithNullName()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                const string textFragmentName = null;
+                const uint previousFragmentId = 0; // There is no text fragments 0 possible
+                var numberOfTextFragments = textFragments.textFragments.Count;
+
+                // Act
+                var (response, msg) = await _createTextFragment(
+                    editionId,
+                    textFragmentName,
+                    previousTextFragmentId: previousFragmentId,
+                    shouldSucceed: false
+                );
+
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+                var updatedTextFragments =
+                    await _getEditionTextFragments(
+                        editionId,
+                        true
+                    ); // Get the list of text fragments in the edition again
+                Assert.Equal(numberOfTextFragments, updatedTextFragments.textFragments.Count);
+
+                // Make sure that nothing else has changed to the pre-existing text fragments
+                for (var i = 0; i < textFragments.textFragments.Count; i++)
+                    textFragments.textFragments[i].ShouldDeepEqual(updatedTextFragments.textFragments[i]);
+            }
+        }
+
+        [Fact]
         public async Task CannotAddTextFragmentWithoutPermission()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))
@@ -885,7 +926,7 @@ namespace SQE.ApiTest
                 var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
                     editionId,
                     textFragments.textFragments.First().id,
-                    new UpdateTextFragmentDTO()
+                    new UpdateTextFragmentDTO
                     {
                         previousTextFragmentId = 0,
                         name = null,
@@ -925,51 +966,11 @@ namespace SQE.ApiTest
                 var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
                     editionId,
                     textFragments.textFragments.First().id,
-                    new UpdateTextFragmentDTO()
+                    new UpdateTextFragmentDTO
                     {
                         previousTextFragmentId = null,
                         name = null,
                         nextTextFragmentId = 0
-                    }
-                );
-                var (response, msg, _, _) = await Request.Send(
-                    newTextFragmentRequestObject,
-                    _client,
-                    null,
-                    auth: true,
-                    deterministic: false,
-                    shouldSucceed: false
-                );
-
-                // Assert
-                Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-                var updatedTextFragments =
-                    await _getEditionTextFragments(
-                        editionId,
-                        true
-                    ); // Get the list of text fragments in the edition again
-                textFragments.ShouldDeepEqual(updatedTextFragments);
-            }
-        }
-
-        [Fact]
-        public async Task CanMoveTextFragmentBetweenNonsequentialTextFragments()
-        {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
-            {
-                // Arrange
-                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
-
-                // Act
-                var newTextFragmentRequestObject = new Put.V1_Editions_EditionId_TextFragments_TextFragmentId(
-                    editionId,
-                    textFragments.textFragments.First().id,
-                    new UpdateTextFragmentDTO()
-                    {
-                        previousTextFragmentId = textFragments.textFragments.Last().id,
-                        name = null,
-                        nextTextFragmentId = textFragments.textFragments.First().id
                     }
                 );
                 var (response, msg, _, _) = await Request.Send(

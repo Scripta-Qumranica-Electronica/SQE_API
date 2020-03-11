@@ -76,7 +76,9 @@ namespace SQE.ApiTest.ApiRequests
         public virtual Func<HubConnection, Task<T>> SignalrRequest<T>()
             where T : Toutput
         {
-            return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString())
+                : signalR.InvokeAsync<T>(SignalrRequestString(), payload);
         }
 
         /// <summary>
@@ -116,7 +118,7 @@ namespace SQE.ApiTest.ApiRequests
         /// </summary>
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public EditionRequestObject(uint editionId, List<string> optional = null, Tinput payload = default(Tinput)) :
+        public EditionRequestObject(uint editionId, List<string> optional = null, Tinput payload = default) :
             base(payload)
         {
             this.editionId = editionId;
@@ -126,6 +128,45 @@ namespace SQE.ApiTest.ApiRequests
         protected override string HttpPath()
         {
             return requestPath.Replace("/edition-id", $"/{editionId.ToString()}")
+                   + (optional != null && optional.Any() ? $"?optional={string.Join(",", optional)}" : "");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? optional == null ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, optional)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, payload);
+        }
+    }
+
+    /// <summary>
+    ///     Subclass of RequestObject for all requests made on an edition
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class EditionEditorRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    {
+        public readonly string editorEmail;
+
+        /// <summary>
+        ///     Provides an EditionRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public EditionEditorRequestObject(uint editionId,
+            string editorEmail,
+            List<string> optional = null,
+            Tinput payload = default) :
+            base(editionId, optional, payload)
+        {
+            this.editorEmail = editorEmail;
+        }
+
+        protected override string HttpPath()
+        {
+            return requestPath.Replace("/edition-id", $"/{editionId.ToString()}")
+                       .Replace("/editor-email-id", $"/{editorEmail}")
                    + (optional != null && optional.Any() ? $"?optional={string.Join(",", optional)}" : "");
         }
 
@@ -156,7 +197,7 @@ namespace SQE.ApiTest.ApiRequests
         public ImagedObjectRequestObject(uint editionId,
             uint imagedObjectId,
             List<string> optional = null,
-            Tinput payload = default(Tinput)) : base(editionId, optional, payload)
+            Tinput payload = default) : base(editionId, optional, payload)
         {
             this.imagedObjectId = imagedObjectId;
         }

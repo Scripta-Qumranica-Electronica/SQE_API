@@ -8,28 +8,32 @@
 
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.Server.Services;
+using SQE.DatabaseAccess.Helpers;
+using System.Text.Json;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub : Hub
+    public partial class MainHub : Hub<ISQEClient>
     {
         private readonly IArtefactService _artefactService;
         private readonly IRoiService _roiService;
         private readonly IUserService _userService;
         private readonly IEditionService _editionService;
+        private readonly ITextService _textService;
         private readonly IImagedObjectService _imagedObjectService;
         private readonly IImageService _imageService;
-        private readonly ITextService _textService;
+        private readonly IUtilService _utilService;
 
-        public MainHub(IArtefactService artefactService, IRoiService roiService, IUserService userService, IEditionService editionService, IImagedObjectService imagedObjectService, IImageService imageService, ITextService textService)
+        public MainHub(IArtefactService artefactService, IRoiService roiService, IUserService userService, IEditionService editionService, ITextService textService, IImagedObjectService imagedObjectService, IImageService imageService, IUtilService utilService)
         {
             _artefactService = artefactService;
             _roiService = roiService;
             _userService = userService;
             _editionService = editionService;
+            _textService = textService;
             _imagedObjectService = imagedObjectService;
             _imageService = imageService;
-            _textService = textService;
+            _utilService = utilService;
         }
     }
 }

@@ -14,11 +14,12 @@ namespace SQE.DatabaseAccess.Queries
         /// </summary>
         public const string GetQuery = @"
 WITH RECURSIVE sign_interpretation_ids
-AS (
+	AS (
 		SELECT 	position_in_stream.sign_interpretation_id AS signInterpretationId, 
 				position_in_stream.next_sign_interpretation_id,
 				position_in_stream_owner.edition_editor_id,
-				1 AS sequence
+				position_in_stream_owner.edition_id,
+				@X := 0 AS sequence
 		FROM position_in_stream
 			JOIN position_in_stream_owner 
 				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
@@ -27,19 +28,21 @@ AS (
 
 		UNION
 
-		SELECT 	position_in_stream.sign_interpretation_id, 
+		SELECT 	position_in_stream.sign_interpretation_id AS signInterpretationId, 
 				position_in_stream.next_sign_interpretation_id,
 				position_in_stream_owner.edition_editor_id,
-				sign_interpretation_ids.sequence + 1
-		FROM  sign_interpretation_ids, position_in_stream
+				sign_interpretation_ids.edition_id,
+				@X := @X + 1 AS sequence
+		FROM  sign_interpretation_ids
+			JOIN position_in_stream 
+				ON position_in_stream.sign_interpretation_id = sign_interpretation_ids.next_sign_interpretation_id
+				AND signInterpretationId != @EndId
 			JOIN position_in_stream_owner 
 				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
-				AND position_in_stream_owner.edition_id = @EditionId
-		WHERE position_in_stream.sign_interpretation_id = sign_interpretation_ids.next_sign_interpretation_id
-			AND signInterpretationId != @EndId
+					AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
 	)
 
-SELECT 	manuscript_data.manuscript_id AS manuscriptId,
+SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 		manuscript_data.name AS editionName,
 		manuscript_author.user_id AS manuscriptAuthor,
 
@@ -67,58 +70,72 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 		sign_interpretation_attribute_author.user_id AS signInterpretationAttributeAuthor,
 		sign_interpretation_attribute.numeric_value AS value,
 
-		sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
-		sign_interpretation_roi.sign_interpretation_id AS SignInterpretationId,
-		sign_interpretation_roi_author.user_id AS SignInterpretationRoiAuthor,
-		sign_interpretation_roi.values_set AS ValuesSet,
-		sign_interpretation_roi.exceptional AS Exceptional,
-		ST_ASTEXT(roi_shape.path) AS Shape,
-		roi_position.translate_x AS TranslateX,
-		roi_position.translate_y AS TranslateY,
-		roi_position.stance_rotation AS StanceRotation,
-		roi_position.artefact_id AS ArtefactId
+		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
+		roi.sign_interpretation_id AS SignInterpretationId,
+		roi.user_id AS SignInterpretationRoiAuthor,
+		roi.values_set AS ValuesSet,
+		roi.exceptional AS Exceptional,
+		ST_ASTEXT(roi.path) AS Shape,
+		roi.translate_x AS TranslateX,
+		roi.translate_y AS TranslateY,
+		roi.stance_rotation AS StanceRotation,
+		roi.artefact_id AS ArtefactId
 
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
 	JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_id = signInterpretationId
 	JOIN sign_interpretation_attribute_owner 
 		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
-		AND sign_interpretation_attribute_owner.edition_id = @EditionId
+		AND sign_interpretation_attribute_owner.edition_id = sign_interpretation_ids.edition_id
 	JOIN edition_editor AS sign_interpretation_attribute_author 
 		ON sign_interpretation_attribute_author.edition_editor_id = sign_interpretation_attribute_owner.edition_editor_id
 
 	JOIN line_to_sign ON line_to_sign.sign_id = sign_interpretation.sign_id
 	JOIN line_data USING (line_id)
 	JOIN line_data_owner ON line_data_owner.line_data_id = line_data.line_data_id
-	  AND line_data_owner.edition_id = @EditionId
+	  AND line_data_owner.edition_id = sign_interpretation_ids.edition_id
 	JOIN edition_editor AS line_author ON line_data_owner.edition_editor_id = line_author.edition_editor_id
 
 	JOIN text_fragment_to_line USING (line_id)
 	JOIN text_fragment_data USING (text_fragment_id)
 	JOIN text_fragment_data_owner 
 		ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
-			AND text_fragment_data_owner.edition_id = @EditionId
+			AND text_fragment_data_owner.edition_id = sign_interpretation_ids.edition_id
 	JOIN edition_editor AS text_fragment_author 
 		ON text_fragment_data_owner.edition_editor_id = text_fragment_author.edition_editor_id
 
 	JOIN manuscript_to_text_fragment USING (text_fragment_id)
 	JOIN manuscript_data USING (manuscript_id)
 	JOIN manuscript_data_owner ON manuscript_data_owner.manuscript_data_id = manuscript_data.manuscript_data_id
-		AND manuscript_data_owner.edition_id = @EditionId
+		AND manuscript_data_owner.edition_id = sign_interpretation_ids.edition_id
 	JOIN edition_editor AS manuscript_author ON manuscript_data_owner.edition_editor_id = manuscript_author.edition_editor_id
 	  
 	JOIN edition_editor AS sign_sequence_author ON sign_interpretation_ids.edition_editor_id = sign_sequence_author.edition_editor_id
 
-	LEFT JOIN sign_interpretation_roi ON sign_interpretation_roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
-	LEFT JOIN sign_interpretation_roi_owner 
-		ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
-		AND sign_interpretation_roi_owner.edition_id = @EditionId
-	LEFT JOIN roi_shape ON roi_shape.roi_shape_id = sign_interpretation_roi.roi_shape_id
-	LEFT JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
-	LEFT JOIN edition_editor AS sign_interpretation_roi_author 
-		ON sign_interpretation_roi_author.edition_editor_id = sign_interpretation_roi_owner.edition_editor_id
+	LEFT JOIN 
+		(SELECT	sign_interpretation_roi.sign_interpretation_roi_id,
+				sign_interpretation_roi.sign_interpretation_id,
+				sign_interpretation_roi_author.user_id,
+				sign_interpretation_roi.values_set,
+				sign_interpretation_roi.exceptional,
+				roi_shape.path AS path,
+				roi_position.translate_x,
+				roi_position.translate_y,
+				roi_position.stance_rotation,
+				roi_position.artefact_id,
+				sign_interpretation_roi_owner.edition_id
+		FROM sign_interpretation_roi
+			JOIN sign_interpretation_roi_owner 
+				ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
+			JOIN roi_shape ON roi_shape.roi_shape_id = sign_interpretation_roi.roi_shape_id
+			JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
+			JOIN edition_editor AS sign_interpretation_roi_author 
+				ON sign_interpretation_roi_author.edition_editor_id = sign_interpretation_roi_owner.edition_editor_id) 
+		AS roi 
+			ON roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
+				AND roi.edition_id = sign_interpretation_ids.edition_id
 
-	JOIN edition ON edition.edition_id = @EditionId
+	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
   
 ORDER BY sign_interpretation_ids.sequence
 ";
@@ -134,15 +151,22 @@ ORDER BY sign_interpretation_ids.sequence
         ///     @editionId is the Id of the edition the line is to be searched
         /// </summary>
         public const string GetQuery = @"
-      SELECT sign_interpretation.sign_interpretation_id
-      FROM  line_to_sign
-        JOIN  sign_interpretation USING (sign_id)
-        JOIN   sign_interpretation_attribute USING (sign_interpretation_id)
-        JOIN sign_interpretation_attribute_owner USING (sign_interpretation_attribute_id)
-      WHERE line_id=@entityId
-        AND (attribute_value_id=10 OR attribute_value_id = 11)
-        AND edition_id=@editionId
-
+SELECT sign_interpretation.sign_interpretation_id
+FROM line_to_sign
+	JOIN edition ON edition.edition_id = @EditionId
+	JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
+    JOIN line_to_sign_owner ON line_to_sign_owner.line_to_sign_id = line_to_sign.line_to_sign_id
+    	AND line_to_sign_owner.edition_id = edition.edition_id
+	JOIN sign_interpretation USING (sign_id)
+	JOIN sign_interpretation_attribute USING (sign_interpretation_id)
+	JOIN sign_interpretation_attribute_owner 
+	    ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
+		AND sign_interpretation_attribute_owner.edition_id=edition.edition_id
+        
+WHERE line_id = @EntityId
+	AND (attribute_value_id = 10 OR attribute_value_id = 11)
+	AND (edition_editor.user_id = @UserId OR edition.public = 1)
+ORDER BY attribute_value_id
 ";
     }
 

@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.329
@@ -37,9 +37,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs", "U
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-hub-builder", "sqe-realtime-hub-builder\sqe-realtime-hub-builder.csproj", "{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "qwb-to-sqe", "qwb-to-sqe\qwb-to-sqe.csproj", "{A5C337B7-A222-4E74-827B-09E9270C6FEB}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ingo_test", "ingo_test\ingo_test.csproj", "{51E6B0F2-6EF7-40D1-8B10-A9E696430112}"
+#Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "qwb-to-sqe", "qwb-to-sqe\qwb-to-sqe.csproj", "{A5C337B7-A222-4E74-827B-09E9270C6FEB}"
+#EndProject
+#Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ingo_test", "ingo_test\ingo_test.csproj", "{51E6B0F2-6EF7-40D1-8B10-A9E696430112}"
+#EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptInterfaces", "Utilities\GenerateTypescriptInterfaces\GenerateTypescriptInterfaces.csproj", "{298627C6-72BB-409D-92EE-EC5605078557}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -79,6 +81,10 @@ Global
 		{51E6B0F2-6EF7-40D1-8B10-A9E696430112}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{51E6B0F2-6EF7-40D1-8B10-A9E696430112}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{51E6B0F2-6EF7-40D1-8B10-A9E696430112}.Release|Any CPU.Build.0 = Release|Any CPU
+		{298627C6-72BB-409D-92EE-EC5605078557}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{298627C6-72BB-409D-92EE-EC5605078557}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{298627C6-72BB-409D-92EE-EC5605078557}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{298627C6-72BB-409D-92EE-EC5605078557}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -88,6 +94,7 @@ Global
 		{645057D9-6167-4A7B-AF1C-4232A2CCAEC2} = {2342F74C-D461-45E2-BA99-72BD0C84F64B}
 		{39232745-6408-429E-8726-5F5D4A44EC72} = {2342F74C-D461-45E2-BA99-72BD0C84F64B}
 		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC} = {055DC416-8BED-4A81-9E30-C802D05C9B50}
+		{298627C6-72BB-409D-92EE-EC5605078557} = {055DC416-8BED-4A81-9E30-C802D05C9B50}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28758AAA-F471-4702-917C-C7D7D498BA0C}

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -35,22 +36,24 @@ namespace SQE.API.Server.Helpers
                 context.Response.ContentType = "application/json; charset=utf-8";
                 await context.Response.WriteAsync(
                     JsonConvert.SerializeObject(
-                        new ApiExceptionError(nameof(httpException), httpException.Error)
+                        new ApiExceptionError(nameof(httpException), httpException.Error, httpException is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)
                     )
                 );
             }
         }
 
-        private class ApiExceptionError
+        public class ApiExceptionError
         {
-            public ApiExceptionError(string internalErrorName, string msg)
+            public ApiExceptionError(string internalErrorName, string msg, IDictionary data)
             {
                 this.internalErrorName = internalErrorName;
                 this.msg = msg;
+                this.data = data;
             }
 
             public string internalErrorName { get; }
             public string msg { get; }
+            public IDictionary data { get; }
         }
     }
 }
