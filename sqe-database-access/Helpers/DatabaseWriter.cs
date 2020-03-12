@@ -125,7 +125,7 @@ namespace SQE.DatabaseAccess.Helpers
     {
         Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
             List<MutationRequest> mutationRequests);
-        
+
     }
 
     public class DatabaseWriter : DbConnectionBase, IDatabaseWriter
@@ -133,7 +133,7 @@ namespace SQE.DatabaseAccess.Helpers
         public DatabaseWriter(IConfiguration config) : base(config)
         {
         }
-        
+
 
         /// <summary>
         ///     Performs a list mutation requests for a single scroll version and user.
@@ -163,7 +163,7 @@ namespace SQE.DatabaseAccess.Helpers
                     // Grab a transaction scope, we roll back all changes if any transactions fail
                     // I could limit the transaction scope to each individual mutation request,
                     // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
-                    using (var transactionScope = new TransactionScope())
+                    using (var transactionScope = new TransactionScope(/*TransactionScopeOption.RequiresNew*/))
                     using (var connection = OpenConnection())
                     {
                         foreach (var mutationRequest in mutationRequests)
@@ -417,8 +417,8 @@ namespace SQE.DatabaseAccess.Helpers
             // Execute query
             await connection.ExecuteAsync(query, mutationRequest.Parameters);
         }
-        
-        
+
+
 
         /// <summary>
         ///     Enum for allowed actions in the single_action database table.

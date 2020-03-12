@@ -29,12 +29,12 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="payload">JSON object with the WKT polygon to validate</param>
         [Authorize]
-        public async Task PostV1UtilsValidateWkt(WktPolygonDTO payload)
+        public async Task<WktPolygonDTO> PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
 
         {
             try
             {
-                await _utilService.ValidateWktPolygonAsync(payload.wktPolygon, clientId: Context.ConnectionId);
+                return await _utilService.RepairWktPolygonAsync(payload.wktPolygon, clientId: Context.ConnectionId);
             }
             catch (ApiException err)
             {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace SQE.API.DTO
 {
@@ -83,6 +84,33 @@ namespace SQE.API.DTO
     public class EditionScriptCollectionDTO
     {
         public List<LetterDTO> letters { get; set; }
+    }
+
+    /// <summary>
+    /// This is a list of all entities in an edition, including the edition itself.
+    /// This is initially intended to be used with the DeleteDTO object
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum EditionEntities
+    {
+        edition,
+        artefact,
+        textFragment,
+        line,
+        signInterpretation,
+        roi
+    }
+
+    public class DeleteDTO
+    {
+        public DeleteDTO(EditionEntities entity, List<uint> ids)
+        {
+            this.entity = entity;
+            this.ids = ids;
+        }
+
+        public EditionEntities entity { get; set; }
+        public List<uint> ids { get; set; }
     }
 
     #region Request DTO's

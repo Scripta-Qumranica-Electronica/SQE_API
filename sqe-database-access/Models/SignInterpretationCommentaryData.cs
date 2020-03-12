@@ -16,7 +16,7 @@ namespace SQE.DatabaseAccess.Models
 
     public class SignInterpretationCommentaryDataSearchData : SignInterpretationCommentaryData, ISearchData
     {
-        
+
 
         public string CommentaryRegex { get; set; }
 

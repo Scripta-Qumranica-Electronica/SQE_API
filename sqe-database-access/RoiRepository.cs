@@ -35,7 +35,7 @@ namespace SQE.DatabaseAccess
         Task<List<SignInterpretationRoiData>> GetSignInterpretationRoisByArtefactIdAsync(
             EditionUserInfo editionUser,
             uint artefactId);
-        
+
         Task<List<uint>> GetSignInterpretationRoiIdsByDataAsync(EditionUserInfo editionUser,
             SignInterpretationROISearchData searchData);
 
@@ -58,7 +58,7 @@ namespace SQE.DatabaseAccess
             _databaseWriter = databaseWriter;
         }
 
-        
+
         /// <summary>
         ///     Creates a sign interpretation roi from a list.
         /// </summary>
@@ -191,7 +191,7 @@ namespace SQE.DatabaseAccess
             foreach (var deleteRoiId in deleteRoiIds) await DeleteSignInterpretationRoiAsync(editionUser, deleteRoiId);
             return deleteRoiIds;
         }
-        
+
         /// <summary>
         /// Deletes all rois for the sign interpretation referred by its id
         /// </summary>
@@ -245,7 +245,7 @@ namespace SQE.DatabaseAccess
                 )).ToList();
             }
         }
-        
+
         /// <summary>
         /// Retrieves all sign interpretation rois which match the data provided by searchData
         /// </summary>
@@ -262,7 +262,7 @@ namespace SQE.DatabaseAccess
             {
                 var result = await connection.QueryAsync<SignInterpretationRoiData>(
                     query,
-                    new {editionUser.EditionId});
+                    new { editionUser.EditionId });
                 return result == null ? new List<SignInterpretationRoiData>() : result.ToList();
             }
         }
@@ -279,12 +279,12 @@ namespace SQE.DatabaseAccess
                 editionUser,
                 searchData);
         }
-        
+
         public async Task<List<SignInterpretationRoiData>> ReplaceSignInterpretationRoisAsync(
             EditionUserInfo editionUser,
             List<SignInterpretationRoiData> rois)
         {
-            foreach (var signInterpretationId in 
+            foreach (var signInterpretationId in
                 rois.Select(r => r.SignInterpretationId).Distinct())
             {
                 await DeleteAllRoisForSignInterpretationAsync(editionUser, signInterpretationId.GetValueOrDefault());
@@ -294,7 +294,7 @@ namespace SQE.DatabaseAccess
 
 
         }
-        
+
         /// <summary>
         /// Retrieves all sign interpretation roi ids which match the data provided by searchData
         /// </summary>
@@ -313,7 +313,7 @@ namespace SQE.DatabaseAccess
             {
                 var result = await connection.QueryAsync<uint>(
                     query,
-                    new {editionUser.EditionId});
+                    new { editionUser.EditionId });
                 return result == null ? new List<uint>() : result.ToList();
             }
         }

@@ -19,11 +19,11 @@ namespace SQE.DatabaseAccess
         Task<List<SignInterpretationAttributeData>> UpdateAttributesAsync(EditionUserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> updateAttributes);
-        
+
         Task<List<uint>> DeleteAttributesAsync(EditionUserInfo editionUser, List<uint> deleteAttributeIds);
-        Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(EditionUserInfo editionUser, 
+        Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(EditionUserInfo editionUser,
             uint signInterpretationId);
-        
+
         Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(EditionUserInfo editionUser,
             uint signInterpretationAttributeId);
 
@@ -46,7 +46,7 @@ namespace SQE.DatabaseAccess
             EditionUserInfo editionUser,
             uint signInterpretationId);
 
-        
+
         Task<List<SignInterpretationAttributeData>> ReplaceSignInterpretationAttributesAsync(EditionUserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes);
@@ -55,7 +55,7 @@ namespace SQE.DatabaseAccess
     public class AttributeRepository : DbConnectionBase, IAttributeRepository
     {
         private readonly IDatabaseWriter _databaseWriter;
-        
+
         public AttributeRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
             _databaseWriter = databaseWriter;
@@ -90,13 +90,13 @@ namespace SQE.DatabaseAccess
             uint signInterpretationId,
             List<SignInterpretationAttributeData> updateAttributes)
         {
-            
+
             return await _createOrUpdateAttributesAsync(editionUser,
                 signInterpretationId,
                 updateAttributes,
                 MutateType.Update);
         }
-        
+
 
         /// <summary>
         /// Deletes the attributes with the given ids.
@@ -105,18 +105,18 @@ namespace SQE.DatabaseAccess
         /// <param name="deleteAttributeIds">List of ids of the attributes to be deleted</param>
         /// <returns>The list of the ids of deleted Attributes or empty list if the given list was null.</returns>
         /// <exception cref="DataNotWrittenException"></exception>
-        public async Task<List<uint>> DeleteAttributesAsync(EditionUserInfo editionUser, 
+        public async Task<List<uint>> DeleteAttributesAsync(EditionUserInfo editionUser,
             List<uint> deleteAttributeIds)
         {
             if (deleteAttributeIds == null) return new List<uint>();
             var requests = deleteAttributeIds.Select(
                 id => new MutationRequest(
-                    MutateType.Delete, 
-                    new DynamicParameters(), 
+                    MutateType.Delete,
+                    new DynamicParameters(),
                     "sign_interpretation_attribute")).ToList();
 
             var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
-                
+
             // Check whether for each attribute a request was processed.
             if (writeResults.Count != deleteAttributeIds.Count)
             {
@@ -134,10 +134,10 @@ namespace SQE.DatabaseAccess
         /// <returns>Sign interpretation attribute with the given id</returns>
         /// <exception cref="DataNotFoundException"></exception>
         public async Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(
-            EditionUserInfo editionUser, 
+            EditionUserInfo editionUser,
             uint signInterpretationAttributeId)
         {
-            
+
             var searchData = new SignInterpretationAttributeDataSearchData()
             {
                 SignInterpretationAttributeId = signInterpretationAttributeId
@@ -146,13 +146,13 @@ namespace SQE.DatabaseAccess
             var result = await GetSignInterpretationAttributesByDataAsync(
                 editionUser,
                 searchData);
-                
-                if (result.Count!=1)
-                    throw new StandardExceptions.DataNotFoundException(
-                        "sign interpretation attribute",
-                        signInterpretationAttributeId
-                    );
-                return result.First();
+
+            if (result.Count != 1)
+                throw new StandardExceptions.DataNotFoundException(
+                    "sign interpretation attribute",
+                    signInterpretationAttributeId
+                );
+            return result.First();
         }
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace SQE.DatabaseAccess
             {
                 var result = await connection.QueryAsync<SignInterpretationAttributeData>(
                     query,
-                    new {editionUser.EditionId});
+                    new { editionUser.EditionId });
                 return result == null ? new List<SignInterpretationAttributeData>() : result.ToList();
             }
         }
@@ -193,7 +193,7 @@ namespace SQE.DatabaseAccess
                 editionUser,
                 searchData);
         }
-        
+
         /// <summary>
         /// Gets the attribute with the given id
         /// </summary>
@@ -202,10 +202,10 @@ namespace SQE.DatabaseAccess
         /// <returns>Sign interpretation attribute with the given id</returns>
         /// <exception cref="DataNotFoundException"></exception>
         public async Task<uint> GetSignInterpretationAttributeIdByIdAsync(
-            EditionUserInfo editionUser, 
+            EditionUserInfo editionUser,
             uint signInterpretationAttributeId)
         {
-            
+
             var searchData = new SignInterpretationAttributeDataSearchData()
             {
                 SignInterpretationAttributeId = signInterpretationAttributeId
@@ -214,13 +214,13 @@ namespace SQE.DatabaseAccess
             var result = await GetSignInterpretationAttributeIdsByDataAsync(
                 editionUser,
                 searchData);
-                
-                if (result.Count!=1)
-                    throw new StandardExceptions.DataNotFoundException(
-                        "sign interpretation attribute",
-                        signInterpretationAttributeId
-                    );
-                return result.First();
+
+            if (result.Count != 1)
+                throw new StandardExceptions.DataNotFoundException(
+                    "sign interpretation attribute",
+                    signInterpretationAttributeId
+                );
+            return result.First();
         }
 
         /// <summary>
@@ -239,7 +239,7 @@ namespace SQE.DatabaseAccess
             {
                 var result = await connection.QueryAsync<uint>(
                     query,
-                    new {editionUser.EditionId});
+                    new { editionUser.EditionId });
                 return result == null ? new List<uint>() : result.ToList();
             }
         }
@@ -261,8 +261,8 @@ namespace SQE.DatabaseAccess
                 editionUser,
                 searchData);
         }
-        
-        
+
+
 
         /// <summary>
         /// Deletes all attributes for the sign interpretation referred by its id
@@ -289,7 +289,7 @@ namespace SQE.DatabaseAccess
         /// <returns>List of the new sign interpretation attributes with the new ids</returns>
         /// <exception cref="NotImplementedException"></exception>
         public async Task<List<SignInterpretationAttributeData>> ReplaceSignInterpretationAttributesAsync(
-            EditionUserInfo editionUser, 
+            EditionUserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes)
         {
@@ -320,48 +320,48 @@ namespace SQE.DatabaseAccess
             MutateType action
             )
         {
-            
-        // Let's test whether a list of new attributes is provided and contains attributes
-        if (!(attributes?.Count > 0)) return new List<SignInterpretationAttributeData>();
-        // Create requests for the attributes
-        var requests = new List<MutationRequest>();
-        foreach (var attribute in attributes)
-        {
-            var signInterpretationAttributeParameters = new DynamicParameters();
-            signInterpretationAttributeParameters.Add("@sign_interpretation_id", signInterpretationId);
-            signInterpretationAttributeParameters.Add("@attribute_value_id", attribute.AttributeValueId);
-            signInterpretationAttributeParameters.Add("@sequence", attribute.Sequence);
-            signInterpretationAttributeParameters.Add("@numeric_value", attribute.NumericValue);
-            var signInterpretationAttributeRequest = new MutationRequest(
-                action,
-                signInterpretationAttributeParameters,
-                "sign_interpretation_attribute",
-                action == MutateType.Update ? (uint?) attribute.SignInterpretationAttributeId : null
-            );
-            requests.Add(signInterpretationAttributeRequest);
-        }
 
-        var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
-            
-        // Check whether for each attribute a request was processed.
-        if (writeResults.Count != attributes.Count)
-        {
-            var actionName = action == MutateType.Create ? "create" : "update";
-            throw new StandardExceptions.DataNotWrittenException($"{actionName} sign interpretation attribute");
-        }
-            
-        // Now set the new Ids
-        for (var i = 0; i < attributes.Count; i++)
-        {
-            attributes[i].SignInterpretationAttributeId = (uint) writeResults[i].NewId;
-        }
+            // Let's test whether a list of new attributes is provided and contains attributes
+            if (!(attributes?.Count > 0)) return new List<SignInterpretationAttributeData>();
+            // Create requests for the attributes
+            var requests = new List<MutationRequest>();
+            foreach (var attribute in attributes)
+            {
+                var signInterpretationAttributeParameters = new DynamicParameters();
+                signInterpretationAttributeParameters.Add("@sign_interpretation_id", signInterpretationId);
+                signInterpretationAttributeParameters.Add("@attribute_value_id", attribute.AttributeValueId);
+                signInterpretationAttributeParameters.Add("@sequence", attribute.Sequence);
+                signInterpretationAttributeParameters.Add("@numeric_value", attribute.NumericValue);
+                var signInterpretationAttributeRequest = new MutationRequest(
+                    action,
+                    signInterpretationAttributeParameters,
+                    "sign_interpretation_attribute",
+                    action == MutateType.Update ? (uint?)attribute.SignInterpretationAttributeId : null
+                );
+                requests.Add(signInterpretationAttributeRequest);
+            }
 
-        // Now return the list of new attributes which now also contains the the new ids.
-        return attributes;
-        //If no list of new attributes had been provided return an empty list.
+            var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+
+            // Check whether for each attribute a request was processed.
+            if (writeResults.Count != attributes.Count)
+            {
+                var actionName = action == MutateType.Create ? "create" : "update";
+                throw new StandardExceptions.DataNotWrittenException($"{actionName} sign interpretation attribute");
+            }
+
+            // Now set the new Ids
+            for (var i = 0; i < attributes.Count; i++)
+            {
+                attributes[i].SignInterpretationAttributeId = (uint)writeResults[i].NewId;
+            }
+
+            // Now return the list of new attributes which now also contains the the new ids.
+            return attributes;
+            //If no list of new attributes had been provided return an empty list.
         }
 
         #endregion
     }
-    
+
 }

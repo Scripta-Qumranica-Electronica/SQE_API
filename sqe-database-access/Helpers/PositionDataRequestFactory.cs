@@ -20,7 +20,7 @@ namespace SQE.DatabaseAccess.Helpers
         public bool ForkEnd { get; set; }
     }
 
-    
+
 
     /// <summary>
     /// Defines the different stream types
@@ -105,7 +105,7 @@ namespace SQE.DatabaseAccess.Helpers
         private readonly string _nextNameAt;
         private readonly StreamType _streamType;
         private readonly string _tableName;
-        
+
         public List<uint> AnchorsBefore { get; } = new List<uint>();
         public List<uint> AnchorsAfter { get; } = new List<uint>();
 
@@ -141,7 +141,7 @@ namespace SQE.DatabaseAccess.Helpers
                 _nextName = "next_text_fragment_id";
             }
         }
-        
+
 
         /// <summary>
         /// Create a new PositionDataRequestFactory object with several items.
@@ -158,10 +158,10 @@ namespace SQE.DatabaseAccess.Helpers
         /// </param>
         /// <returns></returns>
         public static async Task<PositionDataRequestFactory> CreateInstanceAsync(
-            IDbConnection dbConnection, 
+            IDbConnection dbConnection,
             StreamType streamType,
             List<uint> itemIds,
-            uint editionId, 
+            uint editionId,
             bool addExistingAnchors = false)
         {
             var newObject =
@@ -184,16 +184,16 @@ namespace SQE.DatabaseAccess.Helpers
         /// the itemIds to the factory</param>
         /// <returns></returns>
         public static async Task<PositionDataRequestFactory> CreateInstanceAsync(
-            IDbConnection dbConnection, 
+            IDbConnection dbConnection,
             StreamType streamType,
-            uint itemId, 
-            uint editionId, 
+            uint itemId,
+            uint editionId,
             bool addExistingAnchors = false)
         {
             return await CreateInstanceAsync(
-                dbConnection, streamType, 
+                dbConnection, streamType,
                 new List<uint> { itemId },
-                editionId, 
+                editionId,
                 addExistingAnchors);
         }
 
@@ -262,7 +262,7 @@ namespace SQE.DatabaseAccess.Helpers
             _actions.Add(action);
         }
 
-       
+
 
         /// <summary>
         /// Creates a list of mutation requests from the data set in the object.
@@ -318,13 +318,13 @@ namespace SQE.DatabaseAccess.Helpers
             {
                 await _addRequestForCreatingPairAsync(requests, anchorBefore, _itemIds.First());
             }
-            
+
             // Add each anchor after to the last item if the pair does not yet exist
             foreach (var anchorAfter in AnchorsAfter)
             {
                 await _addRequestForCreatingPairAsync(requests, _itemIds.Last(), anchorAfter);
             }
-            
+
             return requests;
         }
 
@@ -338,7 +338,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// <returns></returns>
         private async Task _addRequestForCreatingPairAsync(
             ICollection<MutationRequest> requests,
-            uint itemId, 
+            uint itemId,
             uint nextItemId)
         {
             if ((await _getExistingPairAsync(itemId, nextItemId)) == null)
@@ -371,9 +371,9 @@ namespace SQE.DatabaseAccess.Helpers
                 AnchorsBefore.AddRange(pairs.Select(p => p.ItemId));
             }
 
-            return pairs.Select(p=> new MutationRequest(
-                    MutateType.Delete, 
-                    new DynamicParameters(), 
+            return pairs.Select(p => new MutationRequest(
+                    MutateType.Delete,
+                    new DynamicParameters(),
                     _tableName, p.PositionInStreamId)).ToList();
         }
 
@@ -384,13 +384,13 @@ namespace SQE.DatabaseAccess.Helpers
         private IEnumerable<MutationRequest> _createRequestForConnectAnchors()
         {
             return (
-                from anchorBefore in AnchorsBefore 
-                from anchorAfter in AnchorsAfter 
+                from anchorBefore in AnchorsBefore
+                from anchorAfter in AnchorsAfter
                 select new MutationRequest(
-                    MutateType.Create, 
+                    MutateType.Create,
                     _createMutationRequestParameters(
-                        anchorBefore, 
-                        anchorAfter), 
+                        anchorBefore,
+                        anchorAfter),
                     _tableName)).ToList();
         }
 
@@ -402,7 +402,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// <returns></returns>
         private async Task<List<MutationRequest>> _createRequestForDeleteAsync(bool connect)
         {
-           var query = $@"
+            var query = $@"
             WITH RECURSIVE result AS (
 		        SELECT 	pis_1.{_nextName} AS nextItemId,
 		                pis_1.{_tableName}_id AS PositionInStreamId,
@@ -449,7 +449,7 @@ namespace SQE.DatabaseAccess.Helpers
             FROM result
             ORDER BY sequence";
 
-            var data = await _dbConnection.QueryAsync <PositionDataPair>(
+            var data = await _dbConnection.QueryAsync<PositionDataPair>(
                 query,
                 new
                 {
@@ -457,7 +457,7 @@ namespace SQE.DatabaseAccess.Helpers
                     Start = _itemIds.First(),
                     ItemIds = _itemIds
                 });
-            
+
             //Stores all ids of sub paths to be deleted
             var resultIds = new List<uint>();
             // Stores id of a sub path between fork events
@@ -472,26 +472,27 @@ namespace SQE.DatabaseAccess.Helpers
                     // A fork ends after a start  and not after a an end
                     // Then we can delete the items in between.
                     if (singleData.ForkEnd && lastForkIsStart) resultIds.AddRange(tempResultIds);
-                    
+
                     // Start a new sub path.
                     tempResultIds.Clear();
                     //Store the last fork event.
                     lastForkIsStart = singleData.ForkStart;
-                } else // Store the item in subpath.
+                }
+                else // Store the item in subpath.
                 {
                     tempResultIds.Add(singleData.PositionInStreamId);
                 }
             }
-            
+
             if (lastForkIsStart) resultIds.AddRange(tempResultIds);
-            
-            
+
+
 
             // If items are marked to be deleted, create the list ot mutation requests
             // and adjust the anchors to the new situation (if connect is true)
             if (resultIds.Any())
             {
-                var requests= resultIds.Select(
+                var requests = resultIds.Select(
                     id => new MutationRequest(
                         MutateType.Delete,
                         new DynamicParameters(),
@@ -545,20 +546,21 @@ namespace SQE.DatabaseAccess.Helpers
                     else //All items will be deleted, thus connect the anchors directly
                     {
                         requests.AddRange(
-                            from anchorBefore in AnchorsBefore 
-                            from anchorAfter in AnchorsAfter 
+                            from anchorBefore in AnchorsBefore
+                            from anchorAfter in AnchorsAfter
                             select new MutationRequest(
-                                MutateType.Create, 
+                                MutateType.Create,
                                 _createMutationRequestParameters(
-                                    anchorBefore, 
-                                    anchorAfter), 
+                                    anchorBefore,
+                                    anchorAfter),
                                 _tableName));
                     }
                 }
 
                 return requests;
 
-            } else return new List<MutationRequest>();
+            }
+            else return new List<MutationRequest>();
 
 
         }
@@ -566,7 +568,7 @@ namespace SQE.DatabaseAccess.Helpers
         private async Task<List<MutationRequest>> _createMoveToRequestsAsync()
         {
             var requests = new List<MutationRequest>();
-            
+
             // First create requests to take out items from there old places
             foreach (var itemId in _itemIds)
             {
@@ -694,9 +696,9 @@ namespace SQE.DatabaseAccess.Helpers
             parameters.Add("@ItemIds", itemIds);
             parameters.Add("@EditionId", _editionId);
 
-            var result = 
+            var result =
                 await _dbConnection.QueryAsync<PositionDataPair>(
-                    queryForConnection, 
+                    queryForConnection,
                     parameters);
             return result == null ? new List<PositionDataPair>() : result.ToList();
         }

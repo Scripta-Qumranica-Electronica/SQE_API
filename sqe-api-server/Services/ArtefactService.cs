@@ -199,7 +199,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .DeletedArtefact(artefactId);
+                .DeletedArtefact(new DeleteDTO(EditionEntities.artefact, new List<uint>() { artefactId }));
             return new NoContentResult();
         }
 
@@ -215,7 +215,7 @@ namespace SQE.API.Server.Services
                     x => new ArtefactTextFragmentMatchDTO(
                         x.TextFragmentId.GetValueOrDefault(),
                         x.TextFragmentName,
-                        x.EditionEditorId.GetValueOrDefault(),
+                        x.TextFragmentEditorId.GetValueOrDefault(),
                         false
                     )
                 )
@@ -236,9 +236,9 @@ namespace SQE.API.Server.Services
                 (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
                 .Select(
                     x => new ArtefactTextFragmentMatchDTO(
-                        x.TextFragmentId.GetValueOrDefault(), 
-                        x.TextFragmentName, 
-                        x.EditionEditorId.GetValueOrDefault(),
+                        x.TextFragmentId.GetValueOrDefault(),
+                        x.TextFragmentName,
+                        x.TextFragmentEditorId.GetValueOrDefault(),
                         true)
                 )
                 .ToList()

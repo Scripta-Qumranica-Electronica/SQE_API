@@ -1,6 +1,6 @@
 namespace SQE.DatabaseAccess.Queries
 {
-    
+
     //TODO Probably most of the queries can be replace by the new queries GetSignInterpretationRoiDetailsByDataQuery
     // and GetRoiIdByData using SignInterpretationROISearchData
     internal static class CreateRoiShapeQuery
@@ -106,7 +106,7 @@ JOIN sign_interpretation_roi_owner
 WHERE @WhereString
 ";
     }
-    
+
     internal static class GetSignInterpretationRoiDetailsByArtefactIdQuery
     {
         public const string GetQuery = @"
@@ -131,7 +131,7 @@ JOIN sign_interpretation_roi_owner
 WHERE roi_position.artefact_id = @ArtefactId
 ";
     }
-    
+
     /// <summary>
     /// Template for getting all ids of sign_interpretation_roi by using SignInterpretationROISearchData.getSearchParameterString
     /// and getJoinsString

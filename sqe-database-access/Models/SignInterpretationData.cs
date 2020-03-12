@@ -8,9 +8,9 @@ namespace SQE.DatabaseAccess.Models
         public List<SignInterpretationAttributeData> Attributes { get; set; } = new List<SignInterpretationAttributeData>();
         public List<SignInterpretationCommentaryData> Commentaries { get; set; } = new List<SignInterpretationCommentaryData>();
         public HashSet<NextSignInterpretation> NextSignInterpretations { get; set; } = new HashSet<NextSignInterpretation>();
-        public List<SignInterpretationRoiData> SignInterpretationRois { get; set; }= new List<SignInterpretationRoiData>();
+        public List<SignInterpretationRoiData> SignInterpretationRois { get; set; } = new List<SignInterpretationRoiData>();
         public string Character { get; set; }
-        
+
     }
 
     public class NextSignInterpretation

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using CaseExtensions;
+using CommandLine;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -78,21 +79,39 @@ namespace GenerateTypescriptInterfaces
             RegexOptions.Compiled | RegexOptions.IgnoreCase
         );
 
-        private static void Main(string[] args)
+        /// <summary>
+        /// Optional command line arguments (see https://github.com/commandlineparser/commandline)
+        /// </summary>
+        private class Options
         {
-            ParseSqeSignalrHub();
+            [Option('p', "project-folder", Required = false, HelpText = "Specify project folder path.")]
+            public string ProjectRoot { get; set; }
+            [Option('a', "api-folder", Required = false, HelpText = "Specify api server folder path.")]
+            public string ApiServerRoot { get; set; }
+            [Option('t', "ts-folder", Required = false, HelpText = "Specify typescript definitions folder path.")]
+            public string TsFolder { get; set; }
+            [Option('h', "hub-folder", Required = false, HelpText = "Specify signalr hub folder path.")]
+            public string HubFolder { get; set; }
         }
 
-        private static void ParseSqeSignalrHub()
+        private static void Main(string[] args)
+        {
+            // Parse any command line arguments and pass them on to the ParseSqeSignalrHub method
+            Parser.Default.ParseArguments<Options>(args)
+                .WithParsed<Options>(o =>
+                {
+                    ParseSqeSignalrHub(o.ProjectRoot, o.ApiServerRoot, o.TsFolder, o.HubFolder);
+                });
+        }
+
+        private static void ParseSqeSignalrHub(string projectRoot, string apiServerRoot, string tsFolder, string hubFolder)
         {
             Console.WriteLine("Parsing the SignalR hub and creating corresponding typescript interfaces.");
 
-            // TODO: Can we find a better way to resolve these paths instead of all the backtracking?
-            var projectRoot =
-                Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../", "../", "../"));
-            var apiServerRoot = Path.GetFullPath(Path.Combine(projectRoot, "../", "../", "sqe-api-server"));
-            var tsFolder = Path.GetFullPath(Path.Combine(apiServerRoot, "../", "ts-dtos"));
-            var hubFolder = Path.GetFullPath(Path.Combine(apiServerRoot, "RealtimeHubs"));
+            projectRoot ??= Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../", "../", "../"));
+            apiServerRoot ??= Path.GetFullPath(Path.Combine(projectRoot, "../", "../", "sqe-api-server"));
+            tsFolder ??= Path.GetFullPath(Path.Combine(apiServerRoot, "../", "ts-dtos"));
+            hubFolder ??= Path.GetFullPath(Path.Combine(apiServerRoot, "RealtimeHubs"));
 
             var dir = new DirectoryInfo(hubFolder);
             var files = dir.GetFiles("*.cs");

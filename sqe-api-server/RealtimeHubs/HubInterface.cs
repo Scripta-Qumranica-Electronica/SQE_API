@@ -106,7 +106,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="returnedData">Details of the deleted ROI</param>
         /// <returns></returns>
-        Task DeletedRoi(uint returnedData);
+        Task DeletedRoi(DeleteDTO returnedData);
 
         /// <summary>
         ///     broadcasts an artefact has been created
@@ -120,7 +120,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="returnedData">Details of the deleted artefact</param>
         /// <returns></returns>
-        Task DeletedArtefact(uint returnedData);
+        Task DeletedArtefact(DeleteDTO returnedData);
 
         /// <summary>
         ///     broadcasts an artefact has been updated

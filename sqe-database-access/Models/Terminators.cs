@@ -11,7 +11,7 @@ namespace SQE.DatabaseAccess.Models
         {
             _data = data;
         }
-        
-        
+
+
     }
 }

@@ -88,9 +88,9 @@ namespace SQE.API.Server.Services
             return new TextFragmentDataListDTO(
                 (await _textRepo.GetFragmentDataAsync(editionUser))
                 .Select(x => new TextFragmentDataDTO(
-                    x.TextFragmentId.GetValueOrDefault(), 
-                    x.TextFragmentName, 
-                    x.EditionEditorId.GetValueOrDefault()))
+                    x.TextFragmentId.GetValueOrDefault(),
+                    x.TextFragmentName,
+                    x.TextFragmentEditorId.GetValueOrDefault()))
                 .ToList()
             );
         }
@@ -109,7 +109,7 @@ namespace SQE.API.Server.Services
             CreateTextFragmentDTO createFragment,
             string clientId = null)
         {
-            var fragmentData = new TextFragmentData(){TextFragmentName = createFragment.name};
+            var fragmentData = new TextFragmentData() { TextFragmentName = createFragment.name };
             var newFragment = await _textRepo.CreateTextFragmentAsync(
                 editionUser,
                 fragmentData,
@@ -120,7 +120,7 @@ namespace SQE.API.Server.Services
             var newTextFragmentData = new TextFragmentDataDTO(
                 newFragment.TextFragmentId.GetValueOrDefault(),
                 newFragment.TextFragmentName,
-                newFragment.EditionEditorId.GetValueOrDefault()
+                newFragment.TextFragmentEditorId.GetValueOrDefault()
             );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
@@ -156,7 +156,7 @@ namespace SQE.API.Server.Services
             var newTextFragmentData = new TextFragmentDataDTO(
                 newFragment.TextFragmentId.GetValueOrDefault(),
                 newFragment.TextFragmentName,
-                newFragment.EditionEditorId.GetValueOrDefault()
+                newFragment.TextFragmentEditorId.GetValueOrDefault()
             );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
@@ -173,12 +173,12 @@ namespace SQE.API.Server.Services
         /// <returns>A TextEditionDTO</returns>
         private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)
         {
-            var editorList = 
-                editors.ToDictionary(editor => editor.UserId, 
+            var editorList =
+                editors.ToDictionary(editor => editor.UserId.ToString(),
                     editor => new EditorDTO
                     {
-                        forename = editor.Forename, 
-                        surname = editor.Surname, 
+                        forename = editor.Forename,
+                        surname = editor.Surname,
                         organization = editor.Organization
                     });
 
@@ -200,7 +200,7 @@ namespace SQE.API.Server.Services
                         {
                             textFragmentId = x.TextFragmentId.GetValueOrDefault(),
                             textFragmentName = x.TextFragmentName,
-                            editorId = x.EditionEditorId.GetValueOrDefault(),
+                            editorId = x.TextFragmentEditorId.GetValueOrDefault(),
 
                             lines = x.Lines.Select(
                                     y => new LineDTO
@@ -281,13 +281,13 @@ namespace SQE.API.Server.Services
 
         private static LineTextDTO _textEditionLineToDTO(TextEdition ed, List<EditorInfo> editors)
         {
-            var editorList = 
+            var editorList =
                 editors.ToDictionary(
-                    editor => editor.UserId, 
+                    editor => editor.UserId.ToString(),
                     editor => new EditorDTO
                     {
-                        forename = editor.Forename, 
-                        surname = editor.Surname, 
+                        forename = editor.Forename,
+                        surname = editor.Surname,
                         organization = editor.Organization
                     });
 

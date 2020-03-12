@@ -306,9 +306,9 @@ namespace SQE.DatabaseAccess
                     var pks = await GetArtefactStackPksAsync(editionUser, artefactId, table);
                     mutations.AddRange(
                         pks.Select(pk => new MutationRequest(
-                            MutateType.Delete, 
-                            new DynamicParameters(), 
-                            table, 
+                            MutateType.Delete,
+                            new DynamicParameters(),
+                            table,
                             pk)));
                 }
 

@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Data;
-using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -20,8 +18,8 @@ namespace SQE.DatabaseAccess
         Task<LineData> CreateLineAsync(EditionUserInfo editionUser,
             LineData lineData,
             uint fragmentId,
-            uint anchorBefore=0,
-            uint anchorAfter=0);
+            uint anchorBefore = 0,
+            uint anchorAfter = 0);
         Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
         Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId);
         Task<uint> RemoveLineAsync(EditionUserInfo editionUser, uint lineId);
@@ -52,14 +50,14 @@ namespace SQE.DatabaseAccess
             uint signInterpretationId);
 
         Task<uint> RemoveSignAsync(EditionUserInfo editionUser, uint signId);
-        
-        
-        
+
+
+
 
         #endregion
 
         #region Text fragment
-       
+
         Task<TextFragmentData> CreateTextFragmentAsync(EditionUserInfo editionUser,
             TextFragmentData textFragmentData,
             uint? previousFragmentId,
@@ -81,7 +79,7 @@ namespace SQE.DatabaseAccess
     {
 
         #region Interna
-        
+
         private readonly IDatabaseWriter _databaseWriter;
 
         private readonly AttributeRepository _attributeRepository;
@@ -92,20 +90,20 @@ namespace SQE.DatabaseAccess
         public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
             _databaseWriter = databaseWriter;
-            
+
             // Because some functions set or remove attributes, commentaries, or ROIs we sometimes need
             // objects of the repositories. If we don't want to create them from the beginning,
             // we would have to store the configuration to make it accessible for creation the object elsewhere
             _attributeRepository = new AttributeRepository(config, databaseWriter);
-            _commentaryRepository= new SignInterpretationCommentaryRepository(config,databaseWriter);
-            _roiRepository = new RoiRepository(config,databaseWriter);
+            _commentaryRepository = new SignInterpretationCommentaryRepository(config, databaseWriter);
+            _roiRepository = new RoiRepository(config, databaseWriter);
 
 
         }
 
         public IDbConnection Connection => OpenConnection();
         #endregion
-        
+
 
         #region Public Methods
 
@@ -126,8 +124,8 @@ namespace SQE.DatabaseAccess
         public async Task<LineData> CreateLineAsync(EditionUserInfo editionUser,
             LineData lineData,
             uint fragmentId,
-            uint anchorBefore=0,
-            uint anchorAfter=0)
+            uint anchorBefore = 0,
+            uint anchorAfter = 0)
         {
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
@@ -136,7 +134,7 @@ namespace SQE.DatabaseAccess
                     {
                         // Create the new text fragment abstract id
                         var newLineId = await _simpleInsertAsync(
-                            TableData.Table.Line);
+                            TableData.Table.line);
                         ;
 
                         lineData.LineId = newLineId;
@@ -146,23 +144,23 @@ namespace SQE.DatabaseAccess
 
                         // Create the data entry for the new text fragment
                         await _setLineDataAsync(editionUser, newLineId, lineData.LineName);
-                        
-                       lineData.Signs.Insert(0,
-                           CreateTerminatorSign(TableData.Table.Line,TableData.TerminatorType.Start));
-                        lineData.Signs.Add(CreateTerminatorSign(TableData.Table.Line, 
+
+                        lineData.Signs.Insert(0,
+                            CreateTerminatorSign(TableData.Table.line, TableData.TerminatorType.Start));
+                        lineData.Signs.Add(CreateTerminatorSign(TableData.Table.line,
                             TableData.TerminatorType.End));
 
                         lineData.Signs = await CreateSignsAsync(editionUser,
                             lineData.LineId.GetValueOrDefault(),
                             lineData.Signs,
                             anchorBefore > 0 ?
-                                new List<uint>() {anchorBefore}:
+                                new List<uint>() { anchorBefore } :
                                 new List<uint>(),
                             anchorAfter > 0 ?
-                                new List<uint>() {anchorAfter}:
+                                new List<uint>() { anchorAfter } :
                                 new List<uint>());
-                        
-                        
+
+
                         // End the transaction (it was all or nothing)
                         transactionScope.Complete();
 
@@ -173,7 +171,7 @@ namespace SQE.DatabaseAccess
             );
             return null;
         }
-        
+
         /// <summary>
         /// Gets the text of a line in an edition
         /// </summary>
@@ -182,14 +180,14 @@ namespace SQE.DatabaseAccess
         /// <returns>A detailed text object</returns>
         public async Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
         {
-            var terminators = _getTerminators(editionUser, TableData.Table.Line, lineId);
+            var terminators = _getTerminators(editionUser, TableData.Table.line, lineId);
 
             if (!terminators.IsValid)
                 return new TextEdition();
 
             return await _getEntityById(editionUser, terminators);
         }
-        
+
         /// <summary>
         /// Get a list of all lines in a text fragment.
         /// </summary>
@@ -202,11 +200,11 @@ namespace SQE.DatabaseAccess
             {
                 return (await connection.QueryAsync<LineData>(
                     GetLineData.Query,
-                    new {TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId}
+                    new { TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId }
                 )).ToList();
             }
         }
-        
+
 
         /// <summary>
         /// Removes the line with the given Id together with all its signs.
@@ -216,25 +214,25 @@ namespace SQE.DatabaseAccess
         /// <returns>Id of removed line</returns>
         public async Task<uint> RemoveLineAsync(EditionUserInfo editionUser, uint lineId)
         {
-            var signIds = await _getChildrenIds(editionUser, TableData.Table.Line, lineId);
+            var signIds = await _getChildrenIds(editionUser, TableData.Table.line, lineId);
             foreach (var signId in signIds)
             {
-                await RemoveSignAsync(editionUser, signId);   
+                await RemoveSignAsync(editionUser, signId);
             }
-            return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.Line), lineId);
+            return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.line), lineId);
         }
 
         public async Task<LineData> UpdateLineAsync(EditionUserInfo editionUser,
             uint lineId,
             string lineName)
         {
-            
+
             await _setLineDataAsync(
                 editionUser,
                 lineId,
                 lineName,
                 false);
-            return new LineData(){LineId = lineId, LineName = lineName};
+            return new LineData() { LineId = lineId, LineName = lineName };
 
         }
 
@@ -242,7 +240,7 @@ namespace SQE.DatabaseAccess
 
         #region Sign and its interpretation
 
-        
+
         public async Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(EditionUserInfo editionUser, uint signId)
         {
             using (var connection = OpenConnection())
@@ -251,7 +249,8 @@ namespace SQE.DatabaseAccess
                     GetSignInterpretationIdsForSignIdQuery.GetQuery,
                     new
                     {
-                        editionUser.EditionId, SignId=signId
+                        editionUser.EditionId,
+                        SignId = signId
                     })).ToList();
             }
         }
@@ -284,20 +283,20 @@ namespace SQE.DatabaseAccess
             var internalAnchorsBefore = anchorsBefore;
             foreach (var sign in signs)
             {
-                
+
                 // First, create a simple entry in the sign table
                 var newSignData = await _createSignAsync(editionUser, lineId);
                 // Add the given sign interpretations which also inject the sign in the reading stream
                 newSignData.SignInterpretations = await AddSignInterpretationsAsync(editionUser,
-                    newSignData.SignId, 
+                    newSignData.SignId,
                     sign.SignInterpretations,
-                    internalAnchorsBefore, 
+                    internalAnchorsBefore,
                     anchorsAfter);
-                
+
                 // Set the new sign interpretation ids as anchors before the next sign
                 internalAnchorsBefore = newSignData.SignInterpretations.Select(
                     si => si.SignInterpretationId.GetValueOrDefault()).ToList();
-                
+
                 // If already a sign had been set adhjust its nextSignInterpretations
                 // TODO do we need this here? (Ingo)
                 if (previousSignData != null)
@@ -306,12 +305,12 @@ namespace SQE.DatabaseAccess
                     var nextSignInterpretations = internalAnchorsBefore.Select(
                         signInterpretationId => new NextSignInterpretation(
                         signInterpretationId,
-                        (uint) editionUser.EditionEditorId)).Distinct().ToHashSet();
-                    
+                        (uint)editionUser.EditionEditorId)).Distinct().ToHashSet();
+
                     // Store this hashset into each signInterpretation of the previous set sign 
                     previousSignData.SignInterpretations.ForEach(
                         signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
-                    
+
                 }
                 previousSignData = newSignData;
                 newSigns.Add(newSignData);
@@ -338,8 +337,8 @@ namespace SQE.DatabaseAccess
             List<uint> anchorsBefore,
             List<uint> anchorsAfter)
         {
-  
-            using (var connection = OpenConnection()) 
+
+            using (var connection = OpenConnection())
             {
                 foreach (var signInterpretation in signInterpretations)
                 {
@@ -365,7 +364,7 @@ namespace SQE.DatabaseAccess
                         {
                             throw new StandardExceptions.DataNotWrittenException($"add new sign interpretation");
                         }
-                        
+
 
                         newSignInterpretation = false;
 
@@ -383,22 +382,22 @@ namespace SQE.DatabaseAccess
                         signInterpretation.SignInterpretationId.GetValueOrDefault(),
                         editionUser.EditionId,
                         false);
-                    
+
                     // If the sign interpretation already existed than we have to move it.
                     positionDataRequestFactory.AddAction(
-                        newSignInterpretation? PositionAction.Add : PositionAction.MoveTo);
+                        newSignInterpretation ? PositionAction.Add : PositionAction.MoveTo);
                     positionDataRequestFactory.AddAnchorsAfter(anchorsAfter);
                     positionDataRequestFactory.AddAnchorsBefore(anchorsBefore);
                     var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
                     await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
-                    
+
                     // Add the attributes
                     var attributes = newSignInterpretation ?
                         await _attributeRepository.CreateAttributesAsync(
                             editionUser,
                             signInterpretation.SignInterpretationId.GetValueOrDefault(),
                         signInterpretation.Attributes)
-                        :  await _attributeRepository.ReplaceSignInterpretationAttributesAsync(
+                        : await _attributeRepository.ReplaceSignInterpretationAttributesAsync(
                             editionUser,
                             signInterpretation.SignInterpretationId.GetValueOrDefault(),
                             signInterpretation.Attributes);
@@ -495,8 +494,8 @@ namespace SQE.DatabaseAccess
         #endregion
 
         #region Text Fragment
-        
-        
+
+
         /// <summary>
         /// Creates a new text fragment in an edition. If previousFragmentId or nextFragmentId are null, the missing
         /// value will be automatically calculated. If both are null, then the new text fragment is added to the end
@@ -527,14 +526,14 @@ namespace SQE.DatabaseAccess
                     {
                         // Create the new text fragment abstract id
                         var newTextFragmentId = await _simpleInsertAsync(
-                            TableData.Table.TextFragment);
+                            TableData.Table.text_fragment);
 
                         // Add the new text fragment to the edition manuscript
                         await _addTextFragmentToManuscript(editionUser, newTextFragmentId);
 
                         // Create the data entry for the new text fragment
-                        await _setTextFragmentDataAsync(editionUser, 
-                            newTextFragmentId, 
+                        await _setTextFragmentDataAsync(editionUser,
+                            newTextFragmentId,
                             textFragmentData.TextFragmentName);
 
                         // Now set the position for the new text fragment
@@ -545,35 +544,33 @@ namespace SQE.DatabaseAccess
                             nextFragmentId
                         );
 
-                        
+
                         var newLines = new List<LineData>();
                         foreach (var line in textFragmentData.Lines)
                         {
                             newLines.Add(await CreateLineAsync(
                                 editionUser,
-                                line, 
+                                line,
                                 newTextFragmentId));
                         }
 
-                       
-          
+
+
                         // End the transaction (it was all or nothing)
                         transactionScope.Complete();
 
                         // Set the new values to the text fragment
                         textFragmentData.Lines = newLines;
                         textFragmentData.TextFragmentId = newTextFragmentId;
-                        textFragmentData.EditionEditorId = editionUser.EditionEditorId;
+                        textFragmentData.TextFragmentEditorId = editionUser.EditionEditorId;
 
                         return textFragmentData;
-
-
                     }
                 }
             );
         }
 
-        
+
         /// <summary>
         /// Gets a list of all artefacts with ROI's linked to text in the text fragment
         /// </summary>
@@ -586,14 +583,14 @@ namespace SQE.DatabaseAccess
             {
                 return (await connection.QueryAsync<ArtefactDataModel>(
                     GetTextFragmentArtefacts.Query,
-                    new {TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId}
+                    new { TextFragmentId = textFragmentId, editionUser.EditionId, UserId = editionUser.userId }
                 )).ToList();
             }
 
             ;
         }
 
-        
+
         /// <summary>
         /// Gets the text of a text fragment in an edition
         /// </summary>
@@ -602,14 +599,14 @@ namespace SQE.DatabaseAccess
         /// <returns>A detailed text object</returns>
         public async Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId)
         {
-            var terminators = _getTerminators(editionUser, TableData.Table.TextFragment, textFragmentId);
+            var terminators = _getTerminators(editionUser, TableData.Table.text_fragment, textFragmentId);
 
             if (!terminators.IsValid)
                 return new TextEdition();
 
             return await _getEntityById(editionUser, terminators);
         }
-        
+
         /// <summary>
         /// Get a list of all the text fragments in an edition
         /// </summary>
@@ -621,7 +618,7 @@ namespace SQE.DatabaseAccess
             {
                 return (await connection.QueryAsync<TextFragmentData>(
                     GetFragmentData.GetQuery,
-                    new {editionUser.EditionId}
+                    new { editionUser.EditionId }
                 )).ToList();
             }
         }
@@ -634,12 +631,12 @@ namespace SQE.DatabaseAccess
         /// <returns>Id of removed text fragment</returns>
         public async Task<uint> RemoveTextFragmentAsync(EditionUserInfo editionUser, uint textFragmentId)
         {
-            var lineIds = await _getChildrenIds(editionUser, TableData.Table.TextFragment, textFragmentId);
+            var lineIds = await _getChildrenIds(editionUser, TableData.Table.text_fragment, textFragmentId);
             foreach (var lineId in lineIds)
             {
-                await RemoveLineAsync(editionUser, lineId);   
+                await RemoveLineAsync(editionUser, lineId);
             }
-            return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.TextFragment), textFragmentId);;
+            return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.text_fragment), textFragmentId); ;
         }
 
 
@@ -676,7 +673,7 @@ namespace SQE.DatabaseAccess
                     {
                         fragmentName = await connection.QuerySingleAsync<string>(
                             GetFragmentNameById.GetQuery,
-                            new {editionUser.EditionId, UserId = editionUser.userId, TextFragmentId = textFragmentId}
+                            new { editionUser.EditionId, UserId = editionUser.userId, TextFragmentId = textFragmentId }
                         );
                     }
 
@@ -696,22 +693,22 @@ namespace SQE.DatabaseAccess
                     TextFragmentName = fragmentName,
                     PreviousTextFragmentId = previousFragmentId,
                     NextTextFragmentId = nextFragmentId,
-                    EditionEditorId = editionUser.EditionEditorId.Value
+                    TextFragmentEditorId = editionUser.EditionEditorId.Value
                 };
             }
         }
 
         #endregion
-        
+
         #endregion
 
         #region Private methods
-        
+
         #region Common helpers
 
         private Terminators _getTerminators(EditionUserInfo editionUser, TableData.Table table, uint elementId)
         {
-            
+
             var query = $@"SELECT DISTINCT sign_interpretation_id 
                         {TableData.FromQueryPart(table, addPublicEdition: true)}
                         AND attribute_value_id in @Breaks
@@ -723,15 +720,15 @@ namespace SQE.DatabaseAccess
                         new
                         {
                             ElementId = elementId,
-                            UserId = editionUser.userId, 
+                            UserId = editionUser.userId,
                             Breaks = TableData.Terminators(table)
                         }
                     )
                     .ToArray());
             }
         }
-        
-        
+
+
         private async Task<TextEdition> _getEntityById(EditionUserInfo editionUser, Terminators terminators)
         {
             TextEdition lastEdition = null;
@@ -747,7 +744,7 @@ namespace SQE.DatabaseAccess
             {
                 var attributeDict = (await connection.QueryAsync<AttributeDefinition>(
                     TextFragmentAttributes.GetQuery,
-                    new {editionUser.EditionId}
+                    new { editionUser.EditionId }
                 )).ToDictionary(
                     row => row.attributeValueId,
                     row => row.attributeString
@@ -819,18 +816,18 @@ namespace SQE.DatabaseAccess
 
                         lastChar.Attributes.Add(charAttribute);
 
-                        if (roi == null 
+                        if (roi == null
                             || roi.SignInterpretationRoiId == lastInterpretationRoi?.SignInterpretationRoiId
                         ) return newManuscript ? manuscript : null;
-                        
+
                         lastInterpretationRoi = roi;
                         lastChar.SignInterpretationRois.Add(roi);
 
                         return newManuscript ? manuscript : null;
                     },
-                    new {terminators.StartId, terminators.EndId, editionUser.EditionId},
+                    new { terminators.StartId, terminators.EndId, editionUser.EditionId },
                     splitOn:
-                    "textFragmentId, lineId, signId, nextSignInterpretationId, signInterpretationId, interpretationAttributeId, SignInterpretationRoiId"
+                    "textFragmentId, lineId, signId, nextSignInterpretationId, signInterpretationId, SignInterpretationAttributeId, SignInterpretationRoiId"
                 );
                 var formattedEdition = scrolls.AsList()[0];
                 formattedEdition.AddLicence();
@@ -840,12 +837,12 @@ namespace SQE.DatabaseAccess
 
         private async Task<List<uint>> _getChildrenIds(EditionUserInfo user, TableData.Table table, uint elementId)
         {
-            
+
             using (var connection = OpenConnection())
             {
                 return (await connection.QueryAsync<uint>(
                     TableData.GetChildrenIdsQuery(table),
-                    new {user.EditionId, ElementId=elementId}
+                    new { user.EditionId, ElementId = elementId }
                 )).ToList();
             }
         }
@@ -863,7 +860,7 @@ namespace SQE.DatabaseAccess
             {
                 return await connection.QuerySingleAsync<uint>(
                     TableData.GetDataIdQuery(table),
-                    new {user.EditionId, ElementId=elementId}
+                    new { user.EditionId, ElementId = elementId }
                 );
             }
         }
@@ -871,7 +868,7 @@ namespace SQE.DatabaseAccess
 
         private async Task<uint> _removeElementAsync(EditionUserInfo editionUser, string tableName, uint elementId)
         {
-            
+
             var removeRequest = new MutationRequest(
                 MutateType.Delete,
                 new DynamicParameters(),
@@ -983,13 +980,13 @@ namespace SQE.DatabaseAccess
                 create ? MutateType.Create : MutateType.Update,
                 createTextFragmentParameters,
                 $"{table}_data",
-                create ? null : (uint?) (await _getElementDataId(editionUser, table, elementId))
+                create ? null : (uint?)(await _getElementDataId(editionUser, table, elementId))
             );
 
             // Commit the mutation
             var createElementResponse = await _databaseWriter.WriteToDatabaseAsync(
                 editionUser,
-                new List<MutationRequest> {createElementMutation}
+                new List<MutationRequest> { createElementMutation }
             );
 
             // Ensure that the entry was created
@@ -1046,7 +1043,7 @@ namespace SQE.DatabaseAccess
         private async Task _addLineToTextFragment(EditionUserInfo editionUser, uint lineId, uint textFragmentId)
         {
             _addElementToParentAsync(editionUser,
-                TableData.Table.Line,
+                TableData.Table.line,
                 lineId,
                 textFragmentId);
         }
@@ -1059,7 +1056,7 @@ namespace SQE.DatabaseAccess
         /// <returns>Line data id of the line</returns>
         private async Task<uint> _getLineDataId(EditionUserInfo user, uint lineId)
         {
-            return await _getElementDataId(user, TableData.Table.Line, lineId);
+            return await _getElementDataId(user, TableData.Table.line, lineId);
         }
 
         /// <summary>
@@ -1077,13 +1074,13 @@ namespace SQE.DatabaseAccess
         {
             await _setElementDataAsync(
                 editionUser,
-                TableData.Table.Line,
+                TableData.Table.line,
                 lineId,
                 lineName,
                 create);
         }
-        
-       
+
+
 
         #endregion
 
@@ -1099,11 +1096,11 @@ namespace SQE.DatabaseAccess
         private async Task _addSignToLine(EditionUserInfo editionUser, uint? signId, uint? lineId)
         {
             _addElementToParentAsync(editionUser,
-                TableData.Table.Sign,
+                TableData.Table.sign,
                 signId,
                 lineId);
         }
-        
+
         /// <summary>
         /// Creates a new sign without all other sign data.
         /// </summary>
@@ -1121,12 +1118,12 @@ namespace SQE.DatabaseAccess
                     {
                         // Create the new text fragment abstract id
                         var newSignId = await _simpleInsertAsync(
-                            TableData.Table.Sign);
+                            TableData.Table.sign);
                         ;
 
                         // Add the new text fragment to the edition manuscript
                         await _addSignToLine(editionUser, newSignId, lineId);
-                        
+
                         // End the transaction (it was all or nothing)
                         transactionScope.Complete();
 
@@ -1141,21 +1138,21 @@ namespace SQE.DatabaseAccess
             return null;
         }
 
-        
-        
 
-        
-        
-        
+
+
+
+
+
 
         #endregion
 
 
         #region Text Fragment
 
-        
 
-        
+
+
 
         /// <summary>
         /// Set the name of a text fragment
@@ -1173,11 +1170,11 @@ namespace SQE.DatabaseAccess
         {
             await _setElementDataAsync(
                 editionUser,
-                TableData.Table.TextFragment,
+                TableData.Table.text_fragment,
                 textFragmentId,
                 textFragmentName,
                 create);
-            
+
         }
 
         /// <summary>
@@ -1291,7 +1288,7 @@ namespace SQE.DatabaseAccess
         {
             return await _moveTextFragments(
                 editionUser,
-                new List<uint>() {textFragmentId},
+                new List<uint>() { textFragmentId },
                 newAnchorBefore,
                 newAnchorAfter
             );
@@ -1404,7 +1401,7 @@ namespace SQE.DatabaseAccess
             return await _createTextFragmentPositionRequestFactory(
                 editionUser,
                 anchorBefore,
-                new List<uint>() {textFragmentId},
+                new List<uint>() { textFragmentId },
                 anchorAfter
             );
         }
@@ -1465,16 +1462,16 @@ namespace SQE.DatabaseAccess
                 // Get the manuscript id of the current edition
                 manuscriptId = await connection.QuerySingleAsync<uint>(
                     ManuscriptOfEdition.GetQuery,
-                    new {editionUser.EditionId}
+                    new { editionUser.EditionId }
                 );
             }
 
             _addElementToParentAsync(editionUser,
-                TableData.Table.TextFragment,
+                TableData.Table.text_fragment,
                 textFragmentId,
                 manuscriptId
             );
-            
+
         }
 
         /// <summary>
@@ -1485,7 +1482,7 @@ namespace SQE.DatabaseAccess
         /// <returns>Text fragment data id of the text fragment</returns>
         private async Task<uint> _getTextFragmentDataId(EditionUserInfo user, uint textFragmentId)
         {
-            return await _getElementDataId(user, TableData.Table.TextFragment, textFragmentId);
+            return await _getElementDataId(user, TableData.Table.text_fragment, textFragmentId);
         }
 
         #endregion Text Fragment

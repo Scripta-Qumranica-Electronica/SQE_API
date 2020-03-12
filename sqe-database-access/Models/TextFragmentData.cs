@@ -4,7 +4,7 @@ namespace SQE.DatabaseAccess.Models
 {
     public class TextFragmentX
     {
-        public List<LineData> Lines   = new List<LineData>();
+        public List<LineData> Lines = new List<LineData>();
         public uint TextFragmentId { get; set; }
         public string TextFragmentName { get; set; }
         public uint? PreviousTextFragmentId { get; set; }
@@ -19,6 +19,6 @@ namespace SQE.DatabaseAccess.Models
         public uint? TextFragmentId { get; set; }
         public uint? PreviousTextFragmentId { get; set; }
         public uint? NextTextFragmentId { get; set; }
-        public uint? EditionEditorId { get; set; }
+        public uint? TextFragmentEditorId { get; set; }
     }
 }

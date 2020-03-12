@@ -29,15 +29,15 @@ namespace SQE.DatabaseAccess.Helpers
         /// </summary>
         public enum Table
         {
-            Manuscript,
-            TextFragment,
-            Line,
-            Sign
+            manuscript,
+            text_fragment,
+            line,
+            sign
         };
 
         public enum TerminatorType
         {
-            Start,End
+            Start, End
         }
 
         // List of the table data - the sequence represents the parent-child relationship
@@ -49,36 +49,36 @@ namespace SQE.DatabaseAccess.Helpers
             new SingleTableData() {Name = "sign", HasData = false}
         };
 
-        private static readonly Table LastTable = (Table) Data.Count-1;
+        private static readonly Table LastTable = (Table)Data.Count - 1;
 
         /// <summary>
         /// Gives the name of the database table
         /// </summary>
         /// <param name="table"></param>
         /// <returns>Name of the database table</returns>
-        public static string Name(Table table) => Data[(int) table].Name;
+        public static string Name(Table table) => Data[(int)table].Name;
 
         /// <summary>
         /// Returns the name of the parent database table or null if no parent exists
         /// </summary>
         /// <param name="table"></param>
         /// <returns>Name of parent database table</returns>
-        public static string Parent(Table table) => table > 0 ? Data[(int) table - 1].Name : "";
+        public static string Parent(Table table) => table > 0 ? Data[(int)table - 1].Name : "";
 
         /// <summary>
         /// Returns the name of the child database table or null if no child exists
         /// </summary>
         /// <param name="table"></param>
         /// <returns>Name of parent database table</returns>
-        public static string Child(Table table) => table < LastTable ? Data[(int) table + 1].Name : "";
+        public static string Child(Table table) => table < LastTable ? Data[(int)table + 1].Name : "";
 
         /// <summary>
         /// True if the table owns a X_data table
         /// </summary>
         /// <param name="table"></param>
         /// <returns></returns>
-        public static bool HasData(Table table) => Data[(int) table].HasData;
-        
+        public static bool HasData(Table table) => Data[(int)table].HasData;
+
 
         /// <summary>
         /// Returns the name of the connecting table between table and its parent
@@ -87,7 +87,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// <param name="table"></param>
         /// <returns>Name of connection table with parent</returns>
         public static string ConnectingTableToParent(Table table) => table > 0 ? $"{Name(table)}_to_{Parent(table)}" : null;
-        
+
         public static string TableId(Table table) => $"{Name(table)}_id";
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// <param name="table"></param>
         /// <returns>Name of connection table with child</returns>
         public static string ConnectingTableToChild(Table table) => table < LastTable ? $"{Name(table)}_to_{Child(table)}" : "";
-        
+
 
         /// <summary>
         /// Returns the name of X_data table for the given table or null if it has not data table
@@ -111,8 +111,8 @@ namespace SQE.DatabaseAccess.Helpers
         /// </summary>
         /// <param name="table">Element type</param>
         /// <returns>Termoinators as array of uint with start first.</returns>
-        public static uint[] Terminators(Table table) => Data[(int) table].Terminators;
-        
+        public static uint[] Terminators(Table table) => Data[(int)table].Terminators;
+
 
         /// <summary>
         /// Returns the start terminator of the element
@@ -120,14 +120,14 @@ namespace SQE.DatabaseAccess.Helpers
         /// <param name="table">Element type</param>
         /// <returns>Start terminator</returns>
         public static uint StartTerminator(Table table) => Terminators(table)[0];
-        
+
         /// <summary>
         /// Returns the end terminator of the element
         /// </summary>
         /// <param name="table">Element type</param>
         /// <returns>End terminator</returns>
         public static uint EndTerminator(Table table) => Terminators(table)[1];
-        
+
 
         /// <summary>
         /// Returns an array of all terminators of the element and its children depending on terminatorIndex
@@ -146,10 +146,11 @@ namespace SQE.DatabaseAccess.Helpers
                 var count = LastTable - table + 1;
                 terminators = new uint[count];
                 terminators[count - 1] = BreakAttributeValue;
-            } else terminators = new uint[LastTable-table];
-            for (var i = table; i <= LastTable-1; i++)
+            }
+            else terminators = new uint[LastTable - table];
+            for (var i = table; i <= LastTable - 1; i++)
             {
-                terminators[(int) i] = Terminators(i)[terminatorIndex];
+                terminators[(int)i] = Terminators(i)[terminatorIndex];
             }
 
             return terminators;
@@ -167,8 +168,8 @@ namespace SQE.DatabaseAccess.Helpers
         /// <param name="addDataTables">If true than als the data tables of the elements are included</param>
         /// <param name="addPublicEdition">If true all public editions will be found too</param>
         /// <returns>Part of query string</returns>
-        public static string FromQueryPart(Table table, 
-            bool addDataTables = false, 
+        public static string FromQueryPart(Table table,
+            bool addDataTables = false,
             bool addPublicEdition = false,
             bool addRois = false,
             bool addCommentaries = false
@@ -180,7 +181,7 @@ namespace SQE.DatabaseAccess.Helpers
                                 JOIN sign_interpretation_attribute_owner USING (sign_interpretation_attribute_id)
                                 JOIN edition_editor USING (edition_id)
                         ";
-            if (addRois) 
+            if (addRois)
                 query += @"
                                 JOIN sign_interpretation_roi USING (sign_interpretation_id)
                                 JOIN sign_interpretation_roi_owner
@@ -192,7 +193,7 @@ namespace SQE.DatabaseAccess.Helpers
                                 JOIN edition ON edition_editor.edition_id=edition.edition_id
                         ";
 
-            for (var index = LastTable-1;  index >= table; index--)
+            for (var index = LastTable - 1; index >= table; index--)
             {
                 query += $@"
                                 JOIN {ConnectingTableToChild(index)} USING ({TableId(index + 1)})

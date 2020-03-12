@@ -97,6 +97,19 @@ export interface DeleteEditionEntityDTO {
 export interface EditionScriptCollectionDTO {
     letters: LetterDTO[];
 }
+export enum EditionEntities {
+    edition = 0,
+    artefact = 1,
+    textFragment = 2,
+    line = 3,
+    signInterpretation = 4,
+    roi = 5
+}
+
+export interface DeleteDTO {
+    entity: EditionEntities;
+    ids: number[];
+}
 export interface EditionUpdateRequestDTO {
     name: string;
     copyrightHolder: string;

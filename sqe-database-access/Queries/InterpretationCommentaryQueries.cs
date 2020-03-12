@@ -1,9 +1,9 @@
 namespace SQE.DatabaseAccess.Queries
 {
 
-	internal static class GetSignInterpretationCommentaryByData
-	{
-		public const string GetQuery = @"
+    internal static class GetSignInterpretationCommentaryByData
+    {
+        public const string GetQuery = @"
 				SELECT sign_interpretation_commentary_id AS SignInterpretationCommentaryId,
 				       sign_interpretation_id AS SignInterpretationId,
 				       commentary,
@@ -14,7 +14,7 @@ namespace SQE.DatabaseAccess.Queries
 				WHERE @WhereData
 					AND edition_id=@EditionId
 				";
-	}
-	
+    }
+
 
 }

@@ -22,7 +22,7 @@ namespace SQE.DatabaseAccess.Models
 
         public string getSearchParameterString()
         {
-         var searchParameters = new List<string>();
+            var searchParameters = new List<string>();
             if (SignInterpretationId != null) searchParameters.Add($"sign_interpretation_id = {SignInterpretationId}");
             if (SignInterpretationAttributeId != null) searchParameters.Add($"sign_interpretation_attribute_id = {SignInterpretationAttributeId}");
             if (Sequence != null) searchParameters.Add($"sequence = {Sequence}");
@@ -31,7 +31,7 @@ namespace SQE.DatabaseAccess.Models
             if (NumericValue != null) searchParameters.Add($"numeric_value = {NumericValue}");
             if (NumericValueMoreThan != null) searchParameters.Add($"numeric_value > {NumericValueMoreThan}");
             if (NumericValueLessThan != null) searchParameters.Add($"numeric_value < {NumericValueLessThan}");
-            
+
             return String.Join(" AND ", searchParameters);
         }
 

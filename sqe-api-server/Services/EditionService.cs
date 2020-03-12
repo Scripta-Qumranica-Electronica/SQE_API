@@ -231,7 +231,6 @@ namespace SQE.API.Server.Services
                 {
                     // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
                     // made the request, that client directly received the response.
-                    // TODO: make a DTO for the delete object.
                     foreach (var userId in editionUsers)
                         await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
                             .DeletedEdition(deleteResponse);
@@ -255,7 +254,7 @@ namespace SQE.API.Server.Services
                 false
             );
 
-            // Broadcast edition creation notification to all connections of this user
+            // Broadcast edition deletion notification to all connections of this user
             await _hubContext.Clients.GroupExcept($"user-{editionUser.userId.ToString()}", clientId)
                 .DeletedEdition(deleteResponse);
 

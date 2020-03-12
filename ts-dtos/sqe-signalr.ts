@@ -24,6 +24,7 @@ import {
 	DeleteTokenDTO,
 	DeleteEditionEntityDTO,
 	EditionScriptCollectionDTO,
+	DeleteDTO,
 	EditionUpdateRequestDTO,
 	EditionCopyDTO,
 	ImageDTO,
@@ -88,89 +89,6 @@ export class SignalRUtilities {
     /*
      * Server methods.
      */
-
-    /**
-	 * Creates a new text fragment in the given edition of a scroll
-	 *
-	 * @param createFragment - A JSON object with the details of the new text fragment to be created
-	 * @param editionId - Id of the edition
-	 *
-	 */
-    public async postV1EditionsEditionIdTextFragments(editionId: number, createFragment: CreateTextFragmentDTO): Promise<TextFragmentDataDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdTextFragments', editionId, createFragment);
-    }
-
-    /**
-	 * Updates the specified text fragment with the submitted properties
-	 *
-	 * @param editionId - Edition of the text fragment being updates
-	 * @param textFragmentId - Id of the text fragment being updates
-	 * @param updatedTextFragment - Details of the updated text fragment
-	 * @returns - The details of the updated text fragment
-	 */
-    public async putV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number, updatedTextFragment: UpdateTextFragmentDTO): Promise<TextFragmentDataDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId, updatedTextFragment);
-    }
-
-    /**
-	 * Retrieves the ids of all fragments in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @returns - An array of the text fragment ids in correct sequence
-	 */
-    public async getV1EditionsEditionIdTextFragments(editionId: number): Promise<TextFragmentDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragments', editionId);
-    }
-
-    /**
-	 * Retrieves the ids of all lines in the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - An array of the line ids in the proper sequence
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(editionId: number, textFragmentId: number): Promise<ArtefactDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves the ids of all lines in the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - An array of the line ids in the proper sequence
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number): Promise<LineDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves all signs and their data from the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - 
-	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *             sequence
-	 *         
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number): Promise<TextEditionDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves all signs and their data from the given line
-	 *
-	 * @param editionId - Id of the edition
-	 * @param lineId - Id of the line
-	 * @returns - 
-	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *             sequence
-	 *         
-	 */
-    public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
-    }
 
     /**
 	 * Adds an editor to the specified edition
@@ -267,88 +185,6 @@ export class SignalRUtilities {
 	 */
     public async getV1EditionsEditionIdScriptCollection(editionId: number): Promise<EditionScriptCollectionDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdScriptCollection', editionId);
-    }
-
-    /**
-	 * Creates a new artefact with the provided data.
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param payload - A CreateArtefactDTO with the data for the new artefact
-	 *
-	 */
-    public async postV1EditionsEditionIdArtefacts(editionId: number, payload: CreateArtefactDTO): Promise<ArtefactDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdArtefacts', editionId, payload);
-    }
-
-    /**
-	 * Deletes the specified artefact
-	 *
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param editionId - Unique Id of the desired edition
-	 *
-	 */
-    public async deleteV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId);
-    }
-
-    /**
-	 * Provides a listing of all artefacts that are part of the specified edition
-	 *
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param editionId - Unique Id of the desired edition
-	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
-	 *
-	 */
-    public async getV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, optional);
-    }
-
-    /**
-	 * Provides a listing of all rois belonging to an artefact in the specified edition
-	 *
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param editionId - Unique Id of the desired edition
-	 *
-	 */
-    public async getV1EditionsEditionIdArtefactsArtefactIdRois(editionId: number, artefactId: number): Promise<InterpretationRoiDTOList> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdRois', editionId, artefactId);
-    }
-
-    /**
-	 * Provides a listing of all artefacts that are part of the specified edition
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
-	 *
-	 */
-    public async getV1EditionsEditionIdArtefacts(editionId: number, optional: string[]): Promise<ArtefactListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefacts', editionId, optional);
-    }
-
-    /**
-	 * Provides a listing of text fragments that have text in the specified artefact.
-	 * With the optional query parameter "suggested", this endpoint will also return
-	 * any text fragment that the system suggests might have text in the artefact.
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param optional - Add "suggested" to include possible matches suggested by the system
-	 *
-	 */
-    public async getV1EditionsEditionIdArtefactsArtefactIdTextFragments(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactTextFragmentMatchListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdTextFragments', editionId, artefactId, optional);
-    }
-
-    /**
-	 * Updates the specified artefact
-	 *
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param editionId - Unique Id of the desired edition
-	 * @param payload - An UpdateArtefactDTO with the desired alterations to the artefact
-	 *
-	 */
-    public async putV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, payload: UpdateArtefactDTO): Promise<ArtefactDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload);
     }
 
     /**
@@ -461,38 +297,86 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Provides information for the specified imaged object related to the specified edition, can include images and also
-	 * their masks with optional.
+	 * Creates a new text fragment in the given edition of a scroll
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param imagedObjectId - Unique Id of the desired object from the imaging Institution
-	 * @param optional - Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks
+	 * @param createFragment - A JSON object with the details of the new text fragment to be created
+	 * @param editionId - Id of the edition
 	 *
 	 */
-    public async getV1EditionsEditionIdImagedObjectsImagedObjectId(editionId: number, imagedObjectId: string, optional: string[]): Promise<ImagedObjectDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdImagedObjectsImagedObjectId', editionId, imagedObjectId, optional);
+    public async postV1EditionsEditionIdTextFragments(editionId: number, createFragment: CreateTextFragmentDTO): Promise<TextFragmentDataDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdTextFragments', editionId, createFragment);
     }
 
     /**
-	 * Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
-	 * optional.
+	 * Updates the specified text fragment with the submitted properties
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param optional - Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks
-	 *
+	 * @param editionId - Edition of the text fragment being updates
+	 * @param textFragmentId - Id of the text fragment being updates
+	 * @param updatedTextFragment - Details of the updated text fragment
+	 * @returns - The details of the updated text fragment
 	 */
-    public async getV1EditionsEditionIdImagedObjects(editionId: number, optional: string[]): Promise<ImagedObjectListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdImagedObjects', editionId, optional);
+    public async putV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number, updatedTextFragment: UpdateTextFragmentDTO): Promise<TextFragmentDataDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId, updatedTextFragment);
     }
 
     /**
-	 * Provides a list of all institutional image providers.
+	 * Retrieves the ids of all Fragments of all fragments in the given edition of a scroll
 	 *
-	 *
-	 *
+	 * @param editionId - Id of the edition
+	 * @returns - An array of the text fragment ids in correct sequence
 	 */
-    public async getV1ImagedObjectsInstitutions(): Promise<ImageInstitutionListDTO> {
-        return await this._connection.invoke('GetV1ImagedObjectsInstitutions');
+    public async getV1EditionsEditionIdTextFragments(editionId: number): Promise<TextFragmentDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragments', editionId);
+    }
+
+    /**
+	 * Retrieves the ids of all Artefacts in the given textFragmentName
+	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - An array of the line ids in the proper sequence
+	 */
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(editionId: number, textFragmentId: number): Promise<ArtefactDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts', editionId, textFragmentId);
+    }
+
+    /**
+	 * Retrieves the ids of all lines in the given textFragmentName
+	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - An array of the line ids in the proper sequence
+	 */
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number): Promise<LineDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId);
+    }
+
+    /**
+	 * Retrieves all signs and their data from the given textFragmentName
+	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - 
+	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *             sequence
+	 *         
+	 */
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number): Promise<TextEditionDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
+    }
+
+    /**
+	 * Retrieves all signs and their data from the given line
+	 *
+	 * @param editionId - Id of the edition
+	 * @param lineId - Id of the line
+	 * @returns - 
+	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *             sequence
+	 *         
+	 */
+    public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
     }
 
     /**
@@ -535,6 +419,53 @@ export class SignalRUtilities {
 	 */
     public async listEditionSubscriptions(): Promise<number[]> {
         return await this._connection.invoke('ListEditionSubscriptions');
+    }
+
+    /**
+	 * Provides information for the specified imaged object related to the specified edition, can include images and also
+	 * their masks with optional.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param imagedObjectId - Unique Id of the desired object from the imaging Institution
+	 * @param optional - Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks
+	 *
+	 */
+    public async getV1EditionsEditionIdImagedObjectsImagedObjectId(editionId: number, imagedObjectId: string, optional: string[]): Promise<ImagedObjectDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdImagedObjectsImagedObjectId', editionId, imagedObjectId, optional);
+    }
+
+    /**
+	 * Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
+	 * optional.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param optional - Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks
+	 *
+	 */
+    public async getV1EditionsEditionIdImagedObjects(editionId: number, optional: string[]): Promise<ImagedObjectListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdImagedObjects', editionId, optional);
+    }
+
+    /**
+	 * Provides a list of all institutional image providers.
+	 *
+	 *
+	 *
+	 */
+    public async getV1ImagedObjectsInstitutions(): Promise<ImageInstitutionListDTO> {
+        return await this._connection.invoke('GetV1ImagedObjectsInstitutions');
+    }
+
+    /**
+	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
+	 * it attempts to construct a valid polygon that matches the original
+	 * as closely as possible.
+	 *
+	 * @param payload - JSON object with the WKT polygon to validate
+	 *
+	 */
+    public async postV1UtilsRepairWktPolygon(payload: WktPolygonDTO): Promise<WktPolygonDTO> {
+        return await this._connection.invoke('PostV1UtilsRepairWktPolygon', payload);
     }
 
     /**
@@ -616,15 +547,85 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	 * it attempts to construct a valid polygon that matches the original
-	 * as closely as possible.
+	 * Creates a new artefact with the provided data.
 	 *
-	 * @param payload - JSON object with the WKT polygon to validate
+	 * @param editionId - Unique Id of the desired edition
+	 * @param payload - A CreateArtefactDTO with the data for the new artefact
 	 *
 	 */
-    public async postV1UtilsValidateWkt(payload: WktPolygonDTO): Promise<void> {
-        return await this._connection.invoke('PostV1UtilsValidateWkt', payload);
+    public async postV1EditionsEditionIdArtefacts(editionId: number, payload: CreateArtefactDTO): Promise<ArtefactDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdArtefacts', editionId, payload);
+    }
+
+    /**
+	 * Deletes the specified artefact
+	 *
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param editionId - Unique Id of the desired edition
+	 *
+	 */
+    public async deleteV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId);
+    }
+
+    /**
+	 * Provides a listing of all artefacts that are part of the specified edition
+	 *
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param editionId - Unique Id of the desired edition
+	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
+	 *
+	 */
+    public async getV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, optional);
+    }
+
+    /**
+	 * Provides a listing of all rois belonging to an artefact in the specified edition
+	 *
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param editionId - Unique Id of the desired edition
+	 *
+	 */
+    public async getV1EditionsEditionIdArtefactsArtefactIdRois(editionId: number, artefactId: number): Promise<InterpretationRoiDTOList> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdRois', editionId, artefactId);
+    }
+
+    /**
+	 * Provides a listing of all artefacts that are part of the specified edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
+	 *
+	 */
+    public async getV1EditionsEditionIdArtefacts(editionId: number, optional: string[]): Promise<ArtefactListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefacts', editionId, optional);
+    }
+
+    /**
+	 * Provides a listing of text fragments that have text in the specified artefact.
+	 * With the optional query parameter "suggested", this endpoint will also return
+	 * any text fragment that the system suggests might have text in the artefact.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param optional - Add "suggested" to include possible matches suggested by the system
+	 *
+	 */
+    public async getV1EditionsEditionIdArtefactsArtefactIdTextFragments(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactTextFragmentMatchListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdTextFragments', editionId, artefactId, optional);
+    }
+
+    /**
+	 * Updates the specified artefact
+	 *
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param editionId - Unique Id of the desired edition
+	 * @param payload - An UpdateArtefactDTO with the desired alterations to the artefact
+	 *
+	 */
+    public async putV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, payload: UpdateArtefactDTO): Promise<ArtefactDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload);
     }
 
     /*
@@ -856,7 +857,7 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a ROI has been deleted
 	 *
 	 */
-    public connectDeletedRoi(handler: (msg: number) => void): void {
+    public connectDeletedRoi(handler: (msg: DeleteDTO) => void): void {
         this._connection.on('DeletedRoi', handler)
     }
 
@@ -864,7 +865,7 @@ export class SignalRUtilities {
 	 * Remove an existing listener that triggers when the server broadcasts a ROI has been deleted
 	 *
 	 */
-    public disconnectDeletedRoi(handler: (msg: number) => void): void {
+    public disconnectDeletedRoi(handler: (msg: DeleteDTO) => void): void {
         this._connection.off('DeletedRoi', handler)
     }
 
@@ -890,7 +891,7 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts an artefact has been deleted
 	 *
 	 */
-    public connectDeletedArtefact(handler: (msg: number) => void): void {
+    public connectDeletedArtefact(handler: (msg: DeleteDTO) => void): void {
         this._connection.on('DeletedArtefact', handler)
     }
 
@@ -898,7 +899,7 @@ export class SignalRUtilities {
 	 * Remove an existing listener that triggers when the server broadcasts an artefact has been deleted
 	 *
 	 */
-    public disconnectDeletedArtefact(handler: (msg: number) => void): void {
+    public disconnectDeletedArtefact(handler: (msg: DeleteDTO) => void): void {
         this._connection.off('DeletedArtefact', handler)
     }
 

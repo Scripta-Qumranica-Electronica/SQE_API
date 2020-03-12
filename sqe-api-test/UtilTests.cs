@@ -1,17 +1,13 @@
-using System;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
-using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
+using NetTopologySuite;
+using NetTopologySuite.IO;
 
 namespace SQE.ApiTest
 {
@@ -36,9 +32,9 @@ namespace SQE.ApiTest
                 wktPolygon = "POLYGON((0 0,0 10,10 10,10 0,0 0))"
             };
 
-            var polygonValidation = new Post.V1_Utils_ValidateWkt(goodPolygon);
+            var polygonValidation = new Post.V1_Utils_RepairWktPolygon(goodPolygon);
 
-            var (validationResponse, validation, rtValidationResponse, rtValidation) =
+            var (validationResponse, validation, rtResponse, _) =
                 await Request.Send(
                     polygonValidation,
                     _client,
@@ -46,25 +42,28 @@ namespace SQE.ApiTest
                     auth: true
                 );
 
+            var wkr = new WKTReader();
             // Assert
-            // The response should indicate a bad request
-            Assert.Null(validation);
-            Assert.Equal(HttpStatusCode.NoContent, validationResponse.StatusCode);
-            Assert.Null(rtValidation);
-            Assert.Null(rtValidationResponse);
+            Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsExact(wkr.Read(validation.wktPolygon)));
+            Assert.Equal(HttpStatusCode.OK, validationResponse.StatusCode);
+            Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsExact(wkr.Read(rtResponse.wktPolygon)));
         }
 
         [Fact]
-        public async Task RejectsInvalidWktPolygons()
+        public async Task RepairsInvalidWktPolygons()
         {
-            var goodPolygon = new WktPolygonDTO()
+            var badPolygon = new WktPolygonDTO()
             {
                 wktPolygon = "POLYGON((0 0,0 10,10 10,10 0))"
             };
+            var goodPolygon = new WktPolygonDTO()
+            {
+                wktPolygon = "POLYGON((0 0,0 10,10 10,10 0,0 0))"
+            };
 
-            var polygonValidation = new Post.V1_Utils_ValidateWkt(goodPolygon);
+            var polygonValidation = new Post.V1_Utils_RepairWktPolygon(badPolygon);
 
-            var (validationResponse, validation, rtValidationResponse, rtValidation) =
+            var (validationResponse, validation, rtValidation, _) =
                 await Request.Send(
                     polygonValidation,
                     _client,
@@ -72,15 +71,25 @@ namespace SQE.ApiTest
                     auth: true,
                     shouldSucceed: false
                 );
-            var content = await validationResponse.Content.ReadAsStringAsync();
+
             // Assert
             // The response should indicate a bad request
-            Assert.Null(validation);
-            Assert.Equal(HttpStatusCode.UnprocessableEntity, validationResponse.StatusCode);
-            Assert.Equal(
-                "{\"internalErrorName\":\"httpException\",\"msg\":\"The submitted wktPolygon is malformed. Check the data property of this error message for a possible valid substitute.\",\"data\":{\"wktPolygon\":\"POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))\"}}",
-                content
-            );
+            var wkr = new WKTReader();
+
+            var badPolyIsUnreadable = false;
+            try
+            {
+                var _ = wkr.Read(badPolygon.wktPolygon);
+            }
+            catch
+            {
+                badPolyIsUnreadable = true;
+            }
+            Assert.True(badPolyIsUnreadable);
+
+            Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsExact(wkr.Read(validation.wktPolygon)));
+            Assert.Equal(HttpStatusCode.OK, validationResponse.StatusCode);
+            Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsExact(wkr.Read(rtValidation.wktPolygon)));
         }
         #endregion
 

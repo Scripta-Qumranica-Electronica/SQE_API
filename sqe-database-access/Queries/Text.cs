@@ -3,10 +3,10 @@ namespace SQE.DatabaseAccess.Queries
 {
     public static class GetTextChunk
     {
-	    // NOTE I (Ingo) change the query to reflect the integration of the numeric value into the attribute table
-	    // which became necessary by deleting the table attribute_numeric
+        // NOTE I (Ingo) change the query to reflect the integration of the numeric value into the attribute table
+        // which became necessary by deleting the table attribute_numeric
 
-	    /// <summary>
+        /// <summary>
         ///     Retrieves all textual data for a chunk of text
         ///     @startId is the Id of the first sign
         ///     @endId is the Id of the last sign
@@ -51,7 +51,7 @@ SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 
 		text_fragment_data.text_fragment_id AS textFragmentId,
 		text_fragment_data.name AS textFragmentName,
-		text_fragment_author.user_id AS textFragmentAuthor,
+		text_fragment_author.user_id AS TextFragmentEditorId,
 
 		line_data.line_id AS lineId,
 		line_data.name AS line,
@@ -64,11 +64,11 @@ SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 		signInterpretationId,
 		sign_interpretation.`character` AS `character`,
 
-		sign_interpretation_attribute.sign_interpretation_attribute_id AS interpretationAttributeId,
-		sign_interpretation_attribute.attribute_value_id AS attributeValueId,
-		sign_interpretation_attribute.sequence AS sequence,
-		sign_interpretation_attribute_author.user_id AS signInterpretationAttributeAuthor,
-		sign_interpretation_attribute.numeric_value AS value,
+		sign_interpretation_attribute.sign_interpretation_attribute_id AS SignInterpretationAttributeId,
+		sign_interpretation_attribute.attribute_value_id AS AttributeValueId,
+		sign_interpretation_attribute.sequence AS Sequence,
+		sign_interpretation_attribute_author.user_id AS SignInterpretationAttributeAuthor,
+		sign_interpretation_attribute.numeric_value AS NumericValue,
 
 		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
 		roi.sign_interpretation_id AS SignInterpretationId,
@@ -141,8 +141,8 @@ ORDER BY sign_interpretation_ids.sequence
 ";
     }
 
-    
-    
+
+
     internal static class GetLineTerminators
     {
         /// <summary>
@@ -170,8 +170,8 @@ ORDER BY attribute_value_id
 ";
     }
 
-    
-    
+
+
     internal static class GetLineData
     {
         public const string Query = @"
@@ -315,7 +315,7 @@ JOIN attribute_owner
 	AND attribute_owner.edition_id = @EditionId
 ";
     }
-    
+
     //TODO Can be deleted, use DatabaseWriter.SimpleInsertAsync (Ingo)
     /*internal static class CreateManuscript
     {
@@ -353,7 +353,7 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
   AND text_fragment_data_owner.edition_id=@EditionId
 ";
     }
-    
+
 
     internal static class ManuscriptOfEdition
     {
@@ -367,7 +367,7 @@ WHERE edition_id = @EditionId
 
     internal static class GetSignInterpretationIdsForSignIdQuery
     {
-	    public const string GetQuery = @"
+        public const string GetQuery = @"
 			SELECT DISTINCT sign_interpretation_id
 			FROM sign_interpretation
 			JOIN sign_interpretation_attribute USING (sign_interpretation_id)
@@ -376,28 +376,28 @@ WHERE edition_id = @EditionId
 			AND edition_id= @EditionId
 		";
     }
-    
+
     internal static class GetSignInterpretationIdQuery
     {
-	    public const string GetQuery = @"
+        public const string GetQuery = @"
 			SELECT sign_interpretation_id
 			FROM sign_interpretation
 			WHERE sign_id = @SignId
 				AND `character`= @Character
 		";
     }
-    
+
     internal static class AddSignInterpretationQuery
     {
-	    public const string GetQuery = @"
+        public const string GetQuery = @"
 			INSERT INTO sign_interpretation
 				(sign_id,  `character`) 
 				VALUES (@SignId,  @Character)
 		";
     }
 
-    
 
-    
-    
+
+
+
 }

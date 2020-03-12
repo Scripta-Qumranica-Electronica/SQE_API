@@ -9,7 +9,7 @@ namespace SQE.DatabaseAccess.Helpers
         IncompleteButClear = 18,
         IncompleteButNotClear = 19
     }
-    
+
     public static class SignInterpretationAttributeFactory
     {
         public static SignInterpretationAttributeData CreateCharacterAttribute(
@@ -17,12 +17,12 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return _createNumericAttribute(1, width);
         }
-        
+
         public static SignInterpretationAttributeData CreateSpaceAttribute(float width = 1)
         {
             return _createNumericAttribute(2, width);
         }
-        
+
         public static SignInterpretationAttributeData CreateVacatAttribute(float width = 5)
         {
             return _createNumericAttribute(2, width);
@@ -33,11 +33,11 @@ namespace SQE.DatabaseAccess.Helpers
             TableData.Table table,
             TableData.TerminatorType terminatorType)
         {
-            return TableData.AllTerminators(table,terminatorType).Select(value => 
-                new SignInterpretationAttributeData() {AttributeValueId = value}).ToList();
+            return TableData.AllTerminators(table, terminatorType).Select(value =>
+                 new SignInterpretationAttributeData() { AttributeValueId = value }).ToList();
         }
-        
-        
+
+
         public static SignInterpretationAttributeData CreateProbabilityAttribute(float value)
         {
             return _createNumericAttribute(16, value);
@@ -45,10 +45,10 @@ namespace SQE.DatabaseAccess.Helpers
 
         public static SignInterpretationAttributeData CreateReadabilityAttribute(Readability readability)
         {
-            return _createNumericAttribute((uint) readability, 0);
+            return _createNumericAttribute((uint)readability, 0);
         }
 
-        
+
 
 
         private static SignInterpretationAttributeData _createNumericAttribute(
@@ -61,7 +61,7 @@ namespace SQE.DatabaseAccess.Helpers
                 NumericValue = value
             };
         }
-        
+
     }
 
 

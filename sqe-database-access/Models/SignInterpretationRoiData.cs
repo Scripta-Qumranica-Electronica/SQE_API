@@ -22,13 +22,13 @@ namespace SQE.DatabaseAccess.Models
         public uint? RoiPositionId { get; set; }
         public uint OldSignInterpretationRoiId { get; set; }
     }
-    
+
     public class SetSignInterpretationROIX
     {
         public uint ArtefactId { get; set; }
         public uint? SignInterpretationId { get; set; }
         public string Shape { get; set; }
-       //TODO I've no idea to what position refers in our database (Ingo)
+        //TODO I've no idea to what position refers in our database (Ingo)
         public string Position { get; set; }
         public uint TranslateX { get; set; }
         public uint TranslateY { get; set; }
@@ -36,10 +36,10 @@ namespace SQE.DatabaseAccess.Models
         public bool ValuesSet { get; set; }
         public bool Exceptional { get; set; }
     }
-    
+
     public class SignInterpretationROISearchData : SignInterpretationRoiData, ISearchData
     {
-       
+
         public string getSearchParameterString()
         {
             var searchParameters = new List<string>();
@@ -52,9 +52,9 @@ namespace SQE.DatabaseAccess.Models
             if (TranslateX != null) searchParameters.Add($"translate_x = {TranslateX}");
             if (TranslateY != null) searchParameters.Add($"translate_y = {TranslateY}");
             if (StanceRotation != null) searchParameters.Add($"stance_rotation = {StanceRotation}");
-            
+
             return String.Join(" AND ", searchParameters);
-           
+
             //TODO I skipped Position because I don't understand what it means.
             // If it is not needed, it must be deleted also in getJoinString
         }
@@ -65,7 +65,7 @@ namespace SQE.DatabaseAccess.Models
             if (Shape != null) joins = "JOIN roi_shape USING (roi_shape_id) ";
             if (ArtefactId != null || Position != null || TranslateX != null || TranslateY != null || StanceRotation != null)
                 joins += "JOIN roi_position USING (roi_position_id) ";
-           
+
             return joins;
         }
     }
