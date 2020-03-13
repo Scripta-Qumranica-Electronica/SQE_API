@@ -155,61 +155,75 @@ namespace SQE.DatabaseAccess.Helpers
             if (!editionUser.MayWrite)
                 throw new StandardExceptions.NoWritePermissionsException(editionUser);
 
-            var alteredRecords = new List<AlteredRecord>();
-
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
-                async () =>
-                {
-                    // Grab a transaction scope, we roll back all changes if any transactions fail
-                    // I could limit the transaction scope to each individual mutation request,
-                    // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
-                    using (var transactionScope = new TransactionScope(/*TransactionScopeOption.RequiresNew*/))
-                    using (var connection = OpenConnection())
+            // If there is no currently running transaction, start a new one
+            if (Transaction.Current == null)
+            {
+                return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                    async () =>
                     {
-                        foreach (var mutationRequest in mutationRequests)
+                        // Grab a transaction scope, we roll back all changes if any transactions fail
+                        // I could limit the transaction scope to each individual mutation request,
+                        // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
+                        using (var transactionScope = new TransactionScope( /*TransactionScopeOption.RequiresNew*/))
                         {
-                            // Set the editionId for the mutation.
-                            // Though we accept a List of mutations, we have the restriction that
-                            // they all belong to the same editionId and userID.
-                            // This way, we only do one permission check for the whole batch.
-                            mutationRequest.Parameters.Add("@EditionId", editionUser.EditionId);
-                            mutationRequest.Parameters.Add("@EditionEditorId", editionUser.EditionEditorId);
-                            await AddMainActionAsync(connection, mutationRequest);
-                            switch (mutationRequest.Action)
-                            {
-                                case MutateType.Create:
-                                    // Insert the record and add its response to the alteredRecords response.
-                                    alteredRecords.Add(await InsertAsync(connection, mutationRequest));
-                                    break;
-
-                                case MutateType.Update
-                                    : // Update in our system is really Delete + Insert, the old record remains.
-                                      // Delete the old record
-                                    var deletedRecord = await DeleteAsync(connection, mutationRequest);
-
-                                    // Insert the new record
-                                    var insertedRecord = await InsertAsync(connection, mutationRequest);
-
-                                    // Merge the request responses by copying the deleted Id to the insertRecord object
-                                    insertedRecord.OldId = deletedRecord.OldId;
-
-                                    // Add info to the return object
-                                    alteredRecords.Add(insertedRecord);
-                                    break;
-
-                                case MutateType.Delete:
-                                    // Delete the record and add its response to the alteredRecords response.
-                                    alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
-                                    break;
-                            }
+                            var results = await _writeToDatabaseAsync(editionUser, mutationRequests);
+                            transactionScope.Complete();
+                            return results;
                         }
-
-                        transactionScope.Complete();
                     }
+                );
+            }
+            
+            // There is already a transaction scope, so just run the write in the current scope
+            return await _writeToDatabaseAsync(editionUser, mutationRequests);
+        }
 
-                    return alteredRecords;
+        private async Task<List<AlteredRecord>> _writeToDatabaseAsync(EditionUserInfo editionUser,
+            List<MutationRequest> mutationRequests)
+        {
+            var alteredRecords = new List<AlteredRecord>();
+            using (var connection = OpenConnection())
+            {
+                foreach (var mutationRequest in mutationRequests)
+                {
+                    // Set the editionId for the mutation.
+                    // Though we accept a List of mutations, we have the restriction that
+                    // they all belong to the same editionId and userID.
+                    // This way, we only do one permission check for the whole batch.
+                    mutationRequest.Parameters.Add("@EditionId", editionUser.EditionId);
+                    mutationRequest.Parameters.Add("@EditionEditorId", editionUser.EditionEditorId);
+                    await AddMainActionAsync(connection, mutationRequest);
+                    switch (mutationRequest.Action)
+                    {
+                        case MutateType.Create:
+                            // Insert the record and add its response to the alteredRecords response.
+                            alteredRecords.Add(await InsertAsync(connection, mutationRequest));
+                            break;
+
+                        case MutateType.Update
+                            : // Update in our system is really Delete + Insert, the old record remains.
+                              // Delete the old record
+                            var deletedRecord = await DeleteAsync(connection, mutationRequest);
+
+                            // Insert the new record
+                            var insertedRecord = await InsertAsync(connection, mutationRequest);
+
+                            // Merge the request responses by copying the deleted Id to the insertRecord object
+                            insertedRecord.OldId = deletedRecord.OldId;
+
+                            // Add info to the return object
+                            alteredRecords.Add(insertedRecord);
+                            break;
+
+                        case MutateType.Delete:
+                            // Delete the record and add its response to the alteredRecords response.
+                            alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
+                            break;
+                    }
                 }
-            );
+            }
+
+            return alteredRecords;
         }
 
         /// <summary>

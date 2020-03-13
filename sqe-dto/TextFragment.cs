@@ -32,7 +32,7 @@ namespace SQE.API.DTO
         /// </summary>
         /// <param name="id">Id of the text fragment</param>
         /// <param name="name">Name of the text fragment</param>
-        /// <param name="editorId">Id of the editor who sefined the text fragment</param>
+        /// <param name="editorId">Id of the editor who defined the text fragment</param>
         /// <param name="suggested">
         ///     Whether this text fragment was suggest by the system (true)
         ///     or is a definite match (false)

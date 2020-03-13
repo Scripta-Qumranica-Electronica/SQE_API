@@ -109,7 +109,7 @@ $Order";
         public const string GetQuery = @"
 SELECT DISTINCT text_fragment_id AS TextFragmentId, 
        text_fragment_data.name AS TextFragmentName, 
-       text_fragment_data_owner.edition_editor_id AS EditionEditorId
+       text_fragment_data_owner.edition_editor_id AS TextFragmentEditorId
 FROM roi_position
 JOIN sign_interpretation_roi USING(roi_position_id)
 JOIN sign_interpretation_roi_owner ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
@@ -136,7 +136,7 @@ WHERE artefact_id = @ArtefactId
         public const string GetQuery = @"
 SELECT text_fragment_id AS TextFragmentId, 
        text_fragment_data.name AS TextFragmentName, 
-       text_fragment_data_owner.edition_editor_id AS EditionEditorId
+       text_fragment_data_owner.edition_editor_id AS TextFragmentEditorId
 FROM artefact_shape
 JOIN artefact_shape_owner ON artefact_shape.artefact_shape_id = artefact_shape_owner.artefact_shape_id
    AND artefact_shape_owner.edition_id = @EditionId

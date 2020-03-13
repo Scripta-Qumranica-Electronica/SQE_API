@@ -162,7 +162,9 @@ namespace SQE.API.Server.Services
             CreateArtefactDTO createArtefact,
             string clientId = null)
         {
-            var cleanedPoly = await GeometryValidation.ValidatePolygonAsync(createArtefact.polygon.mask, "artefact");
+            var cleanedPoly = string.IsNullOrEmpty(createArtefact.polygon.mask) 
+                ? null 
+                : await GeometryValidation.ValidatePolygonAsync(createArtefact.polygon.mask, "artefact");
 
             var newArtefact = await _artefactRepository.CreateNewArtefactAsync(
                 editionUser,
@@ -235,7 +237,8 @@ namespace SQE.API.Server.Services
             return new ArtefactTextFragmentMatchListDTO(
                 (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
                 .Select(
-                    x => new ArtefactTextFragmentMatchDTO(
+                    x => 
+                        new ArtefactTextFragmentMatchDTO(
                         x.TextFragmentId.GetValueOrDefault(),
                         x.TextFragmentName,
                         x.TextFragmentEditorId.GetValueOrDefault(),

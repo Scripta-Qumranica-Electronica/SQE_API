@@ -224,38 +224,48 @@ ORDER BY attribute_value_id
     internal static class GetFragmentData
     {
         public const string GetQuery = @"
-WITH RECURSIVE cte_fragment AS (
-    SELECT pitfs_1.text_fragment_id, 1 AS sequence
-    FROM position_in_text_fragment_stream AS pitfs_1
-    JOIN position_in_text_fragment_stream_owner AS pitfso_1
-        ON pitfs_1.position_in_text_fragment_stream_id = pitfso_1.position_in_text_fragment_stream_id
-        AND pitfso_1.edition_id=@EditionId
-    WHERE (
-        SELECT count(pitfs_2.position_in_text_fragment_stream_id)
-            FROM position_in_text_fragment_stream AS pitfs_2
-            JOIN position_in_text_fragment_stream_owner AS pitfso_2
-                ON pitfs_2.position_in_text_fragment_stream_id = pitfso_2.position_in_text_fragment_stream_id
-                AND pitfso_2.edition_id=@EditionId
-            WHERE pitfs_2.next_text_fragment_id=pitfs_1.text_fragment_id
-                  ) = 0
-
-    UNION
-    SELECT next_text_fragment_id, sequence+1
-    FROM cte_fragment, position_in_text_fragment_stream as pitfs
-        JOIN position_in_text_fragment_stream_owner AS pitfso
-            ON pitfs.position_in_text_fragment_stream_id = pitfso.position_in_text_fragment_stream_id
-                AND edition_id=@EditionId
-    WHERE pitfs.text_fragment_id = cte_fragment.text_fragment_id
-)
-
-SELECT text_fragment_id AS TextFragmentId,
-       name AS TextFragmentName,
-	   tfdo.edition_editor_id AS EditionEditorId
-FROM cte_fragment
-    JOIN text_fragment_data USING(text_fragment_id)
-    JOIN text_fragment_data_owner tfdo USING (text_fragment_data_id)
-WHERE edition_id=@EditionId
-ORDER BY cte_fragment.sequence
+WITH RECURSIVE text_fragment_ids
+	AS (
+	    SELECT 	position_in_text_fragment_stream.text_fragment_id AS textFragmentId, 
+		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
+		    position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
+		    position_in_text_fragment_stream_owner.edition_id AS editionId,
+		    @X := 0 AS sequence
+	    FROM position_in_text_fragment_stream_owner
+			JOIN position_in_text_fragment_stream USING(position_in_text_fragment_stream_id)
+		WHERE edition_id = @EditionId
+			AND (position_in_text_fragment_stream.text_fragment_id NOT IN (
+				SELECT position_in_text_fragment_stream.next_text_fragment_id
+				FROM position_in_text_fragment_stream_owner
+				JOIN position_in_text_fragment_stream USING(position_in_text_fragment_stream_id)
+				WHERE edition_id = @EditionId
+				)
+			)
+		UNION
+		
+		SELECT 	text_fragment_ids.nextTextFragmentId AS textFragmentId, 
+		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
+			position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
+		    position_in_text_fragment_stream_owner.edition_id AS editionId,
+			@X := @X + 1 AS sequence
+		FROM text_fragment_ids
+		LEFT JOIN position_in_text_fragment_stream 
+			ON position_in_text_fragment_stream.text_fragment_id = text_fragment_ids.nextTextFragmentId
+		JOIN position_in_text_fragment_stream_owner 
+			ON position_in_text_fragment_stream_owner.edition_id = text_fragment_ids.editionId
+				AND position_in_text_fragment_stream_owner.position_in_text_fragment_stream_id = text_fragment_ids.textFragmentPositionId
+	)
+SELECT	text_fragment_id AS TextFragmentId, name AS TextFragmentName, 
+		text_fragment_ids.sequence AS Position, 
+		text_fragment_data_owner.edition_editor_id AS EditionEditorId
+FROM text_fragment_ids
+	JOIN text_fragment_data ON text_fragment_data.text_fragment_id = text_fragment_ids.textFragmentId
+	JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
+		AND text_fragment_data_owner.edition_id = text_fragment_ids.editionId
+	JOIN edition_editor ON edition_editor.edition_id = text_fragment_ids.editionId
+	JOIN edition ON edition.edition_id = text_fragment_ids.editionId
+WHERE edition_editor.user_id = @UserId OR edition.public = 1
+ORDER BY text_fragment_ids.sequence
       ";
     }
 

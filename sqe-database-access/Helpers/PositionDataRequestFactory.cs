@@ -440,7 +440,7 @@ namespace SQE.DatabaseAccess.Helpers
 		                 WHERE pis_3.{_nextName} = pis_4.{_itemName})
 		        FROM  result, {_tableName} AS pis_4
 			        JOIN {_tableName}_owner
-				        ON {_tableName}_owner.position_in_stream_id = pis_4.{_tableName}_id
+				        ON {_tableName}_owner.{_tableName}_id = pis_4.{_tableName}_id
 				            AND {_tableName}_owner.edition_id = @EditionId
 		        WHERE pis_4.{_itemName} = nextItemId
 			        AND pis_4.{_nextName} IN @ItemIds
@@ -569,7 +569,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             var requests = new List<MutationRequest>();
 
-            // First create requests to take out items from there old places
+            // First create requests to take out items from their old places
             foreach (var itemId in _itemIds)
             {
                 var tempData = await CreateInstanceAsync(

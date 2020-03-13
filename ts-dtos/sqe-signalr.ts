@@ -91,6 +91,138 @@ export class SignalRUtilities {
      */
 
     /**
+	 * Get the details for a ROI in the given edition of a scroll
+	 *
+	 * @param editionId - Id of the edition
+	 * @param roiId - A JSON object with the new ROI to be created
+	 *
+	 */
+    public async getV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number): Promise<InterpretationRoiDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdRoisRoiId', editionId, roiId);
+    }
+
+    /**
+	 * Creates new sign ROI in the given edition of a scroll
+	 *
+	 * @param editionId - Id of the edition
+	 * @param newRoi - A JSON object with the new ROI to be created
+	 *
+	 */
+    public async postV1EditionsEditionIdRois(editionId: number, newRoi: SetInterpretationRoiDTO): Promise<InterpretationRoiDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdRois', editionId, newRoi);
+    }
+
+    /**
+	 * Creates new sign ROI's in the given edition of a scroll
+	 *
+	 * @param editionId - Id of the edition
+	 * @param newRois - A JSON object with an array of the new ROI's to be created
+	 *
+	 */
+    public async postV1EditionsEditionIdRoisBatch(editionId: number, newRois: SetInterpretationRoiDTOList): Promise<InterpretationRoiDTOList> {
+        return await this._connection.invoke('PostV1EditionsEditionIdRoisBatch', editionId, newRois);
+    }
+
+    /**
+	 * Processes a series of create/update/delete ROI requests in the given edition of a scroll
+	 *
+	 * @param editionId - Id of the edition
+	 * @param rois - A JSON object with all the roi edits to be performed
+	 *
+	 */
+    public async postV1EditionsEditionIdRoisBatchEdit(editionId: number, rois: BatchEditRoiDTO): Promise<BatchEditRoiResponseDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdRoisBatchEdit', editionId, rois);
+    }
+
+    /**
+	 * Update an existing sign ROI in the given edition of a scroll
+	 *
+	 * @param editionId - Id of the edition
+	 * @param roiId - Id of the ROI to be updated
+	 * @param updateRoi - A JSON object with the updated ROI details
+	 *
+	 */
+    public async putV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number, updateRoi: SetInterpretationRoiDTO): Promise<UpdatedInterpretationRoiDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdRoisRoiId', editionId, roiId, updateRoi);
+    }
+
+    /**
+	 * Update existing sign ROI's in the given edition of a scroll
+	 *
+	 * @param editionId - Id of the edition
+	 * @param updateRois - A JSON object with an array of the updated ROI details
+	 *
+	 */
+    public async putV1EditionsEditionIdRoisBatch(editionId: number, updateRois: InterpretationRoiDTOList): Promise<UpdatedInterpretationRoiDTOList> {
+        return await this._connection.invoke('PutV1EditionsEditionIdRoisBatch', editionId, updateRois);
+    }
+
+    /**
+	 * Deletes a sign ROI from the given edition of a scroll
+	 *
+	 * @param roiId - Id of the ROI to be deleted
+	 * @param editionId - Id of the edition
+	 *
+	 */
+    public async deleteV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdRoisRoiId', editionId, roiId);
+    }
+
+    /**
+	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
+	 * it attempts to construct a valid polygon that matches the original
+	 * as closely as possible.
+	 *
+	 * @param payload - JSON object with the WKT polygon to validate
+	 *
+	 */
+    public async postV1UtilsRepairWktPolygon(payload: WktPolygonDTO): Promise<WktPolygonDTO> {
+        return await this._connection.invoke('PostV1UtilsRepairWktPolygon', payload);
+    }
+
+    /**
+	 * Override the default OnConnectedAsync to add the connection to the user's user_id
+	 * group if the user is authenticated. The user_id group is used for messages that
+	 * are above the level of a single edition.
+	 *
+	 *
+	 *
+	 */
+    public async onConnectedAsync(): Promise<void> {
+        return await this._connection.invoke('OnConnectedAsync');
+    }
+
+    /**
+	 * The client subscribes to all changes for the specified editionId.
+	 *
+	 * @param editionId - The ID of the edition to receive updates
+	 *
+	 */
+    public async subscribeToEdition(editionId: number): Promise<void> {
+        return await this._connection.invoke('SubscribeToEdition', editionId);
+    }
+
+    /**
+	 * The client unsubscribes to all changes for the specified editionId.
+	 *
+	 * @param editionId - The ID of the edition to stop receiving updates
+	 *
+	 */
+    public async unsubscribeToEdition(editionId: number): Promise<void> {
+        return await this._connection.invoke('UnsubscribeToEdition', editionId);
+    }
+
+    /**
+	 * Get a list of all editions the client is currently subscribed to.
+	 *
+	 *
+	 * @returns - A list of every editionId for which the client receives update
+	 */
+    public async listEditionSubscriptions(): Promise<number[]> {
+        return await this._connection.invoke('ListEditionSubscriptions');
+    }
+
+    /**
 	 * Adds an editor to the specified edition
 	 *
 	 * @param editionId - Unique Id of the desired edition
@@ -185,6 +317,89 @@ export class SignalRUtilities {
 	 */
     public async getV1EditionsEditionIdScriptCollection(editionId: number): Promise<EditionScriptCollectionDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdScriptCollection', editionId);
+    }
+
+    /**
+	 * Creates a new text fragment in the given edition of a scroll
+	 *
+	 * @param createFragment - A JSON object with the details of the new text fragment to be created
+	 * @param editionId - Id of the edition
+	 *
+	 */
+    public async postV1EditionsEditionIdTextFragments(editionId: number, createFragment: CreateTextFragmentDTO): Promise<TextFragmentDataDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdTextFragments', editionId, createFragment);
+    }
+
+    /**
+	 * Updates the specified text fragment with the submitted properties
+	 *
+	 * @param editionId - Edition of the text fragment being updates
+	 * @param textFragmentId - Id of the text fragment being updates
+	 * @param updatedTextFragment - Details of the updated text fragment
+	 * @returns - The details of the updated text fragment
+	 */
+    public async putV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number, updatedTextFragment: UpdateTextFragmentDTO): Promise<TextFragmentDataDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId, updatedTextFragment);
+    }
+
+    /**
+	 * Retrieves the ids of all Fragments of all fragments in the given edition of a scroll
+	 *
+	 * @param editionId - Id of the edition
+	 * @returns - An array of the text fragment ids in correct sequence
+	 */
+    public async getV1EditionsEditionIdTextFragments(editionId: number): Promise<TextFragmentDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragments', editionId);
+    }
+
+    /**
+	 * Retrieves the ids of all Artefacts in the given textFragmentName
+	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - An array of the line ids in the proper sequence
+	 */
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(editionId: number, textFragmentId: number): Promise<ArtefactDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts', editionId, textFragmentId);
+    }
+
+    /**
+	 * Retrieves the ids of all lines in the given textFragmentName
+	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - An array of the line ids in the proper sequence
+	 */
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number): Promise<LineDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId);
+    }
+
+    /**
+	 * Retrieves all signs and their data from the given textFragmentName
+	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - 
+	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *             sequence
+	 *         
+	 */
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number): Promise<TextEditionDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
+    }
+
+    /**
+	 * Retrieves all signs and their data from the given line
+	 *
+	 * @param editionId - Id of the edition
+	 * @param lineId - Id of the line
+	 * @returns - 
+	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *             sequence
+	 *         
+	 */
+    public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
     }
 
     /**
@@ -297,131 +512,6 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Creates a new text fragment in the given edition of a scroll
-	 *
-	 * @param createFragment - A JSON object with the details of the new text fragment to be created
-	 * @param editionId - Id of the edition
-	 *
-	 */
-    public async postV1EditionsEditionIdTextFragments(editionId: number, createFragment: CreateTextFragmentDTO): Promise<TextFragmentDataDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdTextFragments', editionId, createFragment);
-    }
-
-    /**
-	 * Updates the specified text fragment with the submitted properties
-	 *
-	 * @param editionId - Edition of the text fragment being updates
-	 * @param textFragmentId - Id of the text fragment being updates
-	 * @param updatedTextFragment - Details of the updated text fragment
-	 * @returns - The details of the updated text fragment
-	 */
-    public async putV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number, updatedTextFragment: UpdateTextFragmentDTO): Promise<TextFragmentDataDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId, updatedTextFragment);
-    }
-
-    /**
-	 * Retrieves the ids of all Fragments of all fragments in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @returns - An array of the text fragment ids in correct sequence
-	 */
-    public async getV1EditionsEditionIdTextFragments(editionId: number): Promise<TextFragmentDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragments', editionId);
-    }
-
-    /**
-	 * Retrieves the ids of all Artefacts in the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - An array of the line ids in the proper sequence
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(editionId: number, textFragmentId: number): Promise<ArtefactDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves the ids of all lines in the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - An array of the line ids in the proper sequence
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number): Promise<LineDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves all signs and their data from the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - 
-	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *             sequence
-	 *         
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number): Promise<TextEditionDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves all signs and their data from the given line
-	 *
-	 * @param editionId - Id of the edition
-	 * @param lineId - Id of the line
-	 * @returns - 
-	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *             sequence
-	 *         
-	 */
-    public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
-    }
-
-    /**
-	 * Override the default OnConnectedAsync to add the connection to the user's user_id
-	 * group if the user is authenticated. The user_id group is used for messages that
-	 * are above the level of a single edition.
-	 *
-	 *
-	 *
-	 */
-    public async onConnectedAsync(): Promise<void> {
-        return await this._connection.invoke('OnConnectedAsync');
-    }
-
-    /**
-	 * The client subscribes to all changes for the specified editionId.
-	 *
-	 * @param editionId - The ID of the edition to receive updates
-	 *
-	 */
-    public async subscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection.invoke('SubscribeToEdition', editionId);
-    }
-
-    /**
-	 * The client unsubscribes to all changes for the specified editionId.
-	 *
-	 * @param editionId - The ID of the edition to stop receiving updates
-	 *
-	 */
-    public async unsubscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection.invoke('UnsubscribeToEdition', editionId);
-    }
-
-    /**
-	 * Get a list of all editions the client is currently subscribed to.
-	 *
-	 *
-	 * @returns - A list of every editionId for which the client receives update
-	 */
-    public async listEditionSubscriptions(): Promise<number[]> {
-        return await this._connection.invoke('ListEditionSubscriptions');
-    }
-
-    /**
 	 * Provides information for the specified imaged object related to the specified edition, can include images and also
 	 * their masks with optional.
 	 *
@@ -454,96 +544,6 @@ export class SignalRUtilities {
 	 */
     public async getV1ImagedObjectsInstitutions(): Promise<ImageInstitutionListDTO> {
         return await this._connection.invoke('GetV1ImagedObjectsInstitutions');
-    }
-
-    /**
-	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	 * it attempts to construct a valid polygon that matches the original
-	 * as closely as possible.
-	 *
-	 * @param payload - JSON object with the WKT polygon to validate
-	 *
-	 */
-    public async postV1UtilsRepairWktPolygon(payload: WktPolygonDTO): Promise<WktPolygonDTO> {
-        return await this._connection.invoke('PostV1UtilsRepairWktPolygon', payload);
-    }
-
-    /**
-	 * Get the details for a ROI in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @param roiId - A JSON object with the new ROI to be created
-	 *
-	 */
-    public async getV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number): Promise<InterpretationRoiDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdRoisRoiId', editionId, roiId);
-    }
-
-    /**
-	 * Creates new sign ROI in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @param newRoi - A JSON object with the new ROI to be created
-	 *
-	 */
-    public async postV1EditionsEditionIdRois(editionId: number, newRoi: SetInterpretationRoiDTO): Promise<InterpretationRoiDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdRois', editionId, newRoi);
-    }
-
-    /**
-	 * Creates new sign ROI's in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @param newRois - A JSON object with an array of the new ROI's to be created
-	 *
-	 */
-    public async postV1EditionsEditionIdRoisBatch(editionId: number, newRois: SetInterpretationRoiDTOList): Promise<InterpretationRoiDTOList> {
-        return await this._connection.invoke('PostV1EditionsEditionIdRoisBatch', editionId, newRois);
-    }
-
-    /**
-	 * Processes a series of create/update/delete ROI requests in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @param rois - A JSON object with all the roi edits to be performed
-	 *
-	 */
-    public async postV1EditionsEditionIdRoisBatchEdit(editionId: number, rois: BatchEditRoiDTO): Promise<BatchEditRoiResponseDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdRoisBatchEdit', editionId, rois);
-    }
-
-    /**
-	 * Update an existing sign ROI in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @param roiId - Id of the ROI to be updated
-	 * @param updateRoi - A JSON object with the updated ROI details
-	 *
-	 */
-    public async putV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number, updateRoi: SetInterpretationRoiDTO): Promise<UpdatedInterpretationRoiDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdRoisRoiId', editionId, roiId, updateRoi);
-    }
-
-    /**
-	 * Update existing sign ROI's in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @param updateRois - A JSON object with an array of the updated ROI details
-	 *
-	 */
-    public async putV1EditionsEditionIdRoisBatch(editionId: number, updateRois: InterpretationRoiDTOList): Promise<UpdatedInterpretationRoiDTOList> {
-        return await this._connection.invoke('PutV1EditionsEditionIdRoisBatch', editionId, updateRois);
-    }
-
-    /**
-	 * Deletes a sign ROI from the given edition of a scroll
-	 *
-	 * @param roiId - Id of the ROI to be deleted
-	 * @param editionId - Id of the edition
-	 *
-	 */
-    public async deleteV1EditionsEditionIdRoisRoiId(editionId: number, roiId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdRoisRoiId', editionId, roiId);
     }
 
     /**

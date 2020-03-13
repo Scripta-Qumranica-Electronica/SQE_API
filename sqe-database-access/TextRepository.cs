@@ -618,13 +618,13 @@ namespace SQE.DatabaseAccess
             {
                 return (await connection.QueryAsync<TextFragmentData>(
                     GetFragmentData.GetQuery,
-                    new { editionUser.EditionId }
+                    new { editionUser.EditionId, UserId = editionUser.userId }
                 )).ToList();
             }
         }
 
         /// <summary>
-        /// Removes the text fragmen with the given Id together with all its ligns and their signs.
+        /// Removes the text fragment with the given Id together with all its lines and their signs.
         /// </summary>
         /// <param name="editionUser"></param>
         /// <param name="textFragmentId">Id of text frgament</param>
