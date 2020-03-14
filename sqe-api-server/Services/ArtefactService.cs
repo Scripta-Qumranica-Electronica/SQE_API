@@ -237,8 +237,7 @@ namespace SQE.API.Server.Services
             return new ArtefactTextFragmentMatchListDTO(
                 (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
                 .Select(
-                    x => 
-                        new ArtefactTextFragmentMatchDTO(
+                    x => new ArtefactTextFragmentMatchDTO(
                         x.TextFragmentId.GetValueOrDefault(),
                         x.TextFragmentName,
                         x.TextFragmentEditorId.GetValueOrDefault(),
