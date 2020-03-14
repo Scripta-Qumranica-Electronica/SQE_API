@@ -162,8 +162,8 @@ namespace SQE.API.Server.Services
             CreateArtefactDTO createArtefact,
             string clientId = null)
         {
-            var cleanedPoly = string.IsNullOrEmpty(createArtefact.polygon.mask) 
-                ? null 
+            var cleanedPoly = string.IsNullOrEmpty(createArtefact.polygon.mask)
+                ? null
                 : await GeometryValidation.ValidatePolygonAsync(createArtefact.polygon.mask, "artefact");
 
             var newArtefact = await _artefactRepository.CreateNewArtefactAsync(
