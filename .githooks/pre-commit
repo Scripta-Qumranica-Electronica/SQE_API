@@ -63,6 +63,21 @@ echo "Cleaning up code formatting"
 cleanup_code
 
 ## We generate the ts definitions for the C# DTOs before pushing
+generate_realtime_hubs () {
+    dotnet build sqe-realtime-hub-builder
+    dotnet sqe-realtime-hub-builder/bin/Debug/netcoreapp3.1/sqe-realtime-hub-builder.dll
+        if test "$?" -ne 0; then 
+        printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
+        printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
+        exit 1
+    fi 
+}
+
+## Generating typescript definitions
+echo "Generating the realtime hub methods"
+generate_realtime_hubs
+
+## We generate the ts definitions for the C# DTOs before pushing
 generate_ts_from_dtos () {
     dotnet build Utilities/GenerateTypescriptDTOs
     dotnet build sqe-dto

@@ -251,6 +251,13 @@ export interface TextFragmentDataDTO {
 export interface ArtefactTextFragmentMatchDTO extends TextFragmentDataDTO {
     suggested: boolean;
 }
+export interface ImagedObjectTextFragmentMatchDTO {
+    editionId: number;
+    manuscriptName: string;
+    textFragmentId: number;
+    textFragmentName: string;
+    side: string;
+}
 
 export interface TextFragmentDataListDTO {
     textFragments: TextFragmentDataDTO[];

@@ -50,6 +50,7 @@ import {
 	InterpretationAttributeDTO,
 	TextFragmentDataDTO,
 	ArtefactTextFragmentMatchDTO,
+	ImagedObjectTextFragmentMatchDTO,
 	TextFragmentDataListDTO,
 	ArtefactTextFragmentMatchListDTO,
 	TextFragmentDTO,
@@ -544,6 +545,16 @@ export class SignalRUtilities {
 	 */
     public async getV1ImagedObjectsInstitutions(): Promise<ImageInstitutionListDTO> {
         return await this._connection.invoke('GetV1ImagedObjectsInstitutions');
+    }
+
+    /**
+	 * Provides a list of all text fragments that should correspond to the imaged object.
+	 *
+	 * @param imagedObjectId - Id of the imaged object
+	 *
+	 */
+    public async getV1ImagedObjectsImagedObjectIdTextFragments(imagedObjectId: string): Promise<ImagedObjectTextFragmentMatchDTO[]> {
+        return await this._connection.invoke('GetV1ImagedObjectsImagedObjectIdTextFragments', imagedObjectId);
     }
 
     /**
