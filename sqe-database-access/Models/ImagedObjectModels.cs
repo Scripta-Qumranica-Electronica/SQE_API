@@ -17,4 +17,13 @@ namespace SQE.DatabaseAccess.Models
         public List<Image> Images { set; get; }
         public int MasterIndex { set; get; }
     }
+
+    public class ImagedObjectTextFragmentMatch
+    {
+        public uint EditionId { get; set; }
+        public string ManuscriptName { get; set; }
+        public uint TextFragmentId { get; set; }
+        public string TextFragmentName { get; set; }
+        public byte Side { get; set; }
+    }
 }

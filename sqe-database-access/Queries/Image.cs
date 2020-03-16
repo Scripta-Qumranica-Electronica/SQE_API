@@ -118,4 +118,25 @@ WHERE edition.edition_id = @EditionId
             public string Institution { get; set; }
         }
     }
+    
+    internal static class ImagedObjectTextFragmentsQuery
+    {
+        public static string GetQuery = @"
+SELECT manuscript_data.name AS ManuscriptName, 
+       text_fragment_data.name AS TextFragmentName, 
+       manuscript_data_owner.edition_id AS EditionId, 
+       iaa_edition_catalog_to_text_fragment.text_fragment_id AS TextFragmentId,
+       min(image_catalog.catalog_side) AS Side
+FROM image_catalog
+    JOIN image_to_iaa_edition_catalog USING(image_catalog_id)
+    JOIN iaa_edition_catalog_to_text_fragment USING(iaa_edition_catalog_id)
+    JOIN text_fragment_data USING(text_fragment_id)
+    JOIN manuscript_to_text_fragment USING(text_fragment_id)
+    JOIN manuscript_data USING(manuscript_id)
+    JOIN manuscript_data_owner USING(manuscript_data_id)
+    JOIN edition USING(edition_id)
+WHERE image_catalog.object_id = @ImagedObjectId
+    AND edition.public = 1
+GROUP BY iaa_edition_catalog_to_text_fragment.text_fragment_id";
+    }
 }

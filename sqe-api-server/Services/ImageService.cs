@@ -13,16 +13,17 @@ namespace SQE.API.Server.Services
     {
         ImageDTO ImageToDTO(Image model);
         Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
+        Task<List<ImagedObjectTextFragmentMatchDTO>> GetImageTextFragmentsAsync(string imagedObjectId);
     }
 
     public class ImageService : IImageService
     {
         private readonly IHubContext<MainHub, ISQEClient> _hubContext;
-        private readonly IImageRepository _repo;
+        private readonly IImageRepository _imageRepo;
 
-        public ImageService(IImageRepository repo, IHubContext<MainHub, ISQEClient> hubContext)
+        public ImageService(IImageRepository imageRepo, IHubContext<MainHub, ISQEClient> hubContext)
         {
-            _repo = repo;
+            _imageRepo = imageRepo;
             _hubContext = hubContext;
         }
 
@@ -48,9 +49,17 @@ namespace SQE.API.Server.Services
 
         public async Task<ImageInstitutionListDTO> GetImageInstitutionsAsync()
         {
-            var institutions = await _repo.ListImageInstitutionsAsync();
+            var institutions = await _imageRepo.ListImageInstitutionsAsync();
 
             return ImageInstitutionsToDTO(institutions);
+        }
+
+        public async Task<List<ImagedObjectTextFragmentMatchDTO>> GetImageTextFragmentsAsync(string imagedObjectId)
+        {
+            var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
+            return textFragments.Select(x => new ImagedObjectTextFragmentMatchDTO(
+                x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName, x.Side == 0 ? "recto" : "verso")
+            ).ToList();
         }
 
         private static string GetType(byte type)
