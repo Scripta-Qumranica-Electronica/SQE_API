@@ -49,31 +49,29 @@ namespace SQE.DatabaseAccess.Helpers
         /// If the already existing connections of the anchors should be deleted,
         /// simply add break to the list of actions.
         /// </summary>
-        Add,
+        CreatePathFromItems,
 
         /// <summary>
-        /// Removes all connections between the anchors - items are ignored.
+        /// Removes all connections between items given as anchors which are directly connected to each other.
+        /// NOTE: This uses the anchors to define the items to be processed - the given items are ignored.
         /// If anchorsAfter is empty than all following connections of anchorsBefore are deleted and
         /// the original neighbours are set as anchorsAfter
         /// if anchorsBefore is empty than all preceding connections of anchorsAfter are deleted and
         /// the original neighbours are anchorsBefore
         /// </summary>
-        Break,
+        DisconnectNeighbouringAnchors,
 
         /// <summary>
         ///     Connects each anchor of anchorsBefore with each of anchorsAfter.
         /// </summary>
         ConnectAnchors,
+        
         /// <summary>
-        ///     Deletes the item(-stream)  from the stream.
-        ///     If no anchors are given, all instances of the item(-stream) are deleted,
-        ///     if anchors are given, only those connected with the anchors are deleted:
-        ///     a->b->c, a->b->d, e->b->d with delete b and without anchors => a, c, d, e,
-        ///     with delete b and anchorBefore a will leave e->b->d untouched
-        ///     with delete b and anchorsAfter c will leave a->b->d and e->b->d untouched
-        ///     with delete b and anchorBefore a and anchorsAfter d will leave a->b->c untouched.
+        /// Ensures, that the given items represent a path - if not, it creates a path from them.
+        /// All other edges leading into or out this path are disconnected from the path and connected
+        /// to the nearest remaining neighbour.
         /// </summary>
-        Delete,
+        TakeOutPathOfItems,
 
         /// <summary>
         /// Like Delete but in case the items form a straight path without any forks,
@@ -83,14 +81,15 @@ namespace SQE.DatabaseAccess.Helpers
         /// left without a predecessor because if they are not connected to a branch
         /// which had not been affected by the delete.
         /// </summary>
-        DeleteAndClose,
+        DeleteAndClose_CanBeDeleted,
 
         /// <summary>
-        ///     Takes the path described by the itemIds out and inserts it between the new anchors provided as Ids
-        ///     If the new anchors are adjacent, then they are split up: a->b => a->c->b
-        ///     The gap between the old anchors is closed.
+        /// Takes the path described by the itemIds out using TakeOutPathOfItems
+        /// and inserts it between the new anchors provided
+        /// as anchors before and anchors after
+        /// If the new anchors are adjacent, then they are split up: a->b => a->c->b
         /// </summary>
-        MoveTo
+        MoveInBetween
     }
 
     public class PositionDataRequestFactory
@@ -105,6 +104,7 @@ namespace SQE.DatabaseAccess.Helpers
         private readonly string _nextNameAt;
         private readonly StreamType _streamType;
         private readonly string _tableName;
+        public bool AffectsOtherPaths { get; set; }  = false;
 
         public List<uint> AnchorsBefore { get; } = new List<uint>();
         public List<uint> AnchorsAfter { get; } = new List<uint>();
@@ -271,25 +271,23 @@ namespace SQE.DatabaseAccess.Helpers
         public async Task<List<MutationRequest>> CreateRequestsAsync()
         {
             var requests = new List<MutationRequest>();
+            AffectsOtherPaths = false;
             foreach (var action in _actions)
                 switch (action)
                 {
-                    case PositionAction.Add:
-                        requests.AddRange(await _createRequestForAddAsync());
+                    case PositionAction.CreatePathFromItems:
+                        requests.AddRange(await _createRequestForCreatePathAsync());
                         break;
-                    case PositionAction.Break:
-                        requests.AddRange(await _createRequestForBreakAsync());
+                    case PositionAction.DisconnectNeighbouringAnchors:
+                        requests.AddRange(await _createRequestForDisconnectAnchorsAsync());
                         break;
                     case PositionAction.ConnectAnchors:
                         requests.AddRange(_createRequestForConnectAnchors());
                         break;
-                    case PositionAction.Delete:
-                        requests.AddRange(await _createRequestForDeleteAsync(false));
+                    case PositionAction.TakeOutPathOfItems:
+                        requests.AddRange(await _createRequestForTakingOutItemsAsync());
                         break;
-                    case PositionAction.DeleteAndClose:
-                        requests.AddRange(await _createRequestForDeleteAsync(true));
-                        break;
-                    case PositionAction.MoveTo:
+                    case PositionAction.MoveInBetween:
                         requests.AddRange(await _createMoveToRequestsAsync());
                         break;
                 }
@@ -302,7 +300,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// with the given anchors.
         /// </summary>
         /// <returns></returns>
-        private async Task<List<MutationRequest>> _createRequestForAddAsync()
+        private async Task<List<MutationRequest>> _createRequestForCreatePathAsync()
         {
             var requests = new List<MutationRequest>();
 
@@ -355,7 +353,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// and the neighbours are set as the corresponding set of anchors.
         /// </summary>
         /// <returns></returns>
-        private async Task<List<MutationRequest>> _createRequestForBreakAsync()
+        private async Task<List<MutationRequest>> _createRequestForDisconnectAnchorsAsync()
         {
             List<PositionDataPair> pairs;
             if (AnchorsBefore.Any() && AnchorsAfter.Any())
@@ -395,206 +393,85 @@ namespace SQE.DatabaseAccess.Helpers
         }
 
         /// <summary>
-        /// Creates the mutation requests to take all items out of the path if they are not belonging to
-        /// a parallel path.
+        /// Creates the mutation requests to take all items out of the path.
+        /// All connections with other items are connected with the next neighbouring remaining item
         /// </summary>
-        /// <param name="connect">If true than the given anchors are connected to each other to close the path</param>
         /// <returns></returns>
-        private async Task<List<MutationRequest>> _createRequestForDeleteAsync(bool connect)
-        {
-            var query = $@"
-            WITH RECURSIVE result AS (
-		        SELECT 	pis_1.{_nextName} AS nextItemId,
-		                pis_1.{_tableName}_id AS PositionInStreamId,
-				        1 AS sequence,
-		                (SELECT COUNT(pis_2.{_tableName}_id) > 1
-		                    FROM {_tableName} AS pis_2
-		                        JOIN  {_tableName}_owner
-				                    ON {_tableName}_owner.{_tableName}_id = pis_2.{_tableName}_id
-					                    AND {_tableName}_owner.edition_id = @EditionId
-		                  WHERE pis_2.{_itemName} = pis_1.{_itemName})  
-                            AS ForkStart,
-		                FALSE AS ForkEnd
-		        FROM {_tableName} pis_1
-			        JOIN {_tableName}_owner 
-				        ON {_tableName}_owner.{_tableName}_id = pis_1.{_tableName}_id
-					        AND {_tableName}_owner.edition_id = @EditionId
-		        WHERE pis_1.{_itemName} = @Start
-
-		        UNION
-
-		        SELECT  pis_4.{_nextName},
-		                pis_4.{_tableName}_id,
-				        result.sequence + 1,
-		                (SELECT COUNT(pis_2.{_tableName}_id) > 1
-		                 FROM {_tableName} AS pis_2
-		                    JOIN {_tableName}_owner
-				                ON {_tableName}_owner.{_tableName}_id = pis_2.{_tableName}_id
-					                AND {_tableName}_owner.edition_id = @EditionId
-		                 WHERE pis_2.{_itemName} = pis_4.{_itemName}),
-		                (SELECT COUNT(pis_3.{_tableName}_id) > 1
-		                 FROM {_tableName} AS pis_3
-		                    JOIN {_tableName}_owner
-				                    ON {_tableName}_owner.{_tableName}_id = pis_3.{_tableName}_id
-					                    AND {_tableName}_owner.edition_id = @EditionId
-		                 WHERE pis_3.{_nextName} = pis_4.{_itemName})
-		        FROM  result, {_tableName} AS pis_4
-			        JOIN {_tableName}_owner
-				        ON {_tableName}_owner.{_tableName}_id = pis_4.{_tableName}_id
-				            AND {_tableName}_owner.edition_id = @EditionId
-		        WHERE pis_4.{_itemName} = nextItemId
-			        AND pis_4.{_nextName} IN @ItemIds
-	        )
-            SELECT DISTINCT PositionInStreamId, ForkStart, ForkEnd
-            FROM result
-            ORDER BY sequence";
-
-            var data = await _dbConnection.QueryAsync<PositionDataPair>(
-                query,
-                new
-                {
-                    EditionId = _editionId,
-                    Start = _itemIds.First(),
-                    ItemIds = _itemIds
-                });
-
-            //Stores all ids of sub paths to be deleted
-            var resultIds = new List<uint>();
-            // Stores id of a sub path between fork events
-            var tempResultIds = new List<uint>();
-            var lastForkIsStart = true;
-
-            foreach (var singleData in data)
-            {
-                // At this point there is an end or a start of a fork
-                if (singleData.ForkEnd || singleData.ForkStart)
-                {
-                    // A fork ends after a start  and not after a an end
-                    // Then we can delete the items in between.
-                    if (singleData.ForkEnd && lastForkIsStart) resultIds.AddRange(tempResultIds);
-
-                    // Start a new sub path.
-                    tempResultIds.Clear();
-                    //Store the last fork event.
-                    lastForkIsStart = singleData.ForkStart;
-                }
-                else // Store the item in subpath.
-                {
-                    tempResultIds.Add(singleData.PositionInStreamId);
-                }
-            }
-
-            if (lastForkIsStart) resultIds.AddRange(tempResultIds);
-
-
-
-            // If items are marked to be deleted, create the list ot mutation requests
-            // and adjust the anchors to the new situation (if connect is true)
-            if (resultIds.Any())
-            {
-                var requests = resultIds.Select(
-                    id => new MutationRequest(
-                        MutateType.Delete,
-                        new DynamicParameters(),
-                        _tableName,
-                        id)).ToList();
-
-                if (connect)
-                {
-                    // If no anchors are set get all existing anchors
-                    if (!(AnchorsBefore.Any() && AnchorsAfter.Any())) AddExistingAnchorsAsync();
-
-                    // If some items won't be deleted
-                    if (resultIds.Count < _itemIds.Count)
-                    {
-                        var keptItems = _itemIds.FindAll(id => !resultIds.Contains(id));
-                        //We have only to adjust the anchors before if the first item is not kept
-                        if (AnchorsBefore.Any() && (keptItems.First() != _itemIds.First()))
-                        {
-                            requests.AddRange(
-                                (await _getExistingPairsFromItemsAsync(AnchorsBefore)).Select(
-                                    pair =>
-                                        new MutationRequest(
-                                            MutateType.Delete,
-                                            new DynamicParameters(),
-                                            _tableName,
-                                            pair.PositionInStreamId)));
-
-                            AnchorsBefore.ForEach(
-                                anchor => _addRequestForCreatingPairAsync(
-                                    requests, anchor, keptItems.First()));
-                        }
-
-                        //We have only to adjust the anchors after if the last item is not kept
-                        if (AnchorsAfter.Any() && (keptItems.Last() != _itemIds.Last()))
-                        {
-                            requests.AddRange(
-                                (await _getExistingPairsFromNextItemsAsync(AnchorsAfter)).Select(
-                                    pair =>
-                                        new MutationRequest(
-                                            MutateType.Delete,
-                                            new DynamicParameters(),
-                                            _tableName,
-                                            pair.PositionInStreamId)));
-
-                            AnchorsAfter.ForEach(
-                                anchor => _addRequestForCreatingPairAsync(
-                                    requests, keptItems.Last(), anchor));
-                        }
-
-                    }
-                    else //All items will be deleted, thus connect the anchors directly
-                    {
-                        requests.AddRange(
-                            from anchorBefore in AnchorsBefore
-                            from anchorAfter in AnchorsAfter
-                            select new MutationRequest(
-                                MutateType.Create,
-                                _createMutationRequestParameters(
-                                    anchorBefore,
-                                    anchorAfter),
-                                _tableName));
-                    }
-                }
-
-                return requests;
-
-            }
-            else return new List<MutationRequest>();
-
-
-        }
-
-        private async Task<List<MutationRequest>> _createMoveToRequestsAsync()
+        private async Task<List<MutationRequest>> _createRequestForTakingOutItemsAsync()
         {
             var requests = new List<MutationRequest>();
-
-            // First create requests to take out items from their old places
-            foreach (var itemId in _itemIds)
+            var looseNeighboursBefore = new List<uint>();
+            uint previousItem = 0;
+            for (var i = 0; i< _itemIds.Count; i++)
             {
-                var tempData = await CreateInstanceAsync(
-                    _dbConnection,
-                    _streamType,
-                    itemId,
-                    _editionId,
-                    true
-                );
-                tempData.AddAction(PositionAction.DeleteAndClose);
-                requests.AddRange(await tempData.CreateRequestsAsync());
-            }
+                var itemAsList = _itemIds.GetRange(i,1);
+                var nextItem = _itemIds.ElementAtOrDefault(i + 1);
+                
+                // First treat the connections with the neighbours before
+                var neighboursBefore = await _getExistingPairsFromNextItemsAsync(
+                    itemAsList);
+                // Take out the connection with the item preceding in the items list
+                neighboursBefore.RemoveAll(id => id.NextItemId == previousItem);
 
+                // If we are not dealing with the first item and they are neighbours before
+                // we must set AffectOtherPaths as true if still false.
+                AffectsOtherPaths = !AffectsOtherPaths && i > 0 && neighboursBefore.Any();
+                foreach (var neighbourBefore in neighboursBefore)
+                {
+                    // We must delete all connections from the item to existing previous items
+                    requests.Add(new MutationRequest(
+                        MutateType.Delete,
+                        new DynamicParameters(),
+                        _tableName, neighbourBefore.PositionInStreamId));
+                    // Add the id of the neughbour before to the looseNeighboursBefore list.
+                    looseNeighboursBefore.Add(neighbourBefore.ItemId);
+                }
 
-            // If for both sides the anchors are given make sure, that they are divided before the items
-            // are injected.
-            if (AnchorsBefore.Any() && AnchorsAfter.Any())
-                foreach (var anchorBefore in AnchorsBefore)
-                    foreach (var anchorBehind in AnchorsAfter)
+                // Now work on the neighbours after
+                var neighboursAfter = await _getExistingPairsFromItemsAsync(itemAsList);
+                // Take out the connection with the item following in the items list
+                neighboursAfter.RemoveAll(id => id.NextItemId == nextItem);
+                // If still neighbours after are present
+                if (neighboursAfter.Any())
+                {
+                    // If we are not dealing with the last item
+                    // we must set AffectOtherPaths as true if still false.
+                    AffectsOtherPaths = !AffectsOtherPaths && i < (_itemIds.Count-1);
+                    foreach (var neighbourAfter in neighboursAfter)
                     {
-                        var pair = await _getExistingPairAsync(anchorBefore, anchorBehind);
-                        if (pair != null) requests.AddRange(await _createRequestForBreakAsync());
+                        // We must delete all connections from the item to existing next items
+                        requests.Add(new MutationRequest(
+                            MutateType.Delete,
+                            new DynamicParameters(),
+                            _tableName, neighbourAfter.PositionInStreamId));
+                        // The disconnected items must be connected to the loose items before
+                        foreach (var looseNeighbourBefore in looseNeighboursBefore)
+                        {
+                            var tmpFactory = (await CreateInstanceAsync(
+                                _dbConnection,
+                                _streamType,
+                                new List<uint>() {looseNeighbourBefore, neighbourAfter.NextItemId},
+                                _editionId
+                            ));
+                            tmpFactory.AddAction(PositionAction.CreatePathFromItems);
+                            requests.AddRange((await tmpFactory.CreateRequestsAsync()));
+                        }
                     }
+                    // All loose items before are now connected and the list can be cleared.
+                   looseNeighboursBefore.Clear(); 
+                }
+                previousItem = _itemIds[i];
+            }
+            return requests;
+        }
 
-            requests.AddRange(await _createRequestForAddAsync());
+        private async Task<List<MutationRequest>> _createMoveToRequestsAsync(bool splitAnchors=true)
+        {
+           // First create requests to take out items from their old places
+           var requests = (await _createRequestForTakingOutItemsAsync());
+           if (splitAnchors) requests.AddRange((await _createRequestForDisconnectAnchorsAsync()));
+            // Then put them as a path between the new anchors
+            requests.AddRange(await _createRequestForCreatePathAsync());
             return requests;
         }
 
@@ -702,11 +579,12 @@ namespace SQE.DatabaseAccess.Helpers
                     parameters);
             return result == null ? new List<PositionDataPair>() : result.ToList();
         }
-
+        
+        
         /// <summary>
         /// Returns all existing pairs with the next item ids as second element
         /// </summary>
-        /// <param name="nextItemIds">List of item ids to be secind items</param>
+        /// <param name="nextItemIds">List of item ids to be second items</param>
         /// <returns>List of position data pair</returns>
         private async Task<List<PositionDataPair>> _getExistingPairsFromNextItemsAsync(List<uint> nextItemIds)
         {
@@ -725,6 +603,13 @@ namespace SQE.DatabaseAccess.Helpers
 
             var result = await _dbConnection.QueryAsync<PositionDataPair>(queryForConnection, parameters);
             return result == null ? new List<PositionDataPair>() : result.ToList();
+        }
+
+        private async Task<bool> _endsWithLastElementAsync()
+        {
+            var result =  (await _getExistingPairsFromItemsAsync(
+                new List<uint>(){_itemIds.Last()})).ToList();
+            return result.Any();
         }
 
         /// <summary>

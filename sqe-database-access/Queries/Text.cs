@@ -17,6 +17,7 @@ WITH RECURSIVE sign_interpretation_ids
 	AS (
 		SELECT 	position_in_stream.sign_interpretation_id AS signInterpretationId, 
 				position_in_stream.next_sign_interpretation_id,
+				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
 				position_in_stream_owner.edition_id,
 				@X := 0 AS sequence
@@ -30,6 +31,7 @@ WITH RECURSIVE sign_interpretation_ids
 
 		SELECT 	position_in_stream.sign_interpretation_id AS signInterpretationId, 
 				position_in_stream.next_sign_interpretation_id,
+				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
 				sign_interpretation_ids.edition_id,
 				@X := @X + 1 AS sequence
@@ -137,7 +139,7 @@ FROM sign_interpretation_ids
 
 	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
   
-ORDER BY sign_interpretation_ids.sequence
+ORDER BY sign_interpretation_ids.sequence, sign_interpretation_ids.is_main DESC
 ";
     }
 
@@ -223,6 +225,45 @@ ORDER BY attribute_value_id
 
     internal static class GetFragmentData
     {
+	    public const string GetQuery = @"
+WITH RECURSIVE cte_fragment AS (
+    SELECT pitfs_1.text_fragment_id, 0 AS sequence
+    FROM position_in_text_fragment_stream AS pitfs_1
+    JOIN position_in_text_fragment_stream_owner AS pitfso_1
+        ON pitfs_1.position_in_text_fragment_stream_id = pitfso_1.position_in_text_fragment_stream_id
+        AND pitfso_1.edition_id=@EditionId
+    WHERE (
+        SELECT count(pitfs_2.position_in_text_fragment_stream_id)
+            FROM position_in_text_fragment_stream AS pitfs_2
+            JOIN position_in_text_fragment_stream_owner AS pitfso_2
+                ON pitfs_2.position_in_text_fragment_stream_id = pitfso_2.position_in_text_fragment_stream_id
+                AND pitfso_2.edition_id=@EditionId
+            WHERE pitfs_2.next_text_fragment_id=pitfs_1.text_fragment_id
+                  ) = 0
+
+    UNION
+    SELECT next_text_fragment_id, sequence+1
+    FROM cte_fragment, position_in_text_fragment_stream as pitfs
+        JOIN position_in_text_fragment_stream_owner AS pitfso
+            ON pitfs.position_in_text_fragment_stream_id = pitfso.position_in_text_fragment_stream_id
+                AND edition_id=@EditionId
+    WHERE pitfs.text_fragment_id = cte_fragment.text_fragment_id
+)
+
+SELECT text_fragment_id AS TextFragmentId,
+       name AS TextFragmentName,
+       cte_fragment.sequence AS Position,
+	   tfdo.edition_editor_id AS EditionEditorId
+FROM cte_fragment
+    JOIN text_fragment_data USING(text_fragment_id)
+    JOIN text_fragment_data_owner tfdo USING (text_fragment_data_id)
+WHERE edition_id=@EditionId
+ORDER BY cte_fragment.sequence
+";
+    }
+
+    internal static class GetFragmentDataOld
+    {
         public const string GetQuery = @"
 WITH RECURSIVE text_fragment_ids
 	AS (
@@ -243,14 +284,14 @@ WITH RECURSIVE text_fragment_ids
 			)
 		UNION
 		
-		SELECT 	text_fragment_ids.nextTextFragmentId AS textFragmentId, 
+		SELECT 	position_in_text_fragment_stream.next_text_fragment_id AS textFragmentId, 
 		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
 			position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
 		    position_in_text_fragment_stream_owner.edition_id AS editionId,
 			@X := @X + 1 AS sequence
 		FROM text_fragment_ids
-		LEFT JOIN position_in_text_fragment_stream 
-			ON position_in_text_fragment_stream.text_fragment_id = text_fragment_ids.nextTextFragmentId
+		JOIN position_in_text_fragment_stream 
+			ON position_in_text_fragment_stream.text_fragment_id = text_fragment_ids.textFragmentId
 		JOIN position_in_text_fragment_stream_owner 
 			ON position_in_text_fragment_stream_owner.edition_id = text_fragment_ids.editionId
 				AND position_in_text_fragment_stream_owner.position_in_text_fragment_stream_id = text_fragment_ids.textFragmentPositionId
