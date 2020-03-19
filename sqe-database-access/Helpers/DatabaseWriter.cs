@@ -173,7 +173,7 @@ namespace SQE.DatabaseAccess.Helpers
                     }
                 );
             }
-            
+
             // There is already a transaction scope, so just run the write in the current scope
             return await _writeToDatabaseAsync(editionUser, mutationRequests);
         }

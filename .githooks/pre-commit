@@ -55,7 +55,7 @@ cleanup_code () {
         dotnet tool install -g dotnet-format
     fi
     
-    dotnet format
+    dotnet-format
 }
 
 ## Cleaning up code formatting
