@@ -385,7 +385,7 @@ namespace SQE.DatabaseAccess
 
                     // If the sign interpretation already existed than we have to move it.
                     positionDataRequestFactory.AddAction(
-                        newSignInterpretation ? PositionAction.Add : PositionAction.MoveTo);
+                        newSignInterpretation ? PositionAction.CreatePathFromItems : PositionAction.MoveInBetween);
                     positionDataRequestFactory.AddAnchorsAfter(anchorsAfter);
                     positionDataRequestFactory.AddAnchorsBefore(anchorsBefore);
                     var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
@@ -466,7 +466,7 @@ namespace SQE.DatabaseAccess
                     signInterpretationId,
                     editionUser.EditionId,
                     true);
-                positionDataRequest.AddAction(PositionAction.Delete);
+                positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
                 var requests = await positionDataRequest.CreateRequestsAsync();
                 _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
             }
@@ -814,7 +814,12 @@ namespace SQE.DatabaseAccess
                             ? val
                             : null;
 
-                        lastChar.Attributes.Add(charAttribute);
+                        //NOTE (by Ingo): I added this check to prevent that sign interpretations are stored
+                        // several times when there are more than 1 next sign interpretation ids
+                        if (!lastChar.Attributes.Exists(
+                            a => a.AttributeValueId==charAttribute.AttributeValueId)
+                        )
+                            lastChar.Attributes.Add(charAttribute);
 
                         if (roi == null
                             || roi.SignInterpretationRoiId == lastInterpretationRoi?.SignInterpretationRoiId
@@ -1203,8 +1208,8 @@ namespace SQE.DatabaseAccess
                 anchorAfter
             );
 
-            positionDataRequestFactory.AddAction(PositionAction.Break);
-            positionDataRequestFactory.AddAction(PositionAction.Add);
+            positionDataRequestFactory.AddAction(PositionAction.DisconnectNeighbouringAnchors);
+            positionDataRequestFactory.AddAction(PositionAction.CreatePathFromItems);
             var requests = await positionDataRequestFactory.CreateRequestsAsync();
 
             // Commit the mutation
@@ -1256,7 +1261,7 @@ namespace SQE.DatabaseAccess
                     textFragmentIds,
                     newAnchorAfter
                 );
-            positionDataRequestFactory.AddAction(PositionAction.MoveTo);
+            positionDataRequestFactory.AddAction(PositionAction.MoveInBetween);
             var requests = await positionDataRequestFactory.CreateRequestsAsync();
             var shiftTextFragmentMutationResults =
                 await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
