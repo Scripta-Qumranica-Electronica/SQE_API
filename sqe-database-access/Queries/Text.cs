@@ -225,7 +225,7 @@ ORDER BY attribute_value_id
 
     internal static class GetFragmentData
     {
-	    public const string GetQuery = @"
+        public const string GetQuery = @"
 WITH RECURSIVE cte_fragment AS (
     SELECT pitfs_1.text_fragment_id, 0 AS sequence
     FROM position_in_text_fragment_stream AS pitfs_1

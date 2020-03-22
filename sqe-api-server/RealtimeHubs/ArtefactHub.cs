@@ -23,108 +23,108 @@ namespace SQE.API.Server.RealtimeHubs
 {
     public partial class MainHub
     {
-/// <summary>
+        /// <summary>
         ///     Creates a new artefact with the provided data.
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">A CreateArtefactDTO with the data for the new artefact</param>
-[Authorize]
-public async Task<ArtefactDTO> PostV1EditionsEditionIdArtefacts(uint editionId, CreateArtefactDTO payload)
+        [Authorize]
+        public async Task<ArtefactDTO> PostV1EditionsEditionIdArtefacts(uint editionId, CreateArtefactDTO payload)
 
-    {
-        try
         {
-                        return await _artefactService.CreateArtefactAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                payload, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _artefactService.CreateArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), payload, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Deletes the specified artefact
         /// </summary>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
-[Authorize]
-public async Task DeleteV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId)
+        [Authorize]
+        public async Task DeleteV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId)
 
-    {
-        try
         {
-                        await _artefactService.DeleteArtefactAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                artefactId, clientId: Context.ConnectionId);              
+            try
+            {
+                await _artefactService.DeleteArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactId, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
-[AllowAnonymous]
-public async Task<ArtefactDTO> GetV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, List<string> optional)
+        [AllowAnonymous]
+        public async Task<ArtefactDTO> GetV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, List<string> optional)
 
-    {
-        try
         {
-                        return await _artefactService.GetEditionArtefactAsync(                await _userService.GetCurrentUserObjectAsync(editionId),                artefactId,                optional);              
+            try
+            {
+                return await _artefactService.GetEditionArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId, optional);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Provides a listing of all rois belonging to an artefact in the specified edition
         /// </summary>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
-[AllowAnonymous]
-public async Task<InterpretationRoiDTOList> GetV1EditionsEditionIdArtefactsArtefactIdRois(uint editionId, uint artefactId)
+        [AllowAnonymous]
+        public async Task<InterpretationRoiDTOList> GetV1EditionsEditionIdArtefactsArtefactIdRois(uint editionId, uint artefactId)
 
-    {
-        try
         {
-                        return await _roiService.GetRoisByArtefactIdAsync(                await _userService.GetCurrentUserObjectAsync(editionId),                artefactId);              
+            try
+            {
+                return await _roiService.GetRoisByArtefactIdAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Provides a listing of all artefacts that are part of the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
-[AllowAnonymous]
-public async Task<ArtefactListDTO> GetV1EditionsEditionIdArtefacts(uint editionId, List<string> optional)
+        [AllowAnonymous]
+        public async Task<ArtefactListDTO> GetV1EditionsEditionIdArtefacts(uint editionId, List<string> optional)
 
-    {
-        try
         {
-                        return await _artefactService.GetEditionArtefactListingsAsync(                await _userService.GetCurrentUserObjectAsync(editionId),                optional);              
+            try
+            {
+                return await _artefactService.GetEditionArtefactListingsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Provides a listing of text fragments that have text in the specified artefact.
         ///     With the optional query parameter "suggested", this endpoint will also return
         ///     any text fragment that the system suggests might have text in the artefact.
@@ -132,41 +132,41 @@ public async Task<ArtefactListDTO> GetV1EditionsEditionIdArtefacts(uint editionI
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="optional">Add "suggested" to include possible matches suggested by the system</param>
-[AllowAnonymous]
-public async Task<ArtefactTextFragmentMatchListDTO> GetV1EditionsEditionIdArtefactsArtefactIdTextFragments(uint editionId, uint artefactId, List<string> optional)
+        [AllowAnonymous]
+        public async Task<ArtefactTextFragmentMatchListDTO> GetV1EditionsEditionIdArtefactsArtefactIdTextFragments(uint editionId, uint artefactId, List<string> optional)
 
-    {
-        try
         {
-                        return await _artefactService.ArtefactTextFragmentsAsync(                await _userService.GetCurrentUserObjectAsync(editionId),                artefactId,                optional);              
+            try
+            {
+                return await _artefactService.ArtefactTextFragmentsAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactId, optional);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Updates the specified artefact
         /// </summary>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
-[Authorize]
-public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload)
+        [Authorize]
+        public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload)
 
-    {
-        try
         {
-                        return await _artefactService.UpdateArtefactAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                artefactId,                payload, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _artefactService.UpdateArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactId, payload, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
+
+
     }
-
-
-	}
 }

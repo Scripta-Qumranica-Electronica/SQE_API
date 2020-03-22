@@ -346,7 +346,7 @@ The Scripta Qumranica Electronica team</body></html>";
                     email,
                     emailSubject,
                     emailBody.Replace("$User", name)
-                        .Replace("$Token", userInfo.Token)
+                        .Replace("$Token", userInfo.Token.ToString())
                         .Replace("$WebServer", webServer)
                 );
             }
@@ -501,7 +501,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 emailSubject,
                 emailBody.Replace("$User", name)
                     .Replace("$WebServer", webServer)
-                    .Replace("$Token", userWithInfo.Token)
+                    .Replace("$Token", userWithInfo.Token.ToString())
             );
         }
 

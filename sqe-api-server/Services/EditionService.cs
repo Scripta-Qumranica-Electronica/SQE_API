@@ -313,7 +313,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 emailBody.Replace("$User", newEditorName)
                     .Replace("$Admin", adminName)
                     .Replace("$WebServer", webServer)
-                    .Replace("$Token", newUserToken.Token)
+                    .Replace("$Token", newUserToken.Token.ToString())
                     .Replace("$EditionName", edition.name)
                     .Replace("$ExpirationPeriod", "no current expiration period set")
             );

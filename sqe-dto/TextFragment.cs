@@ -48,10 +48,10 @@ namespace SQE.API.DTO
 
         public bool suggested { get; set; }
     }
-    
-    public class ImagedObjectTextFragmentMatchDTO 
+
+    public class ImagedObjectTextFragmentMatchDTO
     {
-        public ImagedObjectTextFragmentMatchDTO(uint editionId, string manuscriptName, uint textFragmentId, 
+        public ImagedObjectTextFragmentMatchDTO(uint editionId, string manuscriptName, uint textFragmentId,
             string textFragmentName, string side)
         {
             this.editionId = editionId;

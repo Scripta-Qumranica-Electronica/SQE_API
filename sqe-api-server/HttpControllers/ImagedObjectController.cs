@@ -70,7 +70,7 @@ namespace SQE.API.Server.HttpControllers
         {
             return await _imageService.GetImageInstitutionsAsync();
         }
-        
+
         /// <summary>
         /// Provides a list of all text fragments that should correspond to the imaged object.
         /// </summary>

@@ -65,7 +65,7 @@ namespace SQE.DatabaseAccess.Helpers
         ///     Connects each anchor of anchorsBefore with each of anchorsAfter.
         /// </summary>
         ConnectAnchors,
-        
+
         /// <summary>
         /// Ensures, that the given items represent a path - if not, it creates a path from them.
         /// All other edges leading into or out this path are disconnected from the path and connected
@@ -104,7 +104,7 @@ namespace SQE.DatabaseAccess.Helpers
         private readonly string _nextNameAt;
         private readonly StreamType _streamType;
         private readonly string _tableName;
-        public bool AffectsOtherPaths { get; set; }  = false;
+        public bool AffectsOtherPaths { get; set; } = false;
 
         public List<uint> AnchorsBefore { get; } = new List<uint>();
         public List<uint> AnchorsAfter { get; } = new List<uint>();
@@ -402,11 +402,11 @@ namespace SQE.DatabaseAccess.Helpers
             var requests = new List<MutationRequest>();
             var looseNeighboursBefore = new List<uint>();
             uint previousItem = 0;
-            for (var i = 0; i< _itemIds.Count; i++)
+            for (var i = 0; i < _itemIds.Count; i++)
             {
-                var itemAsList = _itemIds.GetRange(i,1);
+                var itemAsList = _itemIds.GetRange(i, 1);
                 var nextItem = _itemIds.ElementAtOrDefault(i + 1);
-                
+
                 // First treat the connections with the neighbours before
                 var neighboursBefore = await _getExistingPairsFromNextItemsAsync(
                     itemAsList);
@@ -436,7 +436,7 @@ namespace SQE.DatabaseAccess.Helpers
                 {
                     // If we are not dealing with the last item
                     // we must set AffectOtherPaths as true if still false.
-                    AffectsOtherPaths = !AffectsOtherPaths && i < (_itemIds.Count-1);
+                    AffectsOtherPaths = !AffectsOtherPaths && i < (_itemIds.Count - 1);
                     foreach (var neighbourAfter in neighboursAfter)
                     {
                         // We must delete all connections from the item to existing next items
@@ -450,7 +450,7 @@ namespace SQE.DatabaseAccess.Helpers
                             var tmpFactory = (await CreateInstanceAsync(
                                 _dbConnection,
                                 _streamType,
-                                new List<uint>() {looseNeighbourBefore, neighbourAfter.NextItemId},
+                                new List<uint>() { looseNeighbourBefore, neighbourAfter.NextItemId },
                                 _editionId
                             ));
                             tmpFactory.AddAction(PositionAction.CreatePathFromItems);
@@ -458,18 +458,18 @@ namespace SQE.DatabaseAccess.Helpers
                         }
                     }
                     // All loose items before are now connected and the list can be cleared.
-                   looseNeighboursBefore.Clear(); 
+                    looseNeighboursBefore.Clear();
                 }
                 previousItem = _itemIds[i];
             }
             return requests;
         }
 
-        private async Task<List<MutationRequest>> _createMoveToRequestsAsync(bool splitAnchors=true)
+        private async Task<List<MutationRequest>> _createMoveToRequestsAsync(bool splitAnchors = true)
         {
-           // First create requests to take out items from their old places
-           var requests = (await _createRequestForTakingOutItemsAsync());
-           if (splitAnchors) requests.AddRange((await _createRequestForDisconnectAnchorsAsync()));
+            // First create requests to take out items from their old places
+            var requests = (await _createRequestForTakingOutItemsAsync());
+            if (splitAnchors) requests.AddRange((await _createRequestForDisconnectAnchorsAsync()));
             // Then put them as a path between the new anchors
             requests.AddRange(await _createRequestForCreatePathAsync());
             return requests;
@@ -579,8 +579,8 @@ namespace SQE.DatabaseAccess.Helpers
                     parameters);
             return result == null ? new List<PositionDataPair>() : result.ToList();
         }
-        
-        
+
+
         /// <summary>
         /// Returns all existing pairs with the next item ids as second element
         /// </summary>
@@ -607,8 +607,8 @@ namespace SQE.DatabaseAccess.Helpers
 
         private async Task<bool> _endsWithLastElementAsync()
         {
-            var result =  (await _getExistingPairsFromItemsAsync(
-                new List<uint>(){_itemIds.Last()})).ToList();
+            var result = (await _getExistingPairsFromItemsAsync(
+                new List<uint>() { _itemIds.Last() })).ToList();
             return result.Any();
         }
 

@@ -372,7 +372,7 @@ namespace SQE.DatabaseAccess
 
                 // Everything went well, so add the token to the User object so the calling function
                 // can email the new user.
-                userObject.Token = token;
+                userObject.Token = new Guid(token);
                 return userObject;
             }
         }
@@ -396,7 +396,7 @@ namespace SQE.DatabaseAccess
                     throw new StandardExceptions.ImproperInputDataException("user account activation token");
 
                 // Get all Activate tokens for this user
-                var tokens = await connection.QueryAsync<string>(
+                var tokens = await connection.QueryAsync<Guid>(
                     GetTokensQuery.GetQuery,
                     new
                     {
@@ -508,7 +508,7 @@ namespace SQE.DatabaseAccess
                             transactionScope.Complete();
 
                             // Pass the token back in the user info object
-                            userInfo.Token = token;
+                            userInfo.Token = new Guid(token);
                             return userInfo;
                         }
                         catch
@@ -548,7 +548,7 @@ namespace SQE.DatabaseAccess
                     throw new StandardExceptions.DataNotWrittenException("reset password");
 
                 // Get all unused ResetPassword tokens
-                var tokens = await connection.QueryAsync<string>(
+                var tokens = await connection.QueryAsync<Guid>(
                     GetTokensQuery.GetQuery,
                     new
                     {

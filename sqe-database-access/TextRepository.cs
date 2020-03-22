@@ -817,7 +817,7 @@ namespace SQE.DatabaseAccess
                         //NOTE (by Ingo): I added this check to prevent that sign interpretations are stored
                         // several times when there are more than 1 next sign interpretation ids
                         if (!lastChar.Attributes.Exists(
-                            a => a.AttributeValueId==charAttribute.AttributeValueId)
+                            a => a.AttributeValueId == charAttribute.AttributeValueId)
                         )
                             lastChar.Attributes.Add(charAttribute);
 

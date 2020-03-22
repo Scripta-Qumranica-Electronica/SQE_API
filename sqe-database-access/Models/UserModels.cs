@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace SQE.DatabaseAccess.Models
 {
@@ -10,7 +11,7 @@ namespace SQE.DatabaseAccess.Models
 
     public class UserToken : User
     {
-        public string Token { get; set; }
+        public Guid Token { get; set; }
     }
 
     public class DetailedUser : User
@@ -23,7 +24,7 @@ namespace SQE.DatabaseAccess.Models
     public class DetailedUserWithToken : DetailedUser
     {
         public bool Activated { get; set; }
-        public string Token { get; set; }
+        public Guid Token { get; set; }
     }
 
     public class UserEditionPermissions

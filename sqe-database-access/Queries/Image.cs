@@ -118,7 +118,7 @@ WHERE edition.edition_id = @EditionId
             public string Institution { get; set; }
         }
     }
-    
+
     internal static class ImagedObjectTextFragmentsQuery
     {
         public static string GetQuery = @"

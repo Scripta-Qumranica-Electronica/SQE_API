@@ -429,7 +429,7 @@ namespace SQE.DatabaseAccess
                 // That way, we can query for "open" editor requests. Must wait to update the database before we can
                 // implement this functionality.
                 var secret = _config.GetSection("AppSettings").GetSection("Secret").Value;
-                editorInfo.Token = new JwtBuilder()
+                editorInfo.Token = new Guid(new JwtBuilder()
                     .WithAlgorithm(new HMACSHA256Algorithm())
                     .WithSecret(secret)
                     .AddClaim("email", editorEmail)
@@ -439,7 +439,7 @@ namespace SQE.DatabaseAccess
                     .AddClaim("isAdmin", permissions.IsAdmin)
                     .AddClaim("editionId", editionUser.EditionId)
                     .AddClaim("userId", editorInfo.UserId)
-                    .Encode();
+                    .Encode());
 
                 // var writtenToken = await connection.ExecuteAsync(
                 //     CreateUserEmailTokenQuery.GetQuery(),

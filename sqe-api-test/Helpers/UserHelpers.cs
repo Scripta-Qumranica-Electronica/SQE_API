@@ -83,7 +83,7 @@ namespace SQE.ApiTest.Helpers
             bool shouldSucceed = true)
         {
             var userToken = await GetToken(user.email, "ACTIVATE_ACCOUNT"); // Get  token from DB
-            var payload = new AccountActivationRequestDTO { token = userToken.token };
+            var payload = new AccountActivationRequestDTO { token = userToken.token.ToString() };
 
             var (response, msg) =
                 await Request.SendHttpRequestAsync<AccountActivationRequestDTO, UserDTO>(
@@ -233,7 +233,7 @@ WHERE email = @Email AND type = @Type";
 
         private class Token
         {
-            public string token { get; set; }
+            public Guid token { get; set; }
             public string type { get; set; }
             public DateTime date_created { get; set; }
         }
