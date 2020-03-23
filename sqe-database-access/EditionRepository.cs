@@ -38,7 +38,7 @@ namespace SQE.DatabaseAccess
             bool? mayLock,
             bool? isAdmin);
 
-        Task<AddEditorJWT> AddEditionEditor(string token, uint userId);
+        Task<DetailedEditionPermission> AddEditionEditor(string token, uint userId);
 
         Task<Permission> ChangeEditionEditorRights(EditionUserInfo editionUser,
             string editorEmail,
@@ -388,128 +388,158 @@ namespace SQE.DatabaseAccess
             bool? mayLock,
             bool? isAdmin)
         {
-            // Make sure requesting user is admin, only and edition admin may perform this action
+            // Make sure requesting user is admin; only an edition admin may perform this action
             if (!editionUser.IsAdmin)
                 throw new StandardExceptions.NoAdminPermissionsException(editionUser);
 
-            // Check if the editor already exists, don't attempt to re-add
-            if ((await _getEditionEditors(editionUser.EditionId)).Any(x => x.Email == editorEmail))
-                throw new StandardExceptions.ConflictingDataException("editor email");
+            // Instantiate the return object
+            var editorInfo = new DetailedUserWithToken();
 
-            // Set the permissions object by coalescing with the default values
-            var permissions = new Permission
+            using (var transactionScope = new TransactionScope())
             {
-                MayRead = mayRead ?? true,
-                MayWrite = mayWrite ?? false,
-                MayLock = mayLock ?? false,
-                IsAdmin = isAdmin ?? false
-            };
+                // Check if the editor already exists, don't attempt to re-add
+                if ((await _getEditionEditors(editionUser.EditionId)).Any(x => x.Email == editorEmail))
+                    throw new StandardExceptions.ConflictingDataException("editor email");
 
-            // Check for invalid settings
-            if (permissions.IsAdmin
-                && !permissions.MayRead)
-                throw new StandardExceptions.InputDataRuleViolationException("an edition admin must have read rights");
-            if (permissions.MayWrite
-                && !permissions.MayRead)
-                throw new StandardExceptions.InputDataRuleViolationException(
-                    "an editor with write rights must have read rights"
-                );
-            using (var connection = OpenConnection())
-            {
-                // Add the editor
-                var editorInfo = await connection.QuerySingleAsync<DetailedUserWithToken>(
-                    UserDetails.GetQuery(
-                        new List<string> { "user_id", "forename", "surname", "organization" },
-                        new List<string> { "email" }
-                    ),
-                    new { Email = editorEmail }
-                );
+                // Set the permissions object by coalescing with the default values
+                var permissions = new Permission
+                {
+                    MayRead = mayRead ?? true,
+                    MayWrite = mayWrite ?? false,
+                    MayLock = mayLock ?? false,
+                    IsAdmin = isAdmin ?? false
+                };
 
-                // TODO: Use the database user email token system rather than a JWT for this (see commented code below.
-                // That way, we can query for "open" editor requests. Must wait to update the database before we can
-                // implement this functionality.
-                var secret = _config.GetSection("AppSettings").GetSection("Secret").Value;
-                editorInfo.Token = new Guid(new JwtBuilder()
-                    .WithAlgorithm(new HMACSHA256Algorithm())
-                    .WithSecret(secret)
-                    .AddClaim("email", editorEmail)
-                    .AddClaim("mayRead", permissions.MayRead)
-                    .AddClaim("mayWrite", permissions.MayWrite)
-                    .AddClaim("mayLock", permissions.MayLock)
-                    .AddClaim("isAdmin", permissions.IsAdmin)
-                    .AddClaim("editionId", editionUser.EditionId)
-                    .AddClaim("userId", editorInfo.UserId)
-                    .Encode());
+                // Check for invalid settings
+                if (permissions.IsAdmin
+                    && !permissions.MayRead)
+                    throw new StandardExceptions.InputDataRuleViolationException("an edition admin must have read rights");
+                if (permissions.MayWrite
+                    && !permissions.MayRead)
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        "an editor with write rights must have read rights"
+                    );
 
-                // var writtenToken = await connection.ExecuteAsync(
-                //     CreateUserEmailTokenQuery.GetQuery(),
-                //     new
-                //     {
-                //         editorInfo.UserId,
-                //         editorInfo.Token,
-                //         Type = CreateUserEmailTokenQuery.Activate
-                //     }
-                // );
-                //
-                // if (writtenToken != 1)
-                //     throw new StandardExceptions.DataNotWrittenException($"create editor invite token for {editorEmail}");
 
-                // Return the results
-                return editorInfo;
+                using (var connection = OpenConnection())
+                {
+                    // Add the editor
+                    var editorInfoSearch = await connection.QueryAsync<DetailedUserWithToken>(
+                        UserDetails.GetQuery(
+                            new List<string> { "user_id", "forename", "surname", "organization" },
+                            new List<string> { "email" }
+                        ),
+                        new { Email = editorEmail }
+                    );
+
+                    // Throw a meaningful error if the user's email was not found in the system.
+                    if (!editorInfoSearch.Any())
+                        throw new StandardExceptions.DataNotFoundException("editors", editorEmail, "users");
+
+                    editorInfo = editorInfoSearch.FirstOrDefault();
+
+                    // Add a GUID for this transaction
+                    editorInfo.Token = Guid.NewGuid();
+
+                    // Write the GUID token to the database
+                    var writtenToken = await connection.ExecuteAsync(
+                        CreateUserEmailTokenQuery.GetQuery(),
+                        new
+                        {
+                            editorInfo.UserId,
+                            editorInfo.Token,
+                            Type = CreateUserEmailTokenQuery.EditorInvite
+                        }
+                    );
+
+                    if (writtenToken != 1)
+                        throw new StandardExceptions.DataNotWrittenException(
+                            $"create editor invite token for {editorEmail}");
+
+                    // Record the editor request in database
+                    var recordedRequest = await connection.ExecuteAsync(RecordEditionEditorRequest.GetQuery,
+                        new
+                        {
+                            Token = editorInfo.Token,
+                            AdminUserId = editionUser.userId,
+                            EditorUserId = editorInfo.UserId,
+                            EditionId = editionUser.EditionId,
+                            IsAdmin = permissions.IsAdmin,
+                            MayLock = permissions.MayLock,
+                            MayWrite = permissions.MayWrite
+                        });
+                    if (recordedRequest != 1)
+                        throw new StandardExceptions.DataNotWrittenException(
+                            "record editor request to the database, please try again later");
+                }
+
+                // Complete the transaction
+                transactionScope.Complete();
             }
+
+            // Return the results
+            return editorInfo;
         }
 
-        public async Task<AddEditorJWT> AddEditionEditor(string token, uint userId)
+        public async Task<DetailedEditionPermission> AddEditionEditor(string token, uint userId)
         {
-            AddEditorJWT editorJwt;
-            try
-            {
-                var secret = _config.GetSection("AppSettings").GetSection("Secret").Value;
-                editorJwt = new JwtBuilder()
-                    .WithAlgorithm(new HMACSHA256Algorithm())
-                    .WithSecret(secret)
-                    .MustVerifySignature()
-                    .Decode<AddEditorJWT>(token);
-            }
-            catch (TokenExpiredException)
-            {
-                throw new StandardExceptions.ImproperInputDataException("JWT token");
-            }
-            catch (SignatureVerificationException)
-            {
-                throw new StandardExceptions.NoAuthorizationException();
-            }
-
-            // Make sure the JWT matches the requesting users ID
-            if (userId != editorJwt.userId)
-                throw new StandardExceptions.NoAuthorizationException();
-
-            // Check if the editor already exists, don't attempt to re-add
-            if ((await _getEditionEditors(editorJwt.editionId)).Any(x => x.Email == editorJwt.email))
-                throw new StandardExceptions.ConflictingDataException("editor email");
-
+            var editorEditionPermission = new DetailedEditionPermission();
+            using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
+
+                var editorEditionPermissions = await connection.QueryAsync<DetailedEditionPermission>(
+                    FindEditionEditorRequest.GetQuery,
+                    new
+                    {
+                        Token = token,
+                        EditorUserId = userId
+                    });
+                // Make sure the token exists
+                if (!editorEditionPermissions.Any())
+                    throw new StandardExceptions.DataNotFoundException("token", token);
+
+                editorEditionPermission = editorEditionPermissions.FirstOrDefault();
+                editorEditionPermission.MayRead = true; // Invited editors always have read access
+
+                // Check if the editor already exists, don't attempt to re-add
+                if ((await _getEditionEditors(editorEditionPermission.EditionId)).Any(x => x.Email == editorEditionPermission.Email))
+                    throw new StandardExceptions.ConflictingDataException("editor email");
+
                 // Add the editor
                 var editorUpdateExecution = await connection.ExecuteAsync(
                     CreateDetailedEditionEditorQuery.GetQuery,
                     new
                     {
-                        EditionId = editorJwt.editionId,
-                        Email = editorJwt.email,
-                        MayRead = editorJwt.mayRead,
-                        MayWrite = editorJwt.mayWrite,
-                        MayLock = editorJwt.mayLock,
-                        IsAdmin = editorJwt.isAdmin
+                        EditionId = editorEditionPermission.EditionId,
+                        Email = editorEditionPermission.Email,
+                        MayRead = editorEditionPermission.MayRead,
+                        MayWrite = editorEditionPermission.MayWrite,
+                        MayLock = editorEditionPermission.MayLock,
+                        IsAdmin = editorEditionPermission.IsAdmin
                     }
                 );
 
                 if (editorUpdateExecution != 1)
-                    throw new StandardExceptions.DataNotWrittenException($"update permissions for {editorJwt.email}");
+                    throw new StandardExceptions.DataNotWrittenException($"update permissions for {editorEditionPermission.Email}");
 
-                // Return the results
-                return editorJwt;
+                // Delete unneeded database entries
+                await connection.ExecuteAsync(
+                    DeleteUserEmailTokenQuery.GetTokenQuery,
+                    new
+                    { Tokens = new List<Guid>() { new Guid(token) }, Type = CreateUserEmailTokenQuery.EditorInvite }
+                );
+                await connection.ExecuteAsync(
+                    DeleteEditionEditorRequest.GetQuery,
+                    new
+                    { Token = new Guid(token), EditorUserId = userId }
+                );
+
+                transactionScope.Complete();
             }
+
+            // Return the results
+            return editorEditionPermission;
         }
 
         public async Task<Permission> ChangeEditionEditorRights(EditionUserInfo editionUser,

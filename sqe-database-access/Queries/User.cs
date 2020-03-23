@@ -140,6 +140,7 @@ ON DUPLICATE KEY UPDATE `type` = @Type, date_created = NOW()";
         public const string Activate = "ACTIVATE_ACCOUNT";
         public const string ResetPassword = "RESET_PASSWORD";
         public const string DeleteEdition = "DELETE_EDITION";
+        public const string EditorInvite = "EDITOR_INVITE";
 
         public static string GetQuery(bool emailOnly = false)
         {

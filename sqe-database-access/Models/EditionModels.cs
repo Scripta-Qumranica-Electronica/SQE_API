@@ -36,6 +36,11 @@ namespace SQE.DatabaseAccess.Models
         public string Email { get; set; }
     }
 
+    public class DetailedEditionPermission : DetailedPermissions
+    {
+        public uint EditionId { get; set; }
+    }
+
     public class Share
     {
         public UserToken UserToken { get; set; }

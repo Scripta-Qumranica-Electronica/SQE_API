@@ -356,7 +356,7 @@ namespace SQE.DatabaseAccess
                 );
 
                 // Generate our secret token
-                var token = Guid.NewGuid().ToString();
+                var token = Guid.NewGuid();
                 // Add the secret token to the database
                 var userEmailConfirmation = await connection.ExecuteAsync(
                     CreateUserEmailTokenQuery.GetQuery(),
@@ -372,7 +372,7 @@ namespace SQE.DatabaseAccess
 
                 // Everything went well, so add the token to the User object so the calling function
                 // can email the new user.
-                userObject.Token = new Guid(token);
+                userObject.Token = token;
                 return userObject;
             }
         }
@@ -489,7 +489,7 @@ namespace SQE.DatabaseAccess
                             );
 
                             // Generate our secret token
-                            var token = Guid.NewGuid().ToString();
+                            var token = Guid.NewGuid();
 
                             // Write the token to the database
                             var tokenEntry = await connection.ExecuteAsync(
@@ -508,7 +508,7 @@ namespace SQE.DatabaseAccess
                             transactionScope.Complete();
 
                             // Pass the token back in the user info object
-                            userInfo.Token = new Guid(token);
+                            userInfo.Token = token;
                             return userInfo;
                         }
                         catch

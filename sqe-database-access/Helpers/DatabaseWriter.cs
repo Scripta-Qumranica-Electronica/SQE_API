@@ -164,7 +164,7 @@ namespace SQE.DatabaseAccess.Helpers
                         // Grab a transaction scope, we roll back all changes if any transactions fail
                         // I could limit the transaction scope to each individual mutation request,
                         // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
-                        using (var transactionScope = new TransactionScope( /*TransactionScopeOption.RequiresNew*/))
+                        using (var transactionScope = new TransactionScope())
                         {
                             var results = await _writeToDatabaseAsync(editionUser, mutationRequests);
                             transactionScope.Complete();

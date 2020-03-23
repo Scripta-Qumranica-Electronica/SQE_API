@@ -360,4 +360,51 @@ FROM (  SELECT edition_id
 JOIN SQE.edition_editor USING(edition_id)
 ";
     }
+
+    internal static class RecordEditionEditorRequest
+    {
+        internal const string GetQuery = @"
+INSERT INTO edition_editor_request (
+                                        token, 
+                                        admin_user_id, 
+                                        editor_user_id, 
+                                        edition_id, 
+                                        is_admin, 
+                                        may_lock, 
+                                        may_write
+                                    )
+VALUES (
+            @Token, 
+            @AdminUserId, 
+            @EditorUserId, 
+            @EditionId, 
+            @IsAdmin, 
+            @MayLock, 
+            @MayWrite
+        )
+";
+    }
+
+    internal static class FindEditionEditorRequest
+    {
+        internal const string GetQuery = @"
+SELECT  edition_editor_request.edition_id AS EditionId, 
+        edition_editor_request.is_admin AS IsAdmin, 
+        edition_editor_request.may_lock AS MayLock, 
+        edition_editor_request.may_write AS MayWrite,
+        user.email AS Email
+FROM edition_editor_request
+    JOIN user ON user.user_id = edition_editor_request.editor_user_id
+WHERE token = @Token
+    AND editor_user_id = @EditorUserId
+";
+    }
+
+    internal static class DeleteEditionEditorRequest
+    {
+        internal const string GetQuery = @"
+DELETE FROM edition_editor_request
+WHERE token = @Token AND editor_user_id = @EditorUserId
+";
+    }
 }

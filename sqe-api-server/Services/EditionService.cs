@@ -344,15 +344,15 @@ The Scripta Qumranica Electronica team</body></html>";
             );
 
             var newEditorDTO = _permissionsToEditorRightsDTO(
-                newUserPermissions.email,
-                newUserPermissions.mayRead,
-                newUserPermissions.mayWrite,
-                newUserPermissions.mayLock,
-                newUserPermissions.isAdmin
+                newUserPermissions.Email,
+                newUserPermissions.MayRead,
+                newUserPermissions.MayWrite,
+                newUserPermissions.MayLock,
+                newUserPermissions.IsAdmin
             );
             // Broadcast the change to all editors of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            var editionUser = await _userService.GetCurrentUserObjectAsync(newUserPermissions.editionId);
+            var editionUser = await _userService.GetCurrentUserObjectAsync(newUserPermissions.EditionId);
             var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
             foreach (var editionUserId in editionUsers)
                 await _hubContext.Clients.GroupExcept($"user-{editionUserId.ToString()}", clientId)
