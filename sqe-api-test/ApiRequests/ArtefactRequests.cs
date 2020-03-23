@@ -5,7 +5,7 @@ namespace SQE.ApiTest.ApiRequests
 {
     public static partial class Get
     {
-        public class V1_Editions_EditionId_Artefacts : EditionRequestObject<EmptyInput, ArtefactListDTO>
+        public class V1_Editions_EditionId_Artefacts : EditionRequestObject<EmptyInput, ArtefactListDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request a list of artefacts by their editionId
@@ -20,7 +20,7 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, ArtefactDTO>
+        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, ArtefactDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
                 editionId,
@@ -32,7 +32,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Artefacts_ArtefactId_Rois
-            : ArtefactRequestObject<EmptyInput, InterpretationRoiDTOList>
+            : ArtefactRequestObject<EmptyInput, InterpretationRoiDTOList, EmptyOutput>
         {
             public V1_Editions_EditionId_Artefacts_ArtefactId_Rois(uint editionId, uint artefactId) : base(
                 editionId,
@@ -44,7 +44,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments
-            : ArtefactRequestObject<EmptyInput, TextFragmentDataListDTO>
+            : ArtefactRequestObject<EmptyInput, TextFragmentDataListDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments(uint editionId, uint artefactId) : base(
                 editionId,
@@ -56,7 +56,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Artefacts_ArtefactId_SuggestedTextFragments
-            : ArtefactRequestObject<EmptyInput, TextFragmentDataListDTO>
+            : ArtefactRequestObject<EmptyInput, TextFragmentDataListDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_Artefacts_ArtefactId_SuggestedTextFragments(uint editionId, uint artefactId) :
                 base(
@@ -71,7 +71,7 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-        public class V1_Editions_EditionId_Artefacts : EditionRequestObject<CreateArtefactDTO, ArtefactDTO>
+        public class V1_Editions_EditionId_Artefacts : EditionRequestObject<CreateArtefactDTO, ArtefactDTO, ArtefactDTO>
         {
             public V1_Editions_EditionId_Artefacts(uint editionId, CreateArtefactDTO payload) : base(
                 editionId,
@@ -86,7 +86,7 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
-        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<UpdateArtefactDTO, ArtefactDTO>
+        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<UpdateArtefactDTO, ArtefactDTO, ArtefactDTO>
         {
             public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
                 editionId,
@@ -101,7 +101,7 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Delete
     {
-        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, EmptyOutput>
+        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, EmptyOutput, EmptyOutput>
         {
             public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
                 editionId,

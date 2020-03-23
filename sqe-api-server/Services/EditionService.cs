@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Utilities;
 using SQE.API.DTO;
@@ -48,14 +49,14 @@ namespace SQE.API.Server.Services
             string clientId = null);
 
         Task<NoContentResult> RequestNewEditionEditor(EditionUserInfo editionUser,
-            CreateEditorRightsDTO newEditor,
+            InviteEditorDTO newEditor,
             string clientId = null);
 
-        Task<CreateEditorRightsDTO> AddEditionEditor(uint? userId,
+        Task<DetailedEditorRightsDTO> AddEditionEditor(uint? userId,
             string token,
             string clientId = null);
 
-        Task<CreateEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+        Task<DetailedEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
             string editorEmail,
             UpdateEditorRightsDTO updatedEditor,
             string clientId = null);
@@ -71,13 +72,15 @@ namespace SQE.API.Server.Services
         private readonly IUserRepository _userRepo;
         private readonly IUserService _userService;
         private readonly string webServer;
+        private readonly AppSettings _appSettings;
 
         public EditionService(IEditionRepository editionRepo,
             IUserRepository userRepo,
             IUserService userService,
             IHubContext<MainHub, ISQEClient> hubContext,
             IEmailSender emailSender,
-            IConfiguration config)
+            IConfiguration config,
+            IOptions<AppSettings> appSettings)
         {
             _editionRepo = editionRepo;
             _userRepo = userRepo;
@@ -85,6 +88,7 @@ namespace SQE.API.Server.Services
             _hubContext = hubContext;
             _emailSender = emailSender;
             webServer = config.GetConnectionString("WebsiteHost");
+            _appSettings = appSettings.Value;
         }
 
         public async Task<EditionGroupDTO> GetEditionAsync(EditionUserInfo editionUser,
@@ -270,14 +274,14 @@ namespace SQE.API.Server.Services
         /// <param name="clientId"></param>
         /// <returns></returns>
         public async Task<NoContentResult> RequestNewEditionEditor(EditionUserInfo editionUser,
-            CreateEditorRightsDTO newEditor,
+            InviteEditorDTO newEditor,
             string clientId = null)
         {
             var requestingUser = await _userRepo.GetDetailedUserByIdAsync(editionUser.userId);
             var newUserToken = await _editionRepo.RequestAddEditionEditor(
                 editionUser,
                 newEditor.email,
-                newEditor.mayRead,
+                true, // New editors can always read (otherwise there is no point)
                 newEditor.mayWrite,
                 newEditor.mayLock,
                 newEditor.isAdmin
@@ -292,9 +296,8 @@ namespace SQE.API.Server.Services
             const string emailBody = @"
 <html><body>Dear $User,<br>
 <br>
-$Admin has invited you to become an editor on $EditionName. To accept the invitation, please click 
-<a href=""$WebServer/acceptEditor/token/$Token"">here</a>. If you do not wish to accept this invitation, no action is necessary on your 
-part and the offer will expire in $ExpirationPeriod.<br>
+$Admin has invited you to become an editor on $EditionName. To accept the invitation, please <a href=""$WebServer/accept-invitation/token/$Token"">click here</a>. If you do not wish to accept this invitation, no action is necessary on your 
+part and the invitation will expire in $ExpirationPeriod.<br>
 <br>
 Best wishes,<br>
 The Scripta Qumranica Electronica team</body></html>";
@@ -315,12 +318,24 @@ The Scripta Qumranica Electronica team</body></html>";
                     .Replace("$WebServer", webServer)
                     .Replace("$Token", newUserToken.Token.ToString())
                     .Replace("$EditionName", edition.name)
-                    .Replace("$ExpirationPeriod", "no current expiration period set")
+                    .Replace("$ExpirationPeriod", _appSettings.EmailTokenDaysValid.ToString())
             );
 
             // Broadcast the request to the potential editor.
+            var editorBroadcastObject = new RequestedEditorDTO()
+            {
+                editionId = editionUser.EditionId,
+                editionName = edition.name,
+                requestingAdminName = adminName,
+                requestingAdminEmail = requestingUser.Email,
+                isAdmin = newEditor.isAdmin,
+                mayLock = newEditor.mayLock,
+                mayWrite = newEditor.mayWrite,
+                mayRead = true, // New editors can always read (otherwise there is no point)
+                token = newUserToken.Token
+            };
             await _hubContext.Clients.Group($"user-{newUserToken.UserId.ToString()}")
-                .RequestedEditor(edition);
+                .RequestedEditor(editorBroadcastObject);
 
             return new NoContentResult();
         }
@@ -332,7 +347,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <param name="token">JWT to verify the request</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<CreateEditorRightsDTO> AddEditionEditor(uint? userId,
+        public async Task<DetailedEditorRightsDTO> AddEditionEditor(uint? userId,
             string token,
             string clientId = null)
         {
@@ -368,7 +383,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <param name="updatedEditor">Details of the editor and the desired access rights</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<CreateEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+        public async Task<DetailedEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
             string editorEmail,
             UpdateEditorRightsDTO updatedEditor,
             string clientId = null)
@@ -500,13 +515,13 @@ The Scripta Qumranica Electronica team</body></html>";
             };
         }
 
-        private static CreateEditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail,
+        private static DetailedEditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail,
             bool mayRead,
             bool mayWrite,
             bool mayLock,
             bool isAdmin)
         {
-            return new CreateEditorRightsDTO
+            return new DetailedEditorRightsDTO
             {
                 email = editorEmail,
                 mayRead = mayRead,

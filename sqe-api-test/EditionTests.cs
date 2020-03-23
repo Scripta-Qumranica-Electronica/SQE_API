@@ -29,65 +29,102 @@ namespace SQE.ApiTest
         private const string controller = "editions";
         private readonly string _addEditionEditor;
 
-        // [Fact]
-        // public async Task CanAdminShareEdition()
-        // {
-        //     // Arrange
-        //     var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-        //     try
-        //     {
-        //         var newPermissions = new CreateEditorRightsDTO
-        //         {
-        //             email = Request.DefaultUsers.User2.email,
-        //             mayLock = true,
-        //             mayWrite = true,
-        //             isAdmin = true
-        //         };
-        //
-        //         // Act
-        //         var add1 = new Post.V1_Editions_EditionId_Editors(newEdition, newPermissions);
-        //         var (_, shareMsg, _, _) = await Request.Send(
-        //             add1,
-        //             _client,
-        //             null,
-        //             auth: true
-        //         );
-        //
-        //         // Assert
-        //         Assert.True(shareMsg.mayRead);
-        //         Assert.True(shareMsg.mayWrite);
-        //         Assert.True(shareMsg.mayLock);
-        //         Assert.True(shareMsg.isAdmin);
-        //
-        //         var get1 = new Get.V1_Editions_EditionId(newEdition);
-        //         var (_, user1Msg, _, _) = await Request.Send(
-        //             get1,
-        //             _client,
-        //             null,
-        //             auth: true
-        //         );
-        //
-        //         var (_, user2Msg, _, _) = await Request.Send(
-        //             get1,
-        //             _client,
-        //             null,
-        //             auth: true,
-        //             user1: Request.DefaultUsers.User2
-        //         );
-        //         Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
-        //         Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
-        //         Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
-        //         Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
-        //         Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
-        //         Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
-        //         user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
-        //     }
-        //     finally
-        //     {
-        //         // Cleanup
-        //         await EditionHelpers.DeleteEdition(_client, newEdition);
-        //     }
-        // }
+        [Fact]
+        public async Task CanAdminShareEdition()
+        {
+            // Arrange
+            // Grab a new edition
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            try
+            {
+                // Set permissions for a different user to become an editor
+                var newPermissions = new DetailedEditorRightsDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = true,
+                    mayWrite = true,
+                    isAdmin = true
+                };
+
+                // Act
+                // Send in the editor request 
+                var add1 = new Post.V1_Editions_EditionId_AddEditorRequest(newEdition, newPermissions);
+                var (httpResponse, shareMsg, _, listenerResponse) = await Request.Send(
+                    add1,
+                    _client,
+                    StartConnectionAsync,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User1,
+                    listenerUser: Request.DefaultUsers.User2, // User 2 will listen on SignalR for the request
+                    requestRealtime: false,
+                    listenToEdition: false
+                );
+
+                // Assert
+                httpResponse.EnsureSuccessStatusCode();
+                Assert.True(listenerResponse.mayRead);
+                Assert.True(listenerResponse.mayWrite);
+                Assert.True(listenerResponse.mayLock);
+                Assert.True(listenerResponse.isAdmin);
+                Assert.NotNull(listenerResponse.token);
+
+                // Act
+                // User 2 will confirm the request using the token it received
+                var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(listenerResponse.token, newEdition);
+                var (httpConfirmResponse, shareConfirmMsg, _, listenerConfirmResponse) = await Request.Send(
+                    confirmRequest,
+                    _client,
+                    StartConnectionAsync,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User2,
+                    listenerUser: Request.DefaultUsers.User1, // User 1 will listen on the SignalR edition room for news of confirmation
+                    requestRealtime: false
+                );
+
+                // Assert
+                httpConfirmResponse.EnsureSuccessStatusCode();
+                Assert.Equal(shareConfirmMsg.isAdmin, listenerConfirmResponse.isAdmin);
+                Assert.Equal(shareConfirmMsg.mayWrite, listenerConfirmResponse.mayWrite);
+                Assert.Equal(shareConfirmMsg.mayLock, listenerConfirmResponse.mayLock);
+                Assert.Equal(shareConfirmMsg.mayRead, listenerConfirmResponse.mayRead);
+                Assert.Equal(Request.DefaultUsers.User2.email, listenerConfirmResponse.email);
+
+                // Arrange
+                // User 1 should get the basic info about the shared edition
+                var get1 = new Get.V1_Editions_EditionId(newEdition);
+                var (_, user1Msg, _, _) = await Request.Send(
+                    get1,
+                    _client,
+                    null,
+                    auth: true
+                );
+
+                // User 2 should get the basic info about the shared edition
+                var (_, user2Msg, _, _) = await Request.Send(
+                    get1,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User2
+                );
+
+                // Assert
+                Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
+                Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
+                Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
+                Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
+                Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
+                Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
+                Assert.Equal(user1Msg.primary.editionDataEditorId, user2Msg.primary.editionDataEditorId);
+                user1Msg.primary.shares.ShouldDeepEqual(user2Msg.primary.shares);
+                user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
         //
         // [Fact]
         // public async Task CanChangeEditionSharePermissions()

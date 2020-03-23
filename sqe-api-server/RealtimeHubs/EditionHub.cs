@@ -29,7 +29,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
         [Authorize]
-        public async Task PostV1EditionsEditionIdAddEditorRequest(uint editionId, CreateEditorRightsDTO payload)
+        public async Task PostV1EditionsEditionIdAddEditorRequest(uint editionId, InviteEditorDTO payload)
 
         {
             try
@@ -44,11 +44,11 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        ///     Confirma addition of an editor to the specified edition
+        ///     Confirm addition of an editor to the specified edition
         /// </summary>
         /// <param name="token">JWT for verifying the request confirmation</param>
         [Authorize]
-        public async Task<CreateEditorRightsDTO> PostV1EditionsConfirmEditorshipToken(string token)
+        public async Task<DetailedEditorRightsDTO> PostV1EditionsConfirmEditorshipToken(string token)
 
         {
             try
@@ -69,7 +69,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
         [Authorize]
-        public async Task<CreateEditorRightsDTO> PutV1EditionsEditionIdEditorsEditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
+        public async Task<DetailedEditorRightsDTO> PutV1EditionsEditionIdEditorsEditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
 
         {
             try

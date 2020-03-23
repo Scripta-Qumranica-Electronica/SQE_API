@@ -61,15 +61,29 @@ export interface PermissionDTO {
     mayWrite: boolean;
     isAdmin: boolean;
 }
-export interface UpdateEditorRightsDTO {
-    mayRead?: boolean;
-    isAdmin?: boolean;
-    mayLock?: boolean;
-    mayWrite?: boolean;
+
+export interface MinimalEditorRights extends PermissionDTO {
+    mayLock: boolean;
 }
 
-export interface CreateEditorRightsDTO extends UpdateEditorRightsDTO {
+export interface UpdateEditorRightsDTO extends MinimalEditorRights {
+    mayRead: boolean;
+}
+
+export interface InviteEditorDTO extends MinimalEditorRights {
     email: string;
+}
+
+export interface DetailedEditorRightsDTO extends UpdateEditorRightsDTO {
+    email: string;
+}
+
+export interface RequestedEditorDTO extends UpdateEditorRightsDTO {
+    token: string;
+    editionId: number;
+    editionName: string;
+    requestingAdminName: string;
+    requestingAdminEmail: string;
 }
 
 export interface TextEditionDTO {

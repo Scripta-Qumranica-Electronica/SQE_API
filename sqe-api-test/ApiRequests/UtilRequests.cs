@@ -5,7 +5,7 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-        public class V1_Utils_RepairWktPolygon : RequestObject<WktPolygonDTO, WktPolygonDTO>
+        public class V1_Utils_RepairWktPolygon : RequestObject<WktPolygonDTO, WktPolygonDTO, EmptyOutput>
         {
             /// <summary>
             /// Validate a WKT polygon

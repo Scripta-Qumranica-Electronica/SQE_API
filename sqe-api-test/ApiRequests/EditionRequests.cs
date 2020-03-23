@@ -8,7 +8,7 @@ namespace SQE.ApiTest.ApiRequests
 {
     public static partial class Get
     {
-        public class V1_Editions : RequestObject<EmptyInput, EditionListDTO>
+        public class V1_Editions : RequestObject<EmptyInput, EditionListDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request a listing of all editions available to the user
@@ -18,7 +18,7 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId : EditionRequestObject<EmptyInput, EditionGroupDTO>
+        public class V1_Editions_EditionId : EditionRequestObject<EmptyInput, EditionGroupDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request information about a specific edition
@@ -32,7 +32,7 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-        public class V1_Editions_EditionId : EditionRequestObject<EditionCopyDTO, EditionDTO>
+        public class V1_Editions_EditionId : EditionRequestObject<EditionCopyDTO, EditionDTO, EditionDTO>
         {
             /// <summary>
             ///     Request to create a copy of an edition
@@ -43,20 +43,29 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_Editors : EditionRequestObject<CreateEditorRightsDTO, CreateEditorRightsDTO>
+        public class V1_Editions_EditionId_AddEditorRequest : EditionRequestObject<DetailedEditorRightsDTO, EmptyOutput, RequestedEditorDTO>
         {
             /// <summary>
             ///     Request to add an editor to an edition
             /// </summary>
             /// <param name="editionId">The editionId for the desired edition</param>
             /// <param name="payload">An object containing the settings for the editor and editor rights</param>
-            public V1_Editions_EditionId_Editors(uint editionId, CreateEditorRightsDTO payload) : base(
+            public V1_Editions_EditionId_AddEditorRequest(uint editionId, DetailedEditorRightsDTO payload) : base(
                 editionId,
                 null,
                 payload
             )
             {
-                listenerMethod.Add("addEditionEditor");
+                listenerMethod.Add("RequestedEditor");
+            }
+        }
+
+        public class V1_Editions_ConfirmEditorship_Token
+            : EditionEditorConfirmationObject<string, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
+        {
+            public V1_Editions_ConfirmEditorship_Token(Guid token, uint editionId) : base(token, editionId)
+            {
+                listenerMethod.Add("CreatedEditor");
             }
         }
     }
@@ -64,7 +73,7 @@ namespace SQE.ApiTest.ApiRequests
     public static partial class Put
     {
         public class V1_Editions_EditionId_Editors_EditorEmailId
-            : EditionEditorRequestObject<UpdateEditorRightsDTO, CreateEditorRightsDTO>
+            : EditionEditorRequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
         {
             /// <summary>
             ///     Request to change the access rights of an editor to an edition
@@ -84,7 +93,7 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId : EditionRequestObject<EditionUpdateRequestDTO, EditionDTO>
+        public class V1_Editions_EditionId : EditionRequestObject<EditionUpdateRequestDTO, EditionDTO, EditionDTO>
         {
             /// <summary>
             ///     Request to update data for the specified edition
@@ -104,7 +113,7 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Delete
     {
-        public class V1_Editions_EditionId : EditionRequestObject<string, DeleteTokenDTO>
+        public class V1_Editions_EditionId : EditionRequestObject<EmptyInput, DeleteTokenDTO, DeleteTokenDTO>
         {
             private readonly List<string> _optional;
             private readonly string _token;

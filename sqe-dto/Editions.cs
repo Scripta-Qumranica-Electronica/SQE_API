@@ -38,19 +38,37 @@ namespace SQE.API.DTO
         public bool isAdmin { get; set; }
     }
 
-    public class UpdateEditorRightsDTO
+    public class MinimalEditorRights : PermissionDTO
     {
-        public bool? mayRead { get; set; }
-        public bool? isAdmin { get; set; }
-        public bool? mayLock { get; set; }
-        public bool? mayWrite { get; set; }
+        public bool mayLock { get; set; }
     }
 
-    public class CreateEditorRightsDTO : UpdateEditorRightsDTO
+    public class UpdateEditorRightsDTO : MinimalEditorRights
+    {
+        public bool mayRead { get; set; }
+    }
+
+    public class InviteEditorDTO : MinimalEditorRights
     {
         [Required]
         [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
+    }
+
+    public class DetailedEditorRightsDTO : UpdateEditorRightsDTO
+    {
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
+        public string email { get; set; }
+    }
+
+    public class RequestedEditorDTO : UpdateEditorRightsDTO
+    {
+        public Guid token { get; set; }
+        public uint editionId { get; set; }
+        public string editionName { get; set; }
+        public string requestingAdminName { get; set; }
+        public string requestingAdminEmail { get; set; }
     }
 
     public class TextEditionDTO

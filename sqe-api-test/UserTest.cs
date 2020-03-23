@@ -307,7 +307,7 @@ namespace SQE.ApiTest
                     updateUserAccountObject,
                     _client,
                     auth: true,
-                    user1: userAuth,
+                    requestUser: userAuth,
                     shouldSucceed: false
                 );
 
@@ -349,7 +349,7 @@ namespace SQE.ApiTest
                     _client,
                     auth: true,
                     shouldSucceed: false,
-                    user1: authUser
+                    requestUser: authUser
                 );
 
                 // Assert
@@ -394,7 +394,7 @@ namespace SQE.ApiTest
                     userLoginRequest,
                     _client,
                     auth: true,
-                    user1: userAuth
+                    requestUser: userAuth
                 );
 
                 // Assert (login)

@@ -373,6 +373,7 @@ INSERT INTO edition_editor_request (
                                         may_lock, 
                                         may_write
                                     )
+               
 VALUES (
             @Token, 
             @AdminUserId, 
@@ -382,10 +383,16 @@ VALUES (
             @MayLock, 
             @MayWrite
         )
+
+ON DUPLICATE KEY 
+    UPDATE     is_admin = @IsAdmin, 
+               may_lock = @MayLock, 
+               may_write = @MayWrite, 
+               date = CURRENT_DATE()
 ";
     }
 
-    internal static class FindEditionEditorRequest
+    internal static class FindEditionEditorRequestByToken
     {
         internal const string GetQuery = @"
 SELECT  edition_editor_request.edition_id AS EditionId, 
@@ -397,6 +404,17 @@ FROM edition_editor_request
     JOIN user ON user.user_id = edition_editor_request.editor_user_id
 WHERE token = @Token
     AND editor_user_id = @EditorUserId
+";
+    }
+
+    internal static class FindEditionEditorRequestByEditorEdition
+    {
+        internal const string GetQuery = @"
+SELECT  edition_editor_request.token AS Token
+FROM edition_editor_request
+WHERE editor_user_id = @EditorUserId
+    AND edition_id = @EditionId
+    AND admin_user_id = @AdminUserId
 ";
     }
 

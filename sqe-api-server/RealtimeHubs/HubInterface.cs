@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using SQE.API.DTO;
+using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.RealtimeHubs
 {
@@ -29,21 +30,21 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="returnedData">Details of the new editor</param>
         /// <returns></returns>
-        Task RequestedEditor(EditionDTO returnedData);
+        Task RequestedEditor(RequestedEditorDTO returnedData);
 
         /// <summary>
         ///     broadcasts a editor has been added to the edition
         /// </summary>
         /// <param name="returnedData">Details of the new editor</param>
         /// <returns></returns>
-        Task CreatedEditor(CreateEditorRightsDTO returnedData);
+        Task CreatedEditor(DetailedEditorRightsDTO returnedData);
 
         /// <summary>
         ///     broadcasts an editor's permissions have been updated
         /// </summary>
         /// <param name="returnedData">Details of the editor's updated permissions</param>
         /// <returns></returns>
-        Task UpdatedEditorEmail(CreateEditorRightsDTO returnedData);
+        Task UpdatedEditorEmail(DetailedEditorRightsDTO returnedData);
 
         /// <summary>
         ///     broadcasts a new text edition has been created

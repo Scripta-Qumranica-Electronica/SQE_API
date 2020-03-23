@@ -423,7 +423,7 @@ namespace SQE.DatabaseAccess
 
                 using (var connection = OpenConnection())
                 {
-                    // Add the editor
+                    // Find the editor
                     var editorInfoSearch = await connection.QueryAsync<DetailedUserWithToken>(
                         UserDetails.GetQuery(
                             new List<string> { "user_id", "forename", "surname", "organization" },
@@ -438,23 +438,40 @@ namespace SQE.DatabaseAccess
 
                     editorInfo = editorInfoSearch.FirstOrDefault();
 
-                    // Add a GUID for this transaction
-                    editorInfo.Token = Guid.NewGuid();
-
-                    // Write the GUID token to the database
-                    var writtenToken = await connection.ExecuteAsync(
-                        CreateUserEmailTokenQuery.GetQuery(),
+                    // Check for existing request
+                    var existingRequestToken = await connection.QueryAsync<Guid>(
+                        FindEditionEditorRequestByEditorEdition.GetQuery,
                         new
                         {
-                            editorInfo.UserId,
-                            editorInfo.Token,
-                            Type = CreateUserEmailTokenQuery.EditorInvite
-                        }
-                    );
+                            EditionId = editionUser.EditionId,
+                            AdminUserId = editionUser.userId,
+                            EditorUserId = editorInfo.UserId
+                        });
 
-                    if (writtenToken != 1)
-                        throw new StandardExceptions.DataNotWrittenException(
-                            $"create editor invite token for {editorEmail}");
+                    // Add a GUID for this transaction (Reuse any pre-existing ones)
+                    if (existingRequestToken.Any())
+                    {
+                        editorInfo.Token = existingRequestToken.FirstOrDefault();
+                    }
+                    else
+                    {
+                        editorInfo.Token = existingRequestToken.Any() ? existingRequestToken.FirstOrDefault() : Guid.NewGuid();
+
+                        // Write the GUID token to the database
+                        var writtenToken = await connection.ExecuteAsync(
+                            CreateUserEmailTokenQuery.GetQuery(),
+                            new
+                            {
+                                editorInfo.UserId,
+                                editorInfo.Token,
+                                Type = CreateUserEmailTokenQuery.EditorInvite
+                            }
+                        );
+
+                        if (writtenToken != 1)
+                            throw new StandardExceptions.DataNotWrittenException(
+                                $"create editor invite token for {editorEmail}");
+                    }
 
                     // Record the editor request in database
                     var recordedRequest = await connection.ExecuteAsync(RecordEditionEditorRequest.GetQuery,
@@ -468,9 +485,9 @@ namespace SQE.DatabaseAccess
                             MayLock = permissions.MayLock,
                             MayWrite = permissions.MayWrite
                         });
-                    if (recordedRequest != 1)
-                        throw new StandardExceptions.DataNotWrittenException(
-                            "record editor request to the database, please try again later");
+                    // if (recordedRequest > 0)
+                    //     throw new StandardExceptions.DataNotWrittenException(
+                    //         "record editor request to the database, please try again later");
                 }
 
                 // Complete the transaction
@@ -489,7 +506,7 @@ namespace SQE.DatabaseAccess
             {
 
                 var editorEditionPermissions = await connection.QueryAsync<DetailedEditionPermission>(
-                    FindEditionEditorRequest.GetQuery,
+                    FindEditionEditorRequestByToken.GetQuery,
                     new
                     {
                         Token = token,
@@ -525,14 +542,14 @@ namespace SQE.DatabaseAccess
 
                 // Delete unneeded database entries
                 await connection.ExecuteAsync(
-                    DeleteUserEmailTokenQuery.GetTokenQuery,
-                    new
-                    { Tokens = new List<Guid>() { new Guid(token) }, Type = CreateUserEmailTokenQuery.EditorInvite }
-                );
-                await connection.ExecuteAsync(
                     DeleteEditionEditorRequest.GetQuery,
                     new
                     { Token = new Guid(token), EditorUserId = userId }
+                );
+                await connection.ExecuteAsync(
+                    DeleteUserEmailTokenQuery.GetTokenQuery,
+                    new
+                    { Tokens = new List<Guid>() { new Guid(token) }, Type = CreateUserEmailTokenQuery.EditorInvite }
                 );
 
                 transactionScope.Complete();

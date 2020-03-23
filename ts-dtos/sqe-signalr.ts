@@ -17,8 +17,11 @@ import {
 	EditionGroupDTO,
 	EditionListDTO,
 	PermissionDTO,
+	MinimalEditorRights,
 	UpdateEditorRightsDTO,
-	CreateEditorRightsDTO,
+	InviteEditorDTO,
+	DetailedEditorRightsDTO,
+	RequestedEditorDTO,
 	TextEditionDTO,
 	ShareDTO,
 	DeleteTokenDTO,
@@ -230,17 +233,17 @@ export class SignalRUtilities {
 	 * @param payload - JSON object with the attributes of the new editor
 	 *
 	 */
-    public async postV1EditionsEditionIdAddEditorRequest(editionId: number, payload: CreateEditorRightsDTO): Promise<void> {
+    public async postV1EditionsEditionIdAddEditorRequest(editionId: number, payload: InviteEditorDTO): Promise<void> {
         return await this._connection.invoke('PostV1EditionsEditionIdAddEditorRequest', editionId, payload);
     }
 
     /**
-	 * Confirma addition of an editor to the specified edition
+	 * Confirm addition of an editor to the specified edition
 	 *
 	 * @param token - JWT for verifying the request confirmation
 	 *
 	 */
-    public async postV1EditionsConfirmEditorshipToken(token: string): Promise<CreateEditorRightsDTO> {
+    public async postV1EditionsConfirmEditorshipToken(token: string): Promise<DetailedEditorRightsDTO> {
         return await this._connection.invoke('PostV1EditionsConfirmEditorshipToken', token);
     }
 
@@ -252,7 +255,7 @@ export class SignalRUtilities {
 	 * @param payload - JSON object with the attributes of the new editor
 	 *
 	 */
-    public async putV1EditionsEditionIdEditorsEditorEmailId(editionId: number, editorEmailId: string, payload: UpdateEditorRightsDTO): Promise<CreateEditorRightsDTO> {
+    public async putV1EditionsEditionIdEditorsEditorEmailId(editionId: number, editorEmailId: string, payload: UpdateEditorRightsDTO): Promise<DetailedEditorRightsDTO> {
         return await this._connection.invoke('PutV1EditionsEditionIdEditorsEditorEmailId', editionId, editorEmailId, payload);
     }
 
@@ -681,7 +684,7 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a editor has been requested for the edition
 	 *
 	 */
-    public connectRequestedEditor(handler: (msg: EditionDTO) => void): void {
+    public connectRequestedEditor(handler: (msg: RequestedEditorDTO) => void): void {
         this._connection.on('RequestedEditor', handler)
     }
 
@@ -689,7 +692,7 @@ export class SignalRUtilities {
 	 * Remove an existing listener that triggers when the server broadcasts a editor has been requested for the edition
 	 *
 	 */
-    public disconnectRequestedEditor(handler: (msg: EditionDTO) => void): void {
+    public disconnectRequestedEditor(handler: (msg: RequestedEditorDTO) => void): void {
         this._connection.off('RequestedEditor', handler)
     }
 
@@ -698,7 +701,7 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a editor has been added to the edition
 	 *
 	 */
-    public connectCreatedEditor(handler: (msg: CreateEditorRightsDTO) => void): void {
+    public connectCreatedEditor(handler: (msg: DetailedEditorRightsDTO) => void): void {
         this._connection.on('CreatedEditor', handler)
     }
 
@@ -706,7 +709,7 @@ export class SignalRUtilities {
 	 * Remove an existing listener that triggers when the server broadcasts a editor has been added to the edition
 	 *
 	 */
-    public disconnectCreatedEditor(handler: (msg: CreateEditorRightsDTO) => void): void {
+    public disconnectCreatedEditor(handler: (msg: DetailedEditorRightsDTO) => void): void {
         this._connection.off('CreatedEditor', handler)
     }
 
@@ -715,7 +718,7 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts an editor's permissions have been updated
 	 *
 	 */
-    public connectUpdatedEditorEmail(handler: (msg: CreateEditorRightsDTO) => void): void {
+    public connectUpdatedEditorEmail(handler: (msg: DetailedEditorRightsDTO) => void): void {
         this._connection.on('UpdatedEditorEmail', handler)
     }
 
@@ -723,7 +726,7 @@ export class SignalRUtilities {
 	 * Remove an existing listener that triggers when the server broadcasts an editor's permissions have been updated
 	 *
 	 */
-    public disconnectUpdatedEditorEmail(handler: (msg: CreateEditorRightsDTO) => void): void {
+    public disconnectUpdatedEditorEmail(handler: (msg: DetailedEditorRightsDTO) => void): void {
         this._connection.off('UpdatedEditorEmail', handler)
     }
 

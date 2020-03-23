@@ -63,7 +63,7 @@ namespace SQE.ApiTest
                 newTextFragReqObj,
                 _client,
                 StartConnectionAsync,
-                user1: user,
+                requestUser: user,
                 auth: auth
             );
 
@@ -109,7 +109,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     null,
                     StartConnectionAsync,
-                    user1: user,
+                    requestUser: user,
                     auth: authenticated,
                     shouldSucceed: shouldSucceed,
                     deterministic: false
@@ -118,7 +118,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    user1: user,
+                    requestUser: user,
                     auth: authenticated,
                     shouldSucceed: shouldSucceed,
                     deterministic: false

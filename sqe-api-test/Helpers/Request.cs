@@ -29,7 +29,7 @@ namespace SQE.ApiTest.Helpers
         ///     A function to acquire a SignalR hub connection;
         ///     may be null if no request should be made to the SignalR server.
         /// </param>
-        /// <param name="listener">
+        /// <param name="addRealtimeListener">
         ///     Whether to run a test with a listener on the request
         ///     (only works for Post, Put, and Delete requests; default is false).
         ///     The default user for the listener is user2 (if that is null user1 is used).
@@ -38,11 +38,11 @@ namespace SQE.ApiTest.Helpers
         ///     Whether to use authentication (default false).
         ///     If no user1 is provided the default user "test" will be used.
         /// </param>
-        /// <param name="user1">
+        /// <param name="requestUser">
         ///     User object for authentication.
         ///     If no User is provided, the default "test" user is used.
         /// </param>
-        /// <param name="user2">
+        /// <param name="listenerUser">
         ///     User object for authentication of the listener.
         ///     If no User is provided, user2 = user1.
         /// </param>
@@ -56,17 +56,18 @@ namespace SQE.ApiTest.Helpers
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
         public static async
-            Task<(HttpResponseMessage httpResponseMessage, Toutput httpResponse, Toutput signalrResponse, Toutput
-                listenerResponse)> Send<Tinput, Toutput>(
-                RequestObject<Tinput, Toutput> request,
+            Task<(HttpResponseMessage httpResponseMessage, Toutput httpResponse, Toutput signalrResponse, Tlistener
+                listenerResponse)> Send<Tinput, Toutput, Tlistener>(
+                RequestObject<Tinput, Toutput, Tlistener> request,
                 HttpClient http = null,
                 Func<string, Task<HubConnection>> realtime = null,
-                bool listener = false,
                 bool auth = false,
-                UserAuthDetails user1 = null,
-                UserAuthDetails user2 = null,
+                UserAuthDetails requestUser = null,
+                UserAuthDetails listenerUser = null,
                 bool shouldSucceed = true,
-                bool deterministic = true)
+                bool deterministic = true,
+                bool requestRealtime = true,
+                bool listenToEdition = true)
         {
             // Throw an error if no transport protocol has been provided
             if (http == null
@@ -76,14 +77,14 @@ namespace SQE.ApiTest.Helpers
                 );
 
             // Throw an error is a listener is requested but auth has been rejected
-            if (listener && !auth)
+            if (listenerUser != null && !auth)
                 throw new Exception("Setting up a listener requires auth");
 
             // Set up the initial variables and their values
             HttpResponseMessage httpResponseMessage = null;
             var httpResponse = default(Toutput);
             var signalrResponse = default(Toutput);
-            var listenerResponse = default(Toutput);
+            var listenerResponse = default(Tlistener);
             HubConnection signalrListener = null;
             string jwt1 = null;
             string jwt2 = null;
@@ -91,29 +92,30 @@ namespace SQE.ApiTest.Helpers
             // Generate any necessary JWT's
             if (auth)
                 jwt1 = http != null
-                    ? await GetJwtViaHttpAsync(http, user1 ?? null)
-                    : await GetJwtViaRealtimeAsync(realtime, user1 ?? null);
+                    ? await GetJwtViaHttpAsync(http, requestUser ?? null)
+                    : await GetJwtViaRealtimeAsync(realtime, requestUser ?? null);
 
-            if (auth && listener)
-                jwt2 = jwt1 ?? await GetJwtViaRealtimeAsync(realtime, user2 ?? user1 ?? null);
+            if (auth && listenerUser != null)
+                jwt2 = await GetJwtViaRealtimeAsync(realtime, listenerUser);
 
             // Set up a SignalR listener if desired (this hub connection must be different than the one used to make
             // the API request.
-            if (listener
+            if (listenerUser != null
                 && request.requestVerb != HttpMethod.Get
                 && realtime != null
                 && request.listenerMethod.Any()
-                && request.GetType().IsSubclassOf(typeof(EditionRequestObject<Tinput, Toutput>)))
+                && request.GetType().IsSubclassOf(typeof(EditionRequestObject<Tinput, Toutput, Tlistener>)))
             {
-                var editionRequest = request as EditionRequestObject<Tinput, Toutput>;
+                var editionRequest = request as EditionRequestObject<Tinput, Toutput, Tlistener>;
                 signalrListener = await realtime(jwt2);
                 // Subscribe to messages on the edition
-                await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
+                if (listenToEdition)
+                    await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
                 // Register a listener for messages returned by this API request
-                request.listenerMethod.Select(
-                    x =>
-                        signalrListener.On<Toutput>(x, receivedData => listenerResponse = receivedData)
-                );
+                foreach (var listener in request.listenerMethod)
+                {
+                    signalrListener.On<Tlistener>(listener, receivedData => listenerResponse = receivedData);
+                }
 
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
@@ -123,10 +125,10 @@ namespace SQE.ApiTest.Helpers
                     // Subscribe to messages on the edition
                     await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
                     // Register a listener for messages returned by this API request
-                    request.listenerMethod.Select(
-                        x =>
-                            signalrListener.On<Toutput>(x, receivedData => listenerResponse = receivedData)
-                    );
+                    foreach (var listener in request.listenerMethod)
+                    {
+                        signalrListener.On<Tlistener>(listener, receivedData => listenerResponse = receivedData);
+                    }
                 };
             }
 
@@ -148,7 +150,7 @@ namespace SQE.ApiTest.Helpers
             }
 
             // Run the SignalR request if desired
-            if (realtime != null)
+            if (realtime != null && requestRealtime)
             {
                 HubConnection signalR = null;
                 try
@@ -173,7 +175,7 @@ namespace SQE.ApiTest.Helpers
             }
 
             // If no listener is running, return the response from the request
-            if (!listener
+            if (listenerUser == null
                 || request.requestVerb == HttpMethod.Get)
                 return (httpResponseMessage, httpResponse, signalrResponse, listenerResponse);
 
@@ -187,7 +189,7 @@ namespace SQE.ApiTest.Helpers
 
             signalrListener?.DisposeAsync(); // Cleanup
             if (shouldSucceed)
-                Assert.NotNull(listenerResponse); // Do not try to listen with requests that return void!
+                Assert.NotNull(listenerResponse);
             return (httpResponseMessage, httpResponse, signalrResponse, listenerResponse);
         }
 
