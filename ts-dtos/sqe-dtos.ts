@@ -78,12 +78,29 @@ export interface DetailedEditorRightsDTO extends UpdateEditorRightsDTO {
     email: string;
 }
 
-export interface RequestedEditorDTO extends UpdateEditorRightsDTO {
-    token: string;
+export interface DetailedUpdateEditorRightsDTO extends UpdateEditorRightsDTO {
     editionId: number;
     editionName: string;
+    date: string;
+}
+
+export interface AdminEditorRequestDTO extends DetailedUpdateEditorRightsDTO {
+    editorName: string;
+    editorEmail: string;
+}
+
+export interface EditorInvitationDTO extends DetailedUpdateEditorRightsDTO {
+    token: string;
     requestingAdminName: string;
     requestingAdminEmail: string;
+}
+
+export interface EditorInvitationListDTO {
+    editorInvitations: EditorInvitationDTO[];
+}
+
+export interface AdminEditorRequestListDTO {
+    editorRequests: AdminEditorRequestDTO[];
 }
 
 export interface TextEditionDTO {

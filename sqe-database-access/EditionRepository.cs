@@ -31,25 +31,27 @@ namespace SQE.DatabaseAccess
         Task<string> DeleteAllEditionDataAsync(EditionUserInfo editionUser, string token);
         Task<string> GetDeleteToken(EditionUserInfo editionUser);
 
-        Task<DetailedUserWithToken> RequestAddEditionEditor(EditionUserInfo editionUser,
+        Task<DetailedUserWithToken> RequestAddEditionEditorAsync(EditionUserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
             bool? mayLock,
             bool? isAdmin);
 
-        Task<DetailedEditionPermission> AddEditionEditor(string token, uint userId);
+        Task<DetailedEditionPermission> AddEditionEditorAsync(string token, uint userId);
+        Task<List<DetailedEditorRequestPermissions>> GetOutstandingEditionEditorRequestsAsync(uint userId);
+        Task<List<DetailedEditorInvitationPermissions>> GetOutstandingEditionEditorInvitationsAsync(uint userId);
 
-        Task<Permission> ChangeEditionEditorRights(EditionUserInfo editionUser,
+        Task<Permission> ChangeEditionEditorRightsAsync(EditionUserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
             bool? mayLock,
             bool? isAdmin);
 
-        Task<List<uint>> GetEditionEditorUserIds(EditionUserInfo editionUser);
+        Task<List<uint>> GetEditionEditorUserIdsAsync(EditionUserInfo editionUser);
 
-        Task<List<LetterShape>> GetEditionScriptCollection(EditionUserInfo editonUser);
+        Task<List<LetterShape>> GetEditionScriptCollectionAsync(EditionUserInfo editonUser);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
@@ -305,7 +307,7 @@ namespace SQE.DatabaseAccess
             var editors = await _getEditionEditors(editionUser.EditionId);
             await Task.WhenAll(
                 editors.Select(
-                    x => ChangeEditionEditorRights(editionUser, x.Email, x.MayRead, false, x.MayLock, x.IsAdmin)
+                    x => ChangeEditionEditorRightsAsync(editionUser, x.Email, x.MayRead, false, x.MayLock, x.IsAdmin)
                 )
             );
 
@@ -381,7 +383,7 @@ namespace SQE.DatabaseAccess
         /// <param name="mayLock">Permission to lock</param>
         /// <param name="isAdmin">Permission to admin</param>
         /// <returns></returns>
-        public async Task<DetailedUserWithToken> RequestAddEditionEditor(EditionUserInfo editionUser,
+        public async Task<DetailedUserWithToken> RequestAddEditionEditorAsync(EditionUserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
@@ -498,7 +500,7 @@ namespace SQE.DatabaseAccess
             return editorInfo;
         }
 
-        public async Task<DetailedEditionPermission> AddEditionEditor(string token, uint userId)
+        public async Task<DetailedEditionPermission> AddEditionEditorAsync(string token, uint userId)
         {
             var editorEditionPermission = new DetailedEditionPermission();
             using (var transactionScope = new TransactionScope())
@@ -559,7 +561,36 @@ namespace SQE.DatabaseAccess
             return editorEditionPermission;
         }
 
-        public async Task<Permission> ChangeEditionEditorRights(EditionUserInfo editionUser,
+        /// <summary>
+        /// Requests a list of editor requests made by the user, which have not yet been accepted
+        /// </summary>
+        /// <param name="userId">Id of the admin who has issued the request for a user to become an editor</param>
+        /// <returns></returns>
+        public async Task<List<DetailedEditorRequestPermissions>> GetOutstandingEditionEditorRequestsAsync(uint userId)
+        {
+            using var connection = OpenConnection();
+            return (await connection.QueryAsync<DetailedEditorRequestPermissions>(
+                    FindEditionEditorRequestByAdminId.GetQuery,
+                    new {AdminUserId = userId})
+                ).ToList();
+        }
+
+        /// <summary>
+        /// Requests a list of invitations to become an editor, which have been sent to the user
+        /// </summary>
+        /// <param name="userId">Id of the user who has been invited to become editor</param>
+        /// <returns></returns>
+        public async Task<List<DetailedEditorInvitationPermissions>> GetOutstandingEditionEditorInvitationsAsync(
+            uint userId)
+        {
+            using var connection = OpenConnection();
+            return (await connection.QueryAsync<DetailedEditorInvitationPermissions>(
+                    FindEditionEditorRequestByEditorId.GetQuery,
+                    new {EditorUserId = userId})
+                ).ToList();
+        }
+
+        public async Task<Permission> ChangeEditionEditorRightsAsync(EditionUserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
@@ -650,7 +681,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
         /// </summary>
         /// <param name="editionUser">User object requesting the delete</param>
         /// <returns></returns>
-        public async Task<List<uint>> GetEditionEditorUserIds(EditionUserInfo editionUser)
+        public async Task<List<uint>> GetEditionEditorUserIdsAsync(EditionUserInfo editionUser)
         {
             using (var connection = OpenConnection())
             {
@@ -665,7 +696,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
             }
         }
 
-        public async Task<List<LetterShape>> GetEditionScriptCollection(EditionUserInfo editonUser)
+        public async Task<List<LetterShape>> GetEditionScriptCollectionAsync(EditionUserInfo editonUser)
         {
             using (var connection = OpenConnection())
             {
@@ -733,11 +764,11 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
             );
         }
 
-        private async Task<List<DetailedPermissions>> _getEditionEditors(uint editionId)
+        private async Task<List<EditorPermissions>> _getEditionEditors(uint editionId)
         {
             using (var connection = OpenConnection())
             {
-                return (await connection.QueryAsync<DetailedPermissions>(
+                return (await connection.QueryAsync<EditorPermissions>(
                     GetEditionEditorsWithPermissionsQuery.GetQuery,
                     new { EditionId = editionId }
                 )).ToList();

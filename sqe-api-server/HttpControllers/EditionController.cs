@@ -36,6 +36,27 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
+        /// Get a list of requests issued by the current user for other users
+        /// to become editors of a shared edition
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("v1/[controller]s/admin-share-requests")]
+        public async Task<ActionResult<AdminEditorRequestListDTO>> GetAdminShareRequests()
+        {
+            return await _editionService.GetAdminEditorRequests(_userService.GetCurrentUserId() ?? 0);
+        }
+        
+        /// <summary>
+        /// Get a list of invitations issued to the current user to become an editor of a shared edition
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("v1/[controller]s/editor-invitations")]
+        public async Task<ActionResult<EditorInvitationListDTO>> GetEditorInvitations()
+        {
+            return await _editionService.GetUserEditorInvitations(_userService.GetCurrentUserId() ?? 0);
+        }
+
+        /// <summary>
         ///     Confirm addition of an editor to the specified edition
         /// </summary>
         /// <param name="token">JWT for verifying the request confirmation</param>

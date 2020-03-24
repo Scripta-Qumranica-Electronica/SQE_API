@@ -52,6 +52,9 @@ namespace SQE.API.Server.Services
             InviteEditorDTO newEditor,
             string clientId = null);
 
+        Task<AdminEditorRequestListDTO> GetAdminEditorRequests(uint? userId);
+        Task<EditorInvitationListDTO> GetUserEditorInvitations(uint? userId);
+
         Task<DetailedEditorRightsDTO> AddEditionEditor(uint? userId,
             string token,
             string clientId = null);
@@ -150,7 +153,7 @@ namespace SQE.API.Server.Services
             var updatedEdition = EditionModelToDTO(editions.First(x => x.EditionId == editionUser.EditionId));
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+            var editionUsers = await _editionRepo.GetEditionEditorUserIdsAsync(editionUser);
             foreach (var userId in editionUsers)
                 await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
                     .UpdatedEdition(updatedEdition);
@@ -225,7 +228,7 @@ namespace SQE.API.Server.Services
             // Check if the edition should be deleted for all users
             if (deleteForAllEditors)
             {
-                var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+                var editionUsers = await _editionRepo.GetEditionEditorUserIdsAsync(editionUser);
 
                 // Try to delete the edition fully for all editors
                 var newToken = await _editionRepo.DeleteAllEditionDataAsync(editionUser, token);
@@ -249,7 +252,7 @@ namespace SQE.API.Server.Services
             var userInfo = await _userRepo.GetDetailedUserByIdAsync(editionUser.userId);
 
             // Setting all permission to false is how we delete a user's access to an edition.
-            await _editionRepo.ChangeEditionEditorRights(
+            await _editionRepo.ChangeEditionEditorRightsAsync(
                 editionUser,
                 userInfo.Email,
                 false,
@@ -278,7 +281,7 @@ namespace SQE.API.Server.Services
             string clientId = null)
         {
             var requestingUser = await _userRepo.GetDetailedUserByIdAsync(editionUser.userId);
-            var newUserToken = await _editionRepo.RequestAddEditionEditor(
+            var newUserToken = await _editionRepo.RequestAddEditionEditorAsync(
                 editionUser,
                 newEditor.email,
                 true, // New editors can always read (otherwise there is no point)
@@ -322,7 +325,7 @@ The Scripta Qumranica Electronica team</body></html>";
             );
 
             // Broadcast the request to the potential editor.
-            var editorBroadcastObject = new RequestedEditorDTO()
+            var editorBroadcastObject = new EditorInvitationDTO()
             {
                 editionId = editionUser.EditionId,
                 editionName = edition.name,
@@ -341,6 +344,65 @@ The Scripta Qumranica Electronica team</body></html>";
         }
 
         /// <summary>
+        /// Request a list of requests that a user has sent other users to become editors
+        /// </summary>
+        /// <param name="userId">Id of the user who has issued the requests for others to becom editors</param>
+        /// <returns></returns>
+        /// <exception cref="StandardExceptions.NoAuthorizationException"></exception>
+        public async Task<AdminEditorRequestListDTO> GetAdminEditorRequests(uint? userId)
+        {
+            if (!userId.HasValue)
+                throw new StandardExceptions.NoAuthorizationException();
+            
+            return new AdminEditorRequestListDTO()
+            {
+                editorRequests = (await _editionRepo.GetOutstandingEditionEditorRequestsAsync(userId.Value))
+                    .Select(x => new AdminEditorRequestDTO()
+                    {
+                        date = x.Date,
+                        editionId = x.EditionId,
+                        editionName = x.EditionName,
+                        editorEmail = x.Email,
+                        editorName = $"{x.EditorForename} {x.EditorSurname}, {x.EditorOrganization}",
+                        isAdmin = x.IsAdmin,
+                        mayLock = x.MayLock,
+                        mayRead = x.MayRead,
+                        mayWrite = x.MayWrite
+                    }).ToList()
+            };
+        }
+
+        /// <summary>
+        /// Request a list of a user's outstanding invitations to become editor
+        /// </summary>
+        /// <param name="userId">User id to check for outstanding editor invitations</param>
+        /// <returns></returns>
+        /// <exception cref="StandardExceptions.NoAuthorizationException"></exception>
+        public async Task<EditorInvitationListDTO> GetUserEditorInvitations(uint? userId)
+        {
+            if (!userId.HasValue)
+                throw new StandardExceptions.NoAuthorizationException();
+            
+            return new EditorInvitationListDTO()
+            {
+                editorInvitations = (await _editionRepo.GetOutstandingEditionEditorInvitationsAsync(userId.Value))
+                    .Select(x => new EditorInvitationDTO()
+                    {
+                        date = x.Date,
+                        editionId = x.EditionId,
+                        editionName = x.EditionName,
+                        token = x.Token,
+                        requestingAdminEmail = x.Email,
+                        requestingAdminName = $"{x.AdminForename} {x.AdminSurname}, {x.AdminOrganization}",
+                        isAdmin = x.IsAdmin,
+                        mayLock = x.MayLock,
+                        mayRead = x.MayRead,
+                        mayWrite = x.MayWrite
+                    }).ToList()
+            };
+        }
+
+        /// <summary>
         ///     Adds a new editor to an edition with the requested access rights
         /// </summary>
         /// <param name="userId"></param>
@@ -353,7 +415,7 @@ The Scripta Qumranica Electronica team</body></html>";
         {
             if (!userId.HasValue)
                 throw new StandardExceptions.NoAuthorizationException();
-            var newUserPermissions = await _editionRepo.AddEditionEditor(
+            var newUserPermissions = await _editionRepo.AddEditionEditorAsync(
                 token,
                 userId.Value
             );
@@ -368,7 +430,7 @@ The Scripta Qumranica Electronica team</body></html>";
             // Broadcast the change to all editors of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             var editionUser = await _userService.GetCurrentUserObjectAsync(newUserPermissions.EditionId);
-            var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+            var editionUsers = await _editionRepo.GetEditionEditorUserIdsAsync(editionUser);
             foreach (var editionUserId in editionUsers)
                 await _hubContext.Clients.GroupExcept($"user-{editionUserId.ToString()}", clientId)
                     .CreatedEditor(newEditorDTO);
@@ -388,7 +450,7 @@ The Scripta Qumranica Electronica team</body></html>";
             UpdateEditorRightsDTO updatedEditor,
             string clientId = null)
         {
-            var updatedUserPermissions = await _editionRepo.ChangeEditionEditorRights(
+            var updatedUserPermissions = await _editionRepo.ChangeEditionEditorRightsAsync(
                 editionUser,
                 editorEmail,
                 updatedEditor.mayRead,
@@ -405,7 +467,7 @@ The Scripta Qumranica Electronica team</body></html>";
             );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
-            var editionUsers = await _editionRepo.GetEditionEditorUserIds(editionUser);
+            var editionUsers = await _editionRepo.GetEditionEditorUserIdsAsync(editionUser);
             foreach (var editionUserId in editionUsers)
                 await _hubContext.Clients.GroupExcept($"user-{editionUserId.ToString()}", clientId)
                     .CreatedEditor(updatedEditorDTO);
@@ -415,7 +477,7 @@ The Scripta Qumranica Electronica team</body></html>";
 
         public async Task<EditionScriptCollectionDTO> GetEditionScriptCollection(EditionUserInfo editionUser)
         {
-            var letters = await _editionRepo.GetEditionScriptCollection(editionUser);
+            var letters = await _editionRepo.GetEditionScriptCollectionAsync(editionUser);
             var lettersSorted = letters.GroupBy(x => x.Id).ToList();
             var wkbr = new WKBReader();
             var wkr = new WKTReader();

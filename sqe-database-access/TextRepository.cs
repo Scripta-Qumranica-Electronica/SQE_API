@@ -169,7 +169,6 @@ namespace SQE.DatabaseAccess
                     }
                 }
             );
-            return null;
         }
 
         /// <summary>
@@ -468,7 +467,7 @@ namespace SQE.DatabaseAccess
                     true);
                 positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
                 var requests = await positionDataRequest.CreateRequestsAsync();
-                _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+                await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
             }
 
             return signInterpretationId;
@@ -488,7 +487,6 @@ namespace SQE.DatabaseAccess
                 await RemoveSignInterpretationAsync(editionUser, signInterpretationId);
             }
             return await _removeElementAsync(editionUser, "line_to_sign", signId);
-            return signId;
         }
 
         #endregion
@@ -1047,7 +1045,7 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         private async Task _addLineToTextFragment(EditionUserInfo editionUser, uint lineId, uint textFragmentId)
         {
-            _addElementToParentAsync(editionUser,
+            await _addElementToParentAsync(editionUser,
                 TableData.Table.line,
                 lineId,
                 textFragmentId);
@@ -1100,7 +1098,7 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         private async Task _addSignToLine(EditionUserInfo editionUser, uint? signId, uint? lineId)
         {
-            _addElementToParentAsync(editionUser,
+            await _addElementToParentAsync(editionUser,
                 TableData.Table.sign,
                 signId,
                 lineId);
@@ -1140,7 +1138,6 @@ namespace SQE.DatabaseAccess
                     }
                 }
             );
-            return null;
         }
 
 
@@ -1471,7 +1468,7 @@ namespace SQE.DatabaseAccess
                 );
             }
 
-            _addElementToParentAsync(editionUser,
+            await _addElementToParentAsync(editionUser,
                 TableData.Table.text_fragment,
                 textFragmentId,
                 manuscriptId

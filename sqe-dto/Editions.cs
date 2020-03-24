@@ -62,13 +62,34 @@ namespace SQE.API.DTO
         public string email { get; set; }
     }
 
-    public class RequestedEditorDTO : UpdateEditorRightsDTO
+    public class DetailedUpdateEditorRightsDTO : UpdateEditorRightsDTO
     {
-        public Guid token { get; set; }
         public uint editionId { get; set; }
         public string editionName { get; set; }
+        public DateTime date { get; set; }
+    }
+
+    public class AdminEditorRequestDTO : DetailedUpdateEditorRightsDTO
+    {
+        public string editorName { get; set; }
+        public string editorEmail { get; set; }
+    }
+
+    public class EditorInvitationDTO : DetailedUpdateEditorRightsDTO
+    {
+        public Guid token { get; set; }
         public string requestingAdminName { get; set; }
         public string requestingAdminEmail { get; set; }
+    }
+
+    public class EditorInvitationListDTO
+    {
+        public List<EditorInvitationDTO> editorInvitations { get; set; }
+    }
+    
+    public class AdminEditorRequestListDTO
+    {
+        public List<AdminEditorRequestDTO> editorRequests { get; set; }
     }
 
     public class TextEditionDTO

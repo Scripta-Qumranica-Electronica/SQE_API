@@ -31,12 +31,34 @@ namespace SQE.DatabaseAccess.Models
         public bool IsAdmin { get; set; }
     }
 
-    public class DetailedPermissions : Permission
+    public class EditorPermissions : Permission
     {
         public string Email { get; set; }
     }
+    
+    public class DetailedEditorPermissions : EditorPermissions
+    {
+        public uint EditionId { get; set; }
+        public string EditionName { get; set; }
+        public DateTime Date { get; set; }
+    }
+    
+    public class DetailedEditorRequestPermissions : DetailedEditorPermissions
+    {
+        public string EditorForename { get; set; }
+        public string EditorSurname { get; set; }
+        public string EditorOrganization { get; set; }
+    }
+    
+    public class DetailedEditorInvitationPermissions : DetailedEditorPermissions
+    {
+        public string AdminForename { get; set; }
+        public string AdminSurname { get; set; }
+        public string AdminOrganization { get; set; }
+        public Guid Token { get; set; }
+    }
 
-    public class DetailedEditionPermission : DetailedPermissions
+    public class DetailedEditionPermission : EditorPermissions
     {
         public uint EditionId { get; set; }
     }

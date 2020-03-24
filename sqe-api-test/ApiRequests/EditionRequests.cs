@@ -8,6 +8,26 @@ namespace SQE.ApiTest.ApiRequests
 {
     public static partial class Get
     {
+        public class V1_Editions_AdminShareRequests : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
+        {
+            /// <summary>
+            /// Requests a list of all outstanding editor requests made by the current user
+            /// </summary>
+            public V1_Editions_AdminShareRequests() : base(null)
+            {
+            }
+        }
+        
+        public class V1_Editions_EditorInvitations : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
+        {
+            /// <summary>
+            /// Requests a list of all outstanding editor requests made by the current user
+            /// </summary>
+            public V1_Editions_EditorInvitations() : base(null)
+            {
+            }
+        }
+        
         public class V1_Editions : RequestObject<EmptyInput, EditionListDTO, EmptyOutput>
         {
             /// <summary>
@@ -43,7 +63,7 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_AddEditorRequest : EditionRequestObject<DetailedEditorRightsDTO, EmptyOutput, RequestedEditorDTO>
+        public class V1_Editions_EditionId_AddEditorRequest : EditionRequestObject<DetailedEditorRightsDTO, EmptyOutput, EditorInvitationDTO>
         {
             /// <summary>
             ///     Request to add an editor to an edition

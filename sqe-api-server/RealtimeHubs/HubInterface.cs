@@ -30,7 +30,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="returnedData">Details of the new editor</param>
         /// <returns></returns>
-        Task RequestedEditor(RequestedEditorDTO returnedData);
+        Task RequestedEditor(EditorInvitationDTO returnedData);
 
         /// <summary>
         ///     broadcasts a editor has been added to the edition

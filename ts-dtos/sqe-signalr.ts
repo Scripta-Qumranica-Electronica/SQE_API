@@ -21,7 +21,11 @@ import {
 	UpdateEditorRightsDTO,
 	InviteEditorDTO,
 	DetailedEditorRightsDTO,
-	RequestedEditorDTO,
+	DetailedUpdateEditorRightsDTO,
+	AdminEditorRequestDTO,
+	EditorInvitationDTO,
+	EditorInvitationListDTO,
+	AdminEditorRequestListDTO,
 	TextEditionDTO,
 	ShareDTO,
 	DeleteTokenDTO,
@@ -235,6 +239,27 @@ export class SignalRUtilities {
 	 */
     public async postV1EditionsEditionIdAddEditorRequest(editionId: number, payload: InviteEditorDTO): Promise<void> {
         return await this._connection.invoke('PostV1EditionsEditionIdAddEditorRequest', editionId, payload);
+    }
+
+    /**
+	 * Get a list of requests issued by the current user for other users
+	 * to become editors of a shared edition
+	 *
+	 *
+	 *
+	 */
+    public async getV1EditionsAdminShareRequests(): Promise<AdminEditorRequestListDTO> {
+        return await this._connection.invoke('GetV1EditionsAdminShareRequests');
+    }
+
+    /**
+	 * Get a list of invitations issued to the current user to become an editor of a shared edition
+	 *
+	 *
+	 *
+	 */
+    public async getV1EditionsEditorInvitations(): Promise<EditorInvitationListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditorInvitations');
     }
 
     /**
@@ -684,7 +709,7 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts a editor has been requested for the edition
 	 *
 	 */
-    public connectRequestedEditor(handler: (msg: RequestedEditorDTO) => void): void {
+    public connectRequestedEditor(handler: (msg: EditorInvitationDTO) => void): void {
         this._connection.on('RequestedEditor', handler)
     }
 
@@ -692,7 +717,7 @@ export class SignalRUtilities {
 	 * Remove an existing listener that triggers when the server broadcasts a editor has been requested for the edition
 	 *
 	 */
-    public disconnectRequestedEditor(handler: (msg: RequestedEditorDTO) => void): void {
+    public disconnectRequestedEditor(handler: (msg: EditorInvitationDTO) => void): void {
         this._connection.off('RequestedEditor', handler)
     }
 
