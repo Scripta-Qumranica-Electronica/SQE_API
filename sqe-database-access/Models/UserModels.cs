@@ -25,6 +25,7 @@ namespace SQE.DatabaseAccess.Models
     {
         public bool Activated { get; set; }
         public Guid Token { get; set; }
+        public DateTime Date { get; set; }
     }
 
     public class UserEditionPermissions

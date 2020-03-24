@@ -79,7 +79,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("createArtefact");
+                listenerMethod.Add("CreatedArtefact");
             }
         }
     }
@@ -94,7 +94,7 @@ namespace SQE.ApiTest.ApiRequests
                 null
             )
             {
-                listenerMethod.Add("updateArtefact");
+                listenerMethod.Add("UpdatedArtefact");
             }
         }
     }
@@ -109,7 +109,7 @@ namespace SQE.ApiTest.ApiRequests
                 null
             )
             {
-                listenerMethod.Add("deleteArtefact");
+                listenerMethod.Add("DeletedArtefact");
             }
         }
     }

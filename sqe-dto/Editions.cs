@@ -86,7 +86,7 @@ namespace SQE.API.DTO
     {
         public List<EditorInvitationDTO> editorInvitations { get; set; }
     }
-    
+
     public class AdminEditorRequestListDTO
     {
         public List<AdminEditorRequestDTO> editorRequests { get; set; }

@@ -70,7 +70,7 @@ cleanup_code () {
         dotnet tool install -g dotnet-format
     fi
     
-    dotnet-format
+    ~/.dotnet/tools/dotnet-format 
 }
 
 ## Cleaning up code formatting

@@ -417,7 +417,7 @@ WHERE editor_user_id = @EditorUserId
     AND admin_user_id = @AdminUserId
 ";
     }
-    
+
     internal static class FindEditionEditorRequestByAdminId
     {
         internal const string GetQuery = @"
@@ -430,7 +430,7 @@ SELECT  edition_editor_request.edition_id AS EditionId,
         edition_editor_request.date AS Date,
         edition_editor_request.is_admin AS IsAdmin,
         edition_editor_request.may_lock AS MayLock,
-        edition_editor_request.may_write AS MayRead,
+        edition_editor_request.may_write AS MayWrite,
         TRUE AS MayRead
 FROM edition_editor_request
     JOIN user ON user.user_id = edition_editor_request.editor_user_id
@@ -439,7 +439,7 @@ FROM edition_editor_request
 WHERE edition_editor_request.admin_user_id = @AdminUserId
 ";
     }
-    
+
     internal static class FindEditionEditorRequestByEditorId
     {
         internal const string GetQuery = @"
@@ -453,13 +453,22 @@ SELECT  edition_editor_request.edition_id AS EditionId,
         edition_editor_request.date AS Date,
         edition_editor_request.is_admin AS IsAdmin,
         edition_editor_request.may_lock AS MayLock,
-        edition_editor_request.may_write AS MayRead,
+        edition_editor_request.may_write AS MayWrite,
         TRUE AS MayRead
 FROM edition_editor_request
     JOIN user ON user.user_id = edition_editor_request.admin_user_id
     JOIN manuscript_data_owner USING(edition_id)
     JOIN manuscript_data USING(manuscript_data_id)
 WHERE edition_editor_request.editor_user_id = @EditorUserId
+";
+    }
+
+    internal static class GetEditionEditorRequestDate
+    {
+        internal const string GetQuery = @"
+SELECT date
+FROM edition_editor_request
+WHERE token = @Token
 ";
     }
 

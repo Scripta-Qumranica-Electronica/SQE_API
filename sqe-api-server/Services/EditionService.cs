@@ -135,7 +135,8 @@ namespace SQE.API.Server.Services
                 (await _editionRepo.ListEditionsAsync(editionUser.userId, editionUser.EditionId)).First();
 
             if (updatedEditionData.copyrightHolder != null
-                || editionBeforeChanges.Collaborators != updatedEditionData.collaborators)
+                || (updatedEditionData.collaborators != null
+                    && editionBeforeChanges.Collaborators != updatedEditionData.collaborators))
                 await _editionRepo.ChangeEditionCopyrightAsync(
                     editionUser,
                     updatedEditionData.copyrightHolder,
@@ -335,7 +336,8 @@ The Scripta Qumranica Electronica team</body></html>";
                 mayLock = newEditor.mayLock,
                 mayWrite = newEditor.mayWrite,
                 mayRead = true, // New editors can always read (otherwise there is no point)
-                token = newUserToken.Token
+                token = newUserToken.Token,
+                date = newUserToken.Date
             };
             await _hubContext.Clients.Group($"user-{newUserToken.UserId.ToString()}")
                 .RequestedEditor(editorBroadcastObject);
@@ -353,7 +355,7 @@ The Scripta Qumranica Electronica team</body></html>";
         {
             if (!userId.HasValue)
                 throw new StandardExceptions.NoAuthorizationException();
-            
+
             return new AdminEditorRequestListDTO()
             {
                 editorRequests = (await _editionRepo.GetOutstandingEditionEditorRequestsAsync(userId.Value))
@@ -382,7 +384,7 @@ The Scripta Qumranica Electronica team</body></html>";
         {
             if (!userId.HasValue)
                 throw new StandardExceptions.NoAuthorizationException();
-            
+
             return new EditorInvitationListDTO()
             {
                 editorInvitations = (await _editionRepo.GetOutstandingEditionEditorInvitationsAsync(userId.Value))

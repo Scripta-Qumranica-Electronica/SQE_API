@@ -32,7 +32,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("createRois");
+                listenerMethod.Add("CreatedRoi");
             }
         }
 
@@ -50,7 +50,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("createRois");
+                listenerMethod.Add("CreatedRoisBatch");
             }
         }
 
@@ -68,9 +68,9 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("createRois");
-                listenerMethod.Add("updateRois");
-                listenerMethod.Add("deketeRois");
+                listenerMethod.Add("CreatedRoisBatch");
+                listenerMethod.Add("UpdatedRoisBatch");
+                listenerMethod.Add("DeletedRoisBatch");
             }
         }
     }
@@ -91,7 +91,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("updateRois");
+                listenerMethod.Add("UpdatedRoi");
             }
         }
 
@@ -109,7 +109,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("updateRois");
+                listenerMethod.Add("UpdatedRoisBatch");
             }
         }
     }
@@ -125,7 +125,7 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="roiId">The id of the ROI to delete</param>
             public V1_Editions_EditionId_Rois_RoiId(uint editionId, uint roiId) : base(editionId, roiId, null)
             {
-                listenerMethod.Add("deleteRois");
+                listenerMethod.Add("DeletedRoi");
             }
         }
     }

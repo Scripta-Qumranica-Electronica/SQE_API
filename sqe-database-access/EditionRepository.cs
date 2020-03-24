@@ -487,13 +487,21 @@ namespace SQE.DatabaseAccess
                             MayLock = permissions.MayLock,
                             MayWrite = permissions.MayWrite
                         });
-                    // if (recordedRequest > 0)
-                    //     throw new StandardExceptions.DataNotWrittenException(
-                    //         "record editor request to the database, please try again later");
                 }
 
                 // Complete the transaction
                 transactionScope.Complete();
+            }
+
+            // Get datetime of request
+            using (var connection = OpenConnection())
+            {
+                var date = await connection.QueryAsync<DateTime>(
+                    GetEditionEditorRequestDate.GetQuery,
+                    new { Token = editorInfo.Token });
+                if (date.Count() != 1)
+                    throw new StandardExceptions.DataNotWrittenException("generate edition share request");
+                editorInfo.Date = date.FirstOrDefault();
             }
 
             // Return the results
@@ -571,7 +579,7 @@ namespace SQE.DatabaseAccess
             using var connection = OpenConnection();
             return (await connection.QueryAsync<DetailedEditorRequestPermissions>(
                     FindEditionEditorRequestByAdminId.GetQuery,
-                    new {AdminUserId = userId})
+                    new { AdminUserId = userId })
                 ).ToList();
         }
 
@@ -586,7 +594,7 @@ namespace SQE.DatabaseAccess
             using var connection = OpenConnection();
             return (await connection.QueryAsync<DetailedEditorInvitationPermissions>(
                     FindEditionEditorRequestByEditorId.GetQuery,
-                    new {EditorUserId = userId})
+                    new { EditorUserId = userId })
                 ).ToList();
         }
 

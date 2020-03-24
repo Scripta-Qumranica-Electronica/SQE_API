@@ -35,21 +35,21 @@ namespace SQE.DatabaseAccess.Models
     {
         public string Email { get; set; }
     }
-    
+
     public class DetailedEditorPermissions : EditorPermissions
     {
         public uint EditionId { get; set; }
         public string EditionName { get; set; }
         public DateTime Date { get; set; }
     }
-    
+
     public class DetailedEditorRequestPermissions : DetailedEditorPermissions
     {
         public string EditorForename { get; set; }
         public string EditorSurname { get; set; }
         public string EditorOrganization { get; set; }
     }
-    
+
     public class DetailedEditorInvitationPermissions : DetailedEditorPermissions
     {
         public string AdminForename { get; set; }

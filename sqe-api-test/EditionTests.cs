@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -8,6 +9,7 @@ using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
+using SQE.DatabaseAccess.Models;
 using Xunit;
 
 // TODO: all the tests for sharing have been commented out, since I updated the sharing system in
@@ -29,6 +31,11 @@ namespace SQE.ApiTest
         private const string controller = "editions";
         private readonly string _addEditionEditor;
 
+        /// <summary>
+        /// This verifies that an edition can be shared and that the
+        /// submitted permission match the granted permissions
+        /// </summary>
+        /// <returns></returns>
         [Fact]
         public async Task CanAdminShareEdition()
         {
@@ -37,52 +44,23 @@ namespace SQE.ApiTest
             var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
             try
             {
-                // Set permissions for a different user to become an editor
-                var newPermissions = new DetailedEditorRightsDTO
-                {
-                    email = Request.DefaultUsers.User2.email,
-                    mayLock = true,
-                    mayWrite = true,
-                    isAdmin = true
-                };
-
                 // Act
                 // Send in the editor request 
-                var add1 = new Post.V1_Editions_EditionId_AddEditorRequest(newEdition, newPermissions);
-                var (httpResponse, shareMsg, _, listenerResponse) = await Request.Send(
-                    add1,
-                    _client,
-                    StartConnectionAsync,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User1,
-                    listenerUser: Request.DefaultUsers.User2, // User 2 will listen on SignalR for the request
-                    requestRealtime: false,
-                    listenToEdition: false
-                );
-
-                // Assert
-                httpResponse.EnsureSuccessStatusCode();
-                Assert.True(listenerResponse.mayRead);
-                Assert.True(listenerResponse.mayWrite);
-                Assert.True(listenerResponse.mayLock);
-                Assert.True(listenerResponse.isAdmin);
-                Assert.NotNull(listenerResponse.token);
+                var (_, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2);
 
                 // Act
                 // User 2 will confirm the request using the token it received
-                var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(listenerResponse.token, newEdition);
-                var (httpConfirmResponse, shareConfirmMsg, _, listenerConfirmResponse) = await Request.Send(
-                    confirmRequest,
-                    _client,
-                    StartConnectionAsync,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User2,
-                    listenerUser: Request.DefaultUsers.User1, // User 1 will listen on the SignalR edition room for news of confirmation
-                    requestRealtime: false
-                );
+                var (httpConfirmResponse, shareConfirmMsg, listenerConfirmResponse) =
+                    await confirmEditor(
+                        newEdition,
+                        listenerResponse.token,
+                        Request.DefaultUsers.User2,
+                        Request.DefaultUsers.User1);
 
                 // Assert
-                httpConfirmResponse.EnsureSuccessStatusCode();
                 Assert.Equal(shareConfirmMsg.isAdmin, listenerConfirmResponse.isAdmin);
                 Assert.Equal(shareConfirmMsg.mayWrite, listenerConfirmResponse.mayWrite);
                 Assert.Equal(shareConfirmMsg.mayLock, listenerConfirmResponse.mayLock);
@@ -125,185 +103,253 @@ namespace SQE.ApiTest
                 await EditionHelpers.DeleteEdition(_client, newEdition);
             }
         }
-        //
-        // [Fact]
-        // public async Task CanChangeEditionSharePermissions()
-        // {
-        //     // Arrange
-        //     var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-        //
-        //     try
-        //     {
-        //         var newPermissions = new CreateEditorRightsDTO
-        //         {
-        //             email = Request.DefaultUsers.User2.email,
-        //             mayLock = false,
-        //             mayWrite = false,
-        //             isAdmin = false
-        //         };
-        //
-        //         // Act
-        //         var add1 = new Post.V1_Editions_EditionId_Editors(newEdition, newPermissions);
-        //         var (_, shareMsg, _, _) = await Request.Send(
-        //             add1,
-        //             _client,
-        //             null,
-        //             auth: true
-        //         );
-        //
-        //         // Assert
-        //         Assert.True(shareMsg.mayRead);
-        //         Assert.False(shareMsg.mayWrite);
-        //         Assert.False(shareMsg.mayLock);
-        //         Assert.False(shareMsg.isAdmin);
-        //
-        //         var get1 = new Get.V1_Editions_EditionId(newEdition);
-        //         var (_, user2Msg, _, _) = await Request.Send(
-        //             get1,
-        //             _client,
-        //             null,
-        //             auth: true,
-        //             user1: Request.DefaultUsers.User2
-        //         );
-        //         Assert.False(user2Msg.primary.permission.mayWrite);
-        //         Assert.False(user2Msg.primary.permission.isAdmin);
-        //
-        //         // Act
-        //         newPermissions.mayWrite = true;
-        //         newPermissions.isAdmin = true;
-        //         var add2 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(
-        //             newEdition,
-        //             newPermissions.email,
-        //             newPermissions
-        //         );
-        //         var (_, share2Msg, _, _) = await Request.Send(
-        //             add2,
-        //             _client,
-        //             null,
-        //             auth: true
-        //         );
-        //
-        //         // Assert
-        //         Assert.True(share2Msg.mayRead);
-        //         Assert.True(share2Msg.mayWrite);
-        //         Assert.False(share2Msg.mayLock);
-        //         Assert.True(share2Msg.isAdmin);
-        //
-        //         var (_, user2Msg2, _, _) = await Request.Send(
-        //             get1,
-        //             _client,
-        //             null,
-        //             auth: true,
-        //             user1: Request.DefaultUsers.User2
-        //         );
-        //         Assert.True(user2Msg2.primary.permission.mayWrite);
-        //         Assert.True(user2Msg2.primary.permission.isAdmin);
-        //
-        //         // Act
-        //         newPermissions.mayLock = true;
-        //         var add3 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(
-        //             newEdition,
-        //             newPermissions.email,
-        //             newPermissions
-        //         );
-        //         var (_, share3Msg, _, _) = await Request.Send(
-        //             add3,
-        //             _client,
-        //             null,
-        //             auth: true,
-        //             user1: Request.DefaultUsers.User2
-        //         );
-        //
-        //         // Assert
-        //         Assert.True(share3Msg.mayRead);
-        //         Assert.True(share3Msg.mayWrite);
-        //         Assert.True(share3Msg.mayLock);
-        //         Assert.True(share3Msg.isAdmin);
-        //     }
-        //     finally
-        //     {
-        //         // Cleanup
-        //         await EditionHelpers.DeleteEdition(_client, newEdition);
-        //     }
-        // }
-        //
-        // // TODO: finish updating tests to use new request objects.
-        // [Fact]
-        // public async Task CanDefaultShareEdition()
-        // {
-        //     // Arrange
-        //     var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-        //
-        //     try
-        //     {
-        //         var newPermissions = new CreateEditorRightsDTO
-        //         {
-        //             email = Request.DefaultUsers.User2.email
-        //         };
-        //
-        //         // Act
-        //         var (shareResponse, shareMsg) =
-        //             await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-        //                 _client,
-        //                 HttpMethod.Post,
-        //                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-        //                 newPermissions,
-        //                 await Request.GetJwtViaHttpAsync(
-        //                     _client,
-        //                     new Request.UserAuthDetails
-        //                     {
-        //                         email = Request.DefaultUsers.User1.email,
-        //                         password = Request.DefaultUsers.User1.password
-        //                     }
-        //                 )
-        //             );
-        //
-        //         // Assert
-        //         shareResponse.EnsureSuccessStatusCode();
-        //         Assert.True(shareMsg.mayRead);
-        //         Assert.False(shareMsg.mayWrite);
-        //         Assert.False(shareMsg.mayLock);
-        //         Assert.False(shareMsg.isAdmin);
-        //
-        //         var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-        //             )
-        //         );
-        //         user1Resp.EnsureSuccessStatusCode();
-        //
-        //         var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
-        //             )
-        //         );
-        //         user2Resp.EnsureSuccessStatusCode();
-        //         Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
-        //         Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
-        //         Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
-        //         Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
-        //         Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
-        //         Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
-        //         user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
-        //     }
-        //     finally
-        //     {
-        //         // Cleanup
-        //         await EditionHelpers.DeleteEdition(_client, newEdition);
-        //     }
-        // }
+
+        /// <summary>
+        /// This checks to make sure that an admin can see invitations to edit
+        /// that have not yet been accepted.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanViewOutstandingShareRequests()
+        {
+            // Arrange
+            // Grab a new edition
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            try
+            {
+                // Act
+                // Send in the editor request 
+                var (httpResponse, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2);
+
+                // Assert
+                httpResponse.EnsureSuccessStatusCode();
+                Assert.True(listenerResponse.mayRead);
+                Assert.True(listenerResponse.mayWrite);
+                Assert.True(listenerResponse.mayLock);
+                Assert.True(listenerResponse.isAdmin);
+                Assert.NotNull(listenerResponse.token);
+
+                // Act
+                // Check to see if outstanding request is accessible to admin
+                var requestAvailable = new Get.V1_Editions_AdminShareRequests();
+                var (httpShareRequestResponse, shareRequestMsg, _, _) = await Request.Send(
+                    requestAvailable,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User1,
+                    requestRealtime: false
+                );
+
+                // Assert
+                httpShareRequestResponse.EnsureSuccessStatusCode();
+                Assert.NotEmpty(shareRequestMsg.editorRequests);
+                var foundMatch = false;
+                foreach (var share in shareRequestMsg.editorRequests)
+                {
+                    if (share.editionId == listenerResponse.editionId && share.editorEmail == Request.DefaultUsers.User2.email)
+                    {
+                        Assert.Equal(share.date, listenerResponse.date);
+                        Assert.Equal(share.mayLock, listenerResponse.mayLock);
+                        Assert.Equal(share.mayRead, listenerResponse.mayRead);
+                        Assert.Equal(share.mayWrite, listenerResponse.mayWrite);
+                        Assert.Equal(share.isAdmin, listenerResponse.isAdmin);
+                        foundMatch = true;
+                    }
+                }
+                Assert.True(foundMatch);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
+
+        /// <summary>
+        /// This checks whether a user can see invitations to become an editor
+        /// that have not yet been accepted.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanViewOutstandingShareInvitations()
+        {
+            // Arrange
+            // Grab a new edition
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            try
+            {
+                // Act
+                // Send in the editor request 
+                var (_, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2);
+
+                // Act
+                // Check to see if outstanding request is accessible to user who received the invitation
+                var requestAvailable = new Get.V1_Editions_EditorInvitations();
+                var (httpShareRequestResponse, shareRequestMsg, _, _) = await Request.Send(
+                    requestAvailable,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User2,
+                    requestRealtime: false
+                );
+
+                // Assert
+                httpShareRequestResponse.EnsureSuccessStatusCode();
+                Assert.NotEmpty(shareRequestMsg.editorInvitations);
+                var foundMatch = false;
+                foreach (var share in shareRequestMsg.editorInvitations)
+                {
+                    if (share.editionId == listenerResponse.editionId && share.requestingAdminEmail == Request.DefaultUsers.User1.email)
+                    {
+                        Assert.Equal(share.date, listenerResponse.date);
+                        Assert.Equal(share.mayLock, listenerResponse.mayLock);
+                        Assert.Equal(share.mayRead, listenerResponse.mayRead);
+                        Assert.Equal(share.mayWrite, listenerResponse.mayWrite);
+                        Assert.Equal(share.isAdmin, listenerResponse.isAdmin);
+                        Assert.Equal(share.token, listenerResponse.token);
+                        foundMatch = true;
+                    }
+                }
+                Assert.True(foundMatch);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
+
+        /// <summary>
+        /// This creates a new edition, shares it with minimal rights to another user,
+        /// then grants that second user admin rights, then the second user
+        /// performs an admin operation.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanChangeEditionSharePermissions()
+        {
+            // Arrange
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
+            {
+                // Arrange
+                var newPermissions = new InviteEditorDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = false,
+                    mayWrite = false,
+                    isAdmin = false
+                };
+
+                // Share the edition
+                var (_, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2,
+                    newPermissions);
+                await confirmEditor(
+                        newEdition,
+                        listenerResponse.token,
+                        Request.DefaultUsers.User2,
+                        Request.DefaultUsers.User1);
+
+                // Act 
+                // Check permissions for edition info request
+                var get1 = new Get.V1_Editions_EditionId(newEdition);
+                var (_, user2Msg, _, _) = await Request.Send(
+                    get1,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User2
+                );
+
+                // Assert
+                // Permissions are correct
+                Assert.False(user2Msg.primary.permission.mayWrite);
+                Assert.False(user2Msg.primary.permission.isAdmin);
+
+                // Arrange (change permissions)
+                var updatePermissions = new DetailedUpdateEditorRightsDTO()
+                {
+                    mayWrite = true,
+                    isAdmin = true,
+                    mayRead = true,
+                    mayLock = false
+                };
+
+                // Act
+                // Change permissions
+                var add2 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(
+                    newEdition,
+                    newPermissions.email,
+                    updatePermissions
+                );
+                var (_, share2Msg, _, _) = await Request.Send(
+                    add2,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User1
+                );
+
+                // Assert
+                Assert.True(share2Msg.mayRead);
+                Assert.True(share2Msg.mayWrite);
+                Assert.False(share2Msg.mayLock);
+                Assert.True(share2Msg.isAdmin);
+
+                // Act 
+                // Check permissions for edition info request
+                var (_, user2Msg2, _, _) = await Request.Send(
+                    get1,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User2
+                );
+
+                // Assert
+                Assert.True(user2Msg2.primary.permission.mayWrite);
+                Assert.True(user2Msg2.primary.permission.isAdmin);
+
+                // Act
+                // Check that user2 really can perform admin actions
+                updatePermissions.mayLock = true;
+                var add3 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(
+                    newEdition,
+                    newPermissions.email,
+                    updatePermissions
+                );
+                var (_, share3Msg, _, _) = await Request.Send(
+                    add3,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User2
+                );
+
+                // Assert
+                Assert.True(share3Msg.mayRead);
+                Assert.True(share3Msg.mayWrite);
+                Assert.True(share3Msg.mayLock);
+                Assert.True(share3Msg.isAdmin);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
 
         // TODO: write the rest of the tests.
         // TODO: finish updating tests to use new request objects.
@@ -353,129 +399,131 @@ namespace SQE.ApiTest
             await EditionHelpers.CreateCopyOfEdition(_client, editionId, "second edition");
         }
 
-        // TODO: finish updating test to use new request objects.
-        // [Fact]
-        // public async Task CanLockableShareEdition()
-        // {
-        //     // Arrange
-        //     var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-        //
-        //     try
-        //     {
-        //         var newPermissions = new CreateEditorRightsDTO
-        //         {
-        //             email = Request.DefaultUsers.User2.email,
-        //             mayLock = true
-        //         };
-        //
-        //         // Act
-        //         var (shareResponse, shareMsg) =
-        //             await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-        //                 _client,
-        //                 HttpMethod.Post,
-        //                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-        //                 newPermissions,
-        //                 await Request.GetJwtViaHttpAsync(
-        //                     _client,
-        //                     new Request.UserAuthDetails
-        //                     {
-        //                         email = Request.DefaultUsers.User1.email,
-        //                         password = Request.DefaultUsers.User1.password
-        //                     }
-        //                 )
-        //             );
-        //
-        //         // Assert
-        //         shareResponse.EnsureSuccessStatusCode();
-        //         Assert.True(shareMsg.mayRead);
-        //         Assert.False(shareMsg.mayWrite);
-        //         Assert.True(shareMsg.mayLock);
-        //         Assert.False(shareMsg.isAdmin);
-        //
-        //         var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-        //             )
-        //         );
-        //         user1Resp.EnsureSuccessStatusCode();
-        //
-        //         var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
-        //             )
-        //         );
-        //         user2Resp.EnsureSuccessStatusCode();
-        //         Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
-        //         Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
-        //         Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
-        //         Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
-        //         Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
-        //         Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
-        //         user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
-        //     }
-        //     finally
-        //     {
-        //         // Cleanup
-        //         await EditionHelpers.DeleteEdition(_client, newEdition);
-        //     }
-        // }
-        //
-        // // TODO: finish updating test to use new request objects.
-        // [Fact]
-        // public async Task CanNotAdminWithoutReadShareEdition()
-        // {
-        //     // Arrange
-        //     var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-        //
-        //     try
-        //     {
-        //         var newPermissions = new CreateEditorRightsDTO
-        //         {
-        //             email = Request.DefaultUsers.User2.email,
-        //             mayRead = false,
-        //             mayLock = false,
-        //             mayWrite = false,
-        //             isAdmin = true
-        //         };
-        //
-        //         // Act
-        //         var (shareResponse, shareMsg) =
-        //             await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-        //                 _client,
-        //                 HttpMethod.Post,
-        //                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-        //                 newPermissions,
-        //                 await Request.GetJwtViaHttpAsync(
-        //                     _client,
-        //                     new Request.UserAuthDetails
-        //                     {
-        //                         email = Request.DefaultUsers.User1.email,
-        //                         password = Request.DefaultUsers.User1.password
-        //                     }
-        //                 )
-        //             );
-        //
-        //         // Assert
-        //         Assert.Equal(HttpStatusCode.BadRequest, shareResponse.StatusCode);
-        //     }
-        //     finally
-        //     {
-        //         // Cleanup
-        //         await EditionHelpers.DeleteEdition(_client, newEdition);
-        //     }
-        // }
+        /// <summary>
+        /// Check if we can share an edition readonly with locking permission
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanLockableShareEdition()
+        {
+            // Arrange
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
+            {
+                // Arrange
+                var newPermissions = new InviteEditorDTO()
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayWrite = false,
+                    isAdmin = false,
+                    mayLock = true
+                };
+
+                // Act
+                var (shareResponse, shareMsg) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2,
+                    newPermissions);
+                await confirmEditor(
+                    newEdition,
+                    shareMsg.token,
+                    Request.DefaultUsers.User2,
+                    Request.DefaultUsers.User1);
+
+                // Assert
+                Assert.True(shareMsg.mayRead);
+                Assert.False(shareMsg.mayWrite);
+                Assert.True(shareMsg.mayLock);
+                Assert.False(shareMsg.isAdmin);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
+
+        [Fact]
+        public async Task CanNotAdminWithoutReadShareEdition()
+        {
+            // Arrange
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
+            {
+                // Arrange
+                var newPermissions = new InviteEditorDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = false,
+                    mayWrite = false,
+                    isAdmin = false
+                };
+
+                // Share the edition
+                var (_, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2,
+                    newPermissions);
+                await confirmEditor(
+                        newEdition,
+                        listenerResponse.token,
+                        Request.DefaultUsers.User2,
+                        Request.DefaultUsers.User1);
+
+                // Act 
+                // Check permissions for edition info request
+                var get1 = new Get.V1_Editions_EditionId(newEdition);
+                var (_, user2Msg, _, _) = await Request.Send(
+                    get1,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User2
+                );
+
+                // Assert
+                // Permissions are correct
+                Assert.False(user2Msg.primary.permission.mayWrite);
+                Assert.False(user2Msg.primary.permission.isAdmin);
+
+                // Arrange (change permissions)
+                var updatePermissions = new DetailedUpdateEditorRightsDTO()
+                {
+                    mayWrite = false,
+                    isAdmin = true,
+                    mayRead = false,
+                    mayLock = false
+                };
+
+                // Act
+                // Change permissions
+                var add2 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(
+                    newEdition,
+                    newPermissions.email,
+                    updatePermissions
+                );
+                var (share2Response, share2Msg, _, _) = await Request.Send(
+                    add2,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User1,
+                    shouldSucceed: false
+                );
+
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, share2Response.StatusCode);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
 
         // TODO: finish updating test to use new request objects.
         [Fact]
@@ -509,261 +557,296 @@ namespace SQE.ApiTest
             await EditionHelpers.DeleteEdition(_client, editionId);
         }
 
-        // TODO: finish updating test to use new request objects.
-        // [Fact]
-        // public async Task CanNotWriteWithoutReadShareEdition()
-        // {
-        //     // Arrange
-        //     var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-        //
-        //     try
-        //     {
-        //         var newPermissions = new CreateEditorRightsDTO
-        //         {
-        //             email = Request.DefaultUsers.User2.email,
-        //             mayRead = false,
-        //             mayLock = false,
-        //             mayWrite = true,
-        //             isAdmin = false
-        //         };
-        //
-        //         // Act
-        //         var (shareResponse, shareMsg) =
-        //             await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-        //                 _client,
-        //                 HttpMethod.Post,
-        //                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-        //                 newPermissions,
-        //                 await Request.GetJwtViaHttpAsync(
-        //                     _client,
-        //                     new Request.UserAuthDetails
-        //                     {
-        //                         email = Request.DefaultUsers.User1.email,
-        //                         password = Request.DefaultUsers.User1.password
-        //                     }
-        //                 )
-        //             );
-        //
-        //         // Assert
-        //         Assert.Equal(HttpStatusCode.BadRequest, shareResponse.StatusCode);
-        //     }
-        //     finally
-        //     {
-        //         // Cleanup
-        //         await EditionHelpers.DeleteEdition(_client, newEdition);
-        //     }
-        // }
-        //
-        // // TODO: finish updating test to use new request objects.
-        // [Fact]
-        // public async Task CanProperlyDeleteSharedEdition()
-        // {
-        //     // Arrange
-        //     var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-        //     var notDeleted = true;
-        //
-        //     try
-        //     {
-        //         var newPermissions = new CreateEditorRightsDTO
-        //         {
-        //             email = Request.DefaultUsers.User2.email,
-        //             mayLock = true,
-        //             mayWrite = true,
-        //             isAdmin = false
-        //         };
-        //
-        //         // Act
-        //         var (shareResponse, shareMsg) =
-        //             await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-        //                 _client,
-        //                 HttpMethod.Post,
-        //                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-        //                 newPermissions,
-        //                 await Request.GetJwtViaHttpAsync(
-        //                     _client,
-        //                     new Request.UserAuthDetails
-        //                     {
-        //                         email = Request.DefaultUsers.User1.email,
-        //                         password = Request.DefaultUsers.User1.password
-        //                     }
-        //                 )
-        //             );
-        //
-        //         var (deleteResponse, deleteMsg) = await Request.SendHttpRequestAsync<string, string>(
-        //             _client,
-        //             HttpMethod.Delete,
-        //             "/v1/editions/" + newEdition,
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
-        //             )
-        //         );
-        //
-        //         // Assert
-        //         shareResponse.EnsureSuccessStatusCode();
-        //         Assert.True(shareMsg.mayRead);
-        //         Assert.True(shareMsg.mayWrite);
-        //         Assert.True(shareMsg.mayLock);
-        //         Assert.False(shareMsg.isAdmin);
-        //         deleteResponse.EnsureSuccessStatusCode();
-        //
-        //         var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-        //             )
-        //         );
-        //         user1Resp.EnsureSuccessStatusCode();
-        //
-        //         var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
-        //             )
-        //         );
-        //         Assert.Equal(HttpStatusCode.Forbidden, user2Resp.StatusCode);
-        //         Assert.NotNull(user1Msg);
-        //
-        //         // Act (final delete)
-        //         var (delete2Response, delete2Msg) = await Request.SendHttpRequestAsync<string, string>(
-        //             _client,
-        //             HttpMethod.Delete,
-        //             "/v1/editions/" + newEdition,
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-        //             )
-        //         );
-        //
-        //         // Assert
-        //         Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
-        //                                                                              // Kill the edition for real
-        //         await EditionHelpers.DeleteEdition(
-        //             _client,
-        //             newEdition,
-        //             true,
-        //             true,
-        //             new Request.UserAuthDetails
-        //             { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-        //         );
-        //         var (user1Resp2, user1Msg2) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-        //             )
-        //         );
-        //         if (user1Resp2.StatusCode == HttpStatusCode.NoContent)
-        //             notDeleted = false;
-        //         user1Resp2.EnsureSuccessStatusCode();
-        //         Assert.Null(user1Msg2);
-        //     }
-        //     finally
-        //     {
-        //         // Cleanup
-        //         if (notDeleted)
-        //             await EditionHelpers.DeleteEdition(_client, newEdition);
-        //     }
-        //
-        //
-        //     //Todo: maybe run a database check here to ensure that all references to newEdition have been removed from all *_owner tables
-        // }
-        //
-        // // TODO: finish updating test to use new request objects.
-        // [Fact]
-        // public async Task CanWriteShareEdition()
-        // {
-        //     // Arrange
-        //     var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-        //     try
-        //     {
-        //         var newPermissions = new CreateEditorRightsDTO
-        //         {
-        //             email = Request.DefaultUsers.User2.email,
-        //             mayWrite = true
-        //         };
-        //
-        //         // Act
-        //         var (shareResponse, shareMsg) =
-        //             await Request.SendHttpRequestAsync<CreateEditorRightsDTO, CreateEditorRightsDTO>(
-        //                 _client,
-        //                 HttpMethod.Post,
-        //                 _addEditionEditor.Replace("$EditionId", newEdition.ToString()),
-        //                 newPermissions,
-        //                 await Request.GetJwtViaHttpAsync(
-        //                     _client,
-        //                     new Request.UserAuthDetails
-        //                     {
-        //                         email = Request.DefaultUsers.User1.email,
-        //                         password = Request.DefaultUsers.User1.password
-        //                     }
-        //                 )
-        //             );
-        //
-        //         // Assert
-        //         shareResponse.EnsureSuccessStatusCode();
-        //         Assert.True(shareMsg.mayRead);
-        //         Assert.True(shareMsg.mayWrite);
-        //         Assert.False(shareMsg.mayLock);
-        //         Assert.False(shareMsg.isAdmin);
-        //
-        //         var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
-        //             )
-        //         );
-        //         user1Resp.EnsureSuccessStatusCode();
-        //
-        //         var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-        //             _client,
-        //             HttpMethod.Get,
-        //             $"/v1/editions/{newEdition}",
-        //             null,
-        //             await Request.GetJwtViaHttpAsync(
-        //                 _client,
-        //                 new Request.UserAuthDetails
-        //                 { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
-        //             )
-        //         );
-        //         user2Resp.EnsureSuccessStatusCode();
-        //         Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
-        //         Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
-        //         Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
-        //         Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
-        //         Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
-        //         Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
-        //         user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
-        //     }
-        //     finally
-        //     {
-        //         // Cleanup
-        //         await EditionHelpers.DeleteEdition(_client, newEdition);
-        //     }
-        // }
+        [Fact]
+        public async Task CanNotWriteWithoutReadShareEdition()
+        {
+            // Arrange
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+
+            try
+            {
+                // Arrange
+                var newPermissions = new InviteEditorDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = false,
+                    mayWrite = false,
+                    isAdmin = false
+                };
+
+                // Share the edition
+                var (_, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2,
+                    newPermissions);
+                await confirmEditor(
+                        newEdition,
+                        listenerResponse.token,
+                        Request.DefaultUsers.User2,
+                        Request.DefaultUsers.User1);
+
+                // Act 
+                // Check permissions for edition info request
+                var get1 = new Get.V1_Editions_EditionId(newEdition);
+                var (_, user2Msg, _, _) = await Request.Send(
+                    get1,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User2
+                );
+
+                // Assert
+                // Permissions are correct
+                Assert.False(user2Msg.primary.permission.mayWrite);
+                Assert.False(user2Msg.primary.permission.isAdmin);
+
+                // Arrange (change permissions)
+                var updatePermissions = new DetailedUpdateEditorRightsDTO()
+                {
+                    mayWrite = true,
+                    isAdmin = false,
+                    mayRead = false,
+                    mayLock = false
+                };
+
+                // Act
+                // Change permissions
+                var add2 = new Put.V1_Editions_EditionId_Editors_EditorEmailId(
+                    newEdition,
+                    newPermissions.email,
+                    updatePermissions
+                );
+                var (share2Response, share2Msg, _, _) = await Request.Send(
+                    add2,
+                    _client,
+                    null,
+                    auth: true,
+                    requestUser: Request.DefaultUsers.User1,
+                    shouldSucceed: false
+                );
+
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, share2Response.StatusCode);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
+
+        [Fact]
+        public async Task CanProperlyDeleteSharedEdition()
+        {
+            // Arrange
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            var notDeleted = true;
+
+            try
+            {
+                // Arrange
+                var newPermissions = new InviteEditorDTO
+                {
+                    email = Request.DefaultUsers.User2.email,
+                    mayLock = true,
+                    mayWrite = true,
+                    isAdmin = false
+                };
+
+                // Share the edition
+                var (_, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2,
+                    newPermissions);
+                await confirmEditor(
+                    newEdition,
+                    listenerResponse.token,
+                    Request.DefaultUsers.User2,
+                    Request.DefaultUsers.User1);
+
+                var (deleteResponse, deleteMsg) = await Request.SendHttpRequestAsync<string, string>(
+                    _client,
+                    HttpMethod.Delete,
+                    "/v1/editions/" + newEdition,
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                    )
+                );
+
+                // Assert
+                deleteResponse.EnsureSuccessStatusCode();
+
+                var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
+                    _client,
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+                user1Resp.EnsureSuccessStatusCode();
+
+                var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
+                    _client,
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                    )
+                );
+                Assert.Equal(HttpStatusCode.Forbidden, user2Resp.StatusCode);
+                Assert.NotNull(user1Msg);
+
+                // Act (final delete)
+                var (delete2Response, delete2Msg) = await Request.SendHttpRequestAsync<string, string>(
+                    _client,
+                    HttpMethod.Delete,
+                    "/v1/editions/" + newEdition,
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+
+                // Assert
+                Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
+                                                                                     // Kill the edition for real
+                await EditionHelpers.DeleteEdition(
+                    _client,
+                    newEdition,
+                    true,
+                    true,
+                    new Request.UserAuthDetails
+                    { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                );
+                var (user1Resp2, user1Msg2) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
+                    _client,
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+                if (user1Resp2.StatusCode == HttpStatusCode.NoContent)
+                    notDeleted = false;
+                user1Resp2.EnsureSuccessStatusCode();
+                Assert.Null(user1Msg2);
+            }
+            finally
+            {
+                // Cleanup
+                if (notDeleted)
+                    await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+
+
+            //Todo: maybe run a database check here to ensure that all references to newEdition have been removed from all *_owner tables
+        }
+
+        [Fact]
+        public async Task CanWriteShareEdition()
+        {
+            // Arrange
+            var newPermissions = new InviteEditorDTO
+            {
+                email = Request.DefaultUsers.User2.email,
+                mayLock = false,
+                mayWrite = true,
+                isAdmin = false
+            };
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            try
+            {
+                // Arrange
+                var (_, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2,
+                    newPermissions);
+                await confirmEditor(
+                    newEdition,
+                    listenerResponse.token,
+                    Request.DefaultUsers.User2,
+                    Request.DefaultUsers.User1);
+                const string newName = "My cool new name";
+                var update = new EditionUpdateRequestDTO()
+                {
+                    name = newName,
+                    collaborators = null,
+                    copyrightHolder = null
+                };
+
+                // Act
+                var changeNameReq = new Put.V1_Editions_EditionId(newEdition, update);
+                var (updateResp, updateMsg, _, listenerMsg) = await Request.Send(
+                    changeNameReq,
+                    _client,
+                    StartConnectionAsync,
+                    auth: true,
+                    requestRealtime: false,
+                    requestUser: Request.DefaultUsers.User2,
+                    listenerUser: Request.DefaultUsers.User1);
+
+                // Assert
+                Assert.Equal(update.name, updateMsg.name);
+                Assert.Equal(update.name, listenerMsg.name);
+
+                var (user1Resp, user1Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
+                    _client,
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    )
+                );
+                user1Resp.EnsureSuccessStatusCode();
+
+                var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
+                    _client,
+                    HttpMethod.Get,
+                    $"/v1/editions/{newEdition}",
+                    null,
+                    await Request.GetJwtViaHttpAsync(
+                        _client,
+                        new Request.UserAuthDetails
+                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                    )
+                );
+                user2Resp.EnsureSuccessStatusCode();
+                Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
+                Assert.Equal(user1Msg.primary.copyright, user2Msg.primary.copyright);
+                Assert.Equal(user1Msg.primary.isPublic, user2Msg.primary.isPublic);
+                Assert.Equal(user1Msg.primary.locked, user2Msg.primary.locked);
+                Assert.Equal(user1Msg.primary.name, user2Msg.primary.name);
+                Assert.Equal(user1Msg.primary.thumbnailUrl, user2Msg.primary.thumbnailUrl);
+                user1Msg.primary.lastEdit.ShouldDeepEqual(user2Msg.primary.lastEdit);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
 
         // TODO: finish updating test to use new request objects.
         /// <summary>
@@ -995,6 +1078,94 @@ namespace SQE.ApiTest
             Assert.True(msg2.name != oldName);
             Assert.True(msg2.name == name);
             Assert.True(msg2.id == editionId);
+        }
+
+        /// <summary>
+        /// This creates a share edition request. It uses a realtime listener to check that
+        /// the user who was requested as an editor receives realtime notification of the request.
+        /// </summary>
+        /// <param name="editionId">The edition being shared</param>
+        /// <param name="user1">The user initiating the share request</param>
+        /// <param name="user2">The user being requested as an editor</param>
+        /// <param name="permissionRequest">The permissions being requested for user2</param>
+        /// <param name="shouldSucceed">Whether or not the request should succeed</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private async Task<(HttpResponseMessage requesterResponse, EditorInvitationDTO listenerResponse)> shareEdition(uint editionId,
+            Request.UserAuthDetails user1, Request.UserAuthDetails user2, InviteEditorDTO permissionRequest = null, bool shouldSucceed = true)
+        {
+            if (permissionRequest == null)
+                permissionRequest = new InviteEditorDTO
+                {
+                    email = user2.email,
+                    mayLock = true,
+                    mayWrite = true,
+                    isAdmin = true
+                };
+
+            if (user2.email != permissionRequest.email)
+                throw new Exception("user2 must be the same user as in the permissionRequest");
+
+            var add1 = new Post.V1_Editions_EditionId_AddEditorRequest(editionId, permissionRequest);
+            var (httpResponse, _, _, listenerResponse) = await Request.Send(
+                add1,
+                _client,
+                StartConnectionAsync,
+                auth: true,
+                requestUser: user1,
+                listenerUser: user2, // User 2 will listen on SignalR for the request
+                requestRealtime: false,
+                listenToEdition: false
+            );
+
+            if (shouldSucceed)
+            {
+                httpResponse.EnsureSuccessStatusCode();
+                Assert.True(listenerResponse.mayRead);
+                Assert.Equal(permissionRequest.mayWrite, listenerResponse.mayWrite);
+                Assert.Equal(permissionRequest.mayLock, listenerResponse.mayLock);
+                Assert.Equal(permissionRequest.isAdmin, listenerResponse.isAdmin);
+                Assert.NotNull(listenerResponse.token);
+            }
+
+            return (httpResponse, listenerResponse);
+        }
+
+        /// <summary>
+        /// A convenience method to confirm an editor invitation, this uses a realtime listener
+        /// to confirm that the admin who made the request is notified of the acceptance.
+        /// </summary>
+        /// <param name="editionId"><The edition being shared/param>
+        /// <param name="token">The token for the share invitation</param>
+        /// <param name="editor">The user object of the editor who accepts the invitation</param>
+        /// <param name="admin">The user object of the admin who made the share request</param>
+        /// <param name="shouldSucceed">Whether or not the operation is expected to succeed</param>
+        /// <returns></returns>
+        private async Task<(
+            HttpResponseMessage httpResponse,
+            DetailedEditorRightsDTO httpMessage,
+            DetailedEditorRightsDTO listenerMessage
+            )> confirmEditor(uint editionId, Guid token, Request.UserAuthDetails editor, Request.UserAuthDetails admin,
+                bool shouldSucceed = true)
+        {
+            var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(token, editionId);
+            var (httpConfirmResponse, shareConfirmMsg, _, listenerConfirmResponse) = await Request.Send(
+                confirmRequest,
+                _client,
+                StartConnectionAsync,
+                auth: true,
+                requestUser: editor,
+                listenerUser: admin, // User 1 will listen on the SignalR edition room for news of confirmation
+                requestRealtime: false
+            );
+
+            if (shouldSucceed)
+            {
+                httpConfirmResponse.EnsureSuccessStatusCode();
+                shareConfirmMsg.ShouldDeepEqual(listenerConfirmResponse);
+            }
+
+            return (httpConfirmResponse, shareConfirmMsg, listenerConfirmResponse);
         }
     }
 }

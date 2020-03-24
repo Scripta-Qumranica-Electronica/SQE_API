@@ -17,8 +17,8 @@ namespace SQE.ApiTest.ApiRequests
             {
             }
         }
-        
-        public class V1_Editions_EditorInvitations : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
+
+        public class V1_Editions_EditorInvitations : RequestObject<EmptyInput, EditorInvitationListDTO, EmptyOutput>
         {
             /// <summary>
             /// Requests a list of all outstanding editor requests made by the current user
@@ -27,7 +27,7 @@ namespace SQE.ApiTest.ApiRequests
             {
             }
         }
-        
+
         public class V1_Editions : RequestObject<EmptyInput, EditionListDTO, EmptyOutput>
         {
             /// <summary>
@@ -63,14 +63,14 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_AddEditorRequest : EditionRequestObject<DetailedEditorRightsDTO, EmptyOutput, EditorInvitationDTO>
+        public class V1_Editions_EditionId_AddEditorRequest : EditionRequestObject<InviteEditorDTO, EmptyOutput, EditorInvitationDTO>
         {
             /// <summary>
             ///     Request to add an editor to an edition
             /// </summary>
             /// <param name="editionId">The editionId for the desired edition</param>
             /// <param name="payload">An object containing the settings for the editor and editor rights</param>
-            public V1_Editions_EditionId_AddEditorRequest(uint editionId, DetailedEditorRightsDTO payload) : base(
+            public V1_Editions_EditionId_AddEditorRequest(uint editionId, InviteEditorDTO payload) : base(
                 editionId,
                 null,
                 payload
@@ -109,7 +109,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("updateEditionEditor");
+                listenerMethod.Add("UpdatedEditionEditor");
             }
         }
 
@@ -126,7 +126,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("updateEdition");
+                listenerMethod.Add("UpdatedEdition");
             }
         }
     }
@@ -148,7 +148,7 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _optional = optional;
                 _token = token;
-                listenerMethod.Add("deleteEdition");
+                listenerMethod.Add("DeletedEdition");
             }
 
             protected override string HttpPath()

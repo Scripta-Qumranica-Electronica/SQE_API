@@ -23,222 +23,222 @@ namespace SQE.API.Server.RealtimeHubs
 {
     public partial class MainHub
     {
-/// <summary>
+        /// <summary>
         ///     Adds an editor to the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
-[Authorize]
-public async Task PostV1EditionsEditionIdAddEditorRequest(uint editionId, InviteEditorDTO payload)
+        [Authorize]
+        public async Task PostV1EditionsEditionIdAddEditorRequest(uint editionId, InviteEditorDTO payload)
 
-    {
-        try
         {
-                        await _editionService.RequestNewEditionEditor(                await _userService.GetCurrentUserObjectAsync(editionId, admin: true),                payload, clientId: Context.ConnectionId);              
+            try
+            {
+                await _editionService.RequestNewEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), payload, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// Get a list of requests issued by the current user for other users
         /// to become editors of a shared edition
         /// </summary>
         /// <returns></returns>
-[Authorize]
-public async Task<AdminEditorRequestListDTO> GetV1EditionsAdminShareRequests()
+        [Authorize]
+        public async Task<AdminEditorRequestListDTO> GetV1EditionsAdminShareRequests()
 
-    {
-        try
         {
-                        return await _editionService.GetAdminEditorRequests(_userService.GetCurrentUserId() ?? 0);              
+            try
+            {
+                return await _editionService.GetAdminEditorRequests(_userService.GetCurrentUserId() ?? 0);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// Get a list of invitations issued to the current user to become an editor of a shared edition
         /// </summary>
         /// <returns></returns>
-[Authorize]
-public async Task<EditorInvitationListDTO> GetV1EditionsEditorInvitations()
+        [Authorize]
+        public async Task<EditorInvitationListDTO> GetV1EditionsEditorInvitations()
 
-    {
-        try
         {
-                        return await _editionService.GetUserEditorInvitations(_userService.GetCurrentUserId() ?? 0);              
+            try
+            {
+                return await _editionService.GetUserEditorInvitations(_userService.GetCurrentUserId() ?? 0);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Confirm addition of an editor to the specified edition
         /// </summary>
         /// <param name="token">JWT for verifying the request confirmation</param>
-[Authorize]
-public async Task<DetailedEditorRightsDTO> PostV1EditionsConfirmEditorshipToken(string token)
+        [Authorize]
+        public async Task<DetailedEditorRightsDTO> PostV1EditionsConfirmEditorshipToken(string token)
 
-    {
-        try
         {
-                        return await _editionService.AddEditionEditor(                _userService.GetCurrentUserId(),                token, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _editionService.AddEditionEditor(_userService.GetCurrentUserId(), token, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Changes the rights for an editor of the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
-[Authorize]
-public async Task<DetailedEditorRightsDTO> PutV1EditionsEditionIdEditorsEditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
+        [Authorize]
+        public async Task<DetailedEditorRightsDTO> PutV1EditionsEditionIdEditorsEditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
 
-    {
-        try
         {
-                        return await _editionService.ChangeEditionEditorRights(                await _userService.GetCurrentUserObjectAsync(editionId, admin: true),                editorEmailId,                payload, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _editionService.ChangeEditionEditorRights(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), editorEmailId, payload, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Creates a copy of the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="request">JSON object with the attributes to be changed in the copied edition</param>
-[Authorize]
-public async Task<EditionDTO> PostV1EditionsEditionId(uint editionId, EditionCopyDTO request)
+        [Authorize]
+        public async Task<EditionDTO> PostV1EditionsEditionId(uint editionId, EditionCopyDTO request)
 
-    {
-        try
         {
-                        return await _editionService.CopyEditionAsync(                await _userService.GetCurrentUserObjectAsync(editionId),                request, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _editionService.CopyEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId), request, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Provides details about the specified edition and all accessible alternate editions
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
         /// <param name="token">token required when using optional 'deleteForAllEditors'</param>
-[Authorize]
-public async Task<DeleteTokenDTO> DeleteV1EditionsEditionId(uint editionId, List<string> optional, string token)
+        [Authorize]
+        public async Task<DeleteTokenDTO> DeleteV1EditionsEditionId(uint editionId, List<string> optional, string token)
 
-    {
-        try
         {
-                        return await _editionService.DeleteEditionAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                token,                optional, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _editionService.DeleteEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), token, optional, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Provides details about the specified edition and all accessible alternate editions
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
-[AllowAnonymous]
-public async Task<EditionGroupDTO> GetV1EditionsEditionId(uint editionId)
+        [AllowAnonymous]
+        public async Task<EditionGroupDTO> GetV1EditionsEditionId(uint editionId)
 
-    {
-        try
         {
-                        return await _editionService.GetEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));              
+            try
+            {
+                return await _editionService.GetEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Provides a listing of all editions accessible to the current user
         /// </summary>
-[AllowAnonymous]
-public async Task<EditionListDTO> GetV1Editions()
+        [AllowAnonymous]
+        public async Task<EditionListDTO> GetV1Editions()
 
-    {
-        try
         {
-                        return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());              
+            try
+            {
+                return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Updates data for the specified edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="request">JSON object with the attributes to be updated</param>
-[Authorize]
-public async Task<EditionDTO> PutV1EditionsEditionId(uint editionId, EditionUpdateRequestDTO request)
+        [Authorize]
+        public async Task<EditionDTO> PutV1EditionsEditionId(uint editionId, EditionUpdateRequestDTO request)
 
-    {
-        try
         {
-                        return await _editionService.UpdateEditionAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                request, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _editionService.UpdateEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), request, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         ///     Provides spatial data for all letters in the edition 
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>
-[Authorize]
-public async Task<EditionScriptCollectionDTO> GetV1EditionsEditionIdScriptCollection(uint editionId)
+        [Authorize]
+        public async Task<EditionScriptCollectionDTO> GetV1EditionsEditionIdScriptCollection(uint editionId)
 
-    {
-        try
         {
-                        return await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));              
+            try
+            {
+                return await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
+
+
     }
-
-
-	}
 }

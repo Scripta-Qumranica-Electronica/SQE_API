@@ -45,7 +45,7 @@ namespace SQE.API.Server.HttpControllers
         {
             return await _editionService.GetAdminEditorRequests(_userService.GetCurrentUserId() ?? 0);
         }
-        
+
         /// <summary>
         /// Get a list of invitations issued to the current user to become an editor of a shared edition
         /// </summary>

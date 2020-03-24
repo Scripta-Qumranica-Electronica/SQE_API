@@ -945,7 +945,7 @@ namespace SQE.DatabaseAccess
                             new MutationRequest(
                                 MutateType.Create,
                                 parentToElementParameters,
-                                $"{parentTable}_to_{table}e"
+                                $"{parentTable}_to_{table}"
                             )
                         }
                     );
