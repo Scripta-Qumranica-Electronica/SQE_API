@@ -1,3 +1,5 @@
+/* tslint:disable */
+
 import { 
 $IMPORTS
 } from "@/dtos/sqe-dtos"

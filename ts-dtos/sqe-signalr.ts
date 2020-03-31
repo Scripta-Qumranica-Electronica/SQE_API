@@ -6,6 +6,8 @@
  * whenever the GenerateTypescriptInterfaces program is run.
  */
 
+/* tslint:disable */
+
 import { 
 	ArtefactDataDTO,
 	ArtefactDTO,
