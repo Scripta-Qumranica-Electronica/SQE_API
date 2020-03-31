@@ -120,7 +120,7 @@ namespace SQE.API.Server.Services
             return new EditionListDTO
             {
                 editions = (await _editionRepo.ListEditionsAsync(userId, null))
-                    .GroupBy(x => x.ScrollId) // Group the edition listings by scroll_id
+                    .GroupBy(x => x.ManuscriptId) // Group the edition listings by scroll_id
                     .Select(x => x.Select(EditionModelToDTO)) // Format each entry as an EditionDTO
                     .Select(x => x.ToList()) // Convert the groups from IEnumerable to List
                     .ToList() // Convert the list of groups from IEnumerable to List so we now have List<List<EditionDTO>>
@@ -427,7 +427,8 @@ The Scripta Qumranica Electronica team</body></html>";
                 newUserPermissions.MayRead,
                 newUserPermissions.MayWrite,
                 newUserPermissions.MayLock,
-                newUserPermissions.IsAdmin
+                newUserPermissions.IsAdmin,
+                newUserPermissions.EditionId
             );
             // Broadcast the change to all editors of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
@@ -465,7 +466,8 @@ The Scripta Qumranica Electronica team</body></html>";
                 updatedUserPermissions.MayRead,
                 updatedUserPermissions.MayWrite,
                 updatedUserPermissions.MayLock,
-                updatedUserPermissions.IsAdmin
+                updatedUserPermissions.IsAdmin,
+                editionUser.EditionId
             );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
@@ -548,7 +550,20 @@ The Scripta Qumranica Electronica team</body></html>";
                 locked = model.Locked,
                 isPublic = model.IsPublic,
                 lastEdit = model.LastEdit,
-                copyright = model.Copyright
+                copyright = model.Copyright,
+                shares = model.Editors.Select(x => new ShareDTO()
+                {
+                    permission = new PermissionDTO()
+                    {
+                        isAdmin = x.IsAdmin,
+                        mayWrite = x.MayWrite
+                    },
+                    user = new UserDTO()
+                    {
+                        email = x.EditorEmail,
+                        userId = x.EditorId,
+                    }
+                }).ToList()
             };
         }
 
@@ -583,7 +598,8 @@ The Scripta Qumranica Electronica team</body></html>";
             bool mayRead,
             bool mayWrite,
             bool mayLock,
-            bool isAdmin)
+            bool isAdmin,
+            uint editionId)
         {
             return new DetailedEditorRightsDTO
             {
@@ -591,7 +607,8 @@ The Scripta Qumranica Electronica team</body></html>";
                 mayRead = mayRead,
                 mayWrite = mayWrite,
                 mayLock = mayLock,
-                isAdmin = isAdmin
+                isAdmin = isAdmin,
+                editionId = editionId,
             };
         }
 

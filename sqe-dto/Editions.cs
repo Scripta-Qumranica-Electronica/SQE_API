@@ -60,6 +60,7 @@ namespace SQE.API.DTO
         [Required]
         [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
+        public uint editionId { get; set; }
     }
 
     public class DetailedUpdateEditorRightsDTO : UpdateEditorRightsDTO

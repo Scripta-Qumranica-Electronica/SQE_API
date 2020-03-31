@@ -11,7 +11,7 @@ namespace SQE.DatabaseAccess.Models
         public uint EditionId { get; set; }
         public string Name { get; set; }
         public uint EditionDataEditorId { get; set; }
-        public string ScrollId { get; set; }
+        public string ManuscriptId { get; set; }
         public Permission Permission { get; set; }
         public string Thumbnail { get; set; }
         public bool Locked { get; set; }
@@ -21,6 +21,7 @@ namespace SQE.DatabaseAccess.Models
         public string Copyright { get; set; }
         public string CopyrightHolder { get; set; }
         public string Collaborators { get; set; }
+        public List<EditorWithPermissions> Editors { get; set; }
     }
 
     public class Permission

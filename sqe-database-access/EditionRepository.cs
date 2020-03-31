@@ -69,17 +69,69 @@ namespace SQE.DatabaseAccess
         {
             using (var connection = OpenConnection())
             {
-                var results = await connection.QueryAsync<EditionGroupQuery.Result>(
+                Edition lastEdition = null;
+                return (await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
                     EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue),
+                    (editionGroup, editor) =>
+                    {
+                        if (lastEdition == null || lastEdition.EditionId != editionGroup.EditionId)
+                        {
+                            if (lastEdition != null)
+                            {
+                                lastEdition.Copyright = Licence.printLicence(
+                                    lastEdition.CopyrightHolder,
+                                    string.IsNullOrEmpty(lastEdition.Collaborators)
+                                        ? string.Join(", ",
+                                            lastEdition.Editors.Select(x =>
+                                            {
+                                                if (x.Forename == null && x.Surname == null)
+                                                    return x.EditorEmail;
+                                                return $@"{x.Forename} {x.Surname}".Trim();
+                                            }))
+                                        : lastEdition.Collaborators);
+                            }
+
+                            lastEdition = new Edition
+                            {
+                                Name = editionGroup.Name,
+                                Collaborators = editionGroup.Collaborators,
+                                Copyright =
+                                    null, //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+                                CopyrightHolder = editionGroup.CopyrightHolder,
+                                EditionDataEditorId = editionGroup.EditionDataEditorId,
+                                EditionId = editionGroup.EditionId,
+                                IsPublic = editionGroup.IsPublic,
+                                LastEdit = editionGroup.LastEdit,
+                                Locked = editionGroup.Locked,
+                                Owner = new User()
+                                {
+                                    Email = editionGroup.CurrentEmail,
+                                    UserId = editionGroup.CurrentUserId,
+                                },
+                                Permission = new Permission()
+                                {
+                                    IsAdmin = editionGroup.CurrentIsAdmin,
+                                    MayLock = editionGroup.CurrentMayLock,
+                                    MayWrite = editionGroup.CurrentMayWrite,
+                                    MayRead = editionGroup.CurrentMayRead
+                                },
+                                Thumbnail = editionGroup.Thumbnail,
+                                ManuscriptId = editionGroup.ManuscriptId,
+                                Editors = new List<EditorWithPermissions>(),
+                            };
+                        }
+
+                        lastEdition.Editors.Add(editor);
+
+                        return lastEdition;
+                    },
                     new
                     {
                         UserId = userId,
                         EditionId = editionId
-                    }
-                );
-
-                var models = results.Select(result => CreateEdition(result, userId));
-                return models;
+                    },
+                    splitOn: "EditorId"
+                )).ToList();
             }
         }
 
@@ -726,15 +778,15 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                 EditionId = result.EditionId,
                 Name = result.Name,
                 EditionDataEditorId = result.EditionDataEditorId,
-                ScrollId = result.ScrollId,
+                ManuscriptId = result.ManuscriptId,
                 Thumbnail = result.Thumbnail,
                 Locked = result.Locked,
                 LastEdit = result.LastEdit,
                 IsPublic = result.IsPublic,
                 Owner = new User
                 {
-                    UserId = result.UserId,
-                    Email = result.Email
+                    UserId = result.CurrentUserId,
+                    Email = result.CurrentEmail
                 },
                 Copyright = Licence.printLicence(result.CopyrightHolder, result.Collaborators),
                 CopyrightHolder = result.CopyrightHolder,
@@ -744,9 +796,9 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
             if (currentUserId.HasValue)
                 model.Permission = new Permission
                 {
-                    IsAdmin = result.Admin,
-                    MayWrite = result.MayWrite,
-                    MayLock = result.MayLock
+                    IsAdmin = result.CurrentIsAdmin,
+                    MayWrite = result.CurrentMayWrite,
+                    MayLock = result.CurrentMayLock
                 };
             else
                 model.Permission = new Permission

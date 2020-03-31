@@ -89,4 +89,17 @@ namespace SQE.DatabaseAccess.Models
         public string Surname { get; set; }
         public string Organization { get; set; }
     }
+
+    public class EditorWithPermissions : EditorInfo
+    {
+        public uint EditorId { get; set; }
+        public string EditorEmail { get; set; }
+        public bool MayRead { get; set; }
+
+        public bool MayWrite { get; set; }
+
+        public bool MayLock { get; set; }
+
+        public bool IsAdmin { get; set; }
+    }
 }
