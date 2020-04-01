@@ -151,7 +151,15 @@ namespace SQE.API.Server.Helpers
 
                     // If the geometry is still invalid, then we will give up here
                     if (!geom.IsValid)
-                        throw new StandardExceptions.InputDataRuleViolationException($"The polygon could not be repaired: {geom}");
+                    {
+                        // Try one last pass
+                        geom = geom.GeometryType == "MultiPolygon"
+                            ? _repairMultiPolygon(geom)
+                            : _repairSelfInterectingPolygon(geom);
+
+                        if (!geom.IsValid)
+                            throw new StandardExceptions.InputDataRuleViolationException($"The polygon could not be repaired: {geom}");
+                    }
                 }
                 else
                 {
@@ -210,31 +218,42 @@ namespace SQE.API.Server.Helpers
             var coords = poly.Boundary.Coordinates;
             var lines = coords.Select(
                 (t, i) => new LineString(new[] { t, coords[i + 1 == coords.Length ? 0 : i + 1] })
-            ).ToList();
+            ).Where(x => !x.Coordinates[0].Equals2D(x.Coordinates[1])).ToList();
 
             // Now group the lines into linestrings that start and stop at the points of intersection
             var intersectedLines = new List<LineString>();
             var points = new List<Coordinate>();
+            var hitPoints = new List<Coordinate>();
 
+            var linesCount = lines.Count();
             // Loop over each individual line
-            foreach (var line in lines)
+            for (var lineIdx = 0; lineIdx < linesCount; lineIdx++)
             {
+                var line = lines[lineIdx];
                 // Add the first point to the points list
                 if (!points.Any())
                     points.Add(line.Coordinates[0]);
 
                 // Check every available line for an intersection
-                foreach (var compLine in lines)
+                for (var compLineIdx = 0; compLineIdx < linesCount; compLineIdx++)
                 {
-                    // Disregard any directly connected line or any that do not intersect
-                    if (line.Coordinates.Contains(compLine.Coordinates[0])
-                        || line.Coordinates.Contains(compLine.Coordinates[1])
-                        || !line.Intersects(compLine))
+                    var compLine = lines[compLineIdx];
+                    // Disregard the line itself, any directly connected line, or any line that does not intersect
+                    if (!line.Intersects(compLine) || lineIdx == compLineIdx ||
+                            ((compLineIdx + 1) % linesCount == lineIdx && compLine.Coordinates[1].Equals2D(line.Coordinates[0])) ||
+                            compLine.Coordinates[0].Equals2D(line.Coordinates[1])
+                        )
                         continue; // This is not an intersecting line, move on to the next
 
                     // The current compLine intersects our line
                     // Get the point of intersection
                     var point = line.Intersection(compLine);
+
+                    if (compLine.Coordinates[1].Equals2D(line.Coordinates[1]))
+                        hitPoints.Add(point.Coordinate);
+                    else if (compLine.Coordinates.Contains(line.Coordinates[0]) || compLine.Coordinates.Contains(line.Coordinates[1]))
+                        if (hitPoints.Contains(point.Coordinate))
+                            continue;
 
                     // End our current line path at this point of intersection
                     points.Add(point.Coordinate);
@@ -244,7 +263,8 @@ namespace SQE.API.Server.Helpers
 
                     // Start a new line path with this point of intersection
                     points = new List<Coordinate>();
-                    points.Add(point.Coordinate);
+                    if (!point.Coordinate.Equals2D(line.Coordinates[1]))
+                        points.Add(point.Coordinate);
                 }
 
                 // Add the endpoint of the current line to the line path
@@ -260,9 +280,7 @@ namespace SQE.API.Server.Helpers
             intersectedLines.RemoveAt(0); // Remove the first line, which we have started using
 
             // Grab the line segment that should continue the first line
-            var counterpart = intersectedLines.Where(
-                x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())
-            ).LastOrDefault();
+            var counterpart = intersectedLines.Where(x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())).LastOrDefault();
 
             // Loop over all matching line pairs
             while (counterpart != null)
@@ -271,7 +289,8 @@ namespace SQE.API.Server.Helpers
                 intersectedLines.Remove(counterpart);
 
                 // every other matched line should be reversed
-                var rev = intersectedLines.Count % 2 == 0 ? counterpart.Coordinates.ToList() : counterpart.Coordinates.Reverse().ToList();
+                var even = intersectedLines.Count % 2 == 0;
+                var rev = even ? counterpart.Coordinates.ToList() : counterpart.Coordinates.Reverse().ToList();
 
                 // Grab the point at which the intersection originally took place
                 var intersectionPoint = rev.First();
@@ -297,9 +316,7 @@ namespace SQE.API.Server.Helpers
                 fixedIntersecting.AddRange(rev);
 
                 // Find the next line segment to attach
-                counterpart = intersectedLines.Where(
-                    x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())
-                ).LastOrDefault();
+                counterpart = intersectedLines.Where(x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())).LastOrDefault();
 
                 // If a match is found continue building the line string
                 if (counterpart != null
