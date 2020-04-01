@@ -556,7 +556,8 @@ The Scripta Qumranica Electronica team</body></html>";
                     permission = new PermissionDTO()
                     {
                         isAdmin = x.IsAdmin,
-                        mayWrite = x.MayWrite
+                        mayWrite = x.MayWrite,
+                        mayRead = x.MayRead,
                     },
                     user = new UserDTO()
                     {
@@ -572,7 +573,8 @@ The Scripta Qumranica Electronica team</body></html>";
             return new PermissionDTO
             {
                 isAdmin = model.IsAdmin,
-                mayWrite = model.MayWrite
+                mayWrite = model.MayWrite,
+                mayRead = model.MayRead,
             };
         }
 

@@ -34,6 +34,7 @@ namespace SQE.API.DTO
 
     public class PermissionDTO
     {
+        public bool mayRead { get; set; }
         public bool mayWrite { get; set; }
         public bool isAdmin { get; set; }
     }

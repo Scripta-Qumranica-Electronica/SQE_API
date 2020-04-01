@@ -69,28 +69,17 @@ namespace SQE.DatabaseAccess
         {
             using (var connection = OpenConnection())
             {
-                Edition lastEdition = null;
-                return (await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
+                // TODO: check the performance here, I think we may be looping several times, here
+                // and in the calling function.  Maybe it doesn't matter much though.
+                var editionDictionary = new Dictionary<uint, Edition>();
+                var result = (await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
                     EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue),
                     (editionGroup, editor) =>
                     {
-                        if (lastEdition == null || lastEdition.EditionId != editionGroup.EditionId)
-                        {
-                            if (lastEdition != null)
-                            {
-                                lastEdition.Copyright = Licence.printLicence(
-                                    lastEdition.CopyrightHolder,
-                                    string.IsNullOrEmpty(lastEdition.Collaborators)
-                                        ? string.Join(", ",
-                                            lastEdition.Editors.Select(x =>
-                                            {
-                                                if (x.Forename == null && x.Surname == null)
-                                                    return x.EditorEmail;
-                                                return $@"{x.Forename} {x.Surname}".Trim();
-                                            }))
-                                        : lastEdition.Collaborators);
-                            }
+                        Edition lastEdition;
 
+                        if (!editionDictionary.TryGetValue(editionGroup.EditionId, out lastEdition))
+                        {
                             lastEdition = new Edition
                             {
                                 Name = editionGroup.Name,
@@ -119,6 +108,7 @@ namespace SQE.DatabaseAccess
                                 ManuscriptId = editionGroup.ManuscriptId,
                                 Editors = new List<EditorWithPermissions>(),
                             };
+                            editionDictionary.Add(lastEdition.EditionId, lastEdition);
                         }
 
                         lastEdition.Editors.Add(editor);
@@ -132,6 +122,23 @@ namespace SQE.DatabaseAccess
                     },
                     splitOn: "EditorId"
                 )).ToList();
+
+                return editionDictionary.Select(x =>
+                {
+                    // Make sure the License is properly set
+                    x.Value.Copyright = Licence.printLicence(
+                        x.Value.CopyrightHolder,
+                        string.IsNullOrEmpty(x.Value.Collaborators)
+                            ? string.Join(", ",
+                                x.Value.Editors.Select(y =>
+                                {
+                                    if (y.Forename == null && y.Surname == null)
+                                        return y.EditorEmail;
+                                    return $@"{y.Forename} {y.Surname}".Trim();
+                                }))
+                            : x.Value.Collaborators);
+                    return x.Value;
+                });
             }
         }
 
