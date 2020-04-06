@@ -10,4 +10,5 @@ obj/
 **/logs
 /ingo_test/
 /qwb-to-sqe/
+/sqe-api-server/mono_crash*
 
