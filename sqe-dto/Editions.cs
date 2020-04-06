@@ -14,7 +14,7 @@ namespace SQE.API.DTO
         public PermissionDTO permission { get; set; }
         public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }
-        public List<ShareDTO> shares { get; set; }
+        public List<DetailedEditorRightsDTO> shares { get; set; }
         public bool locked { get; set; }
         public bool isPublic { get; set; }
         public DateTime? lastEdit { set; get; }
@@ -102,12 +102,6 @@ namespace SQE.API.DTO
         public string licence { get; set; }
         public Dictionary<string, EditorDTO> editors { get; set; }
         public List<TextFragmentDTO> textFragments { get; set; }
-    }
-
-    public class ShareDTO
-    {
-        public UserDTO user { get; set; }
-        public PermissionDTO permission { get; set; }
     }
 
     public class DeleteTokenDTO

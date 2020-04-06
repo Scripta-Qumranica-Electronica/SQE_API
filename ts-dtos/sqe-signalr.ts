@@ -29,7 +29,6 @@ import {
 	EditorInvitationListDTO,
 	AdminEditorRequestListDTO,
 	TextEditionDTO,
-	ShareDTO,
 	DeleteTokenDTO,
 	DeleteEditionEntityDTO,
 	EditionScriptCollectionDTO,

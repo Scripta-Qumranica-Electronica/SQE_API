@@ -551,19 +551,14 @@ The Scripta Qumranica Electronica team</body></html>";
                 isPublic = model.IsPublic,
                 lastEdit = model.LastEdit,
                 copyright = model.Copyright,
-                shares = model.Editors.Select(x => new ShareDTO()
+                shares = model.Editors.Select(x => new DetailedEditorRightsDTO()
                 {
-                    permission = new PermissionDTO()
-                    {
-                        isAdmin = x.IsAdmin,
-                        mayWrite = x.MayWrite,
-                        mayRead = x.MayRead,
-                    },
-                    user = new UserDTO()
-                    {
-                        email = x.EditorEmail,
-                        userId = x.EditorId,
-                    }
+                    email = x.EditorEmail,
+                    editionId = model.EditionId,
+                    isAdmin = x.IsAdmin,
+                    mayLock = x.MayLock,
+                    mayRead = x.MayRead,
+                    mayWrite = x.MayWrite
                 }).ToList()
             };
         }
