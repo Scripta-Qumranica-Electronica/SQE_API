@@ -56,7 +56,7 @@ SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 		text_fragment_author.user_id AS TextFragmentEditorId,
 
 		line_data.line_id AS lineId,
-		line_data.name AS line,
+		line_data.name AS lineName,
 		line_author.user_id AS lineAuthor,
 
 		sign_interpretation.sign_id AS signId,
