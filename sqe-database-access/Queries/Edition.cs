@@ -113,7 +113,7 @@ $Where
         {
             // Build the WHERE clauses
             var where = limitScrolls ? "WHERE ed1.edition_id = @EditionId" : "";
-            var userFilter = limitUser ? "OR ed2.user_id = @UserId" : "";
+            var userFilter = limitUser ? "OR (ed2.user_id = @UserId AND ed2.may_read = 1)" : "";
 
 
             return _baseQuery.Replace("$Where", where)
