@@ -150,6 +150,7 @@ namespace SQE.API.DTO
 
     public class EditorDTO
     {
+        public string email { get; set; }
         public string forename { get; set; }
         public string surname { get; set; }
         public string organization { get; set; }

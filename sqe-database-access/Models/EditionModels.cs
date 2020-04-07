@@ -11,7 +11,7 @@ namespace SQE.DatabaseAccess.Models
         public uint EditionId { get; set; }
         public string Name { get; set; }
         public uint EditionDataEditorId { get; set; }
-        public string ScrollId { get; set; }
+        public string ManuscriptId { get; set; }
         public Permission Permission { get; set; }
         public string Thumbnail { get; set; }
         public bool Locked { get; set; }
@@ -21,6 +21,7 @@ namespace SQE.DatabaseAccess.Models
         public string Copyright { get; set; }
         public string CopyrightHolder { get; set; }
         public string Collaborators { get; set; }
+        public List<EditorWithPermissions> Editors { get; set; }
     }
 
     public class Permission
@@ -31,9 +32,36 @@ namespace SQE.DatabaseAccess.Models
         public bool IsAdmin { get; set; }
     }
 
-    public class DetailedPermissions : Permission
+    public class EditorPermissions : Permission
     {
         public string Email { get; set; }
+    }
+
+    public class DetailedEditorPermissions : EditorPermissions
+    {
+        public uint EditionId { get; set; }
+        public string EditionName { get; set; }
+        public DateTime Date { get; set; }
+    }
+
+    public class DetailedEditorRequestPermissions : DetailedEditorPermissions
+    {
+        public string EditorForename { get; set; }
+        public string EditorSurname { get; set; }
+        public string EditorOrganization { get; set; }
+    }
+
+    public class DetailedEditorInvitationPermissions : DetailedEditorPermissions
+    {
+        public string AdminForename { get; set; }
+        public string AdminSurname { get; set; }
+        public string AdminOrganization { get; set; }
+        public Guid Token { get; set; }
+    }
+
+    public class DetailedEditionPermission : EditorPermissions
+    {
+        public uint EditionId { get; set; }
     }
 
     public class Share
@@ -44,7 +72,7 @@ namespace SQE.DatabaseAccess.Models
 
     public class TextEdition
     {
-        public readonly List<TextFragment> fragments = new List<TextFragment>();
+        public readonly List<TextFragmentData> fragments = new List<TextFragmentData>();
         public uint manuscriptId { get; set; }
         public string editionName { get; set; }
         public string copyrightHolder { get; set; }

@@ -2,10 +2,13 @@ using System.Collections.Generic;
 
 namespace SQE.DatabaseAccess.Models
 {
-    public class Sign
+    public class LineData
     {
-        public readonly List<SignInterpretation> signInterpretations = new List<SignInterpretation>();
-        public uint signId { get; set; }
+        public List<SignData> Signs { get; set; } = new List<SignData>();
+
+        public uint? LineId { get; set; }
+        public string LineName { get; set; }
+        public uint? LineAuthor { get; set; }
     }
 
     public class LetterShape

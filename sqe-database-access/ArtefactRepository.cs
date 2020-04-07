@@ -304,8 +304,12 @@ namespace SQE.DatabaseAccess
                 else
                 {
                     var pks = await GetArtefactStackPksAsync(editionUser, artefactId, table);
-                    foreach (var pk in pks)
-                        mutations.Add(new MutationRequest(MutateType.Delete, new DynamicParameters(), table, pk));
+                    mutations.AddRange(
+                        pks.Select(pk => new MutationRequest(
+                            MutateType.Delete,
+                            new DynamicParameters(),
+                            table,
+                            pk)));
                 }
 
             var _ = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutations);

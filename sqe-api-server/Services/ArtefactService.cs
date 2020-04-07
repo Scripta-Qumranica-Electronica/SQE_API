@@ -162,7 +162,9 @@ namespace SQE.API.Server.Services
             CreateArtefactDTO createArtefact,
             string clientId = null)
         {
-            var cleanedPoly = await GeometryValidation.ValidatePolygonAsync(createArtefact.polygon.mask, "artefact");
+            var cleanedPoly = string.IsNullOrEmpty(createArtefact.polygon.mask)
+                ? null
+                : await GeometryValidation.ValidatePolygonAsync(createArtefact.polygon.mask, "artefact");
 
             var newArtefact = await _artefactRepository.CreateNewArtefactAsync(
                 editionUser,
@@ -199,7 +201,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .DeletedArtefact(artefactId);
+                .DeletedArtefact(new DeleteDTO(EditionEntities.artefact, new List<uint>() { artefactId }));
             return new NoContentResult();
         }
 
@@ -213,9 +215,9 @@ namespace SQE.API.Server.Services
                 (await _artefactRepository.ArtefactTextFragmentsAsync(editionUser, artefactId))
                 .Select(
                     x => new ArtefactTextFragmentMatchDTO(
-                        x.TextFragmentId,
+                        x.TextFragmentId.GetValueOrDefault(),
                         x.TextFragmentName,
-                        x.EditionEditorId,
+                        x.TextFragmentEditorId.GetValueOrDefault(),
                         false
                     )
                 )
@@ -235,7 +237,11 @@ namespace SQE.API.Server.Services
             return new ArtefactTextFragmentMatchListDTO(
                 (await _artefactRepository.ArtefactSuggestedTextFragmentsAsync(editionUser, artefactId))
                 .Select(
-                    x => new ArtefactTextFragmentMatchDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId, true)
+                    x => new ArtefactTextFragmentMatchDTO(
+                        x.TextFragmentId.GetValueOrDefault(),
+                        x.TextFragmentName,
+                        x.TextFragmentEditorId.GetValueOrDefault(),
+                        true)
                 )
                 .ToList()
             );

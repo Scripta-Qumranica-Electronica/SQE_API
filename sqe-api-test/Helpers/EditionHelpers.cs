@@ -89,7 +89,7 @@ namespace SQE.ApiTest.Helpers
                 getEditionObject,
                 client,
                 null,
-                user1: user,
+                requestUser: user,
                 auth: auth
             );
             response.EnsureSuccessStatusCode();
@@ -120,7 +120,7 @@ namespace SQE.ApiTest.Helpers
                 newScrollRequest,
                 client,
                 null,
-                user1: userAuthDetails ?? Request.DefaultUsers.User1,
+                requestUser: userAuthDetails ?? Request.DefaultUsers.User1,
                 auth: true,
                 deterministic: false,
                 shouldSucceed: false

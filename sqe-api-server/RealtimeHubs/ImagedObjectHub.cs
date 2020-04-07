@@ -84,5 +84,25 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
 
+        /// <summary>
+        /// Provides a list of all text fragments that should correspond to the imaged object.
+        /// </summary>
+        /// <param name="imagedObjectId">Id of the imaged object</param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        public async Task<List<ImagedObjectTextFragmentMatchDTO>> GetV1ImagedObjectsImagedObjectIdTextFragments(string imagedObjectId)
+
+        {
+            try
+            {
+                return await _imageService.GetImageTextFragmentsAsync(imagedObjectId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
     }
 }

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Helpers;
 
@@ -8,7 +8,7 @@ namespace SQE.API.Server.Services
 {
     public interface IUtilService
     {
-        Task<NoContentResult> ValidateWktPolygonAsync(string wktPolygon, string clientId = null);
+        Task<WktPolygonDTO> RepairWktPolygonAsync(string wktPolygon, string clientId = null);
     }
 
     public class UtilService : IUtilService
@@ -20,10 +20,10 @@ namespace SQE.API.Server.Services
             _hubContext = hubContext;
         }
 
-        public async Task<NoContentResult> ValidateWktPolygonAsync(string wktPolygon, string clientId = null)
+        public async Task<WktPolygonDTO> RepairWktPolygonAsync(string wktPolygon, string clientId = null)
         {
-            await GeometryValidation.ValidatePolygonAsync(wktPolygon, "polygon", true);
-            return new NoContentResult();
+            var repaired = await GeometryValidation.ValidatePolygonAsync(wktPolygon, "polygon", true);
+            return new WktPolygonDTO() { wktPolygon = repaired };
         }
     }
 }

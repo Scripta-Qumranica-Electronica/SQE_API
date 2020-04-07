@@ -1,7 +1,11 @@
+using static SQE.DatabaseAccess.Helpers.TableData;
 namespace SQE.DatabaseAccess.Queries
 {
     public static class GetTextChunk
     {
+        // NOTE I (Ingo) change the query to reflect the integration of the numeric value into the attribute table
+        // which became necessary by deleting the table attribute_numeric
+
         /// <summary>
         ///     Retrieves all textual data for a chunk of text
         ///     @startId is the Id of the first sign
@@ -13,6 +17,7 @@ WITH RECURSIVE sign_interpretation_ids
 	AS (
 		SELECT 	position_in_stream.sign_interpretation_id AS signInterpretationId, 
 				position_in_stream.next_sign_interpretation_id,
+				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
 				position_in_stream_owner.edition_id,
 				@X := 0 AS sequence
@@ -26,6 +31,7 @@ WITH RECURSIVE sign_interpretation_ids
 
 		SELECT 	position_in_stream.sign_interpretation_id AS signInterpretationId, 
 				position_in_stream.next_sign_interpretation_id,
+				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
 				sign_interpretation_ids.edition_id,
 				@X := @X + 1 AS sequence
@@ -47,10 +53,10 @@ SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 
 		text_fragment_data.text_fragment_id AS textFragmentId,
 		text_fragment_data.name AS textFragmentName,
-		text_fragment_author.user_id AS textFragmentAuthor,
+		text_fragment_author.user_id AS TextFragmentEditorId,
 
 		line_data.line_id AS lineId,
-		line_data.name AS line,
+		line_data.name AS lineName,
 		line_author.user_id AS lineAuthor,
 
 		sign_interpretation.sign_id AS signId,
@@ -60,11 +66,11 @@ SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 		signInterpretationId,
 		sign_interpretation.`character` AS `character`,
 
-		sign_interpretation_attribute.sign_interpretation_attribute_id AS interpretationAttributeId,
-		sign_interpretation_attribute.attribute_value_id AS attributeValueId,
-		sign_interpretation_attribute.sequence AS sequence,
-		sign_interpretation_attribute_author.user_id AS signInterpretationAttributeAuthor,
-		attribute_numeric.value AS value,
+		sign_interpretation_attribute.sign_interpretation_attribute_id AS SignInterpretationAttributeId,
+		sign_interpretation_attribute.attribute_value_id AS AttributeValueId,
+		sign_interpretation_attribute.sequence AS Sequence,
+		sign_interpretation_attribute_author.user_id AS SignInterpretationAttributeAuthor,
+		sign_interpretation_attribute.numeric_value AS NumericValue,
 
 		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
 		roi.sign_interpretation_id AS SignInterpretationId,
@@ -80,7 +86,6 @@ SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
 	JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_id = signInterpretationId
-	LEFT JOIN attribute_numeric USING (sign_interpretation_attribute_id)
 	JOIN sign_interpretation_attribute_owner 
 		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
 		AND sign_interpretation_attribute_owner.edition_id = sign_interpretation_ids.edition_id
@@ -134,9 +139,11 @@ FROM sign_interpretation_ids
 
 	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
   
-ORDER BY sign_interpretation_ids.sequence
+ORDER BY sign_interpretation_ids.sequence, sign_interpretation_ids.is_main DESC
 ";
     }
+
+
 
     internal static class GetLineTerminators
     {
@@ -165,36 +172,7 @@ ORDER BY attribute_value_id
 ";
     }
 
-    internal static class GetFragmentTerminators
-    {
-        /// <summary>
-        ///     Retrieves the first and last sign of a textFragmentName
-        ///     @entityId is the Id of line
-        ///     @editionId is the Id of the edition the line is to be searched
-        /// </summary>
-        public const string GetQuery = @"
-SELECT sign_interpretation.sign_interpretation_id
-FROM text_fragment_to_line
-	JOIN edition ON edition.edition_id = @EditionId
-	JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
-    JOIN text_fragment_to_line_owner 
-        ON text_fragment_to_line_owner.text_fragment_to_line_id = text_fragment_to_line.text_fragment_to_line_id
-    	AND text_fragment_to_line_owner.edition_id = edition.edition_id
-	JOIN line_to_sign USING (line_id)
-    JOIN line_to_sign_owner ON line_to_sign_owner.line_to_sign_id = line_to_sign.line_to_sign_id
-    	AND line_to_sign_owner.edition_id = edition.edition_id
-	JOIN  sign_interpretation USING (sign_id)
-	JOIN   sign_interpretation_attribute USING (sign_interpretation_id)
-	JOIN sign_interpretation_attribute_owner 
-	    ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
-		AND sign_interpretation_attribute_owner.edition_id=edition.edition_id
-        
-WHERE text_fragment_id = @EntityId
-	AND (attribute_value_id = 12 OR attribute_value_id = 13)
-	AND (edition_editor.user_id = @UserId OR edition.public = 1)
-ORDER BY attribute_value_id
-";
-    }
+
 
     internal static class GetLineData
     {
@@ -249,7 +227,7 @@ ORDER BY attribute_value_id
     {
         public const string GetQuery = @"
 WITH RECURSIVE cte_fragment AS (
-    SELECT pitfs_1.text_fragment_id, 1 AS sequence
+    SELECT pitfs_1.text_fragment_id, 0 AS sequence
     FROM position_in_text_fragment_stream AS pitfs_1
     JOIN position_in_text_fragment_stream_owner AS pitfso_1
         ON pitfs_1.position_in_text_fragment_stream_id = pitfso_1.position_in_text_fragment_stream_id
@@ -274,12 +252,61 @@ WITH RECURSIVE cte_fragment AS (
 
 SELECT text_fragment_id AS TextFragmentId,
        name AS TextFragmentName,
+       cte_fragment.sequence AS Position,
 	   tfdo.edition_editor_id AS EditionEditorId
 FROM cte_fragment
     JOIN text_fragment_data USING(text_fragment_id)
     JOIN text_fragment_data_owner tfdo USING (text_fragment_data_id)
 WHERE edition_id=@EditionId
 ORDER BY cte_fragment.sequence
+";
+    }
+
+    internal static class GetFragmentDataOld
+    {
+        public const string GetQuery = @"
+WITH RECURSIVE text_fragment_ids
+	AS (
+	    SELECT 	position_in_text_fragment_stream.text_fragment_id AS textFragmentId, 
+		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
+		    position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
+		    position_in_text_fragment_stream_owner.edition_id AS editionId,
+		    @X := 0 AS sequence
+	    FROM position_in_text_fragment_stream_owner
+			JOIN position_in_text_fragment_stream USING(position_in_text_fragment_stream_id)
+		WHERE edition_id = @EditionId
+			AND (position_in_text_fragment_stream.text_fragment_id NOT IN (
+				SELECT position_in_text_fragment_stream.next_text_fragment_id
+				FROM position_in_text_fragment_stream_owner
+				JOIN position_in_text_fragment_stream USING(position_in_text_fragment_stream_id)
+				WHERE edition_id = @EditionId
+				)
+			)
+		UNION
+		
+		SELECT 	position_in_text_fragment_stream.next_text_fragment_id AS textFragmentId, 
+		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
+			position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
+		    position_in_text_fragment_stream_owner.edition_id AS editionId,
+			@X := @X + 1 AS sequence
+		FROM text_fragment_ids
+		JOIN position_in_text_fragment_stream 
+			ON position_in_text_fragment_stream.text_fragment_id = text_fragment_ids.textFragmentId
+		JOIN position_in_text_fragment_stream_owner 
+			ON position_in_text_fragment_stream_owner.edition_id = text_fragment_ids.editionId
+				AND position_in_text_fragment_stream_owner.position_in_text_fragment_stream_id = text_fragment_ids.textFragmentPositionId
+	)
+SELECT	text_fragment_id AS TextFragmentId, name AS TextFragmentName, 
+		text_fragment_ids.sequence AS Position, 
+		text_fragment_data_owner.edition_editor_id AS EditionEditorId
+FROM text_fragment_ids
+	JOIN text_fragment_data ON text_fragment_data.text_fragment_id = text_fragment_ids.textFragmentId
+	JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
+		AND text_fragment_data_owner.edition_id = text_fragment_ids.editionId
+	JOIN edition_editor ON edition_editor.edition_id = text_fragment_ids.editionId
+	JOIN edition ON edition.edition_id = text_fragment_ids.editionId
+WHERE edition_editor.user_id = @UserId OR edition.public = 1
+ORDER BY text_fragment_ids.sequence
       ";
     }
 
@@ -340,12 +367,21 @@ JOIN attribute_owner
 ";
     }
 
-    internal static class CreateTextFragment
+    //TODO Can be deleted, use DatabaseWriter.SimpleInsertAsync (Ingo)
+    /*internal static class CreateManuscript
+    {
+	    public const string GetQuery = @"
+INSERT INTO manuscript () VALUES()
+";
+    }*/
+
+    //TODO Can be deleted (Ingo
+    /*internal static class CreateTextFragment
     {
         public const string GetQuery = @"
 INSERT INTO text_fragment () VALUES()
 ";
-    }
+    }*/
 
     internal static class GetTextFragmentByName
     {
@@ -369,6 +405,7 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
 ";
     }
 
+
     internal static class ManuscriptOfEdition
     {
         public const string GetQuery = @"
@@ -377,4 +414,41 @@ FROM edition
 WHERE edition_id = @EditionId
 ";
     }
+
+
+    internal static class GetSignInterpretationIdsForSignIdQuery
+    {
+        public const string GetQuery = @"
+			SELECT DISTINCT sign_interpretation_id
+			FROM sign_interpretation
+			JOIN sign_interpretation_attribute USING (sign_interpretation_id)
+			JOIN sign_interpretation_attribute_owner USING (sign_interpretation_attribute_id)
+			WHERE sign_id = @SignId
+			AND edition_id= @EditionId
+		";
+    }
+
+    internal static class GetSignInterpretationIdQuery
+    {
+        public const string GetQuery = @"
+			SELECT sign_interpretation_id
+			FROM sign_interpretation
+			WHERE sign_id = @SignId
+				AND `character`= @Character
+		";
+    }
+
+    internal static class AddSignInterpretationQuery
+    {
+        public const string GetQuery = @"
+			INSERT INTO sign_interpretation
+				(sign_id,  `character`) 
+				VALUES (@SignId,  @Character)
+		";
+    }
+
+
+
+
+
 }

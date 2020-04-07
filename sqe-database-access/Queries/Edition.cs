@@ -7,89 +7,135 @@ namespace SQE.DatabaseAccess.Queries
     internal class EditionGroupQuery
     {
         private const string _baseQuery = @"
-SELECT DISTINCT ed2.edition_id AS EditionId,
-    ed2.copyright_holder AS CopyrightHolder,
-    COALESCE(
-        ed2.collaborators, 
-        GROUP_CONCAT(DISTINCT CONCAT(user.forename, ' ', user.surname)
-        SEPARATOR ', ')) AS Collaborators,
-    current_editor.is_admin AS Admin,
-    manuscript_data.name AS Name, 
-    manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
-    im.thumbnail_url AS Thumbnail, 
-    ed2.locked AS Locked,
-    ed2.public AS IsPublic,
-    ed2.manuscript_id AS ScrollId,
-    current_editor.may_lock AS MayLock,
-    current_editor.may_write AS MayWrite, 
-    current_editor.may_read AS MayRead,
-    last.last_edit AS LastEdit, 
-    current_editor.user_id AS UserId, 
-    current_editor_details.email AS Email 
+SELECT DISTINCTROW ed2.edition_id AS EditionId,
+        ed2.copyright_holder AS CopyrightHolder,
+        ed2.collaborators AS Collaborators,
+
+        ed2.user_id AS CurrentUserId,
+        ed2.email AS CurrentEmail,
+        ed2.is_admin AS CurrentIsAdmin,
+        ed2.may_lock AS CurrentMayLock,
+        ed2.may_write AS CurrentMayWrite,
+        ed2.may_read AS CurrentMayRead,
+
+        manuscript_data.name AS Name,
+        manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
+
+        im.thumbnail_url AS Thumbnail,
+
+        ed2.manuscript_id AS ManuscriptId,
+        ed2.locked AS Locked,
+        ed2.public AS IsPublic,
+        ed2.manuscript_id AS ScrollId,
+        last.last_edit AS LastEdit,
+
+        other_editors.edition_editor_id EditorId,
+        other_editors.email AS EditorEmail,
+        other_editors.forename AS Forename,
+        other_editors.surname AS Surname,
+        other_editors.organization AS Organization,
+        other_editors.is_admin AS IsAdmin,
+        other_editors.may_lock AS MayLock,
+        other_editors.may_write AS MayWrite,
+        other_editors.may_read AS MayRead
+
 FROM edition AS ed1
-JOIN (SELECT edition.edition_id, 
-             edition.copyright_holder, 
-             edition.collaborators, 
-             edition.locked, 
-             edition.manuscript_id, 
-             edition.public
-      FROM edition
-      JOIN edition_editor USING(edition_id)
-      WHERE (edition.public = 1 $UserFilter)
-        AND (edition.public = 1 OR edition_editor.may_read = 1)
-      GROUP BY edition.edition_id) AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
-JOIN edition_editor ON edition_editor.edition_id = ed2.edition_id
-JOIN user ON user.user_id = edition_editor.user_id
-LEFT JOIN edition_editor AS current_editor ON current_editor.edition_id = ed2.edition_id
-    $CurrentEditorFilter
-LEFT JOIN user AS current_editor_details ON current_editor_details.user_id = current_editor.user_id
-JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
-JOIN manuscript_data USING(manuscript_data_id)
-LEFT JOIN (SELECT edition_id, MAX(time) AS last_edit 
-           FROM edition_editor
-           JOIN main_action USING(edition_id) 
-           GROUP BY edition_id) AS last ON last.edition_id = ed2.edition_id
-LEFT JOIN (SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT(proxy, url, SQE_image.filename)) AS thumbnail_url 
-		   FROM edition
-		   JOIN iaa_edition_catalog USING(manuscript_id)
-           JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
-		   JOIN SQE_image ON SQE_image.image_catalog_id = image_to_iaa_edition_catalog.image_catalog_id AND SQE_image.type = 0 
-           JOIN image_urls USING(image_urls_id)
-           WHERE iaa_edition_catalog.edition_side = 0
-           GROUP BY manuscript_id) AS im ON im.manuscript_id = ed2.manuscript_id
+         # Get every edition of the same manuscript
+         JOIN (
+    SELECT  edition.edition_id,
+            edition.copyright_holder,
+            edition.collaborators,
+            edition.locked,
+            edition.manuscript_id,
+            edition.public,
+            user.user_id,
+            user.email,
+            user.forename,
+            user.surname,
+            user.organization,
+            edition_editor.edition_editor_id,
+            edition_editor.is_admin,
+            edition_editor.may_lock,
+            edition_editor.may_write,
+            edition_editor.may_read
+    FROM edition
+             JOIN edition_editor USING(edition_id)
+             JOIN user USING(user_id)
+) AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
+             AND (ed2.public = 1 $UserFilter)
+    
+
+    # Get the current user details
+         LEFT JOIN (
+    SELECT  user.user_id,
+            user.email,
+            user.forename,
+            user.surname,
+            user.organization,
+            edition_editor.is_admin,
+            edition_editor.may_lock,
+            edition_editor.may_write,
+            edition_editor.may_read,
+            edition_editor.edition_id,
+            edition_editor.edition_editor_id
+    FROM edition_editor
+             JOIN user USING(user_id)
+) AS other_editors ON other_editors.edition_id = ed2.edition_id
+
+    # Get the edition manuscript information
+         JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
+         JOIN manuscript_data USING(manuscript_data_id)
+
+    # Get the last edit date/time
+         LEFT JOIN (
+    SELECT edition_id, MAX(time) AS last_edit
+    FROM edition_editor
+             JOIN main_action USING(edition_id)
+    GROUP BY edition_id
+) AS last ON last.edition_id = ed2.edition_id
+
+    # Get a thumbnail if possible
+         LEFT JOIN (
+    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT(proxy, url, SQE_image.filename)) AS thumbnail_url
+    FROM edition
+             JOIN iaa_edition_catalog USING(manuscript_id)
+             JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
+             JOIN SQE_image ON SQE_image.image_catalog_id = image_to_iaa_edition_catalog.image_catalog_id AND SQE_image.type = 0
+             JOIN image_urls USING(image_urls_id)
+    WHERE iaa_edition_catalog.edition_side = 0
+    GROUP BY manuscript_id
+) AS im ON im.manuscript_id = ed2.manuscript_id
+
 $Where
-GROUP BY ed2.edition_id
 ";
 
         public static string GetQuery(bool limitUser, bool limitScrolls)
         {
             // Build the WHERE clauses
             var where = limitScrolls ? "WHERE ed1.edition_id = @EditionId" : "";
-            var userFilter = limitUser ? "OR edition_editor.user_id = @UserId" : "";
-            var currentEditorFilter = limitUser ? "AND current_editor.user_id = @UserId" : "";
+            var userFilter = limitUser ? "OR (ed2.user_id = @UserId AND ed2.may_read = 1)" : "";
 
 
             return _baseQuery.Replace("$Where", where)
-                .Replace("$UserFilter", userFilter)
-                .Replace("$CurrentEditorFilter", currentEditorFilter);
+                .Replace("$UserFilter", userFilter);
         }
 
 
         internal class Result
         {
             public uint EditionId { get; set; }
-            public bool Admin { get; set; }
+            public bool CurrentIsAdmin { get; set; }
             public string Name { get; set; }
             public uint EditionDataEditorId { get; set; }
-            public string ScrollId { get; set; }
+            public string ManuscriptId { get; set; }
             public string Thumbnail { get; set; }
             public bool Locked { get; set; }
-            public bool MayLock { get; set; }
-            public bool MayWrite { get; set; }
-            public bool MayRead { get; set; }
+            public bool CurrentMayLock { get; set; }
+            public bool CurrentMayWrite { get; set; }
+            public bool CurrentMayRead { get; set; }
             public DateTime? LastEdit { get; set; }
-            public uint UserId { get; set; }
-            public string Email { get; set; }
+            public uint CurrentUserId { get; set; }
+            public string CurrentEmail { get; set; }
             public string Collaborators { get; set; }
             public string CopyrightHolder { get; set; }
             public bool IsPublic { get; set; }
@@ -358,6 +404,125 @@ FROM (  SELECT edition_id
         WHERE edition_id = @EditionId AND user_id = @UserId
     ) as valid_user
 JOIN SQE.edition_editor USING(edition_id)
+";
+    }
+
+    internal static class RecordEditionEditorRequest
+    {
+        internal const string GetQuery = @"
+INSERT INTO edition_editor_request (
+                                        token, 
+                                        admin_user_id, 
+                                        editor_user_id, 
+                                        edition_id, 
+                                        is_admin, 
+                                        may_lock, 
+                                        may_write
+                                    )
+               
+VALUES (
+            @Token, 
+            @AdminUserId, 
+            @EditorUserId, 
+            @EditionId, 
+            @IsAdmin, 
+            @MayLock, 
+            @MayWrite
+        )
+
+ON DUPLICATE KEY 
+    UPDATE     is_admin = @IsAdmin, 
+               may_lock = @MayLock, 
+               may_write = @MayWrite, 
+               date = CURRENT_DATE()
+";
+    }
+
+    internal static class FindEditionEditorRequestByToken
+    {
+        internal const string GetQuery = @"
+SELECT  edition_editor_request.edition_id AS EditionId, 
+        edition_editor_request.is_admin AS IsAdmin, 
+        edition_editor_request.may_lock AS MayLock, 
+        edition_editor_request.may_write AS MayWrite,
+        user.email AS Email
+FROM edition_editor_request
+    JOIN user ON user.user_id = edition_editor_request.editor_user_id
+WHERE token = @Token
+    AND editor_user_id = @EditorUserId
+";
+    }
+
+    internal static class FindEditionEditorRequestByEditorEdition
+    {
+        internal const string GetQuery = @"
+SELECT  edition_editor_request.token AS Token
+FROM edition_editor_request
+WHERE editor_user_id = @EditorUserId
+    AND edition_id = @EditionId
+    AND admin_user_id = @AdminUserId
+";
+    }
+
+    internal static class FindEditionEditorRequestByAdminId
+    {
+        internal const string GetQuery = @"
+SELECT  edition_editor_request.edition_id AS EditionId,
+        manuscript_data.name AS EditionName,
+        user.email AS Email,
+        user.forename AS EditorForename,
+        user.surname AS EditorSurname,
+        user.organization AS EditorOrganization,
+        edition_editor_request.date AS Date,
+        edition_editor_request.is_admin AS IsAdmin,
+        edition_editor_request.may_lock AS MayLock,
+        edition_editor_request.may_write AS MayWrite,
+        TRUE AS MayRead
+FROM edition_editor_request
+    JOIN user ON user.user_id = edition_editor_request.editor_user_id
+    JOIN manuscript_data_owner USING(edition_id)
+    JOIN manuscript_data USING(manuscript_data_id)
+WHERE edition_editor_request.admin_user_id = @AdminUserId
+";
+    }
+
+    internal static class FindEditionEditorRequestByEditorId
+    {
+        internal const string GetQuery = @"
+SELECT  edition_editor_request.edition_id AS EditionId,
+        manuscript_data.name AS EditionName,
+        user.email AS Email,
+        user.forename AS AdminForename,
+        user.surname AS AdminSurname,
+        user.organization AS AdminOrganization,
+        edition_editor_request.token AS Token,
+        edition_editor_request.date AS Date,
+        edition_editor_request.is_admin AS IsAdmin,
+        edition_editor_request.may_lock AS MayLock,
+        edition_editor_request.may_write AS MayWrite,
+        TRUE AS MayRead
+FROM edition_editor_request
+    JOIN user ON user.user_id = edition_editor_request.admin_user_id
+    JOIN manuscript_data_owner USING(edition_id)
+    JOIN manuscript_data USING(manuscript_data_id)
+WHERE edition_editor_request.editor_user_id = @EditorUserId
+";
+    }
+
+    internal static class GetEditionEditorRequestDate
+    {
+        internal const string GetQuery = @"
+SELECT date
+FROM edition_editor_request
+WHERE token = @Token
+";
+    }
+
+    internal static class DeleteEditionEditorRequest
+    {
+        internal const string GetQuery = @"
+DELETE FROM edition_editor_request
+WHERE token = @Token AND editor_user_id = @EditorUserId
 ";
     }
 }

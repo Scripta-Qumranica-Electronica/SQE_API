@@ -78,7 +78,7 @@ namespace SQE.API.Server.Services
         {
             return new LineDataListDTO(
                 (await _textRepo.GetLineIdsAsync(editionUser, fragmentId))
-                .Select(x => new LineDataDTO(x.lineId, x.lineName))
+                .Select(x => new LineDataDTO(x.LineId.GetValueOrDefault(), x.LineName))
                 .ToList()
             );
         }
@@ -87,7 +87,10 @@ namespace SQE.API.Server.Services
         {
             return new TextFragmentDataListDTO(
                 (await _textRepo.GetFragmentDataAsync(editionUser))
-                .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId))
+                .Select(x => new TextFragmentDataDTO(
+                    x.TextFragmentId.GetValueOrDefault(),
+                    x.TextFragmentName,
+                    x.TextFragmentEditorId.GetValueOrDefault()))
                 .ToList()
             );
         }
@@ -106,17 +109,18 @@ namespace SQE.API.Server.Services
             CreateTextFragmentDTO createFragment,
             string clientId = null)
         {
+            var fragmentData = new TextFragmentData() { TextFragmentName = createFragment.name };
             var newFragment = await _textRepo.CreateTextFragmentAsync(
                 editionUser,
-                createFragment.name,
+                fragmentData,
                 createFragment.previousTextFragmentId,
                 createFragment.nextTextFragmentId
             );
 
             var newTextFragmentData = new TextFragmentDataDTO(
-                newFragment.TextFragmentId,
+                newFragment.TextFragmentId.GetValueOrDefault(),
                 newFragment.TextFragmentName,
-                newFragment.EditionEditorId
+                newFragment.TextFragmentEditorId.GetValueOrDefault()
             );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
@@ -150,9 +154,9 @@ namespace SQE.API.Server.Services
             );
 
             var newTextFragmentData = new TextFragmentDataDTO(
-                newFragment.TextFragmentId,
+                newFragment.TextFragmentId.GetValueOrDefault(),
                 newFragment.TextFragmentName,
-                newFragment.EditionEditorId
+                newFragment.TextFragmentEditorId.GetValueOrDefault()
             );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
@@ -169,17 +173,14 @@ namespace SQE.API.Server.Services
         /// <returns>A TextEditionDTO</returns>
         private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)
         {
-            var editorList = new Dictionary<string, EditorDTO>();
-            foreach (var editor in editors)
-                editorList.Add(
-                    editor.UserId.ToString(),
-                    new EditorDTO
+            var editorList =
+                editors.ToDictionary(editor => editor.UserId.ToString(),
+                    editor => new EditorDTO
                     {
                         forename = editor.Forename,
                         surname = editor.Surname,
                         organization = editor.Organization
-                    }
-                );
+                    });
 
             // Check if this edition has a proper collaborators field, if not dynamically add
             // all edition editors to that field.
@@ -197,69 +198,69 @@ namespace SQE.API.Server.Services
                 textFragments = ed.fragments.Select(
                         x => new TextFragmentDTO
                         {
-                            textFragmentId = x.textFragmentId,
-                            textFragmentName = x.textFragmentName,
-                            editorId = x.textFragmentAuthor,
+                            textFragmentId = x.TextFragmentId.GetValueOrDefault(),
+                            textFragmentName = x.TextFragmentName,
+                            editorId = x.TextFragmentEditorId.GetValueOrDefault(),
 
-                            lines = x.lines.Select(
+                            lines = x.Lines.Select(
                                     y => new LineDTO
                                     {
-                                        lineId = y.lineId,
-                                        lineName = y.line,
-                                        editorId = y.lineAuthor,
+                                        lineId = y.LineId.GetValueOrDefault(),
+                                        lineName = y.LineName,
+                                        editorId = y.LineAuthor.GetValueOrDefault(),
 
-                                        signs = y.signs.Select(
+                                        signs = y.Signs.Select(
                                                 z => new SignDTO
                                                 {
-                                                    signInterpretations = z.signInterpretations.Select(
+                                                    signInterpretations = z.SignInterpretations.Select(
                                                             a => new SignInterpretationDTO
                                                             {
-                                                                signInterpretationId = a.signInterpretationId,
-                                                                character = a.character,
+                                                                signInterpretationId = a.SignInterpretationId.GetValueOrDefault(),
+                                                                character = a.Character,
 
-                                                                attributes = a.attributes.Select(
+                                                                attributes = a.Attributes.Select(
                                                                         b => new InterpretationAttributeDTO
                                                                         {
                                                                             interpretationAttributeId =
-                                                                                b.interpretationAttributeId,
-                                                                            sequence = b.sequence,
-                                                                            attributeValueId = b.attributeValueId,
-                                                                            attributeValueString = b.attributeString,
+                                                                                b.SignInterpretationAttributeId.GetValueOrDefault(),
+                                                                            sequence = b.Sequence.GetValueOrDefault(),
+                                                                            attributeValueId = b.AttributeValueId.GetValueOrDefault(),
+                                                                            attributeValueString = b.AttributeString,
                                                                             editorId = b
-                                                                                .signInterpretationAttributeAuthor,
-                                                                            value = b.value
+                                                                                .SignInterpretationAttributeAuthor.GetValueOrDefault(),
+                                                                            value = b.NumericValue.GetValueOrDefault()
                                                                         }
                                                                     )
                                                                     .ToList(),
 
-                                                                rois = a.signInterpretationRois.Select(
+                                                                rois = a.SignInterpretationRois.Select(
                                                                         b => new InterpretationRoiDTO
                                                                         {
                                                                             interpretationRoiId =
-                                                                                b.SignInterpretationRoiId,
+                                                                                b.SignInterpretationRoiId.GetValueOrDefault(),
                                                                             signInterpretationId =
                                                                                 b.SignInterpretationId,
-                                                                            editorId = b.SignInterpretationRoiAuthor,
-                                                                            artefactId = b.ArtefactId,
+                                                                            editorId = b.SignInterpretationRoiAuthor.GetValueOrDefault(),
+                                                                            artefactId = b.ArtefactId.GetValueOrDefault(),
                                                                             shape = b.Shape,
                                                                             translate = new TranslateDTO
                                                                             {
-                                                                                x = b.TranslateX,
-                                                                                y = b.TranslateY
+                                                                                x = b.TranslateX.GetValueOrDefault(),
+                                                                                y = b.TranslateY.GetValueOrDefault()
                                                                             },
-                                                                            exceptional = b.Exceptional,
-                                                                            valuesSet = b.ValuesSet
+                                                                            exceptional = b.Exceptional.GetValueOrDefault(),
+                                                                            valuesSet = b.ValuesSet.GetValueOrDefault()
                                                                         }
                                                                     )
                                                                     .ToList(),
 
-                                                                nextSignInterpretations = a.nextSignInterpretations
+                                                                nextSignInterpretations = a.NextSignInterpretations
                                                                     .Select(
                                                                         b => new NextSignInterpretationDTO
                                                                         {
                                                                             nextSignInterpretationId =
-                                                                                b.nextSignInterpretationId,
-                                                                            editorId = b.signSequenceAuthor
+                                                                                b.NextSignInterpretationId,
+                                                                            editorId = b.SignSequenceAuthor
                                                                         }
                                                                     )
                                                                     .ToList()
@@ -280,17 +281,15 @@ namespace SQE.API.Server.Services
 
         private static LineTextDTO _textEditionLineToDTO(TextEdition ed, List<EditorInfo> editors)
         {
-            var editorList = new Dictionary<string, EditorDTO>();
-            foreach (var editor in editors)
-                editorList.Add(
-                    editor.UserId.ToString(),
-                    new EditorDTO
+            var editorList =
+                editors.ToDictionary(
+                    editor => editor.UserId.ToString(),
+                    editor => new EditorDTO
                     {
                         forename = editor.Forename,
                         surname = editor.Surname,
                         organization = editor.Organization
-                    }
-                );
+                    });
 
             // Check if this edition has a proper collaborators field, if not dynamically add
             // all edition editors to that field.
@@ -301,57 +300,57 @@ namespace SQE.API.Server.Services
             {
                 editors = editorList,
                 licence = ed.licence,
-                lineId = ed.fragments.First().lines.First().lineId,
-                lineName = ed.fragments.First().lines.First().line,
-                editorId = ed.fragments.First().lines.First().lineAuthor,
+                lineId = ed.fragments.First().Lines.First().LineId.GetValueOrDefault(),
+                lineName = ed.fragments.First().Lines.First().LineName,
+                editorId = ed.fragments.First().Lines.First().LineAuthor.GetValueOrDefault(),
                 signs = ed.fragments.First()
-                    .lines.First()
-                    .signs.Select(
+                    .Lines.First()
+                    .Signs.Select(
                         z => new SignDTO
                         {
-                            signInterpretations = z.signInterpretations.Select(
+                            signInterpretations = z.SignInterpretations.Select(
                                     a => new SignInterpretationDTO
                                     {
-                                        signInterpretationId = a.signInterpretationId,
-                                        character = a.character,
+                                        signInterpretationId = a.SignInterpretationId.GetValueOrDefault(),
+                                        character = a.Character,
 
-                                        attributes = a.attributes.Select(
+                                        attributes = a.Attributes.Select(
                                                 b => new InterpretationAttributeDTO
                                                 {
-                                                    interpretationAttributeId = b.interpretationAttributeId,
-                                                    sequence = b.sequence,
-                                                    attributeValueId = b.attributeValueId,
-                                                    attributeValueString = b.attributeString,
-                                                    editorId = b.signInterpretationAttributeAuthor,
-                                                    value = b.value
+                                                    interpretationAttributeId = b.SignInterpretationAttributeId.GetValueOrDefault(),
+                                                    sequence = b.Sequence.GetValueOrDefault(),
+                                                    attributeValueId = b.AttributeValueId.GetValueOrDefault(),
+                                                    attributeValueString = b.AttributeString,
+                                                    editorId = b.SignInterpretationAttributeAuthor.GetValueOrDefault(),
+                                                    value = b.NumericValue.GetValueOrDefault()
                                                 }
                                             )
                                             .ToList(),
 
-                                        rois = a.signInterpretationRois.Select(
+                                        rois = a.SignInterpretationRois.Select(
                                                 b => new InterpretationRoiDTO
                                                 {
-                                                    interpretationRoiId = b.SignInterpretationRoiId,
-                                                    signInterpretationId = b.SignInterpretationId,
-                                                    editorId = b.SignInterpretationRoiAuthor,
-                                                    artefactId = b.ArtefactId,
+                                                    interpretationRoiId = b.SignInterpretationRoiId.GetValueOrDefault(),
+                                                    signInterpretationId = b.SignInterpretationId.GetValueOrDefault(),
+                                                    editorId = b.SignInterpretationRoiAuthor.GetValueOrDefault(),
+                                                    artefactId = b.ArtefactId.GetValueOrDefault(),
                                                     shape = b.Shape,
                                                     translate = new TranslateDTO
                                                     {
-                                                        x = b.TranslateX,
-                                                        y = b.TranslateY
+                                                        x = b.TranslateX.GetValueOrDefault(),
+                                                        y = b.TranslateY.GetValueOrDefault()
                                                     },
-                                                    exceptional = b.Exceptional,
-                                                    valuesSet = b.ValuesSet
+                                                    exceptional = b.Exceptional.GetValueOrDefault(),
+                                                    valuesSet = b.ValuesSet.GetValueOrDefault()
                                                 }
                                             )
                                             .ToList(),
 
-                                        nextSignInterpretations = a.nextSignInterpretations.Select(
+                                        nextSignInterpretations = a.NextSignInterpretations.Select(
                                                 b => new NextSignInterpretationDTO
                                                 {
-                                                    nextSignInterpretationId = b.nextSignInterpretationId,
-                                                    editorId = b.signSequenceAuthor
+                                                    nextSignInterpretationId = b.NextSignInterpretationId,
+                                                    editorId = b.SignSequenceAuthor
                                                 }
                                             )
                                             .ToList()

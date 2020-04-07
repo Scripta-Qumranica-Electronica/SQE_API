@@ -70,39 +70,32 @@ namespace SQE.API.Server.Helpers
         private static string _validatePolygon(string wktPolygon, string entityName, bool fix)
         {
             var wkr = new WKTReader();
-            var fixedPoly = false;
             // Bail immediately on null/blank input
             if (string.IsNullOrEmpty(wktPolygon))
-                return null;
+                throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is empty");
 
-            Geometry polygon;
-            // Load Polygon
+
+            // Try loading the polygon
             try
             {
-                polygon = wkr.Read(wktPolygon);
+                var polygon = wkr.Read(wktPolygon);
+                // If it is valid, return it
+                if (polygon.IsValid)
+                    return polygon.Normalized().ToString(); // Always normalize the polygon
             }
             catch
             {
+                // The polygon could not be loaded, so throw an error if no request to fix it has been made
                 if (!fix)
-                    throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the repair API's validate-wkt endpoint to fix it");
-
-                polygon = _repairPolygon(wktPolygon);
-                fixedPoly = true;
+                    throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
             }
 
-            if (!polygon.IsValid)
-            {
-                if (!fix)
-                    throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the repair API's validate-wkt endpoint to fix it");
+            // The polygon is somehow invalid, throw an error if no request to repair it has been made
+            if (!fix)
+                throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the repair API's repair-wkt-polygon endpoint to fix it");
 
-                polygon = _repairPolygon(wktPolygon);
-                fixedPoly = true;
-            }
-
-            if (fixedPoly)
-                throw new StandardExceptions.MalformedDataException("wktPolygon", polygon.Normalized().ToString());
-
-            return polygon.Normalized().ToString();
+            // Run the repair algorithms and return the results in mornalized form
+            return _repairPolygon(wktPolygon).Normalized().ToString();
         }
 
         /// <summary>
@@ -117,13 +110,15 @@ namespace SQE.API.Server.Helpers
             var wkr = new WKTReader();
             var asymmetricNesting = new Regex(@"\),\s(?!\()");
             var wktSplit = new Regex(@"\)\s?,\s?\(");
+
+            // Check for errors with the nesting of parentheses in the polygon geometry, we don't really know how to fix those
             if (asymmetricNesting.Matches(wkt).Count > 0)
                 throw new StandardExceptions.InputDataRuleViolationException("The submitted POLYGON has an improperly nested ring");
 
             // We break the string into the individual paths the loop over them, repairing each path as we go.
             var polyStrings = wktSplit.Split(wkt).Select(z =>
             {
-                // Strip extraneous character
+                // Strip extraneous characters
                 var saniString = z.Replace("POLYGON", "")
                     .Replace("MULTI", "")
                     .Replace("(", "")
@@ -140,25 +135,35 @@ namespace SQE.API.Server.Helpers
                 // Read the single path into net topology suite
                 var geom = wkr.Read(singlePath);
 
-                // Check if geom is valid
+                // Return the geom if it is valid
                 if (geom.IsValid) return geom;
+
+                // Trying running a buffer of 0 on the polygon and testing if it has the same area as the original
                 var bufferedGeom = geom.Buffer(0);
                 if (!bufferedGeom.IsValid
                     || !bufferedGeom.Area.Equals(geom.Area))
                 {
-                    // We have a function to fix self-intersecting polys,
-                    // Should we check here also for multipolys and
-                    // run the algorithm to fix that?
+                    // If the geometry is a MultiPolygon, then try to fix that. 
+                    // Otherwise it is a single Polygon and is almost certainly self-intersecting, so fix that.
                     geom = geom.GeometryType == "MultiPolygon"
                         ? _repairMultiPolygon(geom)
                         : _repairSelfInterectingPolygon(geom);
 
-                    // If still invalid, we give up
+                    // If the geometry is still invalid, then we will give up here
                     if (!geom.IsValid)
-                        throw new StandardExceptions.InputDataRuleViolationException($"The new repair method couldn't fix the poly: {geom}");
+                    {
+                        // Try one last pass
+                        geom = geom.GeometryType == "MultiPolygon"
+                            ? _repairMultiPolygon(geom)
+                            : _repairSelfInterectingPolygon(geom);
+
+                        if (!geom.IsValid)
+                            throw new StandardExceptions.InputDataRuleViolationException($"The polygon could not be repaired: {geom}");
+                    }
                 }
                 else
                 {
+                    // The buffer trick worked, so return that geometry
                     geom = bufferedGeom;
                 }
 
@@ -174,11 +179,11 @@ namespace SQE.API.Server.Helpers
                 var newGeom = polyStrings[i];
                 // Create an overlay operation
                 var op = new OverlayOp(fullGeom, newGeom);
-                // Perform the overlay
+                // Perform the symmetric difference operation
                 fullGeom = op.GetResultGeometry(SpatialFunction.SymDifference);
             }
 
-            // If the result is a multipolygon try to repair that
+            // If the resulting is a multipolygon, try to repair that
             if (fullGeom.GetType() == typeof(MultiPolygon))
                 fullGeom = _repairMultiPolygon(fullGeom);
 
@@ -199,11 +204,12 @@ namespace SQE.API.Server.Helpers
         {
             // Separate the geom into its discrete polygon entities
             var discretePolys = GeometryExtracter.Extract<Polygon>(poly);
-            // If there is only one, our job is done
+
+            // If there is more than one polygon, then return the results of the multipolygon algorithm
             if (discretePolys.Count != 1)
-                throw new StandardExceptions.ImproperInputDataException("polygon");
+                return _repairMultiPolygon(new MultiPolygon(discretePolys.Select(x => new Polygon(new LinearRing(x.Coordinates))).ToArray()));
 
-
+            // Immediately return a valid polygon
             if (discretePolys[0].IsValid)
                 return (Polygon)discretePolys[0];
 
@@ -212,54 +218,90 @@ namespace SQE.API.Server.Helpers
             var coords = poly.Boundary.Coordinates;
             var lines = coords.Select(
                 (t, i) => new LineString(new[] { t, coords[i + 1 == coords.Length ? 0 : i + 1] })
-            ).ToList();
+            ).Where(x => !x.Coordinates[0].Equals2D(x.Coordinates[1])).ToList();
 
             // Now group the lines into linestrings that start and stop at the points of intersection
             var intersectedLines = new List<LineString>();
             var points = new List<Coordinate>();
-            foreach (var line in lines)
+            var hitPoints = new List<Coordinate>();
+
+            var linesCount = lines.Count();
+            // Loop over each individual line
+            for (var lineIdx = 0; lineIdx < linesCount; lineIdx++)
             {
+                var line = lines[lineIdx];
+                // Add the first point to the points list
                 if (!points.Any())
                     points.Add(line.Coordinates[0]);
 
-                foreach (var compLine in lines)
+                // Check every available line for an intersection
+                for (var compLineIdx = 0; compLineIdx < linesCount; compLineIdx++)
                 {
-                    if (line.Coordinates.Contains(compLine.Coordinates[0])
-                        || line.Coordinates.Contains(compLine.Coordinates[1])
-                        || !line.Intersects(compLine))
-                        continue;
+                    var compLine = lines[compLineIdx];
+                    // Disregard the line itself, any directly connected line, or any line that does not intersect
+                    if (!line.Intersects(compLine) || lineIdx == compLineIdx ||
+                            ((compLineIdx + 1) % linesCount == lineIdx && compLine.Coordinates[1].Equals2D(line.Coordinates[0])) ||
+                            compLine.Coordinates[0].Equals2D(line.Coordinates[1])
+                        )
+                        continue; // This is not an intersecting line, move on to the next
 
+                    // The current compLine intersects our line
+                    // Get the point of intersection
                     var point = line.Intersection(compLine);
+
+                    if (compLine.Coordinates[1].Equals2D(line.Coordinates[1]))
+                        hitPoints.Add(point.Coordinate);
+                    else if (compLine.Coordinates.Contains(line.Coordinates[0]) || compLine.Coordinates.Contains(line.Coordinates[1]))
+                        if (hitPoints.Contains(point.Coordinate))
+                            continue;
+
+                    // End our current line path at this point of intersection
                     points.Add(point.Coordinate);
+
+                    // Register the current path with this intersection point
                     intersectedLines.Add(new LineString(points.ToArray()));
+
+                    // Start a new line path with this point of intersection
                     points = new List<Coordinate>();
-                    points.Add(point.Coordinate);
+                    if (!point.Coordinate.Equals2D(line.Coordinates[1]))
+                        points.Add(point.Coordinate);
                 }
 
+                // Add the endpoint of the current line to the line path
                 points.Add(line.Coordinates[1]);
+
+                // If we came to the end of the list of lines, then finish up
                 if (lines.Last().ToText() == line.ToText())
                     intersectedLines.Add(new LineString(points.ToArray()));
             }
 
-            // Build the polygon out of the line segments
+            // Build the polygon out of the non intersecting line segments
             var fixedIntersecting = intersectedLines.First().Coordinates.ToList();
-            intersectedLines.RemoveAt(0);
-            var counterpart = intersectedLines.Where(
-                x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())
-            ).LastOrDefault();
+            intersectedLines.RemoveAt(0); // Remove the first line, which we have started using
 
+            // Grab the line segment that should continue the first line
+            var counterpart = intersectedLines.Where(x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())).LastOrDefault();
+
+            // Loop over all matching line pairs
             while (counterpart != null)
             {
+                // Remove the matched line from the list of possibilities
                 intersectedLines.Remove(counterpart);
+
                 // every other matched line should be reversed
-                var rev = intersectedLines.Count % 2 == 0 ? counterpart.Coordinates.ToList() : counterpart.Coordinates.Reverse().ToList();
+                var even = intersectedLines.Count % 2 == 0;
+                var rev = even ? counterpart.Coordinates.ToList() : counterpart.Coordinates.Reverse().ToList();
+
+                // Grab the point at which the intersection originally took place
                 var intersectionPoint = rev.First();
 
                 // Delete the point of intersection from both line strings
                 rev.RemoveAt(0);
                 fixedIntersecting.RemoveAt(fixedIntersecting.Count - 1);
 
-                //calculate the replacement coordinates for the point of intersection
+                // Calculate the replacement coordinates for the old point of intersection
+                // Basically we create one point a very small distance closer to the last point of the first line,
+                // and we create a second point a very small distance closer to the first point of the "counterpart" line.
                 var distCalc = new PointPairDistance();
                 distCalc.Initialize(intersectionPoint, fixedIntersecting.Last());
                 var point1Dist = distCalc.Distance;
@@ -268,15 +310,13 @@ namespace SQE.API.Server.Helpers
                 var newMidPoint1 = LinearLocation.PointAlongSegmentByFraction(intersectionPoint, fixedIntersecting.Last(), 0.1 * (1 / point1Dist));
                 var newMidPoint2 = LinearLocation.PointAlongSegmentByFraction(intersectionPoint, rev.First(), 0.1 * (1 / point2Dist));
 
-                // Add the replacements for the intersection point and concatenate the following line
+                // Add the replacements for the intersection point and concatenate the "counterpart" line
                 fixedIntersecting.Add(newMidPoint1);
                 fixedIntersecting.Add(newMidPoint2);
                 fixedIntersecting.AddRange(rev);
 
                 // Find the next line segment to attach
-                counterpart = intersectedLines.Where(
-                    x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())
-                ).LastOrDefault();
+                counterpart = intersectedLines.Where(x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())).LastOrDefault();
 
                 // If a match is found continue building the line string
                 if (counterpart != null
@@ -290,7 +330,7 @@ namespace SQE.API.Server.Helpers
             if (!fixedIntersecting.First().Equals2D(fixedIntersecting.Last()))
                 fixedIntersecting.Add(fixedIntersecting.First());
 
-            // Delete doubled endpoint
+            // Delete a doubled endpoint
             if (fixedIntersecting.Last().Equals2D(fixedIntersecting[^2]))
                 fixedIntersecting.RemoveAt(fixedIntersecting.Count - 1);
 

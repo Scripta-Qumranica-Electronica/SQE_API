@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace SQE.API.DTO
 {
@@ -13,7 +14,7 @@ namespace SQE.API.DTO
         public PermissionDTO permission { get; set; }
         public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }
-        public List<ShareDTO> shares { get; set; }
+        public List<DetailedEditorRightsDTO> shares { get; set; }
         public bool locked { get; set; }
         public bool isPublic { get; set; }
         public DateTime? lastEdit { set; get; }
@@ -33,23 +34,64 @@ namespace SQE.API.DTO
 
     public class PermissionDTO
     {
+        public bool mayRead { get; set; }
         public bool mayWrite { get; set; }
         public bool isAdmin { get; set; }
     }
 
-    public class UpdateEditorRightsDTO
+    public class MinimalEditorRights : PermissionDTO
     {
-        public bool? mayRead { get; set; }
-        public bool? isAdmin { get; set; }
-        public bool? mayLock { get; set; }
-        public bool? mayWrite { get; set; }
+        public bool mayLock { get; set; }
     }
 
-    public class CreateEditorRightsDTO : UpdateEditorRightsDTO
+    public class UpdateEditorRightsDTO : MinimalEditorRights
+    {
+        public bool mayRead { get; set; }
+    }
+
+    public class InviteEditorDTO : MinimalEditorRights
     {
         [Required]
         [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
+    }
+
+    public class DetailedEditorRightsDTO : UpdateEditorRightsDTO
+    {
+        [Required]
+        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
+        public string email { get; set; }
+        public uint editionId { get; set; }
+    }
+
+    public class DetailedUpdateEditorRightsDTO : UpdateEditorRightsDTO
+    {
+        public uint editionId { get; set; }
+        public string editionName { get; set; }
+        public DateTime date { get; set; }
+    }
+
+    public class AdminEditorRequestDTO : DetailedUpdateEditorRightsDTO
+    {
+        public string editorName { get; set; }
+        public string editorEmail { get; set; }
+    }
+
+    public class EditorInvitationDTO : DetailedUpdateEditorRightsDTO
+    {
+        public Guid token { get; set; }
+        public string requestingAdminName { get; set; }
+        public string requestingAdminEmail { get; set; }
+    }
+
+    public class EditorInvitationListDTO
+    {
+        public List<EditorInvitationDTO> editorInvitations { get; set; }
+    }
+
+    public class AdminEditorRequestListDTO
+    {
+        public List<AdminEditorRequestDTO> editorRequests { get; set; }
     }
 
     public class TextEditionDTO
@@ -60,12 +102,6 @@ namespace SQE.API.DTO
         public string licence { get; set; }
         public Dictionary<string, EditorDTO> editors { get; set; }
         public List<TextFragmentDTO> textFragments { get; set; }
-    }
-
-    public class ShareDTO
-    {
-        public UserDTO user { get; set; }
-        public PermissionDTO permission { get; set; }
     }
 
     public class DeleteTokenDTO
@@ -83,6 +119,33 @@ namespace SQE.API.DTO
     public class EditionScriptCollectionDTO
     {
         public List<LetterDTO> letters { get; set; }
+    }
+
+    /// <summary>
+    /// This is a list of all entities in an edition, including the edition itself.
+    /// This is initially intended to be used with the DeleteDTO object
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum EditionEntities
+    {
+        edition,
+        artefact,
+        textFragment,
+        line,
+        signInterpretation,
+        roi
+    }
+
+    public class DeleteDTO
+    {
+        public DeleteDTO(EditionEntities entity, List<uint> ids)
+        {
+            this.entity = entity;
+            this.ids = ids;
+        }
+
+        public EditionEntities entity { get; set; }
+        public List<uint> ids { get; set; }
     }
 
     #region Request DTO's

@@ -356,7 +356,7 @@ namespace SQE.DatabaseAccess
                 );
 
                 // Generate our secret token
-                var token = Guid.NewGuid().ToString();
+                var token = Guid.NewGuid();
                 // Add the secret token to the database
                 var userEmailConfirmation = await connection.ExecuteAsync(
                     CreateUserEmailTokenQuery.GetQuery(),
@@ -396,7 +396,7 @@ namespace SQE.DatabaseAccess
                     throw new StandardExceptions.ImproperInputDataException("user account activation token");
 
                 // Get all Activate tokens for this user
-                var tokens = await connection.QueryAsync<string>(
+                var tokens = await connection.QueryAsync<Guid>(
                     GetTokensQuery.GetQuery,
                     new
                     {
@@ -489,7 +489,7 @@ namespace SQE.DatabaseAccess
                             );
 
                             // Generate our secret token
-                            var token = Guid.NewGuid().ToString();
+                            var token = Guid.NewGuid();
 
                             // Write the token to the database
                             var tokenEntry = await connection.ExecuteAsync(
@@ -548,7 +548,7 @@ namespace SQE.DatabaseAccess
                     throw new StandardExceptions.DataNotWrittenException("reset password");
 
                 // Get all unused ResetPassword tokens
-                var tokens = await connection.QueryAsync<string>(
+                var tokens = await connection.QueryAsync<Guid>(
                     GetTokensQuery.GetQuery,
                     new
                     {

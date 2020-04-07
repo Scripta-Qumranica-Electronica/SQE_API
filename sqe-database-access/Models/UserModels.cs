@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace SQE.DatabaseAccess.Models
 {
@@ -10,7 +11,7 @@ namespace SQE.DatabaseAccess.Models
 
     public class UserToken : User
     {
-        public string Token { get; set; }
+        public Guid Token { get; set; }
     }
 
     public class DetailedUser : User
@@ -23,7 +24,8 @@ namespace SQE.DatabaseAccess.Models
     public class DetailedUserWithToken : DetailedUser
     {
         public bool Activated { get; set; }
-        public string Token { get; set; }
+        public Guid Token { get; set; }
+        public DateTime Date { get; set; }
     }
 
     public class UserEditionPermissions
@@ -34,17 +36,6 @@ namespace SQE.DatabaseAccess.Models
         public bool MayRead { get; set; }
         public bool IsAdmin { get; set; }
         public bool Locked { get; set; }
-    }
-
-    public class AddEditorJWT
-    {
-        public uint userId { get; set; }
-        public uint editionId { get; set; }
-        public string email { get; set; }
-        public bool mayWrite { get; set; }
-        public bool mayLock { get; set; }
-        public bool mayRead { get; set; }
-        public bool isAdmin { get; set; }
     }
 
     public class EditionUserInfo
@@ -97,5 +88,18 @@ namespace SQE.DatabaseAccess.Models
         public string Forename { get; set; }
         public string Surname { get; set; }
         public string Organization { get; set; }
+    }
+
+    public class EditorWithPermissions : EditorInfo
+    {
+        public uint EditorId { get; set; }
+        public string EditorEmail { get; set; }
+        public bool MayRead { get; set; }
+
+        public bool MayWrite { get; set; }
+
+        public bool MayLock { get; set; }
+
+        public bool IsAdmin { get; set; }
     }
 }

@@ -48,6 +48,21 @@ check_appsettings_vars "MailerEmailPassword"
 check_appsettings_vars "MailerEmailSmtpUrl"
 check_appsettings_vars "MailerEmailSmtpPort"
 
+## We generate the ts definitions for the C# DTOs before pushing
+generate_realtime_hubs () {
+    dotnet build sqe-realtime-hub-builder
+    dotnet sqe-realtime-hub-builder/bin/Debug/netcoreapp3.1/sqe-realtime-hub-builder.dll
+        if test "$?" -ne 0; then 
+        printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
+        printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
+        exit 1
+    fi 
+}
+
+## Generating realtime hub methods
+echo "Generating the realtime hub methods"
+generate_realtime_hubs
+
 ## We run the "linter" to ensure the code remains formatted consistently
 cleanup_code () {
     ## Check that dotnet-format is installed
@@ -55,7 +70,7 @@ cleanup_code () {
         dotnet tool install -g dotnet-format
     fi
     
-    dotnet format
+    ~/.dotnet/tools/dotnet-format 
 }
 
 ## Cleaning up code formatting

@@ -64,6 +64,8 @@ namespace SQE.API.Server
             services.AddTransient<IDatabaseWriter, DatabaseWriter>();
             services.AddTransient<ITextRepository, TextRepository>();
             services.AddTransient<IRoiRepository, RoiRepository>();
+            services.AddTransient<ISignInterpretationCommentaryRepository, SignInterpretationCommentaryRepository>();
+            services.AddTransient<IAttributeRepository, AttributeRepository>();
 
             services.AddResponseCompression();
             services.Configure<BrotliCompressionProviderOptions>(

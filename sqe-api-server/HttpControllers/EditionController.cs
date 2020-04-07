@@ -27,7 +27,7 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="payload">JSON object with the attributes of the new editor</param>
         [HttpPost("v1/[controller]s/{editionId}/add-editor-request")]
         public async Task<ActionResult> RequestAddEditionEditor([FromRoute] uint editionId,
-            [FromBody] CreateEditorRightsDTO payload)
+            [FromBody] InviteEditorDTO payload)
         {
             return await _editionService.RequestNewEditionEditor(
                 await _userService.GetCurrentUserObjectAsync(editionId, admin: true),
@@ -36,11 +36,32 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        ///     Confirma addition of an editor to the specified edition
+        /// Get a list of requests issued by the current user for other users
+        /// to become editors of a shared edition
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("v1/[controller]s/admin-share-requests")]
+        public async Task<ActionResult<AdminEditorRequestListDTO>> GetAdminShareRequests()
+        {
+            return await _editionService.GetAdminEditorRequests(_userService.GetCurrentUserId() ?? 0);
+        }
+
+        /// <summary>
+        /// Get a list of invitations issued to the current user to become an editor of a shared edition
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("v1/[controller]s/editor-invitations")]
+        public async Task<ActionResult<EditorInvitationListDTO>> GetEditorInvitations()
+        {
+            return await _editionService.GetUserEditorInvitations(_userService.GetCurrentUserId() ?? 0);
+        }
+
+        /// <summary>
+        ///     Confirm addition of an editor to the specified edition
         /// </summary>
         /// <param name="token">JWT for verifying the request confirmation</param>
         [HttpPost("v1/[controller]s/confirm-editorship/{token}")]
-        public async Task<ActionResult<CreateEditorRightsDTO>> ConfirmAddEditionEditor([FromRoute] string token)
+        public async Task<ActionResult<DetailedEditorRightsDTO>> ConfirmAddEditionEditor([FromRoute] string token)
         {
             return await _editionService.AddEditionEditor(
                 _userService.GetCurrentUserId(),
@@ -55,7 +76,7 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
         /// <param name="payload">JSON object with the attributes of the new editor</param>
         [HttpPut("v1/[controller]s/{editionId}/editors/{editorEmailId}")]
-        public async Task<ActionResult<CreateEditorRightsDTO>> AlterEditionEditor([FromRoute] uint editionId,
+        public async Task<ActionResult<DetailedEditorRightsDTO>> AlterEditionEditor([FromRoute] uint editionId,
             [FromRoute] string editorEmailId,
             [FromBody] UpdateEditorRightsDTO payload)
         {

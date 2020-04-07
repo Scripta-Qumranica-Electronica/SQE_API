@@ -4,7 +4,7 @@ namespace SQE.ApiTest.ApiRequests
 {
     public static partial class Get
     {
-        public class V1_Editions_EditionId_Rois_RoiId : RoiRequestObject<EmptyInput, InterpretationRoiDTO>
+        public class V1_Editions_EditionId_Rois_RoiId : RoiRequestObject<EmptyInput, InterpretationRoiDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request information about a ROI
@@ -19,7 +19,7 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-        public class V1_Editions_EditionId_Rois : EditionRequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO>
+        public class V1_Editions_EditionId_Rois : EditionRequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO, InterpretationRoiDTO>
         {
             /// <summary>
             ///     Create a new ROI in an edition
@@ -32,12 +32,12 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("createRois");
+                listenerMethod.Add("CreatedRoi");
             }
         }
 
         public class V1_Editions_EditionId_Rois_Batch
-            : EditionRequestObject<InterpretationRoiDTOList, InterpretationRoiDTO>
+            : EditionRequestObject<InterpretationRoiDTOList, InterpretationRoiDTO, InterpretationRoiDTO>
         {
             /// <summary>
             ///     Create one or more new ROIs in an edition
@@ -50,12 +50,12 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("createRois");
+                listenerMethod.Add("CreatedRoisBatch");
             }
         }
 
         public class V1_Editions_EditionId_Rois_BatchEdit
-            : EditionRequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO>
+            : EditionRequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO, BatchEditRoiResponseDTO>
         {
             /// <summary>
             ///     Create one or more new ROIs in an edition
@@ -68,9 +68,9 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("createRois");
-                listenerMethod.Add("updateRois");
-                listenerMethod.Add("deketeRois");
+                listenerMethod.Add("CreatedRoisBatch");
+                listenerMethod.Add("UpdatedRoisBatch");
+                listenerMethod.Add("DeletedRoisBatch");
             }
         }
     }
@@ -78,7 +78,7 @@ namespace SQE.ApiTest.ApiRequests
     public static partial class Put
     {
         public class V1_Editions_EditionId_Rois_RoiId
-            : EditionRequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO>
+            : EditionRequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO, UpdatedInterpretationRoiDTO>
         {
             /// <summary>
             ///     Update ROI in an edition
@@ -91,12 +91,12 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("updateRois");
+                listenerMethod.Add("UpdatedRoi");
             }
         }
 
         public class V1_Editions_EditionId_Rois_Batch
-            : EditionRequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
+            : EditionRequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
         {
             /// <summary>
             ///     Updates one or more new ROIs in an edition
@@ -109,14 +109,14 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("updateRois");
+                listenerMethod.Add("UpdatedRoisBatch");
             }
         }
     }
 
     public static partial class Delete
     {
-        public class V1_Editions_EditionId_Rois_RoiId : RoiRequestObject<EmptyInput, EmptyOutput>
+        public class V1_Editions_EditionId_Rois_RoiId : RoiRequestObject<EmptyInput, EmptyOutput, EmptyOutput>
         {
             /// <summary>
             ///     Deletes a ROI from an edition
@@ -125,7 +125,7 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="roiId">The id of the ROI to delete</param>
             public V1_Editions_EditionId_Rois_RoiId(uint editionId, uint roiId) : base(editionId, roiId, null)
             {
-                listenerMethod.Add("deleteRois");
+                listenerMethod.Add("DeletedRoi");
             }
         }
     }

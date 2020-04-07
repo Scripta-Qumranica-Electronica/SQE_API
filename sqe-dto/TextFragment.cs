@@ -32,7 +32,7 @@ namespace SQE.API.DTO
         /// </summary>
         /// <param name="id">Id of the text fragment</param>
         /// <param name="name">Name of the text fragment</param>
-        /// <param name="editorId">Id of the editor who sefined the text fragment</param>
+        /// <param name="editorId">Id of the editor who defined the text fragment</param>
         /// <param name="suggested">
         ///     Whether this text fragment was suggest by the system (true)
         ///     or is a definite match (false)
@@ -47,6 +47,25 @@ namespace SQE.API.DTO
         }
 
         public bool suggested { get; set; }
+    }
+
+    public class ImagedObjectTextFragmentMatchDTO
+    {
+        public ImagedObjectTextFragmentMatchDTO(uint editionId, string manuscriptName, uint textFragmentId,
+            string textFragmentName, string side)
+        {
+            this.editionId = editionId;
+            this.manuscriptName = manuscriptName;
+            this.textFragmentId = textFragmentId;
+            this.textFragmentName = textFragmentName;
+            this.side = side;
+        }
+
+        public uint editionId { get; set; }
+        public string manuscriptName { get; set; }
+        public uint textFragmentId { get; set; }
+        public string textFragmentName { get; set; }
+        public string side { get; set; }
     }
 
     public class TextFragmentDataListDTO

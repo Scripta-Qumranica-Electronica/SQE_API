@@ -121,7 +121,7 @@ namespace SQE.ApiTest
         private async Task ActivatUserAccountAsync(DetailedUserDTO user, bool shouldSucceed = true)
         {
             var userToken = await GetToken(user.email); // Get  token from DB
-            var payload = new AccountActivationRequestDTO { token = userToken.token };
+            var payload = new AccountActivationRequestDTO { token = userToken.token.ToString() };
 
             var (response, msg) =
                 await Request.SendHttpRequestAsync<AccountActivationRequestDTO, UserDTO>(
@@ -268,7 +268,7 @@ namespace SQE.ApiTest
 
         private class Token
         {
-            public string token { get; set; }
+            public Guid token { get; set; }
             public string type { get; set; }
             public DateTime date_created { get; set; }
         }
@@ -307,7 +307,7 @@ namespace SQE.ApiTest
                     updateUserAccountObject,
                     _client,
                     auth: true,
-                    user1: userAuth,
+                    requestUser: userAuth,
                     shouldSucceed: false
                 );
 
@@ -349,7 +349,7 @@ namespace SQE.ApiTest
                     _client,
                     auth: true,
                     shouldSucceed: false,
-                    user1: authUser
+                    requestUser: authUser
                 );
 
                 // Assert
@@ -394,7 +394,7 @@ namespace SQE.ApiTest
                     userLoginRequest,
                     _client,
                     auth: true,
-                    user1: userAuth
+                    requestUser: userAuth
                 );
 
                 // Assert (login)
@@ -840,7 +840,7 @@ namespace SQE.ApiTest
                 _client,
                 HttpMethod.Post,
                 changeForgottenPassword,
-                new ResetForgottenUserPasswordRequestDTO { token = userToken.token, password = newPassword }
+                new ResetForgottenUserPasswordRequestDTO { token = userToken.token.ToString(), password = newPassword }
             );
 
             // Assert (attempt to reset password with token)

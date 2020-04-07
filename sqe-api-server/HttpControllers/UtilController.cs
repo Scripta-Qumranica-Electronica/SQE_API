@@ -23,10 +23,10 @@ namespace SQE.API.Server.HttpControllers
         ///     as closely as possible.
         /// </summary>
         /// <param name="payload">JSON object with the WKT polygon to validate</param>
-        [HttpPost("v1/[controller]s/validate-wkt")]
-        public async Task<ActionResult> RequestAddEditionEditor([FromBody] WktPolygonDTO payload)
+        [HttpPost("v1/[controller]s/repair-wkt-polygon")]
+        public async Task<ActionResult<WktPolygonDTO>> RepairWktPolygon([FromBody] WktPolygonDTO payload)
         {
-            return await _utilService.ValidateWktPolygonAsync(payload.wktPolygon);
+            return await _utilService.RepairWktPolygonAsync(payload.wktPolygon);
         }
     }
 }

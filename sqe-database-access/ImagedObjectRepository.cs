@@ -36,7 +36,7 @@ namespace SQE.DatabaseAccess
                     }
                 );
 
-                var models = results.Select(result => CreateImagedObject(result));
+                var models = results.Select(CreateImagedObject);
                 return models;
             }
         }

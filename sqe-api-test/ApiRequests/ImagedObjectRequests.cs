@@ -5,7 +5,7 @@ namespace SQE.ApiTest.ApiRequests
 {
     public static partial class Get
     {
-        public class V1_ImagedObjects_Institutions : RequestObject<EmptyInput, ImageInstitutionListDTO>
+        public class V1_ImagedObjects_Institutions : RequestObject<EmptyInput, ImageInstitutionListDTO, EmptyOutput>
         {
             private V1_ImagedObjects_Institutions() : base(null)
             {
@@ -13,7 +13,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ImagedObjects
-            : EditionRequestObject<EmptyInput, ImagedObjectListDTO>
+            : EditionRequestObject<EmptyInput, ImagedObjectListDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_ImagedObjects(uint editionId,
                 uint imagedObjectId,
@@ -24,7 +24,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ImagedObjects_ImagedObjectId
-            : ImagedObjectRequestObject<EmptyInput, ImagedObjectDTO>
+            : ImagedObjectRequestObject<EmptyInput, ImagedObjectDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(uint editionId,
                 uint imagedObjectId,

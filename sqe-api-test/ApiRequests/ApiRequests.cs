@@ -13,7 +13,7 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public abstract class RequestObject<Tinput, Toutput>
+    public abstract class RequestObject<Tinput, Toutput, TListener>
     {
         public List<string> listenerMethod = new List<string>();
         protected Tinput payload;
@@ -108,7 +108,7 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class EditionRequestObject<Tinput, Toutput> : RequestObject<Tinput, Toutput>
+    public class EditionRequestObject<Tinput, Toutput, TListener> : RequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint editionId;
         public readonly List<string> optional;
@@ -145,7 +145,7 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class EditionEditorRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    public class EditionEditorRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly string editorEmail;
 
@@ -180,11 +180,43 @@ namespace SQE.ApiTest.ApiRequests
     }
 
     /// <summary>
+    ///     Subclass of RequestObject for all requests made on an edition
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class EditionEditorConfirmationObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    {
+        public readonly Guid token;
+
+        /// <summary>
+        ///     Provides an EditionRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public EditionEditorConfirmationObject(Guid token, uint editionId, List<string> optional = null,
+            Tinput payload = default) :
+            base(editionId, optional, payload)
+        {
+            this.token = token;
+        }
+
+        protected override string HttpPath()
+        {
+            return requestPath.Replace("/token", $"/{token.ToString()}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), token.ToString());
+        }
+    }
+
+    /// <summary>
     ///     Subclass of EditionRequestObject for all requests made on an imaged object
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class ImagedObjectRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    public class ImagedObjectRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint imagedObjectId;
 
@@ -221,7 +253,7 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class TextFragmentRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    public class TextFragmentRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint textFragmentId;
 
@@ -258,7 +290,7 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class LineRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    public class LineRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint lineId;
 
@@ -291,7 +323,7 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class ArtefactRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    public class ArtefactRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint artefactId;
 
@@ -324,7 +356,7 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class RoiRequestObject<Tinput, Toutput> : EditionRequestObject<Tinput, Toutput>
+    public class RoiRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint roiId;
 

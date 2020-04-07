@@ -4,7 +4,7 @@ namespace SQE.ApiTest.ApiRequests
 {
     public static partial class Get
     {
-        public class V1_Editions_EditionId_Lines_LineId : LineRequestObject<EmptyInput, LineTextDTO>
+        public class V1_Editions_EditionId_Lines_LineId : LineRequestObject<EmptyInput, LineTextDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request a listing of all editions available to the user
@@ -14,7 +14,7 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_TextFragments : EditionRequestObject<EmptyInput, TextFragmentDataListDTO>
+        public class V1_Editions_EditionId_TextFragments : EditionRequestObject<EmptyInput, TextFragmentDataListDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request a listing of all text fragments belonging to an edition
@@ -26,7 +26,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_TextFragments_TextFragmentId
-            : TextFragmentRequestObject<EmptyInput, TextEditionDTO>
+            : TextFragmentRequestObject<EmptyInput, TextEditionDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request a specific text fragment from a specific edition
@@ -43,7 +43,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_TextFragments_TextFragmentId_Lines
-            : TextFragmentRequestObject<EmptyInput, LineDataListDTO>
+            : TextFragmentRequestObject<EmptyInput, LineDataListDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request a listing of all lines in a text fragment of an edition
@@ -63,7 +63,7 @@ namespace SQE.ApiTest.ApiRequests
     public static partial class Post
     {
         public class V1_Editions_EditionId_TextFragments
-            : EditionRequestObject<CreateTextFragmentDTO, TextFragmentDataDTO>
+            : EditionRequestObject<CreateTextFragmentDTO, TextFragmentDataDTO, TextFragmentDataDTO>
         {
             /// <summary>
             ///     Add a new tet fragment to an edition
@@ -76,7 +76,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("createTextFragment");
+                listenerMethod.Add("CreatedTextFragment");
             }
         }
     }
@@ -84,7 +84,7 @@ namespace SQE.ApiTest.ApiRequests
     public static partial class Put
     {
         public class V1_Editions_EditionId_TextFragments_TextFragmentId
-            : TextFragmentRequestObject<UpdateTextFragmentDTO, TextFragmentDataDTO>
+            : TextFragmentRequestObject<UpdateTextFragmentDTO, TextFragmentDataDTO, TextFragmentDataDTO>
         {
             /// <summary>
             ///     Alter a text fragment in an edition
@@ -100,7 +100,7 @@ namespace SQE.ApiTest.ApiRequests
                 payload
             )
             {
-                listenerMethod.Add("updateTextFragment");
+                listenerMethod.Add("UpdatedTextFragment");
             }
         }
     }
