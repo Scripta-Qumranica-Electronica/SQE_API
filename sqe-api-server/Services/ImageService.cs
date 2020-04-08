@@ -56,6 +56,7 @@ namespace SQE.API.Server.Services
 
         public async Task<List<ImagedObjectTextFragmentMatchDTO>> GetImageTextFragmentsAsync(string imagedObjectId)
         {
+            imagedObjectId = System.Web.HttpUtility.UrlDecode(imagedObjectId);
             var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
             return textFragments.Select(x => new ImagedObjectTextFragmentMatchDTO(
                 x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName, x.Side == 0 ? "recto" : "verso")
