@@ -1,15 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NetTopologySuite.Geometries;
-using NetTopologySuite.Geometries.Utilities;
 using NetTopologySuite.IO;
-using NetTopologySuite.LinearReferencing;
-using NetTopologySuite.Operation.Buffer.Validate;
-using NetTopologySuite.Operation.Distance;
-using NetTopologySuite.Operation.Overlay;
 using Newtonsoft.Json;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -18,6 +13,43 @@ namespace SQE.API.Server.Helpers
 {
     public static class GeometryValidation
     {
+        // You must declare the layout of your C struct (this is for any array)
+        [StructLayout(LayoutKind.Sequential)]
+        public struct BinaryData
+        {
+            public UIntPtr data;
+            public UIntPtr len;
+        }
+
+        // You must DllImport before each external function imported (beware the paths)
+        [DllImport(
+            "/home/bronson/workspace/SQE_API/sqe-api-server/bin/Debug/netcoreapp3.1/libgeo_repair_polygon.so",
+            CharSet = CharSet.Ansi,
+            CallingConvention = CallingConvention.Cdecl
+        )]
+        private static extern unsafe BinaryData repair_wkb(UIntPtr data, UIntPtr len);
+
+        [DllImport(
+            "/home/bronson/workspace/SQE_API/sqe-api-server/bin/Debug/netcoreapp3.1/libgeo_repair_polygon.so",
+            CharSet = CharSet.Ansi,
+            CallingConvention = CallingConvention.Cdecl
+        )]
+        private static extern unsafe void c_bin_data_free(BinaryData bin_data);
+
+        [DllImport(
+            "/home/bronson/workspace/SQE_API/sqe-api-server/bin/Debug/netcoreapp3.1/libgeo_repair_polygon.so",
+            CharSet = CharSet.Ansi,
+            CallingConvention = CallingConvention.Cdecl
+        )]
+        private static extern unsafe IntPtr repair_wkt(IntPtr wkt);
+
+        [DllImport(
+            "/home/bronson/workspace/SQE_API/sqe-api-server/bin/Debug/netcoreapp3.1/libgeo_repair_polygon.so",
+            CharSet = CharSet.Ansi,
+            CallingConvention = CallingConvention.Cdecl
+        )]
+        private static extern unsafe void c_char_free(IntPtr ptr);
+
         /// <summary>
         ///     The validator checks that the transformMatrix is indeed valid JSON that can be successfully
         ///     parsed into the SQE.SqeHttpApi.DataAccess.Models.TransformMatrix class.
@@ -74,14 +106,63 @@ namespace SQE.API.Server.Helpers
             if (string.IsNullOrEmpty(wktPolygon))
                 throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is empty");
 
-
+            var polygon = default(Geometry);
             // Try loading the polygon
             try
             {
-                var polygon = wkr.Read(wktPolygon);
+                polygon = wkr.Read(wktPolygon);
                 // If it is valid, return it
                 if (polygon.IsValid)
                     return polygon.Normalized().ToString(); // Always normalize the polygon
+
+                // It is invalid, but could be repaired as a binary representation
+                // Throw an error if no request to fix it has been made
+                if (!fix)
+                    throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
+
+                // Try repairing the binary version of the polygon
+                var wkb_in = polygon.AsBinary(); // Get the binary data
+                // Instantiate the variable to process the response from the FFI
+                var bin = new BinaryData();
+                var wkbData = new Span<byte>();
+
+                // Reading and writing pointers is unsafe
+                try
+                {
+                    unsafe
+                    {
+                        // Create a pointer to the binary data (it only needs to live till the FFI function returns)
+                        fixed (byte* data = &wkb_in[0])
+                        {
+                            bin = repair_wkb((UIntPtr)data, (UIntPtr)wkb_in.Length);
+                        }
+
+                        // The FFI function repair_wkb returns a null pointer with a 0 length if it could not repair the poly.
+                        // For safety throw on either.  In fact, check for a length less than 21, because 21 bytes is the
+                        // length of the smallest possible valid WKB (a POINT geometry). 
+                        if ((int)bin.len < 21 || bin.data == UIntPtr.Zero)
+                            throw new StandardExceptions.InputDataRuleViolationException(
+                                "The submitted WKT POLYGON is invalid and cannot be repaired");
+
+                        // Map the response of the FFI into a Span
+                        wkbData = new Span<byte>(bin.data.ToPointer(), (int)bin.len);
+
+                        // Read the binary data into a Net Topology geometry and get the WKT representation
+                        var wkbReader = new WKBReader();
+                        var repairedPoly = wkbReader.Read(wkbData.ToArray()).AsText();
+
+                        // Free the data allocated by Rust (we do it this way since we do not know the length of the response,
+                        // so it would be just a guess if we passed Rust memory managed by C#)
+                        c_bin_data_free(bin);
+
+                        return repairedPoly;
+                    }
+                }
+                catch
+                {
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        "The submitted WKT POLYGON is invalid and cannot be repaired");
+                }
             }
             catch
             {
@@ -90,24 +171,24 @@ namespace SQE.API.Server.Helpers
                     throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
             }
 
-            // The polygon is somehow invalid, throw an error if no request to repair it has been made
-            if (!fix)
-                throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the repair API's repair-wkt-polygon endpoint to fix it");
-
-            // Run the repair algorithms and return the results in mornalized form
-            return _repairPolygon(wktPolygon).Normalized().ToString();
+            // Try repairing as a WKT (there may have been some text formatting errors)
+            var repairedWkt = repair_wkt(Marshal.StringToHGlobalAnsi(_repairPolygon(wktPolygon)));
+            var returnPoly = Marshal.PtrToStringAnsi(repairedWkt);
+            c_char_free(repairedWkt); // We need to let Rust free the memory it was using
+            if (string.IsNullOrEmpty(returnPoly) || returnPoly == "INVALIDGEOMETRY")
+                throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
+            return returnPoly;
         }
 
         /// <summary>
         /// This makes a quick pass of the geometry and fixes unclosed polygons as well
-        /// as trying to fix improperly ordered path elements within the Polygon
+        /// as trying to fix any simple text formatting errors.
         /// </summary>
         /// <param name="wkt">A Wkt Polygon string</param>
         /// <returns></returns>
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
-        private static Geometry _repairPolygon(string wkt)
+        private static string _repairPolygon(string wkt)
         {
-            var wkr = new WKTReader();
             var asymmetricNesting = new Regex(@"\),\s(?!\()");
             var wktSplit = new Regex(@"\)\s?,\s?\(");
 
@@ -129,424 +210,10 @@ namespace SQE.API.Server.Helpers
                 if (coords.First() != coords.Last())
                     coords.Add(coords.First());
 
-                // Convert the path into a single wkt Polygon
-                var singlePath = @$"POLYGON(({string.Join(",", coords)}))";
-
-                // Read the single path into net topology suite
-                var geom = wkr.Read(singlePath);
-
-                // Return the geom if it is valid
-                if (geom.IsValid) return geom;
-
-                // Trying running a buffer of 0 on the polygon and testing if it has the same area as the original
-                var bufferedGeom = geom.Buffer(0);
-                if (!bufferedGeom.IsValid
-                    || !bufferedGeom.Area.Equals(geom.Area))
-                {
-                    // If the geometry is a MultiPolygon, then try to fix that. 
-                    // Otherwise it is a single Polygon and is almost certainly self-intersecting, so fix that.
-                    geom = geom.GeometryType == "MultiPolygon"
-                        ? _repairMultiPolygon(geom)
-                        : _repairSelfInterectingPolygon(geom);
-
-                    // If the geometry is still invalid, then we will give up here
-                    if (!geom.IsValid)
-                    {
-                        // Try one last pass
-                        geom = geom.GeometryType == "MultiPolygon"
-                            ? _repairMultiPolygon(geom)
-                            : _repairSelfInterectingPolygon(geom);
-
-                        if (!geom.IsValid)
-                            throw new StandardExceptions.InputDataRuleViolationException($"The polygon could not be repaired: {geom}");
-                    }
-                }
-                else
-                {
-                    // The buffer trick worked, so return that geometry
-                    geom = bufferedGeom;
-                }
-
-                // The Polygon is now valid
-                return geom;
+                return $"({string.Join(",", coords)})";
             }).ToList();
 
-            // Try rebuilding the polygon from its individual paths, grab the first path
-            var fullGeom = polyStrings[0];
-            for (var i = 1; i < polyStrings.Count(); i++)
-            {
-                // Grab a new path
-                var newGeom = polyStrings[i];
-                // Create an overlay operation
-                var op = new OverlayOp(fullGeom, newGeom);
-                // Perform the symmetric difference operation
-                fullGeom = op.GetResultGeometry(SpatialFunction.SymDifference);
-            }
-
-            // If the resulting is a multipolygon, try to repair that
-            if (fullGeom.GetType() == typeof(MultiPolygon))
-                fullGeom = _repairMultiPolygon(fullGeom);
-
-            // Throw an error if we still couldn't compose a single polygon from the input 
-            if (fullGeom.GetType() != typeof(Polygon))
-                throw new StandardExceptions.InputDataRuleViolationException($"The new repair method couldn't fix the poly, it does not appear possible to compose it into a single POLYGON: {fullGeom}");
-
-            return fullGeom;
-        }
-
-        /// <summary>
-        /// Fixes a self-intersecting polygon by changing the point of intersection to
-        /// very thin open area. 
-        /// </summary>
-        /// <param name="poly">The self-intersecting polygon to fix</param>
-        /// <returns>A repaired version of the self-intersecting polygon</returns>
-        private static Polygon _repairSelfInterectingPolygon(Geometry poly)
-        {
-            // Separate the geom into its discrete polygon entities
-            var discretePolys = GeometryExtracter.Extract<Polygon>(poly);
-
-            // If there is more than one polygon, then return the results of the multipolygon algorithm
-            if (discretePolys.Count != 1)
-                return _repairMultiPolygon(new MultiPolygon(discretePolys.Select(x => new Polygon(new LinearRing(x.Coordinates))).ToArray()));
-
-            // Immediately return a valid polygon
-            if (discretePolys[0].IsValid)
-                return (Polygon)discretePolys[0];
-
-            // Probably the polygon is invalid due to self intersection
-            // Let's grab every outer line in the polygon
-            var coords = poly.Boundary.Coordinates;
-            var lines = coords.Select(
-                (t, i) => new LineString(new[] { t, coords[i + 1 == coords.Length ? 0 : i + 1] })
-            ).Where(x => !x.Coordinates[0].Equals2D(x.Coordinates[1])).ToList();
-
-            // Now group the lines into linestrings that start and stop at the points of intersection
-            var intersectedLines = new List<LineString>();
-            var points = new List<Coordinate>();
-            var hitPoints = new List<Coordinate>();
-
-            var linesCount = lines.Count();
-            // Loop over each individual line
-            for (var lineIdx = 0; lineIdx < linesCount; lineIdx++)
-            {
-                var line = lines[lineIdx];
-                // Add the first point to the points list
-                if (!points.Any())
-                    points.Add(line.Coordinates[0]);
-
-                // Check every available line for an intersection
-                for (var compLineIdx = 0; compLineIdx < linesCount; compLineIdx++)
-                {
-                    var compLine = lines[compLineIdx];
-                    // Disregard the line itself, any directly connected line, or any line that does not intersect
-                    if (!line.Intersects(compLine) || lineIdx == compLineIdx ||
-                            ((compLineIdx + 1) % linesCount == lineIdx && compLine.Coordinates[1].Equals2D(line.Coordinates[0])) ||
-                            compLine.Coordinates[0].Equals2D(line.Coordinates[1])
-                        )
-                        continue; // This is not an intersecting line, move on to the next
-
-                    // The current compLine intersects our line
-                    // Get the point of intersection
-                    var point = line.Intersection(compLine);
-
-                    if (compLine.Coordinates[1].Equals2D(line.Coordinates[1]))
-                        hitPoints.Add(point.Coordinate);
-                    else if (compLine.Coordinates.Contains(line.Coordinates[0]) || compLine.Coordinates.Contains(line.Coordinates[1]))
-                        if (hitPoints.Contains(point.Coordinate))
-                            continue;
-
-                    // End our current line path at this point of intersection
-                    points.Add(point.Coordinate);
-
-                    // Register the current path with this intersection point
-                    intersectedLines.Add(new LineString(points.ToArray()));
-
-                    // Start a new line path with this point of intersection
-                    points = new List<Coordinate>();
-                    if (!point.Coordinate.Equals2D(line.Coordinates[1]))
-                        points.Add(point.Coordinate);
-                }
-
-                // Add the endpoint of the current line to the line path
-                points.Add(line.Coordinates[1]);
-
-                // If we came to the end of the list of lines, then finish up
-                if (lines.Last().ToText() == line.ToText())
-                    intersectedLines.Add(new LineString(points.ToArray()));
-            }
-
-            // Build the polygon out of the non intersecting line segments
-            var fixedIntersecting = intersectedLines.First().Coordinates.ToList();
-            intersectedLines.RemoveAt(0); // Remove the first line, which we have started using
-
-            // Grab the line segment that should continue the first line
-            var counterpart = intersectedLines.Where(x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())).LastOrDefault();
-
-            // Loop over all matching line pairs
-            while (counterpart != null)
-            {
-                // Remove the matched line from the list of possibilities
-                intersectedLines.Remove(counterpart);
-
-                // every other matched line should be reversed
-                var even = intersectedLines.Count % 2 == 0;
-                var rev = even ? counterpart.Coordinates.ToList() : counterpart.Coordinates.Reverse().ToList();
-
-                // Grab the point at which the intersection originally took place
-                var intersectionPoint = rev.First();
-
-                // Delete the point of intersection from both line strings
-                rev.RemoveAt(0);
-                fixedIntersecting.RemoveAt(fixedIntersecting.Count - 1);
-
-                // Calculate the replacement coordinates for the old point of intersection
-                // Basically we create one point a very small distance closer to the last point of the first line,
-                // and we create a second point a very small distance closer to the first point of the "counterpart" line.
-                var distCalc = new PointPairDistance();
-                distCalc.Initialize(intersectionPoint, fixedIntersecting.Last());
-                var point1Dist = distCalc.Distance;
-                distCalc.Initialize(intersectionPoint, rev.First());
-                var point2Dist = distCalc.Distance;
-                var newMidPoint1 = LinearLocation.PointAlongSegmentByFraction(intersectionPoint, fixedIntersecting.Last(), 0.1 * (1 / point1Dist));
-                var newMidPoint2 = LinearLocation.PointAlongSegmentByFraction(intersectionPoint, rev.First(), 0.1 * (1 / point2Dist));
-
-                // Add the replacements for the intersection point and concatenate the "counterpart" line
-                fixedIntersecting.Add(newMidPoint1);
-                fixedIntersecting.Add(newMidPoint2);
-                fixedIntersecting.AddRange(rev);
-
-                // Find the next line segment to attach
-                counterpart = intersectedLines.Where(x => x.Coordinates.Last().Equals2D(fixedIntersecting.Last())).LastOrDefault();
-
-                // If a match is found continue building the line string
-                if (counterpart != null
-                    || intersectedLines.Count != 1) continue;
-
-                // If we are down to the last segment, grab the last line segment available
-                counterpart = intersectedLines.First();
-            }
-
-            // // Close the line string if necessary
-            if (!fixedIntersecting.First().Equals2D(fixedIntersecting.Last()))
-                fixedIntersecting.Add(fixedIntersecting.First());
-
-            // Delete a doubled endpoint
-            if (fixedIntersecting.Last().Equals2D(fixedIntersecting[^2]))
-                fixedIntersecting.RemoveAt(fixedIntersecting.Count - 1);
-
-            // Return the line string as a polygon
-            return new Polygon(new LinearRing(fixedIntersecting.ToArray()));
-        }
-
-        /// <summary>
-        /// Repairs a self-intersecting polygon or a multipolygon by converting it
-        /// into a single polygon that most closely resembles the input polygon
-        /// while still remaining valid.
-        /// </summary>
-        /// <param name="poly">A self-intersecting polygon or a multi-polygon</param>
-        /// <returns>A single valid polygon most closely approximating the input</returns>
-        /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
-        private static Polygon _repairMultiPolygon(Geometry poly)
-        {
-            // Separate the geom into its discrete polygon entities
-            var discretePolys = GeometryExtracter.Extract<Polygon>(poly);
-
-            // Firstly let us find pairs of the closest polygon to each polygon in cleanedPoly.
-            var repairedPoly = discretePolys[0];
-            var polyMovePairs = new List<int>();
-            for (var i = 0; i < discretePolys.Count; ++i)
-            {
-                // Skip polys that we've already matched or are empty
-                if (polyMovePairs.Contains(i) || discretePolys[i].Area.Equals(0))
-                    continue;
-
-                double distance = 0;
-                var nearestPoly = -1;
-                for (var j = 0; j < discretePolys.Count; ++j)
-                {
-                    // Skip the same polygon or empty polygons
-                    if (j == i || discretePolys[j].Area.Equals(0))
-                        continue;
-
-                    var currentDistance = DistanceOp.Distance(discretePolys[i], discretePolys[j]);
-                    // Check if this poly is closer than the closest so far
-                    if (nearestPoly != -1
-                        && distance < currentDistance) continue;
-
-                    // Since this is the closest, set this as the new closest poly
-                    distance = currentDistance;
-                    nearestPoly = j;
-                }
-
-                // Bail out if no close poly was found
-                if (nearestPoly == -1)
-                    continue;
-
-                // Now that we know the closest poly, attempt to join the two
-                var points = DistanceOp.NearestPoints(discretePolys[i], discretePolys[nearestPoly]);
-                var joined = _joinPolys(
-                    (Polygon)discretePolys[i],
-                    (Polygon)discretePolys[nearestPoly],
-                    points[0],
-                    points[1]
-                );
-
-                // Merge joined polys into the return poly
-                repairedPoly = repairedPoly.Union(joined);
-
-                // Record the match so we don't attempt to do it again
-                polyMovePairs.Add(i);
-                polyMovePairs.Add(nearestPoly);
-            }
-
-            // Throw an error if we still could not produce a valid Polygon type
-            if (repairedPoly.GetType() != typeof(Polygon))
-                throw new StandardExceptions.InputDataRuleViolationException($"Combined poly is invalid: {repairedPoly}");
-
-            // If we are really valid, return the poly
-            if (repairedPoly.IsValid)
-                return (Polygon)repairedPoly;
-
-            // Finally try to buffer it
-            var bufferedPoly = repairedPoly.Buffer(0);
-            // Throw an error if buffering changed the dimensions significantly
-            if (Math.Abs(bufferedPoly.Area - repairedPoly.Area) > 1)
-                throw new StandardExceptions.InputDataRuleViolationException($"");
-
-            return (Polygon)bufferedPoly;
-        }
-
-
-
-        /// <summary>
-        /// Join two polygons into a single polygon (not a multi-polygon) by altering them
-        /// to intersect.
-        /// </summary>
-        /// <param name="poly1">First polygon</param>
-        /// <param name="poly2">Second polygon</param>
-        /// <param name="poly1Point">Point in first polygon that is closest to the second polygon</param>
-        /// <param name="poly2Point">Point in second polygon that is closest to the first polygon</param>
-        /// <returns>A single polygon union of the two input polygons</returns>
-        /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
-        private static Polygon _joinPolys(Polygon poly1, Polygon poly2, Coordinate poly1Point, Coordinate poly2Point)
-        {
-            var wkr = new WKTReader();
-            // If the two closest points are the same, then we need to do something fancy
-            if (poly1Point.Equals(poly2Point))
-            {
-                // TODO: maybe we can rewrite this to be a little better
-                // We can grab each closest point, remove each from the polygon and add
-                // two points instead, each a little closer to the previous/next point.
-                // Then make a thin bridge joining the two sets of new points.
-                var point = new Point(poly1Point.X, poly1Point.Y + 1);
-                var (biggerPoly, smallerPoly) = poly1.Area > poly2.Area
-                    ? (poly1, poly2)
-                    : (poly2, poly1);
-                // Try nudging the point in 8 cardinal directions to find a point inside the larger poly
-                Point fittingPoint = null;
-                // North
-                if (biggerPoly.Contains(point))
-                    fittingPoint = point;
-
-                // Northeast
-                point = new Point(point.X + 0.5, point.Y - 0.5);
-                if (biggerPoly.Contains(point))
-                    fittingPoint = point;
-
-                // East
-                point = new Point(point.X + 0.5, point.Y - 0.5);
-                if (biggerPoly.Contains(point))
-                    fittingPoint = point;
-
-                // SouthEast
-                point = new Point(point.X - 0.5, point.Y - 0.5);
-                if (biggerPoly.Contains(point))
-                    fittingPoint = point;
-
-                // South
-                point = new Point(point.X - 0.5, point.Y - 0.5);
-                if (biggerPoly.Contains(point))
-                    fittingPoint = point;
-
-                // SouthWest
-                point = new Point(point.X - 0.5, point.Y + 0.5);
-                if (biggerPoly.Contains(point))
-                    fittingPoint = point;
-
-                // West
-                point = new Point(point.X - 0.5, point.Y + 0.5);
-                if (biggerPoly.Contains(point))
-                    fittingPoint = point;
-
-                // NorthWest
-                point = new Point(point.X + 0.5, point.Y - 0.5);
-                if (biggerPoly.Contains(point))
-                    fittingPoint = point;
-
-                // What magic could make an interior point unfindable??? (it really could happen)
-                if (fittingPoint == null)
-                    throw new StandardExceptions.InputDataRuleViolationException($"");
-
-                // Alter to smaller polygon so it intersects the larger one
-                // TODO: find a way to do this without string manipulation
-                var adjSmallerPoly = wkr.Read(smallerPoly
-                    .ToText()
-                    .Replace(
-                        $"{poly2Point.X} {poly2Point.Y}",
-                        $"{fittingPoint.X} {fittingPoint.Y}"
-                    ));
-
-                // Join the two polygons and validate
-                var joined = biggerPoly.Union(adjSmallerPoly);
-                if (!joined.IsValid || joined.GetType() != typeof(Polygon))
-                    throw new StandardExceptions.InputDataRuleViolationException($"");
-                return (Polygon)joined;
-            }
-
-            // Apparently the two polygons just have close points, but don't share the same point.
-            // So let's just swap the two closest points between the polygons and call it a day...
-            // TODO: Find a way to do this without string manipulation.
-            var repaired1 = wkr.Read(poly1
-                .ToText()
-                .Replace(
-                    $"{poly1Point.X} {poly1Point.Y}",
-                    $"{poly2Point.X} {poly2Point.Y}"));
-            if (!repaired1.IsValid)
-            {
-                // If it is invalid, that is almost certainly due to self intersection, so recurse to fix that
-                repaired1 = _repairSelfInterectingPolygon(repaired1);
-            }
-            if (!repaired1.IsValid)
-                // If we still aren't valid, then give up
-                throw new StandardExceptions.InputDataRuleViolationException($"");
-
-            var repaired2 = wkr.Read(poly2
-                .ToText()
-                .Replace(
-                    $"{poly2Point.X} {poly2Point.Y}",
-                    $"{poly1Point.X} {poly1Point.Y}"));
-            if (!repaired2.IsValid)
-            {
-                // If it is invalid, that is almost certainly due to self intersection, so recurse to fix that
-                repaired2 = _repairSelfInterectingPolygon(repaired2);
-            }
-            if (!repaired2.IsValid)
-                // If we still aren't valid, then give up
-                throw new StandardExceptions.InputDataRuleViolationException($"");
-
-            // Join our two new polygons, which should now intersect (but possibly might not)
-            var combined = repaired1.Union(repaired2);
-
-            // If combined is no good, give up and return the larger geometry (Buffered at 0 for safety).
-            // This algorithm usually only fails when one or both polygons is really tiny or has very few points
-            // (since polygons with very few points [triangle/square] are incredibly rare in our system
-            // of worn material fragments and calligraphic fonts, we assume that such instances are noise). 
-            if (!combined.IsValid
-                || combined.GetType() != typeof(Polygon))
-                return repaired1.Area > repaired2.Area
-                    ? (Polygon)repaired1.Buffer(0)
-                    : (Polygon)repaired2.Buffer(0);
-            return (Polygon)combined;
+            return ($"POLYGON({string.Join(",", polyStrings)})");
         }
     }
 }
