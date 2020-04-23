@@ -23,28 +23,28 @@ namespace SQE.API.Server.Helpers
 
         // You must DllImport before each external function imported (beware the paths)
         [DllImport(
-            "/home/bronson/workspace/SQE_API/sqe-api-server/bin/Debug/netcoreapp3.1/libgeo_repair_polygon.so",
+            "geo_repair_polygon",
             CharSet = CharSet.Ansi,
             CallingConvention = CallingConvention.Cdecl
         )]
         private static extern unsafe BinaryData repair_wkb(UIntPtr data, UIntPtr len);
 
         [DllImport(
-            "/home/bronson/workspace/SQE_API/sqe-api-server/bin/Debug/netcoreapp3.1/libgeo_repair_polygon.so",
+            "geo_repair_polygon",
             CharSet = CharSet.Ansi,
             CallingConvention = CallingConvention.Cdecl
         )]
         private static extern unsafe void c_bin_data_free(BinaryData bin_data);
 
         [DllImport(
-            "/home/bronson/workspace/SQE_API/sqe-api-server/bin/Debug/netcoreapp3.1/libgeo_repair_polygon.so",
+            "geo_repair_polygon",
             CharSet = CharSet.Ansi,
             CallingConvention = CallingConvention.Cdecl
         )]
         private static extern unsafe IntPtr repair_wkt(IntPtr wkt);
 
         [DllImport(
-            "/home/bronson/workspace/SQE_API/sqe-api-server/bin/Debug/netcoreapp3.1/libgeo_repair_polygon.so",
+            "geo_repair_polygon",
             CharSet = CharSet.Ansi,
             CallingConvention = CallingConvention.Cdecl
         )]

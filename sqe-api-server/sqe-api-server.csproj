@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="EmailValidation" Version="1.0.3" />
+    <PackageReference Include="geo_repair_polygon" Version="0.1.0" />
     <PackageReference Include="MailKit" Version="2.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="3.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.1" />
