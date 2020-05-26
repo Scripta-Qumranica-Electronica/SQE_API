@@ -41,7 +41,8 @@ namespace SQE.DatabaseAccess
             float? scale,
             float? rotate,
             uint? translateX,
-            uint? translateY);
+            uint? translateY,
+            sbyte? zIndex);
 
         Task<uint> CreateNewArtefactAsync(EditionUserInfo editionUser,
             uint masterImageId,
@@ -51,6 +52,7 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
+            sbyte? zIndex,
             string workStatus);
 
         Task DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId);
@@ -200,7 +202,8 @@ namespace SQE.DatabaseAccess
             float? scale,
             float? rotate,
             uint? translateX,
-            uint? translateY)
+            uint? translateY,
+            sbyte? zIndex)
         {
             const string tableName = "artefact_position";
             var artefactPositionId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
@@ -213,7 +216,8 @@ namespace SQE.DatabaseAccess
                     scale,
                     rotate,
                     translateX,
-                    translateY
+                    translateY,
+                    zIndex
                 );
 
             var artefactChangeParams = new DynamicParameters();
@@ -240,6 +244,7 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
+            sbyte? zIndex,
             string workStatus)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
@@ -269,14 +274,16 @@ namespace SQE.DatabaseAccess
                         if (scale.HasValue
                             || rotate.HasValue
                             || translateX.HasValue
-                            || translateY.HasValue)
+                            || translateY.HasValue
+                            || zIndex.HasValue)
                             await InsertArtefactPositionAsync(
                                 editionUser,
                                 artefactId,
                                 scale,
                                 rotate,
                                 translateX,
-                                translateY
+                                translateY,
+                                zIndex
                             );
 
                         await newShape;
@@ -413,11 +420,13 @@ namespace SQE.DatabaseAccess
             float? scale,
             float? rotate,
             uint? translateX,
-            uint? translateY)
+            uint? translateY,
+            sbyte? zIndex)
         {
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@scale", scale);
             artefactChangeParams.Add("@rotate", rotate);
+            artefactChangeParams.Add("@z_index", zIndex ?? 0);
             artefactChangeParams.Add("@translate_x", translateX);
             artefactChangeParams.Add("@translate_y", translateY);
             artefactChangeParams.Add("@artefact_id", artefactId);

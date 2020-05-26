@@ -134,7 +134,8 @@ namespace SQE.API.Server.Services
                         updateArtefact.polygon.transformation.scale,
                         updateArtefact.polygon.transformation.rotate,
                         updateArtefact.polygon.transformation.translate?.x,
-                        updateArtefact.polygon.transformation.translate?.y
+                        updateArtefact.polygon.transformation.translate?.y,
+                        updateArtefact.polygon.transformation.zIndex
                     )
                 );
 
@@ -175,6 +176,7 @@ namespace SQE.API.Server.Services
                 createArtefact.polygon.transformation?.rotate,
                 createArtefact.polygon.transformation?.translate?.x,
                 createArtefact.polygon.transformation?.translate?.y,
+                createArtefact.polygon.transformation?.zIndex,
                 createArtefact.statusMessage
             );
 

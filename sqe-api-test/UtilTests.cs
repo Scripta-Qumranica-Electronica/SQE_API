@@ -58,7 +58,7 @@ namespace SQE.ApiTest
             };
             var goodPolygon = new WktPolygonDTO()
             {
-                wktPolygon = "POLYGON((0 0,0 10,10 10,10 0,0 0))"
+                wktPolygon = "POLYGON((0 0,10 0,10 10,0 10,0 0))"
             };
 
             var polygonValidation = new Post.V1_Utils_RepairWktPolygon(badPolygon);
