@@ -12,11 +12,19 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
+        public class V1_ImagedObjects_ImagedObjectId_TextFragments
+            : ImagedObjectRequestObject<EmptyInput, List<ImagedObjectTextFragmentMatchDTO>, EmptyOutput>
+        {
+            public V1_ImagedObjects_ImagedObjectId_TextFragments(string imagedObjectId) : base(imagedObjectId)
+            {
+            }
+        }
+
         public class V1_Editions_EditionId_ImagedObjects
             : EditionRequestObject<EmptyInput, ImagedObjectListDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_ImagedObjects(uint editionId,
-                uint imagedObjectId,
+                string imagedObjectId,
                 List<string> optional = null)
                 : base(editionId, optional)
             {
@@ -24,10 +32,10 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ImagedObjects_ImagedObjectId
-            : ImagedObjectRequestObject<EmptyInput, ImagedObjectDTO, EmptyOutput>
+            : EditionImagedObjectRequestObject<EmptyInput, ImagedObjectDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(uint editionId,
-                uint imagedObjectId,
+                string imagedObjectId,
                 List<string> optional = null)
                 : base(editionId, imagedObjectId, optional)
             {

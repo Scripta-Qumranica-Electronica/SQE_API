@@ -216,9 +216,9 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class ImagedObjectRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    public class EditionImagedObjectRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
-        public readonly uint imagedObjectId;
+        public readonly string imagedObjectId;
 
         /// <summary>
         ///     Provides an ImagedObjectRequestObject for all API requests made on an edition
@@ -226,8 +226,8 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="imagedObjectId">The id of the imaged object to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public ImagedObjectRequestObject(uint editionId,
-            uint imagedObjectId,
+        public EditionImagedObjectRequestObject(uint editionId,
+            string imagedObjectId,
             List<string> optional = null,
             Tinput payload = default) : base(editionId, optional, payload)
         {
@@ -381,6 +381,37 @@ namespace SQE.ApiTest.ApiRequests
             return signalR => payload == null
                 ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, roiId)
                 : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, roiId, payload);
+        }
+    }
+
+    /// <summary>
+    ///     Subclass of EditionRequestObject for all requests made on an imaged object
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    /// <typeparam name="TListener">The API endpoint listener return type</typeparam>
+    public class ImagedObjectRequestObject<Tinput, Toutput, TListener> : RequestObject<Tinput, Toutput, TListener>
+    {
+        public readonly string imagedObjectId;
+
+        /// <summary>
+        ///     Provides an ImagedObjectRequestObject for all API requests made on an imaged object
+        /// </summary>
+        /// <param name="imagedObjectId">The id of the imaged object to perform the request on</param>
+        public ImagedObjectRequestObject(string imagedObjectId) : base(default(Tinput))
+        {
+            this.imagedObjectId = imagedObjectId;
+        }
+
+        protected override string HttpPath()
+        {
+            return base.HttpPath().Replace("/imaged-object-id", $"/{imagedObjectId}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR =>
+                signalR.InvokeAsync<T>(SignalrRequestString(), imagedObjectId, payload);
         }
     }
 
