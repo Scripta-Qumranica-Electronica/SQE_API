@@ -223,6 +223,7 @@ namespace SQE.DatabaseAccess
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@scale", scale);
             artefactChangeParams.Add("@rotate", rotate);
+            artefactChangeParams.Add("@z_index", zIndex);
             artefactChangeParams.Add("@translate_x", translateX);
             artefactChangeParams.Add("@translate_y", translateY);
             artefactChangeParams.Add("@artefact_id", artefactId);
