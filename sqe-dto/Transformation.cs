@@ -6,6 +6,7 @@ namespace SQE.API.DTO
     {
         public float? scale { get; set; }
         public float? rotate { get; set; }
+        public sbyte? zIndex { get; set; }
         public TranslateDTO translate { get; set; }
     }
 

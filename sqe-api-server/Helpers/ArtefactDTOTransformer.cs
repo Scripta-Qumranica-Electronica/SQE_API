@@ -23,6 +23,7 @@ namespace SQE.API.Server.Helpers
                     {
                         scale = artefact.Scale,
                         rotate = artefact.Rotate,
+                        zIndex = artefact.ZIndex,
                         translate = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue
                             ? new TranslateDTO
                             {
@@ -39,7 +40,6 @@ namespace SQE.API.Server.Helpers
 
                 name = artefact.Name,
                 side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso,
-                zOrder = artefact.ZIndex
             };
         }
 

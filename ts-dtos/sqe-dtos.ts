@@ -11,7 +11,6 @@ export interface ArtefactDTO extends ArtefactDataDTO {
     imageId: number;
     artefactDataEditorId: number;
     mask: PolygonDTO;
-    zOrder: number;
     side: string;
     statusMessage: string;
 }
@@ -334,6 +333,7 @@ export interface CreateTextFragmentDTO extends UpdateTextFragmentDTO {
 export interface TransformationDTO {
     scale?: number;
     rotate?: number;
+    zIndex?: number;
     translate: TranslateDTO;
 }
 export interface TranslateDTO {

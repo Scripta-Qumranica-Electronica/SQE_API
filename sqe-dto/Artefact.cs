@@ -16,7 +16,6 @@ namespace SQE.API.DTO
         public uint imageId { get; set; }
         public uint artefactDataEditorId { get; set; }
         public PolygonDTO mask { get; set; }
-        public short zOrder { get; set; }
         public string side { get; set; }
         public string statusMessage { get; set; }
 

@@ -99,7 +99,6 @@ WHERE user_id = @UserId AND sqe_image_id IS NOT NULL";
             var artefact = artefacts.First();
             Assert.True(artefact.editionId > 0);
             Assert.True(artefact.id > 0);
-            Assert.True(artefact.zOrder > -256 && artefact.zOrder < 256);
             Assert.NotNull(artefact.imagedObjectId);
             Assert.NotNull(artefact.side);
             Assert.NotNull(artefact.mask.mask);
