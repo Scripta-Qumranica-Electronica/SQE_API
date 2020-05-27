@@ -129,5 +129,12 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="returnedData">Details of the updated artefact</param>
         /// <returns></returns>
         Task UpdatedArtefact(ArtefactDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the transform details for a batch of artefacts has been updated
+        /// </summary>
+        /// <param name="returnedData">Details of the updated artefact transforms</param>
+        /// <returns></returns>
+        Task BatchUpdatedArtefactTransform(BatchUpdatedArtefactTransformDTO returnedData);
     }
 }

@@ -29,6 +29,10 @@ namespace SQE.API.Server.Services
         Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(EditionUserInfo editionUser,
             bool withMask = false);
 
+        Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(EditionUserInfo editionUser,
+            BatchUpdateArtefactTransformDTO updates,
+            string clientId = null);
+
         Task<ArtefactDTO> UpdateArtefactAsync(EditionUserInfo editionUser,
             uint artefactId,
             UpdateArtefactDTO updateArtefact,
@@ -105,6 +109,28 @@ namespace SQE.API.Server.Services
                 artefactListings.ToList(),
                 editionUser.EditionId
             );
+        }
+
+        public async Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(EditionUserInfo editionUser,
+            BatchUpdateArtefactTransformDTO updates,
+            string clientId = null)
+        {
+            await _artefactRepository.BatchUpdateArtefactPositionAsync(editionUser, updates.artefactTransforms);
+            var updatedArtefacts = new BatchUpdatedArtefactTransformDTO()
+            {
+                artefactTransforms = updates.artefactTransforms.Select(x => new UpdatedArtefactTransformDTO()
+                {
+                    artefactId = x.artefactId,
+                    positionEditorId = editionUser.EditionEditorId.Value,
+                    transform = x.transform
+                }).ToList()
+            };
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
+            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+                .BatchUpdatedArtefactTransform(updatedArtefacts);
+
+            return updatedArtefacts;
         }
 
         public async Task<ArtefactDTO> UpdateArtefactAsync(EditionUserInfo editionUser,

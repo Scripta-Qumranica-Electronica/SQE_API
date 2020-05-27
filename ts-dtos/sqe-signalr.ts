@@ -14,6 +14,10 @@ import {
 	ArtefactListDTO,
 	ArtefactDataListDTO,
 	UpdateArtefactDTO,
+	UpdateArtefactTransformDTO,
+	BatchUpdateArtefactTransformDTO,
+	UpdatedArtefactTransformDTO,
+	BatchUpdatedArtefactTransformDTO,
 	CreateArtefactDTO,
 	EditionDTO,
 	EditionGroupDTO,
@@ -41,6 +45,7 @@ import {
 	ImageStackDTO,
 	ImagedObjectDTO,
 	ImagedObjectListDTO,
+	SetPolygonDTO,
 	PolygonDTO,
 	WktPolygonDTO,
 	SetInterpretationRoiDTO,
@@ -668,6 +673,17 @@ export class SignalRUtilities {
         return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload);
     }
 
+    /**
+	 * Updates the positional data for a batch of artefacts
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param payload - A BatchUpdateArtefactTransformDTO with a list of the desired updates
+	 *
+	 */
+    public async postV1EditionsEditionIdArtefactsBatchTransformation(editionId: number, payload: BatchUpdateArtefactTransformDTO): Promise<BatchUpdatedArtefactTransformDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdArtefactsBatchTransformation', editionId, payload);
+    }
+
     /*
      * Client methods.
      */
@@ -958,6 +974,23 @@ export class SignalRUtilities {
 	 */
     public disconnectUpdatedArtefact(handler: (msg: ArtefactDTO) => void): void {
         this._connection.off('UpdatedArtefact', handler)
+    }
+
+
+    /**
+	 * Add a listener for when the server broadcasts the transform details for a batch of artefacts has been updated
+	 *
+	 */
+    public connectBatchUpdatedArtefactTransform(handler: (msg: BatchUpdatedArtefactTransformDTO) => void): void {
+        this._connection.on('BatchUpdatedArtefactTransform', handler)
+    }
+
+    /**
+	 * Remove an existing listener that triggers when the server broadcasts the transform details for a batch of artefacts has been updated
+	 *
+	 */
+    public disconnectBatchUpdatedArtefactTransform(handler: (msg: BatchUpdatedArtefactTransformDTO) => void): void {
+        this._connection.off('BatchUpdatedArtefactTransform', handler)
     }
 
 } 

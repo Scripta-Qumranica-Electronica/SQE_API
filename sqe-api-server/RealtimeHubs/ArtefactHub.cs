@@ -168,5 +168,26 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
 
+        /// <summary>
+        ///     Updates the positional data for a batch of artefacts
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="payload">A BatchUpdateArtefactTransformDTO with a list of the desired updates</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<BatchUpdatedArtefactTransformDTO> PostV1EditionsEditionIdArtefactsBatchTransformation(uint editionId, BatchUpdateArtefactTransformDTO payload)
+
+        {
+            try
+            {
+                return await _artefactService.BatchUpdateArtefactTransformAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), payload, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
     }
 }

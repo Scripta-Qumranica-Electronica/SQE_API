@@ -6,6 +6,7 @@ using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
+using SQE.API.DTO;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -35,6 +36,9 @@ namespace SQE.DatabaseAccess
             string workStatus);
 
         Task<List<AlteredRecord>> UpdateArtefactNameAsync(EditionUserInfo editionUser, uint artefactId, string name);
+
+        Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(EditionUserInfo editionUser,
+            List<UpdateArtefactTransformDTO> transforms);
 
         Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
             uint artefactId,
@@ -197,7 +201,42 @@ namespace SQE.DatabaseAccess
             return await WriteArtefactAsync(editionUser, artefactChangeRequest);
         }
 
+        public async Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(EditionUserInfo editionUser,
+            List<UpdateArtefactTransformDTO> transforms)
+        {
+            List<AlteredRecord> updates;
+            using (var transactionScope = new TransactionScope())
+            {
+                var updateMutationTasks = transforms.Select(async x => await FormatArtefactPositionUpdateRequestAsync(editionUser, x.artefactId, x.transform?.scale,
+                    x.transform?.rotate, x.transform?.translate?.x, x.transform?.translate?.y, x.transform?.zIndex));
+                var updateMutations = (await Task.WhenAll(updateMutationTasks)).ToList();
+                updates = await _databaseWriter.WriteToDatabaseAsync(editionUser, updateMutations);
+                transactionScope.Complete();
+            }
+
+            return updates;
+        }
+
         public async Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
+            uint artefactId,
+            float? scale,
+            float? rotate,
+            uint? translateX,
+            uint? translateY,
+            sbyte? zIndex)
+        {
+            return await WriteArtefactAsync(editionUser, await FormatArtefactPositionUpdateRequestAsync(
+                editionUser,
+                artefactId,
+                scale,
+                rotate,
+                translateX,
+                translateY,
+                zIndex)
+            );
+        }
+
+        private async Task<MutationRequest> FormatArtefactPositionUpdateRequestAsync(EditionUserInfo editionUser,
             uint artefactId,
             float? scale,
             float? rotate,
@@ -210,7 +249,7 @@ namespace SQE.DatabaseAccess
             // It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
             // If no artefact_position already exists we need to create a new entry here.
             if (artefactPositionId == 0)
-                return await InsertArtefactPositionAsync(
+                return await FormatArtefactPositionInsertionAsync(
                     editionUser,
                     artefactId,
                     scale,
@@ -223,7 +262,7 @@ namespace SQE.DatabaseAccess
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@scale", scale);
             artefactChangeParams.Add("@rotate", rotate);
-            artefactChangeParams.Add("@z_index", zIndex);
+            artefactChangeParams.Add("@z_index", zIndex ?? 0);
             artefactChangeParams.Add("@translate_x", translateX);
             artefactChangeParams.Add("@translate_y", translateY);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -234,7 +273,7 @@ namespace SQE.DatabaseAccess
                 artefactPositionId
             );
 
-            return await WriteArtefactAsync(editionUser, artefactChangeRequest);
+            return artefactChangeRequest;
         }
 
         public async Task<uint> CreateNewArtefactAsync(EditionUserInfo editionUser,
@@ -424,6 +463,25 @@ namespace SQE.DatabaseAccess
             uint? translateY,
             sbyte? zIndex)
         {
+            return await WriteArtefactAsync(editionUser, await FormatArtefactPositionInsertionAsync(
+                editionUser,
+                artefactId,
+                scale,
+                rotate,
+                translateX,
+                translateY,
+                zIndex)
+            );
+        }
+
+        private async Task<MutationRequest> FormatArtefactPositionInsertionAsync(EditionUserInfo editionUser,
+            uint artefactId,
+            float? scale,
+            float? rotate,
+            uint? translateX,
+            uint? translateY,
+            sbyte? zIndex)
+        {
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@scale", scale);
             artefactChangeParams.Add("@rotate", rotate);
@@ -437,7 +495,7 @@ namespace SQE.DatabaseAccess
                 "artefact_position"
             );
 
-            return await WriteArtefactAsync(editionUser, artefactChangeRequest);
+            return artefactChangeRequest;
         }
 
         public async Task<List<AlteredRecord>> WriteArtefactAsync(EditionUserInfo editionUser,

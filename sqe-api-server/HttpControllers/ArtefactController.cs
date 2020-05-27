@@ -141,5 +141,20 @@ namespace SQE.API.Server.HttpControllers
                 payload
             );
         }
+
+        /// <summary>
+        ///     Updates the positional data for a batch of artefacts
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="payload">A BatchUpdateArtefactTransformDTO with a list of the desired updates</param>
+        /// <returns></returns>
+        [HttpPost("v1/editions/{editionId}/[controller]s/batch-transformation")]
+        public async Task<ActionResult<BatchUpdatedArtefactTransformDTO>> BatchUpdateArtefactTransform(
+            [FromRoute] uint editionId,
+            [FromBody] BatchUpdateArtefactTransformDTO payload)
+        {
+            return await _artefactService.BatchUpdateArtefactTransformAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),
+                payload);
+        }
     }
 }

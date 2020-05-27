@@ -48,7 +48,7 @@ namespace SQE.API.DTO
 
     public class UpdateArtefactDTO
     {
-        public virtual PolygonDTO polygon { get; set; }
+        public virtual SetPolygonDTO polygon { get; set; }
 
         [StringLength(
             255,
@@ -60,10 +60,31 @@ namespace SQE.API.DTO
         public string statusMessage { get; set; }
     }
 
+    public class UpdateArtefactTransformDTO
+    {
+        public uint artefactId { get; set; }
+        public TransformationDTO transform { get; set; }
+    }
+
+    public class BatchUpdateArtefactTransformDTO
+    {
+        public List<UpdateArtefactTransformDTO> artefactTransforms { get; set; }
+    }
+
+    public class UpdatedArtefactTransformDTO : UpdateArtefactTransformDTO
+    {
+        public uint positionEditorId { get; set; }
+    }
+
+    public class BatchUpdatedArtefactTransformDTO
+    {
+        public List<UpdatedArtefactTransformDTO> artefactTransforms { get; set; }
+    }
+
     public class CreateArtefactDTO : UpdateArtefactDTO
     {
         [Required] public uint masterImageId { get; set; }
 
-        [Required] public override PolygonDTO polygon { get; set; }
+        [Required] public override SetPolygonDTO polygon { get; set; }
     }
 }

@@ -24,14 +24,31 @@ export interface ArtefactDataListDTO {
 }
 
 export interface UpdateArtefactDTO {
-    polygon: PolygonDTO;
+    polygon: SetPolygonDTO;
     name: string;
     statusMessage: string;
 }
 
+export interface UpdateArtefactTransformDTO {
+    artefactId: number;
+    transform: TransformationDTO;
+}
+
+export interface BatchUpdateArtefactTransformDTO {
+    artefactTransforms: UpdateArtefactTransformDTO[];
+}
+
+export interface UpdatedArtefactTransformDTO extends UpdateArtefactTransformDTO {
+    positionEditorId: number;
+}
+
+export interface BatchUpdatedArtefactTransformDTO {
+    artefactTransforms: UpdatedArtefactTransformDTO[];
+}
+
 export interface CreateArtefactDTO extends UpdateArtefactDTO {
     masterImageId: number;
-    polygon: PolygonDTO;
+    polygon: SetPolygonDTO;
 }
 
 export interface EditionDTO {
@@ -186,10 +203,13 @@ export interface ImagedObjectListDTO {
     imagedObjects: ImagedObjectDTO[];
 }
 
-export interface PolygonDTO {
+export interface SetPolygonDTO {
     mask: string;
-    maskEditorId: number;
     transformation: TransformationDTO;
+}
+
+export interface PolygonDTO extends SetPolygonDTO {
+    maskEditorId: number;
     positionEditorId: number;
 }
 export interface WktPolygonDTO {
