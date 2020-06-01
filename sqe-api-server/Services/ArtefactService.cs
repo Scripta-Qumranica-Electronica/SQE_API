@@ -133,6 +133,13 @@ namespace SQE.API.Server.Services
             return updatedArtefacts;
         }
 
+        // NOTE: This function offers many possibilities for updating an artefact. It could
+        // happen that this is abused, and, for example, people send the entire mask along when
+        // they are only trying to change the z-Index. Such a situation would result in a lot
+        // of extra bandwidth usage and checking (the system does check to see if the mask has
+        // actually changed). If such is the case, consider breaking up the artefact update
+        // endpoint into several distinct endpoints, for example: one for name, another for 
+        // position, and another for mask.
         public async Task<ArtefactDTO> UpdateArtefactAsync(EditionUserInfo editionUser,
             uint artefactId,
             UpdateArtefactDTO updateArtefact,

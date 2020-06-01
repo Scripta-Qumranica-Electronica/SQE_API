@@ -249,7 +249,7 @@ namespace SQE.DatabaseAccess
             // It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
             // If no artefact_position already exists we need to create a new entry here.
             if (artefactPositionId == 0)
-                return await FormatArtefactPositionInsertionAsync(
+                return FormatArtefactPositionInsertion(
                     editionUser,
                     artefactId,
                     scale,
@@ -463,7 +463,7 @@ namespace SQE.DatabaseAccess
             uint? translateY,
             sbyte? zIndex)
         {
-            return await WriteArtefactAsync(editionUser, await FormatArtefactPositionInsertionAsync(
+            return await WriteArtefactAsync(editionUser, FormatArtefactPositionInsertion(
                 editionUser,
                 artefactId,
                 scale,
@@ -474,7 +474,7 @@ namespace SQE.DatabaseAccess
             );
         }
 
-        private async Task<MutationRequest> FormatArtefactPositionInsertionAsync(EditionUserInfo editionUser,
+        private MutationRequest FormatArtefactPositionInsertion(EditionUserInfo editionUser,
             uint artefactId,
             float? scale,
             float? rotate,

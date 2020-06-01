@@ -22,5 +22,6 @@ namespace SQE.DatabaseAccess.Models
         public string ImageURL { get; set; }
         public string ImageSuffix { get; set; }
         public float ImageRotation { get; set; }
+        public string Attributes { get; set; }
     }
 }

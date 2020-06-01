@@ -79,15 +79,11 @@ export interface PermissionDTO {
     isAdmin: boolean;
 }
 
-export interface MinimalEditorRights extends PermissionDTO {
+export interface UpdateEditorRightsDTO extends PermissionDTO {
     mayLock: boolean;
 }
 
-export interface UpdateEditorRightsDTO extends MinimalEditorRights {
-    mayRead: boolean;
-}
-
-export interface InviteEditorDTO extends MinimalEditorRights {
+export interface InviteEditorDTO extends UpdateEditorRightsDTO {
     email: string;
 }
 
@@ -136,10 +132,6 @@ export interface DeleteTokenDTO {
 export interface DeleteEditionEntityDTO {
     entityId: number;
     editorId: number;
-}
-
-export interface EditionScriptCollectionDTO {
-    letters: LetterDTO[];
 }
 export enum EditionEntities {
     edition = 0,
@@ -258,13 +250,6 @@ export interface BatchEditRoiResponseDTO {
     updateRois: UpdatedInterpretationRoiDTO[];
     deleteRois: number[];
 }
-export interface LetterDTO {
-    id: number;
-    letter: string;
-    polygon: string;
-    imageURL: string;
-    rotation: number;
-}
 
 export interface SignDTO {
     signInterpretations: SignInterpretationDTO[];
@@ -288,6 +273,41 @@ export interface InterpretationAttributeDTO {
     attributeValueString: string;
     editorId: number;
     value: number;
+}
+
+export interface EditionScriptCollectionDTO {
+    letters: CharacterShapeDTO[];
+}
+
+export interface EditionScriptLinesDTO {
+    textFragments: ScriptTextFragmentDTO[];
+}
+export interface CharacterShapeDTO {
+    id: number;
+    character: string;
+    polygon: string;
+    imageURL: string;
+    rotation: number;
+    attributes: string[];
+}
+
+export interface ScriptTextFragmentDTO {
+    textFragmentName: string;
+    textFragmentId: number;
+    lines: ScriptLineDTO[];
+}
+
+export interface ScriptLineDTO {
+    lineName: string;
+    lineId: number;
+    artefacts: ScriptArtefactCharactersDTO[];
+}
+
+export interface ScriptArtefactCharactersDTO {
+    artefactName: string;
+    artefactId: number;
+    mask: PolygonDTO;
+    characters: SignInterpretationDTO[];
 }
 export interface TextFragmentDataDTO {
     id: number;

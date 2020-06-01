@@ -23,7 +23,6 @@ import {
 	EditionGroupDTO,
 	EditionListDTO,
 	PermissionDTO,
-	MinimalEditorRights,
 	UpdateEditorRightsDTO,
 	InviteEditorDTO,
 	DetailedEditorRightsDTO,
@@ -35,7 +34,6 @@ import {
 	TextEditionDTO,
 	DeleteTokenDTO,
 	DeleteEditionEntityDTO,
-	EditionScriptCollectionDTO,
 	DeleteDTO,
 	EditionUpdateRequestDTO,
 	EditionCopyDTO,
@@ -56,11 +54,16 @@ import {
 	UpdatedInterpretationRoiDTOList,
 	BatchEditRoiDTO,
 	BatchEditRoiResponseDTO,
-	LetterDTO,
 	SignDTO,
 	NextSignInterpretationDTO,
 	SignInterpretationDTO,
 	InterpretationAttributeDTO,
+	EditionScriptCollectionDTO,
+	EditionScriptLinesDTO,
+	CharacterShapeDTO,
+	ScriptTextFragmentDTO,
+	ScriptLineDTO,
+	ScriptArtefactCharactersDTO,
 	TextFragmentDataDTO,
 	ArtefactTextFragmentMatchDTO,
 	ImagedObjectTextFragmentMatchDTO,
@@ -352,6 +355,17 @@ export class SignalRUtilities {
 	 */
     public async getV1EditionsEditionIdScriptCollection(editionId: number): Promise<EditionScriptCollectionDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdScriptCollection', editionId);
+    }
+
+    /**
+	 * Provides spatial data for all letters in the edition organized and oriented
+	 * by lines.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 *
+	 */
+    public async getV1EditionsEditionIdScriptLines(editionId: number): Promise<EditionScriptLinesDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdScriptLines', editionId);
     }
 
     /**

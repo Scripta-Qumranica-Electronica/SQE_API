@@ -832,7 +832,7 @@ namespace SQE.DatabaseAccess
                     splitOn:
                     "textFragmentId, lineId, signId, nextSignInterpretationId, signInterpretationId, SignInterpretationAttributeId, SignInterpretationRoiId"
                 );
-                var formattedEdition = scrolls.AsList()[0];
+                var formattedEdition = scrolls.FirstOrDefault();
                 formattedEdition.AddLicence();
                 return formattedEdition;
             }

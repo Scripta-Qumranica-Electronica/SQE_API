@@ -5,9 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
-using JWT;
-using JWT.Algorithms;
-using JWT.Builder;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -52,6 +49,7 @@ namespace SQE.DatabaseAccess
         Task<List<uint>> GetEditionEditorUserIdsAsync(EditionUserInfo editionUser);
 
         Task<List<LetterShape>> GetEditionScriptCollectionAsync(EditionUserInfo editonUser);
+        Task<List<ScriptTextFragment>> GetEditionScriptLines(EditionUserInfo editionUser);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
@@ -775,6 +773,104 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                         UserId = editonUser.userId ?? 0
                     }
                 )).ToList();
+            }
+        }
+
+        public async Task<List<ScriptTextFragment>> GetEditionScriptLines(EditionUserInfo editionUser)
+        {
+            // Placehoders for query mapping
+            ScriptTextFragment lastScriptTextFragment = null;
+            ScriptLine lastScriptLine = null;
+            ScriptArtefactCharacters lastScriptArtefactCharacters = null;
+            Character lastCharacters = null;
+            SpatialRoi lastSpatialRoi = null;
+            CharacterAttribute lastCharacterAttribute = null;
+            CharacterStreamPosition lastCharacterStreamPosition = null;
+
+            using (var connection = OpenConnection())
+            {
+                var scriptLines = await connection.QueryAsync(
+                    EditionScriptLines.GetQuery,
+                    new[]
+                    {
+                        typeof(ScriptTextFragment),
+                        typeof(ScriptLine),
+                        typeof(ScriptArtefactCharacters),
+                        typeof(Character),
+                        typeof(SpatialRoi),
+                        typeof(CharacterAttribute),
+                        typeof(CharacterStreamPosition)
+                    },
+                    objects =>
+                    {
+                        // Collect the mapped objects
+                        var scriptTextFragment = objects[0] as ScriptTextFragment;
+                        var scriptLine = objects[1] as ScriptLine;
+                        var scriptArtefactCharacters = objects[2] as ScriptArtefactCharacters;
+                        var character = objects[3] as Character;
+                        var spatialRoi = objects[4] as SpatialRoi;
+                        var characterAttribute = objects[5] as CharacterAttribute;
+                        var characterStreamPosition = objects[6] as CharacterStreamPosition;
+
+                        // Construct the nestings
+                        var newTextFragment = scriptTextFragment.TextFragmentId != lastScriptTextFragment?.TextFragmentId;
+
+                        if (newTextFragment)
+                        {
+                            lastScriptTextFragment = scriptTextFragment;
+                            lastScriptTextFragment.Lines = new List<ScriptLine>();
+                        }
+
+                        if (scriptLine.LineId != lastScriptLine?.LineId)
+                        {
+                            lastScriptLine = scriptLine;
+                            lastScriptLine.Artefacts = new List<ScriptArtefactCharacters>();
+                            lastScriptTextFragment.Lines.Add(lastScriptLine);
+                        }
+
+                        if (scriptArtefactCharacters.ArtefactId != lastScriptArtefactCharacters?.ArtefactId)
+                        {
+                            lastScriptArtefactCharacters = scriptArtefactCharacters;
+                            lastScriptArtefactCharacters.Characters = new List<Character>();
+                            lastScriptLine.Artefacts.Add(lastScriptArtefactCharacters);
+                        }
+
+                        if (character.SignInterpretationId != lastCharacters?.SignInterpretationId)
+                        {
+                            lastCharacters = character;
+                            lastCharacters.Attributes = new List<CharacterAttribute>();
+                            lastCharacters.Rois = new List<SpatialRoi>();
+                            lastCharacters.NextCharacters = new List<CharacterStreamPosition>();
+                            lastScriptArtefactCharacters.Characters.Add(lastCharacters);
+                        }
+
+                        if (spatialRoi.SignInterpretationRoiId != lastSpatialRoi?.SignInterpretationRoiId)
+                        {
+                            lastSpatialRoi = spatialRoi;
+                            lastCharacters.Rois.Add(lastSpatialRoi);
+                        }
+
+                        if (characterAttribute.SignInterpretationAttributeId !=
+                            lastCharacterAttribute?.SignInterpretationAttributeId)
+                        {
+                            lastCharacterAttribute = characterAttribute;
+                            lastCharacters.Attributes.Add(lastCharacterAttribute);
+                        }
+
+                        if (characterStreamPosition.PositionInStreamId !=
+                            lastCharacterStreamPosition?.PositionInStreamId)
+                        {
+                            lastCharacterStreamPosition = characterStreamPosition;
+                            lastCharacters.NextCharacters.Add(lastCharacterStreamPosition);
+                        }
+
+                        return newTextFragment ? scriptTextFragment : null;
+                    },
+                    new { EditionId = editionUser.EditionId, UserId = editionUser.userId },
+                    splitOn:
+                    "LineId,ArtefactId,SignInterpretationId,SignInterpretationRoiId,SignInterpretationAttributeId,PositionInStreamId"
+                );
+                return scriptLines.Where(x => x != null).ToList();
             }
         }
 

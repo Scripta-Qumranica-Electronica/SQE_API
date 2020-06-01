@@ -39,17 +39,12 @@ namespace SQE.API.DTO
         public bool isAdmin { get; set; }
     }
 
-    public class MinimalEditorRights : PermissionDTO
+    public class UpdateEditorRightsDTO : PermissionDTO
     {
         public bool mayLock { get; set; }
     }
 
-    public class UpdateEditorRightsDTO : MinimalEditorRights
-    {
-        public bool mayRead { get; set; }
-    }
-
-    public class InviteEditorDTO : MinimalEditorRights
+    public class InviteEditorDTO : UpdateEditorRightsDTO
     {
         [Required]
         [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
@@ -116,10 +111,7 @@ namespace SQE.API.DTO
         public uint editorId { get; set; }
     }
 
-    public class EditionScriptCollectionDTO
-    {
-        public List<LetterDTO> letters { get; set; }
-    }
+
 
     /// <summary>
     /// This is a list of all entities in an edition, including the edition itself.
