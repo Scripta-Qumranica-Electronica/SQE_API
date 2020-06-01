@@ -164,6 +164,7 @@ export interface ImageDTO {
     waveLength: string[];
     type: string;
     side: string;
+    ppi: number;
     regionInMasterImage: string;
     regionInImage: string;
     transformToMaster: string;

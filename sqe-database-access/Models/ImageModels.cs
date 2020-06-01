@@ -7,6 +7,7 @@
         public uint? ImageToImageMapEditorId { get; set; }
         public string[] WaveLength { set; get; }
         public byte Type { set; get; }
+        public uint PPI { set; get; }
         public string Side { get; set; }
         public string RegionInMaster { set; get; }
         public string RegionOfMaster { set; get; }

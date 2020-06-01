@@ -73,6 +73,7 @@ namespace SQE.DatabaseAccess
                 ImageToImageMapEditorId = image.image_to_image_map_editor_id,
                 Side = image.side == 0 ? "recto" : "verso",
                 Type = image.img_type,
+                PPI = image.ppi,
                 WaveLength = GetWave(image.wave_start, image.wave_end),
                 Institution = image.institution,
                 Catalog1 = image.catalog_1,

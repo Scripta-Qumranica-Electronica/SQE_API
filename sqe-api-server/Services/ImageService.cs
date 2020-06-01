@@ -36,6 +36,7 @@ namespace SQE.API.Server.Services
                 imageToImageMapEditorId = model.ImageToImageMapEditorId,
                 waveLength = model.WaveLength,
                 type = GetType(model.Type),
+                ppi = model.PPI,
                 regionInMasterImage = model.RegionInMaster,
                 regionInImage = model.RegionOfMaster,
                 lightingDirection = GetLightingDirection(model.Type),
