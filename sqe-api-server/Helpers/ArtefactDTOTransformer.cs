@@ -19,19 +19,21 @@ namespace SQE.API.Server.Helpers
                 {
                     mask = artefact.Mask,
                     maskEditorId = artefact.MaskEditorId,
-                    transformation = new TransformationDTO
-                    {
-                        scale = artefact.Scale,
-                        rotate = artefact.Rotate,
-                        zIndex = artefact.ZIndex,
-                        translate = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue
-                            ? new TranslateDTO
-                            {
-                                x = artefact.TranslateX.Value,
-                                y = artefact.TranslateY.Value
-                            }
-                            : null
-                    },
+                    transformation = artefact.Scale.HasValue
+                        ? new TransformationDTO
+                        {
+                            scale = artefact.Scale.Value,
+                            rotate = artefact.Rotate.Value,
+                            zIndex = artefact.ZIndex.Value,
+                            translate = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue
+                                ? new TranslateDTO
+                                {
+                                    x = artefact.TranslateX.Value,
+                                    y = artefact.TranslateY.Value
+                                }
+                                : null
+                        }
+                        : null,
                     positionEditorId = artefact.PositionEditorId
                 },
 

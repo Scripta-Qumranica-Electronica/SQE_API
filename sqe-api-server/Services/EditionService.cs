@@ -1,9 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Drawing.Drawing2D;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +16,7 @@ using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.API.Server.Helpers;
 using NetTopologySuite.IO;
-using NetTopologySuite.Operation.Overlay;
 using NetTopologySuite.Operation.Union;
-using NetTopologySuite.Precision;
-using NetTopologySuite.Utilities;
-using Matrix = System.Drawing.Drawing2D.Matrix;
 
 namespace SQE.API.Server.Services
 {
@@ -560,12 +553,14 @@ The Scripta Qumranica Electronica team</body></html>";
                                 {
                                     rotate = c.ArtefactRotate,
                                     scale = c.ArtefactScale,
-                                    zIndex = c.ArtefactZIndex,
-                                    translate = new TranslateDTO()
-                                    {
-                                        x = c.ArtefactTranslateX,
-                                        y = c.ArtefactTranslateY
-                                    }
+                                    zIndex = (uint)c.ArtefactZIndex,
+                                    translate = c.ArtefactTranslateX.HasValue && c.ArtefactTranslateY.HasValue
+                                        ? new TranslateDTO()
+                                        {
+                                            x = c.ArtefactTranslateX.Value,
+                                            y = c.ArtefactTranslateY.Value
+                                        }
+                                        : null
                                 }
                             },
                             characters = c.Characters.Select(d => new SignInterpretationDTO()

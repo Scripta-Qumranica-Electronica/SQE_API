@@ -372,9 +372,9 @@ export interface CreateTextFragmentDTO extends UpdateTextFragmentDTO {
 }
 
 export interface TransformationDTO {
-    scale?: number;
-    rotate?: number;
-    zIndex?: number;
+    scale: number;
+    rotate: number;
+    zIndex: number;
     translate: TranslateDTO;
 }
 export interface TranslateDTO {

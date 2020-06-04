@@ -25,6 +25,12 @@ namespace SQE.API.Server.RealtimeHubs
     {
         /// <summary>
         ///     Creates a new artefact with the provided data.
+        ///
+        ///     If no mask is provided, a placeholder mask will be created with the values:
+        ///     "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
+        ///     every artefact). It is not recommended to leave the mask, name, or work status
+        ///     blank or null. It will often be advantageous to leave the transformation null
+        ///     when first creating a new artefact.
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="payload">A CreateArtefactDTO with the data for the new artefact</param>
@@ -148,7 +154,17 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        ///     Updates the specified artefact
+        ///     Updates the specified artefact.
+        /// 
+        ///     There are many possible attributes that can be changed for
+        ///     an artefact.  The caller should only input only those that
+        ///     should be changed. Attributes with a null value will be ignored.
+        ///     For instance, setting the mask to null or "" will result in
+        ///     no changes to the current mask, and no value for the mask will
+        ///     be returned (or broadcast). Likewise, the transformation, name,
+        ///     or status message may be set to null and no change will be made
+        ///     to those entities (though any unchanged values will be returned
+        ///     along with the changed values and also broadcast to co-editors).
         /// </summary>
         /// <param name="artefactId">Unique Id of the desired artefact</param>
         /// <param name="editionId">Unique Id of the desired edition</param>

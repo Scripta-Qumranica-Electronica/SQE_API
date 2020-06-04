@@ -1,15 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using NetTopologySuite;
-using NetTopologySuite.Geometries;
-using NetTopologySuite.Geometries.Utilities;
-using NetTopologySuite.IO;
-using NetTopologySuite.Operation.Overlay;
-using NetTopologySuite.Simplify;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
@@ -86,15 +79,6 @@ namespace SQE.API.Server.Services
                     editionUser.EditionId
                 );
             }
-
-            // var wkr = new WKTReader();
-            // var wkw = new WKTWriter();
-            // artefacts.artefacts = artefacts.artefacts.Select(x =>
-            //     {
-            //         x.mask.mask = wkw.Write(DouglasPeuckerSimplifier.Simplify(wkr.Read(x.mask.mask), 10)).Replace(", ", ",").Replace("POLYGON (", "POLYGON(");
-            //         return x;
-            //     }
-            // ).ToList();
             return artefacts;
         }
 
@@ -135,7 +119,7 @@ namespace SQE.API.Server.Services
 
         // NOTE: This function offers many possibilities for updating an artefact. It could
         // happen that this is abused, and, for example, people send the entire mask along when
-        // they are only trying to change the z-Index. Such a situation would result in a lot
+        // they are only trying to change only the z-Index. Such a situation would result in a lot
         // of extra bandwidth usage and checking (the system does check to see if the mask has
         // actually changed). If such is the case, consider breaking up the artefact update
         // endpoint into several distinct endpoints, for example: one for name, another for 
@@ -159,7 +143,7 @@ namespace SQE.API.Server.Services
             if (!string.IsNullOrEmpty(updateArtefact.name))
                 tasks.Add(_artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, updateArtefact.name));
 
-            if (updateArtefact.polygon != null)
+            if (updateArtefact.polygon.transformation != null)
                 tasks.Add(
                     _artefactRepository.UpdateArtefactPositionAsync(
                         editionUser,

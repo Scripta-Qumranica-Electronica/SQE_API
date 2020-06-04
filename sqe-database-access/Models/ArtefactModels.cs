@@ -16,7 +16,7 @@
         public uint? TranslateX { get; set; }
         public uint? TranslateY { get; set; }
         public uint PositionEditorId { get; set; }
-        public sbyte ZIndex { get; set; }
+        public uint? ZIndex { get; set; }
         public byte CatalogSide { get; set; }
         public uint ImageId { get; set; }
         public uint ImageCatalogId { get; set; }

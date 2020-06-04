@@ -4,9 +4,11 @@ namespace SQE.API.DTO
 {
     public class TransformationDTO
     {
-        public float? scale { get; set; }
-        public float? rotate { get; set; }
-        public sbyte? zIndex { get; set; }
+        [Range(0, 99.9999)]
+        public float scale { get; set; }
+        [Range(0, 9999.99)]
+        public float rotate { get; set; }
+        public uint zIndex { get; set; }
         public TranslateDTO translate { get; set; }
     }
 

@@ -46,7 +46,7 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
-            sbyte? zIndex);
+            uint? zIndex);
 
         Task<uint> CreateNewArtefactAsync(EditionUserInfo editionUser,
             uint masterImageId,
@@ -56,7 +56,7 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
-            sbyte? zIndex,
+            uint? zIndex,
             string workStatus);
 
         Task DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId);
@@ -223,7 +223,7 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
-            sbyte? zIndex)
+            uint? zIndex)
         {
             return await WriteArtefactAsync(editionUser, await FormatArtefactPositionUpdateRequestAsync(
                 editionUser,
@@ -242,7 +242,7 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
-            sbyte? zIndex)
+            uint? zIndex)
         {
             const string tableName = "artefact_position";
             var artefactPositionId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
@@ -260,9 +260,12 @@ namespace SQE.DatabaseAccess
                 );
 
             var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@scale", scale);
-            artefactChangeParams.Add("@rotate", rotate);
-            artefactChangeParams.Add("@z_index", zIndex ?? 0);
+            if (scale.HasValue)
+                artefactChangeParams.Add("@scale", scale);
+            if (rotate.HasValue)
+                artefactChangeParams.Add("@rotate", rotate);
+            if (zIndex.HasValue)
+                artefactChangeParams.Add("@z_index", zIndex ?? 0);
             artefactChangeParams.Add("@translate_x", translateX);
             artefactChangeParams.Add("@translate_y", translateY);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -284,7 +287,7 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
-            sbyte? zIndex,
+            uint? zIndex,
             string workStatus)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
@@ -307,7 +310,8 @@ namespace SQE.DatabaseAccess
                         if (artefactId == 0)
                             throw new StandardExceptions.DataNotWrittenException("create artefact");
 
-                        shape = string.IsNullOrEmpty(shape) ? "POLYGON((0 0))" : shape;
+                        // If no shape is input, we use a tiny "dummy" shape as a placeholder
+                        shape = string.IsNullOrEmpty(shape) ? "POLYGON((0 0,1 1,1 0,0 0))" : shape;
                         var newShape = InsertArtefactShapeAsync(editionUser, artefactId, masterImageId, shape);
                         var newArtefact = InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
                         var newName = InsertArtefactNameAsync(editionUser, artefactId, artefactName ?? "");
@@ -461,7 +465,7 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
-            sbyte? zIndex)
+            uint? zIndex)
         {
             return await WriteArtefactAsync(editionUser, FormatArtefactPositionInsertion(
                 editionUser,
@@ -480,12 +484,14 @@ namespace SQE.DatabaseAccess
             float? rotate,
             uint? translateX,
             uint? translateY,
-            sbyte? zIndex)
+            uint? zIndex)
         {
-            var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@scale", scale);
-            artefactChangeParams.Add("@rotate", rotate);
-            artefactChangeParams.Add("@z_index", zIndex ?? 0);
+            var artefactChangeParams = new DynamicParameters(); if (scale.HasValue)
+                artefactChangeParams.Add("@scale", scale);
+            if (rotate.HasValue)
+                artefactChangeParams.Add("@rotate", rotate);
+            if (zIndex.HasValue)
+                artefactChangeParams.Add("@z_index", zIndex ?? 0);
             artefactChangeParams.Add("@translate_x", translateX);
             artefactChangeParams.Add("@translate_y", translateY);
             artefactChangeParams.Add("@artefact_id", artefactId);

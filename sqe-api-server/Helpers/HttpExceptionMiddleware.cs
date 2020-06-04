@@ -36,7 +36,10 @@ namespace SQE.API.Server.Helpers
                 context.Response.ContentType = "application/json; charset=utf-8";
                 await context.Response.WriteAsync(
                     JsonConvert.SerializeObject(
-                        new ApiExceptionError(nameof(httpException), httpException.Error, httpException is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)
+                        new ApiExceptionError(nameof(httpException), httpException.Error,
+                            httpException is IExceptionWithData exceptionWithData
+                                ? exceptionWithData.CustomReturnedData
+                                : null)
                     )
                 );
             }
