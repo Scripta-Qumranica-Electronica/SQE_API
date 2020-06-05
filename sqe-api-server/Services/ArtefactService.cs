@@ -100,21 +100,33 @@ namespace SQE.API.Server.Services
             string clientId = null)
         {
             await _artefactRepository.BatchUpdateArtefactPositionAsync(editionUser, updates.artefactTransforms);
-            var updatedArtefacts = new BatchUpdatedArtefactTransformDTO()
+
+            // Collect the updated artefacts
+            var updatedArtefacts = await Task.WhenAll(
+                updates.artefactTransforms
+                .Select(async x => await GetEditionArtefactAsync(editionUser, x.artefactId, new List<string>()))
+                );
+
+            // Create the tasks to broadcast the change to all subscribers of the editionId.
+            // Exclude the client (not the user), which made the request, that client directly received the response.
+            var broadcastTasks = updatedArtefacts
+                .Select(x =>
+                    _hubContext.Clients
+                        .GroupExcept(editionUser.EditionId.ToString(), clientId)
+                        .UpdatedArtefact(x));
+
+            // Wait for all tasks to finish before returning (otherwise the threads may get lost)
+            await Task.WhenAll(broadcastTasks);
+
+            return new BatchUpdatedArtefactTransformDTO()
             {
-                artefactTransforms = updates.artefactTransforms.Select(x => new UpdatedArtefactTransformDTO()
+                artefactTransforms = updatedArtefacts.Select(x => new UpdatedArtefactTransformDTO()
                 {
-                    artefactId = x.artefactId,
-                    positionEditorId = editionUser.EditionEditorId.Value,
-                    transform = x.transform
+                    artefactId = x.id,
+                    positionEditorId = x.mask.positionEditorId,
+                    transform = x.mask.transformation
                 }).ToList()
             };
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .BatchUpdatedArtefactTransform(updatedArtefacts);
-
-            return updatedArtefacts;
         }
 
         // NOTE: This function offers many possibilities for updating an artefact. It could

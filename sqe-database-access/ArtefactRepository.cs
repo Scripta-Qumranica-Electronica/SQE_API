@@ -42,8 +42,8 @@ namespace SQE.DatabaseAccess
 
         Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
             uint artefactId,
-            float? scale,
-            float? rotate,
+            decimal? scale,
+            decimal? rotate,
             uint? translateX,
             uint? translateY,
             uint? zIndex);
@@ -52,8 +52,8 @@ namespace SQE.DatabaseAccess
             uint masterImageId,
             string shape,
             string artefactName,
-            float? scale,
-            float? rotate,
+            decimal? scale,
+            decimal? rotate,
             uint? translateX,
             uint? translateY,
             uint? zIndex,
@@ -219,8 +219,8 @@ namespace SQE.DatabaseAccess
 
         public async Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
             uint artefactId,
-            float? scale,
-            float? rotate,
+            decimal? scale,
+            decimal? rotate,
             uint? translateX,
             uint? translateY,
             uint? zIndex)
@@ -238,8 +238,8 @@ namespace SQE.DatabaseAccess
 
         private async Task<MutationRequest> FormatArtefactPositionUpdateRequestAsync(EditionUserInfo editionUser,
             uint artefactId,
-            float? scale,
-            float? rotate,
+            decimal? scale,
+            decimal? rotate,
             uint? translateX,
             uint? translateY,
             uint? zIndex)
@@ -283,8 +283,8 @@ namespace SQE.DatabaseAccess
             uint masterImageId,
             string shape,
             string artefactName,
-            float? scale,
-            float? rotate,
+            decimal? scale,
+            decimal? rotate,
             uint? translateX,
             uint? translateY,
             uint? zIndex,
@@ -461,8 +461,8 @@ namespace SQE.DatabaseAccess
 
         public async Task<List<AlteredRecord>> InsertArtefactPositionAsync(EditionUserInfo editionUser,
             uint artefactId,
-            float? scale,
-            float? rotate,
+            decimal? scale,
+            decimal? rotate,
             uint? translateX,
             uint? translateY,
             uint? zIndex)
@@ -480,8 +480,8 @@ namespace SQE.DatabaseAccess
 
         private MutationRequest FormatArtefactPositionInsertion(EditionUserInfo editionUser,
             uint artefactId,
-            float? scale,
-            float? rotate,
+            decimal? scale,
+            decimal? rotate,
             uint? translateX,
             uint? translateY,
             uint? zIndex)

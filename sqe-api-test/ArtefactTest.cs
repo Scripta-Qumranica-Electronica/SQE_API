@@ -2,7 +2,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
 using NetTopologySuite.IO;
 using Newtonsoft.Json;
@@ -71,9 +70,9 @@ namespace SQE.ApiTest
         }
 
 
-        private static (float scale, float rotate, uint translateX, uint translateY, uint zIndex) ArtefactPosition()
+        private static (decimal scale, decimal rotate, uint translateX, uint translateY, uint zIndex) ArtefactPosition()
         {
-            return ((float)1.1, (float)45, (uint)34765, (uint)556, (uint)2);
+            return (1.1m, 45m, (uint)34765, (uint)556, (uint)2);
         }
 
         /// <summary>
@@ -431,7 +430,7 @@ namespace SQE.ApiTest
                     mask = newArtefactShape,
                     transformation = new TransformationDTO
                     {
-                        scale = 100, // 0–99.9999 is allowed range
+                        scale = 100m, // 0–99.9999 is allowed range
                         rotate = newRotate,
                         translate = new TranslateDTO
                         {
@@ -459,8 +458,10 @@ namespace SQE.ApiTest
             // Assert
             // The response should indicate a bad request
             Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
+            var resp = await artefactResponse.Content.ReadAsStringAsync();
+            Assert.True(resp.Contains("The scale must be between 0.1 and 99.9999"));
 
-            // Test bad rotate
+            // Test scale has improper decimal value
             newArtefact = new CreateArtefactDTO
             {
                 polygon = new PolygonDTO
@@ -468,8 +469,8 @@ namespace SQE.ApiTest
                     mask = newArtefactShape,
                     transformation = new TransformationDTO
                     {
-                        scale = newScale,
-                        rotate = (float)-180.45, // 0–9999.99 is the only allowable range
+                        scale = 2.43567m,
+                        rotate = newRotate, // 0–9999.99 is the only allowable range
                         translate = new TranslateDTO
                         {
                             x = newTranslateX,
@@ -496,6 +497,86 @@ namespace SQE.ApiTest
             // Assert
             // The response should indicate a bad request
             Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
+            resp = await artefactResponse.Content.ReadAsStringAsync();
+            Assert.True(resp.Contains("The scale cannot have more than 2 digits to the left of the decimal and 4 digits to the right"));
+
+            // Test rotate has improper decimal value
+            newArtefact = new CreateArtefactDTO
+            {
+                polygon = new PolygonDTO
+                {
+                    mask = newArtefactShape,
+                    transformation = new TransformationDTO
+                    {
+                        scale = newScale,
+                        rotate = 180.4576m, // 0–9999.99 is the only allowable range
+                        translate = new TranslateDTO
+                        {
+                            x = newTranslateX,
+                            y = newTranslateY
+                        },
+                        zIndex = newZIdx
+                    }
+                },
+                name = newName,
+                masterImageId = masterImageId,
+                statusMessage = null
+            };
+
+            // Act
+            newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
+            (artefactResponse, artefact, _, _) =
+                await Request.Send(
+                    newArtefactObject,
+                    _client,
+                    auth: true,
+                    shouldSucceed: false
+                );
+
+            // Assert
+            // The response should indicate a bad request
+            Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
+            resp = await artefactResponse.Content.ReadAsStringAsync();
+            Assert.True(resp.Contains("The rotate cannot have more than 4 digits to the left of the decimal and 2 digits to the right"));
+
+            // Test rotate out of range
+            newArtefact = new CreateArtefactDTO
+            {
+                polygon = new PolygonDTO
+                {
+                    mask = newArtefactShape,
+                    transformation = new TransformationDTO
+                    {
+                        scale = newScale,
+                        rotate = -180.45m, // 0–9999.99 is the only allowable range
+                        translate = new TranslateDTO
+                        {
+                            x = newTranslateX,
+                            y = newTranslateY
+                        },
+                        zIndex = newZIdx
+                    }
+                },
+                name = newName,
+                masterImageId = masterImageId,
+                statusMessage = null
+            };
+
+            // Act
+            newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
+            (artefactResponse, artefact, _, _) =
+                await Request.Send(
+                    newArtefactObject,
+                    _client,
+                    auth: true,
+                    shouldSucceed: false
+                );
+
+            // Assert
+            // The response should indicate a bad request
+            Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
+            resp = await artefactResponse.Content.ReadAsStringAsync();
+            Assert.True(resp.Contains("The rotate must be between 0 and 360"));
         }
 
         /// <summary>

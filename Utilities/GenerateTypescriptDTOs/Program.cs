@@ -29,6 +29,8 @@ namespace SQE.Utilities.GenerateTypescriptDTOs
                         options.Log = Console.WriteLine;
                         options.VerboseLogging = true;
                         options.GenerationMode = GenerationMode.Strict;
+                        // Restrict this to the "SQE.API.DTO" namespace (perhaps we can use these rules even better)
+                        options.Rules.MatchType(x => x.Namespace == "SQE.API.DTO");
                     }
                 )
                 .Execute(out result);

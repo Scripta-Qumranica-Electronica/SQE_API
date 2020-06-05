@@ -20,8 +20,8 @@ namespace SQE.DatabaseAccess.Models
     {
         public string ArtefactName { get; set; }
         public uint ArtefactId { get; set; }
-        public float ArtefactScale { get; set; }
-        public float ArtefactRotate { get; set; }
+        public decimal ArtefactScale { get; set; }
+        public decimal ArtefactRotate { get; set; }
         public uint? ArtefactTranslateX { get; set; }
         public uint? ArtefactTranslateY { get; set; }
         public uint ArtefactZIndex { get; set; }
