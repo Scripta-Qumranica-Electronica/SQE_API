@@ -14,11 +14,11 @@ namespace SQE.API.Server.Helpers
     public static class GeometryValidation
     {
         // You must declare the layout of your C struct (this is for any array)
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
         public struct BinaryData
         {
-            public UIntPtr data;
             public UIntPtr len;
+            public IntPtr data;
         }
 
         // You must DllImport before each external function imported (beware the paths)
@@ -27,28 +27,28 @@ namespace SQE.API.Server.Helpers
             CharSet = CharSet.Ansi,
             CallingConvention = CallingConvention.Cdecl
         )]
-        private static extern unsafe BinaryData repair_wkb(UIntPtr data, UIntPtr len);
+        private static extern BinaryData repair_wkb(IntPtr data, UIntPtr len);
 
         [DllImport(
             "geo_repair_polygon",
             CharSet = CharSet.Ansi,
             CallingConvention = CallingConvention.Cdecl
         )]
-        private static extern unsafe void c_bin_data_free(BinaryData bin_data);
+        private static extern void c_bin_data_free(BinaryData bin_data);
 
         [DllImport(
             "geo_repair_polygon",
             CharSet = CharSet.Ansi,
             CallingConvention = CallingConvention.Cdecl
         )]
-        private static extern unsafe IntPtr repair_wkt(IntPtr wkt);
+        private static extern IntPtr repair_wkt(IntPtr wkt);
 
         [DllImport(
             "geo_repair_polygon",
             CharSet = CharSet.Ansi,
             CallingConvention = CallingConvention.Cdecl
         )]
-        private static extern unsafe void c_char_free(IntPtr ptr);
+        private static extern void c_char_free(IntPtr ptr);
 
         /// <summary>
         ///     The validator checks that the transformMatrix is indeed valid JSON that can be successfully
@@ -124,39 +124,48 @@ namespace SQE.API.Server.Helpers
                 var wkb_in = polygon.AsBinary(); // Get the binary data
                 // Instantiate the variable to process the response from the FFI
                 var bin = new BinaryData();
-                var wkbData = new Span<byte>();
 
-                // Reading and writing pointers is unsafe
                 try
                 {
-                    unsafe
+                    var pinnedArray = GCHandle.Alloc(wkb_in, GCHandleType.Pinned);
+                    var unmanagedWkbIn = pinnedArray.AddrOfPinnedObject();
+                    bin = repair_wkb(unmanagedWkbIn, (UIntPtr)wkb_in.Length);
+                    pinnedArray.Free();
+
+                    // The FFI function repair_wkb returns a null pointer with a 0 length if it could not repair the poly.
+                    // For safety throw on either.  In fact, check for a length less than 21, because 21 bytes is the
+                    // length of the smallest possible valid WKB (a POINT geometry). 
+                    if ((int)bin.len < 21 || bin.data == IntPtr.Zero)
+                        throw new StandardExceptions.InputDataRuleViolationException(
+                            "The submitted WKT POLYGON is invalid and cannot be repaired");
+
+                    // Parse the returned binary data
+                    var wkbData = new byte[(int)bin.len];
+                    Marshal.Copy(bin.data, wkbData, 0, (int)bin.len);
+
+                    // Dear possible future reader, we have decided to do this marshalling the safe way.
+                    // Should you find that this is causing unacceptable memory pressure and/or latency, then
+                    // the returned binary data can be read directly in an unsafe way.
+                    // The procedure is as follows
+                    /*
+                    // Map the response of the FFI into a Span
+                    Span<byte> wkbData;
+                    unsafe 
                     {
-                        // Create a pointer to the binary data (it only needs to live till the FFI function returns)
-                        fixed (byte* data = &wkb_in[0])
-                        {
-                            bin = repair_wkb((UIntPtr)data, (UIntPtr)wkb_in.Length);
-                        }
-
-                        // The FFI function repair_wkb returns a null pointer with a 0 length if it could not repair the poly.
-                        // For safety throw on either.  In fact, check for a length less than 21, because 21 bytes is the
-                        // length of the smallest possible valid WKB (a POINT geometry). 
-                        if ((int)bin.len < 21 || bin.data == UIntPtr.Zero)
-                            throw new StandardExceptions.InputDataRuleViolationException(
-                                "The submitted WKT POLYGON is invalid and cannot be repaired");
-
-                        // Map the response of the FFI into a Span
                         wkbData = new Span<byte>(bin.data.ToPointer(), (int)bin.len);
-
-                        // Read the binary data into a Net Topology geometry and get the WKT representation
-                        var wkbReader = new WKBReader();
-                        var repairedPoly = wkbReader.Read(wkbData.ToArray()).AsText();
-
-                        // Free the data allocated by Rust (we do it this way since we do not know the length of the response,
-                        // so it would be just a guess if we passed Rust memory managed by C#)
-                        c_bin_data_free(bin);
-
-                        return repairedPoly;
                     }
+                    // You will then need to cast the Span<byte> to a byte[] to read it as WKB data.
+                    */
+
+                    // Read the binary data into a Net Topology geometry and get the WKT representation
+                    var wkbReader = new WKBReader();
+                    var repairedPoly = wkbReader.Read(wkbData).AsText();
+
+                    // Free the data allocated by Rust (we do it this way since we do not know the length of the response,
+                    // so it would be just a guess if we passed Rust memory managed by C#)
+                    c_bin_data_free(bin);
+
+                    return repairedPoly;
                 }
                 catch
                 {
