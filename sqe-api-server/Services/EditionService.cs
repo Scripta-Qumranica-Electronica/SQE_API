@@ -17,6 +17,7 @@ using SQE.DatabaseAccess.Models;
 using SQE.API.Server.Helpers;
 using NetTopologySuite.IO;
 using NetTopologySuite.Operation.Union;
+using SQE.API.Server.Serialization;
 
 namespace SQE.API.Server.Services
 {
@@ -529,77 +530,10 @@ The Scripta Qumranica Electronica team</body></html>";
         // TODO: we need to gather also the editor ID's
         public async Task<EditionScriptLinesDTO> GetEditionScriptLines(EditionUserInfo editionUser)
         {
-            var wkw = new WKTWriter();
-            var wbr = new WKBReader();
             var results = await _editionRepo.GetEditionScriptLines(editionUser);
             return new EditionScriptLinesDTO()
             {
-                textFragments = results.Select(a => new ScriptTextFragmentDTO()
-                {
-                    textFragmentId = a.TextFragmentId,
-                    textFragmentName = a.TextFragmentName,
-                    lines = a.Lines.Select(b => new ScriptLineDTO()
-                    {
-                        lineId = b.LineId,
-                        lineName = b.LineName,
-                        artefacts = b.Artefacts.Select(c => new ScriptArtefactCharactersDTO()
-                        {
-                            artefactId = c.ArtefactId,
-                            artefactName = c.ArtefactName,
-                            mask = new PolygonDTO()
-                            {
-                                mask = null,
-                                transformation = new TransformationDTO()
-                                {
-                                    rotate = c.ArtefactRotate,
-                                    scale = c.ArtefactScale,
-                                    zIndex = (uint)c.ArtefactZIndex,
-                                    translate = c.ArtefactTranslateX.HasValue && c.ArtefactTranslateY.HasValue
-                                        ? new TranslateDTO()
-                                        {
-                                            x = c.ArtefactTranslateX.Value,
-                                            y = c.ArtefactTranslateY.Value
-                                        }
-                                        : null
-                                }
-                            },
-                            characters = c.Characters.Select(d => new SignInterpretationDTO()
-                            {
-                                signInterpretationId = d.SignInterpretationId,
-                                character = d.SignInterpretationCharacter.ToString(),
-                                attributes = d.Attributes.Select(e => new InterpretationAttributeDTO()
-                                {
-                                    attributeValueId = e.SignInterpretationAttributeId,
-                                    attributeValueString = $"{e.AttributeName}_{e.AttributeValue}"
-                                }).ToList(),
-                                nextSignInterpretations = d.NextCharacters.Select(f => new NextSignInterpretationDTO()
-                                {
-                                    nextSignInterpretationId = f.NextSignInterpretationId
-                                }).ToList(),
-                                rois = d.Rois.Take(1).Select(g => new InterpretationRoiDTO()
-                                {
-                                    artefactId = c.ArtefactId,
-                                    interpretationRoiId = g.SignInterpretationRoiId,
-                                    signInterpretationId = d.SignInterpretationId,
-                                    stanceRotation = g.RoiRotate,
-                                    translate = null,
-                                    shape = wkw.Write(
-                                            (new CascadedPolygonUnion(d.Rois
-                                                .Select(h =>
-                                                {
-                                                    Geometry poly = wbr.Read(h.RoiShape);
-                                                    var tr = new AffineTransformation();
-                                                    tr.Translate(h.RoiTranslateX, h.RoiTranslateY);
-                                                    return tr.Transform(poly);
-                                                }).Where(i => i.IsValid && !i.IsEmpty).ToList()) // These need to be transformed
-                                            )
-                                            .Union())
-                                }
-                                    ).ToList()
-                            }).ToList()
-                        }).ToList()
-                    }).ToList()
-                }).ToList()
+                textFragments = results.Select(a => a.ToDTO()).ToList()
             };
         }
 
