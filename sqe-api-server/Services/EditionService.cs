@@ -1,9 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Drawing.Drawing2D;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +16,8 @@ using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.API.Server.Helpers;
 using NetTopologySuite.IO;
-using NetTopologySuite.Operation.Overlay;
 using NetTopologySuite.Operation.Union;
-using NetTopologySuite.Precision;
-using NetTopologySuite.Utilities;
-using Matrix = System.Drawing.Drawing2D.Matrix;
+using SQE.API.Server.Serialization;
 
 namespace SQE.API.Server.Services
 {
@@ -65,6 +59,8 @@ namespace SQE.API.Server.Services
             string clientId = null);
 
         Task<EditionScriptCollectionDTO> GetEditionScriptCollection(EditionUserInfo editionUser);
+
+        Task<EditionScriptLinesDTO> GetEditionScriptLines(EditionUserInfo editionUser);
     }
 
     public class EditionService : IEditionService
@@ -484,7 +480,6 @@ The Scripta Qumranica Electronica team</body></html>";
             var letters = await _editionRepo.GetEditionScriptCollectionAsync(editionUser);
             var lettersSorted = letters.GroupBy(x => x.Id).ToList();
             var wkbr = new WKBReader();
-            var wkr = new WKTReader();
             var wkw = new WKTWriter();
             return new EditionScriptCollectionDTO()
             {
@@ -494,7 +489,6 @@ The Scripta Qumranica Electronica team</body></html>";
                             var polys = x.Select(
                                 y =>
                                 {
-                                    //var poly = wkbr.Read(Encoding.ASCII.GetBytes(await GeometryValidation.CleanPolygonAsync(Encoding.ASCII.GetString(y.Polygon), "ROI")));
                                     var poly = wkbr.Read(y.Polygon);
                                     var tr = new AffineTransformation();
                                     var rotation = y.LetterRotation;
@@ -508,32 +502,38 @@ The Scripta Qumranica Electronica team</body></html>";
                             var envelope = polys.Any() ? combinedPoly.EnvelopeInternal : new Envelope(0, 0, 0, 0);
                             if (polys.Any())
                             {
-                                // var tr = new AffineTransformation();
-                                // tr.Rotate(Degrees.ToRadians(x.First().ImageRotation));
-                                // var rotatedPoly = tr.Transform(combinedPoly);
-                                // var envelope1 = rotatedPoly.EnvelopeInternal;
-
                                 var tr = new AffineTransformation();
                                 tr.Translate(-envelope.MinX, -envelope.MinY);
                                 var translatedPoly = tr.Transform(combinedPoly);
 
-                                var envelope2 = translatedPoly.EnvelopeInternal;
-
                                 combinedPoly = translatedPoly;
                             }
 
-                            return new LetterDTO()
+                            return new CharacterShapeDTO()
                             {
                                 id = x.First().Id,
-                                letter = x.First().Letter,
+                                character = x.First().Letter,
                                 rotation = x.First().ImageRotation,
                                 imageURL = x.First().ImageURL
-                                           + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/pct:99/0/"
+                                           + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/full/0/"
                                            + x.First().ImageSuffix,
-                                polygon = polys.Any() ? wkw.Write(combinedPoly) : null
+                                polygon = polys.Any() ? wkw.Write(combinedPoly) : null,
+                                attributes = x.First().Attributes
+                                    .Split(",")
+                                    .ToList()
                             };
                         }
                     ).ToList()
+            };
+        }
+
+        // TODO: we need to gather also the editor ID's
+        public async Task<EditionScriptLinesDTO> GetEditionScriptLines(EditionUserInfo editionUser)
+        {
+            var results = await _editionRepo.GetEditionScriptLines(editionUser);
+            return new EditionScriptLinesDTO()
+            {
+                textFragments = results.Select(a => a.ToDTO()).ToList()
             };
         }
 

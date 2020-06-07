@@ -62,13 +62,4 @@ namespace SQE.API.DTO
 
         [Required] public List<uint> deleteRois { get; set; }
     }
-
-    public class LetterDTO
-    {
-        public uint id { get; set; }
-        public char letter { get; set; }
-        public string polygon { get; set; }
-        public string imageURL { get; set; }
-        public float rotation { get; set; }
-    }
 }

@@ -19,18 +19,21 @@ namespace SQE.API.Server.Helpers
                 {
                     mask = artefact.Mask,
                     maskEditorId = artefact.MaskEditorId,
-                    transformation = new TransformationDTO
-                    {
-                        scale = artefact.Scale,
-                        rotate = artefact.Rotate,
-                        translate = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue
-                            ? new TranslateDTO
-                            {
-                                x = artefact.TranslateX.Value,
-                                y = artefact.TranslateY.Value
-                            }
-                            : null
-                    },
+                    transformation = artefact.Scale.HasValue
+                        ? new TransformationDTO
+                        {
+                            scale = artefact.Scale.Value,
+                            rotate = artefact.Rotate.Value,
+                            zIndex = artefact.ZIndex.Value,
+                            translate = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue
+                                ? new TranslateDTO
+                                {
+                                    x = artefact.TranslateX.Value,
+                                    y = artefact.TranslateY.Value
+                                }
+                                : null
+                        }
+                        : null,
                     positionEditorId = artefact.PositionEditorId
                 },
 
@@ -39,7 +42,6 @@ namespace SQE.API.Server.Helpers
 
                 name = artefact.Name,
                 side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso,
-                zOrder = artefact.ZIndex
             };
         }
 

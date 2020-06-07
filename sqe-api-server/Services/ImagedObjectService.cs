@@ -119,6 +119,7 @@ namespace SQE.API.Server.Services
             string imagedObjectId,
             List<string> optional = null)
         {
+            imagedObjectId = System.Web.HttpUtility.UrlDecode(imagedObjectId);
             ParseOptionals(optional, out var artefacts, out var masks);
             var result =
                 (await GetImagedObjectsAsync(editionUser)).imagedObjects.First(x => x.id == imagedObjectId);

@@ -1,10 +1,13 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using Dapper;
 using Microsoft.AspNetCore.Mvc.Testing;
+using NetTopologySuite.Geometries.Utilities;
 using SQE.API.DTO;
 using SQE.API.Server;
+using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
 
@@ -262,6 +265,29 @@ LIMIT 50";
                         }
 
             Assert.True(foundArtefactWithMask);
+        }
+
+        /// <summary>
+        /// Can recognize imaged object ids with url encoded values
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanDecodeImagedObjectIdWithUrlEncodedValue()
+        {
+            // Note: the dotnet HTTP Request system automatically escapes the URL's we submit,
+            // so we need to encode the URL first (remember this!!!).
+            var id = HttpUtility.UrlEncode("IAA-275%2F1-1");
+            var textFragRequest = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(id);
+
+            var (response, msg, _, _) = await Request.Send(
+                textFragRequest,
+                _client);
+
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(1, msg.Count);
+            Assert.Equal("4Q7", msg.First().manuscriptName);
+            Assert.Equal("frg. 1", msg.First().textFragmentName);
+            Assert.Equal((uint)9423, msg.First().textFragmentId);
         }
     }
 }

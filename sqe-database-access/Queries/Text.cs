@@ -42,9 +42,10 @@ WITH RECURSIVE sign_interpretation_ids
 			JOIN position_in_stream_owner 
 				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
 					AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
+        GROUP BY sign_interpretation_ids.signInterpretationId, position_in_stream.next_sign_interpretation_id
 	)
 
-SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
+SELECT  manuscript_data.manuscript_id AS manuscriptId,
 		manuscript_data.name AS editionName,
 		manuscript_author.user_id AS manuscriptAuthor,
 

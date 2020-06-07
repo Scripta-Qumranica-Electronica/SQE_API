@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
@@ -36,6 +36,7 @@ namespace SQE.API.Server.Services
                 imageToImageMapEditorId = model.ImageToImageMapEditorId,
                 waveLength = model.WaveLength,
                 type = GetType(model.Type),
+                ppi = model.PPI,
                 regionInMasterImage = model.RegionInMaster,
                 regionInImage = model.RegionOfMaster,
                 lightingDirection = GetLightingDirection(model.Type),
@@ -56,6 +57,7 @@ namespace SQE.API.Server.Services
 
         public async Task<List<ImagedObjectTextFragmentMatchDTO>> GetImageTextFragmentsAsync(string imagedObjectId)
         {
+            imagedObjectId = imagedObjectId.Replace("%2F", "/").Replace("%20", " ");
             var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
             return textFragments.Select(x => new ImagedObjectTextFragmentMatchDTO(
                 x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName, x.Side == 0 ? "recto" : "verso")

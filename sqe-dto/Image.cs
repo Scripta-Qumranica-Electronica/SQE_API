@@ -25,6 +25,7 @@ namespace SQE.API.DTO
         public string[] waveLength { get; set; }
         public string type { get; set; }
         public string side { get; set; }
+        public uint ppi { get; set; }
         public string regionInMasterImage { get; set; }
         public string regionInImage { get; set; }
         public string transformToMaster { get; set; }

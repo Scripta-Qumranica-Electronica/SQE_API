@@ -9,6 +9,7 @@ SELECT image_urls.url AS url,
     image_urls.proxy AS proxy,
     image_catalog.image_catalog_id,
     SQE_image.type AS img_type,
+    SQE_image.dpi AS ppi,
     image_catalog.catalog_side AS side,
     SQE_image.sqe_image_id AS sqe_image_id,
     SQE_image.filename AS filename,
@@ -55,6 +56,7 @@ WHERE edition.edition_id = @EditionId
             public uint sqe_image_id { get; set; }
             public uint image_catalog_id { get; set; }
             public byte img_type { get; set; }
+            public uint ppi { get; set; }
             public byte side { get; set; }
             public bool master { get; set; }
             public ushort wave_start { get; set; }

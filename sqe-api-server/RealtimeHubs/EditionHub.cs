@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
 using SQE.API.Server.Services;
+using SQE.DatabaseAccess.Models;
 using Microsoft.AspNetCore.SignalR;
 
 using SQE.DatabaseAccess.Helpers;
@@ -232,6 +233,27 @@ namespace SQE.API.Server.RealtimeHubs
             try
             {
                 return await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        ///     Provides spatial data for all letters in the edition organized and oriented
+        ///     by lines.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<EditionScriptLinesDTO> GetV1EditionsEditionIdScriptLines(uint editionId)
+
+        {
+            try
+            {
+                return await _editionService.GetEditionScriptLines(await _userService.GetCurrentUserObjectAsync(editionId));
             }
             catch (ApiException err)
             {

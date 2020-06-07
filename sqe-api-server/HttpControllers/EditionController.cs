@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.API.DTO;
 using SQE.API.Server.Services;
+using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.HttpControllers
 {
@@ -166,6 +167,19 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint editionId)
         {
             return await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));
+        }
+
+        /// <summary>
+        ///     Provides spatial data for all letters in the edition organized and oriented
+        ///     by lines.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <returns></returns>
+        [HttpGet("/v1/[controller]s/{editionId}/script-lines")]
+        public async Task<ActionResult<EditionScriptLinesDTO>> GetEditionScriptLines(
+            [FromRoute] uint editionId)
+        {
+            return await _editionService.GetEditionScriptLines(await _userService.GetCurrentUserObjectAsync(editionId));
         }
     }
 }

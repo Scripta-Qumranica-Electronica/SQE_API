@@ -363,6 +363,7 @@ WHERE edition_id = @EditionId
         internal const string GetQuery = @"
 SELECT sign_interpretation_roi.sign_interpretation_id AS Id,
     sign_interpretation.character AS Letter,
+    GROUP_CONCAT(DISTINCT CONCAT(attr.name, '_', attr.string_value)) AS Attributes,
     AsWKB(roi_shape.path) AS Polygon,
     roi_position.translate_x AS TranslateX,
     roi_position.translate_y AS TranslateY,
@@ -386,12 +387,20 @@ JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = sign_in
 JOIN position_in_stream ON position_in_stream.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
 JOIN position_in_stream_owner ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
     AND position_in_stream_owner.edition_id = sign_interpretation_roi_owner.edition_id
+LEFT JOIN (
+    SELECT sign_interpretation_id, string_value, name, edition_id
+    FROM sign_interpretation_attribute_owner
+    JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_attribute_id = sign_interpretation_attribute_owner.sign_interpretation_attribute_id
+    JOIN attribute_value USING(attribute_value_id)
+    JOIN attribute USING(attribute_id) 
+    ) AS attr ON attr.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id AND attr.edition_id = sign_interpretation_roi_owner.edition_id
 JOIN edition ON edition.edition_id = sign_interpretation_roi_owner.edition_id
 JOIN edition_editor ON edition_editor.edition_id = sign_interpretation_roi_owner.edition_id
 
 WHERE sign_interpretation_roi_owner.edition_id = @EditionId
-    AND (edition.public OR edition_editor.user_id = @UserId)
-ORDER BY sign_interpretation_roi.sign_interpretation_id
+        AND (edition.public OR edition_editor.user_id = @UserId)
+GROUP BY sign_interpretation_roi.sign_interpretation_roi_id
+ORDER BY sign_interpretation_roi.sign_interpretation_id 
 ";
     }
 
