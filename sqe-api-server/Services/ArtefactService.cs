@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
+using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -23,7 +24,7 @@ namespace SQE.API.Server.Services
             bool withMask = false);
 
         Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(EditionUserInfo editionUser,
-            BatchUpdateArtefactTransformDTO updates,
+            BatchUpdateArtefactPlacementDTO updates,
             string clientId = null);
 
         Task<ArtefactDTO> UpdateArtefactAsync(EditionUserInfo editionUser,
@@ -59,7 +60,7 @@ namespace SQE.API.Server.Services
         {
             ParseImageMaskOptionals(optional, out _, out var withMask);
             var artefact = await _artefactRepository.GetEditionArtefactAsync(editionUser, artefactId, withMask);
-            return ArtefactDTOTransformer.QueryArtefactToArtefactDTO(artefact, editionUser.EditionId);
+            return artefact.ToDTO(editionUser.EditionId);
         }
 
         public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(EditionUserInfo editionUser,
@@ -74,7 +75,7 @@ namespace SQE.API.Server.Services
             else
             {
                 var listings = await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMask);
-                artefacts = ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
+                artefacts = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
                     listings.ToList(),
                     editionUser.EditionId
                 );
@@ -89,21 +90,21 @@ namespace SQE.API.Server.Services
             //var imagedObjectIds = artefactListings.Select(x => x.ImageCatalogId);
 
 
-            return ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
+            return ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
                 artefactListings.ToList(),
                 editionUser.EditionId
             );
         }
 
         public async Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(EditionUserInfo editionUser,
-            BatchUpdateArtefactTransformDTO updates,
+            BatchUpdateArtefactPlacementDTO updates,
             string clientId = null)
         {
-            await _artefactRepository.BatchUpdateArtefactPositionAsync(editionUser, updates.artefactTransforms);
+            await _artefactRepository.BatchUpdateArtefactPositionAsync(editionUser, updates.artefactPlacements);
 
             // Collect the updated artefacts
             var updatedArtefacts = await Task.WhenAll(
-                updates.artefactTransforms
+                updates.artefactPlacements
                 .Select(async x => await GetEditionArtefactAsync(editionUser, x.artefactId, new List<string>()))
                 );
 
@@ -120,11 +121,11 @@ namespace SQE.API.Server.Services
 
             return new BatchUpdatedArtefactTransformDTO()
             {
-                artefactTransforms = updatedArtefacts.Select(x => new UpdatedArtefactTransformDTO()
+                artefactPlacements = updatedArtefacts.Select(x => new UpdatedArtefactPlacementDTO()
                 {
                     artefactId = x.id,
-                    positionEditorId = x.mask.positionEditorId,
-                    transform = x.mask.transformation
+                    placementEditorId = x.artefactPlacementEditorId ?? 0,
+                    placement = x.placement
                 }).ToList()
             };
         }
@@ -143,9 +144,9 @@ namespace SQE.API.Server.Services
         {
             var withMask = false;
             var tasks = new List<Task<List<AlteredRecord>>>();
-            if (!string.IsNullOrEmpty(updateArtefact.polygon.mask))
+            if (!string.IsNullOrEmpty(updateArtefact.mask))
             {
-                var cleanedPoly = await GeometryValidation.ValidatePolygonAsync(updateArtefact.polygon.mask, "artefact");
+                var cleanedPoly = await GeometryValidation.ValidatePolygonAsync(updateArtefact.mask, "artefact");
                 tasks.Add(
                     _artefactRepository.UpdateArtefactShapeAsync(editionUser, artefactId, cleanedPoly)
                 );
@@ -155,16 +156,16 @@ namespace SQE.API.Server.Services
             if (!string.IsNullOrEmpty(updateArtefact.name))
                 tasks.Add(_artefactRepository.UpdateArtefactNameAsync(editionUser, artefactId, updateArtefact.name));
 
-            if (updateArtefact.polygon.transformation != null)
+            if (updateArtefact.placement != null)
                 tasks.Add(
                     _artefactRepository.UpdateArtefactPositionAsync(
                         editionUser,
                         artefactId,
-                        updateArtefact.polygon.transformation.scale,
-                        updateArtefact.polygon.transformation.rotate,
-                        updateArtefact.polygon.transformation.translate?.x,
-                        updateArtefact.polygon.transformation.translate?.y,
-                        updateArtefact.polygon.transformation.zIndex
+                        updateArtefact.placement.scale,
+                        updateArtefact.placement.rotate,
+                        updateArtefact.placement.translate?.x,
+                        updateArtefact.placement.translate?.y,
+                        updateArtefact.placement.zIndex
                     )
                 );
 
@@ -192,24 +193,24 @@ namespace SQE.API.Server.Services
             CreateArtefactDTO createArtefact,
             string clientId = null)
         {
-            var cleanedPoly = string.IsNullOrEmpty(createArtefact.polygon.mask)
+            var cleanedPoly = string.IsNullOrEmpty(createArtefact.mask)
                 ? null
-                : await GeometryValidation.ValidatePolygonAsync(createArtefact.polygon.mask, "artefact");
+                : await GeometryValidation.ValidatePolygonAsync(createArtefact.mask, "artefact");
 
             var newArtefact = await _artefactRepository.CreateNewArtefactAsync(
                 editionUser,
                 createArtefact.masterImageId,
                 cleanedPoly,
                 createArtefact.name,
-                createArtefact.polygon.transformation?.scale,
-                createArtefact.polygon.transformation?.rotate,
-                createArtefact.polygon.transformation?.translate?.x,
-                createArtefact.polygon.transformation?.translate?.y,
-                createArtefact.polygon.transformation?.zIndex,
+                createArtefact.placement?.scale,
+                createArtefact.placement?.rotate,
+                createArtefact.placement?.translate?.x,
+                createArtefact.placement?.translate?.y,
+                createArtefact.placement?.zIndex,
                 createArtefact.statusMessage
             );
 
-            var optional = string.IsNullOrEmpty(createArtefact.polygon.mask)
+            var optional = string.IsNullOrEmpty(createArtefact.mask)
                 ? new List<string>()
                 : new List<string> { "masks" };
 

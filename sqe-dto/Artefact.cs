@@ -5,17 +5,41 @@ namespace SQE.API.DTO
 {
     public class ArtefactDataDTO
     {
+        [Required]
         public uint id { get; set; }
+
+        [Required]
         public string name { get; set; }
     }
 
     public class ArtefactDTO : ArtefactDataDTO
     {
+        [Required]
         public uint editionId { get; set; }
+
+        [Required]
         public string imagedObjectId { get; set; }
+
+        [Required]
         public uint imageId { get; set; }
+
+        [Required]
         public uint artefactDataEditorId { get; set; }
-        public PolygonDTO mask { get; set; }
+
+        [Required]
+        public string mask { get; set; }
+
+        [Required]
+        public uint artefactMaskEditorId { get; set; }
+
+        [Required]
+        public bool isPlaced { get; set; }
+
+        [Required]
+        public PlacementDTO placement { get; set; }
+        public uint? artefactPlacementEditorId { get; set; }
+
+        [Required]
         public string side { get; set; }
         public string statusMessage { get; set; }
 
@@ -28,27 +52,20 @@ namespace SQE.API.DTO
 
     public class ArtefactListDTO
     {
-        public ArtefactListDTO(List<ArtefactDTO> artefacts)
-        {
-            this.artefacts = artefacts;
-        }
-
+        [Required]
         public List<ArtefactDTO> artefacts { get; set; }
     }
 
     public class ArtefactDataListDTO
     {
-        public ArtefactDataListDTO(List<ArtefactDataDTO> artefacts)
-        {
-            this.artefacts = artefacts;
-        }
-
+        [Required]
         public List<ArtefactDataDTO> artefacts { get; set; }
     }
 
     public class UpdateArtefactDTO
     {
-        public virtual SetPolygonDTO polygon { get; set; }
+        public virtual string mask { get; set; }
+        public PlacementDTO placement { get; set; }
 
         [StringLength(
             255,
@@ -60,31 +77,42 @@ namespace SQE.API.DTO
         public string statusMessage { get; set; }
     }
 
-    public class UpdateArtefactTransformDTO
+    public class UpdateArtefactPlacementDTO
     {
+        [Required]
         public uint artefactId { get; set; }
-        public TransformationDTO transform { get; set; }
+
+        [Required]
+        public PlacementDTO placement { get; set; }
     }
 
-    public class BatchUpdateArtefactTransformDTO
+    public class BatchUpdateArtefactPlacementDTO
     {
-        public List<UpdateArtefactTransformDTO> artefactTransforms { get; set; }
+        [Required]
+        public List<UpdateArtefactPlacementDTO> artefactPlacements { get; set; }
     }
 
-    public class UpdatedArtefactTransformDTO : UpdateArtefactTransformDTO
+    public class UpdatedArtefactPlacementDTO : UpdateArtefactPlacementDTO
     {
-        public uint positionEditorId { get; set; }
+        [Required]
+        public uint placementEditorId { get; set; }
     }
 
     public class BatchUpdatedArtefactTransformDTO
     {
-        public List<UpdatedArtefactTransformDTO> artefactTransforms { get; set; }
+        [Required]
+        public List<UpdatedArtefactPlacementDTO> artefactPlacements { get; set; }
     }
 
     public class CreateArtefactDTO : UpdateArtefactDTO
     {
-        [Required] public uint masterImageId { get; set; }
+        [Required]
+        public uint masterImageId { get; set; }
 
-        [Required] public override SetPolygonDTO polygon { get; set; }
+        // Run a quick regex to make sure we have a the valid text for a WKT polygon (does not check polygon validity)
+        [RegularExpression(@"^\s*[Pp][Oo][Ll][Yy][Gg][Oo][Nn]\s*\(\s*\(.*\)\s*\)\s*$",
+            ErrorMessage = "The mask must be a valid WKT POLYGON description.")]
+        [Required]
+        public override string mask { get; set; }
     }
 }

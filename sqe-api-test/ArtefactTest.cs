@@ -92,7 +92,7 @@ namespace SQE.ApiTest
             Assert.True(artefact.id > 0);
             Assert.NotNull(artefact.imagedObjectId);
             Assert.NotNull(artefact.side);
-            Assert.NotNull(artefact.mask.mask);
+            Assert.NotNull(artefact.mask);
         }
 
         /// <summary>
@@ -115,27 +115,23 @@ namespace SQE.ApiTest
             var newName = "CanCreateArtefacts.artefact א";
             var newArtefact = new CreateArtefactDTO
             {
-                polygon = new PolygonDTO
+                mask = newArtefactShape,
+                placement = new PlacementDTO()
                 {
-                    mask = newArtefactShape,
-                    transformation = new TransformationDTO
+                    scale = newScale,
+                    rotate = newRotate,
+                    translate = new TranslateDTO
                     {
-                        scale = newScale,
-                        rotate = newRotate,
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        },
-                        zIndex = newZIdx
-                    }
+                        x = newTranslateX,
+                        y = newTranslateY
+                    },
+                    zIndex = newZIdx
                 },
                 name = newName,
                 masterImageId = masterImageId,
                 statusMessage = null
             };
             const string defaultStatusMessage = "New";
-            var jsonString = JsonConvert.SerializeObject(newArtefact);
 
             // Act
             var (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
@@ -149,11 +145,11 @@ namespace SQE.ApiTest
             // Assert
             response.EnsureSuccessStatusCode();
             Assert.Equal(newEdition, writtenArtefact.editionId);
-            Assert.Equal(newArtefact.polygon.mask, writtenArtefact.mask.mask);
-            Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
-            Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
-            Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
-            Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
+            Assert.Equal(newArtefact.mask, writtenArtefact.mask);
+            Assert.Equal(newScale, writtenArtefact.placement.scale);
+            Assert.Equal(newRotate, writtenArtefact.placement.rotate);
+            Assert.Equal(newTranslateX, writtenArtefact.placement.translate.x);
+            Assert.Equal(newTranslateY, writtenArtefact.placement.translate.y);
             Assert.Equal(newArtefact.name, writtenArtefact.name);
             Assert.Equal(defaultStatusMessage, writtenArtefact.statusMessage);
 
@@ -165,18 +161,15 @@ namespace SQE.ApiTest
 
             newArtefact = new CreateArtefactDTO
             {
-                polygon = new PolygonDTO
+                mask = newArtefactShape,
+                placement = new PlacementDTO
                 {
-                    mask = newArtefactShape,
-                    transformation = new TransformationDTO
+                    scale = newScale,
+                    rotate = newRotate,
+                    translate = new TranslateDTO
                     {
-                        scale = newScale,
-                        rotate = newRotate,
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        }
+                        x = newTranslateX,
+                        y = newTranslateY
                     }
                 },
                 name = newName,
@@ -195,57 +188,12 @@ namespace SQE.ApiTest
             // Assert
             response.EnsureSuccessStatusCode();
             Assert.Equal(newEdition, writtenArtefact.editionId);
-            Assert.Equal(newArtefact.polygon.mask, writtenArtefact.mask.mask);
-            Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
-            Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
-            Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
-            Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
+            Assert.Equal(newArtefact.mask, writtenArtefact.mask);
+            Assert.Equal(newScale, writtenArtefact.placement.scale);
+            Assert.Equal(newRotate, writtenArtefact.placement.rotate);
+            Assert.Equal(newTranslateX, writtenArtefact.placement.translate.x);
+            Assert.Equal(newTranslateY, writtenArtefact.placement.translate.y);
             Assert.Equal("", writtenArtefact.name);
-
-            // Cleanup
-            await DeleteArtefact(newEdition, writtenArtefact.id);
-
-            // Arrange
-            newName = "CanCreateArtefacts.artefact ב";
-
-            newArtefact = new CreateArtefactDTO
-            {
-                polygon = new PolygonDTO
-                {
-                    mask = null,
-                    transformation = new TransformationDTO
-                    {
-                        scale = newScale,
-                        rotate = newRotate,
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        }
-                    }
-                },
-                name = newName,
-                masterImageId = masterImageId
-            };
-
-            // Act
-            (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
-                _client,
-                HttpMethod.Post,
-                $"/{version}/editions/{newEdition}/{controller}",
-                newArtefact,
-                await Request.GetJwtViaHttpAsync(_client)
-            );
-
-            // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.Equal(newEdition, writtenArtefact.editionId);
-            Assert.Equal("", writtenArtefact.mask.mask);
-            Assert.Equal(newScale, writtenArtefact.mask.transformation.scale);
-            Assert.Equal(newRotate, writtenArtefact.mask.transformation.rotate);
-            Assert.Equal(newTranslateX, writtenArtefact.mask.transformation.translate.x);
-            Assert.Equal(newTranslateY, writtenArtefact.mask.transformation.translate.y);
-            Assert.Equal(newArtefact.name, writtenArtefact.name);
 
             // Cleanup
             await DeleteArtefact(newEdition, writtenArtefact.id);
@@ -334,20 +282,17 @@ namespace SQE.ApiTest
             ;
             var newArtefact = new CreateArtefactDTO
             {
-                polygon = new PolygonDTO
+                mask = newArtefactShape,
+                placement = new PlacementDTO
                 {
-                    mask = newArtefactShape,
-                    transformation = new TransformationDTO
+                    scale = newScale,
+                    rotate = newRotate,
+                    translate = new TranslateDTO
                     {
-                        scale = newScale,
-                        rotate = newRotate,
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        },
-                        zIndex = newZIdx
-                    }
+                        x = newTranslateX,
+                        y = newTranslateY
+                    },
+                    zIndex = newZIdx
                 },
                 name = newName,
                 masterImageId = masterImageId
@@ -388,20 +333,17 @@ namespace SQE.ApiTest
             var newName = "CannotCreateMalformedArtefact.artefact א";
             var newArtefact = new CreateArtefactDTO
             {
-                polygon = new PolygonDTO
+                mask = newArtefactShape,
+                placement = new PlacementDTO
                 {
-                    mask = newArtefactShape,
-                    transformation = new TransformationDTO
+                    scale = newScale,
+                    rotate = newRotate,
+                    translate = new TranslateDTO
                     {
-                        scale = newScale,
-                        rotate = newRotate,
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        },
-                        zIndex = newZIdx
-                    }
+                        x = newTranslateX,
+                        y = newTranslateY
+                    },
+                    zIndex = newZIdx
                 },
                 name = newName,
                 masterImageId = masterImageId,
@@ -425,20 +367,17 @@ namespace SQE.ApiTest
             // Test bad scale
             newArtefact = new CreateArtefactDTO
             {
-                polygon = new PolygonDTO
+                mask = newArtefactShape,
+                placement = new PlacementDTO
                 {
-                    mask = newArtefactShape,
-                    transformation = new TransformationDTO
+                    scale = 100m, // 0–99.9999 is allowed range
+                    rotate = newRotate,
+                    translate = new TranslateDTO
                     {
-                        scale = 100m, // 0–99.9999 is allowed range
-                        rotate = newRotate,
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        },
-                        zIndex = newZIdx
-                    }
+                        x = newTranslateX,
+                        y = newTranslateY
+                    },
+                    zIndex = newZIdx
                 },
                 name = newName,
                 masterImageId = masterImageId,
@@ -464,20 +403,17 @@ namespace SQE.ApiTest
             // Test scale has improper decimal value
             newArtefact = new CreateArtefactDTO
             {
-                polygon = new PolygonDTO
+                mask = newArtefactShape,
+                placement = new PlacementDTO
                 {
-                    mask = newArtefactShape,
-                    transformation = new TransformationDTO
+                    scale = 2.43567m,
+                    rotate = newRotate, // 0–9999.99 is the only allowable range
+                    translate = new TranslateDTO
                     {
-                        scale = 2.43567m,
-                        rotate = newRotate, // 0–9999.99 is the only allowable range
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        },
-                        zIndex = newZIdx
-                    }
+                        x = newTranslateX,
+                        y = newTranslateY
+                    },
+                    zIndex = newZIdx
                 },
                 name = newName,
                 masterImageId = masterImageId,
@@ -503,20 +439,17 @@ namespace SQE.ApiTest
             // Test rotate has improper decimal value
             newArtefact = new CreateArtefactDTO
             {
-                polygon = new PolygonDTO
+                mask = newArtefactShape,
+                placement = new PlacementDTO
                 {
-                    mask = newArtefactShape,
-                    transformation = new TransformationDTO
+                    scale = newScale,
+                    rotate = 180.4576m, // 0–9999.99 is the only allowable range
+                    translate = new TranslateDTO
                     {
-                        scale = newScale,
-                        rotate = 180.4576m, // 0–9999.99 is the only allowable range
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        },
-                        zIndex = newZIdx
-                    }
+                        x = newTranslateX,
+                        y = newTranslateY
+                    },
+                    zIndex = newZIdx
                 },
                 name = newName,
                 masterImageId = masterImageId,
@@ -542,20 +475,17 @@ namespace SQE.ApiTest
             // Test rotate out of range
             newArtefact = new CreateArtefactDTO
             {
-                polygon = new PolygonDTO
+                mask = newArtefactShape,
+                placement = new PlacementDTO
                 {
-                    mask = newArtefactShape,
-                    transformation = new TransformationDTO
+                    scale = newScale,
+                    rotate = -180.45m, // 0–9999.99 is the only allowable range
+                    translate = new TranslateDTO
                     {
-                        scale = newScale,
-                        rotate = -180.45m, // 0–9999.99 is the only allowable range
-                        translate = new TranslateDTO
-                        {
-                            x = newTranslateX,
-                            y = newTranslateY
-                        },
-                        zIndex = newZIdx
-                    }
+                        x = newTranslateX,
+                        y = newTranslateY
+                    },
+                    zIndex = newZIdx
                 },
                 name = newName,
                 masterImageId = masterImageId,
@@ -577,6 +507,76 @@ namespace SQE.ApiTest
             Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
             resp = await artefactResponse.Content.ReadAsStringAsync();
             Assert.True(resp.Contains("The rotate must be between 0 and 360"));
+
+            // Cannot create an artefact without a mask
+            // Arrange
+            newName = "CannotCreateArtefacts.artefact ב";
+
+            newArtefact = new CreateArtefactDTO
+            {
+                mask = null,
+                placement = new PlacementDTO
+                {
+                    scale = newScale,
+                    rotate = newRotate,
+                    translate = new TranslateDTO
+                    {
+                        x = newTranslateX,
+                        y = newTranslateY
+                    }
+                },
+                name = newName,
+                masterImageId = masterImageId
+            };
+
+            // Act
+            (artefactResponse, artefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
+                _client,
+                HttpMethod.Post,
+                $"/{version}/editions/{newEdition}/{controller}",
+                newArtefact,
+                await Request.GetJwtViaHttpAsync(_client)
+            );
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
+            resp = await artefactResponse.Content.ReadAsStringAsync();
+            Assert.True(resp.Contains("The mask field is required."));
+
+            // Cannot create an artefact without a mask
+            // Arrange
+            newName = "CannotCreateArtefacts.artefact ב";
+
+            newArtefact = new CreateArtefactDTO
+            {
+                mask = "PLYGON((0 0,10 0,10 10,0 10,0 0))",
+                placement = new PlacementDTO
+                {
+                    scale = newScale,
+                    rotate = newRotate,
+                    translate = new TranslateDTO
+                    {
+                        x = newTranslateX,
+                        y = newTranslateY
+                    }
+                },
+                name = newName,
+                masterImageId = masterImageId
+            };
+
+            // Act
+            (artefactResponse, artefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
+                _client,
+                HttpMethod.Post,
+                $"/{version}/editions/{newEdition}/{controller}",
+                newArtefact,
+                await Request.GetJwtViaHttpAsync(_client)
+            );
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
+            resp = await artefactResponse.Content.ReadAsStringAsync();
+            Assert.True(resp.Contains("The mask must be a valid WKT POLYGON description."));
         }
 
         /// <summary>
@@ -625,11 +625,8 @@ namespace SQE.ApiTest
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
                 new UpdateArtefactDTO
                 {
-                    polygon = new PolygonDTO
-                    {
-                        mask = null,
-                        transformation = null
-                    },
+                    mask = null,
+                    placement = null,
                     name = newArtefactName
                 }
             );
@@ -665,11 +662,8 @@ namespace SQE.ApiTest
                     $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
                     new UpdateArtefactDTO
                     {
-                        polygon = new PolygonDTO
-                        {
-                            mask = null,
-                            transformation = null
-                        },
+                        mask = null,
+                        placement = null,
                         name = newArtefactName,
                         statusMessage = statusMessage
                     },
@@ -678,9 +672,14 @@ namespace SQE.ApiTest
 
             // Assert (update name and set status)
             nameResponse.EnsureSuccessStatusCode();
-            Assert.Null(updatedNameArtefact.mask.transformation);
+            Assert.False(updatedNameArtefact.isPlaced);
+            Assert.Null(updatedNameArtefact.placement.translate.x);
+            Assert.Null(updatedNameArtefact.placement.translate.y);
+            Assert.Equal(0, updatedNameArtefact.placement.rotate); // Expect the default value
+            Assert.Equal((uint)0, updatedNameArtefact.placement.zIndex); // Expect the default value
+            Assert.Equal(1, updatedNameArtefact.placement.scale); // Expect the default value
             Assert.NotEqual(artefact.name, updatedNameArtefact.name);
-            Assert.True(string.IsNullOrEmpty(updatedNameArtefact.mask?.mask)); // The mask was not updated so we don't send that back
+            Assert.True(string.IsNullOrEmpty(updatedNameArtefact.mask)); // The mask was not updated so we don't send that back
             Assert.Equal(newArtefactName, updatedNameArtefact.name);
             Assert.Equal(statusMessage, updatedNameArtefact.statusMessage);
 
@@ -692,20 +691,17 @@ namespace SQE.ApiTest
                     $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
                     new UpdateArtefactDTO
                     {
-                        polygon = new PolygonDTO
+                        mask = null,
+                        placement = new PlacementDTO
                         {
-                            mask = null,
-                            transformation = new TransformationDTO
+                            scale = newScale,
+                            rotate = newRotate,
+                            translate = new TranslateDTO
                             {
-                                scale = newScale,
-                                rotate = newRotate,
-                                translate = new TranslateDTO
-                                {
-                                    x = newTranslateX,
-                                    y = newTranslateY
-                                },
-                                zIndex = newZIdx
-                            }
+                                x = newTranslateX,
+                                y = newTranslateY
+                            },
+                            zIndex = newZIdx
                         },
                         name = null
                     },
@@ -714,14 +710,15 @@ namespace SQE.ApiTest
 
             // Assert (update position)
             positionResponse.EnsureSuccessStatusCode();
-            Assert.NotEqual(artefact.mask.transformation?.scale, updatedPositionArtefact.mask.transformation?.scale);
-            Assert.NotEqual(artefact.mask.transformation?.rotate, updatedPositionArtefact.mask.transformation?.rotate);
-            Assert.NotNull(updatedPositionArtefact.mask.transformation?.translate);
-            Assert.Equal(newScale, updatedPositionArtefact.mask.transformation?.scale);
-            Assert.Equal(newRotate, updatedPositionArtefact.mask.transformation?.rotate);
-            Assert.Equal(newTranslateX, updatedPositionArtefact.mask.transformation?.translate?.x);
-            Assert.Equal(newTranslateY, updatedPositionArtefact.mask.transformation?.translate?.y);
-            Assert.Equal(newZIdx, updatedPositionArtefact.mask.transformation?.zIndex);
+            Assert.NotEqual(artefact.placement.scale, updatedPositionArtefact.placement.scale);
+            Assert.NotEqual(artefact.placement.rotate, updatedPositionArtefact.placement.rotate);
+            Assert.NotNull(updatedPositionArtefact.placement.translate.x);
+            Assert.NotNull(updatedPositionArtefact.placement.translate.y);
+            Assert.Equal(newScale, updatedPositionArtefact.placement.scale);
+            Assert.Equal(newRotate, updatedPositionArtefact.placement.rotate);
+            Assert.Equal(newTranslateX, updatedPositionArtefact.placement.translate.x);
+            Assert.Equal(newTranslateY, updatedPositionArtefact.placement.translate.y);
+            Assert.Equal(newZIdx, updatedPositionArtefact.placement.zIndex);
             Assert.Equal(newArtefactName, updatedPositionArtefact.name);
 
             // Act (update shape)
@@ -732,18 +729,15 @@ namespace SQE.ApiTest
                     $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
                     new UpdateArtefactDTO
                     {
-                        polygon = new PolygonDTO
+                        mask = newArtefactShape,
+                        placement = new PlacementDTO
                         {
-                            mask = newArtefactShape,
-                            transformation = new TransformationDTO
+                            scale = newScale,
+                            rotate = newRotate,
+                            translate = new TranslateDTO
                             {
-                                scale = newScale,
-                                rotate = newRotate,
-                                translate = new TranslateDTO
-                                {
-                                    x = newTranslateX,
-                                    y = newTranslateY
-                                }
+                                x = newTranslateX,
+                                y = newTranslateY
                             }
                         },
                         name = null
@@ -753,12 +747,12 @@ namespace SQE.ApiTest
 
             // Assert (update shape)
             shapeResponse.EnsureSuccessStatusCode();
-            Assert.NotEqual(artefact.mask.mask, updatedShapeArtefact.mask.mask);
-            Assert.Equal(newArtefactShape, updatedShapeArtefact.mask.mask);
-            Assert.Equal(newScale, updatedShapeArtefact.mask.transformation.scale);
-            Assert.Equal(newRotate, updatedShapeArtefact.mask.transformation.rotate);
-            Assert.Equal(newTranslateX, updatedShapeArtefact.mask.transformation.translate.x);
-            Assert.Equal(newTranslateY, updatedShapeArtefact.mask.transformation.translate.y);
+            Assert.NotEqual(artefact.mask, updatedShapeArtefact.mask);
+            Assert.Equal(newArtefactShape, updatedShapeArtefact.mask);
+            Assert.Equal(newScale, updatedShapeArtefact.placement.scale);
+            Assert.Equal(newRotate, updatedShapeArtefact.placement.rotate);
+            Assert.Equal(newTranslateX, updatedShapeArtefact.placement.translate.x);
+            Assert.Equal(newTranslateY, updatedShapeArtefact.placement.translate.y);
             Assert.Equal(newArtefactName, updatedShapeArtefact.name);
 
             // Arrange (update all)
@@ -770,20 +764,17 @@ namespace SQE.ApiTest
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
                 new UpdateArtefactDTO
                 {
-                    polygon = new PolygonDTO
+                    mask = artefact.mask,
+                    placement = new PlacementDTO
                     {
-                        mask = artefact.mask.mask,
-                        transformation = new TransformationDTO
+                        scale = otherScale,
+                        rotate = otherRotate,
+                        translate = new TranslateDTO
                         {
-                            scale = otherScale,
-                            rotate = otherRotate,
-                            translate = new TranslateDTO
-                            {
-                                x = otherTranslateX,
-                                y = otherTranslateY
-                            },
-                            zIndex = otherzIdx
-                        }
+                            x = otherTranslateX,
+                            y = otherTranslateY
+                        },
+                        zIndex = otherzIdx
                     },
                     name = artefact.name
                 },
@@ -792,12 +783,12 @@ namespace SQE.ApiTest
 
             // Assert (update all)
             allResponse.EnsureSuccessStatusCode();
-            Assert.True(_wkr.Read(artefact.mask.mask).EqualsNormalized(_wkr.Read(updatedAllArtefact.mask.mask)));
-            Assert.Equal(otherScale, updatedAllArtefact.mask.transformation.scale);
-            Assert.Equal(otherRotate, updatedAllArtefact.mask.transformation.rotate);
-            Assert.Equal(otherTranslateX, updatedAllArtefact.mask.transformation.translate.x);
-            Assert.Equal(otherTranslateY, updatedAllArtefact.mask.transformation.translate.y);
-            Assert.Equal(otherzIdx, updatedAllArtefact.mask.transformation.zIndex);
+            Assert.True(_wkr.Read(artefact.mask).EqualsNormalized(_wkr.Read(updatedAllArtefact.mask)));
+            Assert.Equal(otherScale, updatedAllArtefact.placement.scale);
+            Assert.Equal(otherRotate, updatedAllArtefact.placement.rotate);
+            Assert.Equal(otherTranslateX, updatedAllArtefact.placement.translate.x);
+            Assert.Equal(otherTranslateY, updatedAllArtefact.placement.translate.y);
+            Assert.Equal(otherzIdx, updatedAllArtefact.placement.zIndex);
             Assert.Equal(artefact.name, updatedAllArtefact.name);
 
             await EditionHelpers.DeleteEdition(_client, newEdition);
@@ -824,11 +815,8 @@ namespace SQE.ApiTest
                 $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
                 new UpdateArtefactDTO
                 {
-                    polygon = new PolygonDTO
-                    {
-                        mask = newArtefactShape,
-                        transformation = null
-                    },
+                    mask = newArtefactShape,
+                    placement = null,
                     name = null
                 },
                 await Request.GetJwtViaHttpAsync(_client)

@@ -67,11 +67,12 @@ namespace SQE.API.Server.Services
 
         public async Task<ArtefactDataListDTO> GetArtefactsAsync(EditionUserInfo editionUser, uint fragmentId)
         {
-            return new ArtefactDataListDTO(
-                (await _textRepo.GetArtefactsAsync(editionUser, fragmentId))
-                .Select(x => new ArtefactDataDTO { id = x.ArtefactId, name = x.Name })
-                .ToList()
-            );
+            return new ArtefactDataListDTO()
+            {
+                artefacts = (await _textRepo.GetArtefactsAsync(editionUser, fragmentId))
+                        .Select(x => new ArtefactDataDTO { id = x.ArtefactId, name = x.Name })
+                        .ToList()
+            };
         }
 
         public async Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId)

@@ -45,7 +45,7 @@ namespace SQE.API.DTO
     {
         public string artefactName { get; set; }
         public uint artefactId { get; set; }
-        public PolygonDTO mask { get; set; }
+        public PlacementDTO placement { get; set; }
         public List<SignInterpretationDTO> characters { get; set; }
     }
 }

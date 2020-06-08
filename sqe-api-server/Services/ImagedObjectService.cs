@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
+using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -83,7 +84,7 @@ namespace SQE.API.Server.Services
         {
             var result = await GetImagedObjectsAsync(editionUser);
 
-            var artefacts = ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
+            var artefacts = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
                 (await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMasks)).ToList(),
                 editionUser.EditionId
             );
@@ -125,7 +126,7 @@ namespace SQE.API.Server.Services
                 (await GetImagedObjectsAsync(editionUser)).imagedObjects.First(x => x.id == imagedObjectId);
             if (artefacts)
             {
-                var artefactList = ArtefactDTOTransformer.QueryArtefactListToArtefactListDTO(
+                var artefactList = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
                     (await _artefactRepository.GetEditionArtefactListAsync(editionUser, masks)).ToList(),
                     editionUser.EditionId
                 );
