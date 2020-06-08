@@ -165,7 +165,7 @@ LIMIT 50";
             response.EnsureSuccessStatusCode();
             var foundArtefactWithMask = false;
             foreach (var art in msg.artefacts)
-                if (!string.IsNullOrEmpty(art.mask.mask))
+                if (!string.IsNullOrEmpty(art.mask))
                 {
                     foundArtefactWithMask = true;
                     break;
@@ -223,7 +223,7 @@ LIMIT 50";
             var foundArtefact = false;
             foreach (var io in msg.imagedObjects)
                 if (io.artefacts != null
-                    && string.IsNullOrEmpty(io.artefacts.First().mask.mask))
+                    && string.IsNullOrEmpty(io.artefacts.First().mask))
                 {
                     foundArtefact = true;
                     break;
@@ -258,7 +258,7 @@ LIMIT 50";
             foreach (var io in msg.imagedObjects)
                 if (io.artefacts != null)
                     foreach (var art in io.artefacts)
-                        if (!string.IsNullOrEmpty(art.mask.mask))
+                        if (!string.IsNullOrEmpty(art.mask))
                         {
                             foundArtefactWithMask = true;
                             break;

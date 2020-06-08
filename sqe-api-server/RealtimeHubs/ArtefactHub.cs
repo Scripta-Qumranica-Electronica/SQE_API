@@ -191,7 +191,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="payload">A BatchUpdateArtefactTransformDTO with a list of the desired updates</param>
         /// <returns></returns>
         [Authorize]
-        public async Task<BatchUpdatedArtefactTransformDTO> PostV1EditionsEditionIdArtefactsBatchTransformation(uint editionId, BatchUpdateArtefactTransformDTO payload)
+        public async Task<BatchUpdatedArtefactTransformDTO> PostV1EditionsEditionIdArtefactsBatchTransformation(uint editionId, BatchUpdateArtefactPlacementDTO payload)
 
         {
             try

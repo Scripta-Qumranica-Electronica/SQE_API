@@ -7,7 +7,7 @@ using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Serialization
 {
-    public static class ExtensionsDTO
+    public static partial class ExtensionsDTO
     {
         /// <summary>
         /// Outputs a ScriptTextFragmentDTO
@@ -53,11 +53,7 @@ namespace SQE.API.Server.Serialization
             {
                 artefactId = sac.ArtefactId,
                 artefactName = sac.ArtefactName,
-                mask = new PolygonDTO()
-                {
-                    mask = null,
-                    transformation = sac.TransformationDTO()
-                },
+                placement = sac.PlacementDTO(),
                 characters = sac.Characters.Select(x => new SignInterpretationDTO()
                 {
                     signInterpretationId = x.SignInterpretationId,
@@ -96,21 +92,21 @@ namespace SQE.API.Server.Serialization
         /// </summary>
         /// <param name="sac"></param>
         /// <returns></returns>
-        public static TransformationDTO TransformationDTO(this ScriptArtefactCharacters sac)
+        public static PlacementDTO PlacementDTO(this ScriptArtefactCharacters sac)
         {
-            return new TransformationDTO()
+            return new PlacementDTO()
             {
-                rotate = sac.ArtefactRotate,
-                scale = sac.ArtefactScale,
-                zIndex = sac.ArtefactZIndex,
-                // The translate should be null is we have no translate_x and translate_y values
-                translate = sac.ArtefactTranslateX.HasValue && sac.ArtefactTranslateY.HasValue
-                    ? new TranslateDTO()
-                    {
-                        x = sac.ArtefactTranslateX.Value,
-                        y = sac.ArtefactTranslateY.Value
-                    }
-                    : null
+                // Use default values if a null was passed
+                rotate = sac.ArtefactRotate ?? 0,
+                scale = sac.ArtefactScale ?? 1,
+                zIndex = sac.ArtefactZIndex ?? 0,
+
+                // The x and y translate may be null, but sent the DTO in any event
+                translate = new TranslateDTO()
+                {
+                    x = sac.ArtefactTranslateX,
+                    y = sac.ArtefactTranslateY
+                }
             };
         }
 

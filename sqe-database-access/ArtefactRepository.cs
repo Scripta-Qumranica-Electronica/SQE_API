@@ -38,7 +38,7 @@ namespace SQE.DatabaseAccess
         Task<List<AlteredRecord>> UpdateArtefactNameAsync(EditionUserInfo editionUser, uint artefactId, string name);
 
         Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(EditionUserInfo editionUser,
-            List<UpdateArtefactTransformDTO> transforms);
+            List<UpdateArtefactPlacementDTO> transforms);
 
         Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
             uint artefactId,
@@ -202,13 +202,13 @@ namespace SQE.DatabaseAccess
         }
 
         public async Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(EditionUserInfo editionUser,
-            List<UpdateArtefactTransformDTO> transforms)
+            List<UpdateArtefactPlacementDTO> transforms)
         {
             List<AlteredRecord> updates;
             using (var transactionScope = new TransactionScope())
             {
-                var updateMutationTasks = transforms.Select(async x => await FormatArtefactPositionUpdateRequestAsync(editionUser, x.artefactId, x.transform?.scale,
-                    x.transform?.rotate, x.transform?.translate?.x, x.transform?.translate?.y, x.transform?.zIndex));
+                var updateMutationTasks = transforms.Select(async x => await FormatArtefactPositionUpdateRequestAsync(editionUser, x.artefactId, x.placement?.scale,
+                    x.placement?.rotate, x.placement?.translate?.x, x.placement?.translate?.y, x.placement?.zIndex));
                 var updateMutations = (await Task.WhenAll(updateMutationTasks)).ToList();
                 updates = await _databaseWriter.WriteToDatabaseAsync(editionUser, updateMutations);
                 transactionScope.Complete();

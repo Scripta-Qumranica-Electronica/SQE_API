@@ -167,7 +167,7 @@ namespace SQE.API.Server.HttpControllers
         [HttpPost("v1/editions/{editionId}/[controller]s/batch-transformation")]
         public async Task<ActionResult<BatchUpdatedArtefactTransformDTO>> BatchUpdateArtefactTransform(
             [FromRoute] uint editionId,
-            [FromBody] BatchUpdateArtefactTransformDTO payload)
+            [FromBody] BatchUpdateArtefactPlacementDTO payload)
         {
             return await _artefactService.BatchUpdateArtefactTransformAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),
                 payload);
