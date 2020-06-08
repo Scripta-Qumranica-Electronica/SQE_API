@@ -17,7 +17,7 @@ namespace SQE.API.Server.Serialization
                 artefactDataEditorId = artefact.ArtefactDataEditorId,
                 mask = artefact.Mask,
                 artefactMaskEditorId = artefact.MaskEditorId,
-                isPlaced = artefact.Rotate.HasValue,
+                isPlaced = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue,
                 placement = new PlacementDTO
                 {
                     // Always provide a PlacementDTO, but if the values were null, substitute the defaults
