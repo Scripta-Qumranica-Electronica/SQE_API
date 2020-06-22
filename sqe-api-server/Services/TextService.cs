@@ -264,6 +264,7 @@ namespace SQE.API.Server.Services
                                                                         }
                                                                     )
                                                                     .ToList()
+                                                                //TODO (Ingo) Here we should add the output fot the wordIds.
                                                             }
                                                         )
                                                         .ToList()

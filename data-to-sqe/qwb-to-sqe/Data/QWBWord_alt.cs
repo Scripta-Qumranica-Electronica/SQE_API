@@ -230,7 +230,7 @@ namespace qwb_to_sqe
                 if (_previousWord?.Book != "") _previousWord._postSign= new QwbSign("", 15, 13, 11);
                 _precedingSign = new QwbSign("", 14, 12, 10);
 
-                SqeManuscript = SqeDatabase.GetSqeManuscript(Book);
+    //            SqeManuscript = SqeDatabase.GetSqeManuscript(Book);
                 
                 Fragment = "";
                 Console.Write($"\n{Book}");
@@ -243,7 +243,7 @@ namespace qwb_to_sqe
                     _precedingSign = new QwbSign("", 12, 10);
                 }
 
-                SqeFragmentId = SqeDatabase.GetSqeFragmentId(Fragment, _previousWord.SqeFragmentId);
+   //             SqeFragmentId = SqeDatabase.GetSqeFragmentId(Fragment, _previousWord.SqeFragmentId);
                 
                
 

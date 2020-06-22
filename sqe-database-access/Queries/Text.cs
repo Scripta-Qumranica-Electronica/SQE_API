@@ -15,7 +15,8 @@ namespace SQE.DatabaseAccess.Queries
         public const string GetQuery = @"
 WITH RECURSIVE sign_interpretation_ids
 	AS (
-		SELECT 	position_in_stream.sign_interpretation_id AS signInterpretationId, 
+		SELECT 	position_in_stream.position_in_stream_id,
+				position_in_stream.sign_interpretation_id AS signInterpretationId, 
 				position_in_stream.next_sign_interpretation_id,
 				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
@@ -29,7 +30,8 @@ WITH RECURSIVE sign_interpretation_ids
 
 		UNION
 
-		SELECT 	position_in_stream.sign_interpretation_id AS signInterpretationId, 
+		SELECT 	position_in_stream.position_in_stream_id,
+				position_in_stream.sign_interpretation_id AS signInterpretationId, 
 				position_in_stream.next_sign_interpretation_id,
 				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
@@ -42,9 +44,10 @@ WITH RECURSIVE sign_interpretation_ids
 			JOIN position_in_stream_owner 
 				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
 					AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
+		GROUP BY sign_interpretation_ids.signInterpretationId,position_in_stream.next_sign_interpretation_id
 	)
 
-SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
+SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 		manuscript_data.name AS editionName,
 		manuscript_author.user_id AS manuscriptAuthor,
 
@@ -81,7 +84,9 @@ SELECT 	DISTINCTROW manuscript_data.manuscript_id AS manuscriptId,
 		roi.translate_x AS TranslateX,
 		roi.translate_y AS TranslateY,
 		roi.stance_rotation AS StanceRotation,
-		roi.artefact_id AS ArtefactId
+		roi.artefact_id AS ArtefactId,
+
+		word.word_id AS WordId
 
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
@@ -138,8 +143,18 @@ FROM sign_interpretation_ids
 				AND roi.edition_id = sign_interpretation_ids.edition_id
 
 	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
+
+	LEFT JOIN position_in_stream_to_word_rel USING (position_in_stream_id)
+    LEFT JOIN word USING(word_id)
+    LEFT JOIN word_owner ON word.word_id=word_owner.word_id
+        AND word_owner.edition_id = sign_interpretation_ids.edition_id
+
   
-ORDER BY sign_interpretation_ids.sequence, sign_interpretation_ids.is_main DESC
+ORDER BY sign_interpretation_ids.sequence, 
+	sign_interpretation_ids.is_main, 
+	nextSignInterpretationId, 
+	SignInterpretationAttributeId, 
+	SignInterpretationRoiId
 ";
     }
 

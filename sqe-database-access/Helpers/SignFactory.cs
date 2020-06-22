@@ -33,6 +33,13 @@ namespace SQE.DatabaseAccess.Helpers
                 SignInterpretations = new List<SignInterpretationData>() { CreateVacatInterpretation(width, probability) }
             };
         }
+        public static SignData CreateDamageSign(float width = 1, float? probability = null)
+        {
+            return new SignData()
+            {
+                SignInterpretations = new List<SignInterpretationData>() { CreateDamagedInterpretation(width, probability) }
+            };
+        }
 
         public static SignData CreateTerminatorSign(TableData.Table table, TableData.TerminatorType terminatorType)
         {

@@ -80,7 +80,7 @@ namespace qwb_to_sqe
         {
             if (Attributes.ContainsKey(attributeValueId))
             {
-                ((SQESignAttribute) Attributes[attributeValueId]).value+=by;
+            //    ((SQESignAttribute) Attributes[attributeValueId]).value+=by;
             }
             else
             {
