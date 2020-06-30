@@ -41,6 +41,17 @@ namespace SQE.API.Server.Services
         Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
             uint artefactId,
             List<string> optional);
+
+        Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser);
+
+        Task<ArtefactGroupDTO> CreateArtefactGroupAsync(EditionUserInfo editionUser,
+            CreateArtefactGroupDTO artefactGroup, string clientId = null);
+
+        Task<ArtefactGroupDTO> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+            UpdateArtefactGroupDTO artefactGroup, string clientId = null);
+
+        Task<DeleteDTO> DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+            string clientId = null);
     }
 
     public class ArtefactService : IArtefactService
@@ -260,6 +271,50 @@ namespace SQE.API.Server.Services
             var suggestedMatches = await _artefactSuggestedTextFragmentsAsync(editionUser, artefactId);
             realMatches.textFragments.AddRange(suggestedMatches.textFragments);
             return realMatches;
+        }
+
+        public async Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser)
+        {
+            return (await _artefactRepository.ArtefactGroupsOfEditionAsync(editionUser)).ToDTO();
+        }
+
+        public async Task<ArtefactGroupDTO> CreateArtefactGroupAsync(EditionUserInfo editionUser,
+            CreateArtefactGroupDTO artefactGroup,
+            string clientId = null)
+        {
+            var results = (await _artefactRepository.CreateArtefactGroupAsync(editionUser, artefactGroup.name,
+                artefactGroup.artefacts)).ToDTO();
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
+            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+                .CreatedArtefactGroup(results);
+            return results;
+        }
+
+        public async Task<ArtefactGroupDTO> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+            UpdateArtefactGroupDTO artefactGroup,
+            string clientId = null)
+        {
+            var results = (await _artefactRepository.UpdateArtefactGroupAsync(editionUser, artefactGroupId,
+                artefactGroup.name,
+                artefactGroup.artefacts)).ToDTO();
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
+            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+                .UpdatedArtefactGroup(results);
+            return results;
+        }
+
+        public async Task<DeleteDTO> DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+            string clientId = null)
+        {
+            await _artefactRepository.DeleteArtefactGroupAsync(editionUser, artefactGroupId);
+            var results = new DeleteDTO(EditionEntities.artefactGroup, artefactGroupId);
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
+            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+                .DeletedArtefactGroup(results);
+            return results;
         }
 
         private async Task<ArtefactTextFragmentMatchListDTO> _artefactSuggestedTextFragmentsAsync(

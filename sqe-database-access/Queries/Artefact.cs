@@ -152,4 +152,70 @@ WHERE artefact_id = @ArtefactId
    AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
     }
+
+    internal static class FindArtefactGroups
+    {
+        public const string GetQuery = @"
+SELECT artefact_group_member.artefact_group_id AS ArtefactGroupId,
+       agd.name AS ArtefactGroupName,
+       artefact_group_member.artefact_id AS ArtefactId
+FROM artefact_group_member_owner
+JOIN artefact_group_member USING(artefact_group_member_id)
+LEFT JOIN (
+    SELECT artefact_group_data.artefact_group_id, 
+           artefact_group_data.name
+    FROM artefact_group_data_owner
+    JOIN artefact_group_data USING(artefact_group_data_id)
+    WHERE artefact_group_data_owner.edition_id = @EditionId
+) AS agd ON agd.artefact_group_id = artefact_group_member.artefact_group_id
+WHERE artefact_group_member_owner.edition_id = @EditionId
+ORDER BY artefact_group_member.artefact_group_id, artefact_group_member.artefact_id
+";
+    }
+
+    internal static class FindArtefactGroup
+    {
+        public const string GetQuery = @"
+SELECT artefact_group_member.artefact_group_id AS ArtefactGroupId,
+       agd.name AS ArtefactGroupName,
+       artefact_group_member.artefact_id AS ArtefactId
+FROM artefact_group_member_owner
+JOIN artefact_group_member USING(artefact_group_member_id)
+LEFT JOIN (
+    SELECT artefact_group_data.artefact_group_id, 
+           artefact_group_data.name
+    FROM artefact_group_data_owner
+    JOIN artefact_group_data USING(artefact_group_data_id)
+    WHERE artefact_group_data_owner.edition_id = @EditionId
+) AS agd ON agd.artefact_group_id = artefact_group_member.artefact_group_id
+WHERE artefact_group_member_owner.edition_id = @EditionId
+    AND artefact_group_member.artefact_group_id = @ArtefactGroupId
+";
+    }
+
+    internal static class FindArtefactGroupMemebers
+    {
+        public const string GetQuery = @"
+SELECT artefact_group_member.artefact_group_member_id AS ArtefactGroupMemberId,
+       artefact_group_member.artefact_group_id AS ArtefactGroupId,
+       artefact_group_member.artefact_id AS ArtefactId
+FROM artefact_group_member
+JOIN artefact_group_member_owner USING(artefact_group_member_id)
+WHERE artefact_group_member.artefact_group_id = @ArtefactGroupId
+    AND artefact_group_member_owner.edition_id = @EditionId
+";
+    }
+
+    internal static class FindArtefactGroupDataId
+    {
+        public const string GetQuery = @"
+SELECT artefact_group_data.artefact_group_data_id AS ArtefactGroupDataId,
+       artefact_group_data.artefact_group_id AS ArtefactGroupId,
+       artefact_group_data.name AS Name
+FROM artefact_group_data
+JOIN artefact_group_data_owner USING(artefact_group_data_id)
+WHERE artefact_group_data.artefact_group_id = @ArtefactGroupId
+    AND artefact_group_data_owner.edition_id = @EditionId
+";
+    }
 }

@@ -122,6 +122,7 @@ namespace SQE.API.DTO
     {
         edition,
         artefact,
+        artefactGroup,
         textFragment,
         line,
         signInterpretation,
@@ -134,6 +135,11 @@ namespace SQE.API.DTO
         {
             this.entity = entity;
             this.ids = ids;
+        }
+        public DeleteDTO(EditionEntities entity, uint id)
+        {
+            this.entity = entity;
+            this.ids = new List<uint>() { id };
         }
 
         public EditionEntities entity { get; set; }

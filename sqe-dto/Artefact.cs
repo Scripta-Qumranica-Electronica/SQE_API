@@ -62,6 +62,13 @@ namespace SQE.API.DTO
         public List<ArtefactDataDTO> artefacts { get; set; }
     }
 
+    public class ArtefactGroupDTO : UpdateArtefactGroupDTO { }
+
+    public class ArtefactGroupListDTO
+    {
+        public List<ArtefactGroupDTO> artefactGroups { get; set; }
+    }
+
     public class UpdateArtefactDTO
     {
         public virtual string mask { get; set; }
@@ -104,6 +111,12 @@ namespace SQE.API.DTO
         public List<UpdatedArtefactPlacementDTO> artefactPlacements { get; set; }
     }
 
+    public class UpdateArtefactGroupDTO : CreateArtefactGroupDTO
+    {
+        [Required]
+        public uint id { get; set; }
+    }
+
     public class CreateArtefactDTO : UpdateArtefactDTO
     {
         [Required]
@@ -114,5 +127,13 @@ namespace SQE.API.DTO
             ErrorMessage = "The mask must be a valid WKT POLYGON description.")]
         [Required]
         public override string mask { get; set; }
+    }
+
+    public class CreateArtefactGroupDTO
+    {
+        [MaxLength(255)]
+        public string name { get; set; }
+        [Required]
+        public List<uint> artefacts { get; set; }
     }
 }

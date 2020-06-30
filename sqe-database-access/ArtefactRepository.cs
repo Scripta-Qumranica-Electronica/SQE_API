@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
@@ -19,11 +20,6 @@ namespace SQE.DatabaseAccess
             uint artefactId,
             bool withMask = false);
 
-        // Bronson: Don't return query results, create a DataModel object and return that. The query results are internal
-        // Itay: I would prefer not to go through three levels of serialization: query Result -> intermediary -> DTO.  The
-        // service serializes the DTO and the repo serializes the queried data (two serialization operations, two object classes).
-        // I would be ok with having some external model, and letting the repo tell Dapper serialize to that model instead
-        // of the query result object, and using that as the function returns.
         Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(EditionUserInfo editionUser,
             bool withMask = false);
 
@@ -62,6 +58,11 @@ namespace SQE.DatabaseAccess
         Task DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId);
         Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
         Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
+
+        Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser);
+        Task<ArtefactGroup> CreateArtefactGroupAsync(EditionUserInfo editionUser, string artefactGroupName, List<uint> artefactIds);
+        Task<ArtefactGroup> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId, string artefactGroupName, List<uint> artefactIds);
+        Task DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId);
     }
 
     public class ArtefactRepository : DbConnectionBase, IArtefactRepository
@@ -513,6 +514,265 @@ namespace SQE.DatabaseAccess
                 editionUser,
                 new List<MutationRequest> { artefactChangeRequest }
             );
+        }
+
+        public async Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser)
+        {
+            using (var connection = OpenConnection())
+            {
+                // The query gets a table with rows ArtefactGroupId, ArtefactGroupName, and ArtefactId
+                // for every artefact in a group.
+                return (await connection.QueryAsync<ArtefactGroupEntry>(
+                        FindArtefactGroups.GetQuery,
+                        new
+                        {
+                            editionUser.EditionId
+                        }
+                    ))
+                    // Group the results according to the artefact group id and name as keys,
+                    // and the list of ArtefactId is the val
+                    .GroupBy(
+                        x => new { x.ArtefactGroupId, ArtefactName = x.ArtefactGroupName }, // this is the key
+                        x => x.ArtefactId, // this is the val
+                        (key, val) => new ArtefactGroup() // the return object
+                        {
+                            ArtefactGroupId = key.ArtefactGroupId,
+                            ArtefactName = key.ArtefactName,
+                            ArtefactIds = val.ToList(),
+                        }
+                    )
+                    .ToList();
+            }
+        }
+
+        public async Task<ArtefactGroup> GetArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId)
+        {
+            using (var connection = OpenConnection())
+            {
+                // The query gets a table with rows ArtefactGroupId, ArtefactGroupName, and ArtefactId
+                // for every artefact in a group.
+                return (await connection.QueryAsync<ArtefactGroupEntry>(
+                    FindArtefactGroup.GetQuery,
+                    new
+                    {
+                        editionUser.EditionId,
+                        ArtefactGroupId = artefactGroupId
+                    }
+                )).GroupBy(
+                    x => new { x.ArtefactGroupId, ArtefactName = x.ArtefactGroupName }, // this is the key
+                    x => x.ArtefactId, // this is the val
+                    (key, val) => new ArtefactGroup() // the return object
+                    {
+                        ArtefactGroupId = key.ArtefactGroupId,
+                        ArtefactName = key.ArtefactName,
+                        ArtefactIds = val.ToList(),
+                    }
+                ).FirstOrDefault();
+            }
+        }
+
+        public async Task<ArtefactGroup> CreateArtefactGroupAsync(EditionUserInfo editionUser, string artefactGroupName,
+            List<uint> artefactIds)
+        {
+            uint artefactGroupId;
+            using (var transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
+            {
+                // Create a new artefact group
+                await connection.ExecuteAsync("INSERT INTO artefact_group (artefact_group_id) VALUES(NULL)");
+
+                artefactGroupId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                if (artefactGroupId == 0)
+                    throw new StandardExceptions.DataNotWrittenException("create artefact group");
+
+                var createArtefactGroupInserts = artefactIds.Select(artefactId =>
+                {
+                    var artefactInGroupParams = new DynamicParameters();
+                    artefactInGroupParams.Add("@artefact_id", artefactId);
+                    artefactInGroupParams.Add("@artefact_group_id", artefactGroupId);
+                    return new MutationRequest(
+                        MutateType.Create,
+                        artefactInGroupParams,
+                        "artefact_group_member"
+                    );
+                }).AsList();
+
+                if (!string.IsNullOrEmpty(artefactGroupName))
+                {
+                    var artefactGroupNameParams = new DynamicParameters();
+                    artefactGroupNameParams.Add("@name", artefactGroupName);
+                    artefactGroupNameParams.Add("@artefact_group_id", artefactGroupId);
+                    createArtefactGroupInserts.Add(
+                        new MutationRequest(
+                            MutateType.Create,
+                            artefactGroupNameParams,
+                            "artefact_group_data"
+                        )
+                    );
+                }
+
+                var responses =
+                    await _databaseWriter.WriteToDatabaseAsync(editionUser, createArtefactGroupInserts);
+                if (responses.Count != createArtefactGroupInserts.Count())
+                    throw new StandardExceptions.DataNotWrittenException("create a new artefact group");
+
+                transactionScope.Complete();
+            }
+
+            // TODO: Consider returning return a manufactured object based on the method parameters without
+            // making a database query?
+            return await GetArtefactGroupAsync(editionUser, artefactGroupId);
+        }
+
+        public async Task<ArtefactGroup> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+            string artefactGroupName, List<uint> artefactIds)
+        {
+            using (var transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
+            {
+                // Get group members
+                var members = await connection.QueryAsync<ArtefactGroupMember>(
+                    FindArtefactGroupMemebers.GetQuery,
+                    new
+                    {
+                        ArtefactGroupId = artefactGroupId,
+                        editionUser.EditionId
+                    });
+
+                // Get group name (if any)
+                var groupData = await connection.QuerySingleOrDefaultAsync<ArtefactGroupData>(
+                    FindArtefactGroupDataId.GetQuery,
+                    new
+                    {
+                        ArtefactGroupId = artefactGroupId,
+                        editionUser.EditionId
+                    });
+
+                if (!members.Any())
+                    throw new StandardExceptions.DataNotFoundException("artefact group id", artefactGroupId);
+
+                var hashedUpdateArtefactIds = new HashSet<uint>(artefactIds);
+                var deletes = members.Where(x => !hashedUpdateArtefactIds.Contains(x.ArtefactId));
+                var adds = artefactIds.Except(members.Select(x => x.ArtefactId));
+
+                var alterations = deletes
+                    .Select(x =>
+                    {
+                        var artefactInGroupParams = new DynamicParameters();
+                        artefactInGroupParams.Add("@artefact_id", x.ArtefactId);
+                        artefactInGroupParams.Add("@artefact_group_id", artefactGroupId);
+                        return new MutationRequest(
+                            MutateType.Delete,
+                            artefactInGroupParams,
+                            "artefact_group_member",
+                            x.ArtefactGroupMemberId
+                        );
+                    })
+                    .Concat(adds.Select(x =>
+                    {
+                        var artefactInGroupParams = new DynamicParameters();
+                        artefactInGroupParams.Add("@artefact_id", x);
+                        artefactInGroupParams.Add("@artefact_group_id", artefactGroupId);
+                        return new MutationRequest(
+                            MutateType.Create,
+                            artefactInGroupParams,
+                            "artefact_group_member"
+                        );
+                    })).AsList();
+
+                if (groupData != null)
+                {
+                    var artefactGroupNameParams = new DynamicParameters();
+                    artefactGroupNameParams.Add("@name", groupData.Name);
+                    artefactGroupNameParams.Add("@artefact_group_id", artefactGroupId);
+                    alterations.Add(
+                        new MutationRequest(
+                            MutateType.Update,
+                            artefactGroupNameParams,
+                            "artefact_group_data",
+                            groupData.ArtefactGroupDataId
+                        )
+                    );
+                }
+
+                var responses = await _databaseWriter.WriteToDatabaseAsync(editionUser, alterations);
+                if (responses.Count != alterations.Count())
+                    throw new StandardExceptions.DataNotWrittenException("update an artefact group");
+
+                transactionScope.Complete();
+            }
+
+            // TODO: Consider returning return a manufactured object based on the method parameters without
+            // making a database query?
+            return await GetArtefactGroupAsync(editionUser, artefactGroupId);
+        }
+
+        public async Task DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId)
+        {
+            using (var transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
+            {
+                // Get group members
+                var members = await connection.QueryAsync<ArtefactGroupMember>(
+                    FindArtefactGroupMemebers.GetQuery,
+                    new
+                    {
+                        ArtefactGroupId = artefactGroupId,
+                        editionUser.EditionId
+                    });
+
+                // Get group name (if any)
+                var groupData = await connection.QuerySingleOrDefaultAsync<ArtefactGroupData>(
+                    FindArtefactGroupDataId.GetQuery,
+                    new
+                    {
+                        ArtefactGroupId = artefactGroupId,
+                        editionUser.EditionId
+                    });
+
+                if (members.Count() == 0)
+                    throw new StandardExceptions.DataNotFoundException("artefact group id", artefactGroupId);
+
+                var alterations = members
+                    .Select(x =>
+                    {
+                        var artefactInGroupParams = new DynamicParameters();
+                        artefactInGroupParams.Add("@artefact_id", x.ArtefactId);
+                        artefactInGroupParams.Add("@artefact_group_id", artefactGroupId);
+                        return new MutationRequest(
+                            MutateType.Delete,
+                            artefactInGroupParams,
+                            "artefact_group_member",
+                            x.ArtefactGroupMemberId
+                        );
+                    }).ToList();
+
+                if (groupData != null)
+                {
+                    var artefactGroupNameParams = new DynamicParameters();
+                    artefactGroupNameParams.Add("@Name", groupData.Name);
+                    artefactGroupNameParams.Add("@ArtefactGroupId", artefactGroupId);
+                    alterations.Add(
+                        new MutationRequest(
+                            MutateType.Delete,
+                            artefactGroupNameParams,
+                            "artefact_group_data",
+                            groupData.ArtefactGroupDataId
+                        )
+                    );
+                }
+
+                var responses = await _databaseWriter.WriteToDatabaseAsync(editionUser, alterations.AsList());
+                if (responses.Count != alterations.Count())
+                    throw new StandardExceptions.DataNotWrittenException("delete an artefact group");
+
+                transactionScope.Complete();
+            }
+
+            // Verify the delete
+            var artGroup = await GetArtefactGroupAsync(editionUser, artefactGroupId);
+            if (artGroup != null)
+                throw new StandardExceptions.DataNotWrittenException("delete an artefact group");
         }
 
         private async Task<uint> GetArtefactPkAsync(EditionUserInfo editionUser, uint artefactId, string table)

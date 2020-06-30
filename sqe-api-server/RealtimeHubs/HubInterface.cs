@@ -131,6 +131,27 @@ namespace SQE.API.Server.RealtimeHubs
         Task UpdatedArtefact(ArtefactDTO returnedData);
 
         /// <summary>
+        ///     broadcasts an artefact group has been created
+        /// </summary>
+        /// <param name="returnedData">Details of the newly created artefact group</param>
+        /// <returns></returns>
+        Task CreatedArtefactGroup(ArtefactGroupDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts and artefact group has been updated
+        /// </summary>
+        /// <param name="returnedData">Details of the updated artefact group</param>
+        /// <returns></returns>
+        Task UpdatedArtefactGroup(ArtefactGroupDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts an artefact group has been deleted
+        /// </summary>
+        /// <param name="returnedData">Delete DTO with the id of the deleted artefact group</param>
+        /// <returns></returns>
+        Task DeletedArtefactGroup(DeleteDTO returnedData);
+
+        /// <summary>
         ///     broadcasts the transform details for a batch of artefacts has been updated
         /// </summary>
         /// <param name="returnedData">Details of the updated artefact transforms</param>

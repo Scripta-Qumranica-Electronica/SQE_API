@@ -172,5 +172,59 @@ namespace SQE.API.Server.HttpControllers
             return await _artefactService.BatchUpdateArtefactTransformAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),
                 payload);
         }
+
+        /// <summary>
+        ///     Gets a listing of all artefact groups in the edition
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <returns></returns>
+        [HttpGet("v1/editions/{editionId}/[controller]-groups")]
+        public async Task<ActionResult<ArtefactGroupListDTO>> GetEditionArtefactGroups([FromRoute] uint editionId)
+        {
+            return await _artefactService.ArtefactGroupsOfEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
+        }
+
+        /// <summary>
+        ///     Creates a new artefact group with the submitted data.
+        ///     The new artefact must have a list of artefacts that belong to the group.
+        ///     It is not necessary to give the group a name.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="payload">Parameters of the new artefact group</param>
+        /// <returns></returns>
+        [HttpPost("v1/editions/{editionId}/[controller]-groups")]
+        public async Task<ActionResult<ArtefactGroupDTO>> CreateEditionArtefactGroup([FromRoute] uint editionId, [FromBody] CreateArtefactGroupDTO payload)
+        {
+            return await _artefactService.CreateArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), payload);
+        }
+
+        /// <summary>
+        ///     Updates the details of an artefact group.
+        ///     The artefact group will now only contain the artefacts listed in the JSON payload.
+        ///     If the name is null, no change will be made, otherwise the name will also be updated.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactGroupId">Id of the artefact group to be updated</param>
+        /// <param name="payload">Parameters that the artefact group should be changed to</param>
+        /// <returns></returns>
+        [HttpPut("v1/editions/{editionId}/[controller]-groups/{artefactGroupId}")]
+        public async Task<ActionResult<ArtefactGroupDTO>> UpdateEditionArtefactGroup([FromRoute] uint editionId,
+            [FromRoute] uint artefactGroupId, [FromBody] UpdateArtefactGroupDTO payload)
+        {
+            return await _artefactService.UpdateArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactGroupId, payload);
+        }
+
+        /// <summary>
+        ///     Deletes the specified artefact group.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactGroupId">Unique Id of the artefact group to be deleted</param>
+        /// <returns></returns>
+        [HttpDelete("v1/editions/{editionId}/[controller]-groups/{artefactGroupId}")]
+        public async Task<ActionResult<DeleteDTO>> DeleteEditionArtefactGroup([FromRoute] uint editionId,
+            [FromRoute] uint artefactGroupId)
+        {
+            return await _artefactService.DeleteArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactGroupId);
+        }
     }
 }

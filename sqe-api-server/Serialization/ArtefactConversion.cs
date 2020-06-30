@@ -42,7 +42,23 @@ namespace SQE.API.Server.Serialization
             };
         }
 
+        public static ArtefactGroupListDTO ToDTO(this List<ArtefactGroup> agl)
+        {
+            return new ArtefactGroupListDTO()
+            {
+                artefactGroups = agl.Select(x => x.ToDTO()).ToList(),
+            };
+        }
 
+        public static ArtefactGroupDTO ToDTO(this ArtefactGroup ag)
+        {
+            return new ArtefactGroupDTO()
+            {
+                id = ag.ArtefactGroupId,
+                name = ag.ArtefactName,
+                artefacts = ag.ArtefactIds,
+            };
+        }
     }
 
     public static class ArtefactListSerializationDTO
