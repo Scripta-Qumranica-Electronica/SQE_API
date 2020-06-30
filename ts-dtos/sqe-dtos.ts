@@ -28,6 +28,7 @@ export interface ArtefactDataListDTO {
 }
 
 export interface ArtefactGroupDTO extends UpdateArtefactGroupDTO {
+    id: number;
 }
 
 export interface ArtefactGroupListDTO {
@@ -59,7 +60,6 @@ export interface BatchUpdatedArtefactTransformDTO {
 }
 
 export interface UpdateArtefactGroupDTO extends CreateArtefactGroupDTO {
-    id: number;
 }
 
 export interface CreateArtefactDTO extends UpdateArtefactDTO {

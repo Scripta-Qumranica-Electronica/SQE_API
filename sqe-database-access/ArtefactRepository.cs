@@ -7,6 +7,7 @@ using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Crypto.Tls;
 using SQE.API.DTO;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -578,6 +579,9 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
+                // Check if the requested artefact IDs are already part of a group.
+                await _verifyArtefactsFreeForGroup(editionUser, artefactIds.ToList());
+
                 // Create a new artefact group
                 await connection.ExecuteAsync("INSERT INTO artefact_group (artefact_group_id) VALUES(NULL)");
 
@@ -630,23 +634,8 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
-                // Get group members
-                var members = await connection.QueryAsync<ArtefactGroupMember>(
-                    FindArtefactGroupMemebers.GetQuery,
-                    new
-                    {
-                        ArtefactGroupId = artefactGroupId,
-                        editionUser.EditionId
-                    });
-
-                // Get group name (if any)
-                var groupData = await connection.QuerySingleOrDefaultAsync<ArtefactGroupData>(
-                    FindArtefactGroupDataId.GetQuery,
-                    new
-                    {
-                        ArtefactGroupId = artefactGroupId,
-                        editionUser.EditionId
-                    });
+                // Get group members and name (if any)
+                var (members, groupData) = await _getArtefactGroupInternalInfo(editionUser, artefactGroupId);
 
                 if (!members.Any())
                     throw new StandardExceptions.DataNotFoundException("artefact group id", artefactGroupId);
@@ -654,6 +643,10 @@ namespace SQE.DatabaseAccess
                 var hashedUpdateArtefactIds = new HashSet<uint>(artefactIds);
                 var deletes = members.Where(x => !hashedUpdateArtefactIds.Contains(x.ArtefactId));
                 var adds = artefactIds.Except(members.Select(x => x.ArtefactId));
+
+                // Check if the requested artefact IDs to be added are already part of a group.
+                if (adds.Any())
+                    await _verifyArtefactsFreeForGroup(editionUser, adds.ToList());
 
                 var alterations = deletes
                     .Select(x =>
@@ -712,23 +705,8 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
-                // Get group members
-                var members = await connection.QueryAsync<ArtefactGroupMember>(
-                    FindArtefactGroupMemebers.GetQuery,
-                    new
-                    {
-                        ArtefactGroupId = artefactGroupId,
-                        editionUser.EditionId
-                    });
-
-                // Get group name (if any)
-                var groupData = await connection.QuerySingleOrDefaultAsync<ArtefactGroupData>(
-                    FindArtefactGroupDataId.GetQuery,
-                    new
-                    {
-                        ArtefactGroupId = artefactGroupId,
-                        editionUser.EditionId
-                    });
+                // Get group members and name (if any)
+                var (members, groupData) = await _getArtefactGroupInternalInfo(editionUser, artefactGroupId);
 
                 if (members.Count() == 0)
                     throw new StandardExceptions.DataNotFoundException("artefact group id", artefactGroupId);
@@ -847,6 +825,70 @@ namespace SQE.DatabaseAccess
                     GetWorkStatus.GetQuery,
                     new { WorkStatus = workStatus }
                 );
+            }
+        }
+
+        private async Task<(List<ArtefactGroupMember> groupMembers, ArtefactGroupData groupData)> _getArtefactGroupInternalInfo(EditionUserInfo editionUser, uint artefactGroupId)
+        {
+            using (var connection = OpenConnection())
+            {
+                // Get group members
+                var members = await connection.QueryAsync<ArtefactGroupMember>(
+                    FindArtefactGroupMemebers.GetQuery,
+                    new
+                    {
+                        ArtefactGroupId = artefactGroupId,
+                        editionUser.EditionId
+                    });
+
+                // Get group name (if any)
+                var groupData = await connection.QuerySingleOrDefaultAsync<ArtefactGroupData>(
+                    FindArtefactGroupDataId.GetQuery,
+                    new
+                    {
+                        ArtefactGroupId = artefactGroupId,
+                        editionUser.EditionId
+                    });
+                return (members.ToList(), groupData);
+            }
+        }
+
+        private async Task _verifyArtefactsFreeForGroup(EditionUserInfo editionUser,
+            List<uint> artefactIds)
+        {
+            using (var connection = OpenConnection())
+            {
+                // Check if the desired artefacts are already used in another artefact group
+                var alreadyUsedArtefacts = await connection.QueryAsync<uint>(ArtefactsAlreadyInGroups.GetQuery,
+                    new
+                    {
+                        editionUser.EditionId,
+                        ArtefactIds = artefactIds.ToArray()
+                    });
+                if (alreadyUsedArtefacts.Any())
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        $"The artefact {(alreadyUsedArtefacts.Count() > 1 ? "ids" : "id")} " +
+                        $"{string.Join<uint>(", ", alreadyUsedArtefacts)} " +
+                        $"{(alreadyUsedArtefacts.Count() > 1 ? "are" : "is")} already in another group"
+                    );
+
+                // Check to see if the artefact are in fact part of this edition
+                var artefactsInEdition = await connection.QueryAsync<uint>(
+                    ArtefactsFromListInEdition.GetQuery,
+                    new
+                    {
+                        editionUser.EditionId,
+                        ArtefactIds = artefactIds
+                    });
+                if (artefactsInEdition.Count() != artefactIds.Count())
+                {
+                    var artefactsNotInEdition = artefactIds.Except(artefactsInEdition);
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        $"The artefact {(artefactsNotInEdition.Count() > 1 ? "ids" : "id")} " +
+                        $"{string.Join<uint>(", ", artefactsNotInEdition)} " +
+                        $"{(artefactsNotInEdition.Count() > 1 ? "are" : "is")} not part of this edition"
+                    );
+                }
             }
         }
 

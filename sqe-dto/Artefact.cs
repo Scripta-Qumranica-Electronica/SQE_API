@@ -62,7 +62,11 @@ namespace SQE.API.DTO
         public List<ArtefactDataDTO> artefacts { get; set; }
     }
 
-    public class ArtefactGroupDTO : UpdateArtefactGroupDTO { }
+    public class ArtefactGroupDTO : UpdateArtefactGroupDTO
+    {
+        [Required]
+        public uint id { get; set; }
+    }
 
     public class ArtefactGroupListDTO
     {
@@ -111,11 +115,7 @@ namespace SQE.API.DTO
         public List<UpdatedArtefactPlacementDTO> artefactPlacements { get; set; }
     }
 
-    public class UpdateArtefactGroupDTO : CreateArtefactGroupDTO
-    {
-        [Required]
-        public uint id { get; set; }
-    }
+    public class UpdateArtefactGroupDTO : CreateArtefactGroupDTO { }
 
     public class CreateArtefactDTO : UpdateArtefactDTO
     {
@@ -134,6 +134,7 @@ namespace SQE.API.DTO
         [MaxLength(255)]
         public string name { get; set; }
         [Required]
+        [MinLength(1)]
         public List<uint> artefacts { get; set; }
     }
 }
