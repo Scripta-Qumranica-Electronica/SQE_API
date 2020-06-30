@@ -142,6 +142,9 @@ namespace SQE.API.DTO
             this.ids = new List<uint>() { id };
         }
 
+        public DeleteDTO() { }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public EditionEntities entity { get; set; }
         public List<uint> ids { get; set; }
     }

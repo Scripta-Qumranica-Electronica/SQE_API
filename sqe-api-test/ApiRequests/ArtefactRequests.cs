@@ -67,6 +67,12 @@ namespace SQE.ApiTest.ApiRequests
             {
             }
         }
+
+        public class
+            V1_Editions_EditionId_ArtefactGroups : EditionRequestObject<EmptyInput, ArtefactGroupListDTO, EmptyOutput>
+        {
+            public V1_Editions_EditionId_ArtefactGroups(uint editionId) : base(editionId, null) { }
+        }
     }
 
     public static partial class Post
@@ -82,19 +88,41 @@ namespace SQE.ApiTest.ApiRequests
                 listenerMethod.Add("CreatedArtefact");
             }
         }
+
+        public class
+            V1_Editions_EditionId_ArtefactGroups : EditionRequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
+        {
+            public V1_Editions_EditionId_ArtefactGroups(uint editionId, CreateArtefactGroupDTO payload) : base(
+                editionId, null, payload)
+            {
+                listenerMethod.Add("CreatedArtefactGroup");
+            }
+        }
     }
 
     public static partial class Put
     {
         public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<UpdateArtefactDTO, ArtefactDTO, ArtefactDTO>
         {
-            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
+            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload) : base(
                 editionId,
                 artefactId,
-                null
+                payload
             )
             {
                 listenerMethod.Add("UpdatedArtefact");
+            }
+        }
+
+        public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<UpdateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
+        {
+            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId, UpdateArtefactGroupDTO payload) : base(
+                editionId,
+                artefactGroupId,
+                payload
+            )
+            {
+                listenerMethod.Add("UpdatedArtefactGroup");
             }
         }
     }
@@ -110,6 +138,18 @@ namespace SQE.ApiTest.ApiRequests
             )
             {
                 listenerMethod.Add("DeletedArtefact");
+            }
+        }
+
+        public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<EmptyInput, DeleteDTO, DeleteDTO>
+        {
+            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId) : base(
+                editionId,
+                artefactGroupId,
+                null
+            )
+            {
+                listenerMethod.Add("DeletedArtefactGroup");
             }
         }
     }

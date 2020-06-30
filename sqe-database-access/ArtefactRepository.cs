@@ -673,19 +673,35 @@ namespace SQE.DatabaseAccess
                         );
                     })).AsList();
 
-                if (groupData != null)
+                if (!string.IsNullOrEmpty(artefactGroupName))
                 {
-                    var artefactGroupNameParams = new DynamicParameters();
-                    artefactGroupNameParams.Add("@name", groupData.Name);
-                    artefactGroupNameParams.Add("@artefact_group_id", artefactGroupId);
-                    alterations.Add(
-                        new MutationRequest(
-                            MutateType.Update,
-                            artefactGroupNameParams,
-                            "artefact_group_data",
-                            groupData.ArtefactGroupDataId
-                        )
-                    );
+                    if (groupData == null)
+                    {
+                        var artefactGroupNameParams = new DynamicParameters();
+                        artefactGroupNameParams.Add("@name", artefactGroupName);
+                        artefactGroupNameParams.Add("@artefact_group_id", artefactGroupId);
+                        alterations.Add(
+                            new MutationRequest(
+                                MutateType.Create,
+                                artefactGroupNameParams,
+                                "artefact_group_data"
+                            )
+                        );
+                    }
+                    else
+                    {
+                        var artefactGroupNameParams = new DynamicParameters();
+                        artefactGroupNameParams.Add("@name", artefactGroupName);
+                        artefactGroupNameParams.Add("@artefact_group_id", artefactGroupId);
+                        alterations.Add(
+                            new MutationRequest(
+                                MutateType.Update,
+                                artefactGroupNameParams,
+                                "artefact_group_data",
+                                groupData.ArtefactGroupDataId
+                            )
+                        );
+                    }
                 }
 
                 var responses = await _databaseWriter.WriteToDatabaseAsync(editionUser, alterations);

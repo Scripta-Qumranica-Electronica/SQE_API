@@ -198,6 +198,7 @@ namespace SQE.ApiTest.Helpers
                 _client = client;
                 _name = name;
                 _userAuthDetails = userAuthDetails;
+                _editionId = editionId;
             }
 
             private uint _editionId { get; set; }
