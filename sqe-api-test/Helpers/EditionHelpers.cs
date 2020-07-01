@@ -198,16 +198,18 @@ namespace SQE.ApiTest.Helpers
                 _client = client;
                 _name = name;
                 _userAuthDetails = userAuthDetails;
+                _editionId = editionId;
             }
 
             private uint _editionId { get; set; }
 
+            // This seems to work properly even though it is an antipattern.
+            // There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
+            // Maybe using try/finally in the individual tests would ultimately be safer.
             public void Dispose()
             {
-                // This seems to work properly even though it is an antipattern.
-                // There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
-                // Maybe using try/finally in the individual tests would ultimately be safer.
-                Task.Run(async () => await DeleteEdition(_client, _editionId, userAuthDetails: _userAuthDetails))
+                // shouldSucceed here is false, since we don't really care if it worked.
+                Task.Run(async () => await DeleteEdition(_client, _editionId, userAuthDetails: _userAuthDetails, shouldSucceed: false))
                     .Wait();
             }
 

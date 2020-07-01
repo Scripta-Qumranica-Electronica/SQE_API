@@ -205,5 +205,114 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
 
+        /// <summary>
+        ///     Gets a listing of all artefact groups in the edition
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<ArtefactGroupListDTO> GetV1EditionsEditionIdArtefactGroups(uint editionId)
+
+        {
+            try
+            {
+                return await _artefactService.ArtefactGroupsOfEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        ///     Gets the details of a specific artefact group in the edition
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactGroupId">Id of the desired artefact group</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<ArtefactGroupDTO> GetV1EditionsEditionIdArtefactGroupsArtefactGroupId(uint editionId, uint artefactGroupId)
+
+        {
+            try
+            {
+                return await _artefactService.GetArtefactGroupDataAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactGroupId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        ///     Creates a new artefact group with the submitted data.
+        ///     The new artefact must have a list of artefacts that belong to the group.
+        ///     It is not necessary to give the group a name.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="payload">Parameters of the new artefact group</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<ArtefactGroupDTO> PostV1EditionsEditionIdArtefactGroups(uint editionId, CreateArtefactGroupDTO payload)
+
+        {
+            try
+            {
+                return await _artefactService.CreateArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), payload, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        ///     Updates the details of an artefact group.
+        ///     The artefact group will now only contain the artefacts listed in the JSON payload.
+        ///     If the name is null, no change will be made, otherwise the name will also be updated.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactGroupId">Id of the artefact group to be updated</param>
+        /// <param name="payload">Parameters that the artefact group should be changed to</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<ArtefactGroupDTO> PutV1EditionsEditionIdArtefactGroupsArtefactGroupId(uint editionId, uint artefactGroupId, UpdateArtefactGroupDTO payload)
+
+        {
+            try
+            {
+                return await _artefactService.UpdateArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactGroupId, payload, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        ///     Deletes the specified artefact group.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactGroupId">Unique Id of the artefact group to be deleted</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<DeleteDTO> DeleteV1EditionsEditionIdArtefactGroupsArtefactGroupId(uint editionId, uint artefactGroupId)
+
+        {
+            try
+            {
+                return await _artefactService.DeleteArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactGroupId, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
     }
 }

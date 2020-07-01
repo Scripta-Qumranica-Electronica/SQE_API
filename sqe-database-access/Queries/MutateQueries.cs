@@ -66,6 +66,7 @@ WHERE NOT EXISTS (
 ) LIMIT 1";
     }
 
+    // TODO: Check if we really need to be using the @OwnedTableId, maybe we can use a JOIN with the actual record too.
     internal static class OwnerTableDeleteQuery
     {
         public const string GetQuery = @"

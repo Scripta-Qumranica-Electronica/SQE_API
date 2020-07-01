@@ -1,4 +1,6 @@
-﻿namespace SQE.DatabaseAccess.Models
+﻿using System.Collections.Generic;
+
+namespace SQE.DatabaseAccess.Models
 {
     public class ArtefactDataModel
     {
@@ -22,5 +24,33 @@
         public uint ImageCatalogId { get; set; }
         public string ImagedObjectId { get; set; }
         public string WorkStatusMessage { get; set; }
+    }
+
+    public class ArtefactGroupEntry
+    {
+        public uint ArtefactGroupId { get; set; }
+        public string ArtefactGroupName { get; set; }
+        public uint ArtefactId { get; set; }
+    }
+
+    public class ArtefactGroup
+    {
+        public uint ArtefactGroupId { get; set; }
+        public string ArtefactName { get; set; }
+        public List<uint> ArtefactIds { get; set; }
+    }
+
+    internal class ArtefactGroupMember
+    {
+        public uint ArtefactGroupMemberId { get; set; }
+        public uint ArtefactGroupId { get; set; }
+        public uint ArtefactId { get; set; }
+    }
+
+    internal class ArtefactGroupData
+    {
+        public uint ArtefactGroupDataId { get; set; }
+        public uint ArtefactGroupId { get; set; }
+        public string Name { get; set; }
     }
 }

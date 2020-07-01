@@ -43,7 +43,7 @@ namespace SQE.ApiTest.ApiRequests
                     requestVerb = HttpMethod.Put;
                     break;
                 case "Delete":
-                    requestVerb = HttpMethod.Get;
+                    requestVerb = HttpMethod.Delete;
                     break;
             }
         }
@@ -348,6 +348,39 @@ namespace SQE.ApiTest.ApiRequests
             return signalR => payload == null
                 ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, artefactId)
                 : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, artefactId, payload);
+        }
+    }
+
+    /// <summary>
+    ///     Subclass of EditionRequestObject for all requests made on an artefact group
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class ArtefactGroupRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    {
+        public readonly uint artefactGroupId;
+
+        /// <summary>
+        ///     Provides an ArtefactGroupRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="artefactId">The id of the artefact group to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public ArtefactGroupRequestObject(uint editionId, uint artefactGroupId, Tinput payload) : base(editionId, null, payload)
+        {
+            this.artefactGroupId = artefactGroupId;
+        }
+
+        protected override string HttpPath()
+        {
+            return base.HttpPath().Replace("/artefact-group-id", $"/{artefactGroupId.ToString()}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, artefactGroupId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, artefactGroupId, payload);
         }
     }
 
