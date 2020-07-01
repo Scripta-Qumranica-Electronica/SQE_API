@@ -61,6 +61,7 @@ namespace SQE.DatabaseAccess
         Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
 
         Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser);
+        Task<ArtefactGroup> GetArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId);
         Task<ArtefactGroup> CreateArtefactGroupAsync(EditionUserInfo editionUser, string artefactGroupName, List<uint> artefactIds);
         Task<ArtefactGroup> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId, string artefactGroupName, List<uint> artefactIds);
         Task DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId);

@@ -44,6 +44,8 @@ namespace SQE.API.Server.Services
 
         Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser);
 
+        Task<ArtefactGroupDTO> GetArtefactGroupDataAsync(EditionUserInfo editionUser, uint artefactGroupId);
+
         Task<ArtefactGroupDTO> CreateArtefactGroupAsync(EditionUserInfo editionUser,
             CreateArtefactGroupDTO artefactGroup, string clientId = null);
 
@@ -276,6 +278,11 @@ namespace SQE.API.Server.Services
         public async Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser)
         {
             return (await _artefactRepository.ArtefactGroupsOfEditionAsync(editionUser)).ToDTO();
+        }
+
+        public async Task<ArtefactGroupDTO> GetArtefactGroupDataAsync(EditionUserInfo editionUser, uint artefactGroupId)
+        {
+            return (await _artefactRepository.GetArtefactGroupAsync(editionUser, artefactGroupId)).ToDTO();
         }
 
         public async Task<ArtefactGroupDTO> CreateArtefactGroupAsync(EditionUserInfo editionUser,

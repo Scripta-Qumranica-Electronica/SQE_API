@@ -185,6 +185,20 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
+        ///     Gets the details of a specific artefact group in the edition
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactGroupId">Id of the desired artefact group</param>
+        /// <returns></returns>
+        [HttpGet("v1/editions/{editionId}/[controller]-groups/{artefactGroupId}")]
+        public async Task<ActionResult<ArtefactGroupDTO>> GetEditionArtefactGroup([FromRoute] uint editionId,
+            [FromRoute] uint artefactGroupId)
+        {
+            return await _artefactService.GetArtefactGroupDataAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId), artefactGroupId);
+        }
+
+        /// <summary>
         ///     Creates a new artefact group with the submitted data.
         ///     The new artefact must have a list of artefacts that belong to the group.
         ///     It is not necessary to give the group a name.

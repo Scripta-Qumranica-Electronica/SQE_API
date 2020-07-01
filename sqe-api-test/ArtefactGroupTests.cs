@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Dapper;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
@@ -62,6 +65,10 @@ namespace SQE.ApiTest
             using (var editionCreator =
                 new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount]))
             {
+                /**
+                 * Create a new edition and also a new artefact group in it.
+                 */
+
                 var editionId = await editionCreator.CreateEdition();
                 var artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
                 var artefactGroupName = "artefact group 1";
@@ -78,12 +85,15 @@ namespace SQE.ApiTest
                 Assert.Equal(1, artefactList.artefactGroups.Count());
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
+                /**
+                 * Delete the new artefact group.
+                 */
                 _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
             }
         }
 
         /// <summary>
-        ///     Check that an artefact group can be created and deleted.
+        ///     Check that an artefact group can be updated.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -93,6 +103,10 @@ namespace SQE.ApiTest
             using (var editionCreator =
                 new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount]))
             {
+                /**
+                 * Create a new edition and a new artefact group in it.
+                 */
+
                 var editionId = await editionCreator.CreateEdition();
                 var artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
                 var artefactGroupName = "artefact group 1";
@@ -109,9 +123,15 @@ namespace SQE.ApiTest
                 Assert.Equal(1, artefactList.artefactGroups.Count());
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
+                /**
+                 * Prepare updates to the new artefact group by changing its name and
+                 * deleting artefacts.LastOrDefault().id by omitting it, while also adding
+                 * two new artefacts.
+                 */
+
                 // Arrange
                 var updatedArtefactGroupName = "artefact group 2";
-                var updatedArtefacts = new List<uint>() { artefacts[2].id, artefacts[4].id };
+                var updatedArtefacts = new List<uint>() { artefacts.FirstOrDefault().id, artefacts[2].id, artefacts[4].id };
 
                 // Act
                 var (_, updatedAG, _, _) = await _updateArtefactGroupAsync(editionId, createdArtefactGroup.id,
@@ -125,6 +145,128 @@ namespace SQE.ApiTest
                 Assert.Equal(updatedArtefacts, updatedAG.artefacts);
                 Assert.Equal(createdArtefactGroup.id, updatedAG.id);
                 Assert.Equal(1, artefactList.artefactGroups.Count());
+
+                _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+            }
+        }
+
+        /// <summary>
+        ///     Check that an artefact group can be updated.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CannotPerformBadUpdateToArtefactGroup()
+        {
+            // Arrange
+            using (var editionCreator =
+                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount]))
+            {
+                /**
+                 * Create new edition and a new artefact group 
+                 */
+
+                var editionId = await editionCreator.CreateEdition();
+                var artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
+                const string artefactGroupName = "artefact group 1";
+
+                // Act
+                var (_, createdArtefactGroup, _, _) = await _createArtefactGroupAsync(editionId, artefactGroupName, new List<uint>()
+                {
+                    artefacts.FirstOrDefault().id,
+                    artefacts.LastOrDefault().id
+                });
+                var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
+
+                // Assert
+                Assert.Equal(1, artefactList.artefactGroups.Count());
+                artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
+
+                /**
+                 * Prepare updates to the new artefact group, which include an artefact ID
+                 * that is not part of this edition. The update must fail with a BadRequest.
+                 */
+
+                // Arrange
+                var validArtefacIds = artefacts.Select(x => x.id).ToList();
+                var badArtefactId = (uint)Enumerable.Range(1, 100000).FirstOrDefault(num => !validArtefacIds.Contains((uint)num));
+                const string updatedArtefactGroupName = "artefact group 2";
+                var updatedArtefacts = new List<uint>() { badArtefactId, artefacts.FirstOrDefault().id, artefacts.LastOrDefault().id };
+
+                // Act
+                var (updateHttpMsg, updatedAG, _, _) = await _updateArtefactGroupAsync(editionId, createdArtefactGroup.id,
+                    updatedArtefactGroupName, updatedArtefacts, shouldSucceed: false);
+                var errorMsg = await updateHttpMsg.Content.ReadAsStringAsync();
+                var (_, artefactGroup, _) = await _getArtefactGroupAsync(editionId, createdArtefactGroup.id);
+
+                // Assert
+                Assert.True(errorMsg.Contains(badArtefactId.ToString()));
+                Assert.True(errorMsg.Contains("not part of this edition"));
+                Assert.Equal(HttpStatusCode.BadRequest, updateHttpMsg.StatusCode);
+                Assert.Equal(artefactGroupName, artefactGroup.name);
+                createdArtefactGroup.artefacts.Sort();
+                artefactGroup.artefacts.Sort();
+                Assert.Equal(createdArtefactGroup.artefacts, artefactGroup.artefacts);
+                Assert.Equal(createdArtefactGroup.id, artefactGroup.id);
+
+                _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+            }
+        }
+
+        /// <summary>
+        ///     Check that an artefact group can be updated.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CannotReuseArtefactsInArtefactGroup()
+        {
+            // Arrange
+            using (var editionCreator =
+                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount]))
+            {
+                /**
+                 * Create new edition and a new artefact group 
+                 */
+
+                var editionId = await editionCreator.CreateEdition();
+                var artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
+                const string artefactGroupName = "artefact group 1";
+
+                // Act
+                var (_, createdArtefactGroup, _, _) = await _createArtefactGroupAsync(editionId, artefactGroupName, new List<uint>()
+                {
+                    artefacts.FirstOrDefault().id,
+                    artefacts.LastOrDefault().id
+                });
+                var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
+
+                // Assert
+                Assert.Equal(1, artefactList.artefactGroups.Count());
+                artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
+
+                /**
+                 * Create a second artefact group with an artefact ID from the previous artefact group.
+                 * This should fail with a BadRequest and notification of the offenting artefact ID.
+                 */
+
+                // Arrange
+                const string secondArtefactGroupName = "invalid artefact group";
+                var secondGroupArtefacts = new List<uint>() { artefacts.FirstOrDefault().id, artefacts[1].id };
+
+                // Act
+                var (secondHttpMsg, _, _, _) = await _createArtefactGroupAsync(editionId, secondArtefactGroupName, secondGroupArtefacts, shouldSucceed: false);
+                var errorMsg = await secondHttpMsg.Content.ReadAsStringAsync();
+                var (_, artefactGroupList, _) = await _getArtefactGroupsAsync(editionId);
+
+                // Assert
+                Assert.True(errorMsg.Contains(artefacts.FirstOrDefault().id.ToString()));
+                Assert.True(errorMsg.Contains("already in another group"));
+                Assert.Equal(HttpStatusCode.BadRequest, secondHttpMsg.StatusCode);
+                Assert.Equal(artefactGroupName, artefactGroupList.artefactGroups.FirstOrDefault().name);
+                Assert.Equal(1, artefactGroupList.artefactGroups.Count());
+                createdArtefactGroup.artefacts.Sort();
+                artefactGroupList.artefactGroups.FirstOrDefault().artefacts.Sort();
+                Assert.Equal(createdArtefactGroup.artefacts, artefactGroupList.artefactGroups.FirstOrDefault().artefacts);
+                Assert.Equal(createdArtefactGroup.id, artefactGroupList.artefactGroups.FirstOrDefault().id);
 
                 _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
             }
@@ -160,6 +302,36 @@ namespace SQE.ApiTest
             return (httpMessage, httpBody, signalr);
         }
 
+        /// <summary>
+        /// Get a single artefact groups in an edition
+        /// </summary>
+        /// <param name="editionId">The edition to search for the specified artefact group</param>
+        /// <param name="artefactGroupId">The ID of the desired artefact group</param>
+        /// <param name="shouldSucceed">Flag whether the operation is expected to succeed</param>
+        /// <param name="user">Credentials for the user making the request</param>
+        /// <returns></returns>
+        private async
+            Task<(HttpResponseMessage httpResponseMessage, ArtefactGroupDTO httpResponseBody, ArtefactGroupDTO
+                signalrResponse)> _getArtefactGroupAsync(uint editionId, uint artefactGroupId,
+                bool shouldSucceed = true, Request.UserAuthDetails user = null)
+        {
+            // Arrange
+            user ??= Request.DefaultUsers.User1;
+
+            // Act
+            var getApiRequest = new Get.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
+            var (httpMessage, httpBody, signalr, _) = await Request.Send(
+                getApiRequest,
+                _client,
+                StartConnectionAsync,
+                true,
+                user,
+                shouldSucceed: shouldSucceed,
+                listenToEdition: false
+            );
+
+            return (httpMessage, httpBody, signalr);
+        }
 
         /// <summary>
         /// Creates a new artefact group in the specified edition
@@ -200,10 +372,13 @@ namespace SQE.ApiTest
             );
 
             // Assert
-            Assert.Equal(artefactGroupName, httpBody.name);
-            artefactGroup.artefacts.Sort();
-            httpBody.artefacts.Sort();
-            Assert.Equal(artefactGroup.artefacts, httpBody.artefacts);
+            if (shouldSucceed)
+            {
+                Assert.Equal(artefactGroupName, httpBody.name);
+                artefactGroup.artefacts.Sort();
+                httpBody.artefacts.Sort();
+                Assert.Equal(artefactGroup.artefacts, httpBody.artefacts);
+            }
 
             return (httpMessage, httpBody, signalr, listener);
         }
@@ -248,10 +423,13 @@ namespace SQE.ApiTest
             );
 
             // Assert
-            Assert.Equal(artefactGroupName, httpBody.name);
-            artefactGroup.artefacts.Sort();
-            httpBody.artefacts.Sort();
-            Assert.Equal(artefactGroup.artefacts, httpBody.artefacts);
+            if (shouldSucceed)
+            {
+                Assert.Equal(artefactGroupName, httpBody.name);
+                artefactGroup.artefacts.Sort();
+                httpBody.artefacts.Sort();
+                Assert.Equal(artefactGroup.artefacts, httpBody.artefacts);
+            }
 
             return (httpMessage, httpBody, signalr, listener);
         }
@@ -289,8 +467,12 @@ namespace SQE.ApiTest
             );
 
             // Assert
-            Assert.Equal(EditionEntities.artefactGroup, httpBody.entity);
-            Assert.Equal(artefactGroupId, httpBody.ids.FirstOrDefault());
+            if (shouldSucceed)
+            {
+                Assert.Equal(EditionEntities.artefactGroup, httpBody.entity);
+                Assert.Equal(artefactGroupId, httpBody.ids.FirstOrDefault());
+            }
+
             return (httpMessage, httpBody, signalr, listener);
         }
     }

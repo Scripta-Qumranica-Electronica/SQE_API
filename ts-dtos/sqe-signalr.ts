@@ -727,6 +727,17 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Gets the details of a specific artefact group in the edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param artefactGroupId - Id of the desired artefact group
+	 *
+	 */
+    public async getV1EditionsEditionIdArtefactGroupsArtefactGroupId(editionId: number, artefactGroupId: number): Promise<ArtefactGroupDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactGroupsArtefactGroupId', editionId, artefactGroupId);
+    }
+
+    /**
 	 * Creates a new artefact group with the submitted data.
 	 * The new artefact must have a list of artefacts that belong to the group.
 	 * It is not necessary to give the group a name.

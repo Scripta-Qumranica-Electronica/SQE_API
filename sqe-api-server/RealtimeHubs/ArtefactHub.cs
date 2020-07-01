@@ -226,6 +226,27 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
+        ///     Gets the details of a specific artefact group in the edition
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="artefactGroupId">Id of the desired artefact group</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<ArtefactGroupDTO> GetV1EditionsEditionIdArtefactGroupsArtefactGroupId(uint editionId, uint artefactGroupId)
+
+        {
+            try
+            {
+                return await _artefactService.GetArtefactGroupDataAsync(await _userService.GetCurrentUserObjectAsync(editionId), artefactGroupId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
         ///     Creates a new artefact group with the submitted data.
         ///     The new artefact must have a list of artefacts that belong to the group.
         ///     It is not necessary to give the group a name.

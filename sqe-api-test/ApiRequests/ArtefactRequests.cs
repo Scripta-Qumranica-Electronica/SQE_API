@@ -73,6 +73,12 @@ namespace SQE.ApiTest.ApiRequests
         {
             public V1_Editions_EditionId_ArtefactGroups(uint editionId) : base(editionId, null) { }
         }
+
+        public class
+            V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<EmptyInput, ArtefactGroupDTO, EmptyOutput>
+        {
+            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId) : base(editionId, artefactGroupId, null) { }
+        }
     }
 
     public static partial class Post
