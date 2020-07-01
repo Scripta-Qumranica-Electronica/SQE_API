@@ -193,7 +193,7 @@ WHERE artefact_group_member_owner.edition_id = @EditionId
 ";
     }
 
-    internal static class FindArtefactGroupMemebers
+    internal static class FindArtefactGroupMembers
     {
         public const string GetQuery = @"
 SELECT artefact_group_member.artefact_group_member_id AS ArtefactGroupMemberId,

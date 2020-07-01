@@ -851,7 +851,7 @@ namespace SQE.DatabaseAccess
             {
                 // Get group members
                 var members = await connection.QueryAsync<ArtefactGroupMember>(
-                    FindArtefactGroupMemebers.GetQuery,
+                    FindArtefactGroupMembers.GetQuery,
                     new
                     {
                         ArtefactGroupId = artefactGroupId,
