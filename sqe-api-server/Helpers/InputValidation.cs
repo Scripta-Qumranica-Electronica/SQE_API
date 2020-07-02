@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
+using NetTopologySuite.Simplify;
 using Newtonsoft.Json;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -84,6 +85,8 @@ namespace SQE.API.Server.Helpers
         public static async Task<string> ValidatePolygonAsync(string wktPolygon, string entityName, bool fix = false)
         {
             // Wrap the private validation method in a Task so we can asynchronously call this non-trivial method
+            // But see the docs: https://docs.microsoft.com/en-us/aspnet/core/performance/performance-best-practices?view=aspnetcore-3.1
+            // Those docs explicitly warn against do `await Task.Run`.
             return await Task.Run(() => _validatePolygon(wktPolygon, entityName, fix));
         }
 
@@ -106,14 +109,17 @@ namespace SQE.API.Server.Helpers
             if (string.IsNullOrEmpty(wktPolygon))
                 throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is empty");
 
-            var polygon = default(Geometry);
             // Try loading the polygon
             try
             {
-                polygon = wkr.Read(wktPolygon);
+                var polygon = wkr.Read(wktPolygon);
                 // If it is valid, return it
                 if (polygon.IsValid)
-                    return polygon.Normalized().ToString(); // Always normalize the polygon
+                {
+                    // Remove any completely unnecessary points
+                    var simplifier = new DouglasPeuckerSimplifier(polygon) {DistanceTolerance = 0};
+                    return simplifier.GetResultGeometry().ToString();
+                }
 
                 // It is invalid, but could be repaired as a binary representation
                 // Throw an error if no request to fix it has been made
@@ -159,13 +165,16 @@ namespace SQE.API.Server.Helpers
 
                     // Read the binary data into a Net Topology geometry and get the WKT representation
                     var wkbReader = new WKBReader();
-                    var repairedPoly = wkbReader.Read(wkbData).AsText();
+                    // Completely unnecessary points
+                    var simplifier = new DouglasPeuckerSimplifier(wkbReader.Read(wkbData)) {DistanceTolerance = 0};
 
                     // Free the data allocated by Rust (we do it this way since we do not know the length of the response,
                     // so it would be just a guess if we passed Rust memory managed by C#)
                     c_bin_data_free(bin);
 
-                    return repairedPoly;
+                    
+                    
+                    return simplifier.GetResultGeometry().ToString();
                 }
                 catch
                 {
@@ -185,8 +194,11 @@ namespace SQE.API.Server.Helpers
             var returnPoly = Marshal.PtrToStringAnsi(repairedWkt);
             c_char_free(repairedWkt); // We need to let Rust free the memory it was using
             if (string.IsNullOrEmpty(returnPoly) || returnPoly == "INVALIDGEOMETRY")
-                throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
-            return returnPoly;
+                throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid and cannot be repaired");
+            
+            // Remove any completely unnecessary points
+            var simplified = new DouglasPeuckerSimplifier(wkr.Read(returnPoly)) {DistanceTolerance = 0};
+            return simplified.GetResultGeometry().ToString();
         }
 
         /// <summary>
