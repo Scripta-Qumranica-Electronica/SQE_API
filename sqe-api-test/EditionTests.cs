@@ -877,19 +877,21 @@ namespace SQE.ApiTest
                 "application/json; charset=utf-8",
                 response.Content.Headers.ContentType.ToString()
             );
-            Assert.True(msg.name == name);
+            Assert.Equal(name, msg.name);
+            Assert.Equal((uint)1215, msg.metrics.ppi);
             Assert.True(msg.id != 1);
 
             // ARRANGE (without name)
             newScrollRequest = new EditionCopyDTO(null, null, null);
+            newEd = new Post.V1_Editions_EditionId(1, newScrollRequest);
 
             //Act
-            (response, msg) = await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionDTO>(
+            (response, msg, rt, lt) = await Request.Send(
+                newEd,
                 _client,
-                HttpMethod.Post,
-                url,
-                newScrollRequest,
-                await Request.GetJwtViaHttpAsync(_client)
+                StartConnectionAsync,
+                auth: true,
+                deterministic: false
             );
             response.EnsureSuccessStatusCode();
 
@@ -1058,7 +1060,17 @@ namespace SQE.ApiTest
             response.EnsureSuccessStatusCode();
             var oldName = msg.primary.name;
             const string name = "מגלה א";
-            var newScrollRequest = new EditionUpdateRequestDTO(name, null, null);
+            var metrics = new UpdateEditionManuscriptMetrics()
+            {
+                width = 150,
+                height = 50,
+                xOrigin = -5,
+                yOrigin = 0
+            };
+            var newScrollRequest = new EditionUpdateRequestDTO(name, null, null)
+            {
+                metrics = metrics
+            };
 
             //Act
             var (response2, msg2) = await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionDTO>(
@@ -1078,6 +1090,10 @@ namespace SQE.ApiTest
             Assert.True(msg2.name != oldName);
             Assert.True(msg2.name == name);
             Assert.True(msg2.id == editionId);
+            Assert.Equal(metrics.width, msg2.metrics.width);
+            Assert.Equal(metrics.height, msg2.metrics.height);
+            Assert.Equal(metrics.xOrigin, msg2.metrics.xOrigin);
+            Assert.Equal(metrics.yOrigin, msg2.metrics.yOrigin);
         }
 
         /// <summary>

@@ -554,4 +554,31 @@ DELETE FROM edition_editor_request
 WHERE token = @Token AND editor_user_id = @EditorUserId
 ";
     }
+
+    internal static class GetEditionManuscriptMetricsDetails
+    {
+        internal const string GetQuery = @"
+SELECT manuscript_metrics_id AS ManuscriptMetricsId,
+       manuscript_id AS ManuscriptId,
+       width AS Width,
+       height AS Height,
+       x_origin AS XOrigin,
+       y_origin AS YOrigin,
+       pixels_per_inch AS PPI
+FROM manuscript_metrics_owner
+JOIN manuscript_metrics USING(manuscript_metrics_id)
+WHERE manuscript_metrics_owner.edition_id = @EditionId
+";
+
+        internal class Result
+        {
+            public uint ManuscriptMetricsId { get; set; }
+            public uint ManuscriptId { get; set; }
+            public uint Width { get; set; }
+            public uint Height { get; set; }
+            public int XOrigin { get; set; }
+            public int YOrigin { get; set; }
+            public int PPI { get; set; }
+        }
+    }
 }

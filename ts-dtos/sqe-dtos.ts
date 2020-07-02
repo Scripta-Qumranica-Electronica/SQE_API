@@ -169,14 +169,13 @@ export interface DeleteDTO {
     ids: number[];
 }
 
-export interface EditionUpdateRequestDTO {
+export interface EditionUpdateRequestDTO extends EditionCopyDTO {
+    metrics: UpdateEditionManuscriptMetrics;
+}
+export interface EditionCopyDTO {
     name: string;
     copyrightHolder: string;
     collaborators: string;
-    metrics: UpdateEditionManuscriptMetrics;
-}
-
-export interface EditionCopyDTO extends EditionUpdateRequestDTO {
 }
 export interface UpdateEditionManuscriptMetrics {
     width: number;

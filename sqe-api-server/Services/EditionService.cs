@@ -142,6 +142,19 @@ namespace SQE.API.Server.Services
             if (!string.IsNullOrEmpty(updatedEditionData.name))
                 await _editionRepo.ChangeEditionNameAsync(editionUser, updatedEditionData.name);
 
+            if (updatedEditionData.metrics != null && (
+                    updatedEditionData.metrics.xOrigin != editionBeforeChanges.XOrigin
+                    || updatedEditionData.metrics.yOrigin != editionBeforeChanges.YOrigin
+                    || updatedEditionData.metrics.width != editionBeforeChanges.Width
+                    || updatedEditionData.metrics.height != editionBeforeChanges.Height
+                )
+            )
+            {
+                await _editionRepo.UpdateEditionMetricsAsync(editionUser, updatedEditionData.metrics.width,
+                    updatedEditionData.metrics.height, updatedEditionData.metrics.xOrigin,
+                    updatedEditionData.metrics.yOrigin);
+            }
+
             var editions = await _editionRepo.ListEditionsAsync(
                 editionUser.userId,
                 editionUser.EditionId
@@ -177,7 +190,7 @@ namespace SQE.API.Server.Services
             //Change the Name, if a Name has been passed
             if (!string.IsNullOrEmpty(editionInfo.name))
             {
-                edition = await UpdateEditionAsync(editionUser, editionInfo, clientId); // Change the Name.
+                edition = await UpdateEditionAsync(editionUser, new EditionUpdateRequestDTO(editionInfo), clientId); // Change the Name.
             }
             else
             {

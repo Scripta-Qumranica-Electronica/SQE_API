@@ -152,7 +152,7 @@ namespace SQE.API.DTO
 
     #region Request DTO's
 
-    public class EditionUpdateRequestDTO
+    public class EditionUpdateRequestDTO : EditionCopyDTO
     {
         /// <summary>
         ///     Metadata to be added to or updated for an edition
@@ -180,6 +180,25 @@ namespace SQE.API.DTO
         {
         }
 
+        public EditionUpdateRequestDTO(EditionCopyDTO editionCopy) : this(editionCopy.name, editionCopy.copyrightHolder, editionCopy.collaborators)
+        {
+        }
+
+        public UpdateEditionManuscriptMetrics metrics { get; set; }
+    }
+
+    public class EditionCopyDTO
+    {
+        public EditionCopyDTO(string name, string copyrightHolder, string collaborators)
+        {
+            this.name = name;
+            this.collaborators = collaborators;
+            this.copyrightHolder = copyrightHolder;
+        }
+
+        public EditionCopyDTO() : this(string.Empty, string.Empty, string.Empty)
+        {
+        }
 
         [StringLength(
             255,
@@ -187,22 +206,8 @@ namespace SQE.API.DTO
             ErrorMessage = "The name of the edition must be between 1 and 255 characters long"
         )]
         public string name { get; set; }
-
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }
-        public UpdateEditionManuscriptMetrics metrics { get; set; }
-    }
-
-    public class EditionCopyDTO : EditionUpdateRequestDTO
-    {
-        public EditionCopyDTO(string name, string copyrightHolder, string collaborators, UpdateEditionManuscriptMetrics metrics = null)
-            : base(name, copyrightHolder, collaborators, metrics)
-        {
-        }
-
-        public EditionCopyDTO() : this(string.Empty, string.Empty, string.Empty)
-        {
-        }
     }
 
     public class UpdateEditionManuscriptMetrics

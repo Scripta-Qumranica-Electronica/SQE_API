@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Dapper;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
@@ -63,7 +61,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount]))
+                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount % artefactEditions.Length]))
             {
                 /**
                  * Create a new edition and also a new artefact group in it.
@@ -101,7 +99,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount]))
+                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount % artefactEditions.Length]))
             {
                 /**
                  * Create a new edition and a new artefact group in it.
@@ -159,7 +157,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount]))
+                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount % artefactEditions.Length]))
             {
                 /**
                  * Create new edition and a new artefact group 
@@ -221,7 +219,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount]))
+                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount % artefactEditions.Length]))
             {
                 /**
                  * Create new edition and a new artefact group 

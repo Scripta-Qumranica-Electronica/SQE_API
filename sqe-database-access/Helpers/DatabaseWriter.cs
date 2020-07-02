@@ -125,6 +125,8 @@ namespace SQE.DatabaseAccess.Helpers
     {
         Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
             List<MutationRequest> mutationRequests);
+        Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
+            MutationRequest mutationRequest);
 
     }
 
@@ -176,6 +178,12 @@ namespace SQE.DatabaseAccess.Helpers
 
             // There is already a transaction scope, so just run the write in the current scope
             return await _writeToDatabaseAsync(editionUser, mutationRequests);
+        }
+
+        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
+            MutationRequest mutationRequest)
+        {
+            return await WriteToDatabaseAsync(editionUser, new List<MutationRequest>() { mutationRequest });
         }
 
         private async Task<List<AlteredRecord>> _writeToDatabaseAsync(EditionUserInfo editionUser,

@@ -16,6 +16,7 @@ namespace SQE.DatabaseAccess
     {
         Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
         Task ChangeEditionNameAsync(EditionUserInfo editionUser, string name);
+        Task UpdateEditionMetricsAsync(EditionUserInfo editionUser, uint width, uint height, int xOrigin, int yOrigin);
 
         Task<uint> CopyEditionAsync(EditionUserInfo editionUser,
             string copyrightHolder = null,
@@ -191,6 +192,50 @@ namespace SQE.DatabaseAccess
                 // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
                 // care of main_action and single_action.
                 await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
+            }
+        }
+
+        /// <summary>
+        /// Update the metric estimations of the manuscript for an edition 
+        /// </summary>
+        /// <param name="editionUser">Details of the user requesting the changes</param>
+        /// <param name="width">A non-negative estimation of the manuscript width in millimeters (may be zero)</param>
+        /// <param name="height">A non-negative estimation of the manuscript height in millimeters (may be zero)</param>
+        /// <param name="xOrigin">An estimation of the point at which the manuscript begins on the x axis in millimeters (may be zero)</param>
+        /// <param name="yOrigin">An estimation of the point at which the manuscript begins on the x axis in millimeters (may be zero)(may be zero)</param>
+        /// <returns></returns>
+        public async Task UpdateEditionMetricsAsync(EditionUserInfo editionUser, uint width, uint height, int xOrigin,
+            int yOrigin)
+        {
+            using (var connection = OpenConnection())
+            {
+                var oldRecord = await connection.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
+                    GetEditionManuscriptMetricsDetails.GetQuery,
+                    new
+                    {
+                        editionUser.EditionId
+                    });
+                if (oldRecord.Count() != 1)
+                    throw new StandardExceptions.DataNotFoundException("manuscript metrics", editionUser.EditionId,
+                        "edition");
+
+                var parameters = new DynamicParameters();
+                parameters.Add("width", width);
+                parameters.Add("height", height);
+                parameters.Add("x_origin", xOrigin);
+                parameters.Add("y_origin", yOrigin);
+                parameters.Add("manuscript_id", oldRecord.FirstOrDefault().ManuscriptId);
+
+                var mutation = new MutationRequest(
+                    MutateType.Update,
+                    parameters,
+                    "manuscript_metrics",
+                    oldRecord.FirstOrDefault().ManuscriptMetricsId);
+
+                var results = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutation);
+
+                if (results.Count() != 1)
+                    throw new StandardExceptions.DataNotWrittenException("update manuscript metrics");
             }
         }
 
