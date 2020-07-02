@@ -557,7 +557,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 id = model.EditionId,
                 name = model.Name,
                 editionDataEditorId = model.EditionDataEditorId,
-                metrics = new EditionManuscriptMetrics()
+                metrics = new EditionManuscriptMetricsDTO()
                 {
                     editorId = model.ManuscriptMetricsEditor,
                     height = model.Height,

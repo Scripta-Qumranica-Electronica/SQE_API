@@ -15,7 +15,7 @@ namespace SQE.API.DTO
         public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }
         public List<DetailedEditorRightsDTO> shares { get; set; }
-        public EditionManuscriptMetrics metrics { get; set; }
+        public EditionManuscriptMetricsDTO metrics { get; set; }
         public bool locked { get; set; }
         public bool isPublic { get; set; }
         public DateTime? lastEdit { set; get; }
@@ -168,7 +168,7 @@ namespace SQE.API.DTO
         ///     and added to the edition license.
         /// </param>
         /// <param name="length">Editor's estimated metrics of the manuscript (a null object will use the database defaults)</param>
-        public EditionUpdateRequestDTO(string name, string copyrightHolder, string collaborators, UpdateEditionManuscriptMetrics metrics = null)
+        public EditionUpdateRequestDTO(string name, string copyrightHolder, string collaborators, UpdateEditionManuscriptMetricsDTO metrics = null)
         {
             this.name = name;
             this.copyrightHolder = copyrightHolder;
@@ -184,7 +184,7 @@ namespace SQE.API.DTO
         {
         }
 
-        public UpdateEditionManuscriptMetrics metrics { get; set; }
+        public UpdateEditionManuscriptMetricsDTO metrics { get; set; }
     }
 
     public class EditionCopyDTO
@@ -210,7 +210,7 @@ namespace SQE.API.DTO
         public string collaborators { get; set; }
     }
 
-    public class UpdateEditionManuscriptMetrics
+    public class UpdateEditionManuscriptMetricsDTO
     {
         public uint width { get; set; }
         public uint height { get; set; }
@@ -218,7 +218,7 @@ namespace SQE.API.DTO
         public int yOrigin { get; set; }
     }
 
-    public class EditionManuscriptMetrics : UpdateEditionManuscriptMetrics
+    public class EditionManuscriptMetricsDTO : UpdateEditionManuscriptMetricsDTO
     {
         public uint ppi { get; set; }
         public uint editorId { get; set; }

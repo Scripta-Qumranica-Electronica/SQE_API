@@ -1060,7 +1060,7 @@ namespace SQE.ApiTest
             response.EnsureSuccessStatusCode();
             var oldName = msg.primary.name;
             const string name = "מגלה א";
-            var metrics = new UpdateEditionManuscriptMetrics()
+            var metrics = new UpdateEditionManuscriptMetricsDTO()
             {
                 width = 150,
                 height = 50,
