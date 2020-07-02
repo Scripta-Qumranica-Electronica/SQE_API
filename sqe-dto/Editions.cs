@@ -15,6 +15,7 @@ namespace SQE.API.DTO
         public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }
         public List<DetailedEditorRightsDTO> shares { get; set; }
+        public EditionManuscriptMetrics metrics { get; set; }
         public bool locked { get; set; }
         public bool isPublic { get; set; }
         public DateTime? lastEdit { set; get; }
@@ -166,11 +167,13 @@ namespace SQE.API.DTO
         ///     This may be null, in which case the names of all edition editors are collected automatically
         ///     and added to the edition license.
         /// </param>
-        public EditionUpdateRequestDTO(string name, string copyrightHolder, string collaborators)
+        /// <param name="length">Editor's estimated metrics of the manuscript (a null object will use the database defaults)</param>
+        public EditionUpdateRequestDTO(string name, string copyrightHolder, string collaborators, UpdateEditionManuscriptMetrics metrics = null)
         {
             this.name = name;
             this.copyrightHolder = copyrightHolder;
             this.collaborators = collaborators;
+            this.metrics = metrics;
         }
 
         public EditionUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty)
@@ -187,18 +190,33 @@ namespace SQE.API.DTO
 
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }
+        public UpdateEditionManuscriptMetrics metrics { get; set; }
     }
 
     public class EditionCopyDTO : EditionUpdateRequestDTO
     {
-        public EditionCopyDTO(string name, string copyrightHolder, string collaborators)
-            : base(name, copyrightHolder, collaborators)
+        public EditionCopyDTO(string name, string copyrightHolder, string collaborators, UpdateEditionManuscriptMetrics metrics = null)
+            : base(name, copyrightHolder, collaborators, metrics)
         {
         }
 
         public EditionCopyDTO() : this(string.Empty, string.Empty, string.Empty)
         {
         }
+    }
+
+    public class UpdateEditionManuscriptMetrics
+    {
+        public uint width { get; set; }
+        public uint height { get; set; }
+        public int xOrigin { get; set; }
+        public int yOrigin { get; set; }
+    }
+
+    public class EditionManuscriptMetrics : UpdateEditionManuscriptMetrics
+    {
+        public uint ppi { get; set; }
+        public uint editorId { get; set; }
     }
 
     #endregion Request DTO's

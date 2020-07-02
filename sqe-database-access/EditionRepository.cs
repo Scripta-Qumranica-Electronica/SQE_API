@@ -70,17 +70,40 @@ namespace SQE.DatabaseAccess
                 // TODO: check the performance here, I think we may be looping several times, here
                 // and in the calling function.  Maybe it doesn't matter much though.
                 var editionDictionary = new Dictionary<uint, Edition>();
+                Edition lastEdition;
                 var result = (await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
                     EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue),
                     (editionGroup, editor) =>
                     {
-                        Edition lastEdition;
-
+                        // Check if we have moved on to a new edition
                         if (!editionDictionary.TryGetValue(editionGroup.EditionId, out lastEdition))
                         {
+                            // Set the copyrights for the previous, and now complete, edition before making the new one
+                            if (lastEdition != null)
+                            {
+                                lastEdition.Copyright = Licence.printLicence(
+                                    lastEdition.CopyrightHolder,
+                                    string.IsNullOrEmpty(lastEdition.Collaborators)
+                                        ? string.Join(", ",
+                                            lastEdition.Editors.Select(y =>
+                                            {
+                                                if (y.Forename == null && y.Surname == null)
+                                                    return y.EditorEmail;
+                                                return $@"{y.Forename} {y.Surname}".Trim();
+                                            }))
+                                        : lastEdition.Collaborators);
+                            }
+
+                            // Now start building the new edition
                             lastEdition = new Edition
                             {
                                 Name = editionGroup.Name,
+                                Width = editionGroup.Width,
+                                Height = editionGroup.Height,
+                                XOrigin = editionGroup.XOrigin,
+                                YOrigin = editionGroup.YOrigin,
+                                PPI = editionGroup.PPI,
+                                ManuscriptMetricsEditor = editionGroup.ManuscriptMetricsEditor,
                                 Collaborators = editionGroup.Collaborators,
                                 Copyright =
                                     null, //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
@@ -109,6 +132,7 @@ namespace SQE.DatabaseAccess
                             editionDictionary.Add(lastEdition.EditionId, lastEdition);
                         }
 
+                        // Add the new editor to this edition
                         lastEdition.Editors.Add(editor);
 
                         return lastEdition;
@@ -121,22 +145,7 @@ namespace SQE.DatabaseAccess
                     splitOn: "EditorId"
                 )).ToList();
 
-                return editionDictionary.Select(x =>
-                {
-                    // Make sure the License is properly set
-                    x.Value.Copyright = Licence.printLicence(
-                        x.Value.CopyrightHolder,
-                        string.IsNullOrEmpty(x.Value.Collaborators)
-                            ? string.Join(", ",
-                                x.Value.Editors.Select(y =>
-                                {
-                                    if (y.Forename == null && y.Surname == null)
-                                        return y.EditorEmail;
-                                    return $@"{y.Forename} {y.Surname}".Trim();
-                                }))
-                            : x.Value.Collaborators);
-                    return x.Value;
-                });
+                return editionDictionary.Values;
             }
         }
 

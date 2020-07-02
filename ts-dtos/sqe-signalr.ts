@@ -41,6 +41,8 @@ import {
 	DeleteDTO,
 	EditionUpdateRequestDTO,
 	EditionCopyDTO,
+	UpdateEditionManuscriptMetrics,
+	EditionManuscriptMetrics,
 	ImageDTO,
 	ImageInstitutionDTO,
 	ImageInstitutionListDTO,

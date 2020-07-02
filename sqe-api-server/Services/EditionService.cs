@@ -544,6 +544,15 @@ The Scripta Qumranica Electronica team</body></html>";
                 id = model.EditionId,
                 name = model.Name,
                 editionDataEditorId = model.EditionDataEditorId,
+                metrics = new EditionManuscriptMetrics()
+                {
+                    editorId = model.ManuscriptMetricsEditor,
+                    height = model.Height,
+                    width = model.Width,
+                    ppi = model.PPI,
+                    xOrigin = model.XOrigin,
+                    yOrigin = model.YOrigin,
+                },
                 permission = PermissionModelToDTO(model.Permission),
                 owner = UserService.UserModelToDto(model.Owner),
                 thumbnailUrl = model.Thumbnail,

@@ -12,6 +12,12 @@ namespace SQE.DatabaseAccess.Models
         public string Name { get; set; }
         public uint EditionDataEditorId { get; set; }
         public string ManuscriptId { get; set; }
+        public uint Width { get; set; }
+        public uint Height { get; set; }
+        public int XOrigin { get; set; }
+        public int YOrigin { get; set; }
+        public uint PPI { get; set; }
+        public uint ManuscriptMetricsEditor { get; set; }
         public Permission Permission { get; set; }
         public string Thumbnail { get; set; }
         public bool Locked { get; set; }
