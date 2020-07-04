@@ -16,6 +16,7 @@ namespace SQE.DatabaseAccess
     {
         Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
         Task ChangeEditionNameAsync(EditionUserInfo editionUser, string name);
+        Task UpdateEditionMetricsAsync(EditionUserInfo editionUser, uint width, uint height, int xOrigin, int yOrigin);
 
         Task<uint> CopyEditionAsync(EditionUserInfo editionUser,
             string copyrightHolder = null,
@@ -70,17 +71,40 @@ namespace SQE.DatabaseAccess
                 // TODO: check the performance here, I think we may be looping several times, here
                 // and in the calling function.  Maybe it doesn't matter much though.
                 var editionDictionary = new Dictionary<uint, Edition>();
+                Edition lastEdition;
                 var result = (await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
                     EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue),
                     (editionGroup, editor) =>
                     {
-                        Edition lastEdition;
-
+                        // Check if we have moved on to a new edition
                         if (!editionDictionary.TryGetValue(editionGroup.EditionId, out lastEdition))
                         {
+                            // Set the copyrights for the previous, and now complete, edition before making the new one
+                            if (lastEdition != null)
+                            {
+                                lastEdition.Copyright = Licence.printLicence(
+                                    lastEdition.CopyrightHolder,
+                                    string.IsNullOrEmpty(lastEdition.Collaborators)
+                                        ? string.Join(", ",
+                                            lastEdition.Editors.Select(y =>
+                                            {
+                                                if (y.Forename == null && y.Surname == null)
+                                                    return y.EditorEmail;
+                                                return $@"{y.Forename} {y.Surname}".Trim();
+                                            }))
+                                        : lastEdition.Collaborators);
+                            }
+
+                            // Now start building the new edition
                             lastEdition = new Edition
                             {
                                 Name = editionGroup.Name,
+                                Width = editionGroup.Width,
+                                Height = editionGroup.Height,
+                                XOrigin = editionGroup.XOrigin,
+                                YOrigin = editionGroup.YOrigin,
+                                PPI = editionGroup.PPI,
+                                ManuscriptMetricsEditor = editionGroup.ManuscriptMetricsEditor,
                                 Collaborators = editionGroup.Collaborators,
                                 Copyright =
                                     null, //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
@@ -109,6 +133,7 @@ namespace SQE.DatabaseAccess
                             editionDictionary.Add(lastEdition.EditionId, lastEdition);
                         }
 
+                        // Add the new editor to this edition
                         lastEdition.Editors.Add(editor);
 
                         return lastEdition;
@@ -121,22 +146,7 @@ namespace SQE.DatabaseAccess
                     splitOn: "EditorId"
                 )).ToList();
 
-                return editionDictionary.Select(x =>
-                {
-                    // Make sure the License is properly set
-                    x.Value.Copyright = Licence.printLicence(
-                        x.Value.CopyrightHolder,
-                        string.IsNullOrEmpty(x.Value.Collaborators)
-                            ? string.Join(", ",
-                                x.Value.Editors.Select(y =>
-                                {
-                                    if (y.Forename == null && y.Surname == null)
-                                        return y.EditorEmail;
-                                    return $@"{y.Forename} {y.Surname}".Trim();
-                                }))
-                            : x.Value.Collaborators);
-                    return x.Value;
-                });
+                return editionDictionary.Values;
             }
         }
 
@@ -182,6 +192,50 @@ namespace SQE.DatabaseAccess
                 // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
                 // care of main_action and single_action.
                 await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
+            }
+        }
+
+        /// <summary>
+        /// Update the metric estimations of the manuscript for an edition 
+        /// </summary>
+        /// <param name="editionUser">Details of the user requesting the changes</param>
+        /// <param name="width">A non-negative estimation of the manuscript width in millimeters (may be zero)</param>
+        /// <param name="height">A non-negative estimation of the manuscript height in millimeters (may be zero)</param>
+        /// <param name="xOrigin">An estimation of the point at which the manuscript begins on the x axis in millimeters (may be zero)</param>
+        /// <param name="yOrigin">An estimation of the point at which the manuscript begins on the x axis in millimeters (may be zero)(may be zero)</param>
+        /// <returns></returns>
+        public async Task UpdateEditionMetricsAsync(EditionUserInfo editionUser, uint width, uint height, int xOrigin,
+            int yOrigin)
+        {
+            using (var connection = OpenConnection())
+            {
+                var oldRecord = await connection.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
+                    GetEditionManuscriptMetricsDetails.GetQuery,
+                    new
+                    {
+                        editionUser.EditionId
+                    });
+                if (oldRecord.Count() != 1)
+                    throw new StandardExceptions.DataNotFoundException("manuscript metrics", editionUser.EditionId,
+                        "edition");
+
+                var parameters = new DynamicParameters();
+                parameters.Add("width", width);
+                parameters.Add("height", height);
+                parameters.Add("x_origin", xOrigin);
+                parameters.Add("y_origin", yOrigin);
+                parameters.Add("manuscript_id", oldRecord.FirstOrDefault().ManuscriptId);
+
+                var mutation = new MutationRequest(
+                    MutateType.Update,
+                    parameters,
+                    "manuscript_metrics",
+                    oldRecord.FirstOrDefault().ManuscriptMetricsId);
+
+                var results = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutation);
+
+                if (results.Count() != 1)
+                    throw new StandardExceptions.DataNotWrittenException("update manuscript metrics");
             }
         }
 

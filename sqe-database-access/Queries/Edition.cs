@@ -20,6 +20,13 @@ SELECT DISTINCTROW ed2.edition_id AS EditionId,
 
         manuscript_data.name AS Name,
         manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
+                   
+        manuscript_metrics.width AS Width,
+        manuscript_metrics.height AS Height,
+        manuscript_metrics.x_origin AS XOrigin,
+        manuscript_metrics.y_origin AS YOrigin,
+        manuscript_metrics.pixels_per_inch AS PPI,
+        manuscript_metrics_owner.edition_editor_id AS ManuscriptMetricsEditor,
 
         im.thumbnail_url AS Thumbnail,
 
@@ -85,6 +92,10 @@ FROM edition AS ed1
     # Get the edition manuscript information
          JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
          JOIN manuscript_data USING(manuscript_data_id)
+             
+    # Get the edition manuscript metrics
+        JOIN manuscript_metrics_owner ON manuscript_metrics_owner.edition_id = ed2.edition_id
+        JOIN manuscript_metrics USING(manuscript_metrics_id)
 
     # Get the last edit date/time
          LEFT JOIN (
@@ -107,6 +118,9 @@ FROM edition AS ed1
 ) AS im ON im.manuscript_id = ed2.manuscript_id
 
 $Where
+
+# Add some ordering so sorting makes more sense (adding the ORDER BY surprisingly makes the query faster)
+ORDER BY manuscript_data.manuscript_id, ed2.edition_id
 ";
 
         public static string GetQuery(bool limitUser, bool limitScrolls)
@@ -127,6 +141,12 @@ $Where
             public bool CurrentIsAdmin { get; set; }
             public string Name { get; set; }
             public uint EditionDataEditorId { get; set; }
+            public uint Width { get; set; }
+            public uint Height { get; set; }
+            public int XOrigin { get; set; }
+            public int YOrigin { get; set; }
+            public uint PPI { get; set; }
+            public uint ManuscriptMetricsEditor { get; set; }
             public string ManuscriptId { get; set; }
             public string Thumbnail { get; set; }
             public bool Locked { get; set; }
@@ -533,5 +553,32 @@ WHERE token = @Token
 DELETE FROM edition_editor_request
 WHERE token = @Token AND editor_user_id = @EditorUserId
 ";
+    }
+
+    internal static class GetEditionManuscriptMetricsDetails
+    {
+        internal const string GetQuery = @"
+SELECT manuscript_metrics_id AS ManuscriptMetricsId,
+       manuscript_id AS ManuscriptId,
+       width AS Width,
+       height AS Height,
+       x_origin AS XOrigin,
+       y_origin AS YOrigin,
+       pixels_per_inch AS PPI
+FROM manuscript_metrics_owner
+JOIN manuscript_metrics USING(manuscript_metrics_id)
+WHERE manuscript_metrics_owner.edition_id = @EditionId
+";
+
+        internal class Result
+        {
+            public uint ManuscriptMetricsId { get; set; }
+            public uint ManuscriptId { get; set; }
+            public uint Width { get; set; }
+            public uint Height { get; set; }
+            public int XOrigin { get; set; }
+            public int YOrigin { get; set; }
+            public int PPI { get; set; }
+        }
     }
 }
