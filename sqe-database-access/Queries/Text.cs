@@ -86,7 +86,7 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 		roi.stance_rotation AS StanceRotation,
 		roi.artefact_id AS ArtefactId,
 
-		word.word_id AS WordId
+		sign_stream_section.sign_stream_section_id AS WordId
 
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
@@ -144,10 +144,11 @@ FROM sign_interpretation_ids
 
 	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
 
-	LEFT JOIN position_in_stream_to_word_rel USING (position_in_stream_id)
-    LEFT JOIN word USING(word_id)
-    LEFT JOIN word_owner ON word.word_id=word_owner.word_id
-        AND word_owner.edition_id = sign_interpretation_ids.edition_id
+	LEFT JOIN position_in_stream_to_section_rel USING (position_in_stream_id)
+    LEFT JOIN sign_stream_section USING(sign_stream_section_id)
+    LEFT JOIN sign_stream_section_owner 
+        ON sign_stream_section.sign_stream_section_id=sign_stream_section_owner.sign_stream_section_id
+        AND sign_stream_section_owner.edition_id = sign_interpretation_ids.edition_id
 
   
 ORDER BY sign_interpretation_ids.sequence, 
