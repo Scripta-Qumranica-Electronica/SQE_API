@@ -23,35 +23,6 @@ namespace SQE.ApiTest
         {
         }
 
-        // artefactEditions is a list of all editions that have artefacts more that 10 artefacts
-        private static readonly uint[] artefactEditions =
-        {
-            3, 22, 66, 67, 76, 78, 80, 82, 86, 87, 89, 90, 93, 94, 95, 96, 98, 100, 102, 106, 107, 108, 109, 111, 114,
-            115, 116, 117, 121, 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 136, 137, 138, 140, 141, 144, 148,
-            149, 150, 152, 154, 155, 156, 158, 160, 164, 165, 166, 167, 171, 209, 210, 213, 216, 217, 218, 219, 220,
-            221, 226, 227, 228, 229, 230, 231, 232, 233, 234, 238, 240, 242, 243, 244, 246, 247, 248, 256, 257, 258,
-            259, 260, 265, 269, 271, 273, 274, 275, 278, 280, 294, 298, 308, 323, 324, 326, 327, 328, 329, 331, 332,
-            334, 338, 339, 340, 341, 342, 343, 345, 350, 352, 354, 355, 356, 357, 358, 359, 362, 363, 365, 366, 367,
-            369, 370, 373, 377, 380, 381, 382, 383, 387, 388, 389, 390, 391, 393, 394, 395, 396, 397, 400, 403, 404,
-            406, 407, 414, 430, 432, 433, 434, 436, 470, 472, 483, 487, 493, 495, 496, 502, 509, 511, 513, 515, 519,
-            521, 522, 524, 526, 528, 530, 531, 532, 533, 534, 535, 536, 541, 542, 546, 548, 550, 552, 554, 556, 557,
-            558, 561, 569, 570, 573, 575, 576, 578, 579, 587, 593, 596, 598, 615, 616, 617, 622, 623, 625, 631, 632,
-            633, 634, 637, 641, 642, 643, 644, 645, 646, 650, 651, 653, 655, 657, 661, 720, 728, 743, 760, 806, 810,
-            819, 820, 830, 833, 838, 839, 842, 848, 849, 850, 853, 856, 861, 862, 863, 864, 865, 868, 870, 871, 873,
-            874, 875, 876, 877, 878, 879, 882, 885, 888, 889, 890, 891, 894, 897, 898, 899, 900, 901, 902, 903, 904,
-            905, 910, 912, 918, 920, 924, 926, 927, 928, 930, 931, 932, 933, 934, 935, 936, 937, 939, 941, 944, 956,
-            957, 960, 968, 969, 970, 972, 973, 1014, 1017, 1019, 1021, 1022, 1023, 1028, 1029, 1042, 1050, 1060, 1062,
-            1063, 1064, 1067, 1071, 1075, 1076, 1077, 1080, 1081, 1082, 1083, 1089, 1090, 1091, 1092, 1093, 1094, 1097,
-            1098, 1099, 1102, 1107, 1108, 1109, 1110, 1111, 1112, 1118, 1119, 1120, 1122, 1131, 1137, 1159, 1160, 1181,
-            1188, 1198, 1208, 1211, 1217, 1236, 1239, 1245, 1246, 1256, 1258, 1259, 1264, 1267, 1269, 1287, 1290, 1291,
-            1292, 1293, 1295, 1296, 1298, 1299, 1303, 1308, 1309, 1311, 1313, 1317, 1326, 1331, 1608, 1615, 1616, 1628,
-            1629, 1634, 1637, 1638, 1642, 1643
-        };
-
-
-        private static uint artefactEditionCount = 0;
-
-
         /// <summary>
         ///     Check that an artefact group can be created and deleted.
         /// </summary>
@@ -61,7 +32,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount % artefactEditions.Length]))
+                new EditionHelpers.EditionCreator(_client))
             {
                 /**
                  * Create a new edition and also a new artefact group in it.
@@ -99,7 +70,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount % artefactEditions.Length]))
+                new EditionHelpers.EditionCreator(_client))
             {
                 /**
                  * Create a new edition and a new artefact group in it.
@@ -157,7 +128,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount % artefactEditions.Length]))
+                new EditionHelpers.EditionCreator(_client))
             {
                 /**
                  * Create new edition and a new artefact group 
@@ -219,7 +190,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client, artefactEditions[++artefactEditionCount % artefactEditions.Length]))
+                new EditionHelpers.EditionCreator(_client))
             {
                 /**
                  * Create new edition and a new artefact group 

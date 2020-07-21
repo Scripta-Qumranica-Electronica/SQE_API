@@ -34,6 +34,13 @@ namespace SQE.DatabaseAccess.Helpers
             return _createSimpleInterpretation(" ", CreateVacatAttribute(width), null, probability);
         }
 
+        public static SignInterpretationData CreateDamagedInterpretation(float width = 1,
+            float? probability = null)
+        {
+            return _createSimpleInterpretation(" ", CreateDamageAttribute(width), null, probability);
+        }
+
+
 
 
         private static SignInterpretationData _createSimpleInterpretation(string character,
@@ -68,6 +75,8 @@ namespace SQE.DatabaseAccess.Helpers
 
             return signInterpretation;
         }
+
+
 
 
     }

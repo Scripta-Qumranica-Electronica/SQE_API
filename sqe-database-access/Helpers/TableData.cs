@@ -66,7 +66,7 @@ namespace SQE.DatabaseAccess.Helpers
         public static string Parent(Table table) => table > 0 ? Data[(int)table - 1].Name : "";
 
         /// <summary>
-        /// Returns the name of the child database table or null if no child exists
+        /// Returns the name of the child database table or empty string if no child exists
         /// </summary>
         /// <param name="table"></param>
         /// <returns>Name of parent database table</returns>
@@ -133,16 +133,16 @@ namespace SQE.DatabaseAccess.Helpers
         /// Returns an array of all terminators of the element and its children depending on terminatorIndex
         /// </summary>
         /// <param name="table">Element type</param>
-        /// <param name="terminatorType">If start that all start terminators + break is eiven,
+        /// <param name="terminatorType">If start that all start terminators + break is given,
         /// if end the end terminators</param>
         /// <returns></returns>
         public static uint[] AllTerminators(Table table, TerminatorType terminatorType)
         {
+            // Array receving the terminator ids
             uint[] terminators;
-            var terminatorIndex = 1;
             if (terminatorType == TerminatorType.Start)
             {
-                terminatorIndex = 0;
+                // If Start-Type than we need 
                 var count = LastTable - table + 1;
                 terminators = new uint[count];
                 terminators[count - 1] = BreakAttributeValue;
@@ -150,7 +150,7 @@ namespace SQE.DatabaseAccess.Helpers
             else terminators = new uint[LastTable - table];
             for (var i = table; i <= LastTable - 1; i++)
             {
-                terminators[(int)i] = Terminators(i)[terminatorIndex];
+                terminators[(int)(i - table)] = Terminators(i)[(int)terminatorType];
             }
 
             return terminators;

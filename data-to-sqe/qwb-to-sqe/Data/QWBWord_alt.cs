@@ -5,9 +5,9 @@ using MySql.Data.MySqlClient;
 
 namespace qwb_to_sqe
 {
-    
 
-    
+
+
 
     public class QwbWord : Word
     {
@@ -189,11 +189,18 @@ namespace qwb_to_sqe
         {
             var qwbSign = new QwbSign(sign.ToString(), attributeValues)
             {
-                IsSuperScript = isSuperScript, IsReconstructed = IsReconstructed,
+                IsSuperScript = isSuperScript,
+                IsReconstructed = IsReconstructed,
                 IsWrongAddition = WrongAddition,
-                IsForgotten = Forgotten, IsSubScript = IsSubScript, is_variant = IsVariant, IsOriginal = IsOriginal,
-                IsCorrected = IsCorrected, IsMarginVariant = IsMarginVariant, IsQuestionable = IsQuestionable,
-                IsConjecture = IsConjecture, IsInserted = IsInserted
+                IsForgotten = Forgotten,
+                IsSubScript = IsSubScript,
+                is_variant = IsVariant,
+                IsOriginal = IsOriginal,
+                IsCorrected = IsCorrected,
+                IsMarginVariant = IsMarginVariant,
+                IsQuestionable = IsQuestionable,
+                IsConjecture = IsConjecture,
+                IsInserted = IsInserted
             };
             IsVariant = 0;
             signs.Add(qwbSign);
@@ -227,11 +234,11 @@ namespace qwb_to_sqe
             {
                 //If no _currBook has been set, than we are at the start and we need only to set Scroll,Frag, and Linestart
                 //otherwise we have to add also Scroll-, Frag-, and Line-end
-                if (_previousWord?.Book != "") _previousWord._postSign= new QwbSign("", 15, 13, 11);
+                if (_previousWord?.Book != "") _previousWord._postSign = new QwbSign("", 15, 13, 11);
                 _precedingSign = new QwbSign("", 14, 12, 10);
 
-                SqeManuscript = SqeDatabase.GetSqeManuscript(Book);
-                
+                //            SqeManuscript = SqeDatabase.GetSqeManuscript(Book);
+
                 Fragment = "";
                 Console.Write($"\n{Book}");
             }
@@ -243,9 +250,9 @@ namespace qwb_to_sqe
                     _precedingSign = new QwbSign("", 12, 10);
                 }
 
-                SqeFragmentId = SqeDatabase.GetSqeFragmentId(Fragment, _previousWord.SqeFragmentId);
-                
-               
+                //             SqeFragmentId = SqeDatabase.GetSqeFragmentId(Fragment, _previousWord.SqeFragmentId);
+
+
 
                 Console.Write($"\n\t{Fragment},");
             }

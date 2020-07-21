@@ -10,6 +10,17 @@ namespace SQE.DatabaseAccess.Helpers
         IncompleteButNotClear = 19
     }
 
+    public enum RelativePosition : uint
+    {
+        BelowLine = 34,
+        AboveLine = 35,
+        LeftMargin = 36,
+        RightMargin = 37,
+        Margin = 38,
+        UpperMargin = 39,
+        LowerMargin = 40
+    }
+
     public static class SignInterpretationAttributeFactory
     {
         public static SignInterpretationAttributeData CreateCharacterAttribute(
@@ -25,7 +36,12 @@ namespace SQE.DatabaseAccess.Helpers
 
         public static SignInterpretationAttributeData CreateVacatAttribute(float width = 5)
         {
-            return _createNumericAttribute(2, width);
+            return _createNumericAttribute(4, width);
+        }
+
+        public static SignInterpretationAttributeData CreateDamageAttribute(float width = 1)
+        {
+            return _createNumericAttribute(5, width);
         }
 
 
@@ -47,8 +63,6 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return _createNumericAttribute((uint)readability, 0);
         }
-
-
 
 
         private static SignInterpretationAttributeData _createNumericAttribute(

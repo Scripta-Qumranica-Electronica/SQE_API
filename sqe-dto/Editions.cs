@@ -203,7 +203,7 @@ namespace SQE.API.DTO
         [StringLength(
             255,
             MinimumLength = 1,
-            ErrorMessage = "The name of the edition must be between 1 and 255 characters long"
+            ErrorMessage = "The name of the edition must be either null for no change or between 1 and 255 characters long"
         )]
         public string name { get; set; }
         public string copyrightHolder { get; set; }
