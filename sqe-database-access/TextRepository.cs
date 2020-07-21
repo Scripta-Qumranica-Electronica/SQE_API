@@ -27,7 +27,7 @@ namespace SQE.DatabaseAccess
             uint lineId,
             string lineName);
         #endregion
-
+        
         #region Sign and its Interpretation
 
         Task<List<SignInterpretationData>> AddSignInterpretationsAsync(EditionUserInfo editionUser,
@@ -236,7 +236,7 @@ namespace SQE.DatabaseAccess
         }
 
         #endregion
-
+        
         #region Sign and its interpretation
 
 
@@ -300,11 +300,12 @@ namespace SQE.DatabaseAccess
                 // TODO do we need this here? (Ingo)
                 if (previousSignData != null)
                 {
-                    // Create an hashset of next sign interpretations from the new anchors before
+                    // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
+                    // Create an list of next sign interpretations from the new anchors before
                     var nextSignInterpretations = internalAnchorsBefore.Select(
                         signInterpretationId => new NextSignInterpretation(
                         signInterpretationId,
-                        (uint)editionUser.EditionEditorId)).Distinct().ToHashSet();
+                        (uint)editionUser.EditionEditorId)).Distinct().ToList();
 
                     // Store this hashset into each signInterpretation of the previous set sign 
                     previousSignData.SignInterpretations.ForEach(
@@ -726,16 +727,14 @@ namespace SQE.DatabaseAccess
             }
         }
 
-
+        
         private async Task<TextEdition> _getEntityById(EditionUserInfo editionUser, Terminators terminators)
         {
             TextEdition lastEdition = null;
             TextFragmentData lastTextFragment = null;
             LineData lastLineData = null;
             SignData lastSignData = null;
-            NextSignInterpretation lastNextSignInterpretation = null;
-            SignInterpretationData lastChar = null;
-            SignInterpretationRoiData lastInterpretationRoi = null;
+            SignInterpretationData lastSignInterpretation = null;
 
 
             using (var connection = OpenConnection())
@@ -753,7 +752,7 @@ namespace SQE.DatabaseAccess
                     {
                         typeof(TextEdition), typeof(TextFragmentData), typeof(LineData), typeof(SignData),
                         typeof(NextSignInterpretation), typeof(SignInterpretationData), typeof(SignInterpretationAttributeData),
-                        typeof(SignInterpretationRoiData)
+                        typeof(SignInterpretationRoiData), typeof(uint?)
                     },
                     objects =>
                     {
@@ -765,6 +764,7 @@ namespace SQE.DatabaseAccess
                         var signInterpretation = objects[5] as SignInterpretationData;
                         var charAttribute = objects[6] as SignInterpretationAttributeData;
                         var roi = objects[7] as SignInterpretationRoiData;
+                        var wordId = objects[8] as uint?;
 
                         var newManuscript = manuscript.manuscriptId != lastEdition?.manuscriptId;
 
@@ -792,45 +792,55 @@ namespace SQE.DatabaseAccess
                             lastSignData = sign;
                             lastLineData.Signs.Add(sign);
                         }
-
-                        if (nextSignInterpretation.NextSignInterpretationId
-                            != lastNextSignInterpretation?.NextSignInterpretationId)
-                            lastNextSignInterpretation = nextSignInterpretation;
-
-                        if (signInterpretation.SignInterpretationId != lastChar?.SignInterpretationId)
+                        
+                        if (signInterpretation.SignInterpretationId != lastSignInterpretation?.SignInterpretationId)
                         {
-                            lastChar = signInterpretation;
+                            lastSignInterpretation = signInterpretation;
                             lastSignData.SignInterpretations.Add(signInterpretation);
                         }
 
-                        lastChar.NextSignInterpretations.Add(nextSignInterpretation);
+                        if (nextSignInterpretation!=null && 
+                            (lastSignInterpretation.NextSignInterpretations.Count==0 ||
+                            lastSignInterpretation.NextSignInterpretations.Last()?.NextSignInterpretationId != 
+                            nextSignInterpretation.NextSignInterpretationId))
+                        {
+                            lastSignInterpretation.NextSignInterpretations.Add(nextSignInterpretation);    
+                        }
+                        
+                        if (lastSignInterpretation.NextSignInterpretations.Count>1) return newManuscript ? manuscript : null;
 
-                        charAttribute.AttributeString = attributeDict.TryGetValue(
-                            charAttribute.AttributeValueId.GetValueOrDefault(),
-                            out var val
-                        )
-                            ? val
-                            : null;
+                        if (lastSignInterpretation.Attributes.Count==0 ||
+                            lastSignInterpretation.Attributes.Last().AttributeValueId!=charAttribute.AttributeValueId)
+                        {
+                            charAttribute.AttributeString = attributeDict.TryGetValue(
+                                charAttribute.AttributeValueId.GetValueOrDefault(),
+                                out var val
+                            )
+                                ? val
+                                : null;    
+                            lastSignInterpretation.Attributes.Add(charAttribute);
+                        }
+                            
+                        if (lastSignInterpretation.Attributes.Count>1) return newManuscript ? manuscript : null;
+                        
+                        if (roi!=null && (lastSignInterpretation.SignInterpretationRois.Count==0 ||
+                            lastSignInterpretation.SignInterpretationRois.Last().SignInterpretationRoiId != 
+                            roi.SignInterpretationRoiId))
+                        {
+                            lastSignInterpretation.SignInterpretationRois.Add(roi);    
+                        }
 
-                        //NOTE (by Ingo): I added this check to prevent that sign interpretations are stored
-                        // several times when there are more than 1 next sign interpretation ids
-                        if (!lastChar.Attributes.Exists(
-                            a => a.AttributeValueId == charAttribute.AttributeValueId)
-                        )
-                            lastChar.Attributes.Add(charAttribute);
-
-                        if (roi == null
-                            || roi.SignInterpretationRoiId == lastInterpretationRoi?.SignInterpretationRoiId
-                        ) return newManuscript ? manuscript : null;
-
-                        lastInterpretationRoi = roi;
-                        lastChar.SignInterpretationRois.Add(roi);
-
+                        if (lastSignInterpretation.SignInterpretationRois.Count>1) 
+                            return newManuscript ? manuscript : null;
+                        
+                        if (wordId!=null) 
+                            lastSignInterpretation.WordIds.Add(wordId.Value);
                         return newManuscript ? manuscript : null;
                     },
                     new { terminators.StartId, terminators.EndId, editionUser.EditionId },
                     splitOn:
-                    "textFragmentId, lineId, signId, nextSignInterpretationId, signInterpretationId, SignInterpretationAttributeId, SignInterpretationRoiId"
+                    "textFragmentId, lineId, signId, nextSignInterpretationId," +
+                    "signInterpretationId, SignInterpretationAttributeId, SignInterpretationRoiId, WordId"
                 );
                 var formattedEdition = scrolls.FirstOrDefault();
                 formattedEdition.AddLicence();

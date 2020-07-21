@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.0.35" />
     <PackageReference Include="EmailValidation" Version="1.0.3" />
     <PackageReference Include="geo_repair_polygon" Version="0.1.1" />
     <PackageReference Include="MailKit" Version="2.5.0" />

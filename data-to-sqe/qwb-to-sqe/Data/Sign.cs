@@ -49,5 +49,10 @@ namespace qwb_to_sqe
                     
             }
         }
+
+        public void Add(Sign s)
+        {
+            
+        }
     }
 }
