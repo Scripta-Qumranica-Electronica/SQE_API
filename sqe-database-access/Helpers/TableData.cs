@@ -49,7 +49,7 @@ namespace SQE.DatabaseAccess.Helpers
             new SingleTableData() {Name = "sign", HasData = false}
         };
 
-       private static readonly Table LastTable = (Table)Data.Count - 1;
+        private static readonly Table LastTable = (Table)Data.Count - 1;
 
         /// <summary>
         /// Gives the name of the database table
@@ -150,7 +150,7 @@ namespace SQE.DatabaseAccess.Helpers
             else terminators = new uint[LastTable - table];
             for (var i = table; i <= LastTable - 1; i++)
             {
-                terminators[(int)(i-table)] = Terminators(i)[(int) terminatorType];
+                terminators[(int)(i - table)] = Terminators(i)[(int)terminatorType];
             }
 
             return terminators;

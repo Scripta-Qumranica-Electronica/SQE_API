@@ -156,7 +156,7 @@ namespace qwb_to_sqe
                         case '|':
                             currSign = SignFactory.CreateTerminatorSign(TableData.Table.line,
                                 TableData.TerminatorType.End);
-                            currSign =  SignFactory.CreateTerminatorSign(TableData.Table.line,
+                            currSign = SignFactory.CreateTerminatorSign(TableData.Table.line,
                                 TableData.TerminatorType.Start);
                             ContainsLineBreak = true;
                             break;
@@ -232,6 +232,6 @@ namespace qwb_to_sqe
 
 
 
-    
-}
+
+    }
 }

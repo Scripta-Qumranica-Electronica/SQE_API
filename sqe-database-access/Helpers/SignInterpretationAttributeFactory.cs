@@ -63,8 +63,8 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return _createNumericAttribute((uint)readability, 0);
         }
-        
-        
+
+
         private static SignInterpretationAttributeData _createNumericAttribute(
             uint attributeValueId,
             float value)

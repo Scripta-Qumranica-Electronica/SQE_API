@@ -7,7 +7,7 @@ namespace qwb_to_sqe
         public uint Id;
         public string Name;
         public readonly List<QWBFragment> fragments = new List<QWBFragment>();
-        
-        
+
+
     }
 }

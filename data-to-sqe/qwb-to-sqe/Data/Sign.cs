@@ -6,8 +6,8 @@ namespace qwb_to_sqe
 {
     public class Sign
     {
-        
-        public readonly Dictionary<int,SQESignAttribute> Attributes = new Dictionary<int, SQESignAttribute>();
+
+        public readonly Dictionary<int, SQESignAttribute> Attributes = new Dictionary<int, SQESignAttribute>();
         public string character = "";
         public int is_variant = 0;
         public int sign_id = 0;
@@ -18,7 +18,7 @@ namespace qwb_to_sqe
         {
             this.character = character;
             AddAttributes(attributeValues);
-            
+
         }
 
         public void AddAttributes(params int[] attributeValues)
@@ -29,7 +29,9 @@ namespace qwb_to_sqe
         {
             var attribute = new SQESignAttribute
             {
-                attribute_value_id = attributeValue, value = value, sequence = sequence
+                attribute_value_id = attributeValue,
+                value = value,
+                sequence = sequence
             };
             Attributes.Add(attributeValue, attribute);
         }
@@ -46,13 +48,13 @@ namespace qwb_to_sqe
             //New sign
             if (previousSign.sign_id == 0)
             {
-                    
+
             }
         }
 
         public void Add(Sign s)
         {
-            
+
         }
     }
 }

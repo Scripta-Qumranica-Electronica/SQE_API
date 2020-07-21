@@ -8,8 +8,8 @@ namespace qwb_to_sqe
 {
     public class Word
     {
-        
-    //    protected static readonly SQEConn SqeConnection = new SQEConn();
+
+        //    protected static readonly SQEConn SqeConnection = new SQEConn();
 
 
         protected readonly int qwbId;
@@ -31,14 +31,14 @@ namespace qwb_to_sqe
 
         protected Word()
         {
-            
+
         }
 
         protected Word(int id)
         {
             qwbId = id;
         }
-        
+
 
     }
 }

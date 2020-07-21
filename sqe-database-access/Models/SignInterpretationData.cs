@@ -8,7 +8,7 @@ namespace SQE.DatabaseAccess.Models
         public List<uint> WordIds { get; set; } = new List<uint>();
         public List<SignInterpretationAttributeData> Attributes { get; set; } = new List<SignInterpretationAttributeData>();
         public List<SignInterpretationCommentaryData> Commentaries { get; set; } = new List<SignInterpretationCommentaryData>();
-        
+
         // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
         public List<NextSignInterpretation> NextSignInterpretations { get; set; } = new List<NextSignInterpretation>();
         public List<SignInterpretationRoiData> SignInterpretationRois { get; set; } = new List<SignInterpretationRoiData>();

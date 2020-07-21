@@ -13,7 +13,7 @@ namespace qwb_to_sqe.Common
         private ForwardedPortLocal _port;
         private IConfiguration _configuration;
 
-        
+
 
         public SshDatabase(string name)
         {
@@ -21,18 +21,18 @@ namespace qwb_to_sqe.Common
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile($"appsettings{name}.json", false)
                 .Build();
- 
+
             if (bool.Parse(_configuration["UseSsh"]))
             {
                 _createTunnel();
             }
             else
             {
-                _port = new ForwardedPortLocal( 
-                    _configuration["ServerUrl"], 
+                _port = new ForwardedPortLocal(
+                    _configuration["ServerUrl"],
                     _configuration.GetValue<uint>("MysqlPort"),
                     "127.0.0.1",
-                    0 
+                    0
                     );
             }
 
@@ -43,7 +43,7 @@ namespace qwb_to_sqe.Common
         {
             if (_sshClient != null) return;
             _sshClient = new SshClient(_configuration["ServerUrl"],
-              
+
                 _configuration["ServerUserName"],
                 _configuration["ServerPassword"]);
             _sshClient.Connect();
@@ -62,7 +62,7 @@ namespace qwb_to_sqe.Common
 
         private void _connectToDatabase()
         {
-            var cString = $"server={_port.BoundHost};" 
+            var cString = $"server={_port.BoundHost};"
                           + $"port={_port.BoundPort};"
                           + $"database={_configuration["DbTable"]};"
                           + $"username={_configuration["DbUserName"]};"

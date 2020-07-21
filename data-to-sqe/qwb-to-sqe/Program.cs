@@ -14,17 +14,17 @@ namespace qwb_to_sqe
     {
         static void Main(string[] args)
         {
-            
+
             var sqe = new SqeDatabase();
             var qwb = new QWBDatabase();
-            
+
             foreach (var qwbScroll in qwb.GetScrollIds())
             {
-               qwb.readInScrollText(qwbScroll); 
-                
+                qwb.readInScrollText(qwbScroll);
+
             }
-    
-            
+
+
             /*
 
             var qwbScrolls = qwb.GetScrolls().Where(s => s != null);

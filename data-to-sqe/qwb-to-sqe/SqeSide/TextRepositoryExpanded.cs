@@ -58,6 +58,6 @@ namespace qwb_to_sqe.Repositories
                     .ToArray());
             }
         }
-        
+
     }
 }

@@ -10,44 +10,55 @@ namespace qwb_to_sqe
         {
         }
 
-       public bool HasCirc{
+        public bool HasCirc
+        {
             set => this.SetBoolAttribute(19, value);
         }
-        public bool IsSuperScript{
+        public bool IsSuperScript
+        {
             set => this.SetBoolAttribute(31, value);
         }
-        public bool IsSubScript{
+        public bool IsSubScript
+        {
             set => this.SetBoolAttribute(30, value);
         }
-        public bool IsReconstructed{
+        public bool IsReconstructed
+        {
             set => this.SetBoolAttribute(20, value);
         }
-        public bool IsWrongAddition{
+        public bool IsWrongAddition
+        {
             set => this.SetBoolAttribute(23, value);
         }
-        public bool IsForgotten{
+        public bool IsForgotten
+        {
             set => this.SetBoolAttribute(22, value);
         }
-        public bool IsOriginal{
+        public bool IsOriginal
+        {
             set => this.SetBoolAttribute(41, value);
         }
-        public bool IsCorrected{
+        public bool IsCorrected
+        {
             set => this.SetBoolAttribute(42, value);
         }
-        public bool IsInserted{
+        public bool IsInserted
+        {
             set => this.SetBoolAttribute(43, value);
         }
         public bool IsMarginVariant
         {
-            set =>this.SetBoolAttribute(38, value);
-            
+            set => this.SetBoolAttribute(38, value);
+
         }
 
-        public bool IsQuestionable{
+        public bool IsQuestionable
+        {
             set => this.SetBoolAttribute(44, value);
         }
-        
-        public bool IsConjecture{
+
+        public bool IsConjecture
+        {
             set => this.SetBoolAttribute(21, value);
         }
 
@@ -61,26 +72,26 @@ namespace qwb_to_sqe
 
 
 
-        
-        
+
+
         public void expandVacat()
         {
             stepValue(4);
         }
         public void expandDestroyedRegion()
         {
-           stepValue(5,3);
+            stepValue(5, 3);
         }
         public void expandDestroyedSign()
         {
             stepValue(5);
         }
 
-        private void stepValue(int attributeValueId, int by=1)
+        private void stepValue(int attributeValueId, int by = 1)
         {
             if (Attributes.ContainsKey(attributeValueId))
             {
-            //    ((SQESignAttribute) Attributes[attributeValueId]).value+=by;
+                //    ((SQESignAttribute) Attributes[attributeValueId]).value+=by;
             }
             else
             {
@@ -89,6 +100,6 @@ namespace qwb_to_sqe
         }
 
 
-        
+
     }
 }

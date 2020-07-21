@@ -27,7 +27,7 @@ namespace SQE.DatabaseAccess
             uint lineId,
             string lineName);
         #endregion
-        
+
         #region Sign and its Interpretation
 
         Task<List<SignInterpretationData>> AddSignInterpretationsAsync(EditionUserInfo editionUser,
@@ -236,7 +236,7 @@ namespace SQE.DatabaseAccess
         }
 
         #endregion
-        
+
         #region Sign and its interpretation
 
 
@@ -727,7 +727,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        
+
         private async Task<TextEdition> _getEntityById(EditionUserInfo editionUser, Terminators terminators)
         {
             TextEdition lastEdition = null;
@@ -792,48 +792,48 @@ namespace SQE.DatabaseAccess
                             lastSignData = sign;
                             lastLineData.Signs.Add(sign);
                         }
-                        
+
                         if (signInterpretation.SignInterpretationId != lastSignInterpretation?.SignInterpretationId)
                         {
                             lastSignInterpretation = signInterpretation;
                             lastSignData.SignInterpretations.Add(signInterpretation);
                         }
 
-                        if (nextSignInterpretation!=null && 
-                            (lastSignInterpretation.NextSignInterpretations.Count==0 ||
-                            lastSignInterpretation.NextSignInterpretations.Last()?.NextSignInterpretationId != 
+                        if (nextSignInterpretation != null &&
+                            (lastSignInterpretation.NextSignInterpretations.Count == 0 ||
+                            lastSignInterpretation.NextSignInterpretations.Last()?.NextSignInterpretationId !=
                             nextSignInterpretation.NextSignInterpretationId))
                         {
-                            lastSignInterpretation.NextSignInterpretations.Add(nextSignInterpretation);    
+                            lastSignInterpretation.NextSignInterpretations.Add(nextSignInterpretation);
                         }
-                        
-                        if (lastSignInterpretation.NextSignInterpretations.Count>1) return newManuscript ? manuscript : null;
 
-                        if (lastSignInterpretation.Attributes.Count==0 ||
-                            lastSignInterpretation.Attributes.Last().AttributeValueId!=charAttribute.AttributeValueId)
+                        if (lastSignInterpretation.NextSignInterpretations.Count > 1) return newManuscript ? manuscript : null;
+
+                        if (lastSignInterpretation.Attributes.Count == 0 ||
+                            lastSignInterpretation.Attributes.Last().AttributeValueId != charAttribute.AttributeValueId)
                         {
                             charAttribute.AttributeString = attributeDict.TryGetValue(
                                 charAttribute.AttributeValueId.GetValueOrDefault(),
                                 out var val
                             )
                                 ? val
-                                : null;    
+                                : null;
                             lastSignInterpretation.Attributes.Add(charAttribute);
                         }
-                            
-                        if (lastSignInterpretation.Attributes.Count>1) return newManuscript ? manuscript : null;
-                        
-                        if (roi!=null && (lastSignInterpretation.SignInterpretationRois.Count==0 ||
-                            lastSignInterpretation.SignInterpretationRois.Last().SignInterpretationRoiId != 
+
+                        if (lastSignInterpretation.Attributes.Count > 1) return newManuscript ? manuscript : null;
+
+                        if (roi != null && (lastSignInterpretation.SignInterpretationRois.Count == 0 ||
+                            lastSignInterpretation.SignInterpretationRois.Last().SignInterpretationRoiId !=
                             roi.SignInterpretationRoiId))
                         {
-                            lastSignInterpretation.SignInterpretationRois.Add(roi);    
+                            lastSignInterpretation.SignInterpretationRois.Add(roi);
                         }
 
-                        if (lastSignInterpretation.SignInterpretationRois.Count>1) 
+                        if (lastSignInterpretation.SignInterpretationRois.Count > 1)
                             return newManuscript ? manuscript : null;
-                        
-                        if (wordId!=null) 
+
+                        if (wordId != null)
                             lastSignInterpretation.WordIds.Add(wordId.Value);
                         return newManuscript ? manuscript : null;
                     },
