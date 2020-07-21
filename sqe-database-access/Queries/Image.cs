@@ -121,6 +121,19 @@ WHERE edition.edition_id = @EditionId
         }
     }
 
+    internal static class InstitutionImagesQuery
+    {
+        public const string GetQuery = @"
+SELECT image_catalog.object_id AS Name, 
+       CONCAT(image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS Thumbnail,
+       image_urls.license AS License
+FROM image_catalog
+JOIN SQE_image USING(image_catalog_id)
+JOIN image_urls USING(image_urls_id)
+WHERE image_catalog.institution = @Institution
+";
+    }
+
     internal static class ImagedObjectTextFragmentsQuery
     {
         public static string GetQuery = @"

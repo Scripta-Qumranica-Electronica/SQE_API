@@ -72,6 +72,16 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
+        ///     Provides a list of all institutional image providers.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("v1/imaged-objects/institutions/{institution}")]
+        public async Task<ActionResult<InstitutionalImageListDTO>> ListInstitutionImages([FromRoute] string institution)
+        {
+            return await _imageService.GetInstitutionImagesAsync(institution);
+        }
+
+        /// <summary>
         /// Provides a list of all text fragments that should correspond to the imaged object.
         /// </summary>
         /// <param name="imagedObjectId">Id of the imaged object</param>

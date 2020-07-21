@@ -212,6 +212,15 @@ export interface ImageInstitutionDTO {
 export interface ImageInstitutionListDTO {
     institutions: ImageInstitutionDTO[];
 }
+export interface InstitutionalImageDTO {
+    id: string;
+    thumbnailUrl: string;
+    license: string;
+}
+
+export interface InstitutionalImageListDTO {
+    institutionalImages: InstitutionalImageDTO[];
+}
 
 export interface ImageStackDTO {
     id?: number;

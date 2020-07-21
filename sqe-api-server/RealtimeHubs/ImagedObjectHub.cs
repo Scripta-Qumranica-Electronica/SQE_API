@@ -85,6 +85,24 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
+        ///     Provides a list of all institutional image providers.
+        /// </summary>
+        [AllowAnonymous]
+        public async Task<InstitutionalImageListDTO> GetV1ImagedObjectsInstitutionsInstitution(string institution)
+
+        {
+            try
+            {
+                return await _imageService.GetInstitutionImagesAsync(institution);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
         /// Provides a list of all text fragments that should correspond to the imaged object.
         /// </summary>
         /// <param name="imagedObjectId">Id of the imaged object</param>

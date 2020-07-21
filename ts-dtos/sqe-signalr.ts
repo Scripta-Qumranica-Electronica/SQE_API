@@ -46,6 +46,8 @@ import {
 	ImageDTO,
 	ImageInstitutionDTO,
 	ImageInstitutionListDTO,
+	InstitutionalImageDTO,
+	InstitutionalImageListDTO,
 	ImageStackDTO,
 	ImagedObjectDTO,
 	ImagedObjectListDTO,
@@ -597,6 +599,16 @@ export class SignalRUtilities {
 	 */
     public async getV1ImagedObjectsInstitutions(): Promise<ImageInstitutionListDTO> {
         return await this._connection.invoke('GetV1ImagedObjectsInstitutions');
+    }
+
+    /**
+	 * Provides a list of all institutional image providers.
+	 *
+	 *
+	 *
+	 */
+    public async getV1ImagedObjectsInstitutionsInstitution(institution: string): Promise<InstitutionalImageListDTO> {
+        return await this._connection.invoke('GetV1ImagedObjectsInstitutionsInstitution', institution);
     }
 
     /**

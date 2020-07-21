@@ -52,4 +52,16 @@ namespace SQE.API.DTO
 
         public List<ImageInstitutionDTO> institutions { get; set; }
     }
+
+    public class InstitutionalImageDTO
+    {
+        public string id { get; set; }
+        public string thumbnailUrl { get; set; }
+        public string license { get; set; }
+    }
+
+    public class InstitutionalImageListDTO
+    {
+        public List<InstitutionalImageDTO> institutionalImages { get; set; }
+    }
 }
