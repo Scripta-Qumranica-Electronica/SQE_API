@@ -23,6 +23,8 @@ import {
 	UpdateArtefactGroupDTO,
 	CreateArtefactDTO,
 	CreateArtefactGroupDTO,
+	CatalogueMatchDTO,
+	CatalogueMatchListDTO,
 	EditionDTO,
 	EditionGroupDTO,
 	EditionListDTO,
@@ -619,6 +621,46 @@ export class SignalRUtilities {
 	 */
     public async getV1ImagedObjectsImagedObjectIdTextFragments(imagedObjectId: string): Promise<ImagedObjectTextFragmentMatchDTO[]> {
         return await this._connection.invoke('GetV1ImagedObjectsImagedObjectIdTextFragments', imagedObjectId);
+    }
+
+    /**
+	 * Get a listing of all text fragments matches that correspond to an imaged object
+	 *
+	 * @param imagedObjectId - Id of imaged object to search for transcription matches
+	 *
+	 */
+    public async getV1CatalogueImagedObjectsImagedObjectIdTextFragments(imagedObjectId: string): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueImagedObjectsImagedObjectIdTextFragments', imagedObjectId);
+    }
+
+    /**
+	 * Get a listing of all imaged objects that matches that correspond to a transcribed text fragment
+	 *
+	 * @param textFragmentId - Unique Id of the text fragment to search for imaged object matches
+	 *
+	 */
+    public async getV1CatalogueTextFragmentsTextFragmentIdImagedObjects(textFragmentId: number): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueTextFragmentsTextFragmentIdImagedObjects', textFragmentId);
+    }
+
+    /**
+	 * Get a listing of all corresponding imaged objects and transcribed text fragment in a specified edition
+	 *
+	 * @param editionId - Unique Id of the edition to search for imaged objects to text fragment matches
+	 *
+	 */
+    public async getV1CatalogueEditionsEditionIdImagedObjectTextFragmentMatches(editionId: number): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueEditionsEditionIdImagedObjectTextFragmentMatches', editionId);
+    }
+
+    /**
+	 * Get a listing of all corresponding imaged objects and transcribed text fragment in a specified edition
+	 *
+	 * @param manuscriptId - Unique Id of the edition to search for imaged objects to text fragment matches
+	 *
+	 */
+    public async getV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches(manuscriptId: number): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches', manuscriptId);
     }
 
     /**

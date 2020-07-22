@@ -71,6 +71,39 @@ export interface CreateArtefactGroupDTO {
     artefacts: number[];
 }
 
+export interface CatalogueMatchDTO {
+    imageCatalogId: number;
+    institution: string;
+    catalogueNumber1: string;
+    catalogueNumber2: string;
+    catalogSide: SideDesignation;
+    imagedObjectId: string;
+    proxy: string;
+    url: string;
+    filename: string;
+    suffix: string;
+    thumbnail: string;
+    license: string;
+    iaaEditionCatalogueId: number;
+    manuscriptId: number;
+    editionName: string;
+    editionVolume: string;
+    editionLocation1: string;
+    editionLocation2: string;
+    editionSide: SideDesignation;
+    comment: string;
+    textFragmentId: number;
+    name: string;
+    editionId: number;
+    confirmed: boolean;
+    matchAuthor: string;
+    dateOfMatch: string;
+}
+
+export interface CatalogueMatchListDTO {
+    matches: CatalogueMatchDTO[];
+}
+
 export interface EditionDTO {
     id: number;
     name: string;
@@ -473,6 +506,10 @@ export interface EditorDTO {
     organization: string;
 }
 export interface ArtefactSide {
+}
+export enum SideDesignation {
+    recto = 0,
+    verso = 1
 }
 export enum Direction {
     left = 0,
