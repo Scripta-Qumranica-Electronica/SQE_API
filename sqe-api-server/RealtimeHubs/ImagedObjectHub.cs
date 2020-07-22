@@ -31,6 +31,28 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
         /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
+        public async Task<SimpleImageListDTO> GetV1ImagedObjectsImagedObjectId(string imagedObjectId)
+
+        {
+            try
+            {
+                return await _imagedObjectService.GetImagedObjectImagesAsync(imagedObjectId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        ///     Provides information for the specified imaged object related to the specified edition, can include images and also
+        ///     their masks with optional.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+        /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
+        [AllowAnonymous]
         public async Task<ImagedObjectDTO> GetV1EditionsEditionIdImagedObjectsImagedObjectId(uint editionId, string imagedObjectId, List<string> optional)
 
         {
@@ -57,7 +79,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return await _imagedObjectService.GetImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
+                return await _imagedObjectService.GetEditionImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
             }
             catch (ApiException err)
             {

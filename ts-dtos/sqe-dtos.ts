@@ -86,6 +86,7 @@ export interface CatalogueMatchDTO {
     license: string;
     iaaEditionCatalogueId: number;
     manuscriptId: number;
+    manuscriptName: string;
     editionName: string;
     editionVolume: string;
     editionLocation1: string;
@@ -222,21 +223,28 @@ export interface EditionManuscriptMetricsDTO extends UpdateEditionManuscriptMetr
     editorId: number;
 }
 
-export interface ImageDTO {
+export interface SimpleImageDTO {
     id: number;
     url: string;
-    imageToImageMapEditorId?: number;
     lightingType: Lighting;
     lightingDirection: Direction;
     waveLength: string[];
     type: string;
     side: string;
     ppi: number;
+    master: boolean;
+    catalogNumber: number;
+}
+
+export interface ImageDTO extends SimpleImageDTO {
+    imageToImageMapEditorId?: number;
     regionInMasterImage: string;
     regionInImage: string;
     transformToMaster: string;
-    master: boolean;
-    catalogNumber: number;
+}
+
+export interface SimpleImageListDTO {
+    images: SimpleImageDTO[];
 }
 export interface ImageInstitutionDTO {
     name: string;

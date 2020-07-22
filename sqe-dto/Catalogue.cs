@@ -26,6 +26,7 @@ namespace SQE.API.DTO
         public string license { get; set; }
         public uint iaaEditionCatalogueId { get; set; }
         public uint manuscriptId { get; set; }
+        public string manuscriptName { get; set; }
         public string editionName { get; set; }
         public string editionVolume { get; set; }
         public string editionLocation1 { get; set; }

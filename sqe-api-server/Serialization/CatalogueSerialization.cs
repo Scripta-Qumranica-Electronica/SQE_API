@@ -35,6 +35,7 @@ namespace SQE.API.Server.Serialization
                 iaaEditionCatalogueId = cat.IaaEditionCatalogueId,
                 license = cat.License,
                 manuscriptId = cat.ManuscriptId,
+                manuscriptName = cat.ManuscriptName,
                 matchAuthor = cat.MatchAuthor,
                 name = cat.Name,
                 proxy = cat.Proxy,

@@ -75,6 +75,32 @@ WHERE edition.edition_id = @EditionId
         }
     }
 
+    internal class ImagedObjectImageQuery
+    {
+        public const string GetQuery = @"
+SELECT image_urls.url AS url,
+    image_urls.proxy AS proxy,
+    image_catalog.image_catalog_id,
+    SQE_image.type AS img_type,
+    SQE_image.dpi AS ppi,
+    image_catalog.catalog_side AS side,
+    SQE_image.sqe_image_id AS sqe_image_id,
+    SQE_image.filename AS filename,
+    SQE_image.is_master AS master,
+    SQE_image.wavelength_start AS wave_start,
+    SQE_image.wavelength_end AS wave_end,
+    image_catalog.Institution AS Institution,
+    image_catalog.catalog_number_1 AS catalog_1,
+    image_catalog.catalog_number_2 AS catalog_2,
+    image_catalog.object_id AS object_id,
+    NULL AS image_to_image_map_editor_id
+FROM image_catalog
+    JOIN SQE_image USING(image_catalog_id)
+    JOIN image_urls USING(image_urls_id)
+WHERE image_catalog.object_id = @ImagedObjectId
+";
+    }
+
     internal class ImageGroupQuery
     {
         private const string _baseQuery = @"

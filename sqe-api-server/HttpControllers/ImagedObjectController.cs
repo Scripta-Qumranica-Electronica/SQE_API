@@ -32,8 +32,22 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
         /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
+        [HttpGet("v1/imaged-objects/{imagedObjectId}")]
+        public async Task<ActionResult<SimpleImageListDTO>> GetImagedObject([FromRoute] string imagedObjectId)
+        {
+            return await _imagedObjectService.GetImagedObjectImagesAsync(imagedObjectId);
+        }
+
+        /// <summary>
+        ///     Provides information for the specified imaged object related to the specified edition, can include images and also
+        ///     their masks with optional.
+        /// </summary>
+        /// <param name="editionId">Unique Id of the desired edition</param>
+        /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+        /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
+        [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
-        public async Task<ActionResult<ImagedObjectDTO>> GetImagedObject([FromRoute] uint editionId,
+        public async Task<ActionResult<ImagedObjectDTO>> GetEditionImagedObject([FromRoute] uint editionId,
             [FromRoute] string imagedObjectId,
             [FromQuery] List<string> optional)
         {
@@ -55,7 +69,7 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjects([FromRoute] uint editionId,
             [FromQuery] List<string> optional)
         {
-            return await _imagedObjectService.GetImagedObjectsAsync(
+            return await _imagedObjectService.GetEditionImagedObjectsAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId),
                 optional
             );

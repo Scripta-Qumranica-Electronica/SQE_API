@@ -45,7 +45,9 @@ import {
 	EditionCopyDTO,
 	UpdateEditionManuscriptMetricsDTO,
 	EditionManuscriptMetricsDTO,
+	SimpleImageDTO,
 	ImageDTO,
+	SimpleImageListDTO,
 	ImageInstitutionDTO,
 	ImageInstitutionListDTO,
 	InstitutionalImageDTO,
@@ -566,6 +568,19 @@ export class SignalRUtilities {
 	 */
     public async postV1UsersResendActivationEmail(payload: ResendUserAccountActivationRequestDTO): Promise<void> {
         return await this._connection.invoke('PostV1UsersResendActivationEmail', payload);
+    }
+
+    /**
+	 * Provides information for the specified imaged object related to the specified edition, can include images and also
+	 * their masks with optional.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param imagedObjectId - Unique Id of the desired object from the imaging Institution
+	 * @param optional - Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks
+	 *
+	 */
+    public async getV1ImagedObjectsImagedObjectId(imagedObjectId: string): Promise<SimpleImageListDTO> {
+        return await this._connection.invoke('GetV1ImagedObjectsImagedObjectId', imagedObjectId);
     }
 
     /**

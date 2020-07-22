@@ -18,6 +18,7 @@ namespace SQE.DatabaseAccess.Models
         public string Filename { get; set; }
         public uint IaaEditionCatalogueId { get; set; }
         public uint ManuscriptId { get; set; }
+        public string ManuscriptName { get; set; }
         public string EditionName { get; set; }
         public string EditionVolume { get; set; }
         public string EditionLocation1 { get; set; }
