@@ -99,5 +99,65 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
 
+        /// <summary>
+        /// Create a new matched pair for an imaged object and a text fragment along with the edition princeps information
+        /// </summary>
+        /// <param name="newMatch">The details of the new match</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task PostV1Catalogue(CatalogueMatchInputDTO newMatch)
+
+        {
+            try
+            {
+                await _catalogueService.CreateTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(), newMatch, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Confirm the correctness of an existing imaged object and text fragment match
+        /// </summary>
+        /// <param name="iaaEditionCatalogToTextFragmentId">The unique id of the match to confirm</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task PostV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId(uint iaaEditionCatalogToTextFragmentId)
+
+        {
+            try
+            {
+                await _catalogueService.ConfirmTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(), iaaEditionCatalogToTextFragmentId, true, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Remove an existing imaged object and text fragment match, which is not correct
+        /// </summary>
+        /// <param name="iaaEditionCatalogToTextFragmentId">The unique id of the match to confirm</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task DeleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId(uint iaaEditionCatalogToTextFragmentId)
+
+        {
+            try
+            {
+                await _catalogueService.ConfirmTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(), iaaEditionCatalogToTextFragmentId, false, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
     }
 }

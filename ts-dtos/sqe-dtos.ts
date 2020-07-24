@@ -71,22 +71,10 @@ export interface CreateArtefactGroupDTO {
     artefacts: number[];
 }
 
-export interface CatalogueMatchDTO {
-    imageCatalogId: number;
-    institution: string;
-    catalogueNumber1: string;
-    catalogueNumber2: string;
+export interface CatalogueMatchInputDTO {
     catalogSide: SideDesignation;
     imagedObjectId: string;
-    proxy: string;
-    url: string;
-    filename: string;
-    suffix: string;
-    thumbnail: string;
-    license: string;
-    iaaEditionCatalogueId: number;
     manuscriptId: number;
-    manuscriptName: string;
     editionName: string;
     editionVolume: string;
     editionLocation1: string;
@@ -94,9 +82,24 @@ export interface CatalogueMatchDTO {
     editionSide: SideDesignation;
     comment: string;
     textFragmentId: number;
-    name: string;
     editionId: number;
     confirmed: boolean;
+}
+
+export interface CatalogueMatchDTO extends CatalogueMatchInputDTO {
+    imageCatalogId: number;
+    institution: string;
+    catalogueNumber1: string;
+    catalogueNumber2: string;
+    proxy: string;
+    url: string;
+    filename: string;
+    suffix: string;
+    thumbnail: string;
+    license: string;
+    iaaEditionCatalogueId: number;
+    manuscriptName: string;
+    name: string;
     matchAuthor: string;
     dateOfMatch: string;
 }

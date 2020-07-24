@@ -51,7 +51,7 @@ namespace SQE.API.Server.Serialization
                 ppi = image.ppi,
                 side = image.side == 0 ? "recto" : "verso",
                 type = image.wave_start == image.wave_end ? "infrared" : "color",
-                url = $"${image.proxy}${image.url}${image.filename}",
+                url = $"{image.proxy}{image.url}{image.filename}",
                 waveLength = new string[2] { image.wave_start.ToString(), image.wave_end.ToString() }
             };
         }

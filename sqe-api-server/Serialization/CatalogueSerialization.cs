@@ -40,7 +40,7 @@ namespace SQE.API.Server.Serialization
                 name = cat.Name,
                 proxy = cat.Proxy,
                 suffix = cat.Suffix,
-                thumbnail = $"{cat.Proxy}${cat.Url}${cat.Filename}/full/150,/0/${cat.Suffix}",
+                thumbnail = $"{cat.Proxy}{cat.Url}{cat.Filename}/full/150,/0/{cat.Suffix}",
                 textFragmentId = cat.TextFragmentId,
                 url = cat.Url,
             };

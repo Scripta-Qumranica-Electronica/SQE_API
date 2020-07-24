@@ -12,10 +12,12 @@ namespace SQE.API.Server.HttpControllers
     public class CatalogueController : ControllerBase
     {
         private readonly ICatalogService _catalogueService;
+        private readonly IUserService _userService;
 
-        public CatalogueController(ICatalogService catalogueService)
+        public CatalogueController(ICatalogService catalogueService, IUserService userService)
         {
             _catalogueService = catalogueService;
+            _userService = userService;
         }
 
         /// <summary>
@@ -60,6 +62,44 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult<CatalogueMatchListDTO>> GetImagedObjectsAndTextFragmentsOfManuscript([FromRoute] uint manuscriptId)
         {
             return await _catalogueService.GetTextFragmentsAndImagedObjectsOfManuscript(manuscriptId);
+        }
+
+        /// <summary>
+        /// Create a new matched pair for an imaged object and a text fragment along with the edition princeps information
+        /// </summary>
+        /// <param name="newMatch">The details of the new match</param>
+        /// <returns></returns>
+        [HttpPost("v1/catalogue")]
+        public async Task<ActionResult> PostNewImagedObjectTextFragmentMatch([FromBody] CatalogueMatchInputDTO newMatch)
+        {
+            return await _catalogueService.CreateTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(),
+                newMatch);
+        }
+
+        /// <summary>
+        /// Confirm the correctness of an existing imaged object and text fragment match
+        /// </summary>
+        /// <param name="iaaEditionCatalogToTextFragmentId">The unique id of the match to confirm</param>
+        /// <returns></returns>
+        [HttpPost("v1/catalogue/confirm-match/{iaaEditionCatalogToTextFragmentId}")]
+        public async Task<ActionResult> ConfirmImagedObjectTextFragmentMatch(
+            [FromRoute] uint iaaEditionCatalogToTextFragmentId)
+        {
+            return await _catalogueService.ConfirmTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(),
+                iaaEditionCatalogToTextFragmentId, true);
+        }
+
+        /// <summary>
+        /// Remove an existing imaged object and text fragment match, which is not correct
+        /// </summary>
+        /// <param name="iaaEditionCatalogToTextFragmentId">The unique id of the match to confirm</param>
+        /// <returns></returns>
+        [HttpDelete("v1/catalogue/confirm-match/{iaaEditionCatalogToTextFragmentId}")]
+        public async Task<ActionResult> RejectImagedObjectTextFragmentMatch(
+            [FromRoute] uint iaaEditionCatalogToTextFragmentId)
+        {
+            return await _catalogueService.ConfirmTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(),
+                iaaEditionCatalogToTextFragmentId, false);
         }
     }
 }

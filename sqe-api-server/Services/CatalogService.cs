@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
@@ -13,6 +14,10 @@ namespace SQE.API.Server.Services
         Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId);
         Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId);
         Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId);
+        Task<NoContentResult> CreateTextFragmentImagedObjectMatch(uint? userId,
+            CatalogueMatchInputDTO match);
+        Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(uint? userId, uint textFragmentImagedObjectMatchId,
+            bool confirm);
     }
 
     public class CatalogService : ICatalogService
@@ -33,15 +38,39 @@ namespace SQE.API.Server.Services
 
         public async Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId)
         {
-            return (await _catalogueRepo.GetTextFragmentMatchesForImagedObjectAsync(System.Web.HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
+            return (await _catalogueRepo.GetTextFragmentMatchesForImagedObjectAsync(
+                System.Web.HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
         }
+
         public async Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId)
         {
             return (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForEditionAsync(editionId)).ToDTO();
         }
+
         public async Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId)
         {
             return (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForManuscriptAsync(manuscriptId)).ToDTO();
+        }
+
+        public async Task<NoContentResult> CreateTextFragmentImagedObjectMatch(uint? userId,
+            CatalogueMatchInputDTO match)
+        {
+            if (userId.HasValue)
+                await _catalogueRepo.CreateNewImagedObjectTextFragmentMatchAsync(userId.Value, match.imagedObjectId,
+                    (byte)match.catalogSide, match.textFragmentId, match.editionId, match.editionName,
+                    match.editionVolume, match.editionLocation1, match.editionLocation2, (byte)match.editionSide,
+                    match.comment);
+            return new NoContentResult();
+        }
+
+        public async Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(uint? userId,
+            uint textFragmentImagedObjectMatchId,
+            bool confirm)
+        {
+            if (userId.HasValue)
+                await _catalogueRepo.ConfirmImagedObjectTextFragmentMatchAsync(userId.Value,
+                    textFragmentImagedObjectMatchId, confirm);
+            return new NoContentResult();
         }
     }
 }

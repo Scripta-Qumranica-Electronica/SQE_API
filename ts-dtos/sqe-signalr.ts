@@ -23,6 +23,7 @@ import {
 	UpdateArtefactGroupDTO,
 	CreateArtefactDTO,
 	CreateArtefactGroupDTO,
+	CatalogueMatchInputDTO,
 	CatalogueMatchDTO,
 	CatalogueMatchListDTO,
 	EditionDTO,
@@ -676,6 +677,36 @@ export class SignalRUtilities {
 	 */
     public async getV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches(manuscriptId: number): Promise<CatalogueMatchListDTO> {
         return await this._connection.invoke('GetV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches', manuscriptId);
+    }
+
+    /**
+	 * Create a new matched pair for an imaged object and a text fragment along with the edition princeps information
+	 *
+	 * @param newMatch - The details of the new match
+	 *
+	 */
+    public async postV1Catalogue(newMatch: CatalogueMatchInputDTO): Promise<void> {
+        return await this._connection.invoke('PostV1Catalogue', newMatch);
+    }
+
+    /**
+	 * Confirm the correctness of an existing imaged object and text fragment match
+	 *
+	 * @param iaaEditionCatalogToTextFragmentId - The unique id of the match to confirm
+	 *
+	 */
+    public async postV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId(iaaEditionCatalogToTextFragmentId: number): Promise<void> {
+        return await this._connection.invoke('PostV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId', iaaEditionCatalogToTextFragmentId);
+    }
+
+    /**
+	 * Remove an existing imaged object and text fragment match, which is not correct
+	 *
+	 * @param iaaEditionCatalogToTextFragmentId - The unique id of the match to confirm
+	 *
+	 */
+    public async deleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId(iaaEditionCatalogToTextFragmentId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId', iaaEditionCatalogToTextFragmentId);
     }
 
     /**
