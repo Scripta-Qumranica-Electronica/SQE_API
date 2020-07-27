@@ -15,9 +15,9 @@ namespace SQE.API.Server.Services
         Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId);
         Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId);
         Task<NoContentResult> CreateTextFragmentImagedObjectMatch(uint? userId,
-            CatalogueMatchInputDTO match);
+            CatalogueMatchInputDTO match, string clientId = null);
         Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(uint? userId, uint textFragmentImagedObjectMatchId,
-            bool confirm);
+            bool confirm, string clientId = null);
     }
 
     public class CatalogService : ICatalogService
@@ -53,7 +53,8 @@ namespace SQE.API.Server.Services
         }
 
         public async Task<NoContentResult> CreateTextFragmentImagedObjectMatch(uint? userId,
-            CatalogueMatchInputDTO match)
+            CatalogueMatchInputDTO match,
+            string clientId = null)
         {
             if (userId.HasValue)
                 await _catalogueRepo.CreateNewImagedObjectTextFragmentMatchAsync(userId.Value, match.imagedObjectId,
@@ -65,7 +66,8 @@ namespace SQE.API.Server.Services
 
         public async Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(uint? userId,
             uint textFragmentImagedObjectMatchId,
-            bool confirm)
+            bool confirm,
+            string clientId = null)
         {
             if (userId.HasValue)
                 await _catalogueRepo.ConfirmImagedObjectTextFragmentMatchAsync(userId.Value,

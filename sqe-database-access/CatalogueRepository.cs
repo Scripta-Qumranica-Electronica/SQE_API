@@ -137,11 +137,19 @@ namespace SQE.DatabaseAccess
                     IaaEditionCatalogId = editionCatalogueId,
                     TextFragmentId = textFragmentId,
                 });
+                var textFragmentImagedObjectMatchId = await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
+
 
                 await connection.ExecuteAsync(EditionCatalogImageCatalogMatchInsertQuery.GetQuery, new
                 {
                     IaaEditionCatalogId = editionCatalogueId,
                     ImagedObjectId = imagedObjectId,
+                });
+
+                await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery, new
+                {
+                    IaaEditionCatalogToTextFragmentId = textFragmentImagedObjectMatchId,
+                    Confirmed = false
                 });
 
                 transactionScope.Complete();

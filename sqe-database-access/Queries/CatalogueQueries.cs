@@ -115,7 +115,7 @@ $Where
                 searchOptions.Add("manuscript_id = @ManuscriptId");
             if (editionId)
                 searchOptions.Add("edition_id = @EditionId");
-            return _GetQuery.Replace("$Where", searchOptions.Any() ? string.Join(" AND ", searchOptions) : "");
+            return _GetQuery.Replace("$Where", searchOptions.Any() ? "WHERE " + string.Join(" AND ", searchOptions) : "");
         }
     }
 
@@ -148,7 +148,7 @@ WHERE edition_id = @EditionId
     {
         public const string GetQuery = @"
 INSERT INTO iaa_edition_catalog_author (iaa_edition_catalog_id, user_id) 
-SELECT (@IaaEditionCatalogId, @UserId)
+SELECT @IaaEditionCatalogId, @UserId
 FROM dual
 WHERE NOT EXISTS
   ( SELECT iaa_edition_catalog_id, user_id
@@ -162,7 +162,7 @@ WHERE NOT EXISTS
     {
         public const string GetQuery = @"
 INSERT INTO iaa_edition_catalog_to_text_fragment (iaa_edition_catalog_id, text_fragment_id) 
-SELECT (@IaaEditionCatalogId, @TextFragmentId)
+SELECT @IaaEditionCatalogId, @TextFragmentId
 FROM dual
 WHERE NOT EXISTS
   ( SELECT iaa_edition_catalog_id, text_fragment_id
@@ -176,7 +176,7 @@ WHERE NOT EXISTS
     {
         public const string GetQuery = @"
 INSERT INTO iaa_edition_catalog_to_text_fragment_confirmation (iaa_edition_catalog_to_text_fragment_id, user_id, confirmed)
-SELECT (@IaaEditionCatalogToTextFragmentId, @UserId, @Confirmed)
+SELECT @IaaEditionCatalogToTextFragmentId, @UserId, @Confirmed
 FROM dual
 WHERE NOT EXISTS
   ( SELECT iaa_edition_catalog_to_text_fragment_id, user_id, confirmed
