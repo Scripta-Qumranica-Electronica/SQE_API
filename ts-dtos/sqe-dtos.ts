@@ -44,6 +44,7 @@ export interface UpdateArtefactDTO {
 
 export interface UpdateArtefactPlacementDTO {
     artefactId: number;
+    isPlaced: boolean;
     placement: PlacementDTO;
 }
 

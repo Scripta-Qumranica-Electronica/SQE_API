@@ -18,7 +18,7 @@ namespace SQE.API.DTO
         public decimal rotate { get; set; }
 
         [Required]
-        public uint zIndex { get; set; }
+        public int zIndex { get; set; }
 
         [Required]
         public TranslateDTO translate { get; set; }
@@ -26,7 +26,7 @@ namespace SQE.API.DTO
 
     public class TranslateDTO
     {
-        public uint? x { get; set; }
-        public uint? y { get; set; }
+        public int? x { get; set; }
+        public int? y { get; set; }
     }
 }

@@ -22,9 +22,9 @@ namespace SQE.DatabaseAccess.Models
         public uint ArtefactId { get; set; }
         public decimal? ArtefactScale { get; set; }
         public decimal? ArtefactRotate { get; set; }
-        public uint? ArtefactTranslateX { get; set; }
-        public uint? ArtefactTranslateY { get; set; }
-        public uint? ArtefactZIndex { get; set; }
+        public int? ArtefactTranslateX { get; set; }
+        public int? ArtefactTranslateY { get; set; }
+        public int? ArtefactZIndex { get; set; }
         public List<Character> Characters { get; set; }
     }
 

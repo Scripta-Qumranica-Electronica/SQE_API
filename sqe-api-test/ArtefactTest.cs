@@ -70,9 +70,9 @@ namespace SQE.ApiTest
         }
 
 
-        private static (decimal scale, decimal rotate, uint translateX, uint translateY, uint zIndex) ArtefactPosition()
+        private static (decimal scale, decimal rotate, int translateX, int translateY, int zIndex) ArtefactPosition()
         {
-            return (1.1m, 45m, (uint)34765, (uint)556, (uint)2);
+            return (1.1m, 45m, (int)34765, (int)556, (int)2);
         }
 
         /// <summary>
@@ -676,7 +676,7 @@ namespace SQE.ApiTest
             Assert.Null(updatedNameArtefact.placement.translate.x);
             Assert.Null(updatedNameArtefact.placement.translate.y);
             Assert.Equal(0, updatedNameArtefact.placement.rotate); // Expect the default value
-            Assert.Equal((uint)0, updatedNameArtefact.placement.zIndex); // Expect the default value
+            Assert.Equal(0, updatedNameArtefact.placement.zIndex); // Expect the default value
             Assert.Equal(1, updatedNameArtefact.placement.scale); // Expect the default value
             Assert.NotEqual(artefact.name, updatedNameArtefact.name);
             Assert.True(string.IsNullOrEmpty(updatedNameArtefact.mask)); // The mask was not updated so we don't send that back
@@ -790,6 +790,132 @@ namespace SQE.ApiTest
             Assert.Equal(otherTranslateY, updatedAllArtefact.placement.translate.y);
             Assert.Equal(otherzIdx, updatedAllArtefact.placement.zIndex);
             Assert.Equal(artefact.name, updatedAllArtefact.name);
+
+            await EditionHelpers.DeleteEdition(_client, newEdition);
+        }
+
+        /// <summary>
+        ///     Ensure that a existing artefact can be placed and unplaced.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanBatchUnplaceArtefacts()
+        {
+            // Arrange
+            var allArtefacts = (await GetEditionArtefacts()).artefacts; // Find edition with artefacts
+            var artefact = allArtefacts.First();
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client, artefact.editionId); // Clone it
+            var placement = new PlacementDTO
+            {
+                scale = (decimal)1.0,
+                rotate = (decimal)0.0,
+                translate = new TranslateDTO
+                {
+                    x = 100,
+                    y = 223
+                },
+                zIndex = 0
+            };
+            // Act (update position)
+            var (updateResponse, updatedArtefacts) =
+                await Request.SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
+                    _client,
+                    HttpMethod.Post,
+                    $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                    new BatchUpdateArtefactPlacementDTO
+                    {
+                        artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO()
+                        {
+                            artefactId = x.id,
+                            isPlaced = true,
+                            placement = placement
+                        }).ToList()
+                    },
+                    await Request.GetJwtViaHttpAsync(_client)
+                );
+
+            // Assert (update name and set status)
+            updateResponse.EnsureSuccessStatusCode();
+            foreach (var art in updatedArtefacts.artefactPlacements)
+            {
+                Assert.True(art.isPlaced);
+                Assert.Equal(100, art.placement.translate.x.Value);
+                Assert.Equal(223, art.placement.translate.y.Value);
+                Assert.Equal(1, art.placement.scale);
+                Assert.Equal(0, art.placement.rotate);
+                Assert.Equal(0, art.placement.zIndex);
+            }
+
+            // Act (update remove x/y)
+            placement = new PlacementDTO
+            {
+                scale = (decimal)1.0,
+                rotate = (decimal)0.0,
+                translate = new TranslateDTO
+                {
+                    x = null,
+                    y = null
+                },
+                zIndex = 0
+            };
+            (updateResponse, updatedArtefacts) =
+                await Request.SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
+                    _client,
+                    HttpMethod.Post,
+                    $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                    new BatchUpdateArtefactPlacementDTO
+                    {
+                        artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO()
+                        {
+                            artefactId = x.id,
+                            isPlaced = false,
+                            placement = placement
+                        }).ToList()
+                    },
+                    await Request.GetJwtViaHttpAsync(_client)
+                );
+
+            // Assert (update name and set status)
+            updateResponse.EnsureSuccessStatusCode();
+            foreach (var art in updatedArtefacts.artefactPlacements)
+            {
+                Assert.False(art.isPlaced);
+                Assert.Null(art.placement.translate.x);
+                Assert.Null(art.placement.translate.y);
+                Assert.Equal(placement.scale, art.placement.scale);
+                Assert.Equal(placement.rotate, art.placement.rotate);
+                Assert.Equal(placement.zIndex, art.placement.zIndex);
+            }
+
+            // Act (full remove of position)
+            (updateResponse, updatedArtefacts) =
+                await Request.SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
+                    _client,
+                    HttpMethod.Post,
+                    $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                    new BatchUpdateArtefactPlacementDTO
+                    {
+                        artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO()
+                        {
+                            artefactId = x.id,
+                            isPlaced = false,
+                            placement = null
+                        }).ToList()
+                    },
+                    await Request.GetJwtViaHttpAsync(_client)
+                );
+
+            // Assert (update name and set status)
+            updateResponse.EnsureSuccessStatusCode();
+            foreach (var art in updatedArtefacts.artefactPlacements)
+            {
+                Assert.False(art.isPlaced);
+                Assert.Null(art.placement.translate.x);
+                Assert.Null(art.placement.translate.y);
+                Assert.Equal(1, art.placement.scale);
+                Assert.Equal(0, art.placement.rotate);
+                Assert.Equal(0, art.placement.zIndex);
+            }
 
             await EditionHelpers.DeleteEdition(_client, newEdition);
         }
