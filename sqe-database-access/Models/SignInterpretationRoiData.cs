@@ -13,8 +13,8 @@ namespace SQE.DatabaseAccess.Models
         public string Shape { get; set; }
         //TODO I've no idea to what position refers in our database (Ingo)
         public string Position { get; set; }
-        public uint? TranslateX { get; set; }
-        public uint? TranslateY { get; set; }
+        public int? TranslateX { get; set; }
+        public int? TranslateY { get; set; }
         public ushort? StanceRotation { get; set; }
         public bool? ValuesSet { get; set; }
         public bool? Exceptional { get; set; }

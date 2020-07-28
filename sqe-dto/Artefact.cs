@@ -94,6 +94,8 @@ namespace SQE.API.DTO
         public uint artefactId { get; set; }
 
         [Required]
+        public bool isPlaced { get; set; }
+
         public PlacementDTO placement { get; set; }
     }
 

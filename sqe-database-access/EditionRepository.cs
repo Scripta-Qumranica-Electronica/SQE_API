@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using Serilog;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
+using IsolationLevel = System.Transactions.IsolationLevel;
 
 namespace SQE.DatabaseAccess
 {
@@ -17,6 +19,10 @@ namespace SQE.DatabaseAccess
         Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
         Task ChangeEditionNameAsync(EditionUserInfo editionUser, string name);
         Task UpdateEditionMetricsAsync(EditionUserInfo editionUser, uint width, uint height, int xOrigin, int yOrigin);
+
+        Task<uint> CopyEditionSlowAsync(EditionUserInfo editionUser,
+            string copyrightHolder = null,
+            string collaborators = null);
 
         Task<uint> CopyEditionAsync(EditionUserInfo editionUser,
             string copyrightHolder = null,
@@ -240,6 +246,9 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
+        ///     NOTE! This version of the copy edition method is about 4 times slower than the one
+        ///     currently in use. It is here as a reminder that this approach is not faster than the current one.
+        ///
         ///     This creates a new copy of the requested edition, which will be owned with full privileges
         ///     by the requesting user.
         /// </summary>
@@ -256,7 +265,7 @@ namespace SQE.DatabaseAccess
         ///     (automatically created from user and all editors when null)
         /// </param>
         /// <returns>The editionId of the newly created edition.</returns>
-        public async Task<uint> CopyEditionAsync(EditionUserInfo editionUser,
+        public async Task<uint> CopyEditionSlowAsync(EditionUserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null)
         {
@@ -301,6 +310,9 @@ namespace SQE.DatabaseAccess
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
+                    var watch = new System.Diagnostics.Stopwatch();
+                    watch.Start();
+
                     using (var transactionScope = new TransactionScope())
                     using (var connection = OpenConnection())
                     {
@@ -356,6 +368,101 @@ namespace SQE.DatabaseAccess
                             }
 
                         await Task.WhenAll(writeTasks);
+
+                        //Cleanup
+                        transactionScope.Complete();
+
+                        watch.Stop();
+                        Log.Information($"Execution Time for copy edition 1: {watch.ElapsedMilliseconds} ms");
+
+                        return toEditionId;
+                    }
+                }
+            );
+        }
+
+        /// <summary>
+        ///     This creates a new copy of the requested edition, which will be owned with full privileges
+        ///     by the requesting user.
+        /// </summary>
+        /// <param name="editionUser">
+        ///     User info object contains the editionId that the user wishes to copy and
+        ///     all user permissions related to it.
+        /// </param>
+        /// <param name="copyrightHolder">
+        ///     Name of the person/institution that holds the copyright
+        ///     (automatically created from user when null)
+        /// </param>
+        /// <param name="collaborators">
+        ///     Names of all collaborators
+        ///     (automatically created from user and all editors when null)
+        /// </param>
+        /// <returns>The editionId of the newly created edition.</returns>
+        public async Task<uint> CopyEditionAsync(EditionUserInfo editionUser,
+            string copyrightHolder = null,
+            string collaborators = null)
+        {
+            List<OwnerTables.Result> ownerTables;
+
+            using (var connection = OpenConnection())
+            {
+                ownerTables = (await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery)).ToList();
+            }
+
+            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                async () =>
+                {
+                    // In an effort to speed this up further, I tried disabling foreign keys and unique checks.
+                    // It made no appreciable difference. Also, setting the isolation level to read committed
+                    // made only a very minor difference:
+                    // await connection.ExecuteAsync("SET @@session.foreign_key_checks=0;");
+                    // await connection.ExecuteAsync("SET @@session.unique_checks=0;");
+                    //using (var transactionScope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() {IsolationLevel = IsolationLevel.ReadCommitted}))
+                    using (var transactionScope = new TransactionScope())
+                    using (var connection = OpenConnection())
+                    {
+                        // Create a new edition
+                        connection.Execute(
+                            CopyEditionQuery.GetQuery,
+                            new
+                            {
+                                editionUser.EditionId,
+                                CopyrightHolder = copyrightHolder,
+                                Collaborators = collaborators
+                            }
+                        );
+
+                        var toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                        if (toEditionId == 0)
+                            throw new StandardExceptions.DataNotWrittenException("create edition");
+
+                        // Create new edition_editor
+                        connection.Execute(
+                            CreateEditionEditorQuery.GetQuery,
+                            new
+                            {
+                                EditionId = toEditionId,
+                                UserId = editionUser.userId,
+                                MayLock = 1,
+                                IsAdmin = 1
+                            }
+                        );
+
+                        var toEditionEditorId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                        if (toEditionEditorId == 0)
+                            throw new StandardExceptions.DataNotWrittenException("create edition_editor");
+
+                        foreach (var ownerTable in ownerTables)
+                        {
+                            var tableName = ownerTable.TableName;
+                            var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
+                            // Should I do any error checking here?
+                            await connection.ExecuteAsync($@"
+INSERT INTO {tableName} ({tableIdColumn}, edition_id, edition_editor_id)
+SELECT {tableIdColumn}, {toEditionId}, {toEditionEditorId}
+FROM {tableName}
+WHERE edition_id = {editionUser.EditionId}");
+                        }
 
                         //Cleanup
                         transactionScope.Complete();

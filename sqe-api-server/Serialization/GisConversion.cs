@@ -102,11 +102,13 @@ namespace SQE.API.Server.Serialization
                 zIndex = sac.ArtefactZIndex ?? 0,
 
                 // The x and y translate may be null, but sent the DTO in any event
-                translate = new TranslateDTO()
-                {
-                    x = sac.ArtefactTranslateX,
-                    y = sac.ArtefactTranslateY
-                }
+                translate = sac.ArtefactTranslateX.HasValue && sac.ArtefactTranslateY.HasValue
+                    ? new TranslateDTO()
+                    {
+                        x = sac.ArtefactTranslateX.Value,
+                        y = sac.ArtefactTranslateY.Value
+                    }
+                    : null
             };
         }
 

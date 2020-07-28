@@ -17,7 +17,7 @@ namespace SQE.ApiTest
         // They are in use and all other tests pass, but some things, like ReliableMySqlDbCommand.Prepare() or 
         // ReliableMySqlConnection.DataSource, never get tested (I don't necessarily know what they all should do).
         // Perhaps something could be wrong there and we would not see it for a very long time.
-        private const int _retryCount = 8;
+        private const int _retryCount = 66;
         private const int _circuitBreakCount = 5;
 
         private static void ThrowMySqlException(Counter counter, uint sqlErrorCode)
