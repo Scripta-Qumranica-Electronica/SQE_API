@@ -110,7 +110,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                await _catalogueService.CreateTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(), newMatch, clientId: Context.ConnectionId);
+                await _catalogueService.CreateTextFragmentImagedObjectMatch(await _userService.GetCurrentUserObjectAsync(null, true), newMatch, clientId: Context.ConnectionId);
             }
             catch (ApiException err)
             {
@@ -130,7 +130,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                await _catalogueService.ConfirmTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(), iaaEditionCatalogToTextFragmentId, true, clientId: Context.ConnectionId);
+                await _catalogueService.ConfirmTextFragmentImagedObjectMatch(await _userService.GetCurrentUserObjectAsync(null, true), iaaEditionCatalogToTextFragmentId, true, clientId: Context.ConnectionId);
             }
             catch (ApiException err)
             {
@@ -150,7 +150,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                await _catalogueService.ConfirmTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(), iaaEditionCatalogToTextFragmentId, false, clientId: Context.ConnectionId);
+                await _catalogueService.ConfirmTextFragmentImagedObjectMatch(await _userService.GetCurrentUserObjectAsync(null, true), iaaEditionCatalogToTextFragmentId, false, clientId: Context.ConnectionId);
             }
             catch (ApiException err)
             {

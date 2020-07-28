@@ -31,7 +31,7 @@ namespace SQE.API.Server.Services
         Task<DetailedUserDTO> GetCurrentUser();
         uint? GetCurrentUserId();
 
-        Task<EditionUserInfo> GetCurrentUserObjectAsync(uint editionId,
+        Task<UserInfo> GetCurrentUserObjectAsync(uint? editionId,
             bool write = false,
             bool locking = false,
             bool admin = false);
@@ -424,14 +424,16 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <param name="locking">Whether the user must have locking access</param>
         /// <param name="admin">Whether the user must have admin access</param>
         /// <returns></returns>
-        public async Task<EditionUserInfo> GetCurrentUserObjectAsync(uint editionId,
+        public async Task<UserInfo> GetCurrentUserObjectAsync(uint? editionId,
             bool write = false,
             bool locking = false,
             bool admin = false)
         {
             var access = new EditionAccessLevels(true, write, locking, admin);
 
-            var user = new EditionUserInfo(GetCurrentUserId(), editionId, _userRepository);
+            var user = new UserInfo(GetCurrentUserId(), editionId, _userRepository);
+            await user.ReadRoles();
+            if (!editionId.HasValue) return user;
             await user.ReadPermissions();
 
             // Immediately reject requests without proper permissions

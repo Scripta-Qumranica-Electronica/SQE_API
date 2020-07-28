@@ -38,20 +38,25 @@ SELECT image_catalog_id AS ImageCatalogId,
        name AS Name,
        manuscript_name AS ManuscriptName,
        edition_id AS EditionId,
-       iaa_edition_catalog_to_text_fragment_confirmation.confirmed AS Confirmed,
+       iecc.confirmed AS Confirmed,
        user.email AS MatchAuthor,
-       iaa_edition_catalog_to_text_fragment_confirmation.time AS Date
+       iecc.time AS Date,
+       image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id AS MatchId
 FROM image_text_fragment_match_catalogue
-    JOIN SQE.iaa_edition_catalog_to_text_fragment_confirmation USING(iaa_edition_catalog_to_text_fragment_id)
+    $Latest
     LEFT JOIN user USING(user_id)
 $Where
-$Group
 ";
 
         private const string latestFilter = @"
-GROUP BY iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id
-            HAVING MAX(iaa_edition_catalog_to_text_fragment_confirmation.time)";
-
+JOIN (SELECT iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id, iaa_edition_catalog_to_text_fragment_confirmation.time, iaa_edition_catalog_to_text_fragment_confirmation.confirmed, iaa_edition_catalog_to_text_fragment_confirmation.user_id
+FROM iaa_edition_catalog_to_text_fragment_confirmation
+LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation iec ON iec.iaa_edition_catalog_to_text_fragment_id = iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id
+    AND iec.time > iaa_edition_catalog_to_text_fragment_confirmation.time
+where iec.iaa_edition_catalog_to_text_fragment_id IS NULL) AS iecc 
+ON iecc.iaa_edition_catalog_to_text_fragment_id = image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id";
+        private const string allFilter =
+            @"JOIN SQE.iaa_edition_catalog_to_text_fragment_confirmation AS iecc USING(iaa_edition_catalog_to_text_fragment_id)";
         private const string editionFilter = "WHERE image_text_fragment_match_catalogue.edition_id = @EditionId";
         private const string imagedObjectFilter = "WHERE image_text_fragment_match_catalogue.object_id = @ImagedObjectId";
         private const string textFragmentFilter = "WHERE image_text_fragment_match_catalogue.text_fragment_id = @TextFragmentId";
@@ -66,9 +71,9 @@ GROUP BY iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_t
                 CatalogueQueryFilterType.Manuscript => manuscriptFilter,
                 _ => ""
             };
-            var group = onlyLatestMatch ? latestFilter : "";
+            var group = onlyLatestMatch ? latestFilter : allFilter;
 
-            return _GetQuery.Replace("$Where", where).Replace("$Group", group);
+            return _GetQuery.Replace("$Where", where).Replace("$Latest", group);
         }
     }
 
@@ -140,6 +145,8 @@ SELECT @Manuscript,
       manuscript_id
 FROM manuscript_data_owner
 JOIN manuscript_data USING(manuscript_data_id)
+JOIN users_system_roles ON users_system_roles.user_id = @UserId
+    AND users_system_roles.system_roles_id = 2
 WHERE edition_id = @EditionId
 ";
     }
@@ -148,9 +155,11 @@ WHERE edition_id = @EditionId
     {
         public const string GetQuery = @"
 INSERT INTO iaa_edition_catalog_author (iaa_edition_catalog_id, user_id) 
-SELECT @IaaEditionCatalogId, @UserId
-FROM dual
-WHERE NOT EXISTS
+SELECT @IaaEditionCatalogId, users_system_roles.user_id
+FROM users_system_roles 
+WHERE users_system_roles.user_id = @UserId
+    AND users_system_roles.system_roles_id = 2
+    AND NOT EXISTS
   ( SELECT iaa_edition_catalog_id, user_id
     FROM iaa_edition_catalog_author
     WHERE (iaa_edition_catalog_id, user_id) = (@IaaEditionCatalogId, @UserId)
@@ -163,8 +172,10 @@ WHERE NOT EXISTS
         public const string GetQuery = @"
 INSERT INTO iaa_edition_catalog_to_text_fragment (iaa_edition_catalog_id, text_fragment_id) 
 SELECT @IaaEditionCatalogId, @TextFragmentId
-FROM dual
-WHERE NOT EXISTS
+FROM users_system_roles 
+WHERE users_system_roles.user_id = @UserId
+    AND users_system_roles.system_roles_id = 2
+    AND NOT EXISTS
   ( SELECT iaa_edition_catalog_id, text_fragment_id
     FROM iaa_edition_catalog_to_text_fragment
     WHERE (iaa_edition_catalog_id, text_fragment_id) = (@IaaEditionCatalogId, @TextFragmentId)
@@ -177,12 +188,9 @@ WHERE NOT EXISTS
         public const string GetQuery = @"
 INSERT INTO iaa_edition_catalog_to_text_fragment_confirmation (iaa_edition_catalog_to_text_fragment_id, user_id, confirmed)
 SELECT @IaaEditionCatalogToTextFragmentId, @UserId, @Confirmed
-FROM dual
-WHERE NOT EXISTS
-  ( SELECT iaa_edition_catalog_to_text_fragment_id, user_id, confirmed
-    FROM iaa_edition_catalog_to_text_fragment_confirmation
-    WHERE (iaa_edition_catalog_to_text_fragment_id, user_id, confirmed) = (@IaaEditionCatalogToTextFragmentId, @UserId, @Confirmed)
-  ) LIMIT 1
+FROM users_system_roles 
+WHERE users_system_roles.user_id = @UserId
+    AND users_system_roles.system_roles_id = 2
 ";
     }
 
@@ -192,7 +200,11 @@ WHERE NOT EXISTS
 INSERT INTO SQE.image_to_iaa_edition_catalog (iaa_edition_catalog_id, image_catalog_id)
 SELECT @IaaEditionCatalogId, image_catalog_id
 FROM image_catalog
-WHERE object_id = @ImagedObjectId AND NOT EXISTS
+JOIN users_system_roles ON users_system_roles.user_id = @UserId
+    AND users_system_roles.system_roles_id = 2
+WHERE object_id = @ImagedObjectId 
+  AND image_catalog.catalog_side = @Side
+  AND NOT EXISTS
   ( SELECT iaa_edition_catalog_id, image_catalog_id
     FROM image_to_iaa_edition_catalog
     JOIN image_catalog USING(image_catalog_id)

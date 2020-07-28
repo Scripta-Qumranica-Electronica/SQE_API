@@ -25,12 +25,9 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        ///     Provides information for the specified imaged object related to the specified edition, can include images and also
-        ///     their masks with optional.
+        ///     Provides information for the specified imaged object.
         /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-        /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
         [HttpGet("v1/imaged-objects/{imagedObjectId}")]
         public async Task<ActionResult<SimpleImageListDTO>> GetImagedObject([FromRoute] string imagedObjectId)

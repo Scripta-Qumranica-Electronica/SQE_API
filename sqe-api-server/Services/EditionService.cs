@@ -23,26 +23,26 @@ namespace SQE.API.Server.Services
 {
     public interface IEditionService
     {
-        Task<EditionGroupDTO> GetEditionAsync(EditionUserInfo editionUser,
+        Task<EditionGroupDTO> GetEditionAsync(UserInfo editionUser,
             bool artefacts = false,
             bool fragments = false);
 
         Task<EditionListDTO> ListEditionsAsync(uint? userId);
 
-        Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
+        Task<EditionDTO> UpdateEditionAsync(UserInfo editionUser,
             EditionUpdateRequestDTO updatedEdition,
             string clientId = null);
 
-        Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser,
+        Task<EditionDTO> CopyEditionAsync(UserInfo editionUser,
             EditionCopyDTO editionInfo,
             string clientId = null);
 
-        Task<DeleteTokenDTO> DeleteEditionAsync(EditionUserInfo editionUser,
+        Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo editionUser,
             string token,
             List<string> optional,
             string clientId = null);
 
-        Task<NoContentResult> RequestNewEditionEditor(EditionUserInfo editionUser,
+        Task<NoContentResult> RequestNewEditionEditor(UserInfo editionUser,
             InviteEditorDTO newEditor,
             string clientId = null);
 
@@ -53,14 +53,14 @@ namespace SQE.API.Server.Services
             string token,
             string clientId = null);
 
-        Task<DetailedEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+        Task<DetailedEditorRightsDTO> ChangeEditionEditorRights(UserInfo editionUser,
             string editorEmail,
             UpdateEditorRightsDTO updatedEditor,
             string clientId = null);
 
-        Task<EditionScriptCollectionDTO> GetEditionScriptCollection(EditionUserInfo editionUser);
+        Task<EditionScriptCollectionDTO> GetEditionScriptCollection(UserInfo editionUser);
 
-        Task<EditionScriptLinesDTO> GetEditionScriptLines(EditionUserInfo editionUser);
+        Task<EditionScriptLinesDTO> GetEditionScriptLines(UserInfo editionUser);
     }
 
     public class EditionService : IEditionService
@@ -90,7 +90,7 @@ namespace SQE.API.Server.Services
             _appSettings = appSettings.Value;
         }
 
-        public async Task<EditionGroupDTO> GetEditionAsync(EditionUserInfo editionUser,
+        public async Task<EditionGroupDTO> GetEditionAsync(UserInfo editionUser,
             bool artefacts = false,
             bool fragments = false)
         {
@@ -123,7 +123,7 @@ namespace SQE.API.Server.Services
             };
         }
 
-        public async Task<EditionDTO> UpdateEditionAsync(EditionUserInfo editionUser,
+        public async Task<EditionDTO> UpdateEditionAsync(UserInfo editionUser,
             EditionUpdateRequestDTO updatedEditionData,
             string clientId = null)
         {
@@ -171,7 +171,7 @@ namespace SQE.API.Server.Services
             return updatedEdition;
         }
 
-        public async Task<EditionDTO> CopyEditionAsync(EditionUserInfo editionUser,
+        public async Task<EditionDTO> CopyEditionAsync(UserInfo editionUser,
             EditionCopyDTO editionInfo,
             string clientId = null)
         {
@@ -202,7 +202,7 @@ namespace SQE.API.Server.Services
                 //I think we do not get this far if no records were found, `First` will, I think throw an error.
                 //Maybe we should more often make use of try/catch.
                 if (unformattedEdition == null)
-                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId);
+                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId.Value);
                 edition = EditionModelToDTO(unformattedEdition);
             }
 
@@ -222,7 +222,7 @@ namespace SQE.API.Server.Services
         /// <param name="optional">optional parameters: "deleteForAllEditors"</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<DeleteTokenDTO> DeleteEditionAsync(EditionUserInfo editionUser,
+        public async Task<DeleteTokenDTO> DeleteEditionAsync(UserInfo editionUser,
             string token,
             List<string> optional,
             string clientId = null)
@@ -231,7 +231,7 @@ namespace SQE.API.Server.Services
 
             var deleteResponse = new DeleteTokenDTO
             {
-                editionId = editionUser.EditionId,
+                editionId = editionUser.EditionId.Value,
                 token = null
             };
 
@@ -286,7 +286,7 @@ namespace SQE.API.Server.Services
         /// <param name="newEditor">Details of the new editor to be added</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<NoContentResult> RequestNewEditionEditor(EditionUserInfo editionUser,
+        public async Task<NoContentResult> RequestNewEditionEditor(UserInfo editionUser,
             InviteEditorDTO newEditor,
             string clientId = null)
         {
@@ -337,7 +337,7 @@ The Scripta Qumranica Electronica team</body></html>";
             // Broadcast the request to the potential editor.
             var editorBroadcastObject = new EditorInvitationDTO()
             {
-                editionId = editionUser.EditionId,
+                editionId = editionUser.EditionId.Value,
                 editionName = edition.name,
                 requestingAdminName = adminName,
                 requestingAdminEmail = requestingUser.Email,
@@ -457,7 +457,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <param name="updatedEditor">Details of the editor and the desired access rights</param>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public async Task<DetailedEditorRightsDTO> ChangeEditionEditorRights(EditionUserInfo editionUser,
+        public async Task<DetailedEditorRightsDTO> ChangeEditionEditorRights(UserInfo editionUser,
             string editorEmail,
             UpdateEditorRightsDTO updatedEditor,
             string clientId = null)
@@ -476,7 +476,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 updatedUserPermissions.MayWrite,
                 updatedUserPermissions.MayLock,
                 updatedUserPermissions.IsAdmin,
-                editionUser.EditionId
+                editionUser.EditionId.Value
             );
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
@@ -488,7 +488,7 @@ The Scripta Qumranica Electronica team</body></html>";
             return updatedEditorDTO;
         }
 
-        public async Task<EditionScriptCollectionDTO> GetEditionScriptCollection(EditionUserInfo editionUser)
+        public async Task<EditionScriptCollectionDTO> GetEditionScriptCollection(UserInfo editionUser)
         {
             var letters = await _editionRepo.GetEditionScriptCollectionAsync(editionUser);
             var lettersSorted = letters.GroupBy(x => x.Id).ToList();
@@ -541,7 +541,7 @@ The Scripta Qumranica Electronica team</body></html>";
         }
 
         // TODO: we need to gather also the editor ID's
-        public async Task<EditionScriptLinesDTO> GetEditionScriptLines(EditionUserInfo editionUser)
+        public async Task<EditionScriptLinesDTO> GetEditionScriptLines(UserInfo editionUser)
         {
             var results = await _editionRepo.GetEditionScriptLines(editionUser);
             return new EditionScriptLinesDTO()

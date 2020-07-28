@@ -179,6 +179,7 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>
         [HttpGet("v1/editions/{editionId}/[controller]-groups")]
+        [AllowAnonymous]
         public async Task<ActionResult<ArtefactGroupListDTO>> GetEditionArtefactGroups([FromRoute] uint editionId)
         {
             return await _artefactService.ArtefactGroupsOfEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
@@ -191,6 +192,7 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="artefactGroupId">Id of the desired artefact group</param>
         /// <returns></returns>
         [HttpGet("v1/editions/{editionId}/[controller]-groups/{artefactGroupId}")]
+        [AllowAnonymous]
         public async Task<ActionResult<ArtefactGroupDTO>> GetEditionArtefactGroup([FromRoute] uint editionId,
             [FromRoute] uint artefactGroupId)
         {

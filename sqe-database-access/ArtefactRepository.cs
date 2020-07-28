@@ -17,27 +17,27 @@ namespace SQE.DatabaseAccess
 {
     public interface IArtefactRepository
     {
-        Task<ArtefactModel> GetEditionArtefactAsync(EditionUserInfo editionUser,
+        Task<ArtefactModel> GetEditionArtefactAsync(UserInfo editionUser,
             uint artefactId,
             bool withMask = false);
 
-        Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(EditionUserInfo editionUser,
+        Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(UserInfo editionUser,
             bool withMask = false);
 
-        Task<List<AlteredRecord>> UpdateArtefactShapeAsync(EditionUserInfo editionUser,
+        Task<List<AlteredRecord>> UpdateArtefactShapeAsync(UserInfo editionUser,
             uint artefactId,
             string shape);
 
-        Task<List<AlteredRecord>> UpdateArtefactStatusAsync(EditionUserInfo editionUser,
+        Task<List<AlteredRecord>> UpdateArtefactStatusAsync(UserInfo editionUser,
             uint artefactId,
             string workStatus);
 
-        Task<List<AlteredRecord>> UpdateArtefactNameAsync(EditionUserInfo editionUser, uint artefactId, string name);
+        Task<List<AlteredRecord>> UpdateArtefactNameAsync(UserInfo editionUser, uint artefactId, string name);
 
-        Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(EditionUserInfo editionUser,
+        Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(UserInfo editionUser,
             List<UpdateArtefactPlacementDTO> transforms);
 
-        Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
+        Task<List<AlteredRecord>> UpdateArtefactPositionAsync(UserInfo editionUser,
             uint artefactId,
             decimal? scale,
             decimal? rotate,
@@ -45,7 +45,7 @@ namespace SQE.DatabaseAccess
             int? translateY,
             int? zIndex);
 
-        Task<uint> CreateNewArtefactAsync(EditionUserInfo editionUser,
+        Task<uint> CreateNewArtefactAsync(UserInfo editionUser,
             uint masterImageId,
             string shape,
             string artefactName,
@@ -56,15 +56,15 @@ namespace SQE.DatabaseAccess
             int? zIndex,
             string workStatus);
 
-        Task DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId);
-        Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
-        Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser, uint artefactId);
+        Task DeleteArtefactAsync(UserInfo editionUser, uint artefactId);
+        Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(UserInfo editionUser, uint artefactId);
+        Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(UserInfo editionUser, uint artefactId);
 
-        Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser);
-        Task<ArtefactGroup> GetArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId);
-        Task<ArtefactGroup> CreateArtefactGroupAsync(EditionUserInfo editionUser, string artefactGroupName, List<uint> artefactIds);
-        Task<ArtefactGroup> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId, string artefactGroupName, List<uint> artefactIds);
-        Task DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId);
+        Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(UserInfo editionUser);
+        Task<ArtefactGroup> GetArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId);
+        Task<ArtefactGroup> CreateArtefactGroupAsync(UserInfo editionUser, string artefactGroupName, List<uint> artefactIds);
+        Task<ArtefactGroup> UpdateArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId, string artefactGroupName, List<uint> artefactIds);
+        Task DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId);
     }
 
     public class ArtefactRepository : DbConnectionBase, IArtefactRepository
@@ -76,7 +76,7 @@ namespace SQE.DatabaseAccess
             _databaseWriter = databaseWriter;
         }
 
-        public async Task<ArtefactModel> GetEditionArtefactAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactModel> GetEditionArtefactAsync(UserInfo editionUser,
             uint artefactId,
             bool withMask = false)
         {
@@ -103,7 +103,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser"></param>
         /// <param name="withMask">Optionally include the mask data for the artefacts</param>
         /// <returns></returns>
-        public async Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(EditionUserInfo editionUser,
+        public async Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(UserInfo editionUser,
             bool withMask = false)
         {
             using (var connection = OpenConnection())
@@ -119,7 +119,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<List<AlteredRecord>> UpdateArtefactShapeAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> UpdateArtefactShapeAsync(UserInfo editionUser,
             uint artefactId,
             string shape)
         {
@@ -160,7 +160,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<List<AlteredRecord>> UpdateArtefactStatusAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> UpdateArtefactStatusAsync(UserInfo editionUser,
             uint artefactId,
             string workStatus)
         {
@@ -183,7 +183,7 @@ namespace SQE.DatabaseAccess
             return await WriteArtefactAsync(editionUser, artefactChangeRequest);
         }
 
-        public async Task<List<AlteredRecord>> UpdateArtefactNameAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> UpdateArtefactNameAsync(UserInfo editionUser,
             uint artefactId,
             string name)
         {
@@ -204,7 +204,7 @@ namespace SQE.DatabaseAccess
             return await WriteArtefactAsync(editionUser, artefactChangeRequest);
         }
 
-        public async Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(UserInfo editionUser,
             List<UpdateArtefactPlacementDTO> transforms)
         {
             List<AlteredRecord> updates;
@@ -226,7 +226,7 @@ namespace SQE.DatabaseAccess
             return updates;
         }
 
-        public async Task<List<AlteredRecord>> UpdateArtefactPositionAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> UpdateArtefactPositionAsync(UserInfo editionUser,
             uint artefactId,
             decimal? scale,
             decimal? rotate,
@@ -245,7 +245,7 @@ namespace SQE.DatabaseAccess
             );
         }
 
-        private async Task<MutationRequest> FormatArtefactPositionUpdateRequestAsync(EditionUserInfo editionUser,
+        private async Task<MutationRequest> FormatArtefactPositionUpdateRequestAsync(UserInfo editionUser,
             uint artefactId,
             decimal? scale,
             decimal? rotate,
@@ -290,7 +290,7 @@ namespace SQE.DatabaseAccess
             return artefactChangeRequest;
         }
 
-        public async Task<uint> CreateNewArtefactAsync(EditionUserInfo editionUser,
+        public async Task<uint> CreateNewArtefactAsync(UserInfo editionUser,
             uint masterImageId,
             string shape,
             string artefactName,
@@ -353,7 +353,7 @@ namespace SQE.DatabaseAccess
             );
         }
 
-        public async Task DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId)
+        public async Task DeleteArtefactAsync(UserInfo editionUser, uint artefactId)
         {
             var mutations = new List<MutationRequest>();
             foreach (var table in artefactTableNames.All())
@@ -377,7 +377,7 @@ namespace SQE.DatabaseAccess
             var _ = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutations);
         }
 
-        public async Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
+        public async Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(UserInfo editionUser,
             uint artefactId)
         {
             using (var connection = OpenConnection())
@@ -394,7 +394,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(EditionUserInfo editionUser,
+        public async Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(UserInfo editionUser,
             uint artefactId)
         {
             using (var connection = OpenConnection())
@@ -411,7 +411,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<List<AlteredRecord>> InsertArtefactShapeAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> InsertArtefactShapeAsync(UserInfo editionUser,
             uint artefactId,
             uint masterImageId,
             string shape)
@@ -437,7 +437,7 @@ namespace SQE.DatabaseAccess
             return await WriteArtefactAsync(editionUser, artefactChangeRequest);
         }
 
-        public async Task<List<AlteredRecord>> InsertArtefactStatusAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> InsertArtefactStatusAsync(UserInfo editionUser,
             uint artefactId,
             string workStatus)
         {
@@ -454,7 +454,7 @@ namespace SQE.DatabaseAccess
             return await WriteArtefactAsync(editionUser, artefactChangeRequest);
         }
 
-        public async Task<List<AlteredRecord>> InsertArtefactNameAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> InsertArtefactNameAsync(UserInfo editionUser,
             uint artefactId,
             string name)
         {
@@ -470,7 +470,7 @@ namespace SQE.DatabaseAccess
             return await WriteArtefactAsync(editionUser, artefactChangeRequest);
         }
 
-        public async Task<List<AlteredRecord>> InsertArtefactPositionAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> InsertArtefactPositionAsync(UserInfo editionUser,
             uint artefactId,
             decimal? scale,
             decimal? rotate,
@@ -489,7 +489,7 @@ namespace SQE.DatabaseAccess
             );
         }
 
-        private MutationRequest FormatArtefactPositionInsertion(EditionUserInfo editionUser,
+        private MutationRequest FormatArtefactPositionInsertion(UserInfo editionUser,
             uint artefactId,
             decimal? scale,
             decimal? rotate,
@@ -515,7 +515,7 @@ namespace SQE.DatabaseAccess
             return artefactChangeRequest;
         }
 
-        public async Task<List<AlteredRecord>> WriteArtefactAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> WriteArtefactAsync(UserInfo editionUser,
             MutationRequest artefactChangeRequest)
         {
             // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
@@ -526,7 +526,7 @@ namespace SQE.DatabaseAccess
             );
         }
 
-        public async Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser)
+        public async Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(UserInfo editionUser)
         {
             using (var connection = OpenConnection())
             {
@@ -555,7 +555,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<ArtefactGroup> GetArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId)
+        public async Task<ArtefactGroup> GetArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId)
         {
             using (var connection = OpenConnection())
             {
@@ -581,7 +581,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<ArtefactGroup> CreateArtefactGroupAsync(EditionUserInfo editionUser, string artefactGroupName,
+        public async Task<ArtefactGroup> CreateArtefactGroupAsync(UserInfo editionUser, string artefactGroupName,
             List<uint> artefactIds)
         {
             uint artefactGroupId;
@@ -637,7 +637,7 @@ namespace SQE.DatabaseAccess
             return await GetArtefactGroupAsync(editionUser, artefactGroupId);
         }
 
-        public async Task<ArtefactGroup> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+        public async Task<ArtefactGroup> UpdateArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId,
             string artefactGroupName, List<uint> artefactIds)
         {
             using (var transactionScope = new TransactionScope())
@@ -725,7 +725,7 @@ namespace SQE.DatabaseAccess
             return await GetArtefactGroupAsync(editionUser, artefactGroupId);
         }
 
-        public async Task DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId)
+        public async Task DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId)
         {
             using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
@@ -778,7 +778,7 @@ namespace SQE.DatabaseAccess
                 throw new StandardExceptions.DataNotWrittenException("delete an artefact group");
         }
 
-        private async Task<uint> GetArtefactPkAsync(EditionUserInfo editionUser, uint artefactId, string table)
+        private async Task<uint> GetArtefactPkAsync(UserInfo editionUser, uint artefactId, string table)
         {
             using (var connection = OpenConnection())
             {
@@ -793,7 +793,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        private async Task<List<uint>> GetArtefactStackPksAsync(EditionUserInfo editionUser,
+        private async Task<List<uint>> GetArtefactStackPksAsync(UserInfo editionUser,
             uint artefactId,
             string table)
         {
@@ -812,7 +812,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        private async Task<uint> GetArtefactShapeSqeImageIdAsync(EditionUserInfo editionUser,
+        private async Task<uint> GetArtefactShapeSqeImageIdAsync(UserInfo editionUser,
             uint artefactId)
         {
             using (var connection = OpenConnection())
@@ -853,7 +853,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        private async Task<(List<ArtefactGroupMember> groupMembers, ArtefactGroupData groupData)> _getArtefactGroupInternalInfo(EditionUserInfo editionUser, uint artefactGroupId)
+        private async Task<(List<ArtefactGroupMember> groupMembers, ArtefactGroupData groupData)> _getArtefactGroupInternalInfo(UserInfo editionUser, uint artefactGroupId)
         {
             using (var connection = OpenConnection())
             {
@@ -878,7 +878,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        private async Task _verifyArtefactsFreeForGroup(EditionUserInfo editionUser,
+        private async Task _verifyArtefactsFreeForGroup(UserInfo editionUser,
             List<uint> artefactIds)
         {
             using (var connection = OpenConnection())

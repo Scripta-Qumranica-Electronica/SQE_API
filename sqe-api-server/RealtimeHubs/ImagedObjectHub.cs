@@ -24,12 +24,9 @@ namespace SQE.API.Server.RealtimeHubs
     public partial class MainHub
     {
         /// <summary>
-        ///     Provides information for the specified imaged object related to the specified edition, can include images and also
-        ///     their masks with optional.
+        ///     Provides information for the specified imaged object.
         /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-        /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
         [AllowAnonymous]
         public async Task<SimpleImageListDTO> GetV1ImagedObjectsImagedObjectId(string imagedObjectId)
 

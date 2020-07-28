@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using SQE.API.DTO;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -102,7 +100,8 @@ namespace SQE.DatabaseAccess
                         EditionLocation2 = canonicalEditionLoc2,
                         EditionSide = canonicalEditionSide,
                         Comment = comment,
-                        EditionId = editionId
+                        EditionId = editionId,
+                        UserId = userId,
                     });
                 var editionCatalogueId = existingEditionCats.Any()
                     ? existingEditionCats.First().IaaEditionCatalogId
@@ -117,7 +116,8 @@ namespace SQE.DatabaseAccess
                         EditionLocation2 = canonicalEditionLoc2,
                         EditionSide = canonicalEditionSide,
                         Comment = comment,
-                        EditionId = editionId
+                        EditionId = editionId,
+                        UserId = userId,
                     });
                     if (writeEC != 1)
                         throw new StandardExceptions.DataNotWrittenException("Create Edition Catalogue Entry");
@@ -126,7 +126,7 @@ namespace SQE.DatabaseAccess
                     writeEC = await connection.ExecuteAsync(EditionCatalogueAuthorInsertQuery.GetQuery, new
                     {
                         IaaEditionCatalogId = editionCatalogueId,
-                        UserId = userId
+                        UserId = userId,
                     });
                     if (writeEC != 1)
                         throw new StandardExceptions.DataNotWrittenException("Create Edition Catalogue Author Entry");
@@ -136,6 +136,7 @@ namespace SQE.DatabaseAccess
                 {
                     IaaEditionCatalogId = editionCatalogueId,
                     TextFragmentId = textFragmentId,
+                    UserId = userId,
                 });
                 var textFragmentImagedObjectMatchId = await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
 
@@ -144,12 +145,15 @@ namespace SQE.DatabaseAccess
                 {
                     IaaEditionCatalogId = editionCatalogueId,
                     ImagedObjectId = imagedObjectId,
+                    Side = imageSide,
+                    UserId = userId,
                 });
 
                 await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery, new
                 {
                     IaaEditionCatalogToTextFragmentId = textFragmentImagedObjectMatchId,
-                    Confirmed = false
+                    Confirmed = (bool?)null,
+                    UserId = userId,
                 });
 
                 transactionScope.Complete();

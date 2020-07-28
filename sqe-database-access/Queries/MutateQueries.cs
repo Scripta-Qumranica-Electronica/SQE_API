@@ -20,8 +20,8 @@ namespace SQE.DatabaseAccess.Queries
         public static string GetQuery(bool hasNulls)
         {
             return $@"
-INSERT INTO $TableName ($Columns)
-SELECT $Values
+INSERT INTO $TableName ($Columns, creator_id)
+SELECT $Values, @UserId
 FROM dual
 WHERE NOT EXISTS
   ( SELECT $Columns                 # This is basically an adhoc uniqueness constraint, which Itay wants to protect

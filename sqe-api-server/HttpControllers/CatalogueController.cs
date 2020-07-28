@@ -72,7 +72,7 @@ namespace SQE.API.Server.HttpControllers
         [HttpPost("v1/catalogue")]
         public async Task<ActionResult> PostNewImagedObjectTextFragmentMatch([FromBody] CatalogueMatchInputDTO newMatch)
         {
-            return await _catalogueService.CreateTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(),
+            return await _catalogueService.CreateTextFragmentImagedObjectMatch(await _userService.GetCurrentUserObjectAsync(null, true),
                 newMatch);
         }
 
@@ -85,7 +85,7 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult> ConfirmImagedObjectTextFragmentMatch(
             [FromRoute] uint iaaEditionCatalogToTextFragmentId)
         {
-            return await _catalogueService.ConfirmTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(),
+            return await _catalogueService.ConfirmTextFragmentImagedObjectMatch(await _userService.GetCurrentUserObjectAsync(null, true),
                 iaaEditionCatalogToTextFragmentId, true);
         }
 
@@ -98,7 +98,7 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult> RejectImagedObjectTextFragmentMatch(
             [FromRoute] uint iaaEditionCatalogToTextFragmentId)
         {
-            return await _catalogueService.ConfirmTextFragmentImagedObjectMatch(_userService.GetCurrentUserId(),
+            return await _catalogueService.ConfirmTextFragmentImagedObjectMatch(await _userService.GetCurrentUserObjectAsync(null, true),
                 iaaEditionCatalogToTextFragmentId, false);
         }
     }

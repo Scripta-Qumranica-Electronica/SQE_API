@@ -210,7 +210,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ArtefactGroupListDTO> GetV1EditionsEditionIdArtefactGroups(uint editionId)
 
         {
@@ -231,7 +231,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <param name="artefactGroupId">Id of the desired artefact group</param>
         /// <returns></returns>
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ArtefactGroupDTO> GetV1EditionsEditionIdArtefactGroupsArtefactGroupId(uint editionId, uint artefactGroupId)
 
         {

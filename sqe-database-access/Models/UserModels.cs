@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SQE.DatabaseAccess.Models
@@ -38,19 +39,42 @@ namespace SQE.DatabaseAccess.Models
         public bool Locked { get; set; }
     }
 
-    public class EditionUserInfo
+    // See the table system_roles in the database for these values
+    public enum UserSystemRoles
+    {
+        /// <summary>
+        /// This role is for all general users of the system. It should permit all activities related to the edition system. Such users may perform CREATE on all *_owner table, they may UPDATE/DELETE only those rows with an edition_id for which they have write permissions. They may CREATE in any data table with a corresponding *_owned table.
+        /// </summary>
+        REGISTERED_USER = 1,
+        /// <summary>
+        /// This role is for users who may edit cataloguing data. This refers mainly to CREATE/UPDATE/DELETE operations on tables that contain references to cataloguing information, such as textual references and museum numbers. Any operations performed by such users should maintain a record of who made the changes—see, e.g., the *_author tables.
+        /// </summary>
+        CATALOGUE_CURATOR = 2,
+        /// <summary>
+        /// This role is for users who can add images to the system and alter information related to the images. Mainly this constitutes CREATE/UPDATE/DELETE access to the SQE_image and image_urls table.
+        /// </summary>
+        IMAGE_DATA_CURATOR = 3,
+        /// <summary>
+        /// This role is for administrators of the user access system. It permits CREATE/UPDATE/DELETE access to the user, system_roles, and users_system_roles tables.
+        /// </summary>
+        USER_ADMIN = 4
+    }
+
+    public class UserInfo
     {
         private readonly IUserRepository _userRepo;
         public readonly uint? userId;
 
-        public EditionUserInfo(uint? userId, uint editionId, IUserRepository userRepository)
+        public UserInfo(uint? userId, uint? editionId, IUserRepository userRepository)
         {
             EditionId = editionId;
             this.userId = userId;
             _userRepo = userRepository;
         }
 
-        public uint EditionId { get; private set; }
+        public List<UserSystemRoles> SystemRoles { get; private set; }
+
+        public uint? EditionId { get; private set; }
 
         public uint? EditionEditorId { get; private set; }
 
@@ -79,6 +103,11 @@ namespace SQE.DatabaseAccess.Models
             MayLock = permissions.MayLock;
             IsAdmin = permissions.IsAdmin;
             EditionEditorId = permissions.EditionEditionEditorId;
+        }
+
+        public async Task ReadRoles()
+        {
+            SystemRoles = await _userRepo.GetUserSystemRolesAsync(this);
         }
     }
 

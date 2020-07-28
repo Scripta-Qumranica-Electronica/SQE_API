@@ -12,17 +12,17 @@ namespace SQE.API.Server.Services
 {
     public interface ITextService
     {
-        Task<LineTextDTO> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
-        Task<TextEditionDTO> GetFragmentByIdAsync(EditionUserInfo editionUser, uint fragmentId);
-        Task<ArtefactDataListDTO> GetArtefactsAsync(EditionUserInfo editionUser, uint fragmentId);
-        Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId);
-        Task<TextFragmentDataListDTO> GetFragmentDataAsync(EditionUserInfo editionUser);
+        Task<LineTextDTO> GetLineByIdAsync(UserInfo editionUser, uint lineId);
+        Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo editionUser, uint fragmentId);
+        Task<ArtefactDataListDTO> GetArtefactsAsync(UserInfo editionUser, uint fragmentId);
+        Task<LineDataListDTO> GetLineIdsAsync(UserInfo editionUser, uint fragmentId);
+        Task<TextFragmentDataListDTO> GetFragmentDataAsync(UserInfo editionUser);
 
-        Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
+        Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo editionUser,
             CreateTextFragmentDTO createFragment,
             string clientId = null);
 
-        Task<TextFragmentDataDTO> UpdateTextFragmentAsync(EditionUserInfo editionUser,
+        Task<TextFragmentDataDTO> UpdateTextFragmentAsync(UserInfo editionUser,
             uint textFragmentId,
             UpdateTextFragmentDTO updatedFragment,
             string clientId = null);
@@ -43,18 +43,18 @@ namespace SQE.API.Server.Services
             _hubContext = hubContext;
         }
 
-        public async Task<LineTextDTO> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
+        public async Task<LineTextDTO> GetLineByIdAsync(UserInfo editionUser, uint lineId)
         {
-            var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId);
+            var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
             var editionLine = await _textRepo.GetLineByIdAsync(editionUser, lineId);
             if (editionLine.manuscriptId == 0)
                 throw new StandardExceptions.DataNotFoundException("line", lineId, "line_id");
             return _textEditionLineToDTO(editionLine, await editionEditors);
         }
 
-        public async Task<TextEditionDTO> GetFragmentByIdAsync(EditionUserInfo editionUser, uint fragmentId)
+        public async Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo editionUser, uint fragmentId)
         {
-            var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId);
+            var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
             var edition = await _textRepo.GetTextFragmentByIdAsync(editionUser, fragmentId);
             if (edition.manuscriptId == 0) // TODO: describe missing data better here.
                 throw new StandardExceptions.DataNotFoundException(
@@ -65,7 +65,7 @@ namespace SQE.API.Server.Services
             return _textEditionToDTO(edition, await editionEditors);
         }
 
-        public async Task<ArtefactDataListDTO> GetArtefactsAsync(EditionUserInfo editionUser, uint fragmentId)
+        public async Task<ArtefactDataListDTO> GetArtefactsAsync(UserInfo editionUser, uint fragmentId)
         {
             return new ArtefactDataListDTO()
             {
@@ -75,7 +75,7 @@ namespace SQE.API.Server.Services
             };
         }
 
-        public async Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId)
+        public async Task<LineDataListDTO> GetLineIdsAsync(UserInfo editionUser, uint fragmentId)
         {
             return new LineDataListDTO(
                 (await _textRepo.GetLineIdsAsync(editionUser, fragmentId))
@@ -84,7 +84,7 @@ namespace SQE.API.Server.Services
             );
         }
 
-        public async Task<TextFragmentDataListDTO> GetFragmentDataAsync(EditionUserInfo editionUser)
+        public async Task<TextFragmentDataListDTO> GetFragmentDataAsync(UserInfo editionUser)
         {
             return new TextFragmentDataListDTO(
                 (await _textRepo.GetFragmentDataAsync(editionUser))
@@ -106,7 +106,7 @@ namespace SQE.API.Server.Services
         ///     Details of the newly created text fragment.
         ///     TODO: decide if we will return info about the previous/next text fragment id's
         /// </returns>
-        public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
+        public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(UserInfo editionUser,
             CreateTextFragmentDTO createFragment,
             string clientId = null)
         {
@@ -141,7 +141,7 @@ namespace SQE.API.Server.Services
         ///     Details of the updated text fragment.
         ///     TODO: decide if we will return info about the previous/next text fragment id's
         /// </returns>
-        public async Task<TextFragmentDataDTO> UpdateTextFragmentAsync(EditionUserInfo editionUser,
+        public async Task<TextFragmentDataDTO> UpdateTextFragmentAsync(UserInfo editionUser,
             uint textFragmentId,
             UpdateTextFragmentDTO updatedFragment,
             string clientId = null)

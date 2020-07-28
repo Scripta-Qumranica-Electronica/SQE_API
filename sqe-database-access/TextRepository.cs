@@ -15,41 +15,41 @@ namespace SQE.DatabaseAccess
     public interface ITextRepository
     {
         #region Line
-        Task<LineData> CreateLineAsync(EditionUserInfo editionUser,
+        Task<LineData> CreateLineAsync(UserInfo editionUser,
             LineData lineData,
             uint fragmentId,
             uint anchorBefore = 0,
             uint anchorAfter = 0);
-        Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
-        Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId);
-        Task<uint> RemoveLineAsync(EditionUserInfo editionUser, uint lineId);
-        Task<LineData> UpdateLineAsync(EditionUserInfo editionUser,
+        Task<TextEdition> GetLineByIdAsync(UserInfo editionUser, uint lineId);
+        Task<List<LineData>> GetLineIdsAsync(UserInfo editionUser, uint textFragmentId);
+        Task<uint> RemoveLineAsync(UserInfo editionUser, uint lineId);
+        Task<LineData> UpdateLineAsync(UserInfo editionUser,
             uint lineId,
             string lineName);
         #endregion
 
         #region Sign and its Interpretation
 
-        Task<List<SignInterpretationData>> AddSignInterpretationsAsync(EditionUserInfo editionUser,
+        Task<List<SignInterpretationData>> AddSignInterpretationsAsync(UserInfo editionUser,
             uint? signId,
             List<SignInterpretationData> signInterpretations,
             List<uint> anchorsBefore,
             List<uint> anchorsAfter);
 
 
-        Task<List<SignData>> CreateSignsAsync(EditionUserInfo editionUser,
+        Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
             uint lineId,
             List<SignData> signs,
             List<uint> anchorsBefore,
             List<uint> anchorsAfter
         );
 
-        Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(EditionUserInfo editionUser, uint signId);
+        Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(UserInfo editionUser, uint signId);
 
-        Task<uint> RemoveSignInterpretationAsync(EditionUserInfo editionUser,
+        Task<uint> RemoveSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
 
-        Task<uint> RemoveSignAsync(EditionUserInfo editionUser, uint signId);
+        Task<uint> RemoveSignAsync(UserInfo editionUser, uint signId);
 
 
 
@@ -58,15 +58,15 @@ namespace SQE.DatabaseAccess
 
         #region Text fragment
 
-        Task<TextFragmentData> CreateTextFragmentAsync(EditionUserInfo editionUser,
+        Task<TextFragmentData> CreateTextFragmentAsync(UserInfo editionUser,
             TextFragmentData textFragmentData,
             uint? previousFragmentId,
             uint? nextFragmentId);
-        Task<List<ArtefactDataModel>> GetArtefactsAsync(EditionUserInfo editionUser, uint textFragmentId);
-        Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId);
-        Task<List<TextFragmentData>> GetFragmentDataAsync(EditionUserInfo editionUser);
-        Task<uint> RemoveTextFragmentAsync(EditionUserInfo editionUser, uint textFragmentId);
-        Task<TextFragmentData> UpdateTextFragmentAsync(EditionUserInfo editionUser,
+        Task<List<ArtefactDataModel>> GetArtefactsAsync(UserInfo editionUser, uint textFragmentId);
+        Task<TextEdition> GetTextFragmentByIdAsync(UserInfo editionUser, uint textFragmentId);
+        Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo editionUser);
+        Task<uint> RemoveTextFragmentAsync(UserInfo editionUser, uint textFragmentId);
+        Task<TextFragmentData> UpdateTextFragmentAsync(UserInfo editionUser,
             uint textFragmentId,
             string fragmentName,
             uint? previousFragmentId,
@@ -121,7 +121,7 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorBefore">The interpretation id anchor before</param>
         /// <param name="anchorAfter">The interpretation id anchor aftere</param>
         /// <returns>An instance of Line</returns>
-        public async Task<LineData> CreateLineAsync(EditionUserInfo editionUser,
+        public async Task<LineData> CreateLineAsync(UserInfo editionUser,
             LineData lineData,
             uint fragmentId,
             uint anchorBefore = 0,
@@ -177,7 +177,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="lineId">Line id</param>
         /// <returns>A detailed text object</returns>
-        public async Task<TextEdition> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
+        public async Task<TextEdition> GetLineByIdAsync(UserInfo editionUser, uint lineId)
         {
             var terminators = _getTerminators(editionUser, TableData.Table.line, lineId);
 
@@ -193,7 +193,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Text fragment id</param>
         /// <returns>A list of lines in the text fragment</returns>
-        public async Task<List<LineData>> GetLineIdsAsync(EditionUserInfo editionUser, uint textFragmentId)
+        public async Task<List<LineData>> GetLineIdsAsync(UserInfo editionUser, uint textFragmentId)
         {
             using (var connection = OpenConnection())
             {
@@ -211,7 +211,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser"></param>
         /// <param name="lineId">Id of line</param>
         /// <returns>Id of removed line</returns>
-        public async Task<uint> RemoveLineAsync(EditionUserInfo editionUser, uint lineId)
+        public async Task<uint> RemoveLineAsync(UserInfo editionUser, uint lineId)
         {
             var signIds = await _getChildrenIds(editionUser, TableData.Table.line, lineId);
             foreach (var signId in signIds)
@@ -221,7 +221,7 @@ namespace SQE.DatabaseAccess
             return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.line), lineId);
         }
 
-        public async Task<LineData> UpdateLineAsync(EditionUserInfo editionUser,
+        public async Task<LineData> UpdateLineAsync(UserInfo editionUser,
             uint lineId,
             string lineName)
         {
@@ -240,7 +240,7 @@ namespace SQE.DatabaseAccess
         #region Sign and its interpretation
 
 
-        public async Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(EditionUserInfo editionUser, uint signId)
+        public async Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(UserInfo editionUser, uint signId)
         {
             using (var connection = OpenConnection())
             {
@@ -268,7 +268,7 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorsBefore"></param>
         /// <param name="anchorsAfter"></param>
         /// <returns></returns>
-        public async Task<List<SignData>> CreateSignsAsync(EditionUserInfo editionUser,
+        public async Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
             uint lineId,
             List<SignData> signs,
             List<uint> anchorsBefore,
@@ -331,7 +331,7 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorsAfter">Ids of the ancors after</param>
         /// <returns>List of sign Interpretation objects with the new ids</returns>
         /// <exception cref="DataNotWrittenException"></exception>
-        public async Task<List<SignInterpretationData>> AddSignInterpretationsAsync(EditionUserInfo editionUser,
+        public async Task<List<SignInterpretationData>> AddSignInterpretationsAsync(UserInfo editionUser,
             uint? signId,
             List<SignInterpretationData> signInterpretations,
             List<uint> anchorsBefore,
@@ -380,7 +380,7 @@ namespace SQE.DatabaseAccess
                         connection,
                         StreamType.SignInterpretationStream,
                         signInterpretation.SignInterpretationId.GetValueOrDefault(),
-                        editionUser.EditionId,
+                        editionUser.EditionId.Value,
                         false);
 
                     // If the sign interpretation already existed than we have to move it.
@@ -446,7 +446,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>Id of the sign interpretation</returns>
-        public async Task<uint> RemoveSignInterpretationAsync(EditionUserInfo editionUser,
+        public async Task<uint> RemoveSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId)
         {
             // Remove all attributes
@@ -464,7 +464,7 @@ namespace SQE.DatabaseAccess
                     connection,
                     StreamType.SignInterpretationStream,
                     signInterpretationId,
-                    editionUser.EditionId,
+                    editionUser.EditionId.Value,
                     true);
                 positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
                 var requests = await positionDataRequest.CreateRequestsAsync();
@@ -480,7 +480,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser"></param>
         /// <param name="signId">Id of sign</param>
         /// <returns>Id of removed sign</returns>
-        public async Task<uint> RemoveSignAsync(EditionUserInfo editionUser, uint signId)
+        public async Task<uint> RemoveSignAsync(UserInfo editionUser, uint signId)
         {
             var signInterpretationIds = await GetAllSignInterpretationIdsForSignIdAsync(editionUser, signId);
             foreach (var signInterpretationId in signInterpretationIds)
@@ -513,7 +513,7 @@ namespace SQE.DatabaseAccess
         /// <param name="firstLineName">name of the first, empty line</param>
         /// may be null</param>
         /// <returns></returns>
-        public async Task<TextFragmentData> CreateTextFragmentAsync(EditionUserInfo editionUser,
+        public async Task<TextFragmentData> CreateTextFragmentAsync(UserInfo editionUser,
             TextFragmentData textFragmentData,
             uint? previousFragmentId,
             uint? nextFragmentId)
@@ -576,7 +576,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Text fragment id</param>
         /// <returns>A list of artefacts</returns>
-        public async Task<List<ArtefactDataModel>> GetArtefactsAsync(EditionUserInfo editionUser, uint textFragmentId)
+        public async Task<List<ArtefactDataModel>> GetArtefactsAsync(UserInfo editionUser, uint textFragmentId)
         {
             using (var connection = OpenConnection())
             {
@@ -596,7 +596,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Text fragment id</param>
         /// <returns>A detailed text object</returns>
-        public async Task<TextEdition> GetTextFragmentByIdAsync(EditionUserInfo editionUser, uint textFragmentId)
+        public async Task<TextEdition> GetTextFragmentByIdAsync(UserInfo editionUser, uint textFragmentId)
         {
             var terminators = _getTerminators(editionUser, TableData.Table.text_fragment, textFragmentId);
 
@@ -611,7 +611,7 @@ namespace SQE.DatabaseAccess
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <returns>A list of all text fragments in the edition</returns>
-        public async Task<List<TextFragmentData>> GetFragmentDataAsync(EditionUserInfo editionUser)
+        public async Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo editionUser)
         {
             using (var connection = OpenConnection())
             {
@@ -628,7 +628,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser"></param>
         /// <param name="textFragmentId">Id of text frgament</param>
         /// <returns>Id of removed text fragment</returns>
-        public async Task<uint> RemoveTextFragmentAsync(EditionUserInfo editionUser, uint textFragmentId)
+        public async Task<uint> RemoveTextFragmentAsync(UserInfo editionUser, uint textFragmentId)
         {
             var lineIds = await _getChildrenIds(editionUser, TableData.Table.text_fragment, textFragmentId);
             foreach (var lineId in lineIds)
@@ -656,7 +656,7 @@ namespace SQE.DatabaseAccess
         ///     may be null
         /// </param>
         /// <returns>Details of the updated text fragment</returns>
-        public async Task<TextFragmentData> UpdateTextFragmentAsync(EditionUserInfo editionUser,
+        public async Task<TextFragmentData> UpdateTextFragmentAsync(UserInfo editionUser,
             uint textFragmentId,
             string fragmentName,
             uint? previousFragmentId,
@@ -705,7 +705,7 @@ namespace SQE.DatabaseAccess
 
         #region Common helpers
 
-        private Terminators _getTerminators(EditionUserInfo editionUser, TableData.Table table, uint elementId)
+        private Terminators _getTerminators(UserInfo editionUser, TableData.Table table, uint elementId)
         {
 
             var query = $@"SELECT DISTINCT sign_interpretation_id 
@@ -728,7 +728,7 @@ namespace SQE.DatabaseAccess
         }
 
 
-        private async Task<TextEdition> _getEntityById(EditionUserInfo editionUser, Terminators terminators)
+        private async Task<TextEdition> _getEntityById(UserInfo editionUser, Terminators terminators)
         {
             TextEdition lastEdition = null;
             TextFragmentData lastTextFragment = null;
@@ -848,7 +848,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        private async Task<List<uint>> _getChildrenIds(EditionUserInfo user, TableData.Table table, uint elementId)
+        private async Task<List<uint>> _getChildrenIds(UserInfo user, TableData.Table table, uint elementId)
         {
 
             using (var connection = OpenConnection())
@@ -867,7 +867,7 @@ namespace SQE.DatabaseAccess
         /// <param name="table">Name of the table</param>
         /// <param name="elementId">Id of the text fragment</param>
         /// <returns>Text fragment data id of the text fragment</returns>
-        private async Task<uint> _getElementDataId(EditionUserInfo user, TableData.Table table, uint elementId)
+        private async Task<uint> _getElementDataId(UserInfo user, TableData.Table table, uint elementId)
         {
             using (var connection = OpenConnection())
             {
@@ -879,7 +879,7 @@ namespace SQE.DatabaseAccess
         }
 
 
-        private async Task<uint> _removeElementAsync(EditionUserInfo editionUser, string tableName, uint elementId)
+        private async Task<uint> _removeElementAsync(UserInfo editionUser, string tableName, uint elementId)
         {
 
             var removeRequest = new MutationRequest(
@@ -937,7 +937,7 @@ namespace SQE.DatabaseAccess
         /// <param name="parentId">Id of parent</param>
         /// <returns></returns>
         /// <exception cref="DataNotWrittenException"></exception>
-        private async Task _addElementToParentAsync(EditionUserInfo editionUser,
+        private async Task _addElementToParentAsync(UserInfo editionUser,
             TableData.Table table, uint? elementId, uint? parentId)
         {
             using (var connection = OpenConnection())
@@ -977,7 +977,7 @@ namespace SQE.DatabaseAccess
         /// <param name="create">Boolean whether a new text fragment should be created for this name. Set to
         /// false if you are updating existing data.</param>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
-        private async Task _setElementDataAsync(EditionUserInfo editionUser,
+        private async Task _setElementDataAsync(UserInfo editionUser,
             TableData.Table table,
             uint elementId,
             string elementName,
@@ -1018,7 +1018,7 @@ namespace SQE.DatabaseAccess
         /// <param name="elementName">Name of the new line;
         /// may be null</param>
         /// <returns>Id of the created Element</returns>
-        public async Task<uint> _createElementAsync(EditionUserInfo editionUser,
+        public async Task<uint> _createElementAsync(UserInfo editionUser,
             TableData.Table table,
             string elementName,
             uint parentId)
@@ -1053,7 +1053,7 @@ namespace SQE.DatabaseAccess
         /// <param name="lineId">Id of line</param>
         /// <param name="textFragmentId">Id of the text fragment to be added</param>
         /// <returns></returns>
-        private async Task _addLineToTextFragment(EditionUserInfo editionUser, uint lineId, uint textFragmentId)
+        private async Task _addLineToTextFragment(UserInfo editionUser, uint lineId, uint textFragmentId)
         {
             await _addElementToParentAsync(editionUser,
                 TableData.Table.line,
@@ -1067,7 +1067,7 @@ namespace SQE.DatabaseAccess
         /// <param name="user">Edition user object</param>
         /// <param name="lineId">Id of the line</param>
         /// <returns>Line data id of the line</returns>
-        private async Task<uint> _getLineDataId(EditionUserInfo user, uint lineId)
+        private async Task<uint> _getLineDataId(UserInfo user, uint lineId)
         {
             return await _getElementDataId(user, TableData.Table.line, lineId);
         }
@@ -1080,7 +1080,7 @@ namespace SQE.DatabaseAccess
         /// <param name="lineName">Name to be set</param>
         /// <param name="create">Boolean whether a new text fragment should be created for this name. Set to
         /// false if you are updating existing data.</param>
-        private async Task _setLineDataAsync(EditionUserInfo editionUser,
+        private async Task _setLineDataAsync(UserInfo editionUser,
             uint lineId,
             string lineName,
             bool create = true)
@@ -1106,7 +1106,7 @@ namespace SQE.DatabaseAccess
         /// <param name="signId">Id of the sign</param>
         /// <param name="lineId">Id of the line</param>
         /// <returns></returns>
-        private async Task _addSignToLine(EditionUserInfo editionUser, uint? signId, uint? lineId)
+        private async Task _addSignToLine(UserInfo editionUser, uint? signId, uint? lineId)
         {
             await _addElementToParentAsync(editionUser,
                 TableData.Table.sign,
@@ -1120,7 +1120,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="lineId">Id of line to which the sign should belong</param>
         /// <returns></returns>
-        public async Task<SignData> _createSignAsync(EditionUserInfo editionUser,
+        public async Task<SignData> _createSignAsync(UserInfo editionUser,
             uint lineId
         )
         {
@@ -1175,7 +1175,7 @@ namespace SQE.DatabaseAccess
         /// <param name="create">Boolean whether a new text fragment should be created for this name. Set to
         /// false if you are updating existing data.</param>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
-        private async Task _setTextFragmentDataAsync(EditionUserInfo editionUser,
+        private async Task _setTextFragmentDataAsync(UserInfo editionUser,
             uint textFragmentId,
             string textFragmentName,
             bool create = true)
@@ -1201,7 +1201,7 @@ namespace SQE.DatabaseAccess
         /// <returns>The id of the preceding and following text fragments</returns>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _createTextFragmentPosition(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint? anchorBefore,
             uint textFragmentId,
             uint? anchorAfter)
@@ -1249,7 +1249,7 @@ namespace SQE.DatabaseAccess
         /// <returns>The id of the preceding and following text fragments</returns>
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             List<uint> textFragmentIds,
             uint? newAnchorBefore,
             uint? newAnchorAfter)
@@ -1293,7 +1293,7 @@ namespace SQE.DatabaseAccess
         /// <returns>The id of the preceding and following text fragments</returns>
         /// <exception cref="DataNotWrittenException"></exception>
         private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint textFragmentId,
             uint? newAnchorBefore,
             uint? newAnchorAfter)
@@ -1318,7 +1318,7 @@ namespace SQE.DatabaseAccess
         /// <returns>A PositionDataRequestFactory along with the ids of the previous and next text fragments</returns>
         private async Task<(PositionDataRequestFactory positionDataRequestFactory, uint? previousTextFragmentId, uint?
                 nextTextFragmentId)>
-            _createTextFragmentPositionRequestFactory(EditionUserInfo editionUser,
+            _createTextFragmentPositionRequestFactory(UserInfo editionUser,
                 uint? anchorBefore,
                 List<uint> textFragmentIds,
                 uint? anchorAfter)
@@ -1336,7 +1336,7 @@ namespace SQE.DatabaseAccess
                     connection,
                     StreamType.TextFragmentStream,
                     textFragmentIds,
-                    editionUser.EditionId
+                    editionUser.EditionId.Value
                 );
 
                 // Determine the anchorBefore if none was provided
@@ -1358,7 +1358,7 @@ namespace SQE.DatabaseAccess
                             connection,
                             StreamType.TextFragmentStream,
                             anchorAfter.Value,
-                            editionUser.EditionId,
+                            editionUser.EditionId.Value,
                             true);
                         var before = tempFac.AnchorsBefore; // Get the text fragment(s) directly before it
                         if (before.Any())
@@ -1378,7 +1378,7 @@ namespace SQE.DatabaseAccess
                         connection,
                         StreamType.TextFragmentStream,
                         anchorBefore.Value,
-                        editionUser.EditionId,
+                        editionUser.EditionId.Value,
                         true);
                     var after = tempFac.AnchorsAfter; // Get the text fragment(s) directly after it
                     if (after.Any())
@@ -1405,7 +1405,7 @@ namespace SQE.DatabaseAccess
         /// <returns>A PositionDataRequestFactory along with the ids of the previous and next text fragments</returns>
         private async Task<(PositionDataRequestFactory positionDataRequestFactory, uint? previousTextFragmentId, uint?
                 nextTextFragmentId)>
-            _createTextFragmentPositionRequestFactory(EditionUserInfo editionUser,
+            _createTextFragmentPositionRequestFactory(UserInfo editionUser,
                 uint? anchorBefore,
                 uint textFragmentId,
                 uint? anchorAfter)
@@ -1466,7 +1466,7 @@ namespace SQE.DatabaseAccess
         /// <param name="textFragmentId">Id of the text fragment to be added</param>
         /// <returns></returns>
         /// <exception cref="DataNotWrittenException"></exception>
-        private async Task _addTextFragmentToManuscript(EditionUserInfo editionUser, uint textFragmentId)
+        private async Task _addTextFragmentToManuscript(UserInfo editionUser, uint textFragmentId)
         {
             uint manuscriptId;
             using (var connection = OpenConnection())
@@ -1492,7 +1492,7 @@ namespace SQE.DatabaseAccess
         /// <param name="user">Edition user object</param>
         /// <param name="textFragmentId">Id of the text fragment</param>
         /// <returns>Text fragment data id of the text fragment</returns>
-        private async Task<uint> _getTextFragmentDataId(EditionUserInfo user, uint textFragmentId)
+        private async Task<uint> _getTextFragmentDataId(UserInfo user, uint textFragmentId)
         {
             return await _getElementDataId(user, TableData.Table.text_fragment, textFragmentId);
         }

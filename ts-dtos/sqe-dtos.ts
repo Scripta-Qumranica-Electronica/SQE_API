@@ -84,7 +84,7 @@ export interface CatalogueMatchInputDTO {
     comment: string;
     textFragmentId: number;
     editionId: number;
-    confirmed: boolean;
+    confirmed?: boolean;
 }
 
 export interface CatalogueMatchDTO extends CatalogueMatchInputDTO {
@@ -102,6 +102,7 @@ export interface CatalogueMatchDTO extends CatalogueMatchInputDTO {
     manuscriptName: string;
     name: string;
     matchAuthor: string;
+    matchId: number;
     dateOfMatch: string;
 }
 

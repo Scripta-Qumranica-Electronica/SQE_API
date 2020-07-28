@@ -18,7 +18,8 @@ namespace SQE.DatabaseAccess
         Task<DetailedUserWithToken> GetDetailedUserByIdAsync(uint? userId);
         Task<DetailedUser> GetDetailedUserByTokenAsync(string token);
         Task<DetailedUserWithToken> GetUnactivatedUserByEmailAsync(string email);
-        Task<UserEditionPermissions> GetUserEditionPermissionsAsync(EditionUserInfo editionUser);
+        Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo editionUser);
+        Task<List<UserSystemRoles>> GetUserSystemRolesAsync(UserInfo editionUser);
         Task<List<EditorInfo>> GetEditionEditorsAsync(uint editionId);
 
         // Create/update account data
@@ -169,7 +170,7 @@ namespace SQE.DatabaseAccess
         /// </summary>
         /// <param name="editionUser"></param>
         /// <returns>Returns the user's rights to read, write, and admin the edition and the users editor id for the edition</returns>
-        public async Task<UserEditionPermissions> GetUserEditionPermissionsAsync(EditionUserInfo editionUser)
+        public async Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo editionUser)
         {
             using (var connection = OpenConnection())
             {
@@ -184,6 +185,46 @@ namespace SQE.DatabaseAccess
                         }
                     );
                     return results;
+                }
+                catch (InvalidOperationException)
+                {
+                    throw new StandardExceptions.NoPermissionsException(editionUser);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Retrieves the current users permissions for a specific edition.
+        /// </summary>
+        /// <param name="editionUser"></param>
+        /// <returns>Returns the user's rights to read, write, and admin the edition and the users editor id for the edition</returns>
+        public async Task<List<UserSystemRoles>> GetUserSystemRolesAsync(UserInfo editionUser)
+        {
+            using (var connection = OpenConnection())
+            {
+                try
+                {
+                    var results = await connection.QueryAsync<string>(
+                        UserSystemRolesQuery.GetQuery,
+                        new
+                        {
+                            UserId = editionUser.userId
+                        }
+                    );
+
+                    // Note, I could use Dapper to map the UserSystemRoles by internal database id.
+                    // To do this make the enum `UserSystemRoles : uint`, but I like the string matching,
+                    // since that decouples the systems. The system here will break down if the database is
+                    // altered without matching changes made to the API (or the reverse).
+                    return results.Select(x => x switch
+                        {
+                            "REGISTERED_USER" => UserSystemRoles.REGISTERED_USER,
+                            "CATALOGUE_CURATOR" => UserSystemRoles.CATALOGUE_CURATOR,
+                            "IMAGE_DATA_CURATOR" => UserSystemRoles.IMAGE_DATA_CURATOR,
+                            "USER_ADMIN" => UserSystemRoles.USER_ADMIN,
+                            _ => UserSystemRoles.REGISTERED_USER
+                        }
+                    ).ToList();
                 }
                 catch (InvalidOperationException)
                 {

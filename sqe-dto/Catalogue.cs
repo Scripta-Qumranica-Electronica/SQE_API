@@ -24,7 +24,7 @@ namespace SQE.API.DTO
         public string comment { get; set; }
         public uint textFragmentId { get; set; }
         public uint editionId { get; set; }
-        public bool confirmed { get; set; }
+        public bool? confirmed { get; set; }
     }
     public class CatalogueMatchDTO : CatalogueMatchInputDTO
     {
@@ -42,6 +42,7 @@ namespace SQE.API.DTO
         public string manuscriptName { get; set; }
         public string name { get; set; }
         public string matchAuthor { get; set; }
+        public uint matchId { get; set; }
         public DateTime dateOfMatch { get; set; }
     }
 

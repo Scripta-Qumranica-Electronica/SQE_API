@@ -17,25 +17,25 @@ namespace SQE.DatabaseAccess
     public interface IEditionRepository
     {
         Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
-        Task ChangeEditionNameAsync(EditionUserInfo editionUser, string name);
-        Task UpdateEditionMetricsAsync(EditionUserInfo editionUser, uint width, uint height, int xOrigin, int yOrigin);
+        Task ChangeEditionNameAsync(UserInfo editionUser, string name);
+        Task UpdateEditionMetricsAsync(UserInfo editionUser, uint width, uint height, int xOrigin, int yOrigin);
 
-        Task<uint> CopyEditionSlowAsync(EditionUserInfo editionUser,
+        Task<uint> CopyEditionSlowAsync(UserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null);
 
-        Task<uint> CopyEditionAsync(EditionUserInfo editionUser,
+        Task<uint> CopyEditionAsync(UserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null);
 
-        Task ChangeEditionCopyrightAsync(EditionUserInfo editionUser,
+        Task ChangeEditionCopyrightAsync(UserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null);
 
-        Task<string> DeleteAllEditionDataAsync(EditionUserInfo editionUser, string token);
-        Task<string> GetDeleteToken(EditionUserInfo editionUser);
+        Task<string> DeleteAllEditionDataAsync(UserInfo editionUser, string token);
+        Task<string> GetDeleteToken(UserInfo editionUser);
 
-        Task<DetailedUserWithToken> RequestAddEditionEditorAsync(EditionUserInfo editionUser,
+        Task<DetailedUserWithToken> RequestAddEditionEditorAsync(UserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
@@ -46,17 +46,17 @@ namespace SQE.DatabaseAccess
         Task<List<DetailedEditorRequestPermissions>> GetOutstandingEditionEditorRequestsAsync(uint userId);
         Task<List<DetailedEditorInvitationPermissions>> GetOutstandingEditionEditorInvitationsAsync(uint userId);
 
-        Task<Permission> ChangeEditionEditorRightsAsync(EditionUserInfo editionUser,
+        Task<Permission> ChangeEditionEditorRightsAsync(UserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
             bool? mayLock,
             bool? isAdmin);
 
-        Task<List<uint>> GetEditionEditorUserIdsAsync(EditionUserInfo editionUser);
+        Task<List<uint>> GetEditionEditorUserIdsAsync(UserInfo editionUser);
 
-        Task<List<LetterShape>> GetEditionScriptCollectionAsync(EditionUserInfo editonUser);
-        Task<List<ScriptTextFragment>> GetEditionScriptLines(EditionUserInfo editionUser);
+        Task<List<LetterShape>> GetEditionScriptCollectionAsync(UserInfo editonUser);
+        Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser);
     }
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
@@ -156,7 +156,7 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task ChangeEditionNameAsync(EditionUserInfo editionUser, string name)
+        public async Task ChangeEditionNameAsync(UserInfo editionUser, string name)
         {
             using (var connection = OpenConnection())
             {
@@ -176,7 +176,7 @@ namespace SQE.DatabaseAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId);
+                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId.Value);
                 }
 
                 // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
@@ -210,7 +210,7 @@ namespace SQE.DatabaseAccess
         /// <param name="xOrigin">An estimation of the point at which the manuscript begins on the x axis in millimeters (may be zero)</param>
         /// <param name="yOrigin">An estimation of the point at which the manuscript begins on the x axis in millimeters (may be zero)(may be zero)</param>
         /// <returns></returns>
-        public async Task UpdateEditionMetricsAsync(EditionUserInfo editionUser, uint width, uint height, int xOrigin,
+        public async Task UpdateEditionMetricsAsync(UserInfo editionUser, uint width, uint height, int xOrigin,
             int yOrigin)
         {
             using (var connection = OpenConnection())
@@ -222,7 +222,7 @@ namespace SQE.DatabaseAccess
                         editionUser.EditionId
                     });
                 if (oldRecord.Count() != 1)
-                    throw new StandardExceptions.DataNotFoundException("manuscript metrics", editionUser.EditionId,
+                    throw new StandardExceptions.DataNotFoundException("manuscript metrics", editionUser.EditionId.Value,
                         "edition");
 
                 var parameters = new DynamicParameters();
@@ -265,7 +265,7 @@ namespace SQE.DatabaseAccess
         ///     (automatically created from user and all editors when null)
         /// </param>
         /// <returns>The editionId of the newly created edition.</returns>
-        public async Task<uint> CopyEditionSlowAsync(EditionUserInfo editionUser,
+        public async Task<uint> CopyEditionSlowAsync(UserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null)
         {
@@ -398,7 +398,7 @@ namespace SQE.DatabaseAccess
         ///     (automatically created from user and all editors when null)
         /// </param>
         /// <returns>The editionId of the newly created edition.</returns>
-        public async Task<uint> CopyEditionAsync(EditionUserInfo editionUser,
+        public async Task<uint> CopyEditionAsync(UserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null)
         {
@@ -482,7 +482,7 @@ WHERE edition_id = {editionUser.EditionId}");
         ///     and will switch to an autogenerated collaborator listing.
         /// </param>
         /// <returns></returns>
-        public async Task ChangeEditionCopyrightAsync(EditionUserInfo editionUser,
+        public async Task ChangeEditionCopyrightAsync(UserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null)
         {
@@ -512,7 +512,7 @@ WHERE edition_id = {editionUser.EditionId}");
         ///     to the requester to use a confirmation of the delete.
         /// </param>
         /// <returns>Returns a null string if successful; a string with a confirmation token if no token was provided.</returns>
-        public async Task<string> DeleteAllEditionDataAsync(EditionUserInfo editionUser, string token)
+        public async Task<string> DeleteAllEditionDataAsync(UserInfo editionUser, string token)
         {
             // We only allow admins to delete all data in an unlocked edition.
             if (!editionUser.IsAdmin)
@@ -522,7 +522,7 @@ WHERE edition_id = {editionUser.EditionId}");
             if (string.IsNullOrEmpty(token)) return await GetDeleteToken(editionUser);
 
             // Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
-            var editors = await _getEditionEditors(editionUser.EditionId);
+            var editors = await _getEditionEditors(editionUser.EditionId.Value);
             await Task.WhenAll(
                 editors.Select(
                     x => ChangeEditionEditorRightsAsync(editionUser, x.Email, x.MayRead, false, x.MayLock, x.IsAdmin)
@@ -567,7 +567,7 @@ WHERE edition_id = {editionUser.EditionId}");
         }
 
 
-        public async Task<string> GetDeleteToken(EditionUserInfo editionUser)
+        public async Task<string> GetDeleteToken(UserInfo editionUser)
         {
             // Generate our secret token
             var token = Guid.NewGuid().ToString();
@@ -601,7 +601,7 @@ WHERE edition_id = {editionUser.EditionId}");
         /// <param name="mayLock">Permission to lock</param>
         /// <param name="isAdmin">Permission to admin</param>
         /// <returns></returns>
-        public async Task<DetailedUserWithToken> RequestAddEditionEditorAsync(EditionUserInfo editionUser,
+        public async Task<DetailedUserWithToken> RequestAddEditionEditorAsync(UserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
@@ -618,7 +618,7 @@ WHERE edition_id = {editionUser.EditionId}");
             using (var transactionScope = new TransactionScope())
             {
                 // Check if the editor already exists, don't attempt to re-add
-                if ((await _getEditionEditors(editionUser.EditionId)).Any(x => x.Email == editorEmail))
+                if ((await _getEditionEditors(editionUser.EditionId.Value)).Any(x => x.Email == editorEmail))
                     throw new StandardExceptions.ConflictingDataException("editor email");
 
                 // Set the permissions object by coalescing with the default values
@@ -816,7 +816,7 @@ WHERE edition_id = {editionUser.EditionId}");
                 ).ToList();
         }
 
-        public async Task<Permission> ChangeEditionEditorRightsAsync(EditionUserInfo editionUser,
+        public async Task<Permission> ChangeEditionEditorRightsAsync(UserInfo editionUser,
             string editorEmail,
             bool? mayRead,
             bool? mayWrite,
@@ -829,7 +829,7 @@ WHERE edition_id = {editionUser.EditionId}");
                 throw new StandardExceptions.NoAdminPermissionsException(editionUser);
 
             // Check if the editor exists
-            var editors = await _getEditionEditors(editionUser.EditionId);
+            var editors = await _getEditionEditors(editionUser.EditionId.Value);
 
             var currentEditorSettingsList = editors.Where(x => x.Email == editorEmail).ToList();
             if (currentEditorSettingsList.Count != 1) // There should be only 1 record
@@ -907,7 +907,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
         /// </summary>
         /// <param name="editionUser">User object requesting the delete</param>
         /// <returns></returns>
-        public async Task<List<uint>> GetEditionEditorUserIdsAsync(EditionUserInfo editionUser)
+        public async Task<List<uint>> GetEditionEditorUserIdsAsync(UserInfo editionUser)
         {
             using (var connection = OpenConnection())
             {
@@ -922,7 +922,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
             }
         }
 
-        public async Task<List<LetterShape>> GetEditionScriptCollectionAsync(EditionUserInfo editonUser)
+        public async Task<List<LetterShape>> GetEditionScriptCollectionAsync(UserInfo editonUser)
         {
             using (var connection = OpenConnection())
             {
@@ -937,7 +937,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
             }
         }
 
-        public async Task<List<ScriptTextFragment>> GetEditionScriptLines(EditionUserInfo editionUser)
+        public async Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser)
         {
             // Placehoders for query mapping
             ScriptTextFragment lastScriptTextFragment = null;
@@ -1077,7 +1077,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 
         private static async Task DeleteDataFromOwnerTable(IDbConnection connection,
             string tableName,
-            EditionUserInfo editionUser)
+            UserInfo editionUser)
         {
             await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>

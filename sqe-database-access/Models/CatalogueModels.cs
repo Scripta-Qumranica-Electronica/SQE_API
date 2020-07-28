@@ -28,8 +28,9 @@ namespace SQE.DatabaseAccess.Models
         public uint TextFragmentId { get; set; }
         public string Name { get; set; }
         public uint EditionId { get; set; }
-        public bool Confirmed { get; set; }
+        public bool? Confirmed { get; set; }
         public string MatchAuthor { get; set; }
+        public uint MatchId { get; set; }
         public DateTime Date { get; set; }
     }
 

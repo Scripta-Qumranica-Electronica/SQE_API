@@ -37,6 +37,7 @@ namespace SQE.API.Server.Serialization
                 manuscriptId = cat.ManuscriptId,
                 manuscriptName = cat.ManuscriptName,
                 matchAuthor = cat.MatchAuthor,
+                matchId = cat.MatchId,
                 name = cat.Name,
                 proxy = cat.Proxy,
                 suffix = cat.Suffix,

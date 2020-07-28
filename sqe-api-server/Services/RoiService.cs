@@ -20,36 +20,36 @@ namespace SQE.API.Server.Services
 {
     public interface IRoiService
     {
-        Task<InterpretationRoiDTO> GetRoiAsync(EditionUserInfo editionUser, uint roiId);
+        Task<InterpretationRoiDTO> GetRoiAsync(UserInfo editionUser, uint roiId);
 
-        Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(EditionUserInfo editionUser, uint artefactId);
+        Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(UserInfo editionUser, uint artefactId);
 
-        Task<InterpretationRoiDTO> CreateRoiAsync(EditionUserInfo editionUser,
+        Task<InterpretationRoiDTO> CreateRoiAsync(UserInfo editionUser,
             SetInterpretationRoiDTO newRois,
             string clientId = null);
 
-        Task<InterpretationRoiDTOList> CreateRoisAsync(EditionUserInfo editionUser,
+        Task<InterpretationRoiDTOList> CreateRoisAsync(UserInfo editionUser,
             SetInterpretationRoiDTOList newRois,
             string clientId = null);
 
-        Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(EditionUserInfo editionUser,
+        Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(UserInfo editionUser,
             BatchEditRoiDTO rois,
             string clientId = null);
 
-        Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(EditionUserInfo editionUser,
+        Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(UserInfo editionUser,
             uint roiId,
             SetInterpretationRoiDTO updatedRoi,
             string clientId = null);
 
-        Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(EditionUserInfo editionUser,
+        Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(UserInfo editionUser,
             InterpretationRoiDTOList updatedRois,
             string clientId = null);
 
-        Task<List<uint>> DeleteRoisAsync(EditionUserInfo editionUser,
+        Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
             List<uint> deleteRois,
             string clientId = null);
 
-        Task<NoContentResult> DeleteRoiAsync(EditionUserInfo editionUser,
+        Task<NoContentResult> DeleteRoiAsync(UserInfo editionUser,
             uint deleteRoi,
             string clientId = null);
     }
@@ -68,7 +68,7 @@ namespace SQE.API.Server.Services
             _hubContext = hubContext;
         }
 
-        public async Task<InterpretationRoiDTO> GetRoiAsync(EditionUserInfo editionUser, uint roiId)
+        public async Task<InterpretationRoiDTO> GetRoiAsync(UserInfo editionUser, uint roiId)
         {
             var roi = await _roiRepository.GetSignInterpretationRoiByIdAsync(editionUser, roiId);
 
@@ -89,7 +89,7 @@ namespace SQE.API.Server.Services
             };
         }
 
-        public async Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(EditionUserInfo editionUser,
+        public async Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(UserInfo editionUser,
             uint artefactId)
         {
             return new InterpretationRoiDTOList
@@ -116,7 +116,7 @@ namespace SQE.API.Server.Services
             };
         }
 
-        public async Task<InterpretationRoiDTO> CreateRoiAsync(EditionUserInfo editionUser,
+        public async Task<InterpretationRoiDTO> CreateRoiAsync(UserInfo editionUser,
             SetInterpretationRoiDTO newRoi,
             string clientId = null)
         {
@@ -128,7 +128,7 @@ namespace SQE.API.Server.Services
             )).rois.FirstOrDefault();
         }
 
-        public async Task<InterpretationRoiDTOList> CreateRoisAsync(EditionUserInfo editionUser,
+        public async Task<InterpretationRoiDTOList> CreateRoisAsync(UserInfo editionUser,
             SetInterpretationRoiDTOList newRois,
             string clientId = null)
         {
@@ -159,7 +159,7 @@ namespace SQE.API.Server.Services
             return newRoisDTO;
         }
 
-        public async Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(EditionUserInfo editionUser,
+        public async Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(UserInfo editionUser,
             BatchEditRoiDTO rois,
             string clientId = null)
         {
@@ -189,7 +189,7 @@ namespace SQE.API.Server.Services
             return batchEditRoisDTO;
         }
 
-        public async Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(EditionUserInfo editionUser,
+        public async Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(UserInfo editionUser,
             uint roiId,
             SetInterpretationRoiDTO updatedRoi,
             string clientId = null)
@@ -211,7 +211,7 @@ namespace SQE.API.Server.Services
             )).rois.FirstOrDefault();
         }
 
-        public async Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(EditionUserInfo editionUser,
+        public async Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(UserInfo editionUser,
             InterpretationRoiDTOList updatedRois,
             string clientId = null)
         {
@@ -242,7 +242,7 @@ namespace SQE.API.Server.Services
             return updateRoisDTO;
         }
 
-        public async Task<NoContentResult> DeleteRoiAsync(EditionUserInfo editionUser,
+        public async Task<NoContentResult> DeleteRoiAsync(UserInfo editionUser,
             uint deleteRoi,
             string clientId = null)
         {
@@ -250,7 +250,7 @@ namespace SQE.API.Server.Services
             return new NoContentResult();
         }
 
-        public async Task<List<uint>> DeleteRoisAsync(EditionUserInfo editionUser,
+        public async Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
             List<uint> deleteRois,
             string clientId = null)
         {

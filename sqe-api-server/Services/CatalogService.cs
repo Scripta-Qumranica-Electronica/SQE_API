@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -5,6 +7,8 @@ using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
+using SQE.DatabaseAccess.Helpers;
+using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Services
 {
@@ -14,9 +18,9 @@ namespace SQE.API.Server.Services
         Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId);
         Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId);
         Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId);
-        Task<NoContentResult> CreateTextFragmentImagedObjectMatch(uint? userId,
+        Task<NoContentResult> CreateTextFragmentImagedObjectMatch(UserInfo user,
             CatalogueMatchInputDTO match, string clientId = null);
-        Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(uint? userId, uint textFragmentImagedObjectMatchId,
+        Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(UserInfo user, uint textFragmentImagedObjectMatchId,
             bool confirm, string clientId = null);
     }
 
@@ -52,27 +56,34 @@ namespace SQE.API.Server.Services
             return (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForManuscriptAsync(manuscriptId)).ToDTO();
         }
 
-        public async Task<NoContentResult> CreateTextFragmentImagedObjectMatch(uint? userId,
+        public async Task<NoContentResult> CreateTextFragmentImagedObjectMatch(UserInfo user,
             CatalogueMatchInputDTO match,
             string clientId = null)
         {
-            if (userId.HasValue)
-                await _catalogueRepo.CreateNewImagedObjectTextFragmentMatchAsync(userId.Value, match.imagedObjectId,
-                    (byte)match.catalogSide, match.textFragmentId, match.editionId, match.editionName,
-                    match.editionVolume, match.editionLocation1, match.editionLocation2, (byte)match.editionSide,
-                    match.comment);
+            CheckCatalogueEditRights(user);
+
+            await _catalogueRepo.CreateNewImagedObjectTextFragmentMatchAsync(user.userId.Value, match.imagedObjectId,
+                (byte)match.catalogSide, match.textFragmentId, match.editionId, match.editionName,
+                match.editionVolume, match.editionLocation1, match.editionLocation2, (byte)match.editionSide,
+                match.comment);
             return new NoContentResult();
         }
 
-        public async Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(uint? userId,
+        public async Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(UserInfo user,
             uint textFragmentImagedObjectMatchId,
             bool confirm,
             string clientId = null)
         {
-            if (userId.HasValue)
-                await _catalogueRepo.ConfirmImagedObjectTextFragmentMatchAsync(userId.Value,
-                    textFragmentImagedObjectMatchId, confirm);
+            CheckCatalogueEditRights(user);
+            await _catalogueRepo.ConfirmImagedObjectTextFragmentMatchAsync(user.userId.Value,
+                textFragmentImagedObjectMatchId, confirm);
             return new NoContentResult();
+        }
+
+        private static void CheckCatalogueEditRights(UserInfo user)
+        {
+            if (!user.userId.HasValue || user.SystemRoles.All(x => x != UserSystemRoles.CATALOGUE_CURATOR))
+                throw new StandardExceptions.NoSystemPermissionsException(user);
         }
     }
 }
