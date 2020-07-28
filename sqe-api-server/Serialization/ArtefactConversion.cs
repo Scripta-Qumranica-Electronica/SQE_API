@@ -26,11 +26,13 @@ namespace SQE.API.Server.Serialization
                     zIndex = artefact.ZIndex ?? 0,
 
                     // Always include a TranslateDTO (x and y are nullable uints as in the database)
-                    translate = new TranslateDTO
-                    {
-                        x = artefact.TranslateX,
-                        y = artefact.TranslateY
-                    }
+                    translate = artefact.TranslateX.HasValue && artefact.TranslateY.HasValue
+                        ? new TranslateDTO
+                        {
+                            x = artefact.TranslateX.Value,
+                            y = artefact.TranslateY.Value
+                        }
+                        : null
                 },
                 artefactPlacementEditorId = artefact.PositionEditorId,
 

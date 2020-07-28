@@ -673,8 +673,7 @@ namespace SQE.ApiTest
             // Assert (update name and set status)
             nameResponse.EnsureSuccessStatusCode();
             Assert.False(updatedNameArtefact.isPlaced);
-            Assert.Null(updatedNameArtefact.placement.translate.x);
-            Assert.Null(updatedNameArtefact.placement.translate.y);
+            Assert.Null(updatedNameArtefact.placement.translate);
             Assert.Equal(0, updatedNameArtefact.placement.rotate); // Expect the default value
             Assert.Equal(0, updatedNameArtefact.placement.zIndex); // Expect the default value
             Assert.Equal(1, updatedNameArtefact.placement.scale); // Expect the default value
@@ -839,8 +838,8 @@ namespace SQE.ApiTest
             foreach (var art in updatedArtefacts.artefactPlacements)
             {
                 Assert.True(art.isPlaced);
-                Assert.Equal(100, art.placement.translate.x.Value);
-                Assert.Equal(223, art.placement.translate.y.Value);
+                Assert.Equal(100, art.placement.translate.x);
+                Assert.Equal(223, art.placement.translate.y);
                 Assert.Equal(1, art.placement.scale);
                 Assert.Equal(0, art.placement.rotate);
                 Assert.Equal(0, art.placement.zIndex);
@@ -851,11 +850,7 @@ namespace SQE.ApiTest
             {
                 scale = (decimal)1.0,
                 rotate = (decimal)0.0,
-                translate = new TranslateDTO
-                {
-                    x = null,
-                    y = null
-                },
+                translate = null,
                 zIndex = 0
             };
             (updateResponse, updatedArtefacts) =
@@ -880,8 +875,7 @@ namespace SQE.ApiTest
             foreach (var art in updatedArtefacts.artefactPlacements)
             {
                 Assert.False(art.isPlaced);
-                Assert.Null(art.placement.translate.x);
-                Assert.Null(art.placement.translate.y);
+                Assert.Null(art.placement.translate);
                 Assert.Equal(placement.scale, art.placement.scale);
                 Assert.Equal(placement.rotate, art.placement.rotate);
                 Assert.Equal(placement.zIndex, art.placement.zIndex);
@@ -910,8 +904,7 @@ namespace SQE.ApiTest
             foreach (var art in updatedArtefacts.artefactPlacements)
             {
                 Assert.False(art.isPlaced);
-                Assert.Null(art.placement.translate.x);
-                Assert.Null(art.placement.translate.y);
+                Assert.Null(art.placement.translate);
                 Assert.Equal(1, art.placement.scale);
                 Assert.Equal(0, art.placement.rotate);
                 Assert.Equal(0, art.placement.zIndex);

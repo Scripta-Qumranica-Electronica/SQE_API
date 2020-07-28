@@ -403,8 +403,8 @@ export interface PlacementDTO {
     translate: TranslateDTO;
 }
 export interface TranslateDTO {
-    x?: number;
-    y?: number;
+    x: number;
+    y: number;
 }
 export interface LoginRequestDTO {
     email: string;

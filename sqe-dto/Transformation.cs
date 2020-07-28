@@ -20,13 +20,12 @@ namespace SQE.API.DTO
         [Required]
         public int zIndex { get; set; }
 
-        [Required]
         public TranslateDTO translate { get; set; }
     }
 
     public class TranslateDTO
     {
-        public int? x { get; set; }
-        public int? y { get; set; }
+        public int x { get; set; }
+        public int y { get; set; }
     }
 }
