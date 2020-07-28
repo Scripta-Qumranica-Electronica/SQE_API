@@ -41,9 +41,9 @@ namespace SQE.DatabaseAccess
             uint artefactId,
             decimal? scale,
             decimal? rotate,
-            uint? translateX,
-            uint? translateY,
-            uint? zIndex);
+            int? translateX,
+            int? translateY,
+            int? zIndex);
 
         Task<uint> CreateNewArtefactAsync(EditionUserInfo editionUser,
             uint masterImageId,
@@ -51,9 +51,9 @@ namespace SQE.DatabaseAccess
             string artefactName,
             decimal? scale,
             decimal? rotate,
-            uint? translateX,
-            uint? translateY,
-            uint? zIndex,
+            int? translateX,
+            int? translateY,
+            int? zIndex,
             string workStatus);
 
         Task DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId);
@@ -210,8 +210,14 @@ namespace SQE.DatabaseAccess
             List<AlteredRecord> updates;
             using (var transactionScope = new TransactionScope())
             {
-                var updateMutationTasks = transforms.Select(async x => await FormatArtefactPositionUpdateRequestAsync(editionUser, x.artefactId, x.placement?.scale,
-                    x.placement?.rotate, x.placement?.translate?.x, x.placement?.translate?.y, x.placement?.zIndex));
+                var updateMutationTasks = transforms.Select(async x =>
+                    await FormatArtefactPositionUpdateRequestAsync(editionUser,
+                        x.artefactId,
+                        x.placement?.scale,
+                        x.placement?.rotate,
+                        x.isPlaced ? x.placement?.translate?.x : null, // set to null if explicitly not placed
+                        x.isPlaced ? x.placement?.translate?.y : null, // set to null if explicitly not placed
+                        x.placement?.zIndex));
                 var updateMutations = (await Task.WhenAll(updateMutationTasks)).ToList();
                 updates = await _databaseWriter.WriteToDatabaseAsync(editionUser, updateMutations);
                 transactionScope.Complete();
@@ -224,9 +230,9 @@ namespace SQE.DatabaseAccess
             uint artefactId,
             decimal? scale,
             decimal? rotate,
-            uint? translateX,
-            uint? translateY,
-            uint? zIndex)
+            int? translateX,
+            int? translateY,
+            int? zIndex)
         {
             return await WriteArtefactAsync(editionUser, await FormatArtefactPositionUpdateRequestAsync(
                 editionUser,
@@ -243,15 +249,17 @@ namespace SQE.DatabaseAccess
             uint artefactId,
             decimal? scale,
             decimal? rotate,
-            uint? translateX,
-            uint? translateY,
-            uint? zIndex)
+            int? translateX,
+            int? translateY,
+            int? zIndex)
         {
             const string tableName = "artefact_position";
+            var notPositioned = !scale.HasValue && !rotate.HasValue && !translateX.HasValue && !translateY.HasValue &&
+                               !zIndex.HasValue;
             var artefactPositionId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
             // It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
             // If no artefact_position already exists we need to create a new entry here.
-            if (artefactPositionId == 0)
+            if (artefactPositionId == 0 && !notPositioned)
                 return FormatArtefactPositionInsertion(
                     editionUser,
                     artefactId,
@@ -273,7 +281,7 @@ namespace SQE.DatabaseAccess
             artefactChangeParams.Add("@translate_y", translateY);
             artefactChangeParams.Add("@artefact_id", artefactId);
             var artefactChangeRequest = new MutationRequest(
-                MutateType.Update,
+                notPositioned ? MutateType.Delete : MutateType.Update, // delete if the artefact is not positioned at all
                 artefactChangeParams,
                 tableName,
                 artefactPositionId
@@ -288,9 +296,9 @@ namespace SQE.DatabaseAccess
             string artefactName,
             decimal? scale,
             decimal? rotate,
-            uint? translateX,
-            uint? translateY,
-            uint? zIndex,
+            int? translateX,
+            int? translateY,
+            int? zIndex,
             string workStatus)
         {
             /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
@@ -466,9 +474,9 @@ namespace SQE.DatabaseAccess
             uint artefactId,
             decimal? scale,
             decimal? rotate,
-            uint? translateX,
-            uint? translateY,
-            uint? zIndex)
+            int? translateX,
+            int? translateY,
+            int? zIndex)
         {
             return await WriteArtefactAsync(editionUser, FormatArtefactPositionInsertion(
                 editionUser,
@@ -485,9 +493,9 @@ namespace SQE.DatabaseAccess
             uint artefactId,
             decimal? scale,
             decimal? rotate,
-            uint? translateX,
-            uint? translateY,
-            uint? zIndex)
+            int? translateX,
+            int? translateY,
+            int? zIndex)
         {
             var artefactChangeParams = new DynamicParameters(); if (scale.HasValue)
                 artefactChangeParams.Add("@scale", scale);

@@ -344,8 +344,8 @@ namespace SQE.DatabaseAccess
         }
 
         private async Task<uint> CreateRoiPositionAsync(uint artefactId,
-            uint translateX,
-            uint translateY,
+            int translateX,
+            int translateY,
             ushort stanceRotate)
         {
             using (var connection = OpenConnection())

@@ -44,6 +44,7 @@ export interface UpdateArtefactDTO {
 
 export interface UpdateArtefactPlacementDTO {
     artefactId: number;
+    isPlaced: boolean;
     placement: PlacementDTO;
 }
 
@@ -455,8 +456,8 @@ export interface PlacementDTO {
     translate: TranslateDTO;
 }
 export interface TranslateDTO {
-    x?: number;
-    y?: number;
+    x: number;
+    y: number;
 }
 export interface LoginRequestDTO {
     email: string;

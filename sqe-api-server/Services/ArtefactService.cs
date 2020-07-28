@@ -138,6 +138,7 @@ namespace SQE.API.Server.Services
                 {
                     artefactId = x.id,
                     placementEditorId = x.artefactPlacementEditorId ?? 0,
+                    isPlaced = x.isPlaced,
                     placement = x.placement
                 }).ToList()
             };
