@@ -70,10 +70,11 @@ namespace SQE.DatabaseAccess
     /// </summary>
     public static class DatabaseCommunicationRetryPolicy
     {
-        // There is a +-75 ms randomness added to the retry pause.
-        // The total delay will be somewhere between 2450 and 7350 ms.
-        private const int RetryCount = 7;
-        private const int WaitBetweenRetriesInMilliseconds = 175;
+        // The retries will take about 10 seconds max.
+        // This usually would only occur with an edition copy,
+        // which should take about 2 seconds for a very large edition.
+        private const int RetryCount = 65;
+        private const int WaitBetweenRetriesInMilliseconds = 150;
 
         private static readonly Random _random = new Random();
 
@@ -86,7 +87,7 @@ namespace SQE.DatabaseAccess
             )
             .WaitAndRetryAsync(
                 RetryCount,
-                attempt => TimeSpan.FromMilliseconds(_waitTime(attempt)),
+                attempt => TimeSpan.FromMilliseconds(WaitBetweenRetriesInMilliseconds/*_waitTime(attempt)*/),
                 (exception, delay, retryCount, _) =>
                 {
                     Log.ForContext<DbConnectionBase>()
@@ -103,7 +104,7 @@ namespace SQE.DatabaseAccess
             .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
             .WaitAndRetry(
                 RetryCount,
-                attempt => TimeSpan.FromMilliseconds(_waitTime(attempt)),
+                attempt => TimeSpan.FromMilliseconds(WaitBetweenRetriesInMilliseconds/*_waitTime(attempt)*/),
                 (exception, delay, retryCount, _) =>
                 {
                     Log.ForContext<DbConnectionBase>()
