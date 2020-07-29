@@ -36,6 +36,29 @@ namespace SQE.ApiTest
         {
             return wkt.Replace(" (", "(").Replace(", ", ",");
         }
+        
+        [Fact]
+        public async Task RemovesUnneededPoints()
+        {
+            var inputPoly = "POLYGON ((0 0,5 0,10 0,10 10,0 10,0 0))";
+            var outputPoly = "POLYGON ((0 0,0 10,10 10,10 0,0 0))";
+            await _testBadPoly(inputPoly, outputPoly);
+        }
+        
+        [Fact]
+        public async Task DoesNotSimplifyMinuteFeatures()
+        {
+            var inputPoly = "POLYGON ((0 0,0.000000000001 5,0 10,10 10,9.99999999999 5,10 0,0 0))";
+            await _testBadPoly(inputPoly, inputPoly);
+        }
+        
+        [Fact]
+        public async Task RemovesUnneededPointsFromFixedPoly()
+        {
+            var inputPoly = "POLYGON ((0 0,5 0,10 0,0 10,5 10,10 10,0 0))";
+            var outputPoly = "POLYGON ((0 0, 4.9999999999999982 4.9999999999999982, 4.9999999999999982 5.0000000000000018, 0 10, 10 10, 5.0000000000000018 5.0000000000000018, 5.0000000000000018 4.9999999999999982, 10 0, 0 0))";
+            await _testBadPoly(inputPoly, outputPoly);
+        }
 
         [Fact]
         public async Task FixesSelfIntersectingErrorPoly1()
