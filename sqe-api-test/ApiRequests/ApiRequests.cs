@@ -253,7 +253,7 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class TextFragmentRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    public class EditionTextFragmentRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint textFragmentId;
 
@@ -263,7 +263,7 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="textFragmentId">The id of the text fragment to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public TextFragmentRequestObject(uint editionId, uint textFragmentId, Tinput payload) : base(
+        public EditionTextFragmentRequestObject(uint editionId, uint textFragmentId, Tinput payload) : base(
             editionId,
             null,
             payload
@@ -282,6 +282,39 @@ namespace SQE.ApiTest.ApiRequests
             return signalR => payload == null
                 ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, textFragmentId)
                 : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, textFragmentId, payload);
+        }
+    }
+
+    /// <summary>
+    ///     Subclass of EditionRequestObject for all requests made on an text fragment
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class TextFragmentRequestObject<Tinput, Toutput, TListener> : RequestObject<Tinput, Toutput, TListener>
+    {
+        public readonly uint textFragmentId;
+
+        /// <summary>
+        ///     Provides an TextFragmentRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="textFragmentId">The id of the text fragment to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public TextFragmentRequestObject(uint textFragmentId, Tinput payload = default(Tinput)) : base(payload)
+        {
+            this.textFragmentId = textFragmentId;
+        }
+
+        protected override string HttpPath()
+        {
+            return base.HttpPath().Replace("/text-fragment-id", $"/{textFragmentId.ToString()}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString(), textFragmentId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), textFragmentId, payload);
         }
     }
 
@@ -431,7 +464,7 @@ namespace SQE.ApiTest.ApiRequests
         ///     Provides an ImagedObjectRequestObject for all API requests made on an imaged object
         /// </summary>
         /// <param name="imagedObjectId">The id of the imaged object to perform the request on</param>
-        public ImagedObjectRequestObject(string imagedObjectId) : base(default(Tinput))
+        public ImagedObjectRequestObject(string imagedObjectId, Tinput payload = default(Tinput)) : base(payload)
         {
             this.imagedObjectId = imagedObjectId;
         }
@@ -443,8 +476,9 @@ namespace SQE.ApiTest.ApiRequests
 
         public override Func<HubConnection, Task<T>> SignalrRequest<T>()
         {
-            return signalR =>
-                signalR.InvokeAsync<T>(SignalrRequestString(), imagedObjectId, payload);
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString(), imagedObjectId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), imagedObjectId, payload);
         }
     }
 
