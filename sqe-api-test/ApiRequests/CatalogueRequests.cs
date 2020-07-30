@@ -18,6 +18,13 @@ namespace SQE.ApiTest.ApiRequests
         {
             public V1_Catalogue_TextFragments_TextFragmentId_ImagedObjects(uint textFragmentId) : base(textFragmentId) { }
         }
+
+        public class
+            V1_Catalogue_Editions_EditionId_ImagedObjectTextFragmentMatches : EditionRequestObject<EmptyInput,
+                CatalogueMatchDTO, EmptyOutput>
+        {
+            public V1_Catalogue_Editions_EditionId_ImagedObjectTextFragmentMatches(uint editionId) : base(editionId) { }
+        }
     }
 
     public static partial class Post

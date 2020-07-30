@@ -73,8 +73,8 @@ namespace SQE.DatabaseAccess
         // The retries will take about 10 seconds max.
         // This usually would only occur with an edition copy,
         // which should take about 2 seconds for a very large edition.
-        private const int RetryCount = 65;
-        private const int WaitBetweenRetriesInMilliseconds = 150;
+        private const int RetryCount = 20;
+        private const int WaitBetweenRetriesInMilliseconds = 500;
 
         private static readonly Random _random = new Random();
 
@@ -104,7 +104,7 @@ namespace SQE.DatabaseAccess
             .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
             .WaitAndRetry(
                 RetryCount,
-                attempt => TimeSpan.FromMilliseconds(WaitBetweenRetriesInMilliseconds/*_waitTime(attempt)*/),
+                attempt => TimeSpan.FromMilliseconds(_waitTime()),
                 (exception, delay, retryCount, _) =>
                 {
                     Log.ForContext<DbConnectionBase>()
@@ -124,10 +124,9 @@ namespace SQE.DatabaseAccess
         /// </summary>
         /// <param name="retryCount">The current count of retries</param>
         /// <returns></returns>
-        private static int _waitTime(int retryCount)
+        private static int _waitTime()
         {
-            var waitTime = retryCount * WaitBetweenRetriesInMilliseconds;
-            return waitTime + _random.Next(-1 * waitTime / 2, waitTime / 2);
+            return WaitBetweenRetriesInMilliseconds + _random.Next(-100, 100);
         }
 
         public static void ExecuteRetry(Action operation)
@@ -163,8 +162,8 @@ namespace SQE.DatabaseAccess
     /// </summary>
     public class DatabaseCommunicationCircuitBreakPolicy
     {
-        private const int RetryCount = 5;
-        private const int WaitBetweenRetriesInMilliseconds = 200;
+        private const int RetryCount = 20;
+        private const int WaitBetweenRetriesInMilliseconds = 500;
         private const int CircuitBreakerPause = 5;
 
         private static readonly List<uint> _pauseExceptions = new List<uint> { 1040, 1203 };
@@ -180,7 +179,7 @@ namespace SQE.DatabaseAccess
                 .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .WaitAndRetryAsync(
                     RetryCount,
-                    attempt => TimeSpan.FromMilliseconds(_waitTime(attempt)),
+                    attempt => TimeSpan.FromMilliseconds(_waitTime()),
                     (exception, delay, retryCount, _) =>
                     {
                         Log.ForContext<DbConnectionBase>()
@@ -197,7 +196,7 @@ namespace SQE.DatabaseAccess
                 .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .WaitAndRetry(
                     RetryCount,
-                    attempt => TimeSpan.FromMilliseconds(_waitTime(attempt)),
+                    attempt => TimeSpan.FromMilliseconds(_waitTime()),
                     (exception, delay, retryCount, _) =>
                     {
                         Log.ForContext<DbConnectionBase>()
@@ -232,10 +231,9 @@ namespace SQE.DatabaseAccess
         /// </summary>
         /// <param name="retryCount">The current count of retries</param>
         /// <returns></returns>
-        private int _waitTime(int retryCount)
+        private int _waitTime()
         {
-            var waitTime = retryCount * WaitBetweenRetriesInMilliseconds;
-            return waitTime + _random.Next(-1 * waitTime / 2, waitTime / 2);
+            return WaitBetweenRetriesInMilliseconds + _random.Next(-100, 100);
         }
 
         public void ExecuteRetryWithCircuitBreaker(Action operation)

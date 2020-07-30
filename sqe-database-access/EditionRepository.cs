@@ -20,10 +20,6 @@ namespace SQE.DatabaseAccess
         Task ChangeEditionNameAsync(UserInfo editionUser, string name);
         Task UpdateEditionMetricsAsync(UserInfo editionUser, uint width, uint height, int xOrigin, int yOrigin);
 
-        Task<uint> CopyEditionSlowAsync(UserInfo editionUser,
-            string copyrightHolder = null,
-            string collaborators = null);
-
         Task<uint> CopyEditionAsync(UserInfo editionUser,
             string copyrightHolder = null,
             string collaborators = null);
@@ -158,10 +154,10 @@ namespace SQE.DatabaseAccess
 
         public async Task ChangeEditionNameAsync(UserInfo editionUser, string name)
         {
+            EditionNameQuery.Result result;
+
             using (var connection = OpenConnection())
             {
-                EditionNameQuery.Result result;
-
                 try
                 {
                     // Here we get the data from the original scroll_data field, we need the scroll_id,
@@ -178,27 +174,27 @@ namespace SQE.DatabaseAccess
                 {
                     throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId.Value);
                 }
-
-                // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
-                // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
-                // throws a NoPermissionException immediately.
-
-                // Now we create the mutation object for the requested action
-                // You will want to check the database to make sure you what you are doing.
-                var nameChangeParams = new DynamicParameters();
-                nameChangeParams.Add("@manuscript_id", result.ScrollId);
-                nameChangeParams.Add("@Name", name);
-                var nameChangeRequest = new MutationRequest(
-                    MutateType.Update,
-                    nameChangeParams,
-                    "manuscript_data",
-                    result.ScrollDataId
-                );
-
-                // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-                // care of main_action and single_action.
-                await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
             }
+
+            // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
+            // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
+            // throws a NoPermissionException immediately.
+
+            // Now we create the mutation object for the requested action
+            // You will want to check the database to make sure you what you are doing.
+            var nameChangeParams = new DynamicParameters();
+            nameChangeParams.Add("@manuscript_id", result.ManuscriptId);
+            nameChangeParams.Add("@Name", name);
+            var nameChangeRequest = new MutationRequest(
+                MutateType.Update,
+                nameChangeParams,
+                "manuscript_data",
+                result.ManuscriptDataId
+            );
+
+            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
+            // care of main_action and single_action.
+            await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
         }
 
         /// <summary>
@@ -246,142 +242,6 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        ///     NOTE! This version of the copy edition method is about 4 times slower than the one
-        ///     currently in use. It is here as a reminder that this approach is not faster than the current one.
-        ///
-        ///     This creates a new copy of the requested edition, which will be owned with full privileges
-        ///     by the requesting user.
-        /// </summary>
-        /// <param name="editionUser">
-        ///     User info object contains the editionId that the user wishes to copy and
-        ///     all user permissions related to it.
-        /// </param>
-        /// <param name="copyrightHolder">
-        ///     Name of the person/institution that holds the copyright
-        ///     (automatically created from user when null)
-        /// </param>
-        /// <param name="collaborators">
-        ///     Names of all collaborators
-        ///     (automatically created from user and all editors when null)
-        /// </param>
-        /// <returns>The editionId of the newly created edition.</returns>
-        public async Task<uint> CopyEditionSlowAsync(UserInfo editionUser,
-            string copyrightHolder = null,
-            string collaborators = null)
-        {
-            var originalEditionData = new List<List<uint>>();
-            List<OwnerTables.Result> ownerTables;
-
-            using (var connection = OpenConnection())
-            {
-                // Collect all the data for the copy in one transaction.
-                // This way we don't care if the edition is locked, the DB
-                // will release the share locks once this relatively quick
-                // transaction is complete, and will not block the copy from
-                // edition during the writing of the new edition.
-                ownerTables = (await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery)).ToList();
-                foreach (var ownerTable in ownerTables)
-                {
-                    var tableName = ownerTable.TableName;
-                    var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
-                    originalEditionData.Add(
-                        (await connection.QueryAsync<uint>(
-                            GetOwnerTableDataForQuery.GetQuery(tableName, tableIdColumn),
-                            new
-                            {
-                                editionUser.EditionId
-                            }
-                        )).ToList()
-                    );
-                }
-            }
-
-            // Right now we create all the new rows for the new edition
-            // in one transaction. The benefit of this is that if it fails
-            // for some reason, nothing is committed. The downside is that
-            // it is a long-running process, that touches many rows (thus
-            // locking them up). If we really do run into performance problems,
-            // consider writing each data table in its own transaction,
-            // and be prepared to DELETE all INSERTS in the case an unrecoverable
-            // failure is encountered. The danger of doing that is that you might
-            // end up with "orphaned" INSERTS in the case that the API crashes
-            // in the middle of such a procedure. Then you would need to periodically
-            // check the owner tables for these failed writes, which could be difficult.
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
-                async () =>
-                {
-                    var watch = new System.Diagnostics.Stopwatch();
-                    watch.Start();
-
-                    using (var transactionScope = new TransactionScope())
-                    using (var connection = OpenConnection())
-                    {
-                        // Create a new edition
-                        connection.Execute(
-                            CopyEditionQuery.GetQuery,
-                            new
-                            {
-                                editionUser.EditionId,
-                                CopyrightHolder = copyrightHolder,
-                                Collaborators = collaborators
-                            }
-                        );
-
-                        var toEditionId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
-                        if (toEditionId == 0)
-                            throw new StandardExceptions.DataNotWrittenException("create edition");
-
-                        // Create new edition_editor
-                        connection.Execute(
-                            CreateEditionEditorQuery.GetQuery,
-                            new
-                            {
-                                EditionId = toEditionId,
-                                UserId = editionUser.userId,
-                                MayLock = 1,
-                                IsAdmin = 1
-                            }
-                        );
-
-                        var toEditionEditorId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
-                        if (toEditionEditorId == 0)
-                            throw new StandardExceptions.DataNotWrittenException("create edition_editor");
-
-                        // Copy data collected in the previous transaction over to the new edition
-                        var writeTasks = new List<Task<int>>();
-                        foreach (var (ownerTable, index) in ownerTables.Select((v, i) => (v, i)))
-                            if (originalEditionData[index].Count > 0)
-                            {
-                                var tableName = ownerTable.TableName;
-                                var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
-                                writeTasks.Add(
-                                    connection.ExecuteAsync(
-                                        WriteOwnerTableData.GetQuery(
-                                            tableName,
-                                            tableIdColumn,
-                                            toEditionId,
-                                            toEditionEditorId,
-                                            originalEditionData[index]
-                                        )
-                                    )
-                                );
-                            }
-
-                        await Task.WhenAll(writeTasks);
-
-                        //Cleanup
-                        transactionScope.Complete();
-
-                        watch.Stop();
-                        Log.Information($"Execution Time for copy edition 1: {watch.ElapsedMilliseconds} ms");
-
-                        return toEditionId;
-                    }
-                }
-            );
-        }
-
-        /// <summary>
         ///     This creates a new copy of the requested edition, which will be owned with full privileges
         ///     by the requesting user.
         /// </summary>
@@ -402,6 +262,9 @@ namespace SQE.DatabaseAccess
             string copyrightHolder = null,
             string collaborators = null)
         {
+            // Note, we had tried to make this quicker by collecting all the edition info in a single
+            // transaction, then performing the writes in a separate transaction. It turns out that
+            // approach is about 4 times slower than the one here.
             List<OwnerTables.Result> ownerTables;
 
             using (var connection = OpenConnection())
@@ -413,12 +276,10 @@ namespace SQE.DatabaseAccess
                 async () =>
                 {
                     // In an effort to speed this up further, I tried disabling foreign keys and unique checks.
-                    // It made no appreciable difference. Also, setting the isolation level to read committed
-                    // made only a very minor difference:
+                    // It made no appreciable difference:
                     // await connection.ExecuteAsync("SET @@session.foreign_key_checks=0;");
                     // await connection.ExecuteAsync("SET @@session.unique_checks=0;");
-                    //using (var transactionScope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() {IsolationLevel = IsolationLevel.ReadCommitted}))
-                    using (var transactionScope = new TransactionScope())
+                    using (var transactionScope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = IsolationLevel.ReadCommitted }))
                     using (var connection = OpenConnection())
                     {
                         // Create a new edition
