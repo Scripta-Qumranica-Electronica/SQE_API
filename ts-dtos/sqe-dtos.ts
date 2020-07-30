@@ -102,8 +102,10 @@ export interface CatalogueMatchDTO extends CatalogueMatchInputDTO {
     manuscriptName: string;
     name: string;
     matchAuthor: string;
+    matchConfirmationAuthor: string;
     matchId: number;
     dateOfMatch: string;
+    dateOfConfirmation: string;
 }
 
 export interface CatalogueMatchListDTO {

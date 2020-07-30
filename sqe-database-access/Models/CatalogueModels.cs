@@ -30,8 +30,10 @@ namespace SQE.DatabaseAccess.Models
         public uint EditionId { get; set; }
         public bool? Confirmed { get; set; }
         public string MatchAuthor { get; set; }
+        public string MatchConfirmationAuthor { get; set; }
         public uint MatchId { get; set; }
-        public DateTime Date { get; set; }
+        public DateTime MatchDate { get; set; }
+        public DateTime? MatchConfirmationDate { get; set; }
     }
 
     public class EditionCatalogueEntry

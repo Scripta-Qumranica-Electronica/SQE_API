@@ -38,23 +38,32 @@ SELECT image_catalog_id AS ImageCatalogId,
        name AS Name,
        manuscript_name AS ManuscriptName,
        edition_id AS EditionId,
-       iecc.confirmed AS Confirmed,
-       user.email AS MatchAuthor,
-       iecc.time AS Date,
+       iecc1.email AS MatchAuthor,
+       iecc1.time AS MatchDate,
+       iecc2.confirmed AS Confirmed,
+       IF(iecc2.confirmed IS NULL, NULL, iecc2.email) AS MatchConfirmationAuthor,
+       IF(iecc2.confirmed IS NULL, NULL, iecc2.time) AS MatchConfirmationDate,
        image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id AS MatchId
 FROM image_text_fragment_match_catalogue
     $Latest
-    LEFT JOIN user USING(user_id)
 $Where
 ";
 
         private const string latestFilter = @"
-JOIN (SELECT iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id, iaa_edition_catalog_to_text_fragment_confirmation.time, iaa_edition_catalog_to_text_fragment_confirmation.confirmed, iaa_edition_catalog_to_text_fragment_confirmation.user_id
+JOIN (SELECT iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id, iaa_edition_catalog_to_text_fragment_confirmation.time, iaa_edition_catalog_to_text_fragment_confirmation.confirmed, user.email
+FROM iaa_edition_catalog_to_text_fragment_confirmation
+LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation iec ON iec.iaa_edition_catalog_to_text_fragment_id = iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id
+    AND iec.time < iaa_edition_catalog_to_text_fragment_confirmation.time
+LEFT JOIN user ON user.user_id = iaa_edition_catalog_to_text_fragment_confirmation.user_id
+WHERE iec.iaa_edition_catalog_to_text_fragment_id IS NULL) AS iecc1 
+ON iecc1.iaa_edition_catalog_to_text_fragment_id = image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id
+JOIN (SELECT iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id, iaa_edition_catalog_to_text_fragment_confirmation.time, iaa_edition_catalog_to_text_fragment_confirmation.confirmed, user.email
 FROM iaa_edition_catalog_to_text_fragment_confirmation
 LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation iec ON iec.iaa_edition_catalog_to_text_fragment_id = iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id
     AND iec.time > iaa_edition_catalog_to_text_fragment_confirmation.time
-where iec.iaa_edition_catalog_to_text_fragment_id IS NULL) AS iecc 
-ON iecc.iaa_edition_catalog_to_text_fragment_id = image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id";
+LEFT JOIN user ON user.user_id = iaa_edition_catalog_to_text_fragment_confirmation.user_id
+WHERE iec.iaa_edition_catalog_to_text_fragment_id IS NULL) AS iecc2 
+ON iecc2.iaa_edition_catalog_to_text_fragment_id = image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id";
         private const string allFilter =
             @"JOIN SQE.iaa_edition_catalog_to_text_fragment_confirmation AS iecc USING(iaa_edition_catalog_to_text_fragment_id)";
         private const string editionFilter = "WHERE image_text_fragment_match_catalogue.edition_id = @EditionId";

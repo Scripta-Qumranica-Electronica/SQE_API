@@ -42,8 +42,10 @@ namespace SQE.API.DTO
         public string manuscriptName { get; set; }
         public string name { get; set; }
         public string matchAuthor { get; set; }
+        public string matchConfirmationAuthor { get; set; }
         public uint matchId { get; set; }
         public DateTime dateOfMatch { get; set; }
+        public DateTime? dateOfConfirmation { get; set; }
     }
 
     public class CatalogueMatchListDTO
