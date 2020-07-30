@@ -21,6 +21,7 @@ namespace SQE.DatabaseAccess
         Task UpdateEditionMetricsAsync(UserInfo editionUser, uint width, uint height, int xOrigin, int yOrigin);
 
         Task<uint> CopyEditionAsync(UserInfo editionUser,
+            string name = null,
             string copyrightHolder = null,
             string collaborators = null);
 
@@ -259,6 +260,7 @@ namespace SQE.DatabaseAccess
         /// </param>
         /// <returns>The editionId of the newly created edition.</returns>
         public async Task<uint> CopyEditionAsync(UserInfo editionUser,
+            string name = null,
             string copyrightHolder = null,
             string collaborators = null)
         {
@@ -313,10 +315,40 @@ namespace SQE.DatabaseAccess
                         if (toEditionEditorId == 0)
                             throw new StandardExceptions.DataNotWrittenException("create edition_editor");
 
+                        uint? manuscriptDataId = null;
+                        if (!string.IsNullOrEmpty(name))
+                        {
+                            await connection.ExecuteAsync(@"
+                        INSERT INTO manuscript_data (manuscript_id, name, creator_id)
+                        SELECT manuscript_id, @Name, @UserId
+                        FROM edition
+                        WHERE edition.edition_id = @EditionId
+                        ON DUPLICATE KEY UPDATE manuscript_data_id=LAST_INSERT_ID(manuscript_data_id)", new
+                            {
+                                Name = name,
+                                UserId = editionUser.userId,
+                                EditionId = toEditionId
+                            });
+                            manuscriptDataId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+                        }
+
                         foreach (var ownerTable in ownerTables)
                         {
                             var tableName = ownerTable.TableName;
                             var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
+                            if (tableName == "manuscript_data_owner" && manuscriptDataId.HasValue)
+                            {
+                                await connection.ExecuteAsync(@"
+INSERT INTO manuscript_data_owner (manuscript_data_id, edition_id, edition_editor_id)
+VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)", new
+                                {
+                                    EditionId = toEditionId,
+                                    EditionEditorId = toEditionEditorId,
+                                    ManuscriptDataId = manuscriptDataId.Value
+                                });
+                                continue;
+                            }
+
                             // Should I do any error checking here?
                             await connection.ExecuteAsync($@"
 INSERT INTO {tableName} ({tableIdColumn}, edition_id, edition_editor_id)

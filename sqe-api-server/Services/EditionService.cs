@@ -179,6 +179,7 @@ namespace SQE.API.Server.Services
             // Clone edition
             var copyToEditionId = await _editionRepo.CopyEditionAsync(
                 editionUser,
+                editionInfo.name,
                 editionInfo.copyrightHolder,
                 editionInfo.collaborators
             );
@@ -187,24 +188,17 @@ namespace SQE.API.Server.Services
                 throw new Exception($"Failed to clone {editionUser.EditionId}.");
             await editionUser.SetEditionId(copyToEditionId); // Update user object for the new editionId
 
-            //Change the Name, if a Name has been passed
-            if (!string.IsNullOrEmpty(editionInfo.name))
-            {
-                edition = await UpdateEditionAsync(editionUser, new EditionUpdateRequestDTO(editionInfo), clientId); // Change the Name.
-            }
-            else
-            {
-                var editions = await _editionRepo.ListEditionsAsync(
-                    editionUser.userId,
-                    editionUser.EditionId
-                ); //get wanted scroll by Id
-                var unformattedEdition = editions.First(x => x.EditionId == editionUser.EditionId);
-                //I think we do not get this far if no records were found, `First` will, I think throw an error.
-                //Maybe we should more often make use of try/catch.
-                if (unformattedEdition == null)
-                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId.Value);
-                edition = EditionModelToDTO(unformattedEdition);
-            }
+            var editions = await _editionRepo.ListEditionsAsync(
+                editionUser.userId,
+                editionUser.EditionId
+            ); //get wanted scroll by Id
+            var unformattedEdition = editions.First(x => x.EditionId == editionUser.EditionId);
+            //I think we do not get this far if no records were found, `First` will, I think throw an error.
+            //Maybe we should more often make use of try/catch.
+            if (unformattedEdition == null)
+                throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId.Value);
+            edition = EditionModelToDTO(unformattedEdition);
+
 
             // Broadcast edition creation notification to all connections of this user
             await _hubContext.Clients.GroupExcept($"user-{editionUser.userId.ToString()}", clientId)
