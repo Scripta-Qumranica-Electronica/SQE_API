@@ -295,7 +295,7 @@ namespace SQE.DatabaseAccess.Helpers
                 x =>
                     ((SqlMapper.IParameterLookup)mutationRequest.Parameters)[x] == null
             );
-            var query = OwnedTableInsertQuery.GetQuery(hasNulls);
+            var query = OwnedTableInsertQuery.GetQuery();
             query = query.Replace("$TableName", mutationRequest.TableName);
             query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
             query = query.Replace(
@@ -309,6 +309,16 @@ namespace SQE.DatabaseAccess.Helpers
                     )
                 )
             );
+            query = query.Replace(
+                    "$Where",
+                    string.Join(
+                        " AND ",
+                        mutationRequest.ColumnNames.Select(
+                            x => $"{x} <=> " + (GeometryColumns.columns.IndexOf(x + mutationRequest.TableName) > -1
+                                ? $"ST_GeomFromText(@{x})"
+                                : "@" + x))
+                    )
+                );
             mutationRequest.Parameters.Add("@UserId", userId);
 
             // Execute query
@@ -318,7 +328,7 @@ namespace SQE.DatabaseAccess.Helpers
             if (alteredRecords == 0) // Nothing was inserted because the exact record already existed.
             {
                 // Get id of new record (or the record matching the unique constraints of this request).
-                query = OwnedTableIdQuery.GetQuery(hasNulls);
+                query = OwnedTableIdQuery.GetQuery();
                 query = query.Replace("$TableName", mutationRequest.TableName);
                 query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
                 query = query.Replace(
@@ -332,6 +342,16 @@ namespace SQE.DatabaseAccess.Helpers
                         )
                     )
                 );
+                query = query.Replace(
+                                      "$Where",
+                                      string.Join(
+                                          " AND ",
+                                          mutationRequest.ColumnNames.Select(
+                                              x => $"{x} <=> " + (GeometryColumns.columns.IndexOf(x + mutationRequest.TableName) > -1
+                                                  ? $"ST_GeomFromText(@{x})"
+                                                  : "@" + x))
+                                      )
+                                  );
                 query = query.Replace("$PrimaryKeyName", mutationRequest.TableName + "_id");
 
                 insertId = await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
