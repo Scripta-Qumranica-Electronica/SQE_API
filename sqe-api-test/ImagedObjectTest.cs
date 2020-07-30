@@ -1,8 +1,10 @@
+using System.Drawing;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using Dapper;
+using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using NetTopologySuite.Geometries.Utilities;
 using SQE.API.DTO;
@@ -36,23 +38,14 @@ namespace SQE.ApiTest
         private readonly string editionImagedObjects;
         private readonly string editionImagedObjectbyId;
 
-        private async Task<uint> GetEditionWithImages(uint user = 1)
-        {
-            const string sql = @"
-SELECT DISTINCT artefact_shape_owner.edition_id
-FROM artefact_shape
-JOIN artefact_shape_owner ON artefact_shape.artefact_shape_id = artefact_shape_owner.artefact_shape_id
-JOIN edition_editor ON artefact_shape_owner.edition_editor_id = edition_editor.edition_editor_id
-  AND edition_editor.user_id = @UserId
-JOIN SQE_image ON artefact_shape.sqe_image_id = SQE_image.sqe_image_id";
-            var parameters = new DynamicParameters();
-            parameters.Add("@UserId", user);
-            var editionIds = (await _db.RunQueryAsync<uint>(sql, parameters)).ToList();
-            return editionIds[3];
-        }
-
         private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact(uint user = 1)
         {
+            var editionId = EditionHelpers.GetEditionId();
+            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId, null);
+            var (httpResponse, httpData, signalrData, _) = await Request.Send(req, _client, StartConnectionAsync);
+            httpResponse.EnsureSuccessStatusCode();
+            httpData.ShouldDeepEqual(signalrData);
+            return (editionId, httpData.imagedObjects.FirstOrDefault().id);
             const string sql = @"
 SELECT DISTINCT artefact_shape_owner.edition_id, image_catalog.object_id
 FROM artefact_shape
@@ -61,12 +54,13 @@ JOIN SQE_image ON artefact_shape.sqe_image_id = SQE_image.sqe_image_id
 JOIN image_catalog ON SQE_image.image_catalog_id = image_catalog.image_catalog_id
 JOIN edition_editor ON artefact_shape_owner.edition_editor_id = edition_editor.edition_editor_id
   AND edition_editor.user_id = @UserId
-WHERE artefact_shape.region_in_sqe_image IS NOT NULL 
+WHERE artefact_shape_owner.edition_id = @EditionId AND artefact_shape.region_in_sqe_image IS NOT NULL 
 LIMIT 50";
             var parameters = new DynamicParameters();
             parameters.Add("@UserId", user);
+            parameters.Add("@EditionId", editionId);
             var editionIds = (await _db.RunQueryAsync<(uint editionId, string objectId)>(sql, parameters)).ToList();
-            return editionIds[3];
+            return editionIds.FirstOrDefault();
         }
 
         /// <summary>
@@ -182,7 +176,7 @@ LIMIT 50";
         public async Task CanGetImagedObjectsOfEdition()
         {
             // Arrange
-            var editionId = await GetEditionWithImages();
+            var editionId = EditionHelpers.GetEditionId();
             var path = editionImagedObjects.Replace("$EditionId", editionId.ToString());
 
             // Act
@@ -207,7 +201,7 @@ LIMIT 50";
         public async Task CanGetImagedObjectsOfEditionWithArtefacts()
         {
             // Arrange
-            var editionId = await GetEditionWithImages();
+            var editionId = EditionHelpers.GetEditionId();
             var path = editionImagedObjects.Replace("$EditionId", editionId.ToString()) + "?optional=artefacts";
 
             // Act
@@ -240,7 +234,7 @@ LIMIT 50";
         public async Task CanGetImagedObjectsOfEditionWithArtefactsAndMasks()
         {
             // Arrange
-            var editionId = await GetEditionWithImages();
+            var editionId = EditionHelpers.GetEditionId();
             var path = editionImagedObjects.Replace("$EditionId", editionId.ToString())
                        + "?optional=artefacts&optional=masks";
 

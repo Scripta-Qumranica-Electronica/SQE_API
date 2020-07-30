@@ -38,9 +38,11 @@ namespace SQE.ApiTest
         /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
         /// <param name="jwt">A JWT can be added the request to access private editions.</param>
         /// <returns></returns>
-        private async Task<ArtefactListDTO> GetEditionArtefacts(uint editionId)
+        private async Task<ArtefactListDTO> GetEditionArtefacts(uint? editionId = null)
         {
-            var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId, new List<string>() { "masks" });
+            editionId ??= EditionHelpers.GetEditionId();
+
+            var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId.Value, new List<string>() { "masks" });
             var (response, artefactResponse, artefactRtResponse, _) = await Request.Send(artRequest,
                 _client,
                 StartConnectionAsync,
@@ -78,7 +80,7 @@ namespace SQE.ApiTest
         public async Task CanAccessArtefacts()
         {
             // Act
-            var artefacts = (await GetEditionArtefacts(3)).artefacts;
+            var artefacts = (await GetEditionArtefacts()).artefacts;
 
             // Assert
             Assert.NotEmpty(artefacts);
@@ -398,7 +400,7 @@ namespace SQE.ApiTest
                 // The response should indicate a bad request
                 Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
                 var resp = await artefactResponse.Content.ReadAsStringAsync();
-                Assert.True(resp.Contains("The scale must be between 0.1 and 99.9999"));
+                Assert.Contains("The scale must be between 0.1 and 99.9999", resp);
 
                 // Test scale has improper decimal value
                 newArtefact = new CreateArtefactDTO
@@ -434,8 +436,7 @@ namespace SQE.ApiTest
                 // The response should indicate a bad request
                 Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
                 resp = await artefactResponse.Content.ReadAsStringAsync();
-                Assert.True(resp.Contains(
-                    "The scale cannot have more than 2 digits to the left of the decimal and 4 digits to the right"));
+                Assert.Contains("The scale cannot have more than 2 digits to the left of the decimal and 4 digits to the right", resp);
 
                 // Test rotate has improper decimal value
                 newArtefact = new CreateArtefactDTO
@@ -471,8 +472,7 @@ namespace SQE.ApiTest
                 // The response should indicate a bad request
                 Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
                 resp = await artefactResponse.Content.ReadAsStringAsync();
-                Assert.True(resp.Contains(
-                    "The rotate cannot have more than 4 digits to the left of the decimal and 2 digits to the right"));
+                Assert.Contains("The rotate cannot have more than 4 digits to the left of the decimal and 2 digits to the right", resp);
 
                 // Test rotate out of range
                 newArtefact = new CreateArtefactDTO
@@ -508,7 +508,7 @@ namespace SQE.ApiTest
                 // The response should indicate a bad request
                 Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
                 resp = await artefactResponse.Content.ReadAsStringAsync();
-                Assert.True(resp.Contains("The rotate must be between 0 and 360"));
+                Assert.Contains("The rotate must be between 0 and 360", resp);
 
                 // Cannot create an artefact without a mask
                 // Arrange
@@ -543,7 +543,7 @@ namespace SQE.ApiTest
                 // Assert
                 Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
                 resp = await artefactResponse.Content.ReadAsStringAsync();
-                Assert.True(resp.Contains("The mask field is required."));
+                Assert.Contains("The mask field is required.", resp);
 
                 // Cannot create an artefact without a mask
                 // Arrange
@@ -578,7 +578,7 @@ namespace SQE.ApiTest
                 // Assert
                 Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
                 resp = await artefactResponse.Content.ReadAsStringAsync();
-                Assert.True(resp.Contains("The mask must be a valid WKT POLYGON description."));
+                Assert.Contains("The mask must be a valid WKT POLYGON description.", resp);
             }
         }
 
@@ -720,8 +720,7 @@ namespace SQE.ApiTest
                 positionResponse.EnsureSuccessStatusCode();
                 Assert.NotEqual(artefact.placement.scale, updatedPositionArtefact.placement.scale);
                 Assert.NotEqual(artefact.placement.rotate, updatedPositionArtefact.placement.rotate);
-                Assert.NotNull(updatedPositionArtefact.placement.translate.x);
-                Assert.NotNull(updatedPositionArtefact.placement.translate.y);
+                Assert.NotNull(updatedPositionArtefact.placement.translate);
                 Assert.Equal(newScale, updatedPositionArtefact.placement.scale);
                 Assert.Equal(newRotate, updatedPositionArtefact.placement.rotate);
                 Assert.Equal(newTranslateX, updatedPositionArtefact.placement.translate.x);

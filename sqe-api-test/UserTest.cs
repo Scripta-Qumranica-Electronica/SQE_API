@@ -727,7 +727,7 @@ namespace SQE.ApiTest
 
             // Verify we have a new token
             var token = await GetToken(newEmail);
-            Assert.NotNull(token.token);
+            Assert.NotEqual(Guid.Empty, token.token);
 
             // Cleanup (remove user)
             await CleanupUserAccountAsync(lgMsg);

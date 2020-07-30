@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -5,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
@@ -19,6 +21,7 @@ namespace SQE.ApiTest
     /// </summary>
     public class ArtefactGroupTests : WebControllerTest
     {
+        private int _testCount = 0;
         public ArtefactGroupTests(WebApplicationFactory<Startup> factory) : base(factory)
         {
         }
@@ -57,7 +60,7 @@ namespace SQE.ApiTest
                 /**
                  * Delete the new artefact group.
                  */
-                _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
             }
         }
 
@@ -115,7 +118,7 @@ namespace SQE.ApiTest
                 Assert.Equal(createdArtefactGroup.id, updatedAG.id);
                 Assert.Equal(1, artefactList.artefactGroups.Count());
 
-                _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
             }
         }
 
@@ -168,8 +171,8 @@ namespace SQE.ApiTest
                 var (_, artefactGroup, _) = await _getArtefactGroupAsync(editionId, createdArtefactGroup.id);
 
                 // Assert
-                Assert.True(errorMsg.Contains(badArtefactId.ToString()));
-                Assert.True(errorMsg.Contains("not part of this edition"));
+                Assert.Contains(badArtefactId.ToString(), errorMsg);
+                Assert.Contains("not part of this edition", errorMsg);
                 Assert.Equal(HttpStatusCode.BadRequest, updateHttpMsg.StatusCode);
                 Assert.Equal(artefactGroupName, artefactGroup.name);
                 createdArtefactGroup.artefacts.Sort();
@@ -177,7 +180,7 @@ namespace SQE.ApiTest
                 Assert.Equal(createdArtefactGroup.artefacts, artefactGroup.artefacts);
                 Assert.Equal(createdArtefactGroup.id, artefactGroup.id);
 
-                _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
             }
         }
 
@@ -227,8 +230,8 @@ namespace SQE.ApiTest
                 var (_, artefactGroupList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.True(errorMsg.Contains(artefacts.FirstOrDefault().id.ToString()));
-                Assert.True(errorMsg.Contains("already in another group"));
+                Assert.Contains(artefacts.FirstOrDefault().id.ToString(), errorMsg);
+                Assert.Contains("already in another group", errorMsg);
                 Assert.Equal(HttpStatusCode.BadRequest, secondHttpMsg.StatusCode);
                 Assert.Equal(artefactGroupName, artefactGroupList.artefactGroups.FirstOrDefault().name);
                 Assert.Equal(1, artefactGroupList.artefactGroups.Count());
@@ -237,7 +240,7 @@ namespace SQE.ApiTest
                 Assert.Equal(createdArtefactGroup.artefacts, artefactGroupList.artefactGroups.FirstOrDefault().artefacts);
                 Assert.Equal(createdArtefactGroup.id, artefactGroupList.artefactGroups.FirstOrDefault().id);
 
-                _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
             }
         }
 
@@ -419,14 +422,16 @@ namespace SQE.ApiTest
         {
             // Arrange
             user ??= Request.DefaultUsers.User1;
+            var realtime = user2 != null || this._testCount % 1 == 0;
+            this._testCount += 1;
 
             // Act
             var deleteApiRequest =
                 new Delete.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
             var (httpMessage, httpBody, signalr, listener) = await Request.Send(
                 deleteApiRequest,
-                _client,
-                StartConnectionAsync,
+                realtime ? null : _client,
+                realtime ? StartConnectionAsync : (Func<string, Task<HubConnection>>)null,
                 true,
                 user,
                 user2,
@@ -438,8 +443,8 @@ namespace SQE.ApiTest
             // Assert
             if (shouldSucceed)
             {
-                Assert.Equal(EditionEntities.artefactGroup, httpBody.entity);
-                Assert.Equal(artefactGroupId, httpBody.ids.FirstOrDefault());
+                Assert.Equal(EditionEntities.artefactGroup, realtime ? signalr.entity : httpBody.entity);
+                Assert.Equal(artefactGroupId, realtime ? signalr.ids.FirstOrDefault() : httpBody.ids.FirstOrDefault());
             }
 
             return (httpMessage, httpBody, signalr, listener);

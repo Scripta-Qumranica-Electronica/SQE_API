@@ -24,9 +24,8 @@ namespace SQE.ApiTest.ApiRequests
             : EditionRequestObject<EmptyInput, ImagedObjectListDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_ImagedObjects(uint editionId,
-                string imagedObjectId,
                 List<string> optional = null)
-                : base(editionId, optional)
+                : base(editionId, optional ?? new List<string>())
             {
             }
         }
