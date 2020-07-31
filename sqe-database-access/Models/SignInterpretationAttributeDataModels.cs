@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using Dapper;
 
 namespace SQE.DatabaseAccess.Models
 {
@@ -24,15 +22,17 @@ namespace SQE.DatabaseAccess.Models
         {
             var searchParameters = new List<string>();
             if (SignInterpretationId != null) searchParameters.Add($"sign_interpretation_id = {SignInterpretationId}");
-            if (SignInterpretationAttributeId != null) searchParameters.Add($"sign_interpretation_attribute_id = {SignInterpretationAttributeId}");
+            if (SignInterpretationAttributeId != null)
+                searchParameters.Add($"sign_interpretation_attribute_id = {SignInterpretationAttributeId}");
             if (Sequence != null) searchParameters.Add($"sequence = {Sequence}");
             if (AttributeValueId != null) searchParameters.Add($"attribute_value_id = {AttributeValueId}");
-            if (SignInterpretationAttributeAuthor != null) searchParameters.Add($"edition_editor_id = {SignInterpretationAttributeAuthor}");
+            if (SignInterpretationAttributeAuthor != null)
+                searchParameters.Add($"edition_editor_id = {SignInterpretationAttributeAuthor}");
             if (NumericValue != null) searchParameters.Add($"numeric_value = {NumericValue}");
             if (NumericValueMoreThan != null) searchParameters.Add($"numeric_value > {NumericValueMoreThan}");
             if (NumericValueLessThan != null) searchParameters.Add($"numeric_value < {NumericValueLessThan}");
 
-            return String.Join(" AND ", searchParameters);
+            return string.Join(" AND ", searchParameters);
         }
 
         public string getJoinsString()

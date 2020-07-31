@@ -1,4 +1,3 @@
-using static SQE.DatabaseAccess.Helpers.TableData;
 namespace SQE.DatabaseAccess.Queries
 {
     public static class GetTextChunk
@@ -160,7 +159,6 @@ ORDER BY sign_interpretation_ids.sequence,
     }
 
 
-
     internal static class GetLineTerminators
     {
         /// <summary>
@@ -187,7 +185,6 @@ WHERE line_id = @EntityId
 ORDER BY attribute_value_id
 ";
     }
-
 
 
     internal static class GetLineData
@@ -462,9 +459,4 @@ WHERE edition_id = @EditionId
 				VALUES (@SignId,  @Character)
 		";
     }
-
-
-
-
-
 }

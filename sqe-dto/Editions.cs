@@ -57,6 +57,7 @@ namespace SQE.API.DTO
         [Required]
         [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
+
         public uint editionId { get; set; }
     }
 
@@ -113,10 +114,9 @@ namespace SQE.API.DTO
     }
 
 
-
     /// <summary>
-    /// This is a list of all entities in an edition, including the edition itself.
-    /// This is initially intended to be used with the DeleteDTO object
+    ///     This is a list of all entities in an edition, including the edition itself.
+    ///     This is initially intended to be used with the DeleteDTO object
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum EditionEntities
@@ -137,16 +137,20 @@ namespace SQE.API.DTO
             this.entity = entity;
             this.ids = ids;
         }
+
         public DeleteDTO(EditionEntities entity, uint id)
         {
             this.entity = entity;
-            this.ids = new List<uint>() { id };
+            ids = new List<uint> { id };
         }
 
-        public DeleteDTO() { }
+        public DeleteDTO()
+        {
+        }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public EditionEntities entity { get; set; }
+
         public List<uint> ids { get; set; }
     }
 
@@ -168,7 +172,8 @@ namespace SQE.API.DTO
         ///     and added to the edition license.
         /// </param>
         /// <param name="length">Editor's estimated metrics of the manuscript (a null object will use the database defaults)</param>
-        public EditionUpdateRequestDTO(string name, string copyrightHolder, string collaborators, UpdateEditionManuscriptMetricsDTO metrics = null)
+        public EditionUpdateRequestDTO(string name, string copyrightHolder, string collaborators,
+            UpdateEditionManuscriptMetricsDTO metrics = null)
         {
             this.name = name;
             this.copyrightHolder = copyrightHolder;
@@ -180,7 +185,8 @@ namespace SQE.API.DTO
         {
         }
 
-        public EditionUpdateRequestDTO(EditionCopyDTO editionCopy) : this(editionCopy.name, editionCopy.copyrightHolder, editionCopy.collaborators)
+        public EditionUpdateRequestDTO(EditionCopyDTO editionCopy) : this(editionCopy.name, editionCopy.copyrightHolder,
+            editionCopy.collaborators)
         {
         }
 
@@ -203,9 +209,11 @@ namespace SQE.API.DTO
         [StringLength(
             255,
             MinimumLength = 1,
-            ErrorMessage = "The name of the edition must be either null for no change or between 1 and 255 characters long"
+            ErrorMessage =
+                "The name of the edition must be either null for no change or between 1 and 255 characters long"
         )]
         public string name { get; set; }
+
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }
     }

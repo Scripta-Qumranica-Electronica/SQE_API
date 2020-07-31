@@ -50,7 +50,7 @@ namespace SQE.DatabaseAccess.Helpers
             TableData.TerminatorType terminatorType)
         {
             return TableData.AllTerminators(table, terminatorType).Select(value =>
-                 new SignInterpretationAttributeData() { AttributeValueId = value }).ToList();
+                new SignInterpretationAttributeData { AttributeValueId = value }).ToList();
         }
 
 
@@ -69,16 +69,11 @@ namespace SQE.DatabaseAccess.Helpers
             uint attributeValueId,
             float value)
         {
-            return new SignInterpretationAttributeData()
+            return new SignInterpretationAttributeData
             {
                 AttributeValueId = attributeValueId,
                 NumericValue = value
             };
         }
-
     }
-
-
-
-
 }

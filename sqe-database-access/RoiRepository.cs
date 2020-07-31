@@ -88,7 +88,7 @@ namespace SQE.DatabaseAccess
                                 x.ValuesSet.GetValueOrDefault(),
                                 x.Exceptional.GetValueOrDefault()
                             );
-                            return (SignInterpretationRoiData)await GetSignInterpretationRoiByIdAsync(
+                            return await GetSignInterpretationRoiByIdAsync(
                                 editionUser,
                                 signInterpretationRoiId
                             );
@@ -130,7 +130,8 @@ namespace SQE.DatabaseAccess
                         async x =>
                         {
                             var originalSignRoiInterpretation =
-                                await GetSignInterpretationRoiByIdAsync(editionUser, x.SignInterpretationRoiId.GetValueOrDefault());
+                                await GetSignInterpretationRoiByIdAsync(editionUser,
+                                    x.SignInterpretationRoiId.GetValueOrDefault());
 
                             // TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
                             var roiShapeId = originalSignRoiInterpretation.Shape == x.Shape
@@ -163,7 +164,7 @@ namespace SQE.DatabaseAccess
                                 throw new StandardExceptions.DataNotWrittenException("update sign interpretation");
 
                             var updatedRoi =
-                                (SignInterpretationRoiData)await GetSignInterpretationRoiByIdAsync(
+                                await GetSignInterpretationRoiByIdAsync(
                                     editionUser,
                                     signInterpretationRoiUpdate.NewId.Value
                                 );
@@ -193,12 +194,13 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Deletes all rois for the sign interpretation referred by its id
+        ///     Deletes all rois for the sign interpretation referred by its id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>List of ids of deleted roiss</returns>
-        public async Task<List<uint>> DeleteAllRoisForSignInterpretationAsync(UserInfo editionUser, uint signInterpretationId)
+        public async Task<List<uint>> DeleteAllRoisForSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId)
         {
             var roiIds = await GetSignInterpretationRoisIdsByInterpretationId(editionUser, signInterpretationId);
             return await DeleteRoisAsync(
@@ -247,7 +249,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Retrieves all sign interpretation rois which match the data provided by searchData
+        ///     Retrieves all sign interpretation rois which match the data provided by searchData
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="searchData">Sign interpretation roi search data object</param>
@@ -270,7 +272,7 @@ namespace SQE.DatabaseAccess
         public async Task<List<uint>> GetSignInterpretationRoisIdsByInterpretationId(UserInfo editionUser,
             uint signInterpretationId)
         {
-            var searchData = new SignInterpretationROISearchData()
+            var searchData = new SignInterpretationROISearchData
             {
                 SignInterpretationId = signInterpretationId
             };
@@ -286,17 +288,13 @@ namespace SQE.DatabaseAccess
         {
             foreach (var signInterpretationId in
                 rois.Select(r => r.SignInterpretationId).Distinct())
-            {
                 await DeleteAllRoisForSignInterpretationAsync(editionUser, signInterpretationId.GetValueOrDefault());
-            }
 
             return await CreateRoisAsync(editionUser, rois);
-
-
         }
 
         /// <summary>
-        /// Retrieves all sign interpretation roi ids which match the data provided by searchData
+        ///     Retrieves all sign interpretation roi ids which match the data provided by searchData
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="searchData">Sign interpretation roi search data object</param>

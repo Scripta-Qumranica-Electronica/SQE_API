@@ -93,13 +93,14 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        /// Provides a list of all text fragments that should correspond to the imaged object.
+        ///     Provides a list of all text fragments that should correspond to the imaged object.
         /// </summary>
         /// <param name="imagedObjectId">Id of the imaged object</param>
         /// <returns></returns>
         [AllowAnonymous]
         [HttpGet("v1/imaged-objects/{imagedObjectId}/text-fragments")]
-        public async Task<ActionResult<List<ImagedObjectTextFragmentMatchDTO>>> ListImageTextFragments([FromRoute] string imagedObjectId)
+        public async Task<ActionResult<List<ImagedObjectTextFragmentMatchDTO>>> ListImageTextFragments(
+            [FromRoute] string imagedObjectId)
         {
             return await _imageService.GetImageTextFragmentsAsync(imagedObjectId);
         }

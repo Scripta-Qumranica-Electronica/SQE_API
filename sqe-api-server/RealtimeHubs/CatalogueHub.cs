@@ -6,7 +6,6 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
@@ -100,7 +99,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Create a new matched pair for an imaged object and a text fragment along with the edition princeps information
+        ///     Create a new matched pair for an imaged object and a text fragment along with the edition princeps information
         /// </summary>
         /// <param name="newMatch">The details of the new match</param>
         /// <returns></returns>
@@ -120,7 +119,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Confirm the correctness of an existing imaged object and text fragment match
+        ///     Confirm the correctness of an existing imaged object and text fragment match
         /// </summary>
         /// <param name="iaaEditionCatalogToTextFragmentId">The unique id of the match to confirm</param>
         /// <returns></returns>
@@ -140,7 +139,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Remove an existing imaged object and text fragment match, which is not correct
+        ///     Remove an existing imaged object and text fragment match, which is not correct
         /// </summary>
         /// <param name="iaaEditionCatalogToTextFragmentId">The unique id of the match to confirm</param>
         /// <returns></returns>

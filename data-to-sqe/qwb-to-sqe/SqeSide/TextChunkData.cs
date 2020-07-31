@@ -1,5 +1,3 @@
-using System.Linq;
-
 namespace SQE.DatabaseAccess.Models
 {
     public class TextChunkData

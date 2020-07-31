@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace SQE.DatabaseAccess.Models
 {
     public class WordData : TextChunkData

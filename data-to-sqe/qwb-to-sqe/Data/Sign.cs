@@ -1,12 +1,9 @@
-
 using System.Collections.Generic;
-using MySql.Data.MySqlClient;
 
 namespace qwb_to_sqe
 {
     public class Sign
     {
-
         public readonly Dictionary<int, SQESignAttribute> Attributes = new Dictionary<int, SQESignAttribute>();
         public string character = "";
         public int is_variant = 0;
@@ -18,13 +15,13 @@ namespace qwb_to_sqe
         {
             this.character = character;
             AddAttributes(attributeValues);
-
         }
 
         public void AddAttributes(params int[] attributeValues)
         {
             foreach (var attributeValue in attributeValues) AddAttribute(attributeValue);
         }
+
         public void AddAttribute(int attributeValue, int value = 0, int sequence = 0)
         {
             var attribute = new SQESignAttribute
@@ -48,13 +45,11 @@ namespace qwb_to_sqe
             //New sign
             if (previousSign.sign_id == 0)
             {
-
             }
         }
 
         public void Add(Sign s)
         {
-
         }
     }
 }

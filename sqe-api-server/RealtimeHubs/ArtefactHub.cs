@@ -25,7 +25,6 @@ namespace SQE.API.Server.RealtimeHubs
     {
         /// <summary>
         ///     Creates a new artefact with the provided data.
-        ///
         ///     If no mask is provided, a placeholder mask will be created with the values:
         ///     "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
         ///     every artefact). It is not recommended to leave the mask, name, or work status
@@ -155,7 +154,6 @@ namespace SQE.API.Server.RealtimeHubs
 
         /// <summary>
         ///     Updates the specified artefact.
-        /// 
         ///     There are many possible attributes that can be changed for
         ///     an artefact.  The caller should only input only those that
         ///     should be changed. Attributes with a null value will be ignored.

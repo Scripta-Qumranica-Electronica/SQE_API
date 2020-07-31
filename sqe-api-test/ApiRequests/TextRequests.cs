@@ -14,7 +14,8 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_TextFragments : EditionRequestObject<EmptyInput, TextFragmentDataListDTO, EmptyOutput>
+        public class
+            V1_Editions_EditionId_TextFragments : EditionRequestObject<EmptyInput, TextFragmentDataListDTO, EmptyOutput>
         {
             /// <summary>
             ///     Request a listing of all text fragments belonging to an edition

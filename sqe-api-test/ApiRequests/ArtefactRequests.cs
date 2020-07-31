@@ -20,7 +20,8 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, ArtefactDTO, EmptyOutput>
+        public class
+            V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, ArtefactDTO, EmptyOutput>
         {
             public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
                 editionId,
@@ -71,13 +72,19 @@ namespace SQE.ApiTest.ApiRequests
         public class
             V1_Editions_EditionId_ArtefactGroups : EditionRequestObject<EmptyInput, ArtefactGroupListDTO, EmptyOutput>
         {
-            public V1_Editions_EditionId_ArtefactGroups(uint editionId) : base(editionId, null) { }
+            public V1_Editions_EditionId_ArtefactGroups(uint editionId) : base(editionId)
+            {
+            }
         }
 
         public class
-            V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<EmptyInput, ArtefactGroupDTO, EmptyOutput>
+            V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<EmptyInput,
+                ArtefactGroupDTO, EmptyOutput>
         {
-            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId) : base(editionId, artefactGroupId, null) { }
+            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId) : base(
+                editionId, artefactGroupId, null)
+            {
+            }
         }
     }
 
@@ -96,7 +103,8 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class
-            V1_Editions_EditionId_ArtefactGroups : EditionRequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
+            V1_Editions_EditionId_ArtefactGroups : EditionRequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO,
+                ArtefactGroupDTO>
         {
             public V1_Editions_EditionId_ArtefactGroups(uint editionId, CreateArtefactGroupDTO payload) : base(
                 editionId, null, payload)
@@ -108,9 +116,12 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
-        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<UpdateArtefactDTO, ArtefactDTO, ArtefactDTO>
+        public class
+            V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<UpdateArtefactDTO, ArtefactDTO,
+                ArtefactDTO>
         {
-            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload) : base(
+            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId,
+                UpdateArtefactDTO payload) : base(
                 editionId,
                 artefactId,
                 payload
@@ -120,9 +131,11 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<UpdateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
+        public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<
+            UpdateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
         {
-            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId, UpdateArtefactGroupDTO payload) : base(
+            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId,
+                UpdateArtefactGroupDTO payload) : base(
                 editionId,
                 artefactGroupId,
                 payload
@@ -135,7 +148,8 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Delete
     {
-        public class V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, EmptyOutput, EmptyOutput>
+        public class
+            V1_Editions_EditionId_Artefacts_ArtefactId : ArtefactRequestObject<EmptyInput, EmptyOutput, EmptyOutput>
         {
             public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId) : base(
                 editionId,
@@ -147,7 +161,9 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<EmptyInput, DeleteDTO, DeleteDTO>
+        public class
+            V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId : ArtefactGroupRequestObject<EmptyInput, DeleteDTO,
+                DeleteDTO>
         {
             public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId) : base(
                 editionId,

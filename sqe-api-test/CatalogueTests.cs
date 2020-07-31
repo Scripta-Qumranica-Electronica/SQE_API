@@ -1,11 +1,7 @@
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
-using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
@@ -20,23 +16,24 @@ namespace SQE.ApiTest
         }
 
         [Fact]
-        public async Task CanGetTextFragmentsForImagedObjects()
-        {
-            var requestObj = new Get.V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments("IAA-1094-1");
-            var (respCode, response, rtResponse, _) = await Request.Send(requestObj, _client, StartConnectionAsync);
-            respCode.EnsureSuccessStatusCode();
-            response.ShouldDeepEqual(rtResponse);
-            Assert.True(response.matches.Count(x => x.editionId == 894 && x.textFragmentId == 9977) == 2);// 894 9977
-        }
-
-        [Fact]
         public async Task CanGetImagedObjectsForTextFragments()
         {
             var requestObj = new Get.V1_Catalogue_TextFragments_TextFragmentId_ImagedObjects(9977);
             var (respCode, response, rtResponse, _) = await Request.Send(requestObj, _client, StartConnectionAsync);
             respCode.EnsureSuccessStatusCode();
             response.ShouldDeepEqual(rtResponse);
-            Assert.True(response.matches.Count(x => x.imagedObjectId == "IAA-1094-1" && x.textFragmentId == 9977) == 2);// 894 9977
+            Assert.True(response.matches.Count(x => x.imagedObjectId == "IAA-1094-1" && x.textFragmentId == 9977) ==
+                        2); // 894 9977
+        }
+
+        [Fact]
+        public async Task CanGetTextFragmentsForImagedObjects()
+        {
+            var requestObj = new Get.V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments("IAA-1094-1");
+            var (respCode, response, rtResponse, _) = await Request.Send(requestObj, _client, StartConnectionAsync);
+            respCode.EnsureSuccessStatusCode();
+            response.ShouldDeepEqual(rtResponse);
+            Assert.True(response.matches.Count(x => x.editionId == 894 && x.textFragmentId == 9977) == 2); // 894 9977
         }
     }
 }

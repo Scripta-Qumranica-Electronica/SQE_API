@@ -73,8 +73,8 @@ namespace SQE.DatabaseAccess
         {
             using var connection = OpenConnection();
             return (await connection.QueryAsync<ImagedObjectTextFragmentMatch>(
-                ImagedObjectTextFragmentsQuery.GetQuery,
-                new { ImagedObjectId = imagedObjectId })
+                    ImagedObjectTextFragmentsQuery.GetQuery,
+                    new { ImagedObjectId = imagedObjectId })
                 ).AsList();
         }
 

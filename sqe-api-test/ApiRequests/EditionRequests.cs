@@ -11,7 +11,7 @@ namespace SQE.ApiTest.ApiRequests
         public class V1_Editions_AdminShareRequests : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
         {
             /// <summary>
-            /// Requests a list of all outstanding editor requests made by the current user
+            ///     Requests a list of all outstanding editor requests made by the current user
             /// </summary>
             public V1_Editions_AdminShareRequests() : base(null)
             {
@@ -21,7 +21,7 @@ namespace SQE.ApiTest.ApiRequests
         public class V1_Editions_EditorInvitations : RequestObject<EmptyInput, EditorInvitationListDTO, EmptyOutput>
         {
             /// <summary>
-            /// Requests a list of all outstanding editor requests made by the current user
+            ///     Requests a list of all outstanding editor requests made by the current user
             /// </summary>
             public V1_Editions_EditorInvitations() : base(null)
             {
@@ -63,7 +63,9 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Editions_EditionId_AddEditorRequest : EditionRequestObject<InviteEditorDTO, EmptyOutput, EditorInvitationDTO>
+        public class
+            V1_Editions_EditionId_AddEditorRequest : EditionRequestObject<InviteEditorDTO, EmptyOutput,
+                EditorInvitationDTO>
         {
             /// <summary>
             ///     Request to add an editor to an edition

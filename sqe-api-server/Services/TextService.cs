@@ -67,11 +67,11 @@ namespace SQE.API.Server.Services
 
         public async Task<ArtefactDataListDTO> GetArtefactsAsync(UserInfo editionUser, uint fragmentId)
         {
-            return new ArtefactDataListDTO()
+            return new ArtefactDataListDTO
             {
                 artefacts = (await _textRepo.GetArtefactsAsync(editionUser, fragmentId))
-                        .Select(x => new ArtefactDataDTO { id = x.ArtefactId, name = x.Name })
-                        .ToList()
+                    .Select(x => new ArtefactDataDTO { id = x.ArtefactId, name = x.Name })
+                    .ToList()
             };
         }
 
@@ -110,7 +110,7 @@ namespace SQE.API.Server.Services
             CreateTextFragmentDTO createFragment,
             string clientId = null)
         {
-            var fragmentData = new TextFragmentData() { TextFragmentName = createFragment.name };
+            var fragmentData = new TextFragmentData { TextFragmentName = createFragment.name };
             var newFragment = await _textRepo.CreateTextFragmentAsync(
                 editionUser,
                 fragmentData,
@@ -216,19 +216,23 @@ namespace SQE.API.Server.Services
                                                     signInterpretations = z.SignInterpretations.Select(
                                                             a => new SignInterpretationDTO
                                                             {
-                                                                signInterpretationId = a.SignInterpretationId.GetValueOrDefault(),
+                                                                signInterpretationId =
+                                                                    a.SignInterpretationId.GetValueOrDefault(),
                                                                 character = a.Character,
 
                                                                 attributes = a.Attributes.Select(
                                                                         b => new InterpretationAttributeDTO
                                                                         {
                                                                             interpretationAttributeId =
-                                                                                b.SignInterpretationAttributeId.GetValueOrDefault(),
+                                                                                b.SignInterpretationAttributeId
+                                                                                    .GetValueOrDefault(),
                                                                             sequence = b.Sequence.GetValueOrDefault(),
-                                                                            attributeValueId = b.AttributeValueId.GetValueOrDefault(),
+                                                                            attributeValueId =
+                                                                                b.AttributeValueId.GetValueOrDefault(),
                                                                             attributeValueString = b.AttributeString,
                                                                             editorId = b
-                                                                                .SignInterpretationAttributeAuthor.GetValueOrDefault(),
+                                                                                .SignInterpretationAttributeAuthor
+                                                                                .GetValueOrDefault(),
                                                                             value = b.NumericValue.GetValueOrDefault()
                                                                         }
                                                                     )
@@ -238,18 +242,22 @@ namespace SQE.API.Server.Services
                                                                         b => new InterpretationRoiDTO
                                                                         {
                                                                             interpretationRoiId =
-                                                                                b.SignInterpretationRoiId.GetValueOrDefault(),
+                                                                                b.SignInterpretationRoiId
+                                                                                    .GetValueOrDefault(),
                                                                             signInterpretationId =
                                                                                 b.SignInterpretationId,
-                                                                            editorId = b.SignInterpretationRoiAuthor.GetValueOrDefault(),
-                                                                            artefactId = b.ArtefactId.GetValueOrDefault(),
+                                                                            editorId = b.SignInterpretationRoiAuthor
+                                                                                .GetValueOrDefault(),
+                                                                            artefactId =
+                                                                                b.ArtefactId.GetValueOrDefault(),
                                                                             shape = b.Shape,
                                                                             translate = new TranslateDTO
                                                                             {
                                                                                 x = b.TranslateX.GetValueOrDefault(),
                                                                                 y = b.TranslateY.GetValueOrDefault()
                                                                             },
-                                                                            exceptional = b.Exceptional.GetValueOrDefault(),
+                                                                            exceptional =
+                                                                                b.Exceptional.GetValueOrDefault(),
                                                                             valuesSet = b.ValuesSet.GetValueOrDefault()
                                                                         }
                                                                     )
@@ -319,7 +327,8 @@ namespace SQE.API.Server.Services
                                         attributes = a.Attributes.Select(
                                                 b => new InterpretationAttributeDTO
                                                 {
-                                                    interpretationAttributeId = b.SignInterpretationAttributeId.GetValueOrDefault(),
+                                                    interpretationAttributeId =
+                                                        b.SignInterpretationAttributeId.GetValueOrDefault(),
                                                     sequence = b.Sequence.GetValueOrDefault(),
                                                     attributeValueId = b.AttributeValueId.GetValueOrDefault(),
                                                     attributeValueString = b.AttributeString,

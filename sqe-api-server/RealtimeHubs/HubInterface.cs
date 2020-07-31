@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using SQE.API.DTO;
-using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.RealtimeHubs
 {

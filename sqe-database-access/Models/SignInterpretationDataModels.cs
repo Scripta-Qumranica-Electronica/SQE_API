@@ -6,14 +6,20 @@ namespace SQE.DatabaseAccess.Models
     {
         public uint? SignInterpretationId { get; set; }
         public List<uint> WordIds { get; set; } = new List<uint>();
-        public List<SignInterpretationAttributeData> Attributes { get; set; } = new List<SignInterpretationAttributeData>();
-        public List<SignInterpretationCommentaryData> Commentaries { get; set; } = new List<SignInterpretationCommentaryData>();
+
+        public List<SignInterpretationAttributeData> Attributes { get; set; } =
+            new List<SignInterpretationAttributeData>();
+
+        public List<SignInterpretationCommentaryData> Commentaries { get; set; } =
+            new List<SignInterpretationCommentaryData>();
 
         // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
         public List<NextSignInterpretation> NextSignInterpretations { get; set; } = new List<NextSignInterpretation>();
-        public List<SignInterpretationRoiData> SignInterpretationRois { get; set; } = new List<SignInterpretationRoiData>();
-        public string Character { get; set; }
 
+        public List<SignInterpretationRoiData> SignInterpretationRois { get; set; } =
+            new List<SignInterpretationRoiData>();
+
+        public string Character { get; set; }
     }
 
     public class NextSignInterpretation
@@ -33,13 +39,13 @@ namespace SQE.DatabaseAccess.Models
         public override bool Equals(object obj)
         {
             return obj is NextSignInterpretation q
-                   && q.NextSignInterpretationId == this.NextSignInterpretationId
-                   && q.SignSequenceAuthor == this.SignSequenceAuthor;
+                   && q.NextSignInterpretationId == NextSignInterpretationId
+                   && q.SignSequenceAuthor == SignSequenceAuthor;
         }
 
         public override int GetHashCode()
         {
-            return this.NextSignInterpretationId.GetHashCode() ^ this.SignSequenceAuthor.GetHashCode();
+            return NextSignInterpretationId.GetHashCode() ^ SignSequenceAuthor.GetHashCode();
         }
     }
 }

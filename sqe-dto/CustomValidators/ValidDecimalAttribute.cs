@@ -10,16 +10,15 @@ namespace SQE.API.DTO.Validators
         private readonly byte scale;
 
         /// <summary>
-        /// This validation attribute checks a decimal type to ensure
-        /// it has the expected precision and scale.
-        ///
-        /// The decimal type in c# is a large 128bit type with massive support
-        /// for decimal type numbers. When inputting values into a DECIMAL column
-        /// in a database, however, it is usually necessary to use a more limited
-        /// form of the decimal type. This validation attribute enables that
-        /// functionality so that, for example, a column of the SQL DECIMAL(19,9)
-        /// type in the database can be safeguarded by using [ValidDecimalAttribute(19,9)]
-        /// on the c# attribute that will go in to or be read from the database.
+        ///     This validation attribute checks a decimal type to ensure
+        ///     it has the expected precision and scale.
+        ///     The decimal type in c# is a large 128bit type with massive support
+        ///     for decimal type numbers. When inputting values into a DECIMAL column
+        ///     in a database, however, it is usually necessary to use a more limited
+        ///     form of the decimal type. This validation attribute enables that
+        ///     functionality so that, for example, a column of the SQL DECIMAL(19,9)
+        ///     type in the database can be safeguarded by using [ValidDecimalAttribute(19,9)]
+        ///     on the c# attribute that will go in to or be read from the database.
         /// </summary>
         /// <param name="precision">The total number of digits in the decimal number</param>
         /// <param name="scale">The number of digits to the right of the decimal point</param>
@@ -38,7 +37,7 @@ namespace SQE.API.DTO.Validators
             if (!(value is decimal decimalNumber)) return false;
 
             // find the first number that is too large for the precision and scale
-            var ceiling = (decimal)BigInteger.Pow(10, this.precision - this.scale);
+            var ceiling = (decimal)BigInteger.Pow(10, precision - scale);
 
             // Make sure that the number of digits to the left of the decimal point
             // do not exceed the desired precision.
@@ -57,7 +56,7 @@ namespace SQE.API.DTO.Validators
             // Shifting 16 bits to the right and using AND 255 (= 11111111) extracts the value of (what is now)
             // the first 8 bits, which are the exponent (i.e., the number of decimal digits). Check to
             // see that this number is less than or equal to the scale.
-            return (bits[3] >> 16 & 255) <= this.scale;
+            return ((bits[3] >> 16) & 255) <= scale;
         }
     }
 }

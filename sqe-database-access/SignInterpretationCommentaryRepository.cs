@@ -50,14 +50,16 @@ namespace SQE.DatabaseAccess
 
     public class SignInterpretationCommentaryRepository : DbConnectionBase, ISignInterpretationCommentaryRepository
     {
-
         private readonly IDatabaseWriter _databaseWriter;
-        public SignInterpretationCommentaryRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
+
+        public SignInterpretationCommentaryRepository(IConfiguration config, IDatabaseWriter databaseWriter) :
+            base(config)
         {
             _databaseWriter = databaseWriter;
         }
+
         /// <summary>
-        /// Creates new commentary für a sign intepretation
+        ///     Creates new commentary für a sign intepretation
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
@@ -69,7 +71,7 @@ namespace SQE.DatabaseAccess
         {
             var result = await _createOrUpdateCommentariesAsync(editionUser,
                 signInterpretationId,
-                new List<SignInterpretationCommentaryData>() { newCommentaryData },
+                new List<SignInterpretationCommentaryData> { newCommentaryData },
                 MutateType.Create);
             return result.Count > 0 ? result.First() : new SignInterpretationCommentaryData();
         }
@@ -86,7 +88,7 @@ namespace SQE.DatabaseAccess
 
 
         /// <summary>
-        /// Update the given commentary
+        ///     Update the given commentary
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
@@ -98,13 +100,13 @@ namespace SQE.DatabaseAccess
         {
             var result = await _createOrUpdateCommentariesAsync(editionUser,
                 signInterpretationId,
-                new List<SignInterpretationCommentaryData>() { updateCommentaryData },
+                new List<SignInterpretationCommentaryData> { updateCommentaryData },
                 MutateType.Update);
             return result.Count > 0 ? result.First() : new SignInterpretationCommentaryData();
         }
 
         /// <summary>
-        /// Deletes the Commentaries with the given ids.
+        ///     Deletes the Commentaries with the given ids.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="deleteCommentaryIds">List of ids of the attributes to be deleted</param>
@@ -124,15 +126,12 @@ namespace SQE.DatabaseAccess
 
             // Check whether for each attribute a request was processed.
             if (writeResults.Count != deleteCommentaryIds.Count)
-            {
                 throw new StandardExceptions.DataNotWrittenException("delete sign interpretation commentary");
-            }
             return deleteCommentaryIds;
-
         }
 
         /// <summary>
-        /// Deletes all commentaries for the sign interpretation referred by its id
+        ///     Deletes all commentaries for the sign interpretation referred by its id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
@@ -145,11 +144,11 @@ namespace SQE.DatabaseAccess
                 signInterpretationId);
             return await DeleteCommentariesAsync(
                 editionUser,
-                (commentaries.Select(commentary => (uint)commentary.SignInterpretationCommentaryId)).ToList());
+                commentaries.Select(commentary => (uint)commentary.SignInterpretationCommentaryId).ToList());
         }
 
         /// <summary>
-        /// Gets the commentary with the given id
+        ///     Gets the commentary with the given id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationCommentaryId">Id of the commentary to be retrieved</param>
@@ -159,7 +158,7 @@ namespace SQE.DatabaseAccess
             UserInfo editionUser,
             uint signInterpretationCommentaryId)
         {
-            var searchData = new SignInterpretationCommentaryDataSearchData()
+            var searchData = new SignInterpretationCommentaryDataSearchData
             {
                 SignInterpretationCommentaryId = signInterpretationCommentaryId
             };
@@ -177,14 +176,15 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Retrieves all sign interpretation commentaries which match the data provided by searchData
+        ///     Retrieves all sign interpretation commentaries which match the data provided by searchData
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="dataSearchData">Sign interpretation commentary search data object</param>
         /// <returns>List of sign interpretation commentary data - if nothing had been found the list is empty.</returns>
-        public async Task<List<SignInterpretationCommentaryDataSearchData>> GetSignInterpretationCommentariesByDataAsync(
-            UserInfo editionUser,
-            SignInterpretationCommentaryDataSearchData dataSearchData)
+        public async Task<List<SignInterpretationCommentaryDataSearchData>>
+            GetSignInterpretationCommentariesByDataAsync(
+                UserInfo editionUser,
+                SignInterpretationCommentaryDataSearchData dataSearchData)
         {
             var query = GetSignInterpretationCommentaryByData.GetQuery.Replace(
                 "@WhereData",
@@ -199,16 +199,17 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Gets all commentaries of a the sign interpretation referred by its id
+        ///     Gets all commentaries of a the sign interpretation referred by its id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>List of sign interpretation commentaries</returns>
-        public async Task<List<SignInterpretationCommentaryDataSearchData>> GetSignInterpretationCommentariesByInterpretationId(
-            UserInfo editionUser,
-            uint signInterpretationId)
+        public async Task<List<SignInterpretationCommentaryDataSearchData>>
+            GetSignInterpretationCommentariesByInterpretationId(
+                UserInfo editionUser,
+                uint signInterpretationId)
         {
-            var searchData = new SignInterpretationCommentaryDataSearchData()
+            var searchData = new SignInterpretationCommentaryDataSearchData
             {
                 SignInterpretationId = signInterpretationId
             };
@@ -219,8 +220,8 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Deletes all existing commentaries of a sign interpretation referred by the field signInterpretationId
-        /// of the new commentary and add the new commentary to it
+        ///     Deletes all existing commentaries of a sign interpretation referred by the field signInterpretationId
+        ///     of the new commentary and add the new commentary to it
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
@@ -235,13 +236,13 @@ namespace SQE.DatabaseAccess
             if (newCommentaryData == null) return new SignInterpretationCommentaryData();
             var result = await ReplaceSignInterpretationCommentaries(editionUser,
                 signInterpretationId,
-                new List<SignInterpretationCommentaryData>() { newCommentaryData });
+                new List<SignInterpretationCommentaryData> { newCommentaryData });
             return result.Count == 0 ? new SignInterpretationCommentaryData() : result.First();
         }
 
         /// <summary>
-        /// Deletes all existing commentaries of a sign interpretation referred by the field signInterpretationId
-        /// of the new commentary and add the new commentaries to it
+        ///     Deletes all existing commentaries of a sign interpretation referred by the field signInterpretationId
+        ///     of the new commentary and add the new commentaries to it
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
@@ -262,23 +263,24 @@ namespace SQE.DatabaseAccess
         #region Private functions
 
         /// <summary>
-        /// Creates and executes create or update mutation requests for the given commentary which must have set the field
-        /// signInterpretationId properly.
+        ///     Creates and executes create or update mutation requests for the given commentary which must have set the field
+        ///     signInterpretationId properly.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="commentary">Sign interpretation commentary object</param>
         /// <param name="action">Mutate type create or update</param>
-        /// <returns>Commentary with the new sign interpretation commentary id set. If the commentary had been null
-        /// the id is set to zero</returns>
+        /// <returns>
+        ///     Commentary with the new sign interpretation commentary id set. If the commentary had been null
+        ///     the id is set to zero
+        /// </returns>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task<List<SignInterpretationCommentaryData>> _createOrUpdateCommentariesAsync(
             UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationCommentaryData> commentaries,
             MutateType action
-            )
+        )
         {
-
             // Let's test whether a list of new attributes is provided.
             // It doesn't matter if this list is empty
             if (!(commentaries?.Count > 0)) return new List<SignInterpretationCommentaryData>();
@@ -294,7 +296,7 @@ namespace SQE.DatabaseAccess
                     action,
                     signInterpretationCommentaryParameters,
                     "sign_interpretation_commentary",
-                    action == MutateType.Update ? (uint?)commentary.SignInterpretationCommentaryId : null
+                    action == MutateType.Update ? commentary.SignInterpretationCommentaryId : null
                 );
                 requests.Add(signInterpretationCommentaryRequest);
             }
@@ -312,10 +314,7 @@ namespace SQE.DatabaseAccess
             // Now set the new Ids
 
             for (var i = 0; i < commentaries.Count; i++)
-            {
                 commentaries[i].SignInterpretationCommentaryId = (uint)writeResults[i].NewId;
-            }
-
 
 
             // Now return the list of new attributes which now also contains the the new ids.

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Net.NetworkInformation;
 using SQE.DatabaseAccess.Models;
 using static SQE.DatabaseAccess.Helpers.SignInterpretationFactory;
 
@@ -12,54 +11,49 @@ namespace SQE.DatabaseAccess.Helpers
             Readability? readability = null,
             float? probability = null)
         {
-            return new SignData()
+            return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData>() { CreateCharacterInterpretation(character,
-                    width, readability, probability)}
+                SignInterpretations = new List<SignInterpretationData>
+                {
+                    CreateCharacterInterpretation(character,
+                        width, readability, probability)
+                }
             };
         }
+
         public static SignData CreateSpaceSign(float width = 1, float? probability = null)
         {
-            return new SignData()
+            return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData>() { CreateSpaceInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData> { CreateSpaceInterpretation(width, probability) }
             };
         }
 
         public static SignData CreateVacatSign(float width = 5, float? probability = null)
         {
-            return new SignData()
+            return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData>() { CreateVacatInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData> { CreateVacatInterpretation(width, probability) }
             };
         }
+
         public static SignData CreateDamageSign(float width = 1, float? probability = null)
         {
-            return new SignData()
+            return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData>() { CreateDamagedInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData> { CreateDamagedInterpretation(width, probability) }
             };
         }
 
         public static SignData CreateTerminatorSign(TableData.Table table, TableData.TerminatorType terminatorType)
         {
-            return new SignData()
+            return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData>()
+                SignInterpretations = new List<SignInterpretationData>
                 {
                     CreateTerminatorInterpretation(table, terminatorType)
                 }
             };
         }
-
-
-
-
-
-
-
-
-
-
     }
 }

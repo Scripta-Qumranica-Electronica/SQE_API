@@ -9,9 +9,7 @@ namespace qwb_to_sqe.Repositories
 {
     public class TextRepositoryExpanded : TextRepository
     {
-
-
-        private static string _terminatorsQuery = @"
+        private static readonly string _terminatorsQuery = @"
             SELECT pis1.sign_interpretation_id
             FROM word as w1
                 JOIN position_in_stream_to_word_rel pistwr1 on w1.word_id = pistwr1.word_id
@@ -58,6 +56,5 @@ namespace qwb_to_sqe.Repositories
                     .ToArray());
             }
         }
-
     }
 }

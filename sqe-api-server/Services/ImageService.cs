@@ -84,18 +84,18 @@ namespace SQE.API.Server.Services
             return null;
         }
 
-        private static ImageDTO.Lighting GetLightingType(byte type)
+        private static SimpleImageDTO.Lighting GetLightingType(byte type)
         {
             if (type == 2
-                || type == 3) return ImageDTO.Lighting.raking;
-            return ImageDTO.Lighting.direct; // need to check..
+                || type == 3) return SimpleImageDTO.Lighting.raking;
+            return SimpleImageDTO.Lighting.direct; // need to check..
         }
 
-        private static ImageDTO.Direction GetLightingDirection(byte type)
+        private static SimpleImageDTO.Direction GetLightingDirection(byte type)
         {
-            if (type == 2) return ImageDTO.Direction.left;
-            if (type == 3) return ImageDTO.Direction.right;
-            return ImageDTO.Direction.top; // need to check..
+            if (type == 2) return SimpleImageDTO.Direction.left;
+            if (type == 3) return SimpleImageDTO.Direction.right;
+            return SimpleImageDTO.Direction.top; // need to check..
         }
 
         private static ImageInstitutionListDTO ImageInstitutionsToDTO(IEnumerable<ImageInstitution> imageInstitutions)

@@ -43,19 +43,28 @@ namespace SQE.DatabaseAccess.Models
     public enum UserSystemRoles
     {
         /// <summary>
-        /// This role is for all general users of the system. It should permit all activities related to the edition system. Such users may perform CREATE on all *_owner table, they may UPDATE/DELETE only those rows with an edition_id for which they have write permissions. They may CREATE in any data table with a corresponding *_owned table.
+        ///     This role is for all general users of the system. It should permit all activities related to the edition system.
+        ///     Such users may perform CREATE on all *_owner table, they may UPDATE/DELETE only those rows with an edition_id for
+        ///     which they have write permissions. They may CREATE in any data table with a corresponding *_owned table.
         /// </summary>
         REGISTERED_USER = 1,
+
         /// <summary>
-        /// This role is for users who may edit cataloguing data. This refers mainly to CREATE/UPDATE/DELETE operations on tables that contain references to cataloguing information, such as textual references and museum numbers. Any operations performed by such users should maintain a record of who made the changes—see, e.g., the *_author tables.
+        ///     This role is for users who may edit cataloguing data. This refers mainly to CREATE/UPDATE/DELETE operations on
+        ///     tables that contain references to cataloguing information, such as textual references and museum numbers. Any
+        ///     operations performed by such users should maintain a record of who made the changes—see, e.g., the *_author tables.
         /// </summary>
         CATALOGUE_CURATOR = 2,
+
         /// <summary>
-        /// This role is for users who can add images to the system and alter information related to the images. Mainly this constitutes CREATE/UPDATE/DELETE access to the SQE_image and image_urls table.
+        ///     This role is for users who can add images to the system and alter information related to the images. Mainly this
+        ///     constitutes CREATE/UPDATE/DELETE access to the SQE_image and image_urls table.
         /// </summary>
         IMAGE_DATA_CURATOR = 3,
+
         /// <summary>
-        /// This role is for administrators of the user access system. It permits CREATE/UPDATE/DELETE access to the user, system_roles, and users_system_roles tables.
+        ///     This role is for administrators of the user access system. It permits CREATE/UPDATE/DELETE access to the user,
+        ///     system_roles, and users_system_roles tables.
         /// </summary>
         USER_ADMIN = 4
     }

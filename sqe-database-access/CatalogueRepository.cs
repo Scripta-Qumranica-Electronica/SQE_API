@@ -16,10 +16,12 @@ namespace SQE.DatabaseAccess
         Task<IEnumerable<CatalogueMatch>> GetImagedObjectMatchesForTextFragmentAsync(uint textFragmentId);
         Task<IEnumerable<CatalogueMatch>> GetImagedObjectAndTextFragmentMatchesForManuscriptAsync(uint manuscriptId);
         Task<IEnumerable<CatalogueMatch>> GetImagedObjectAndTextFragmentMatchesForEditionAsync(uint editionId);
+
         Task CreateNewImagedObjectTextFragmentMatchAsync(uint userId, string imagedObjectId,
             byte imageSide, uint textFragmentId, uint editionId,
             string canonicalEditionName, string canonicalEditionVolume, string canonicalEditionLoc1,
             string canonicalEditionLoc2, byte canonicalEditionSide, string comment);
+
         Task ConfirmImagedObjectTextFragmentMatchAsync(uint userId, uint editionCatalogToTextFragmentId,
             bool confirm);
     }
@@ -54,7 +56,8 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<IEnumerable<CatalogueMatch>> GetImagedObjectAndTextFragmentMatchesForManuscriptAsync(uint manuscriptId)
+        public async Task<IEnumerable<CatalogueMatch>> GetImagedObjectAndTextFragmentMatchesForManuscriptAsync(
+            uint manuscriptId)
         {
             using (var connection = OpenConnection())
             {
@@ -66,7 +69,8 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<IEnumerable<CatalogueMatch>> GetImagedObjectAndTextFragmentMatchesForEditionAsync(uint editionId)
+        public async Task<IEnumerable<CatalogueMatch>> GetImagedObjectAndTextFragmentMatchesForEditionAsync(
+            uint editionId)
         {
             using (var connection = OpenConnection())
             {
@@ -101,7 +105,7 @@ namespace SQE.DatabaseAccess
                         EditionSide = canonicalEditionSide,
                         Comment = comment,
                         EditionId = editionId,
-                        UserId = userId,
+                        UserId = userId
                     });
                 var editionCatalogueId = existingEditionCats.Any()
                     ? existingEditionCats.First().IaaEditionCatalogId
@@ -117,7 +121,7 @@ namespace SQE.DatabaseAccess
                         EditionSide = canonicalEditionSide,
                         Comment = comment,
                         EditionId = editionId,
-                        UserId = userId,
+                        UserId = userId
                     });
                     if (writeEC != 1)
                         throw new StandardExceptions.DataNotWrittenException("Create Edition Catalogue Entry");
@@ -126,7 +130,7 @@ namespace SQE.DatabaseAccess
                     writeEC = await connection.ExecuteAsync(EditionCatalogueAuthorInsertQuery.GetQuery, new
                     {
                         IaaEditionCatalogId = editionCatalogueId,
-                        UserId = userId,
+                        UserId = userId
                     });
                     if (writeEC != 1)
                         throw new StandardExceptions.DataNotWrittenException("Create Edition Catalogue Author Entry");
@@ -136,9 +140,10 @@ namespace SQE.DatabaseAccess
                 {
                     IaaEditionCatalogId = editionCatalogueId,
                     TextFragmentId = textFragmentId,
-                    UserId = userId,
+                    UserId = userId
                 });
-                var textFragmentImagedObjectMatchId = await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
+                var textFragmentImagedObjectMatchId =
+                    await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
 
 
                 await connection.ExecuteAsync(EditionCatalogImageCatalogMatchInsertQuery.GetQuery, new
@@ -146,14 +151,14 @@ namespace SQE.DatabaseAccess
                     IaaEditionCatalogId = editionCatalogueId,
                     ImagedObjectId = imagedObjectId,
                     Side = imageSide,
-                    UserId = userId,
+                    UserId = userId
                 });
 
                 await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery, new
                 {
                     IaaEditionCatalogToTextFragmentId = textFragmentImagedObjectMatchId,
                     Confirmed = (bool?)null,
-                    UserId = userId,
+                    UserId = userId
                 });
 
                 transactionScope.Complete();
@@ -161,7 +166,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Confirm or reject a edition catalog to text fragment match.
+        ///     Confirm or reject a edition catalog to text fragment match.
         /// </summary>
         /// <param name="userId">User's unique id</param>
         /// <param name="editionCatalogToTextFragmentId">Unique id of the record to confirm or reject</param>

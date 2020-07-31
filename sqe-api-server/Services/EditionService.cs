@@ -9,15 +9,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Utilities;
+using NetTopologySuite.IO;
+using NetTopologySuite.Operation.Union;
 using SQE.API.DTO;
+using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
+using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
-using SQE.API.Server.Helpers;
-using NetTopologySuite.IO;
-using NetTopologySuite.Operation.Union;
-using SQE.API.Server.Serialization;
 
 namespace SQE.API.Server.Services
 {
@@ -65,13 +65,13 @@ namespace SQE.API.Server.Services
 
     public class EditionService : IEditionService
     {
+        private readonly AppSettings _appSettings;
         private readonly IEditionRepository _editionRepo;
         private readonly IEmailSender _emailSender;
         private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IUserRepository _userRepo;
         private readonly IUserService _userService;
         private readonly string webServer;
-        private readonly AppSettings _appSettings;
 
         public EditionService(IEditionRepository editionRepo,
             IUserRepository userRepo,
@@ -131,8 +131,8 @@ namespace SQE.API.Server.Services
                 (await _editionRepo.ListEditionsAsync(editionUser.userId, editionUser.EditionId)).First();
 
             if (updatedEditionData.copyrightHolder != null
-                || (updatedEditionData.collaborators != null
-                    && editionBeforeChanges.Collaborators != updatedEditionData.collaborators))
+                || updatedEditionData.collaborators != null
+                && editionBeforeChanges.Collaborators != updatedEditionData.collaborators)
                 await _editionRepo.ChangeEditionCopyrightAsync(
                     editionUser,
                     updatedEditionData.copyrightHolder,
@@ -149,11 +149,9 @@ namespace SQE.API.Server.Services
                     || updatedEditionData.metrics.height != editionBeforeChanges.Height
                 )
             )
-            {
                 await _editionRepo.UpdateEditionMetricsAsync(editionUser, updatedEditionData.metrics.width,
                     updatedEditionData.metrics.height, updatedEditionData.metrics.xOrigin,
                     updatedEditionData.metrics.yOrigin);
-            }
 
             var editions = await _editionRepo.ListEditionsAsync(
                 editionUser.userId,
@@ -329,7 +327,7 @@ The Scripta Qumranica Electronica team</body></html>";
             );
 
             // Broadcast the request to the potential editor.
-            var editorBroadcastObject = new EditorInvitationDTO()
+            var editorBroadcastObject = new EditorInvitationDTO
             {
                 editionId = editionUser.EditionId.Value,
                 editionName = edition.name,
@@ -349,7 +347,7 @@ The Scripta Qumranica Electronica team</body></html>";
         }
 
         /// <summary>
-        /// Request a list of requests that a user has sent other users to become editors
+        ///     Request a list of requests that a user has sent other users to become editors
         /// </summary>
         /// <param name="userId">Id of the user who has issued the requests for others to becom editors</param>
         /// <returns></returns>
@@ -359,10 +357,10 @@ The Scripta Qumranica Electronica team</body></html>";
             if (!userId.HasValue)
                 throw new StandardExceptions.NoAuthorizationException();
 
-            return new AdminEditorRequestListDTO()
+            return new AdminEditorRequestListDTO
             {
                 editorRequests = (await _editionRepo.GetOutstandingEditionEditorRequestsAsync(userId.Value))
-                    .Select(x => new AdminEditorRequestDTO()
+                    .Select(x => new AdminEditorRequestDTO
                     {
                         date = x.Date,
                         editionId = x.EditionId,
@@ -378,7 +376,7 @@ The Scripta Qumranica Electronica team</body></html>";
         }
 
         /// <summary>
-        /// Request a list of a user's outstanding invitations to become editor
+        ///     Request a list of a user's outstanding invitations to become editor
         /// </summary>
         /// <param name="userId">User id to check for outstanding editor invitations</param>
         /// <returns></returns>
@@ -388,10 +386,10 @@ The Scripta Qumranica Electronica team</body></html>";
             if (!userId.HasValue)
                 throw new StandardExceptions.NoAuthorizationException();
 
-            return new EditorInvitationListDTO()
+            return new EditorInvitationListDTO
             {
                 editorInvitations = (await _editionRepo.GetOutstandingEditionEditorInvitationsAsync(userId.Value))
-                    .Select(x => new EditorInvitationDTO()
+                    .Select(x => new EditorInvitationDTO
                     {
                         date = x.Date,
                         editionId = x.EditionId,
@@ -488,49 +486,49 @@ The Scripta Qumranica Electronica team</body></html>";
             var lettersSorted = letters.GroupBy(x => x.Id).ToList();
             var wkbr = new WKBReader();
             var wkw = new WKTWriter();
-            return new EditionScriptCollectionDTO()
+            return new EditionScriptCollectionDTO
             {
                 letters = lettersSorted.Select(
-                        x =>
-                        {
-                            var polys = x.Select(
-                                y =>
-                                {
-                                    var poly = wkbr.Read(y.Polygon);
-                                    var tr = new AffineTransformation();
-                                    var rotation = y.LetterRotation;
-                                    tr.Rotate(rotation, poly.Centroid.X, poly.Centroid.Y);
-                                    tr.Translate(y.TranslateX, y.TranslateY);
-                                    poly = tr.Transform(poly);
-                                    return poly;
-                                }).Where(z => z.IsValid && !z.IsEmpty).ToList();
-                            var cpu = new CascadedPolygonUnion(polys);
-                            var combinedPoly = cpu.Union();
-                            var envelope = polys.Any() ? combinedPoly.EnvelopeInternal : new Envelope(0, 0, 0, 0);
-                            if (polys.Any())
+                    x =>
+                    {
+                        var polys = x.Select(
+                            y =>
                             {
+                                var poly = wkbr.Read(y.Polygon);
                                 var tr = new AffineTransformation();
-                                tr.Translate(-envelope.MinX, -envelope.MinY);
-                                var translatedPoly = tr.Transform(combinedPoly);
+                                var rotation = y.LetterRotation;
+                                tr.Rotate(rotation, poly.Centroid.X, poly.Centroid.Y);
+                                tr.Translate(y.TranslateX, y.TranslateY);
+                                poly = tr.Transform(poly);
+                                return poly;
+                            }).Where(z => z.IsValid && !z.IsEmpty).ToList();
+                        var cpu = new CascadedPolygonUnion(polys);
+                        var combinedPoly = cpu.Union();
+                        var envelope = polys.Any() ? combinedPoly.EnvelopeInternal : new Envelope(0, 0, 0, 0);
+                        if (polys.Any())
+                        {
+                            var tr = new AffineTransformation();
+                            tr.Translate(-envelope.MinX, -envelope.MinY);
+                            var translatedPoly = tr.Transform(combinedPoly);
 
-                                combinedPoly = translatedPoly;
-                            }
-
-                            return new CharacterShapeDTO()
-                            {
-                                id = x.First().Id,
-                                character = x.First().Letter,
-                                rotation = x.First().ImageRotation,
-                                imageURL = x.First().ImageURL
-                                           + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/full/0/"
-                                           + x.First().ImageSuffix,
-                                polygon = polys.Any() ? wkw.Write(combinedPoly) : null,
-                                attributes = x.First().Attributes
-                                    .Split(",")
-                                    .ToList()
-                            };
+                            combinedPoly = translatedPoly;
                         }
-                    ).ToList()
+
+                        return new CharacterShapeDTO
+                        {
+                            id = x.First().Id,
+                            character = x.First().Letter,
+                            rotation = x.First().ImageRotation,
+                            imageURL = x.First().ImageURL
+                                       + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/full/0/"
+                                       + x.First().ImageSuffix,
+                            polygon = polys.Any() ? wkw.Write(combinedPoly) : null,
+                            attributes = x.First().Attributes
+                                .Split(",")
+                                .ToList()
+                        };
+                    }
+                ).ToList()
             };
         }
 
@@ -538,7 +536,7 @@ The Scripta Qumranica Electronica team</body></html>";
         public async Task<EditionScriptLinesDTO> GetEditionScriptLines(UserInfo editionUser)
         {
             var results = await _editionRepo.GetEditionScriptLines(editionUser);
-            return new EditionScriptLinesDTO()
+            return new EditionScriptLinesDTO
             {
                 textFragments = results.Select(a => a.ToDTO()).ToList()
             };
@@ -551,14 +549,14 @@ The Scripta Qumranica Electronica team</body></html>";
                 id = model.EditionId,
                 name = model.Name,
                 editionDataEditorId = model.EditionDataEditorId,
-                metrics = new EditionManuscriptMetricsDTO()
+                metrics = new EditionManuscriptMetricsDTO
                 {
                     editorId = model.ManuscriptMetricsEditor,
                     height = model.Height,
                     width = model.Width,
                     ppi = model.PPI,
                     xOrigin = model.XOrigin,
-                    yOrigin = model.YOrigin,
+                    yOrigin = model.YOrigin
                 },
                 permission = PermissionModelToDTO(model.Permission),
                 owner = UserService.UserModelToDto(model.Owner),
@@ -567,7 +565,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 isPublic = model.IsPublic,
                 lastEdit = model.LastEdit,
                 copyright = model.Copyright,
-                shares = model.Editors.Select(x => new DetailedEditorRightsDTO()
+                shares = model.Editors.Select(x => new DetailedEditorRightsDTO
                 {
                     email = x.EditorEmail,
                     editionId = model.EditionId,
@@ -585,7 +583,7 @@ The Scripta Qumranica Electronica team</body></html>";
             {
                 isAdmin = model.IsAdmin,
                 mayWrite = model.MayWrite,
-                mayRead = model.MayRead,
+                mayRead = model.MayRead
             };
         }
 
@@ -621,7 +619,7 @@ The Scripta Qumranica Electronica team</body></html>";
                 mayWrite = mayWrite,
                 mayLock = mayLock,
                 isAdmin = isAdmin,
-                editionId = editionId,
+                editionId = editionId
             };
         }
 

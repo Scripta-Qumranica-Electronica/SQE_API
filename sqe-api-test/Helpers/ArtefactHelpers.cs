@@ -13,7 +13,8 @@ namespace SQE.ApiTest.Helpers
         /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
         /// <param name="jwt">A JWT can be added the request to access private editions.</param>
         /// <returns></returns>
-        public static async Task<ArtefactListDTO> GetEditionArtefacts(uint editionId, HttpClient client, Request.UserAuthDetails user = null)
+        public static async Task<ArtefactListDTO> GetEditionArtefacts(uint editionId, HttpClient client,
+            Request.UserAuthDetails user = null)
         {
             var apiRequest = new Get.V1_Editions_EditionId_Artefacts(editionId);
             var (response, artefactResponse, _, _) = await Request.Send(
@@ -22,20 +23,21 @@ namespace SQE.ApiTest.Helpers
                 null,
                 true,
                 user
-                );
+            );
             response.EnsureSuccessStatusCode();
             return artefactResponse;
         }
 
         /// <summary>
-        /// Delete an artefact via the API
+        ///     Delete an artefact via the API
         /// </summary>
         /// <param name="editionId"></param>
         /// <param name="artefactId"></param>
         /// <param name="client"></param>
         /// <param name="user"></param>
         /// <returns></returns>
-        public static async Task DeleteArtefact(uint editionId, uint artefactId, HttpClient client, Request.UserAuthDetails user = null)
+        public static async Task DeleteArtefact(uint editionId, uint artefactId, HttpClient client,
+            Request.UserAuthDetails user = null)
         {
             var apiRequest = new Delete.V1_Editions_EditionId_Artefacts_ArtefactId(editionId, artefactId);
             var (response, artefactResponse, _, _) = await Request.Send(
