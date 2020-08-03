@@ -35,11 +35,6 @@ namespace SQE.ApiTest
             return (usedEditionId, textFragmentId: textFragments.textFragments.First().id);
         }
 
-        private async Task<uint> _getClonedEdition()
-        {
-            return await EditionHelpers.CreateCopyOfEdition(_client, EditionHelpers.GetEditionId()); // Clone it
-        }
-
         /// <summary>
         ///     Returns a listing of text fragments for the specified edition id
         /// </summary>
@@ -74,7 +69,6 @@ namespace SQE.ApiTest
         private async Task<(uint editionId, TextFragmentDataListDTO textFragments)> _createEditionWithTextFragments(
             EditionHelpers.EditionCreator editionCreator)
         {
-            // TODO make this disposable, and use using (we want to delete the new edition regardless of test success)
             var editionId =
                 await editionCreator.CreateEdition(); // Get a newly cloned edition
             var textFragments =

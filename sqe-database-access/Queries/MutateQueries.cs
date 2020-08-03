@@ -15,18 +15,24 @@ namespace SQE.DatabaseAccess.Queries
     // want duplicate entries due to null values (also, this overcomes the limitations of the unique constraints, since
     // nulls are not unique). This must be checked upon usage of this query. You will have severe performance problems 
     // if you have tables with geometry and nullable items. Don't do that!
+
+    // The SQL was just updated here for performance reasons. It turns out the the previous approach,
+    // (list of column names) <=> (list of values) in the WHERE NOT EXISTS sub select performs very poorly,
+    // like taking over a second in some cases. Now we replace $Where with a more traditional matching pattern:
+    // WHERE col1 <=> val1 AND col2 <=> val2 AND ... . This is incredibly faster.
     internal static class OwnedTableInsertQuery
     {
-        public static string GetQuery(bool hasNulls)
+        public static string GetQuery()
         {
             return $@"
-INSERT INTO $TableName ($Columns)
-SELECT $Values
+INSERT INTO $TableName ($Columns, creator_id)
+SELECT $Values, @UserId
 FROM dual
 WHERE NOT EXISTS
-  ( SELECT $Columns                 # This is basically an adhoc uniqueness constraint, which Itay wants to protect
-    FROM $TableName                 # against any database schema updates that fail to set a proper uniqueness
-    WHERE ($Columns) {(hasNulls ? "<=>" : "=")} ($Values)    # constraint.  It is very fast if the proper uniqueness constraint already exists.
+  ( SELECT $Columns     # This is basically an adhoc uniqueness constraint, which Itay wants to protect
+    FROM $TableName     # against any database schema updates that fail to set a proper uniqueness
+    WHERE $Where        # constraint.  It is very fast if the proper uniqueness constraint already exists.
+    LIMIT 1
   ) LIMIT 1
 ";
         }
@@ -40,14 +46,19 @@ WHERE NOT EXISTS
     // want duplicate entries due to null values (also, this overcomes the limitations of the unique constraints, since
     // nulls are not unique). This must be checked upon usage of this query. You will have severe performance problems 
     // if you have tables with geometry and nullable items. Don't do that!
+
+    // The SQL was just updated here for performance reasons. It turns out the the previous approach,
+    // (list of column names) <=> (list of values) in the WHERE NOT EXISTS sub select performs very poorly,
+    // like taking over a second in some cases. Now we replace $Where with a more traditional matching pattern:
+    // WHERE col1 <=> val1 AND col2 <=> val2 AND ... . This is incredibly faster.
     internal static class OwnedTableIdQuery
     {
-        public static string GetQuery(bool hasNulls)
+        public static string GetQuery()
         {
             return $@"
 SELECT $PrimaryKeyName
 FROM $TableName
-WHERE ($Columns) {(hasNulls ? "<=>" : "=")} ($Values)
+WHERE $Where
 LIMIT 1
 ";
         }
@@ -62,7 +73,8 @@ FROM dual
 WHERE NOT EXISTS (
     SELECT $OwnedTablePkName, edition_editor_id, edition_id
     FROM $OwnerTableName
-    WHERE ($OwnedTablePkName, edition_id) = (@OwnedTableId, @EditionId)
+    WHERE $OwnedTablePkName = @OwnedTableId
+        AND edition_id = @EditionId
 ) LIMIT 1";
     }
 

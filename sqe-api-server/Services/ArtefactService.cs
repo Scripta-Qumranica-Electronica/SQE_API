@@ -15,44 +15,44 @@ namespace SQE.API.Server.Services
 {
     public interface IArtefactService
     {
-        Task<ArtefactDTO> GetEditionArtefactAsync(EditionUserInfo editionUser, uint artefactId, List<string> optional);
+        Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo editionUser, uint artefactId, List<string> optional);
 
-        Task<ArtefactListDTO> GetEditionArtefactListingsAsync(EditionUserInfo editionUser,
+        Task<ArtefactListDTO> GetEditionArtefactListingsAsync(UserInfo editionUser,
             List<string> optional);
 
-        Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(EditionUserInfo editionUser,
+        Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(UserInfo editionUser,
             bool withMask = false);
 
-        Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(EditionUserInfo editionUser,
+        Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(UserInfo editionUser,
             BatchUpdateArtefactPlacementDTO updates,
             string clientId = null);
 
-        Task<ArtefactDTO> UpdateArtefactAsync(EditionUserInfo editionUser,
+        Task<ArtefactDTO> UpdateArtefactAsync(UserInfo editionUser,
             uint artefactId,
             UpdateArtefactDTO updateArtefact,
             string clientId = null);
 
-        Task<ArtefactDTO> CreateArtefactAsync(EditionUserInfo editionUser,
+        Task<ArtefactDTO> CreateArtefactAsync(UserInfo editionUser,
             CreateArtefactDTO createArtefact,
             string clientId = null);
 
-        Task<NoContentResult> DeleteArtefactAsync(EditionUserInfo editionUser, uint artefactId, string clientId = null);
+        Task<NoContentResult> DeleteArtefactAsync(UserInfo editionUser, uint artefactId, string clientId = null);
 
-        Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
+        Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(UserInfo editionUser,
             uint artefactId,
             List<string> optional);
 
-        Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser);
+        Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(UserInfo editionUser);
 
-        Task<ArtefactGroupDTO> GetArtefactGroupDataAsync(EditionUserInfo editionUser, uint artefactGroupId);
+        Task<ArtefactGroupDTO> GetArtefactGroupDataAsync(UserInfo editionUser, uint artefactGroupId);
 
-        Task<ArtefactGroupDTO> CreateArtefactGroupAsync(EditionUserInfo editionUser,
+        Task<ArtefactGroupDTO> CreateArtefactGroupAsync(UserInfo editionUser,
             CreateArtefactGroupDTO artefactGroup, string clientId = null);
 
-        Task<ArtefactGroupDTO> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+        Task<ArtefactGroupDTO> UpdateArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId,
             UpdateArtefactGroupDTO artefactGroup, string clientId = null);
 
-        Task<DeleteDTO> DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+        Task<DeleteDTO> DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId,
             string clientId = null);
     }
 
@@ -67,16 +67,16 @@ namespace SQE.API.Server.Services
             _hubContext = hubContext;
         }
 
-        public async Task<ArtefactDTO> GetEditionArtefactAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactDTO> GetEditionArtefactAsync(UserInfo editionUser,
             uint artefactId,
             List<string> optional)
         {
             ParseImageMaskOptionals(optional, out _, out var withMask);
             var artefact = await _artefactRepository.GetEditionArtefactAsync(editionUser, artefactId, withMask);
-            return artefact.ToDTO(editionUser.EditionId);
+            return artefact.ToDTO(editionUser.EditionId.Value);
         }
 
-        public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(UserInfo editionUser,
             List<string> optional)
         {
             ParseImageMaskOptionals(optional, out var withImages, out var withMask);
@@ -90,13 +90,13 @@ namespace SQE.API.Server.Services
                 var listings = await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMask);
                 artefacts = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
                     listings.ToList(),
-                    editionUser.EditionId
+                    editionUser.EditionId.Value
                 );
             }
             return artefacts;
         }
 
-        public async Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(UserInfo editionUser,
             bool withMask = false)
         {
             var artefactListings = await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMask);
@@ -105,11 +105,11 @@ namespace SQE.API.Server.Services
 
             return ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
                 artefactListings.ToList(),
-                editionUser.EditionId
+                editionUser.EditionId.Value
             );
         }
 
-        public async Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(EditionUserInfo editionUser,
+        public async Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(UserInfo editionUser,
             BatchUpdateArtefactPlacementDTO updates,
             string clientId = null)
         {
@@ -151,7 +151,7 @@ namespace SQE.API.Server.Services
         // actually changed). If such is the case, consider breaking up the artefact update
         // endpoint into several distinct endpoints, for example: one for name, another for 
         // position, and another for mask.
-        public async Task<ArtefactDTO> UpdateArtefactAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactDTO> UpdateArtefactAsync(UserInfo editionUser,
             uint artefactId,
             UpdateArtefactDTO updateArtefact,
             string clientId = null)
@@ -203,7 +203,7 @@ namespace SQE.API.Server.Services
             return updatedArtefact;
         }
 
-        public async Task<ArtefactDTO> CreateArtefactAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactDTO> CreateArtefactAsync(UserInfo editionUser,
             CreateArtefactDTO createArtefact,
             string clientId = null)
         {
@@ -238,7 +238,7 @@ namespace SQE.API.Server.Services
             return newlyCreatedArtefact;
         }
 
-        public async Task<NoContentResult> DeleteArtefactAsync(EditionUserInfo editionUser,
+        public async Task<NoContentResult> DeleteArtefactAsync(UserInfo editionUser,
             uint artefactId,
             string clientId = null)
         {
@@ -251,7 +251,7 @@ namespace SQE.API.Server.Services
             return new NoContentResult();
         }
 
-        public async Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(UserInfo editionUser,
             uint artefactId,
             List<string> optional)
         {
@@ -276,17 +276,17 @@ namespace SQE.API.Server.Services
             return realMatches;
         }
 
-        public async Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(EditionUserInfo editionUser)
+        public async Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(UserInfo editionUser)
         {
             return (await _artefactRepository.ArtefactGroupsOfEditionAsync(editionUser)).ToDTO();
         }
 
-        public async Task<ArtefactGroupDTO> GetArtefactGroupDataAsync(EditionUserInfo editionUser, uint artefactGroupId)
+        public async Task<ArtefactGroupDTO> GetArtefactGroupDataAsync(UserInfo editionUser, uint artefactGroupId)
         {
             return (await _artefactRepository.GetArtefactGroupAsync(editionUser, artefactGroupId)).ToDTO();
         }
 
-        public async Task<ArtefactGroupDTO> CreateArtefactGroupAsync(EditionUserInfo editionUser,
+        public async Task<ArtefactGroupDTO> CreateArtefactGroupAsync(UserInfo editionUser,
             CreateArtefactGroupDTO artefactGroup,
             string clientId = null)
         {
@@ -299,7 +299,7 @@ namespace SQE.API.Server.Services
             return results;
         }
 
-        public async Task<ArtefactGroupDTO> UpdateArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+        public async Task<ArtefactGroupDTO> UpdateArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId,
             UpdateArtefactGroupDTO artefactGroup,
             string clientId = null)
         {
@@ -313,7 +313,7 @@ namespace SQE.API.Server.Services
             return results;
         }
 
-        public async Task<DeleteDTO> DeleteArtefactGroupAsync(EditionUserInfo editionUser, uint artefactGroupId,
+        public async Task<DeleteDTO> DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId,
             string clientId = null)
         {
             await _artefactRepository.DeleteArtefactGroupAsync(editionUser, artefactGroupId);
@@ -326,7 +326,7 @@ namespace SQE.API.Server.Services
         }
 
         private async Task<ArtefactTextFragmentMatchListDTO> _artefactSuggestedTextFragmentsAsync(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint artefactId)
         {
             return new ArtefactTextFragmentMatchListDTO(

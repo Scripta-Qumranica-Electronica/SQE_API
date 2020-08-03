@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
+using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Models;
 
@@ -13,6 +14,7 @@ namespace SQE.API.Server.Services
     {
         ImageDTO ImageToDTO(Image model);
         Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
+        Task<InstitutionalImageListDTO> GetInstitutionImagesAsync(string institution);
         Task<List<ImagedObjectTextFragmentMatchDTO>> GetImageTextFragmentsAsync(string imagedObjectId);
     }
 
@@ -53,6 +55,11 @@ namespace SQE.API.Server.Services
             var institutions = await _imageRepo.ListImageInstitutionsAsync();
 
             return ImageInstitutionsToDTO(institutions);
+        }
+
+        public async Task<InstitutionalImageListDTO> GetInstitutionImagesAsync(string institution)
+        {
+            return (await _imageRepo.InstitutionImages(institution)).ToDTO();
         }
 
         public async Task<List<ImagedObjectTextFragmentMatchDTO>> GetImageTextFragmentsAsync(string imagedObjectId)

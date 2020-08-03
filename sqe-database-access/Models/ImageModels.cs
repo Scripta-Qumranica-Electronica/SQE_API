@@ -24,4 +24,11 @@
     {
         public string Name { get; set; }
     }
+
+    public class InstitutionImage
+    {
+        public string Name { get; set; }
+        public string Thumbnail { get; set; }
+        public string License { get; set; }
+    }
 }

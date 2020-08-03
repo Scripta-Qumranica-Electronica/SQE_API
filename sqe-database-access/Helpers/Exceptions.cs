@@ -153,7 +153,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             private const string customMsg = "User $UserId has no permissions associated with edition $EditionId.";
 
-            public NoPermissionsException(EditionUserInfo editionUser)
+            public NoPermissionsException(UserInfo editionUser)
             {
                 Error = customMsg
                     .Replace("$UserId", editionUser.userId.ToString())
@@ -165,7 +165,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             private const string customMsg = "User $UserId does not have read access to edition $EditionId.";
 
-            public NoReadPermissionsException(EditionUserInfo editionUser)
+            public NoReadPermissionsException(UserInfo editionUser)
             {
                 Error = customMsg
                     .Replace("$UserId", editionUser.userId.ToString())
@@ -177,7 +177,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             private const string customMsg = "User $UserId does not have write access to edition $EditionId.";
 
-            public NoWritePermissionsException(EditionUserInfo editionUser)
+            public NoWritePermissionsException(UserInfo editionUser)
             {
                 Error = customMsg
                     .Replace("$UserId", editionUser.userId.ToString())
@@ -189,7 +189,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             private const string customMsg = "User $UserId is not allowed to lock edition $EditionId.";
 
-            public NoLockPermissionsException(EditionUserInfo editionUser)
+            public NoLockPermissionsException(UserInfo editionUser)
             {
                 Error = customMsg
                     .Replace("$UserId", editionUser.userId.ToString())
@@ -201,11 +201,22 @@ namespace SQE.DatabaseAccess.Helpers
         {
             private const string customMsg = "User $UserId does not have admin privilege for edition $EditionId.";
 
-            public NoAdminPermissionsException(EditionUserInfo editionUser)
+            public NoAdminPermissionsException(UserInfo editionUser)
             {
                 Error = customMsg
                     .Replace("$UserId", editionUser.userId.ToString())
                     .Replace("$EditionId", editionUser.EditionId.ToString());
+            }
+        }
+
+        public class NoSystemPermissionsException : ForbiddenDataAccessException
+        {
+            private const string customMsg = "User $UserId does not have permissions to access this.";
+
+            public NoSystemPermissionsException(UserInfo editionUser)
+            {
+                Error = customMsg
+                    .Replace("$UserId", editionUser.userId.ToString());
             }
         }
 
@@ -214,7 +225,7 @@ namespace SQE.DatabaseAccess.Helpers
             private const string customMsg =
                 "Edition $EditionId is locked. User $UserId $Permission admin privilege to unlock it.";
 
-            public LockedDataException(EditionUserInfo editionUser)
+            public LockedDataException(UserInfo editionUser)
             {
                 Error = customMsg
                     .Replace("$UserId", editionUser.userId.ToString())
@@ -341,7 +352,7 @@ namespace SQE.DatabaseAccess.Helpers
             private const string customMsg =
                 "The edition $EditionId must be locked before attempting to copy it. User $UserId $Permission admin privilege to unlock it.";
 
-            public EditionCopyLockProtectionException(EditionUserInfo editionUser)
+            public EditionCopyLockProtectionException(UserInfo editionUser)
             {
                 Error = customMsg
                     .Replace("$UserId", editionUser.userId.ToString())

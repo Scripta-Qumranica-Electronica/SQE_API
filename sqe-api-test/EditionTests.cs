@@ -130,7 +130,7 @@ namespace SQE.ApiTest
                 Assert.True(listenerResponse.mayWrite);
                 Assert.True(listenerResponse.mayLock);
                 Assert.True(listenerResponse.isAdmin);
-                Assert.NotNull(listenerResponse.token);
+                Assert.NotEqual(Guid.Empty, listenerResponse.token);
 
                 // Act
                 // Check to see if outstanding request is accessible to admin
@@ -396,7 +396,9 @@ namespace SQE.ApiTest
         {
             // ARRANGE
             var editionId = await EditionHelpers.CreateCopyOfEdition(_client, name: "first edition");
-            await EditionHelpers.CreateCopyOfEdition(_client, editionId, "second edition");
+            var editionId2 = await EditionHelpers.CreateCopyOfEdition(_client, editionId, "second edition");
+            await EditionHelpers.DeleteEdition(_client, editionId);
+            await EditionHelpers.DeleteEdition(_client, editionId2);
         }
 
         /// <summary>
@@ -857,12 +859,12 @@ namespace SQE.ApiTest
         public async Task CreateEdition()
         {
             // ARRANGE (with name)
-            const string url = "/v1/editions/1";
             const string name = "interesting-long-test name @3#ח";
             var newScrollRequest = new EditionCopyDTO(name, null, null);
+            var editionId = EditionHelpers.GetEditionId();
 
             //Act
-            var newEd = new Post.V1_Editions_EditionId(1, newScrollRequest);
+            var newEd = new Post.V1_Editions_EditionId(editionId, newScrollRequest);
             var (response, msg, rt, lt) = await Request.Send(
                 newEd,
                 _client,
@@ -883,7 +885,7 @@ namespace SQE.ApiTest
 
             // ARRANGE (without name)
             newScrollRequest = new EditionCopyDTO(null, null, null);
-            newEd = new Post.V1_Editions_EditionId(1, newScrollRequest);
+            newEd = new Post.V1_Editions_EditionId(editionId, newScrollRequest);
 
             //Act
             (response, msg, rt, lt) = await Request.Send(
@@ -1001,6 +1003,8 @@ namespace SQE.ApiTest
             );
             Assert.True(msg.editions.Count > 0);
             Assert.DoesNotContain(msg.editions.SelectMany(x => x), x => x.id == editionId);
+
+            await EditionHelpers.DeleteEdition(_client, editionId);
         }
 
         // TODO: finish updating test to use new request objects.
@@ -1094,6 +1098,8 @@ namespace SQE.ApiTest
             Assert.Equal(metrics.height, msg2.metrics.height);
             Assert.Equal(metrics.xOrigin, msg2.metrics.xOrigin);
             Assert.Equal(metrics.yOrigin, msg2.metrics.yOrigin);
+
+            await EditionHelpers.DeleteEdition(_client, editionId);
         }
 
         /// <summary>
@@ -1141,7 +1147,7 @@ namespace SQE.ApiTest
                 Assert.Equal(permissionRequest.mayWrite, listenerResponse.mayWrite);
                 Assert.Equal(permissionRequest.mayLock, listenerResponse.mayLock);
                 Assert.Equal(permissionRequest.isAdmin, listenerResponse.isAdmin);
-                Assert.NotNull(listenerResponse.token);
+                Assert.NotEqual(Guid.Empty, listenerResponse.token);
             }
 
             return (httpResponse, listenerResponse);

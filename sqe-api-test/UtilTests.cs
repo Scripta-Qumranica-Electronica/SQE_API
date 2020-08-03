@@ -54,11 +54,11 @@ namespace SQE.ApiTest
         {
             var badPolygon = new WktPolygonDTO()
             {
-                wktPolygon = "POLYGON((0 0,0 10,10 10,10 0))"
+                wktPolygon = "POLYGON((0 0,10 0,10 10,0 10))"
             };
             var goodPolygon = new WktPolygonDTO()
             {
-                wktPolygon = "POLYGON((0 0,10 0,10 10,0 10,0 0))"
+                wktPolygon = "POLYGON((0 0,0 10,10 10,10 0,0 0))"
             };
 
             var polygonValidation = new Post.V1_Utils_RepairWktPolygon(badPolygon);
@@ -87,9 +87,9 @@ namespace SQE.ApiTest
             }
             Assert.True(badPolyIsUnreadable);
 
-            Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsExact(wkr.Read(validation.wktPolygon)));
+            Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsTopologically(wkr.Read(validation.wktPolygon)));
             Assert.Equal(HttpStatusCode.OK, validationResponse.StatusCode);
-            Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsExact(wkr.Read(rtValidation.wktPolygon)));
+            Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsTopologically(wkr.Read(rtValidation.wktPolygon)));
         }
         #endregion
 

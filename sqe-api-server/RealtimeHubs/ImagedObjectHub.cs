@@ -24,6 +24,25 @@ namespace SQE.API.Server.RealtimeHubs
     public partial class MainHub
     {
         /// <summary>
+        ///     Provides information for the specified imaged object.
+        /// </summary>
+        /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+        [AllowAnonymous]
+        public async Task<SimpleImageListDTO> GetV1ImagedObjectsImagedObjectId(string imagedObjectId)
+
+        {
+            try
+            {
+                return await _imagedObjectService.GetImagedObjectImagesAsync(imagedObjectId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
         ///     Provides information for the specified imaged object related to the specified edition, can include images and also
         ///     their masks with optional.
         /// </summary>
@@ -57,7 +76,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return await _imagedObjectService.GetImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
+                return await _imagedObjectService.GetEditionImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), optional);
             }
             catch (ApiException err)
             {
@@ -76,6 +95,24 @@ namespace SQE.API.Server.RealtimeHubs
             try
             {
                 return await _imageService.GetImageInstitutionsAsync();
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        ///     Provides a list of all institutional image providers.
+        /// </summary>
+        [AllowAnonymous]
+        public async Task<InstitutionalImageListDTO> GetV1ImagedObjectsInstitutionsInstitution(string institution)
+
+        {
+            try
+            {
+                return await _imageService.GetInstitutionImagesAsync(institution);
             }
             catch (ApiException err)
             {

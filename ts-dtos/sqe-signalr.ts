@@ -23,6 +23,9 @@ import {
 	UpdateArtefactGroupDTO,
 	CreateArtefactDTO,
 	CreateArtefactGroupDTO,
+	CatalogueMatchInputDTO,
+	CatalogueMatchDTO,
+	CatalogueMatchListDTO,
 	EditionDTO,
 	EditionGroupDTO,
 	EditionListDTO,
@@ -43,9 +46,13 @@ import {
 	EditionCopyDTO,
 	UpdateEditionManuscriptMetricsDTO,
 	EditionManuscriptMetricsDTO,
+	SimpleImageDTO,
 	ImageDTO,
+	SimpleImageListDTO,
 	ImageInstitutionDTO,
 	ImageInstitutionListDTO,
+	InstitutionalImageDTO,
+	InstitutionalImageListDTO,
 	ImageStackDTO,
 	ImagedObjectDTO,
 	ImagedObjectListDTO,
@@ -565,6 +572,16 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Provides information for the specified imaged object.
+	 *
+	 * @param imagedObjectId - Unique Id of the desired object from the imaging Institution
+	 *
+	 */
+    public async getV1ImagedObjectsImagedObjectId(imagedObjectId: string): Promise<SimpleImageListDTO> {
+        return await this._connection.invoke('GetV1ImagedObjectsImagedObjectId', imagedObjectId);
+    }
+
+    /**
 	 * Provides information for the specified imaged object related to the specified edition, can include images and also
 	 * their masks with optional.
 	 *
@@ -600,6 +617,16 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Provides a list of all institutional image providers.
+	 *
+	 *
+	 *
+	 */
+    public async getV1ImagedObjectsInstitutionsInstitution(institution: string): Promise<InstitutionalImageListDTO> {
+        return await this._connection.invoke('GetV1ImagedObjectsInstitutionsInstitution', institution);
+    }
+
+    /**
 	 * Provides a list of all text fragments that should correspond to the imaged object.
 	 *
 	 * @param imagedObjectId - Id of the imaged object
@@ -607,6 +634,76 @@ export class SignalRUtilities {
 	 */
     public async getV1ImagedObjectsImagedObjectIdTextFragments(imagedObjectId: string): Promise<ImagedObjectTextFragmentMatchDTO[]> {
         return await this._connection.invoke('GetV1ImagedObjectsImagedObjectIdTextFragments', imagedObjectId);
+    }
+
+    /**
+	 * Get a listing of all text fragments matches that correspond to an imaged object
+	 *
+	 * @param imagedObjectId - Id of imaged object to search for transcription matches
+	 *
+	 */
+    public async getV1CatalogueImagedObjectsImagedObjectIdTextFragments(imagedObjectId: string): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueImagedObjectsImagedObjectIdTextFragments', imagedObjectId);
+    }
+
+    /**
+	 * Get a listing of all imaged objects that matches that correspond to a transcribed text fragment
+	 *
+	 * @param textFragmentId - Unique Id of the text fragment to search for imaged object matches
+	 *
+	 */
+    public async getV1CatalogueTextFragmentsTextFragmentIdImagedObjects(textFragmentId: number): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueTextFragmentsTextFragmentIdImagedObjects', textFragmentId);
+    }
+
+    /**
+	 * Get a listing of all corresponding imaged objects and transcribed text fragment in a specified edition
+	 *
+	 * @param editionId - Unique Id of the edition to search for imaged objects to text fragment matches
+	 *
+	 */
+    public async getV1CatalogueEditionsEditionIdImagedObjectTextFragmentMatches(editionId: number): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueEditionsEditionIdImagedObjectTextFragmentMatches', editionId);
+    }
+
+    /**
+	 * Get a listing of all corresponding imaged objects and transcribed text fragment in a specified edition
+	 *
+	 * @param manuscriptId - Unique Id of the edition to search for imaged objects to text fragment matches
+	 *
+	 */
+    public async getV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches(manuscriptId: number): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches', manuscriptId);
+    }
+
+    /**
+	 * Create a new matched pair for an imaged object and a text fragment along with the edition princeps information
+	 *
+	 * @param newMatch - The details of the new match
+	 *
+	 */
+    public async postV1Catalogue(newMatch: CatalogueMatchInputDTO): Promise<void> {
+        return await this._connection.invoke('PostV1Catalogue', newMatch);
+    }
+
+    /**
+	 * Confirm the correctness of an existing imaged object and text fragment match
+	 *
+	 * @param iaaEditionCatalogToTextFragmentId - The unique id of the match to confirm
+	 *
+	 */
+    public async postV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId(iaaEditionCatalogToTextFragmentId: number): Promise<void> {
+        return await this._connection.invoke('PostV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId', iaaEditionCatalogToTextFragmentId);
+    }
+
+    /**
+	 * Remove an existing imaged object and text fragment match, which is not correct
+	 *
+	 * @param iaaEditionCatalogToTextFragmentId - The unique id of the match to confirm
+	 *
+	 */
+    public async deleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId(iaaEditionCatalogToTextFragmentId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId', iaaEditionCatalogToTextFragmentId);
     }
 
     /**

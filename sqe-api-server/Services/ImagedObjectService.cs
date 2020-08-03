@@ -14,13 +14,14 @@ namespace SQE.API.Server.Services
 {
     public interface IImagedObjectService
     {
-        Task<ImagedObjectListDTO> GetImagedObjectsAsync(EditionUserInfo editionUser,
+        Task<SimpleImageListDTO> GetImagedObjectImagesAsync(string imagedObjectId);
+        Task<ImagedObjectListDTO> GetEditionImagedObjectsAsync(UserInfo editionUser,
             List<string> optional = null);
 
-        Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(EditionUserInfo editionUser,
+        Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(UserInfo editionUser,
             bool withMasks = false);
 
-        Task<ImagedObjectDTO> GetImagedObjectAsync(EditionUserInfo editionUser,
+        Task<ImagedObjectDTO> GetImagedObjectAsync(UserInfo editionUser,
             string imagedObjectId,
             List<string> optional = null);
     }
@@ -47,8 +48,13 @@ namespace SQE.API.Server.Services
             _hubContext = hubContext;
         }
 
+        public async Task<SimpleImageListDTO> GetImagedObjectImagesAsync(string imagedObjectId)
+        {
+            return (await _repo.GetImagedObjectImagesAsync(System.Web.HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
+        }
+
         // TODO: Fix this and GetImagedObjectsWithArtefactsAsync up to be more DRY and efficient.
-        public async Task<ImagedObjectListDTO> GetImagedObjectsAsync(EditionUserInfo editionUser,
+        public async Task<ImagedObjectListDTO> GetEditionImagedObjectsAsync(UserInfo editionUser,
             List<string> optional = null)
         {
             ParseOptionals(optional, out var artefacts, out var masks);
@@ -58,7 +64,7 @@ namespace SQE.API.Server.Services
             var imagedObjects = await _repo.GetImagedObjectsAsync(editionUser, null);
 
             if (imagedObjects == null)
-                throw new StandardExceptions.DataNotFoundException("imaged object", editionUser.EditionId, "edition");
+                throw new StandardExceptions.DataNotFoundException("imaged object", editionUser.EditionId.Value, "edition");
             var result = new ImagedObjectListDTO
             {
                 imagedObjects = new List<ImagedObjectDTO>()
@@ -79,14 +85,14 @@ namespace SQE.API.Server.Services
             return result;
         }
 
-        public async Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(EditionUserInfo editionUser,
+        public async Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(UserInfo editionUser,
             bool withMasks = false)
         {
-            var result = await GetImagedObjectsAsync(editionUser);
+            var result = await GetEditionImagedObjectsAsync(editionUser);
 
             var artefacts = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
                 (await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMasks)).ToList(),
-                editionUser.EditionId
+                editionUser.EditionId.Value
             );
 
             // The code below takes two lists: one `result.imagedObjects` has many imaged objects, but no artefact information;
@@ -116,19 +122,19 @@ namespace SQE.API.Server.Services
         }
 
         // TODO: Make this less wasteful by retrieving only the desired imaged object
-        public async Task<ImagedObjectDTO> GetImagedObjectAsync(EditionUserInfo editionUser,
+        public async Task<ImagedObjectDTO> GetImagedObjectAsync(UserInfo editionUser,
             string imagedObjectId,
             List<string> optional = null)
         {
             imagedObjectId = System.Web.HttpUtility.UrlDecode(imagedObjectId);
             ParseOptionals(optional, out var artefacts, out var masks);
             var result =
-                (await GetImagedObjectsAsync(editionUser)).imagedObjects.First(x => x.id == imagedObjectId);
+                (await GetEditionImagedObjectsAsync(editionUser)).imagedObjects.First(x => x.id == imagedObjectId);
             if (artefacts)
             {
                 var artefactList = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
                     (await _artefactRepository.GetEditionArtefactListAsync(editionUser, masks)).ToList(),
-                    editionUser.EditionId
+                    editionUser.EditionId.Value
                 );
 
                 foreach (var art in artefactList.artefacts)

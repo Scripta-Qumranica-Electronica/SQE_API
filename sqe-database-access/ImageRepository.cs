@@ -10,8 +10,9 @@ namespace SQE.DatabaseAccess
 {
     public interface IImageRepository
     {
-        Task<IEnumerable<Image>> GetImagesAsync(EditionUserInfo editionUser, string imagedObjectId);
+        Task<IEnumerable<Image>> GetImagesAsync(UserInfo editionUser, string imagedObjectId);
         Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync();
+        Task<IEnumerable<InstitutionImage>> InstitutionImages(string institution);
         Task<List<ImagedObjectTextFragmentMatch>> GetImageTextFragmentsAsync(string imagedObjectId);
     }
 
@@ -21,7 +22,7 @@ namespace SQE.DatabaseAccess
         {
         }
 
-        public async Task<IEnumerable<Image>> GetImagesAsync(EditionUserInfo editionUser, string imagedObjectId)
+        public async Task<IEnumerable<Image>> GetImagesAsync(UserInfo editionUser, string imagedObjectId)
         {
             var sql = ImageQueries.GetImageQuery(!string.IsNullOrEmpty(imagedObjectId));
 
@@ -52,6 +53,19 @@ namespace SQE.DatabaseAccess
 
                 var models = results.Select(CreateInstitution);
                 return models;
+            }
+        }
+
+        public async Task<IEnumerable<InstitutionImage>> InstitutionImages(string institution)
+        {
+            using (var connection = OpenConnection())
+            {
+                var results = await connection.QueryAsync<InstitutionImage>(InstitutionImagesQuery.GetQuery, new
+                {
+                    Institution = institution
+                });
+
+                return results;
             }
         }
 

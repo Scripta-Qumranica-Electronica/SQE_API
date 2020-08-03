@@ -165,9 +165,9 @@ ORDER BY manuscript_data.manuscript_id, ed2.edition_id
     internal class EditionNameQuery
     {
         private const string _baseQuery = @"
-SELECT manuscript_data_id AS ScrollDataId, manuscript_id AS ScrollId, name AS Name
-FROM manuscript_data
-JOIN manuscript_data_owner USING(manuscript_data_id)
+SELECT manuscript_data_id AS ManuscriptDataId, manuscript_id AS ManuscriptId, name AS Name
+FROM manuscript_data_owner
+JOIN manuscript_data USING(manuscript_data_id)
 WHERE edition_id = @EditionId";
 
         public static string GetQuery()
@@ -177,8 +177,8 @@ WHERE edition_id = @EditionId";
 
         internal class Result
         {
-            public uint ScrollDataId { get; set; }
-            public uint ScrollId { get; set; }
+            public uint ManuscriptDataId { get; set; }
+            public uint ManuscriptId { get; set; }
             public string Name { get; set; }
         }
     }

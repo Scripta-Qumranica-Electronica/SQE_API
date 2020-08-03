@@ -72,6 +72,46 @@ export interface CreateArtefactGroupDTO {
     artefacts: number[];
 }
 
+export interface CatalogueMatchInputDTO {
+    catalogSide: SideDesignation;
+    imagedObjectId: string;
+    manuscriptId: number;
+    editionName: string;
+    editionVolume: string;
+    editionLocation1: string;
+    editionLocation2: string;
+    editionSide: SideDesignation;
+    comment: string;
+    textFragmentId: number;
+    editionId: number;
+    confirmed?: boolean;
+}
+
+export interface CatalogueMatchDTO extends CatalogueMatchInputDTO {
+    imageCatalogId: number;
+    institution: string;
+    catalogueNumber1: string;
+    catalogueNumber2: string;
+    proxy: string;
+    url: string;
+    filename: string;
+    suffix: string;
+    thumbnail: string;
+    license: string;
+    iaaEditionCatalogueId: number;
+    manuscriptName: string;
+    name: string;
+    matchAuthor: string;
+    matchConfirmationAuthor: string;
+    matchId: number;
+    dateOfMatch: string;
+    dateOfConfirmation: string;
+}
+
+export interface CatalogueMatchListDTO {
+    matches: CatalogueMatchDTO[];
+}
+
 export interface EditionDTO {
     id: number;
     name: string;
@@ -190,21 +230,28 @@ export interface EditionManuscriptMetricsDTO extends UpdateEditionManuscriptMetr
     editorId: number;
 }
 
-export interface ImageDTO {
+export interface SimpleImageDTO {
     id: number;
     url: string;
-    imageToImageMapEditorId?: number;
     lightingType: Lighting;
     lightingDirection: Direction;
     waveLength: string[];
     type: string;
     side: string;
     ppi: number;
+    master: boolean;
+    catalogNumber: number;
+}
+
+export interface ImageDTO extends SimpleImageDTO {
+    imageToImageMapEditorId?: number;
     regionInMasterImage: string;
     regionInImage: string;
     transformToMaster: string;
-    master: boolean;
-    catalogNumber: number;
+}
+
+export interface SimpleImageListDTO {
+    images: SimpleImageDTO[];
 }
 export interface ImageInstitutionDTO {
     name: string;
@@ -212,6 +259,15 @@ export interface ImageInstitutionDTO {
 
 export interface ImageInstitutionListDTO {
     institutions: ImageInstitutionDTO[];
+}
+export interface InstitutionalImageDTO {
+    id: string;
+    thumbnailUrl: string;
+    license: string;
+}
+
+export interface InstitutionalImageListDTO {
+    institutionalImages: InstitutionalImageDTO[];
 }
 
 export interface ImageStackDTO {
@@ -465,6 +521,10 @@ export interface EditorDTO {
     organization: string;
 }
 export interface ArtefactSide {
+}
+export enum SideDesignation {
+    recto = 0,
+    verso = 1
 }
 export enum Direction {
     left = 0,

@@ -65,6 +65,18 @@ WHERE edition.edition_id = @EditionId";
     }
 
     /// <summary>
+    ///     Retrieves the roles for a user.
+    /// </summary>
+    internal static class UserSystemRolesQuery
+    {
+        public const string GetQuery = @"
+SELECT system_roles.role_title
+FROM users_system_roles
+JOIN system_roles USING(system_roles_id)
+WHERE users_system_roles.user_id = @UserID";
+    }
+
+    /// <summary>
     ///     Creates a new user account for @Email, and @Password (the account is not activated);
     ///     the fields @Forename, @Surname, and @Organization may be empty.
     /// </summary>

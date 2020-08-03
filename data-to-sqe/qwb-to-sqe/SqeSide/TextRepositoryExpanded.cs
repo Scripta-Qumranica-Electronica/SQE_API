@@ -38,7 +38,7 @@ namespace qwb_to_sqe.Repositories
         {
         }
 
-        public TextEdition GetSQEWord(EditionUserInfo editionUser, uint qwbWordId)
+        public TextEdition GetSQEWord(UserInfo editionUser, uint qwbWordId)
         {
             var terminators = _getWordTerminators(qwbWordId);
             return null; // _getEntityById(editionUser, terminators).Result;

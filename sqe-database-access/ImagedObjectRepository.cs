@@ -10,7 +10,8 @@ namespace SQE.DatabaseAccess
 {
     public interface IImagedObjectRepository
     {
-        Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(EditionUserInfo editionUser, string imagedObjectId);
+        Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(UserInfo editionUser, string imagedObjectId);
+        Task<IEnumerable<ImagedObjectImage>> GetImagedObjectImagesAsync(string imagedObjectId);
     }
 
     public class ImagedObjectRepository : DbConnectionBase, IImagedObjectRepository
@@ -19,7 +20,7 @@ namespace SQE.DatabaseAccess
         {
         }
 
-        public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(EditionUserInfo editionUser,
+        public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(UserInfo editionUser,
             string imagedObjectId)
         {
             var sql = ImagedObjectQueries.GetQuery(imagedObjectId != null);
@@ -38,6 +39,20 @@ namespace SQE.DatabaseAccess
 
                 var models = results.Select(CreateImagedObject);
                 return models;
+            }
+        }
+
+        public async Task<IEnumerable<ImagedObjectImage>> GetImagedObjectImagesAsync(string imagedObjectId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return await connection.QueryAsync<ImagedObjectImage>(
+                    ImagedObjectImageQuery.GetQuery,
+                    new
+                    {
+                        ImagedObjectId = imagedObjectId
+                    }
+                );
             }
         }
 

@@ -123,9 +123,9 @@ namespace SQE.DatabaseAccess.Helpers
 
     public interface IDatabaseWriter
     {
-        Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
+        Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo editionUser,
             List<MutationRequest> mutationRequests);
-        Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
+        Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo editionUser,
             MutationRequest mutationRequest);
 
     }
@@ -146,7 +146,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// </returns>
         /// <param name="editionUser"></param>
         /// <param name="mutationRequests">List of mutation requests.</param>
-        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo editionUser,
             List<MutationRequest> mutationRequests)
         {
             // Check if the edition is locked
@@ -180,13 +180,13 @@ namespace SQE.DatabaseAccess.Helpers
             return await _writeToDatabaseAsync(editionUser, mutationRequests);
         }
 
-        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(EditionUserInfo editionUser,
+        public async Task<List<AlteredRecord>> WriteToDatabaseAsync(UserInfo editionUser,
             MutationRequest mutationRequest)
         {
             return await WriteToDatabaseAsync(editionUser, new List<MutationRequest>() { mutationRequest });
         }
 
-        private async Task<List<AlteredRecord>> _writeToDatabaseAsync(EditionUserInfo editionUser,
+        private async Task<List<AlteredRecord>> _writeToDatabaseAsync(UserInfo editionUser,
             List<MutationRequest> mutationRequests)
         {
             var alteredRecords = new List<AlteredRecord>();
@@ -205,7 +205,7 @@ namespace SQE.DatabaseAccess.Helpers
                     {
                         case MutateType.Create:
                             // Insert the record and add its response to the alteredRecords response.
-                            alteredRecords.Add(await InsertAsync(connection, mutationRequest));
+                            alteredRecords.Add(await InsertAsync(connection, mutationRequest, editionUser.userId.Value));
                             break;
 
                         case MutateType.Update
@@ -214,7 +214,7 @@ namespace SQE.DatabaseAccess.Helpers
                             var deletedRecord = await DeleteAsync(connection, mutationRequest);
 
                             // Insert the new record
-                            var insertedRecord = await InsertAsync(connection, mutationRequest);
+                            var insertedRecord = await InsertAsync(connection, mutationRequest, editionUser.userId.Value);
 
                             // Merge the request responses by copying the deleted Id to the insertRecord object
                             insertedRecord.OldId = deletedRecord.OldId;
@@ -227,6 +227,9 @@ namespace SQE.DatabaseAccess.Helpers
                             // Delete the record and add its response to the alteredRecords response.
                             alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
                             break;
+
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
                 }
             }
@@ -241,10 +244,10 @@ namespace SQE.DatabaseAccess.Helpers
         /// <param name="connection">An IDbConnection belonging to the current transaction.</param>
         /// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
         /// <returns>The alteredRecord object to be added to the request response.</returns>
-        private static async Task<AlteredRecord> InsertAsync(IDbConnection connection, MutationRequest mutationRequest)
+        private static async Task<AlteredRecord> InsertAsync(IDbConnection connection, MutationRequest mutationRequest, uint userId)
         {
             // Insert the record (or return the id of a preexisting record matching the unique constraints.
-            var createInsertId = await InsertOwnedTableAsync(connection, mutationRequest);
+            var createInsertId = await InsertOwnedTableAsync(connection, mutationRequest, userId);
 
             // Insert the link to the editionId in the owner table
             await InsertOwnerTableAsync(connection, mutationRequest, createInsertId);
@@ -285,14 +288,14 @@ namespace SQE.DatabaseAccess.Helpers
         ///     Returns the Id of the newly inserted record. If a record with the same data already existed,
         ///     then the Id of that record is returned.
         /// </returns>
-        private static async Task<uint> InsertOwnedTableAsync(IDbConnection connection, MutationRequest mutationRequest)
+        private static async Task<uint> InsertOwnedTableAsync(IDbConnection connection, MutationRequest mutationRequest, uint userId)
         {
             // Format query
             var hasNulls = mutationRequest.Parameters.ParameterNames.Any(
                 x =>
                     ((SqlMapper.IParameterLookup)mutationRequest.Parameters)[x] == null
             );
-            var query = OwnedTableInsertQuery.GetQuery(hasNulls);
+            var query = OwnedTableInsertQuery.GetQuery();
             query = query.Replace("$TableName", mutationRequest.TableName);
             query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
             query = query.Replace(
@@ -306,6 +309,17 @@ namespace SQE.DatabaseAccess.Helpers
                     )
                 )
             );
+            query = query.Replace(
+                    "$Where",
+                    string.Join(
+                        " AND ",
+                        mutationRequest.ColumnNames.Select(
+                            x => $"{x} <=> " + (GeometryColumns.columns.IndexOf(x + mutationRequest.TableName) > -1
+                                ? $"ST_GeomFromText(@{x})"
+                                : "@" + x))
+                    )
+                );
+            mutationRequest.Parameters.Add("@UserId", userId);
 
             // Execute query
             var alteredRecords = await connection.ExecuteAsync(query, mutationRequest.Parameters);
@@ -314,7 +328,7 @@ namespace SQE.DatabaseAccess.Helpers
             if (alteredRecords == 0) // Nothing was inserted because the exact record already existed.
             {
                 // Get id of new record (or the record matching the unique constraints of this request).
-                query = OwnedTableIdQuery.GetQuery(hasNulls);
+                query = OwnedTableIdQuery.GetQuery();
                 query = query.Replace("$TableName", mutationRequest.TableName);
                 query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
                 query = query.Replace(
@@ -328,6 +342,16 @@ namespace SQE.DatabaseAccess.Helpers
                         )
                     )
                 );
+                query = query.Replace(
+                                      "$Where",
+                                      string.Join(
+                                          " AND ",
+                                          mutationRequest.ColumnNames.Select(
+                                              x => $"{x} <=> " + (GeometryColumns.columns.IndexOf(x + mutationRequest.TableName) > -1
+                                                  ? $"ST_GeomFromText(@{x})"
+                                                  : "@" + x))
+                                      )
+                                  );
                 query = query.Replace("$PrimaryKeyName", mutationRequest.TableName + "_id");
 
                 insertId = await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);

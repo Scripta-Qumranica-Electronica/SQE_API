@@ -11,39 +11,39 @@ namespace SQE.DatabaseAccess
 {
     public interface ISignInterpretationCommentaryRepository
     {
-        Task<SignInterpretationCommentaryData> CreateCommentaryAsync(EditionUserInfo editionUser,
+        Task<SignInterpretationCommentaryData> CreateCommentaryAsync(UserInfo editionUser,
             uint signInterpretationId,
             SignInterpretationCommentaryData newCommentaryData);
 
-        Task<List<SignInterpretationCommentaryData>> CreateCommentariesAsync(EditionUserInfo editionUser,
+        Task<List<SignInterpretationCommentaryData>> CreateCommentariesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationCommentaryData> newCommentaries);
 
-        Task<SignInterpretationCommentaryData> UpdateCommentaryAsync(EditionUserInfo editionUser,
+        Task<SignInterpretationCommentaryData> UpdateCommentaryAsync(UserInfo editionUser,
             uint signInterpretationId,
             SignInterpretationCommentaryData updateCommentaryData);
 
-        Task<List<uint>> DeleteCommentariesAsync(EditionUserInfo editionUser, List<uint> deleteCommentaryIds);
+        Task<List<uint>> DeleteCommentariesAsync(UserInfo editionUser, List<uint> deleteCommentaryIds);
 
-        Task<List<uint>> DeleteAllCommentariesForSignInterpretationAsync(EditionUserInfo editionUser,
+        Task<List<uint>> DeleteAllCommentariesForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
 
-        Task<SignInterpretationCommentaryDataSearchData> GetSignInterpretationCommentaryByIdAsync(EditionUserInfo editionUser,
+        Task<SignInterpretationCommentaryDataSearchData> GetSignInterpretationCommentaryByIdAsync(UserInfo editionUser,
             uint signInterpretationCommentaryId);
 
         Task<List<SignInterpretationCommentaryDataSearchData>> GetSignInterpretationCommentariesByDataAsync(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             SignInterpretationCommentaryDataSearchData dataSearchData);
 
         Task<List<SignInterpretationCommentaryDataSearchData>> GetSignInterpretationCommentariesByInterpretationId(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint signInterpretationId);
 
-        Task<SignInterpretationCommentaryData> ReplaceSignInterpretationCommentary(EditionUserInfo editionUser,
+        Task<SignInterpretationCommentaryData> ReplaceSignInterpretationCommentary(UserInfo editionUser,
             uint signInterpretationId,
             SignInterpretationCommentaryData newCommentaryData);
 
-        Task<List<SignInterpretationCommentaryData>> ReplaceSignInterpretationCommentaries(EditionUserInfo editionUser,
+        Task<List<SignInterpretationCommentaryData>> ReplaceSignInterpretationCommentaries(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationCommentaryData> newCommentaries);
     }
@@ -63,7 +63,7 @@ namespace SQE.DatabaseAccess
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <param name="newCommentaryData">Sign interpretation commentary object</param>
         /// <returns>Sign interpretation commentary object with new commentary id set</returns>
-        public async Task<SignInterpretationCommentaryData> CreateCommentaryAsync(EditionUserInfo editionUser,
+        public async Task<SignInterpretationCommentaryData> CreateCommentaryAsync(UserInfo editionUser,
             uint signInterpretationId,
             SignInterpretationCommentaryData newCommentaryData)
         {
@@ -74,7 +74,7 @@ namespace SQE.DatabaseAccess
             return result.Count > 0 ? result.First() : new SignInterpretationCommentaryData();
         }
 
-        public async Task<List<SignInterpretationCommentaryData>> CreateCommentariesAsync(EditionUserInfo editionUser,
+        public async Task<List<SignInterpretationCommentaryData>> CreateCommentariesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationCommentaryData> newCommentaries)
         {
@@ -92,7 +92,7 @@ namespace SQE.DatabaseAccess
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <param name="updateCommentaryData">Sign interpretation commentary object</param>
         /// <returns>Sign interpretation commentary object with new commentary id set</returns>
-        public async Task<SignInterpretationCommentaryData> UpdateCommentaryAsync(EditionUserInfo editionUser,
+        public async Task<SignInterpretationCommentaryData> UpdateCommentaryAsync(UserInfo editionUser,
             uint signInterpretationId,
             SignInterpretationCommentaryData updateCommentaryData)
         {
@@ -110,7 +110,7 @@ namespace SQE.DatabaseAccess
         /// <param name="deleteCommentaryIds">List of ids of the attributes to be deleted</param>
         /// <returns>The list of the ids of deleted commentaries or empty list if the given list was null.</returns>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
-        public async Task<List<uint>> DeleteCommentariesAsync(EditionUserInfo editionUser,
+        public async Task<List<uint>> DeleteCommentariesAsync(UserInfo editionUser,
             List<uint> deleteCommentaryIds)
         {
             if (deleteCommentaryIds == null) return new List<uint>();
@@ -137,7 +137,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>List of ids of delete commentaries</returns>
-        public async Task<List<uint>> DeleteAllCommentariesForSignInterpretationAsync(EditionUserInfo editionUser,
+        public async Task<List<uint>> DeleteAllCommentariesForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId)
         {
             var commentaries = await GetSignInterpretationCommentariesByInterpretationId(
@@ -156,7 +156,7 @@ namespace SQE.DatabaseAccess
         /// <returns>Sign interpretation commentary with the given id</returns>
         /// <exception cref="DataNotFoundException"></exception>
         public async Task<SignInterpretationCommentaryDataSearchData> GetSignInterpretationCommentaryByIdAsync(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint signInterpretationCommentaryId)
         {
             var searchData = new SignInterpretationCommentaryDataSearchData()
@@ -183,7 +183,7 @@ namespace SQE.DatabaseAccess
         /// <param name="dataSearchData">Sign interpretation commentary search data object</param>
         /// <returns>List of sign interpretation commentary data - if nothing had been found the list is empty.</returns>
         public async Task<List<SignInterpretationCommentaryDataSearchData>> GetSignInterpretationCommentariesByDataAsync(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             SignInterpretationCommentaryDataSearchData dataSearchData)
         {
             var query = GetSignInterpretationCommentaryByData.GetQuery.Replace(
@@ -205,7 +205,7 @@ namespace SQE.DatabaseAccess
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>List of sign interpretation commentaries</returns>
         public async Task<List<SignInterpretationCommentaryDataSearchData>> GetSignInterpretationCommentariesByInterpretationId(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint signInterpretationId)
         {
             var searchData = new SignInterpretationCommentaryDataSearchData()
@@ -228,7 +228,7 @@ namespace SQE.DatabaseAccess
         /// <returns>New sign interpretation commentary with the new id</returns>
         /// <exception cref="NotImplementedException"></exception>
         public async Task<SignInterpretationCommentaryData> ReplaceSignInterpretationCommentary(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint signInterpretationId,
             SignInterpretationCommentaryData newCommentaryData)
         {
@@ -248,7 +248,7 @@ namespace SQE.DatabaseAccess
         /// <param name="newCommentary">List of new sign interpretation commentaries</param>
         /// <returns>List of the new sign interpretation commentaries with the new ids</returns>
         public async Task<List<SignInterpretationCommentaryData>> ReplaceSignInterpretationCommentaries(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationCommentaryData> newCommentaries)
         {
@@ -272,7 +272,7 @@ namespace SQE.DatabaseAccess
         /// the id is set to zero</returns>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task<List<SignInterpretationCommentaryData>> _createOrUpdateCommentariesAsync(
-            EditionUserInfo editionUser,
+            UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationCommentaryData> commentaries,
             MutateType action
