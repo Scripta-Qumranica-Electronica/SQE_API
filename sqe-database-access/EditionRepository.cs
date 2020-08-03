@@ -57,7 +57,6 @@ namespace SQE.DatabaseAccess
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
     {
-        private readonly IConfiguration _config;
         private readonly IDatabaseWriter _databaseWriter;
 
         public EditionRepository(IDbConnection conn, IDatabaseWriter databaseWriter) : base(conn)

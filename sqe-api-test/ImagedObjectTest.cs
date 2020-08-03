@@ -44,21 +44,6 @@ namespace SQE.ApiTest
             httpResponse.EnsureSuccessStatusCode();
             httpData.ShouldDeepEqual(signalrData);
             return (editionId, httpData.imagedObjects.FirstOrDefault().id);
-            const string sql = @"
-SELECT DISTINCT artefact_shape_owner.edition_id, image_catalog.object_id
-FROM artefact_shape
-JOIN artefact_shape_owner ON artefact_shape.artefact_shape_id = artefact_shape_owner.artefact_shape_id
-JOIN SQE_image ON artefact_shape.sqe_image_id = SQE_image.sqe_image_id
-JOIN image_catalog ON SQE_image.image_catalog_id = image_catalog.image_catalog_id
-JOIN edition_editor ON artefact_shape_owner.edition_editor_id = edition_editor.edition_editor_id
-  AND edition_editor.user_id = @UserId
-WHERE artefact_shape_owner.edition_id = @EditionId AND artefact_shape.region_in_sqe_image IS NOT NULL 
-LIMIT 50";
-            var parameters = new DynamicParameters();
-            parameters.Add("@UserId", user);
-            parameters.Add("@EditionId", editionId);
-            var editionIds = (await _db.RunQueryAsync<(uint editionId, string objectId)>(sql, parameters)).ToList();
-            return editionIds.FirstOrDefault();
         }
 
         /// <summary>
