@@ -67,8 +67,11 @@ import {
 	BatchEditRoiResponseDTO,
 	SignDTO,
 	NextSignInterpretationDTO,
+	SignInterpretationBaseDTO,
+	SignInterpretationCreateDTO,
 	SignInterpretationDTO,
 	InterpretationAttributeDTO,
+	InterpretationAttributeListDTO,
 	EditionScriptCollectionDTO,
 	EditionScriptLinesDTO,
 	CharacterShapeDTO,
@@ -704,6 +707,72 @@ export class SignalRUtilities {
 	 */
     public async deleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId(iaaEditionCatalogToTextFragmentId: number): Promise<void> {
         return await this._connection.invoke('DeleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId', iaaEditionCatalogToTextFragmentId);
+    }
+
+    /**
+	 * Replaces the sign interpretation in the route with the submitted sign interpretation DTO.
+	 * This is the only way to change a sign interpretation's character. The endpoint will create
+	 * a new sign interpretation id with the submitted information, remove the old sign interpretation
+	 * id from the edition sign streams, and insert the new sign interpretation into its place its
+	 * place in the stream.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation being replaced
+	 * @param newSignInterpretation - New sign interpretation data to be added
+	 * @returns - The new sign interpretation
+	 */
+    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number, newSignInterpretation: SignInterpretationCreateDTO): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId, newSignInterpretation);
+    }
+
+    /**
+	 * Updates the commentary of a sign interpretation
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation being replaced
+	 * @param string - The new commentary for the sign interpretation
+	 * @returns - Ok or Error
+	 */
+    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationIdCommentary(editionId: number, signInterpretationId: number, commentary: string): Promise<void> {
+        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdCommentary', editionId, signInterpretationId, commentary);
+    }
+
+    /**
+	 * This adds a new attribute to the specified sign interpretation.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation for adding a new attribute
+	 * @param newSignInterpretationAttributes - Details of the attribute to be added
+	 * @returns - The updated sign interpretation
+	 */
+    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(editionId: number, signInterpretationId: number, newSignInterpretationAttributes: InterpretationAttributeListDTO): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes', editionId, signInterpretationId, newSignInterpretationAttributes);
+    }
+
+    /**
+	 * This changes the values of the specified sign interpretation attribute,
+	 * mainly used to change commentary.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation being altered
+	 * @param attributeId - Id of the attribute to be altered
+	 * @param alteredSignInterpretationAttribute - New details of the attribute
+	 * @returns - The updated sign interpretation
+	 */
+    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId(editionId: number, signInterpretationId: number, attributeId: number, alteredSignInterpretationAttribute: InterpretationAttributeDTO): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId', editionId, signInterpretationId, attributeId, alteredSignInterpretationAttribute);
+    }
+
+    /**
+	 * This deletes the specified attribute from the specified sign interpretation.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation being alteres
+	 * @param attributeId - Id of the attribute being removed
+	 * @returns - Ok or Error
+	 */
+    public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId(editionId: number, signInterpretationId: number, attributeId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId', editionId, signInterpretationId, attributeId);
     }
 
     /**

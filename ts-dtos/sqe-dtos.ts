@@ -341,11 +341,19 @@ export interface NextSignInterpretationDTO {
     editorId: number;
 }
 
-export interface SignInterpretationDTO {
-    signInterpretationId: number;
+export interface SignInterpretationBaseDTO {
     character: string;
     attributes: InterpretationAttributeDTO[];
     rois: InterpretationRoiDTO[];
+    commentary: string;
+}
+
+export interface SignInterpretationCreateDTO extends SignInterpretationBaseDTO {
+    nextSignInterpretations: number[];
+}
+
+export interface SignInterpretationDTO extends SignInterpretationBaseDTO {
+    signInterpretationId: number;
     nextSignInterpretations: NextSignInterpretationDTO[];
 }
 export interface InterpretationAttributeDTO {
@@ -355,6 +363,11 @@ export interface InterpretationAttributeDTO {
     attributeValueString: string;
     editorId: number;
     value: number;
+    commentary: string;
+}
+
+export interface InterpretationAttributeListDTO {
+    attributes: InterpretationAttributeDTO[];
 }
 
 export interface EditionScriptCollectionDTO {
