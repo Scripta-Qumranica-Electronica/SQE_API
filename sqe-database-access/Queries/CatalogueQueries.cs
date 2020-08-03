@@ -1,10 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SQE.DatabaseAccess.Queries
 {
-    enum CatalogueQueryFilterType
+    internal enum CatalogueQueryFilterType
     {
         Edition,
         ImagedObject,
@@ -64,12 +63,21 @@ LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation iec ON iec.iaa_editi
 LEFT JOIN user ON user.user_id = iaa_edition_catalog_to_text_fragment_confirmation.user_id
 WHERE iec.iaa_edition_catalog_to_text_fragment_id IS NULL) AS iecc2 
 ON iecc2.iaa_edition_catalog_to_text_fragment_id = image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id";
+
         private const string allFilter =
             @"JOIN SQE.iaa_edition_catalog_to_text_fragment_confirmation AS iecc USING(iaa_edition_catalog_to_text_fragment_id)";
+
         private const string editionFilter = "WHERE image_text_fragment_match_catalogue.edition_id = @EditionId";
-        private const string imagedObjectFilter = "WHERE image_text_fragment_match_catalogue.object_id = @ImagedObjectId";
-        private const string textFragmentFilter = "WHERE image_text_fragment_match_catalogue.text_fragment_id = @TextFragmentId";
-        private const string manuscriptFilter = "WHERE image_text_fragment_match_catalogue.manuscript_id = @ManuscriptId";
+
+        private const string imagedObjectFilter =
+            "WHERE image_text_fragment_match_catalogue.object_id = @ImagedObjectId";
+
+        private const string textFragmentFilter =
+            "WHERE image_text_fragment_match_catalogue.text_fragment_id = @TextFragmentId";
+
+        private const string manuscriptFilter =
+            "WHERE image_text_fragment_match_catalogue.manuscript_id = @ManuscriptId";
+
         public static string GetQuery(CatalogueQueryFilterType filter, bool onlyLatestMatch = true)
         {
             var where = filter switch
@@ -106,7 +114,8 @@ $Where
 ";
 
         public static string GetQuery(bool iaaEditionCatalogId, bool manuscript, bool editionName, bool editionVolume,
-            bool editionLocation1, bool editionLocation2, bool editionSide, bool comment, bool manuscriptId, bool editionId)
+            bool editionLocation1, bool editionLocation2, bool editionSide, bool comment, bool manuscriptId,
+            bool editionId)
         {
             var searchOptions = new List<string>();
             if (iaaEditionCatalogId)
@@ -129,7 +138,8 @@ $Where
                 searchOptions.Add("manuscript_id = @ManuscriptId");
             if (editionId)
                 searchOptions.Add("edition_id = @EditionId");
-            return _GetQuery.Replace("$Where", searchOptions.Any() ? "WHERE " + string.Join(" AND ", searchOptions) : "");
+            return _GetQuery.Replace("$Where",
+                searchOptions.Any() ? "WHERE " + string.Join(" AND ", searchOptions) : "");
         }
     }
 

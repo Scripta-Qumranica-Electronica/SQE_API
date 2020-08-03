@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using SQE.DatabaseAccess.Helpers;
+using CaseExtensions;
 
 namespace SQE.DatabaseAccess.Queries
 {
@@ -29,13 +29,13 @@ WHERE $Where";
                 join = "JOIN user_email_token USING(user_id)";
             return _query.Replace( // Add the columns to the query
                     "$Columns",
-                    string.Join(",", columns.Select(x => $"{x} AS {StringFormatters.ToPascalCase(x)}"))
+                    string.Join(",", columns.Select(x => $"{x} AS {x.ToPascalCase()}"))
                 )
                 .Replace( // Add the where clause parameters to the query
                     "$Where",
                     string.Join(
                         $" {(whereAnd ? "AND" : "OR")} ",
-                        where.Select(x => $"{x} = @{StringFormatters.ToPascalCase(x)}")
+                        where.Select(x => $"{x} = @{x.ToPascalCase()}")
                     )
                 )
                 .Replace("$Join", join)

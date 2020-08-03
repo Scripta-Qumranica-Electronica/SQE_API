@@ -24,7 +24,7 @@ namespace SQE.DatabaseAccess.Queries
     {
         public static string GetQuery()
         {
-            return $@"
+            return @"
 INSERT INTO $TableName ($Columns, creator_id)
 SELECT $Values, @UserId
 FROM dual
@@ -55,7 +55,7 @@ WHERE NOT EXISTS
     {
         public static string GetQuery()
         {
-            return $@"
+            return @"
 SELECT $PrimaryKeyName
 FROM $TableName
 WHERE $Where

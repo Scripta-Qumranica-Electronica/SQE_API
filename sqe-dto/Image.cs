@@ -20,10 +20,13 @@ namespace SQE.API.DTO
 
         public uint id { get; set; }
         public string url { get; set; }
+
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public Lighting lightingType { get; set; }
+
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public Direction lightingDirection { get; set; }
+
         public string[] waveLength { get; set; }
         public string type { get; set; }
         public string side { get; set; }

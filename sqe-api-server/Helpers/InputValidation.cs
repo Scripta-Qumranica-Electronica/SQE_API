@@ -3,7 +3,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using NetTopologySuite.Simplify;
 using Newtonsoft.Json;
@@ -14,14 +13,6 @@ namespace SQE.API.Server.Helpers
 {
     public static class GeometryValidation
     {
-        // You must declare the layout of your C struct (this is for any array)
-        [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
-        public struct BinaryData
-        {
-            public UIntPtr len;
-            public IntPtr data;
-        }
-
         // You must DllImport before each external function imported (beware the paths)
         [DllImport(
             "geo_repair_polygon",
@@ -72,15 +63,17 @@ namespace SQE.API.Server.Helpers
         }
 
         /// <summary>
-        /// Validate that the wkt polygon is indeed correct. If it is not, the method will
-        /// throw an error. When the fix parameter is set to true, it will try to repair it and
-        /// send the repaired version of the polygon back with the error.  If the polygon cannot be
-        /// repaired at all, then a descriptive error about the polygon is thrown.
+        ///     Validate that the wkt polygon is indeed correct. If it is not, the method will
+        ///     throw an error. When the fix parameter is set to true, it will try to repair it and
+        ///     send the repaired version of the polygon back with the error.  If the polygon cannot be
+        ///     repaired at all, then a descriptive error about the polygon is thrown.
         /// </summary>
         /// <param name="wktPolygon">A wkt polygon</param>
         /// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
-        /// <param name="fix">Invalid polygons always throw an error, this flag determines whether to try to return a repaired
-        /// version of the polygon with that error</param>
+        /// <param name="fix">
+        ///     Invalid polygons always throw an error, this flag determines whether to try to return a repaired
+        ///     version of the polygon with that error
+        /// </param>
         /// <returns>A WKT string with the cleaned polygon</returns>
         public static async Task<string> ValidatePolygonAsync(string wktPolygon, string entityName, bool fix = false)
         {
@@ -91,15 +84,17 @@ namespace SQE.API.Server.Helpers
         }
 
         /// <summary>
-        /// Private method to validate that the wkt polygon is indeed correct. If it is not, the method will
-        /// throw an error. When the fix parameter is set to true, it will try to repair it and
-        /// send the repaired version of the polygon back with the error.  If the polygon cannot be
-        /// repaired at all, then a descriptive error about the polygon is thrown.
+        ///     Private method to validate that the wkt polygon is indeed correct. If it is not, the method will
+        ///     throw an error. When the fix parameter is set to true, it will try to repair it and
+        ///     send the repaired version of the polygon back with the error.  If the polygon cannot be
+        ///     repaired at all, then a descriptive error about the polygon is thrown.
         /// </summary>
         /// <param name="wktPolygon">A wkt polygon</param>
         /// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
-        /// <param name="fix">Invalid polygons always throw an error, this flag determines whether to try to return a repaired
-        /// version of the polygon with that error</param>
+        /// <param name="fix">
+        ///     Invalid polygons always throw an error, this flag determines whether to try to return a repaired
+        ///     version of the polygon with that error
+        /// </param>
         /// <returns>A WKT string with the cleaned polygon</returns>
         /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
         private static string _validatePolygon(string wktPolygon, string entityName, bool fix)
@@ -124,7 +119,8 @@ namespace SQE.API.Server.Helpers
                 // It is invalid, but could be repaired as a binary representation
                 // Throw an error if no request to fix it has been made
                 if (!fix)
-                    throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        "The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
 
                 // Try repairing the binary version of the polygon
                 var wkb_in = polygon.AsBinary(); // Get the binary data
@@ -173,7 +169,6 @@ namespace SQE.API.Server.Helpers
                     c_bin_data_free(bin);
 
 
-
                     return simplifier.GetResultGeometry().ToString();
                 }
                 catch
@@ -186,7 +181,8 @@ namespace SQE.API.Server.Helpers
             {
                 // The polygon could not be loaded, so throw an error if no request to fix it has been made
                 if (!fix)
-                    throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        "The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
             }
 
             // Try repairing as a WKT (there may have been some text formatting errors)
@@ -194,7 +190,8 @@ namespace SQE.API.Server.Helpers
             var returnPoly = Marshal.PtrToStringAnsi(repairedWkt);
             c_char_free(repairedWkt); // We need to let Rust free the memory it was using
             if (string.IsNullOrEmpty(returnPoly) || returnPoly == "INVALIDGEOMETRY")
-                throw new StandardExceptions.InputDataRuleViolationException("The submitted WKT POLYGON is invalid and cannot be repaired");
+                throw new StandardExceptions.InputDataRuleViolationException(
+                    "The submitted WKT POLYGON is invalid and cannot be repaired");
 
             // Remove any completely unnecessary points
             var simplified = new DouglasPeuckerSimplifier(wkr.Read(returnPoly)) { DistanceTolerance = 0 };
@@ -202,8 +199,8 @@ namespace SQE.API.Server.Helpers
         }
 
         /// <summary>
-        /// This makes a quick pass of the geometry and fixes unclosed polygons as well
-        /// as trying to fix any simple text formatting errors.
+        ///     This makes a quick pass of the geometry and fixes unclosed polygons as well
+        ///     as trying to fix any simple text formatting errors.
         /// </summary>
         /// <param name="wkt">A Wkt Polygon string</param>
         /// <returns></returns>
@@ -215,7 +212,8 @@ namespace SQE.API.Server.Helpers
 
             // Check for errors with the nesting of parentheses in the polygon geometry, we don't really know how to fix those
             if (asymmetricNesting.Matches(wkt).Count > 0)
-                throw new StandardExceptions.InputDataRuleViolationException("The submitted POLYGON has an improperly nested ring");
+                throw new StandardExceptions.InputDataRuleViolationException(
+                    "The submitted POLYGON has an improperly nested ring");
 
             // We break the string into the individual paths the loop over them, repairing each path as we go.
             var polyStrings = wktSplit.Split(wkt).Select(z =>
@@ -234,7 +232,15 @@ namespace SQE.API.Server.Helpers
                 return $"({string.Join(",", coords)})";
             }).ToList();
 
-            return ($"POLYGON({string.Join(",", polyStrings)})");
+            return $"POLYGON({string.Join(",", polyStrings)})";
+        }
+
+        // You must declare the layout of your C struct (this is for any array)
+        [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
+        public struct BinaryData
+        {
+            public UIntPtr len;
+            public IntPtr data;
         }
     }
 }

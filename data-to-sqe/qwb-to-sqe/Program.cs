@@ -1,28 +1,15 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using Dapper;
-using Microsoft.Extensions.Configuration;
-using qwb_to_sqe.Repositories;
-using SQE.DatabaseAccess.Helpers;
-
-
+﻿using qwb_to_sqe.Repositories;
 
 namespace qwb_to_sqe
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-
             var sqe = new SqeDatabase();
             var qwb = new QWBDatabase();
 
-            foreach (var qwbScroll in qwb.GetScrollIds())
-            {
-                qwb.readInScrollText(qwbScroll);
-
-            }
+            foreach (var qwbScroll in qwb.GetScrollIds()) qwb.readInScrollText(qwbScroll);
 
 
             /*
@@ -66,6 +53,5 @@ namespace qwb_to_sqe
             }
             */
         }
-
     }
 }

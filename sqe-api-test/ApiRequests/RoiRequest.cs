@@ -19,7 +19,8 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-        public class V1_Editions_EditionId_Rois : EditionRequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO, InterpretationRoiDTO>
+        public class V1_Editions_EditionId_Rois : EditionRequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO,
+            InterpretationRoiDTO>
         {
             /// <summary>
             ///     Create a new ROI in an edition
@@ -96,7 +97,8 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Rois_Batch
-            : EditionRequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
+            : EditionRequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList,
+                UpdatedInterpretationRoiDTOList>
         {
             /// <summary>
             ///     Updates one or more new ROIs in an edition

@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
-using Org.BouncyCastle.Crypto.Tls;
 using SQE.API.DTO;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -62,8 +60,13 @@ namespace SQE.DatabaseAccess
 
         Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(UserInfo editionUser);
         Task<ArtefactGroup> GetArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId);
-        Task<ArtefactGroup> CreateArtefactGroupAsync(UserInfo editionUser, string artefactGroupName, List<uint> artefactIds);
-        Task<ArtefactGroup> UpdateArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId, string artefactGroupName, List<uint> artefactIds);
+
+        Task<ArtefactGroup> CreateArtefactGroupAsync(UserInfo editionUser, string artefactGroupName,
+            List<uint> artefactIds);
+
+        Task<ArtefactGroup> UpdateArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId,
+            string artefactGroupName, List<uint> artefactIds);
+
         Task DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId);
     }
 
@@ -245,51 +248,6 @@ namespace SQE.DatabaseAccess
             );
         }
 
-        private async Task<MutationRequest> FormatArtefactPositionUpdateRequestAsync(UserInfo editionUser,
-            uint artefactId,
-            decimal? scale,
-            decimal? rotate,
-            int? translateX,
-            int? translateY,
-            int? zIndex)
-        {
-            const string tableName = "artefact_position";
-            var notPositioned = !scale.HasValue && !rotate.HasValue && !translateX.HasValue && !translateY.HasValue &&
-                               !zIndex.HasValue;
-            var artefactPositionId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
-            // It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
-            // If no artefact_position already exists we need to create a new entry here.
-            if (artefactPositionId == 0 && !notPositioned)
-                return FormatArtefactPositionInsertion(
-                    editionUser,
-                    artefactId,
-                    scale,
-                    rotate,
-                    translateX,
-                    translateY,
-                    zIndex
-                );
-
-            var artefactChangeParams = new DynamicParameters();
-            if (scale.HasValue)
-                artefactChangeParams.Add("@scale", scale);
-            if (rotate.HasValue)
-                artefactChangeParams.Add("@rotate", rotate);
-            if (zIndex.HasValue)
-                artefactChangeParams.Add("@z_index", zIndex ?? 0);
-            artefactChangeParams.Add("@translate_x", translateX);
-            artefactChangeParams.Add("@translate_y", translateY);
-            artefactChangeParams.Add("@artefact_id", artefactId);
-            var artefactChangeRequest = new MutationRequest(
-                notPositioned ? MutateType.Delete : MutateType.Update, // delete if the artefact is not positioned at all
-                artefactChangeParams,
-                tableName,
-                artefactPositionId
-            );
-
-            return artefactChangeRequest;
-        }
-
         public async Task<uint> CreateNewArtefactAsync(UserInfo editionUser,
             uint masterImageId,
             string shape,
@@ -411,121 +369,6 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        public async Task<List<AlteredRecord>> InsertArtefactShapeAsync(UserInfo editionUser,
-            uint artefactId,
-            uint masterImageId,
-            string shape)
-        {
-            /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
-			 write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
-			 use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
-			 
-			var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
-			var res = string.Join("", binaryMask);
-			var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-
-            var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@region_in_sqe_image", shape);
-            artefactChangeParams.Add("@sqe_image_id", masterImageId);
-            artefactChangeParams.Add("@artefact_id", artefactId);
-            var artefactChangeRequest = new MutationRequest(
-                MutateType.Create,
-                artefactChangeParams,
-                "artefact_shape"
-            );
-
-            return await WriteArtefactAsync(editionUser, artefactChangeRequest);
-        }
-
-        public async Task<List<AlteredRecord>> InsertArtefactStatusAsync(UserInfo editionUser,
-            uint artefactId,
-            string workStatus)
-        {
-            var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@artefact_id", artefactId);
-            if (!string.IsNullOrEmpty(workStatus))
-                artefactChangeParams.Add("@work_status_id", await SetWorkStatusAsync(workStatus));
-            var artefactChangeRequest = new MutationRequest(
-                MutateType.Create,
-                artefactChangeParams,
-                "artefact_status"
-            );
-
-            return await WriteArtefactAsync(editionUser, artefactChangeRequest);
-        }
-
-        public async Task<List<AlteredRecord>> InsertArtefactNameAsync(UserInfo editionUser,
-            uint artefactId,
-            string name)
-        {
-            var artefactChangeParams = new DynamicParameters();
-            artefactChangeParams.Add("@name", name);
-            artefactChangeParams.Add("@artefact_id", artefactId);
-            var artefactChangeRequest = new MutationRequest(
-                MutateType.Create,
-                artefactChangeParams,
-                "artefact_data"
-            );
-
-            return await WriteArtefactAsync(editionUser, artefactChangeRequest);
-        }
-
-        public async Task<List<AlteredRecord>> InsertArtefactPositionAsync(UserInfo editionUser,
-            uint artefactId,
-            decimal? scale,
-            decimal? rotate,
-            int? translateX,
-            int? translateY,
-            int? zIndex)
-        {
-            return await WriteArtefactAsync(editionUser, FormatArtefactPositionInsertion(
-                editionUser,
-                artefactId,
-                scale,
-                rotate,
-                translateX,
-                translateY,
-                zIndex)
-            );
-        }
-
-        private MutationRequest FormatArtefactPositionInsertion(UserInfo editionUser,
-            uint artefactId,
-            decimal? scale,
-            decimal? rotate,
-            int? translateX,
-            int? translateY,
-            int? zIndex)
-        {
-            var artefactChangeParams = new DynamicParameters(); if (scale.HasValue)
-                artefactChangeParams.Add("@scale", scale);
-            if (rotate.HasValue)
-                artefactChangeParams.Add("@rotate", rotate);
-            if (zIndex.HasValue)
-                artefactChangeParams.Add("@z_index", zIndex ?? 0);
-            artefactChangeParams.Add("@translate_x", translateX);
-            artefactChangeParams.Add("@translate_y", translateY);
-            artefactChangeParams.Add("@artefact_id", artefactId);
-            var artefactChangeRequest = new MutationRequest(
-                MutateType.Create,
-                artefactChangeParams,
-                "artefact_position"
-            );
-
-            return artefactChangeRequest;
-        }
-
-        public async Task<List<AlteredRecord>> WriteArtefactAsync(UserInfo editionUser,
-            MutationRequest artefactChangeRequest)
-        {
-            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-            // care of main_action and single_action.
-            return await _databaseWriter.WriteToDatabaseAsync(
-                editionUser,
-                new List<MutationRequest> { artefactChangeRequest }
-            );
-        }
-
         public async Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(UserInfo editionUser)
         {
             using (var connection = OpenConnection())
@@ -544,11 +387,11 @@ namespace SQE.DatabaseAccess
                     .GroupBy(
                         x => new { x.ArtefactGroupId, ArtefactName = x.ArtefactGroupName }, // this is the key
                         x => x.ArtefactId, // this is the val
-                        (key, val) => new ArtefactGroup() // the return object
+                        (key, val) => new ArtefactGroup // the return object
                         {
                             ArtefactGroupId = key.ArtefactGroupId,
                             ArtefactName = key.ArtefactName,
-                            ArtefactIds = val.ToList(),
+                            ArtefactIds = val.ToList()
                         }
                     )
                     .ToList();
@@ -571,11 +414,11 @@ namespace SQE.DatabaseAccess
                 )).GroupBy(
                     x => new { x.ArtefactGroupId, ArtefactName = x.ArtefactGroupName }, // this is the key
                     x => x.ArtefactId, // this is the val
-                    (key, val) => new ArtefactGroup() // the return object
+                    (key, val) => new ArtefactGroup // the return object
                     {
                         ArtefactGroupId = key.ArtefactGroupId,
                         ArtefactName = key.ArtefactName,
-                        ArtefactIds = val.ToList(),
+                        ArtefactIds = val.ToList()
                     }
                 ).FirstOrDefault();
             }
@@ -778,6 +621,169 @@ namespace SQE.DatabaseAccess
                 throw new StandardExceptions.DataNotWrittenException("delete an artefact group");
         }
 
+        private async Task<MutationRequest> FormatArtefactPositionUpdateRequestAsync(UserInfo editionUser,
+            uint artefactId,
+            decimal? scale,
+            decimal? rotate,
+            int? translateX,
+            int? translateY,
+            int? zIndex)
+        {
+            const string tableName = "artefact_position";
+            var notPositioned = !scale.HasValue && !rotate.HasValue && !translateX.HasValue && !translateY.HasValue &&
+                                !zIndex.HasValue;
+            var artefactPositionId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
+            // It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
+            // If no artefact_position already exists we need to create a new entry here.
+            if (artefactPositionId == 0 && !notPositioned)
+                return FormatArtefactPositionInsertion(
+                    editionUser,
+                    artefactId,
+                    scale,
+                    rotate,
+                    translateX,
+                    translateY,
+                    zIndex
+                );
+
+            var artefactChangeParams = new DynamicParameters();
+            if (scale.HasValue)
+                artefactChangeParams.Add("@scale", scale);
+            if (rotate.HasValue)
+                artefactChangeParams.Add("@rotate", rotate);
+            if (zIndex.HasValue)
+                artefactChangeParams.Add("@z_index", zIndex ?? 0);
+            artefactChangeParams.Add("@translate_x", translateX);
+            artefactChangeParams.Add("@translate_y", translateY);
+            artefactChangeParams.Add("@artefact_id", artefactId);
+            var artefactChangeRequest = new MutationRequest(
+                notPositioned
+                    ? MutateType.Delete
+                    : MutateType.Update, // delete if the artefact is not positioned at all
+                artefactChangeParams,
+                tableName,
+                artefactPositionId
+            );
+
+            return artefactChangeRequest;
+        }
+
+        public async Task<List<AlteredRecord>> InsertArtefactShapeAsync(UserInfo editionUser,
+            uint artefactId,
+            uint masterImageId,
+            string shape)
+        {
+            /* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
+			 write the value directly into the database, but it does not seem to work right yet.  Thus we currently 
+			 use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a ST_GeomFromText().
+			 
+			var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
+			var res = string.Join("", binaryMask);
+			var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
+
+            var artefactChangeParams = new DynamicParameters();
+            artefactChangeParams.Add("@region_in_sqe_image", shape);
+            artefactChangeParams.Add("@sqe_image_id", masterImageId);
+            artefactChangeParams.Add("@artefact_id", artefactId);
+            var artefactChangeRequest = new MutationRequest(
+                MutateType.Create,
+                artefactChangeParams,
+                "artefact_shape"
+            );
+
+            return await WriteArtefactAsync(editionUser, artefactChangeRequest);
+        }
+
+        public async Task<List<AlteredRecord>> InsertArtefactStatusAsync(UserInfo editionUser,
+            uint artefactId,
+            string workStatus)
+        {
+            var artefactChangeParams = new DynamicParameters();
+            artefactChangeParams.Add("@artefact_id", artefactId);
+            if (!string.IsNullOrEmpty(workStatus))
+                artefactChangeParams.Add("@work_status_id", await SetWorkStatusAsync(workStatus));
+            var artefactChangeRequest = new MutationRequest(
+                MutateType.Create,
+                artefactChangeParams,
+                "artefact_status"
+            );
+
+            return await WriteArtefactAsync(editionUser, artefactChangeRequest);
+        }
+
+        public async Task<List<AlteredRecord>> InsertArtefactNameAsync(UserInfo editionUser,
+            uint artefactId,
+            string name)
+        {
+            var artefactChangeParams = new DynamicParameters();
+            artefactChangeParams.Add("@name", name);
+            artefactChangeParams.Add("@artefact_id", artefactId);
+            var artefactChangeRequest = new MutationRequest(
+                MutateType.Create,
+                artefactChangeParams,
+                "artefact_data"
+            );
+
+            return await WriteArtefactAsync(editionUser, artefactChangeRequest);
+        }
+
+        public async Task<List<AlteredRecord>> InsertArtefactPositionAsync(UserInfo editionUser,
+            uint artefactId,
+            decimal? scale,
+            decimal? rotate,
+            int? translateX,
+            int? translateY,
+            int? zIndex)
+        {
+            return await WriteArtefactAsync(editionUser, FormatArtefactPositionInsertion(
+                editionUser,
+                artefactId,
+                scale,
+                rotate,
+                translateX,
+                translateY,
+                zIndex)
+            );
+        }
+
+        private MutationRequest FormatArtefactPositionInsertion(UserInfo editionUser,
+            uint artefactId,
+            decimal? scale,
+            decimal? rotate,
+            int? translateX,
+            int? translateY,
+            int? zIndex)
+        {
+            var artefactChangeParams = new DynamicParameters();
+            if (scale.HasValue)
+                artefactChangeParams.Add("@scale", scale);
+            if (rotate.HasValue)
+                artefactChangeParams.Add("@rotate", rotate);
+            if (zIndex.HasValue)
+                artefactChangeParams.Add("@z_index", zIndex ?? 0);
+            artefactChangeParams.Add("@translate_x", translateX);
+            artefactChangeParams.Add("@translate_y", translateY);
+            artefactChangeParams.Add("@artefact_id", artefactId);
+            var artefactChangeRequest = new MutationRequest(
+                MutateType.Create,
+                artefactChangeParams,
+                "artefact_position"
+            );
+
+            return artefactChangeRequest;
+        }
+
+        public async Task<List<AlteredRecord>> WriteArtefactAsync(UserInfo editionUser,
+            MutationRequest artefactChangeRequest)
+        {
+            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
+            // care of main_action and single_action.
+            return await _databaseWriter.WriteToDatabaseAsync(
+                editionUser,
+                new List<MutationRequest> { artefactChangeRequest }
+            );
+        }
+
         private async Task<uint> GetArtefactPkAsync(UserInfo editionUser, uint artefactId, string table)
         {
             using (var connection = OpenConnection())
@@ -853,7 +859,8 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        private async Task<(List<ArtefactGroupMember> groupMembers, ArtefactGroupData groupData)> _getArtefactGroupInternalInfo(UserInfo editionUser, uint artefactGroupId)
+        private async Task<(List<ArtefactGroupMember> groupMembers, ArtefactGroupData groupData)>
+            _getArtefactGroupInternalInfo(UserInfo editionUser, uint artefactGroupId)
         {
             using (var connection = OpenConnection())
             {
@@ -893,7 +900,7 @@ namespace SQE.DatabaseAccess
                 if (alreadyUsedArtefacts.Any())
                     throw new StandardExceptions.InputDataRuleViolationException(
                         $"The artefact {(alreadyUsedArtefacts.Count() > 1 ? "ids" : "id")} " +
-                        $"{string.Join<uint>(", ", alreadyUsedArtefacts)} " +
+                        $"{string.Join(", ", alreadyUsedArtefacts)} " +
                         $"{(alreadyUsedArtefacts.Count() > 1 ? "are" : "is")} already in another group"
                     );
 
@@ -910,7 +917,7 @@ namespace SQE.DatabaseAccess
                     var artefactsNotInEdition = artefactIds.Except(artefactsInEdition);
                     throw new StandardExceptions.InputDataRuleViolationException(
                         $"The artefact {(artefactsNotInEdition.Count() > 1 ? "ids" : "id")} " +
-                        $"{string.Join<uint>(", ", artefactsNotInEdition)} " +
+                        $"{string.Join(", ", artefactsNotInEdition)} " +
                         $"{(artefactsNotInEdition.Count() > 1 ? "are" : "is")} not part of this edition"
                     );
                 }

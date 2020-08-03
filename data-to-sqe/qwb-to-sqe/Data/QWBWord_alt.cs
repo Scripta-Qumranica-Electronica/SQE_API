@@ -2,13 +2,8 @@ using System;
 using System.Text.RegularExpressions;
 using MySql.Data.MySqlClient;
 
-
 namespace qwb_to_sqe
 {
-
-
-
-
     public class QwbWord : Word
     {
         // Query strings for analysing a word from QWB
@@ -23,40 +18,40 @@ namespace qwb_to_sqe
         private static readonly Regex LineNumberRegex = new Regex("^ *\\[[0-9]\\] *$");
 
         // Holds the previous processed word
-        private static QwbWord _previousWord = null;
-
-        private Sign _precedingSign;
-        private Sign _postSign;
+        private static QwbWord _previousWord;
 
         public static MySqlConnection conn = new MySqlConnection("server=localhost;user=root" +
                                                                  ";database=SQE;" +
                                                                  "port=33067;" +
                                                                  "password=none");
 
+        private Sign _postSign;
 
-        public int qwbBookId;
-        public int qwbBookPosition;
+        private Sign _precedingSign;
 
 
         public string Book;
         public string Fragment;
         public string Line;
 
-        public SqeManuscript SqeManuscript;
+
+        public int qwbBookId;
+        public int qwbBookPosition;
         public int SqeFragmentId;
         public int SQELineId;
+
+        public SqeManuscript SqeManuscript;
+
+
+        public string Word;
         public int EditionId => SqeManuscript.EditionId;
         public int EditorId => SqeManuscript.EditorId;
 
 
-
-        public string Word;
-
-
         public void ProcessWord()
         {
-            this.ProcessReference();
-            this.ProcessWordAsQwbWord();
+            ProcessReference();
+            ProcessWordAsQwbWord();
 
             // Finally, set this word as previous word
             _previousWord = this;
@@ -213,10 +208,8 @@ namespace qwb_to_sqe
             foreach (var sign in signs)
             {
                 Console.Write($"\t{sign.character} => ");
-                foreach (SQESignAttribute attribute in sign.Attributes.Values)
-                {
+                foreach (var attribute in sign.Attributes.Values)
                     Console.Write($"{attribute.attribute_value_id}={attribute.value}, ");
-                }
 
                 Console.WriteLine("");
             }
@@ -251,7 +244,6 @@ namespace qwb_to_sqe
                 }
 
                 //             SqeFragmentId = SqeDatabase.GetSqeFragmentId(Fragment, _previousWord.SqeFragmentId);
-
 
 
                 Console.Write($"\n\t{Fragment},");

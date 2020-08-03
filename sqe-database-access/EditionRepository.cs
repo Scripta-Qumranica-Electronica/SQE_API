@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using Serilog;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -84,7 +83,6 @@ namespace SQE.DatabaseAccess
                         {
                             // Set the copyrights for the previous, and now complete, edition before making the new one
                             if (lastEdition != null)
-                            {
                                 lastEdition.Copyright = Licence.printLicence(
                                     lastEdition.CopyrightHolder,
                                     string.IsNullOrEmpty(lastEdition.Collaborators)
@@ -96,7 +94,6 @@ namespace SQE.DatabaseAccess
                                                 return $@"{y.Forename} {y.Surname}".Trim();
                                             }))
                                         : lastEdition.Collaborators);
-                            }
 
                             // Now start building the new edition
                             lastEdition = new Edition
@@ -117,12 +114,12 @@ namespace SQE.DatabaseAccess
                                 IsPublic = editionGroup.IsPublic,
                                 LastEdit = editionGroup.LastEdit,
                                 Locked = editionGroup.Locked,
-                                Owner = new User()
+                                Owner = new User
                                 {
                                     Email = editionGroup.CurrentEmail,
-                                    UserId = editionGroup.CurrentUserId,
+                                    UserId = editionGroup.CurrentUserId
                                 },
-                                Permission = new Permission()
+                                Permission = new Permission
                                 {
                                     IsAdmin = editionGroup.CurrentIsAdmin,
                                     MayLock = editionGroup.CurrentMayLock,
@@ -131,7 +128,7 @@ namespace SQE.DatabaseAccess
                                 },
                                 Thumbnail = editionGroup.Thumbnail,
                                 ManuscriptId = editionGroup.ManuscriptId,
-                                Editors = new List<EditorWithPermissions>(),
+                                Editors = new List<EditorWithPermissions>()
                             };
                             editionDictionary.Add(lastEdition.EditionId, lastEdition);
                         }
@@ -199,13 +196,19 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Update the metric estimations of the manuscript for an edition 
+        ///     Update the metric estimations of the manuscript for an edition
         /// </summary>
         /// <param name="editionUser">Details of the user requesting the changes</param>
         /// <param name="width">A non-negative estimation of the manuscript width in millimeters (may be zero)</param>
         /// <param name="height">A non-negative estimation of the manuscript height in millimeters (may be zero)</param>
-        /// <param name="xOrigin">An estimation of the point at which the manuscript begins on the x axis in millimeters (may be zero)</param>
-        /// <param name="yOrigin">An estimation of the point at which the manuscript begins on the x axis in millimeters (may be zero)(may be zero)</param>
+        /// <param name="xOrigin">
+        ///     An estimation of the point at which the manuscript begins on the x axis in millimeters (may be
+        ///     zero)
+        /// </param>
+        /// <param name="yOrigin">
+        ///     An estimation of the point at which the manuscript begins on the x axis in millimeters (may be
+        ///     zero)(may be zero)
+        /// </param>
         /// <returns></returns>
         public async Task UpdateEditionMetricsAsync(UserInfo editionUser, uint width, uint height, int xOrigin,
             int yOrigin)
@@ -219,7 +222,8 @@ namespace SQE.DatabaseAccess
                         editionUser.EditionId
                     });
                 if (oldRecord.Count() != 1)
-                    throw new StandardExceptions.DataNotFoundException("manuscript metrics", editionUser.EditionId.Value,
+                    throw new StandardExceptions.DataNotFoundException("manuscript metrics",
+                        editionUser.EditionId.Value,
                         "edition");
 
                 var parameters = new DynamicParameters();
@@ -281,7 +285,8 @@ namespace SQE.DatabaseAccess
                     // It made no appreciable difference:
                     // await connection.ExecuteAsync("SET @@session.foreign_key_checks=0;");
                     // await connection.ExecuteAsync("SET @@session.unique_checks=0;");
-                    using (var transactionScope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = IsolationLevel.ReadCommitted }))
+                    using (var transactionScope = new TransactionScope(TransactionScopeOption.Required,
+                        new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }))
                     using (var connection = OpenConnection())
                     {
                         // Create a new edition
@@ -526,7 +531,8 @@ WHERE edition_id = {editionUser.EditionId}");
                 // Check for invalid settings
                 if (permissions.IsAdmin
                     && !permissions.MayRead)
-                    throw new StandardExceptions.InputDataRuleViolationException("an edition admin must have read rights");
+                    throw new StandardExceptions.InputDataRuleViolationException(
+                        "an edition admin must have read rights");
                 if (permissions.MayWrite
                     && !permissions.MayRead)
                     throw new StandardExceptions.InputDataRuleViolationException(
@@ -556,7 +562,7 @@ WHERE edition_id = {editionUser.EditionId}");
                         FindEditionEditorRequestByEditorEdition.GetQuery,
                         new
                         {
-                            EditionId = editionUser.EditionId,
+                            editionUser.EditionId,
                             AdminUserId = editionUser.userId,
                             EditorUserId = editorInfo.UserId
                         });
@@ -568,7 +574,9 @@ WHERE edition_id = {editionUser.EditionId}");
                     }
                     else
                     {
-                        editorInfo.Token = existingRequestToken.Any() ? existingRequestToken.FirstOrDefault() : Guid.NewGuid();
+                        editorInfo.Token = existingRequestToken.Any()
+                            ? existingRequestToken.FirstOrDefault()
+                            : Guid.NewGuid();
 
                         // Write the GUID token to the database
                         var writtenToken = await connection.ExecuteAsync(
@@ -590,13 +598,13 @@ WHERE edition_id = {editionUser.EditionId}");
                     var recordedRequest = await connection.ExecuteAsync(RecordEditionEditorRequest.GetQuery,
                         new
                         {
-                            Token = editorInfo.Token,
+                            editorInfo.Token,
                             AdminUserId = editionUser.userId,
                             EditorUserId = editorInfo.UserId,
-                            EditionId = editionUser.EditionId,
-                            IsAdmin = permissions.IsAdmin,
-                            MayLock = permissions.MayLock,
-                            MayWrite = permissions.MayWrite
+                            editionUser.EditionId,
+                            permissions.IsAdmin,
+                            permissions.MayLock,
+                            permissions.MayWrite
                         });
                 }
 
@@ -609,7 +617,7 @@ WHERE edition_id = {editionUser.EditionId}");
             {
                 var date = await connection.QueryAsync<DateTime>(
                     GetEditionEditorRequestDate.GetQuery,
-                    new { Token = editorInfo.Token });
+                    new { editorInfo.Token });
                 if (date.Count() != 1)
                     throw new StandardExceptions.DataNotWrittenException("generate edition share request");
                 editorInfo.Date = date.FirstOrDefault();
@@ -625,7 +633,6 @@ WHERE edition_id = {editionUser.EditionId}");
             using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
-
                 var editorEditionPermissions = await connection.QueryAsync<DetailedEditionPermission>(
                     FindEditionEditorRequestByToken.GetQuery,
                     new
@@ -641,7 +648,8 @@ WHERE edition_id = {editionUser.EditionId}");
                 editorEditionPermission.MayRead = true; // Invited editors always have read access
 
                 // Check if the editor already exists, don't attempt to re-add
-                if ((await _getEditionEditors(editorEditionPermission.EditionId)).Any(x => x.Email == editorEditionPermission.Email))
+                if ((await _getEditionEditors(editorEditionPermission.EditionId)).Any(x =>
+                    x.Email == editorEditionPermission.Email))
                     throw new StandardExceptions.ConflictingDataException("editor email");
 
                 // Add the editor
@@ -649,17 +657,18 @@ WHERE edition_id = {editionUser.EditionId}");
                     CreateDetailedEditionEditorQuery.GetQuery,
                     new
                     {
-                        EditionId = editorEditionPermission.EditionId,
-                        Email = editorEditionPermission.Email,
-                        MayRead = editorEditionPermission.MayRead,
-                        MayWrite = editorEditionPermission.MayWrite,
-                        MayLock = editorEditionPermission.MayLock,
-                        IsAdmin = editorEditionPermission.IsAdmin
+                        editorEditionPermission.EditionId,
+                        editorEditionPermission.Email,
+                        editorEditionPermission.MayRead,
+                        editorEditionPermission.MayWrite,
+                        editorEditionPermission.MayLock,
+                        editorEditionPermission.IsAdmin
                     }
                 );
 
                 if (editorUpdateExecution != 1)
-                    throw new StandardExceptions.DataNotWrittenException($"update permissions for {editorEditionPermission.Email}");
+                    throw new StandardExceptions.DataNotWrittenException(
+                        $"update permissions for {editorEditionPermission.Email}");
 
                 // Delete unneeded database entries
                 await connection.ExecuteAsync(
@@ -670,7 +679,7 @@ WHERE edition_id = {editionUser.EditionId}");
                 await connection.ExecuteAsync(
                     DeleteUserEmailTokenQuery.GetTokenQuery,
                     new
-                    { Tokens = new List<Guid>() { new Guid(token) }, Type = CreateUserEmailTokenQuery.EditorInvite }
+                    { Tokens = new List<Guid> { new Guid(token) }, Type = CreateUserEmailTokenQuery.EditorInvite }
                 );
 
                 transactionScope.Complete();
@@ -681,7 +690,7 @@ WHERE edition_id = {editionUser.EditionId}");
         }
 
         /// <summary>
-        /// Requests a list of editor requests made by the user, which have not yet been accepted
+        ///     Requests a list of editor requests made by the user, which have not yet been accepted
         /// </summary>
         /// <param name="userId">Id of the admin who has issued the request for a user to become an editor</param>
         /// <returns></returns>
@@ -695,7 +704,7 @@ WHERE edition_id = {editionUser.EditionId}");
         }
 
         /// <summary>
-        /// Requests a list of invitations to become an editor, which have been sent to the user
+        ///     Requests a list of invitations to become an editor, which have been sent to the user
         /// </summary>
         /// <param name="userId">Id of the user who has been invited to become editor</param>
         /// <returns></returns>
@@ -867,7 +876,8 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                         var characterStreamPosition = objects[6] as CharacterStreamPosition;
 
                         // Construct the nestings
-                        var newTextFragment = scriptTextFragment.TextFragmentId != lastScriptTextFragment?.TextFragmentId;
+                        var newTextFragment =
+                            scriptTextFragment.TextFragmentId != lastScriptTextFragment?.TextFragmentId;
 
                         if (newTextFragment)
                         {
@@ -920,7 +930,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 
                         return newTextFragment ? scriptTextFragment : null;
                     },
-                    new { EditionId = editionUser.EditionId, UserId = editionUser.userId },
+                    new { editionUser.EditionId, UserId = editionUser.userId },
                     splitOn:
                     "LineId,ArtefactId,SignInterpretationId,SignInterpretationRoiId,SignInterpretationAttributeId,PositionInStreamId"
                 );

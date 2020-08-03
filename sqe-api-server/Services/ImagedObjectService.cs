@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
-using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
@@ -15,6 +15,7 @@ namespace SQE.API.Server.Services
     public interface IImagedObjectService
     {
         Task<SimpleImageListDTO> GetImagedObjectImagesAsync(string imagedObjectId);
+
         Task<ImagedObjectListDTO> GetEditionImagedObjectsAsync(UserInfo editionUser,
             List<string> optional = null);
 
@@ -50,7 +51,7 @@ namespace SQE.API.Server.Services
 
         public async Task<SimpleImageListDTO> GetImagedObjectImagesAsync(string imagedObjectId)
         {
-            return (await _repo.GetImagedObjectImagesAsync(System.Web.HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
+            return (await _repo.GetImagedObjectImagesAsync(HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
         }
 
         // TODO: Fix this and GetImagedObjectsWithArtefactsAsync up to be more DRY and efficient.
@@ -64,7 +65,8 @@ namespace SQE.API.Server.Services
             var imagedObjects = await _repo.GetImagedObjectsAsync(editionUser, null);
 
             if (imagedObjects == null)
-                throw new StandardExceptions.DataNotFoundException("imaged object", editionUser.EditionId.Value, "edition");
+                throw new StandardExceptions.DataNotFoundException("imaged object", editionUser.EditionId.Value,
+                    "edition");
             var result = new ImagedObjectListDTO
             {
                 imagedObjects = new List<ImagedObjectDTO>()
@@ -126,7 +128,7 @@ namespace SQE.API.Server.Services
             string imagedObjectId,
             List<string> optional = null)
         {
-            imagedObjectId = System.Web.HttpUtility.UrlDecode(imagedObjectId);
+            imagedObjectId = HttpUtility.UrlDecode(imagedObjectId);
             ParseOptionals(optional, out var artefacts, out var masks);
             var result =
                 (await GetEditionImagedObjectsAsync(editionUser)).imagedObjects.First(x => x.id == imagedObjectId);

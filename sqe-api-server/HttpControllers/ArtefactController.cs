@@ -24,7 +24,6 @@ namespace SQE.API.Server.HttpControllers
 
         /// <summary>
         ///     Creates a new artefact with the provided data.
-        ///
         ///     If no mask is provided, a placeholder mask will be created with the values:
         ///     "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
         ///     every artefact). It is not recommended to leave the mask, name, or work status
@@ -132,7 +131,6 @@ namespace SQE.API.Server.HttpControllers
 
         /// <summary>
         ///     Updates the specified artefact.
-        /// 
         ///     There are many possible attributes that can be changed for
         ///     an artefact.  The caller should only input only those that
         ///     should be changed. Attributes with a null value will be ignored.
@@ -169,7 +167,8 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint editionId,
             [FromBody] BatchUpdateArtefactPlacementDTO payload)
         {
-            return await _artefactService.BatchUpdateArtefactTransformAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),
+            return await _artefactService.BatchUpdateArtefactTransformAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
                 payload);
         }
 
@@ -182,7 +181,8 @@ namespace SQE.API.Server.HttpControllers
         [AllowAnonymous]
         public async Task<ActionResult<ArtefactGroupListDTO>> GetEditionArtefactGroups([FromRoute] uint editionId)
         {
-            return await _artefactService.ArtefactGroupsOfEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
+            return await _artefactService.ArtefactGroupsOfEditionAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId));
         }
 
         /// <summary>
@@ -209,9 +209,11 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="payload">Parameters of the new artefact group</param>
         /// <returns></returns>
         [HttpPost("v1/editions/{editionId}/[controller]-groups")]
-        public async Task<ActionResult<ArtefactGroupDTO>> CreateEditionArtefactGroup([FromRoute] uint editionId, [FromBody] CreateArtefactGroupDTO payload)
+        public async Task<ActionResult<ArtefactGroupDTO>> CreateEditionArtefactGroup([FromRoute] uint editionId,
+            [FromBody] CreateArtefactGroupDTO payload)
         {
-            return await _artefactService.CreateArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), payload);
+            return await _artefactService.CreateArtefactGroupAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true), payload);
         }
 
         /// <summary>
@@ -227,7 +229,8 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult<ArtefactGroupDTO>> UpdateEditionArtefactGroup([FromRoute] uint editionId,
             [FromRoute] uint artefactGroupId, [FromBody] UpdateArtefactGroupDTO payload)
         {
-            return await _artefactService.UpdateArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactGroupId, payload);
+            return await _artefactService.UpdateArtefactGroupAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true), artefactGroupId, payload);
         }
 
         /// <summary>
@@ -240,7 +243,8 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult<DeleteDTO>> DeleteEditionArtefactGroup([FromRoute] uint editionId,
             [FromRoute] uint artefactGroupId)
         {
-            return await _artefactService.DeleteArtefactGroupAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactGroupId);
+            return await _artefactService.DeleteArtefactGroupAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true), artefactGroupId);
         }
     }
 }

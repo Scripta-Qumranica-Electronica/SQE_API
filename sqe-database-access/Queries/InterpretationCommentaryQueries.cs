@@ -1,6 +1,5 @@
 namespace SQE.DatabaseAccess.Queries
 {
-
     internal static class GetSignInterpretationCommentaryByData
     {
         public const string GetQuery = @"
@@ -15,6 +14,4 @@ namespace SQE.DatabaseAccess.Queries
 					AND edition_id=@EditionId
 				";
     }
-
-
 }

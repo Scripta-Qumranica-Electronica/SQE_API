@@ -1,18 +1,11 @@
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Runtime.CompilerServices;
 using Dapper;
-using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
 using qwb_to_sqe.Common;
-using Renci.SshNet;
-using Renci.SshNet.Common;
 
 namespace qwb_to_sqe
 {
     public class QWBDatabase : SshDatabase
     {
-
         private const string getScrollDataQuery = @"
                           SELECT Id, Buch as Name
                           FROM buch
@@ -32,9 +25,7 @@ namespace qwb_to_sqe
 
         public QWBDatabase() : base("QWBlocal")
         {
-
         }
-
 
 
         public IEnumerable<QWBScroll> GetScrollIds()
@@ -56,38 +47,37 @@ namespace qwb_to_sqe
 
         public void readInScrollText(QWBScroll qwbScroll)
         {
-            QWBLine currentLine = new QWBLine();
-            QWBFragment currentFrag = new QWBFragment();
+            var currentLine = new QWBLine();
+            var currentFrag = new QWBFragment();
             connection.Query<QWBFragment, string, QWBWord, QWBFragment>(
                 getScrollTextQuery,
-                map: (kol, zeile, word) =>
-                 {
-                     if (kol.Name != currentFrag.Name)
-                     {
-                         qwbScroll.fragments.Add(kol);
-                         currentFrag = kol;
-                     }
+                (kol, zeile, word) =>
+                {
+                    if (kol.Name != currentFrag.Name)
+                    {
+                        qwbScroll.fragments.Add(kol);
+                        currentFrag = kol;
+                    }
 
-                     if (zeile != currentLine.Name)
-                     {
-                         currentLine = new QWBLine() { Name = zeile };
-                         currentFrag.Lines.Add(currentLine);
-                     }
-                     currentLine.words.Add(word);
-                     return null;
-                 },
+                    if (zeile != currentLine.Name)
+                    {
+                        currentLine = new QWBLine { Name = zeile };
+                        currentFrag.Lines.Add(currentLine);
+                    }
+
+                    currentLine.words.Add(word);
+                    return null;
+                },
                 splitOn: "zeile, QWBWordId",
-                param: new { @scrollId = qwbScroll.Id }
-
-
+                param: new { scrollId = qwbScroll.Id }
             );
         }
 
         public IEnumerable<QWBScroll> GetScrolls()
         {
-            QWBFragment currentFrag = new QWBFragment();
-            QWBScroll currentScroll = new QWBScroll();
-            QWBLine currentLine = new QWBLine();
+            var currentFrag = new QWBFragment();
+            var currentScroll = new QWBScroll();
+            var currentLine = new QWBLine();
             return connection.Query<QWBScroll, string, string, QWBWord, QWBScroll>(
                 @"SELECT Buchnr AS Id, Buch AS Name, kol, zeile, wort.Id AS QWBWordId, wort AS QWBText
                         FROM wort
@@ -105,14 +95,14 @@ namespace qwb_to_sqe
                     if (newScroll) currentScroll = scroll;
                     if (kol != currentFrag.Name)
                     {
-                        currentFrag = new QWBFragment() { Name = kol };
+                        currentFrag = new QWBFragment { Name = kol };
                         currentScroll.fragments.Add(currentFrag);
                         currentLine = new QWBLine();
                     }
 
                     if (line != currentLine.Name)
                     {
-                        currentLine = new QWBLine() { Name = line };
+                        currentLine = new QWBLine { Name = line };
                         currentFrag.Lines.Add(currentLine);
                     }
 

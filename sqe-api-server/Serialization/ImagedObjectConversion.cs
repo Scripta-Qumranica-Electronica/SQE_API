@@ -27,7 +27,7 @@ namespace SQE.API.Server.Serialization
 
         public static SimpleImageDTO ToDTO(this ImagedObjectImage image)
         {
-            return new SimpleImageDTO()
+            return new SimpleImageDTO
             {
                 catalogNumber = image.image_catalog_id,
                 id = image.image_catalog_id,
@@ -58,7 +58,7 @@ namespace SQE.API.Server.Serialization
 
         public static SimpleImageListDTO ToDTO(this IEnumerable<ImagedObjectImage> images)
         {
-            return new SimpleImageListDTO()
+            return new SimpleImageListDTO
             {
                 images = images.Select(x => x.ToDTO()).ToArray()
             };

@@ -113,9 +113,7 @@ namespace SQE.ApiTest.Helpers
                     await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
                 // Register a listener for messages returned by this API request
                 foreach (var listener in request.listenerMethod)
-                {
                     signalrListener.On<Tlistener>(listener, receivedData => listenerResponse = receivedData);
-                }
 
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
@@ -126,9 +124,7 @@ namespace SQE.ApiTest.Helpers
                     await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
                     // Register a listener for messages returned by this API request
                     foreach (var listener in request.listenerMethod)
-                    {
                         signalrListener.On<Tlistener>(listener, receivedData => listenerResponse = receivedData);
-                    }
                 };
             }
 

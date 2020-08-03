@@ -8,11 +8,9 @@ namespace qwb_to_sqe.Common
 {
     public class SshDatabase
     {
-        private SshClient _sshClient;
-        public MySqlConnection connection { get; private set; }
+        private readonly IConfiguration _configuration;
         private ForwardedPortLocal _port;
-        private IConfiguration _configuration;
-
+        private SshClient _sshClient;
 
 
         public SshDatabase(string name)
@@ -23,27 +21,24 @@ namespace qwb_to_sqe.Common
                 .Build();
 
             if (bool.Parse(_configuration["UseSsh"]))
-            {
                 _createTunnel();
-            }
             else
-            {
                 _port = new ForwardedPortLocal(
                     _configuration["ServerUrl"],
                     _configuration.GetValue<uint>("MysqlPort"),
                     "127.0.0.1",
                     0
-                    );
-            }
+                );
 
             _connectToDatabase();
         }
+
+        public MySqlConnection connection { get; private set; }
 
         private void _createTunnel()
         {
             if (_sshClient != null) return;
             _sshClient = new SshClient(_configuration["ServerUrl"],
-
                 _configuration["ServerUserName"],
                 _configuration["ServerPassword"]);
             _sshClient.Connect();

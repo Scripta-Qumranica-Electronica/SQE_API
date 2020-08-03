@@ -8,11 +8,7 @@ namespace SQE.DatabaseAccess.Helpers
     public interface IExceptionWithData
     {
         // Property declaration:
-        Dictionary<string, object> CustomReturnedData
-        {
-            get;
-            set;
-        }
+        Dictionary<string, object> CustomReturnedData { get; set; }
     }
 
     #region Exception Base Class
@@ -338,13 +334,13 @@ namespace SQE.DatabaseAccess.Helpers
             private const string customMsg =
                 "The submitted $DataType is malformed. Check the data property of this error message for a possible valid substitute.";
 
-            public Dictionary<string, object> CustomReturnedData { get; set; } = new Dictionary<string, object>();
-
             public MalformedDataException(string datatype, object example)
             {
                 Error = customMsg.Replace("$DataType", datatype);
                 CustomReturnedData.Add(datatype, example);
             }
+
+            public Dictionary<string, object> CustomReturnedData { get; set; } = new Dictionary<string, object>();
         }
 
         public class EditionCopyLockProtectionException : ForbiddenDataAccessException
@@ -386,6 +382,4 @@ namespace SQE.DatabaseAccess.Helpers
 
         #endregion Data errors
     }
-
-
 }

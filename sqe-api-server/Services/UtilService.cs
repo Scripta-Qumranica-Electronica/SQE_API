@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
-using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Helpers;
+using SQE.API.Server.RealtimeHubs;
 
 namespace SQE.API.Server.Services
 {
@@ -23,7 +23,7 @@ namespace SQE.API.Server.Services
         public async Task<WktPolygonDTO> RepairWktPolygonAsync(string wktPolygon, string clientId = null)
         {
             var repaired = await GeometryValidation.ValidatePolygonAsync(wktPolygon, "polygon", true);
-            return new WktPolygonDTO() { wktPolygon = repaired };
+            return new WktPolygonDTO { wktPolygon = repaired };
         }
     }
 }

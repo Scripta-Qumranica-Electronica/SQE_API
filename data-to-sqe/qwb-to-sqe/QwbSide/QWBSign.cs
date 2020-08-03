@@ -1,10 +1,10 @@
-using System;
 using System.Linq;
 
 namespace qwb_to_sqe
 {
     public class QwbSign : Sign
     {
+        public int[] OtherAttributes;
 
         public QwbSign(string character, params int[] attributeValues) : base(character, attributeValues)
         {
@@ -12,76 +12,80 @@ namespace qwb_to_sqe
 
         public bool HasCirc
         {
-            set => this.SetBoolAttribute(19, value);
+            set => SetBoolAttribute(19, value);
         }
+
         public bool IsSuperScript
         {
-            set => this.SetBoolAttribute(31, value);
+            set => SetBoolAttribute(31, value);
         }
+
         public bool IsSubScript
         {
-            set => this.SetBoolAttribute(30, value);
+            set => SetBoolAttribute(30, value);
         }
+
         public bool IsReconstructed
         {
-            set => this.SetBoolAttribute(20, value);
+            set => SetBoolAttribute(20, value);
         }
+
         public bool IsWrongAddition
         {
-            set => this.SetBoolAttribute(23, value);
+            set => SetBoolAttribute(23, value);
         }
+
         public bool IsForgotten
         {
-            set => this.SetBoolAttribute(22, value);
+            set => SetBoolAttribute(22, value);
         }
+
         public bool IsOriginal
         {
-            set => this.SetBoolAttribute(41, value);
+            set => SetBoolAttribute(41, value);
         }
+
         public bool IsCorrected
         {
-            set => this.SetBoolAttribute(42, value);
+            set => SetBoolAttribute(42, value);
         }
+
         public bool IsInserted
         {
-            set => this.SetBoolAttribute(43, value);
+            set => SetBoolAttribute(43, value);
         }
+
         public bool IsMarginVariant
         {
-            set => this.SetBoolAttribute(38, value);
-
+            set => SetBoolAttribute(38, value);
         }
 
         public bool IsQuestionable
         {
-            set => this.SetBoolAttribute(44, value);
+            set => SetBoolAttribute(44, value);
         }
 
         public bool IsConjecture
         {
-            set => this.SetBoolAttribute(21, value);
+            set => SetBoolAttribute(21, value);
         }
 
         public string Others
         {
-            set => OtherAttributes = value.Split(", ").Select(Int32.Parse).ToArray();
+            set => OtherAttributes = value.Split(", ").Select(int.Parse).ToArray();
         }
-
-        public int[] OtherAttributes;
-
-
-
-
 
 
         public void expandVacat()
         {
             stepValue(4);
         }
+
         public void expandDestroyedRegion()
         {
             stepValue(5, 3);
         }
+
         public void expandDestroyedSign()
         {
             stepValue(5);
@@ -95,11 +99,8 @@ namespace qwb_to_sqe
             }
             else
             {
-                this.AddAttribute(attributeValueId, @by);
+                AddAttribute(attributeValueId, by);
             }
         }
-
-
-
     }
 }

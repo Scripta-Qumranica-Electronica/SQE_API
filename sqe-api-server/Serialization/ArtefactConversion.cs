@@ -40,25 +40,25 @@ namespace SQE.API.Server.Serialization
                 statusMessage = artefact.WorkStatusMessage,
 
                 name = artefact.Name,
-                side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso,
+                side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso
             };
         }
 
         public static ArtefactGroupListDTO ToDTO(this List<ArtefactGroup> agl)
         {
-            return new ArtefactGroupListDTO()
+            return new ArtefactGroupListDTO
             {
-                artefactGroups = agl.Select(x => x.ToDTO()).ToList(),
+                artefactGroups = agl.Select(x => x.ToDTO()).ToList()
             };
         }
 
         public static ArtefactGroupDTO ToDTO(this ArtefactGroup ag)
         {
-            return new ArtefactGroupDTO()
+            return new ArtefactGroupDTO
             {
                 id = ag.ArtefactGroupId,
                 name = ag.ArtefactName,
-                artefacts = ag.ArtefactIds,
+                artefacts = ag.ArtefactIds
             };
         }
     }
@@ -67,7 +67,7 @@ namespace SQE.API.Server.Serialization
     {
         public static ArtefactListDTO QueryArtefactListToArtefactListDTO(List<ArtefactModel> artefacts, uint editionId)
         {
-            return new ArtefactListDTO()
+            return new ArtefactListDTO
             {
                 artefacts = artefacts.Select(x => x.ToDTO(editionId)).ToList()
             };

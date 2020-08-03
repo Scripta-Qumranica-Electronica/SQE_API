@@ -283,7 +283,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    auth: true,
+                    true,
                     deterministic: false
                 );
 
@@ -339,7 +339,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    auth: true,
+                    true,
                     deterministic: false
                 );
 
@@ -560,7 +560,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    auth: true,
+                    true,
                     deterministic: false
                 );
 
@@ -571,7 +571,7 @@ namespace SQE.ApiTest
                         editionId,
                         true
                     ); // Get the updated list of text fragments in the edition
-                       // Check that nothing has changed for the moved text fragment
+                // Check that nothing has changed for the moved text fragment
                 textFragments.textFragments.First().ShouldDeepEqual(updatedTextFragments.textFragments.Last());
 
                 // Make sure that nothing else has changed to the pre-existing text fragments
@@ -605,7 +605,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    auth: true,
+                    true,
                     deterministic: false
                 );
 
@@ -616,7 +616,7 @@ namespace SQE.ApiTest
                         editionId,
                         true
                     ); // Get the updated list of text fragments in the edition
-                       // Check that nothing has changed for the moved text fragment
+                // Check that nothing has changed for the moved text fragment
                 textFragments.textFragments.Last().ShouldDeepEqual(updatedTextFragments.textFragments.First());
 
                 // Make sure that nothing else has changed to the pre-existing text fragments
@@ -650,7 +650,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    auth: true,
+                    true,
                     deterministic: false
                 );
 
@@ -661,7 +661,7 @@ namespace SQE.ApiTest
                         editionId,
                         true
                     ); // Get the updated list of text fragments in the edition
-                       // Check that nothing has changed for the moved text fragment
+                // Check that nothing has changed for the moved text fragment
                 textFragments.textFragments.First().ShouldDeepEqual(updatedTextFragments.textFragments[1]);
 
                 // Make sure that nothing else has changed to the pre-existing text fragments
@@ -696,7 +696,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    auth: true,
+                    true,
                     deterministic: false,
                     shouldSucceed: false
                 );
@@ -931,7 +931,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    auth: true,
+                    true,
                     deterministic: false,
                     shouldSucceed: false
                 );
@@ -971,7 +971,7 @@ namespace SQE.ApiTest
                     newTextFragmentRequestObject,
                     _client,
                     null,
-                    auth: true,
+                    true,
                     deterministic: false,
                     shouldSucceed: false
                 );

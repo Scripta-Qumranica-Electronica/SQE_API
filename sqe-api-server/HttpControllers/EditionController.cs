@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.API.DTO;
 using SQE.API.Server.Services;
-using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.HttpControllers
 {
@@ -37,8 +36,8 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        /// Get a list of requests issued by the current user for other users
-        /// to become editors of a shared edition
+        ///     Get a list of requests issued by the current user for other users
+        ///     to become editors of a shared edition
         /// </summary>
         /// <returns></returns>
         [HttpGet("v1/[controller]s/admin-share-requests")]
@@ -48,7 +47,7 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        /// Get a list of invitations issued to the current user to become an editor of a shared edition
+        ///     Get a list of invitations issued to the current user to become an editor of a shared edition
         /// </summary>
         /// <returns></returns>
         [HttpGet("v1/[controller]s/editor-invitations")]
@@ -158,7 +157,7 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        ///     Provides spatial data for all letters in the edition 
+        ///     Provides spatial data for all letters in the edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>
@@ -166,7 +165,8 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult<EditionScriptCollectionDTO>> GetEditionScriptCollection(
             [FromRoute] uint editionId)
         {
-            return await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));
+            return await _editionService.GetEditionScriptCollection(
+                await _userService.GetCurrentUserObjectAsync(editionId));
         }
 
         /// <summary>

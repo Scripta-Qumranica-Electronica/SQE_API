@@ -145,7 +145,8 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class EditionEditorRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    public class
+        EditionEditorRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly string editorEmail;
 
@@ -184,7 +185,8 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class EditionEditorConfirmationObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    public class
+        EditionEditorConfirmationObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly Guid token;
 
@@ -216,7 +218,8 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class EditionImagedObjectRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    public class
+        EditionImagedObjectRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly string imagedObjectId;
 
@@ -236,7 +239,7 @@ namespace SQE.ApiTest.ApiRequests
 
         protected override string HttpPath()
         {
-            return base.HttpPath().Replace("/imaged-object-id", $"/{imagedObjectId.ToString()}");
+            return base.HttpPath().Replace("/imaged-object-id", $"/{imagedObjectId}");
         }
 
         public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -253,7 +256,8 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class EditionTextFragmentRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    public class
+        EditionTextFragmentRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint textFragmentId;
 
@@ -300,7 +304,7 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="textFragmentId">The id of the text fragment to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public TextFragmentRequestObject(uint textFragmentId, Tinput payload = default(Tinput)) : base(payload)
+        public TextFragmentRequestObject(uint textFragmentId, Tinput payload = default) : base(payload)
         {
             this.textFragmentId = textFragmentId;
         }
@@ -389,7 +393,8 @@ namespace SQE.ApiTest.ApiRequests
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
-    public class ArtefactGroupRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    public class
+        ArtefactGroupRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
     {
         public readonly uint artefactGroupId;
 
@@ -399,7 +404,8 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="artefactId">The id of the artefact group to perform the request on</param>
         /// <param name="payload">Payload to be sent to the API endpoint</param>
-        public ArtefactGroupRequestObject(uint editionId, uint artefactGroupId, Tinput payload) : base(editionId, null, payload)
+        public ArtefactGroupRequestObject(uint editionId, uint artefactGroupId, Tinput payload) : base(editionId, null,
+            payload)
         {
             this.artefactGroupId = artefactGroupId;
         }
@@ -464,7 +470,7 @@ namespace SQE.ApiTest.ApiRequests
         ///     Provides an ImagedObjectRequestObject for all API requests made on an imaged object
         /// </summary>
         /// <param name="imagedObjectId">The id of the imaged object to perform the request on</param>
-        public ImagedObjectRequestObject(string imagedObjectId, Tinput payload = default(Tinput)) : base(payload)
+        public ImagedObjectRequestObject(string imagedObjectId, Tinput payload = default) : base(payload)
         {
             this.imagedObjectId = imagedObjectId;
         }

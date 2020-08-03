@@ -28,21 +28,25 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Users_ChangeUnactivatedEmail : RequestObject<UnactivatedEmailUpdateRequestDTO, EmptyOutput, EmptyOutput>
+        public class
+            V1_Users_ChangeUnactivatedEmail : RequestObject<UnactivatedEmailUpdateRequestDTO, EmptyOutput, EmptyOutput>
         {
             public V1_Users_ChangeUnactivatedEmail(UnactivatedEmailUpdateRequestDTO payload) : base(payload)
             {
             }
         }
 
-        public class V1_Users_ChangeForgottenPassword : RequestObject<ResetForgottenUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
+        public class
+            V1_Users_ChangeForgottenPassword : RequestObject<ResetForgottenUserPasswordRequestDTO, EmptyOutput,
+                EmptyOutput>
         {
             public V1_Users_ChangeForgottenPassword(ResetForgottenUserPasswordRequestDTO payload) : base(payload)
             {
             }
         }
 
-        public class V1_Users_ChangePassword : RequestObject<ResetLoggedInUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
+        public class
+            V1_Users_ChangePassword : RequestObject<ResetLoggedInUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
         {
             public V1_Users_ChangePassword(ResetLoggedInUserPasswordRequestDTO payload) : base(payload)
             {
@@ -63,7 +67,9 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Users_ResendActivationEmail : RequestObject<ResendUserAccountActivationRequestDTO, EmptyOutput, EmptyOutput>
+        public class
+            V1_Users_ResendActivationEmail : RequestObject<ResendUserAccountActivationRequestDTO, EmptyOutput,
+                EmptyOutput>
         {
             public V1_Users_ResendActivationEmail(ResendUserAccountActivationRequestDTO payload) : base(payload)
             {

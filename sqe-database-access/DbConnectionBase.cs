@@ -31,7 +31,8 @@ namespace SQE.DatabaseAccess
                 var port = _config.GetConnectionString("MysqlPort");
                 var user = _config.GetConnectionString("MysqlUsername");
                 var pwd = _config.GetConnectionString("MysqlPassword");
-                return $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8mb4;AllowUserVariables=True;";
+                return
+                    $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8mb4;AllowUserVariables=True;";
             }
         }
 
@@ -87,7 +88,7 @@ namespace SQE.DatabaseAccess
             )
             .WaitAndRetryAsync(
                 RetryCount,
-                attempt => TimeSpan.FromMilliseconds(WaitBetweenRetriesInMilliseconds/*_waitTime(attempt)*/),
+                attempt => TimeSpan.FromMilliseconds(WaitBetweenRetriesInMilliseconds /*_waitTime(attempt)*/),
                 (exception, delay, retryCount, _) =>
                 {
                     Log.ForContext<DbConnectionBase>()

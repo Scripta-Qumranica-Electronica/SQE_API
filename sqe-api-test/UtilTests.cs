@@ -1,13 +1,12 @@
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Testing;
+using NetTopologySuite.IO;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
-using NetTopologySuite;
-using NetTopologySuite.IO;
 
 namespace SQE.ApiTest
 {
@@ -19,15 +18,13 @@ namespace SQE.ApiTest
         public UtilTest(WebApplicationFactory<Startup> factory) : base(factory)
         {
         }
-
-        #region Polygon Validation
         // There are more extensive tests of the polygon validation method in ValidationTests.cs
         // The tests here are geared towards checking the API endpoints
 
         [Fact]
         public async Task CanRecognizeValidWktPolygons()
         {
-            var goodPolygon = new WktPolygonDTO()
+            var goodPolygon = new WktPolygonDTO
             {
                 wktPolygon = "POLYGON((0 0,0 10,10 10,10 0,0 0))"
             };
@@ -39,7 +36,7 @@ namespace SQE.ApiTest
                     polygonValidation,
                     _client,
                     StartConnectionAsync,
-                    auth: true
+                    true
                 );
 
             var wkr = new WKTReader();
@@ -52,11 +49,11 @@ namespace SQE.ApiTest
         [Fact]
         public async Task RepairsInvalidWktPolygons()
         {
-            var badPolygon = new WktPolygonDTO()
+            var badPolygon = new WktPolygonDTO
             {
                 wktPolygon = "POLYGON((0 0,10 0,10 10,0 10))"
             };
-            var goodPolygon = new WktPolygonDTO()
+            var goodPolygon = new WktPolygonDTO
             {
                 wktPolygon = "POLYGON((0 0,0 10,10 10,10 0,0 0))"
             };
@@ -68,7 +65,7 @@ namespace SQE.ApiTest
                     polygonValidation,
                     _client,
                     StartConnectionAsync,
-                    auth: true,
+                    true,
                     shouldSucceed: false
                 );
 
@@ -85,14 +82,12 @@ namespace SQE.ApiTest
             {
                 badPolyIsUnreadable = true;
             }
+
             Assert.True(badPolyIsUnreadable);
 
             Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsTopologically(wkr.Read(validation.wktPolygon)));
             Assert.Equal(HttpStatusCode.OK, validationResponse.StatusCode);
             Assert.True(wkr.Read(goodPolygon.wktPolygon).EqualsTopologically(wkr.Read(rtValidation.wktPolygon)));
         }
-        #endregion
-
-
     }
 }

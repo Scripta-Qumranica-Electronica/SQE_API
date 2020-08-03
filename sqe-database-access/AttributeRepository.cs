@@ -21,6 +21,7 @@ namespace SQE.DatabaseAccess
             List<SignInterpretationAttributeData> updateAttributes);
 
         Task<List<uint>> DeleteAttributesAsync(UserInfo editionUser, List<uint> deleteAttributeIds);
+
         Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
 
@@ -62,7 +63,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Creates new attributes für a sign interpretation
+        ///     Creates new attributes für a sign interpretation
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
@@ -79,7 +80,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Update the given attributes
+        ///     Update the given attributes
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretaionId">Id of sign interpretation</param>
@@ -90,7 +91,6 @@ namespace SQE.DatabaseAccess
             uint signInterpretationId,
             List<SignInterpretationAttributeData> updateAttributes)
         {
-
             return await _createOrUpdateAttributesAsync(editionUser,
                 signInterpretationId,
                 updateAttributes,
@@ -99,7 +99,7 @@ namespace SQE.DatabaseAccess
 
 
         /// <summary>
-        /// Deletes the attributes with the given ids.
+        ///     Deletes the attributes with the given ids.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="deleteAttributeIds">List of ids of the attributes to be deleted</param>
@@ -119,15 +119,12 @@ namespace SQE.DatabaseAccess
 
             // Check whether for each attribute a request was processed.
             if (writeResults.Count != deleteAttributeIds.Count)
-            {
                 throw new StandardExceptions.DataNotWrittenException("delete sign interpretation attribute");
-            }
             return deleteAttributeIds;
-
         }
 
         /// <summary>
-        /// Gets the attribute with the given id
+        ///     Gets the attribute with the given id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationAttributeId">Id of the attribute to be retrieved</param>
@@ -137,8 +134,7 @@ namespace SQE.DatabaseAccess
             UserInfo editionUser,
             uint signInterpretationAttributeId)
         {
-
-            var searchData = new SignInterpretationAttributeDataSearchData()
+            var searchData = new SignInterpretationAttributeDataSearchData
             {
                 SignInterpretationAttributeId = signInterpretationAttributeId
             };
@@ -156,12 +152,13 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Retrieves all sign interpretation attributes which match the data provided by searchData
+        ///     Retrieves all sign interpretation attributes which match the data provided by searchData
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="dataSearchData">Sign interpretation attribute search data object</param>
         /// <returns>List of sign interpretation attribute data - if nothing had been found the list is empty.</returns>
-        public async Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByDataAsync(UserInfo editionUser,
+        public async Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByDataAsync(
+            UserInfo editionUser,
             SignInterpretationAttributeDataSearchData dataSearchData)
         {
             var query = GetSignInterpretationAttributesByDataQuery.GetQuery.Replace(
@@ -177,14 +174,15 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Gets all attributes of a the sign interpretation referred by its id
+        ///     Gets all attributes of a the sign interpretation referred by its id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>List of sign interpretation attributes</returns>
-        public async Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByInterpretationId(UserInfo editionUser, uint signInterpretationId)
+        public async Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByInterpretationId(
+            UserInfo editionUser, uint signInterpretationId)
         {
-            var searchData = new SignInterpretationAttributeDataSearchData()
+            var searchData = new SignInterpretationAttributeDataSearchData
             {
                 SignInterpretationId = signInterpretationId
             };
@@ -195,7 +193,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Gets the attribute with the given id
+        ///     Gets the attribute with the given id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationAttributeId">Id of the attribute to be retrieved</param>
@@ -205,8 +203,7 @@ namespace SQE.DatabaseAccess
             UserInfo editionUser,
             uint signInterpretationAttributeId)
         {
-
-            var searchData = new SignInterpretationAttributeDataSearchData()
+            var searchData = new SignInterpretationAttributeDataSearchData
             {
                 SignInterpretationAttributeId = signInterpretationAttributeId
             };
@@ -224,7 +221,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Retrieves all sign interpretation attribute ids which match the data provided by searchData
+        ///     Retrieves all sign interpretation attribute ids which match the data provided by searchData
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="dataSearchData">Sign interpretation attribute search data object</param>
@@ -245,14 +242,15 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Gets all attribute ids of a the sign interpretation referred by its id
+        ///     Gets all attribute ids of a the sign interpretation referred by its id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>List of sign interpretation attribute idss</returns>
-        public async Task<List<uint>> GetSignInterpretationAttributeIdsByInterpretationId(UserInfo editionUser, uint signInterpretationId)
+        public async Task<List<uint>> GetSignInterpretationAttributeIdsByInterpretationId(UserInfo editionUser,
+            uint signInterpretationId)
         {
-            var searchData = new SignInterpretationAttributeDataSearchData()
+            var searchData = new SignInterpretationAttributeDataSearchData
             {
                 SignInterpretationId = signInterpretationId
             };
@@ -263,14 +261,14 @@ namespace SQE.DatabaseAccess
         }
 
 
-
         /// <summary>
-        /// Deletes all attributes for the sign interpretation referred by its id
+        ///     Deletes all attributes for the sign interpretation referred by its id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>List of ids of delete attributes</returns>
-        public async Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(UserInfo editionUser, uint signInterpretationId)
+        public async Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId)
         {
             var attributes = await GetSignInterpretationAttributeIdsByInterpretationId(
                 editionUser,
@@ -281,7 +279,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Deletes all existing attributes of a sign interpretation and add the new attributes to it
+        ///     Deletes all existing attributes of a sign interpretation and add the new attributes to it
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sogn itnerpretation</param>
@@ -304,23 +302,24 @@ namespace SQE.DatabaseAccess
         #region Private functions
 
         /// <summary>
-        /// Creates and executes create or update mutation requests for the given attributes
+        ///     Creates and executes create or update mutation requests for the given attributes
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <param name="attributes">List of attributes</param>
         /// <param name="action">Mutate type create or update</param>
-        /// <returns>List of set attributes with the new sign interpretation attribute id set or empty list
-        /// if the list of attributes had been null.</returns>
+        /// <returns>
+        ///     List of set attributes with the new sign interpretation attribute id set or empty list
+        ///     if the list of attributes had been null.
+        /// </returns>
         /// <exception cref="DataNotWrittenException"></exception>
         private async Task<List<SignInterpretationAttributeData>> _createOrUpdateAttributesAsync(
             UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> attributes,
             MutateType action
-            )
+        )
         {
-
             // Let's test whether a list of new attributes is provided and contains attributes
             if (!(attributes?.Count > 0)) return new List<SignInterpretationAttributeData>();
             // Create requests for the attributes
@@ -336,7 +335,7 @@ namespace SQE.DatabaseAccess
                     action,
                     signInterpretationAttributeParameters,
                     "sign_interpretation_attribute",
-                    action == MutateType.Update ? (uint?)attribute.SignInterpretationAttributeId : null
+                    action == MutateType.Update ? attribute.SignInterpretationAttributeId : null
                 );
                 requests.Add(signInterpretationAttributeRequest);
             }
@@ -352,9 +351,7 @@ namespace SQE.DatabaseAccess
 
             // Now set the new Ids
             for (var i = 0; i < attributes.Count; i++)
-            {
                 attributes[i].SignInterpretationAttributeId = (uint)writeResults[i].NewId;
-            }
 
             // Now return the list of new attributes which now also contains the the new ids.
             return attributes;
@@ -363,5 +360,4 @@ namespace SQE.DatabaseAccess
 
         #endregion
     }
-
 }

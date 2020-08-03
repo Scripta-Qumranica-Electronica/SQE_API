@@ -4,16 +4,11 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using NetTopologySuite.Geometries;
-using NetTopologySuite.Geometries.Utilities;
 using NetTopologySuite.IO;
-using NetTopologySuite.Operation.Overlay;
-using NetTopologySuite.Operation.Union;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
 using SQE.DatabaseAccess;
-using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Services
@@ -57,10 +52,10 @@ namespace SQE.API.Server.Services
     public class RoiService : IRoiService
     {
         private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+        private readonly Regex _removeDecimals = new Regex(@"\.\d+");
         private readonly IRoiRepository _roiRepository;
         private readonly WKTReader _wkr = new WKTReader();
         private readonly WKTWriter _wkw = new WKTWriter();
-        private readonly Regex _removeDecimals = new Regex(@"\.\d+");
 
         public RoiService(IRoiRepository roiRepository, IHubContext<MainHub, ISQEClient> hubContext)
         {
@@ -141,7 +136,7 @@ namespace SQE.API.Server.Services
                                 .Select( // Serialize the SetInterpretationRoiDTOList to a List of SetSignInterpretationROI
                                     _convertSignInterpretationDTOToSetSignInterpretationROI
                                 )))
-                                .ToList()
+                            .ToList()
                         )
                     )
                     .Select( // Serialize the ROI Repository response to a List of InterpretationRoiDTO
@@ -165,8 +160,10 @@ namespace SQE.API.Server.Services
         {
             var (createRois, updateRois, deleteRois) = _roiRepository.BatchEditRoisAsync(
                 editionUser,
-                (await Task.WhenAll(rois.createRois.Select(_convertSignInterpretationDTOToSetSignInterpretationROI))).ToList(),
-                (await Task.WhenAll(rois.updateRois.Select(_convertInterpretationRoiDTOToSignInterpretationROI))).ToList(),
+                (await Task.WhenAll(rois.createRois.Select(_convertSignInterpretationDTOToSetSignInterpretationROI)))
+                .ToList(),
+                (await Task.WhenAll(rois.updateRois.Select(_convertInterpretationRoiDTOToSignInterpretationROI)))
+                .ToList(),
                 rois.deleteRois
             );
             await Task.WhenAll(createRois, updateRois, deleteRois);
@@ -224,7 +221,7 @@ namespace SQE.API.Server.Services
                                 .Select( // Serialize the InterpretationRoiDTOList to a List of SignInterpretationROI
                                     _convertInterpretationRoiDTOToSignInterpretationROI
                                 )))
-                                .ToList()
+                            .ToList()
                         )
                     )
                     .Select( // Serialize the ROI Repository response to a List of InterpretationRoiDTO
@@ -266,7 +263,7 @@ namespace SQE.API.Server.Services
         private async Task<SignInterpretationRoiData> _convertSignInterpretationDTOToSetSignInterpretationROI(
             SetInterpretationRoiDTO x)
         {
-            return new SignInterpretationRoiData()
+            return new SignInterpretationRoiData
             {
                 SignInterpretationId = x.signInterpretationId,
                 ArtefactId = x.artefactId,
@@ -278,9 +275,10 @@ namespace SQE.API.Server.Services
             };
         }
 
-        private async Task<SignInterpretationRoiData> _convertInterpretationRoiDTOToSignInterpretationROI(InterpretationRoiDTO x)
+        private async Task<SignInterpretationRoiData> _convertInterpretationRoiDTOToSignInterpretationROI(
+            InterpretationRoiDTO x)
         {
-            return new SignInterpretationRoiData()
+            return new SignInterpretationRoiData
             {
                 SignInterpretationRoiId = x.interpretationRoiId,
                 SignInterpretationId = x.signInterpretationId,

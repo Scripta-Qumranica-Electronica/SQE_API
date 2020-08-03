@@ -1,6 +1,5 @@
 namespace SQE.DatabaseAccess.Queries
 {
-
     //TODO Probably most of the queries can be replace by the new queries GetSignInterpretationRoiDetailsByDataQuery
     // and GetRoiIdByData using SignInterpretationROISearchData
     internal static class CreateRoiShapeQuery
@@ -79,8 +78,8 @@ WHERE sign_interpretation_roi.sign_interpretation_roi_id = @SignInterpretationRo
     }
 
     /// <summary>
-    /// Template for getting all RoiData searched by using SignInterpretationROISearchData.getSearchParameterString.
-    /// getJoinsString is not needed since all joins must be set for the select.
+    ///     Template for getting all RoiData searched by using SignInterpretationROISearchData.getSearchParameterString.
+    ///     getJoinsString is not needed since all joins must be set for the select.
     /// </summary>
     internal static class GetSignInterpretationRoiDetailsByDataQuery
     {
@@ -133,8 +132,9 @@ WHERE roi_position.artefact_id = @ArtefactId
     }
 
     /// <summary>
-    /// Template for getting all ids of sign_interpretation_roi by using SignInterpretationROISearchData.getSearchParameterString
-    /// and getJoinsString
+    ///     Template for getting all ids of sign_interpretation_roi by using
+    ///     SignInterpretationROISearchData.getSearchParameterString
+    ///     and getJoinsString
     /// </summary>
     internal static class GetRoiIdByData
     {

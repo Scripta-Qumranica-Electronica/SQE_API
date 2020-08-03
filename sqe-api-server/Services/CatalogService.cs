@@ -1,6 +1,6 @@
-using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
@@ -18,8 +18,10 @@ namespace SQE.API.Server.Services
         Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId);
         Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId);
         Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId);
+
         Task<NoContentResult> CreateTextFragmentImagedObjectMatch(UserInfo user,
             CatalogueMatchInputDTO match, string clientId = null);
+
         Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(UserInfo user, uint textFragmentImagedObjectMatchId,
             bool confirm, string clientId = null);
     }
@@ -43,7 +45,7 @@ namespace SQE.API.Server.Services
         public async Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId)
         {
             return (await _catalogueRepo.GetTextFragmentMatchesForImagedObjectAsync(
-                System.Web.HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
+                HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
         }
 
         public async Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId)

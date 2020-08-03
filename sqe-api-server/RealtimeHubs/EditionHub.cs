@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
 using SQE.API.Server.Services;
-using SQE.DatabaseAccess.Models;
 using Microsoft.AspNetCore.SignalR;
 
 using SQE.DatabaseAccess.Helpers;
@@ -45,8 +44,8 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Get a list of requests issued by the current user for other users
-        /// to become editors of a shared edition
+        ///     Get a list of requests issued by the current user for other users
+        ///     to become editors of a shared edition
         /// </summary>
         /// <returns></returns>
         [Authorize]
@@ -65,7 +64,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Get a list of invitations issued to the current user to become an editor of a shared edition
+        ///     Get a list of invitations issued to the current user to become an editor of a shared edition
         /// </summary>
         /// <returns></returns>
         [Authorize]
@@ -222,7 +221,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        ///     Provides spatial data for all letters in the edition 
+        ///     Provides spatial data for all letters in the edition
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>

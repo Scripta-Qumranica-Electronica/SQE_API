@@ -81,32 +81,15 @@ namespace GenerateTypescriptInterfaces
             RegexOptions.Compiled | RegexOptions.IgnoreCase
         );
 
-        /// <summary>
-        /// Optional command line arguments (see https://github.com/commandlineparser/commandline)
-        /// </summary>
-        private class Options
-        {
-            [Option('p', "project-folder", Required = false, HelpText = "Specify project folder path.")]
-            public string ProjectRoot { get; set; }
-            [Option('a', "api-folder", Required = false, HelpText = "Specify api server folder path.")]
-            public string ApiServerRoot { get; set; }
-            [Option('t', "ts-folder", Required = false, HelpText = "Specify typescript definitions folder path.")]
-            public string TsFolder { get; set; }
-            [Option('h', "hub-folder", Required = false, HelpText = "Specify signalr hub folder path.")]
-            public string HubFolder { get; set; }
-        }
-
         private static void Main(string[] args)
         {
             // Parse any command line arguments and pass them on to the ParseSqeSignalrHub method
             Parser.Default.ParseArguments<Options>(args)
-                .WithParsed<Options>(o =>
-                {
-                    ParseSqeSignalrHub(o.ProjectRoot, o.ApiServerRoot, o.TsFolder, o.HubFolder);
-                });
+                .WithParsed(o => { ParseSqeSignalrHub(o.ProjectRoot, o.ApiServerRoot, o.TsFolder, o.HubFolder); });
         }
 
-        private static void ParseSqeSignalrHub(string projectRoot, string apiServerRoot, string tsFolder, string hubFolder)
+        private static void ParseSqeSignalrHub(string projectRoot, string apiServerRoot, string tsFolder,
+            string hubFolder)
         {
             Console.WriteLine("Parsing the SignalR hub and creating corresponding typescript interfaces.");
 
@@ -330,6 +313,24 @@ namespace GenerateTypescriptInterfaces
                         )
                 );
             }
+        }
+
+        /// <summary>
+        ///     Optional command line arguments (see https://github.com/commandlineparser/commandline)
+        /// </summary>
+        private class Options
+        {
+            [Option('p', "project-folder", Required = false, HelpText = "Specify project folder path.")]
+            public string ProjectRoot { get; set; }
+
+            [Option('a', "api-folder", Required = false, HelpText = "Specify api server folder path.")]
+            public string ApiServerRoot { get; set; }
+
+            [Option('t', "ts-folder", Required = false, HelpText = "Specify typescript definitions folder path.")]
+            public string TsFolder { get; set; }
+
+            [Option('h', "hub-folder", Required = false, HelpText = "Specify signalr hub folder path.")]
+            public string HubFolder { get; set; }
         }
     }
 

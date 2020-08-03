@@ -1,6 +1,5 @@
 namespace SQE.DatabaseAccess.Queries
 {
-
     internal static class GetSignInterpretationAttributesByDataQuery
     {
         public const string GetQuery = @"
@@ -18,6 +17,7 @@ namespace SQE.DatabaseAccess.Queries
 					AND edition_id=@EditionId
 				";
     }
+
     internal static class GetSignInterpretationAttributeIdsByDataQuery
     {
         public const string GetQuery = @"
@@ -28,6 +28,4 @@ namespace SQE.DatabaseAccess.Queries
 					AND edition_id=@EditionId
 				";
     }
-
-
 }

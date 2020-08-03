@@ -9,11 +9,6 @@ namespace qwb_to_sqe
 {
     public class QWBWord
     {
-        private static readonly List<uint> AttributeIds = new List<uint>();
-
-        public bool ContainsLineBreak = false;
-
-
         private const uint Destroyed = 5;
         private const uint Vacat = 4;
         private const uint SuperScript = 30;
@@ -29,23 +24,7 @@ namespace qwb_to_sqe
         private const uint Questionable = 44;
         private const uint Conjecture = 21;
         private const uint Circellus = 19;
-        private int IsVariant = 0;
-
-
-        public uint QWBWordId;
-        public uint SQEWordId;
-
-        private string _qwbText;
-
-        public string QWBText
-        {
-            get => _qwbText;
-            set => _qwbText = _processQWBWord(value);
-        }
-
-        private readonly List<SignData> _signs = new List<SignData>();
-
-
+        private static readonly List<uint> AttributeIds = new List<uint>();
 
 
         // Query strings for analysing a word from QWB
@@ -58,6 +37,23 @@ namespace qwb_to_sqe
         private static readonly Regex CorrectedRegex = new Regex("[≪«≫]");
         private static readonly Regex SubScriptRegex = new Regex("##");
         private static readonly Regex LineNumberRegex = new Regex("^ *\\[[0-9]\\] *$");
+
+        private readonly List<SignData> _signs = new List<SignData>();
+
+        private string _qwbText;
+
+        public bool ContainsLineBreak;
+        private int IsVariant = 0;
+
+
+        public uint QWBWordId;
+        public uint SQEWordId;
+
+        public string QWBText
+        {
+            get => _qwbText;
+            set => _qwbText = _processQWBWord(value);
+        }
 
         private string _processQWBWord(string qwbWord)
         {
@@ -82,6 +78,7 @@ namespace qwb_to_sqe
                                 currSign = SignFactory.CreateVacatSign(0);
                                 _handleNewSign(currSign);
                             }
+
                             _expandLastNumericValue(currSign, Vacat);
                             break;
                         case '-': // Destroyed area
@@ -90,6 +87,7 @@ namespace qwb_to_sqe
                                 currSign = SignFactory.CreateDamageSign(0);
                                 _handleNewSign(currSign);
                             }
+
                             _expandLastNumericValue(currSign, Destroyed, 3);
                             break;
                         case '^': // Switch for superscript
@@ -197,11 +195,7 @@ namespace qwb_to_sqe
         {
             _signs.Add(sign);
             if (additionalAttributeId != null) _addAttribute(sign, additionalAttributeId.Value, numericValue);
-            foreach (var id in AttributeIds.Distinct())
-            {
-                _addAttribute(sign, id);
-            }
-
+            foreach (var id in AttributeIds.Distinct()) _addAttribute(sign, id);
         }
 
         private void _switchAttribute(uint id)
@@ -212,7 +206,7 @@ namespace qwb_to_sqe
 
         private void _addAttribute(SignData sign, uint attributeId, uint? numericValue = null)
         {
-            sign?.SignInterpretations.Last().Attributes.Add(new SignInterpretationAttributeData()
+            sign?.SignInterpretations.Last().Attributes.Add(new SignInterpretationAttributeData
             {
                 AttributeValueId = attributeId,
                 NumericValue = numericValue
@@ -221,7 +215,8 @@ namespace qwb_to_sqe
 
         private bool _lastAttributeIs(SignData sign, uint attributeId)
         {
-            return (sign?.SignInterpretations.Last().Attributes.Exists(data => data.AttributeValueId == attributeId)) ?? false;
+            return sign?.SignInterpretations.Last().Attributes.Exists(data => data.AttributeValueId == attributeId) ??
+                   false;
         }
 
         private void _expandLastNumericValue(SignData sign, uint attributeValueId, uint by = 1)
@@ -229,9 +224,5 @@ namespace qwb_to_sqe
             sign.SignInterpretations.Last().Attributes.Find(attr =>
                 attr.AttributeValueId == attributeValueId).NumericValue += by;
         }
-
-
-
-
     }
 }

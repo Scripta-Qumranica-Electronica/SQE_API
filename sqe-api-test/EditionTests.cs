@@ -9,7 +9,6 @@ using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
-using SQE.DatabaseAccess.Models;
 using Xunit;
 
 // TODO: all the tests for sharing have been commented out, since I updated the sharing system in
@@ -32,8 +31,99 @@ namespace SQE.ApiTest
         private readonly string _addEditionEditor;
 
         /// <summary>
-        /// This verifies that an edition can be shared and that the
-        /// submitted permission match the granted permissions
+        ///     This creates a share edition request. It uses a realtime listener to check that
+        ///     the user who was requested as an editor receives realtime notification of the request.
+        /// </summary>
+        /// <param name="editionId">The edition being shared</param>
+        /// <param name="user1">The user initiating the share request</param>
+        /// <param name="user2">The user being requested as an editor</param>
+        /// <param name="permissionRequest">The permissions being requested for user2</param>
+        /// <param name="shouldSucceed">Whether or not the request should succeed</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private async Task<(HttpResponseMessage requesterResponse, EditorInvitationDTO listenerResponse)> shareEdition(
+            uint editionId,
+            Request.UserAuthDetails user1, Request.UserAuthDetails user2, InviteEditorDTO permissionRequest = null,
+            bool shouldSucceed = true)
+        {
+            if (permissionRequest == null)
+                permissionRequest = new InviteEditorDTO
+                {
+                    email = user2.email,
+                    mayLock = true,
+                    mayWrite = true,
+                    isAdmin = true
+                };
+
+            if (user2.email != permissionRequest.email)
+                throw new Exception("user2 must be the same user as in the permissionRequest");
+
+            var add1 = new Post.V1_Editions_EditionId_AddEditorRequest(editionId, permissionRequest);
+            var (httpResponse, _, _, listenerResponse) = await Request.Send(
+                add1,
+                _client,
+                StartConnectionAsync,
+                true,
+                user1,
+                user2, // User 2 will listen on SignalR for the request
+                requestRealtime: false,
+                listenToEdition: false
+            );
+
+            if (shouldSucceed)
+            {
+                httpResponse.EnsureSuccessStatusCode();
+                Assert.True(listenerResponse.mayRead);
+                Assert.Equal(permissionRequest.mayWrite, listenerResponse.mayWrite);
+                Assert.Equal(permissionRequest.mayLock, listenerResponse.mayLock);
+                Assert.Equal(permissionRequest.isAdmin, listenerResponse.isAdmin);
+                Assert.NotEqual(Guid.Empty, listenerResponse.token);
+            }
+
+            return (httpResponse, listenerResponse);
+        }
+
+        /// <summary>
+        ///     A convenience method to confirm an editor invitation, this uses a realtime listener
+        ///     to confirm that the admin who made the request is notified of the acceptance.
+        /// </summary>
+        /// <param name="editionId">
+        ///     <The edition being shared/ param>
+        ///         <param name="token">The token for the share invitation</param>
+        ///         <param name="editor">The user object of the editor who accepts the invitation</param>
+        ///         <param name="admin">The user object of the admin who made the share request</param>
+        ///         <param name="shouldSucceed">Whether or not the operation is expected to succeed</param>
+        ///         <returns></returns>
+        private async Task<(
+            HttpResponseMessage httpResponse,
+            DetailedEditorRightsDTO httpMessage,
+            DetailedEditorRightsDTO listenerMessage
+            )> confirmEditor(uint editionId, Guid token, Request.UserAuthDetails editor, Request.UserAuthDetails admin,
+            bool shouldSucceed = true)
+        {
+            var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(token, editionId);
+            var (httpConfirmResponse, shareConfirmMsg, _, listenerConfirmResponse) = await Request.Send(
+                confirmRequest,
+                _client,
+                StartConnectionAsync,
+                true,
+                editor,
+                admin, // User 1 will listen on the SignalR edition room for news of confirmation
+                requestRealtime: false
+            );
+
+            if (shouldSucceed)
+            {
+                httpConfirmResponse.EnsureSuccessStatusCode();
+                shareConfirmMsg.ShouldDeepEqual(listenerConfirmResponse);
+            }
+
+            return (httpConfirmResponse, shareConfirmMsg, listenerConfirmResponse);
+        }
+
+        /// <summary>
+        ///     This verifies that an edition can be shared and that the
+        ///     submitted permission match the granted permissions
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -74,7 +164,7 @@ namespace SQE.ApiTest
                     get1,
                     _client,
                     null,
-                    auth: true
+                    true
                 );
 
                 // User 2 should get the basic info about the shared edition
@@ -82,8 +172,8 @@ namespace SQE.ApiTest
                     get1,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User2
+                    true,
+                    Request.DefaultUsers.User2
                 );
 
                 // Assert
@@ -105,132 +195,9 @@ namespace SQE.ApiTest
         }
 
         /// <summary>
-        /// This checks to make sure that an admin can see invitations to edit
-        /// that have not yet been accepted.
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task CanViewOutstandingShareRequests()
-        {
-            // Arrange
-            // Grab a new edition
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-            try
-            {
-                // Act
-                // Send in the editor request 
-                var (httpResponse, listenerResponse) = await shareEdition(
-                    newEdition,
-                    Request.DefaultUsers.User1,
-                    Request.DefaultUsers.User2);
-
-                // Assert
-                httpResponse.EnsureSuccessStatusCode();
-                Assert.True(listenerResponse.mayRead);
-                Assert.True(listenerResponse.mayWrite);
-                Assert.True(listenerResponse.mayLock);
-                Assert.True(listenerResponse.isAdmin);
-                Assert.NotEqual(Guid.Empty, listenerResponse.token);
-
-                // Act
-                // Check to see if outstanding request is accessible to admin
-                var requestAvailable = new Get.V1_Editions_AdminShareRequests();
-                var (httpShareRequestResponse, shareRequestMsg, _, _) = await Request.Send(
-                    requestAvailable,
-                    _client,
-                    null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User1,
-                    requestRealtime: false
-                );
-
-                // Assert
-                httpShareRequestResponse.EnsureSuccessStatusCode();
-                Assert.NotEmpty(shareRequestMsg.editorRequests);
-                var foundMatch = false;
-                foreach (var share in shareRequestMsg.editorRequests)
-                {
-                    if (share.editionId == listenerResponse.editionId && share.editorEmail == Request.DefaultUsers.User2.email)
-                    {
-                        Assert.Equal(share.date, listenerResponse.date);
-                        Assert.Equal(share.mayLock, listenerResponse.mayLock);
-                        Assert.Equal(share.mayRead, listenerResponse.mayRead);
-                        Assert.Equal(share.mayWrite, listenerResponse.mayWrite);
-                        Assert.Equal(share.isAdmin, listenerResponse.isAdmin);
-                        foundMatch = true;
-                    }
-                }
-                Assert.True(foundMatch);
-            }
-            finally
-            {
-                // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
-            }
-        }
-
-        /// <summary>
-        /// This checks whether a user can see invitations to become an editor
-        /// that have not yet been accepted.
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task CanViewOutstandingShareInvitations()
-        {
-            // Arrange
-            // Grab a new edition
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-            try
-            {
-                // Act
-                // Send in the editor request 
-                var (_, listenerResponse) = await shareEdition(
-                    newEdition,
-                    Request.DefaultUsers.User1,
-                    Request.DefaultUsers.User2);
-
-                // Act
-                // Check to see if outstanding request is accessible to user who received the invitation
-                var requestAvailable = new Get.V1_Editions_EditorInvitations();
-                var (httpShareRequestResponse, shareRequestMsg, _, _) = await Request.Send(
-                    requestAvailable,
-                    _client,
-                    null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User2,
-                    requestRealtime: false
-                );
-
-                // Assert
-                httpShareRequestResponse.EnsureSuccessStatusCode();
-                Assert.NotEmpty(shareRequestMsg.editorInvitations);
-                var foundMatch = false;
-                foreach (var share in shareRequestMsg.editorInvitations)
-                {
-                    if (share.editionId == listenerResponse.editionId && share.requestingAdminEmail == Request.DefaultUsers.User1.email)
-                    {
-                        Assert.Equal(share.date, listenerResponse.date);
-                        Assert.Equal(share.mayLock, listenerResponse.mayLock);
-                        Assert.Equal(share.mayRead, listenerResponse.mayRead);
-                        Assert.Equal(share.mayWrite, listenerResponse.mayWrite);
-                        Assert.Equal(share.isAdmin, listenerResponse.isAdmin);
-                        Assert.Equal(share.token, listenerResponse.token);
-                        foundMatch = true;
-                    }
-                }
-                Assert.True(foundMatch);
-            }
-            finally
-            {
-                // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
-            }
-        }
-
-        /// <summary>
-        /// This creates a new edition, shares it with minimal rights to another user,
-        /// then grants that second user admin rights, then the second user
-        /// performs an admin operation.
+        ///     This creates a new edition, shares it with minimal rights to another user,
+        ///     then grants that second user admin rights, then the second user
+        ///     performs an admin operation.
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -257,10 +224,10 @@ namespace SQE.ApiTest
                     Request.DefaultUsers.User2,
                     newPermissions);
                 await confirmEditor(
-                        newEdition,
-                        listenerResponse.token,
-                        Request.DefaultUsers.User2,
-                        Request.DefaultUsers.User1);
+                    newEdition,
+                    listenerResponse.token,
+                    Request.DefaultUsers.User2,
+                    Request.DefaultUsers.User1);
 
                 // Act 
                 // Check permissions for edition info request
@@ -269,8 +236,8 @@ namespace SQE.ApiTest
                     get1,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User2
+                    true,
+                    Request.DefaultUsers.User2
                 );
 
                 // Assert
@@ -279,7 +246,7 @@ namespace SQE.ApiTest
                 Assert.False(user2Msg.primary.permission.isAdmin);
 
                 // Arrange (change permissions)
-                var updatePermissions = new DetailedUpdateEditorRightsDTO()
+                var updatePermissions = new DetailedUpdateEditorRightsDTO
                 {
                     mayWrite = true,
                     isAdmin = true,
@@ -298,8 +265,8 @@ namespace SQE.ApiTest
                     add2,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User1
+                    true,
+                    Request.DefaultUsers.User1
                 );
 
                 // Assert
@@ -314,8 +281,8 @@ namespace SQE.ApiTest
                     get1,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User2
+                    true,
+                    Request.DefaultUsers.User2
                 );
 
                 // Assert
@@ -334,8 +301,8 @@ namespace SQE.ApiTest
                     add3,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User2
+                    true,
+                    Request.DefaultUsers.User2
                 );
 
                 // Assert
@@ -402,7 +369,7 @@ namespace SQE.ApiTest
         }
 
         /// <summary>
-        /// Check if we can share an edition readonly with locking permission
+        ///     Check if we can share an edition readonly with locking permission
         /// </summary>
         /// <returns></returns>
         [Fact]
@@ -414,7 +381,7 @@ namespace SQE.ApiTest
             try
             {
                 // Arrange
-                var newPermissions = new InviteEditorDTO()
+                var newPermissions = new InviteEditorDTO
                 {
                     email = Request.DefaultUsers.User2.email,
                     mayWrite = false,
@@ -471,10 +438,10 @@ namespace SQE.ApiTest
                     Request.DefaultUsers.User2,
                     newPermissions);
                 await confirmEditor(
-                        newEdition,
-                        listenerResponse.token,
-                        Request.DefaultUsers.User2,
-                        Request.DefaultUsers.User1);
+                    newEdition,
+                    listenerResponse.token,
+                    Request.DefaultUsers.User2,
+                    Request.DefaultUsers.User1);
 
                 // Act 
                 // Check permissions for edition info request
@@ -483,8 +450,8 @@ namespace SQE.ApiTest
                     get1,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User2
+                    true,
+                    Request.DefaultUsers.User2
                 );
 
                 // Assert
@@ -493,7 +460,7 @@ namespace SQE.ApiTest
                 Assert.False(user2Msg.primary.permission.isAdmin);
 
                 // Arrange (change permissions)
-                var updatePermissions = new DetailedUpdateEditorRightsDTO()
+                var updatePermissions = new DetailedUpdateEditorRightsDTO
                 {
                     mayWrite = false,
                     isAdmin = true,
@@ -512,8 +479,8 @@ namespace SQE.ApiTest
                     add2,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User1,
+                    true,
+                    Request.DefaultUsers.User1,
                     shouldSucceed: false
                 );
 
@@ -583,10 +550,10 @@ namespace SQE.ApiTest
                     Request.DefaultUsers.User2,
                     newPermissions);
                 await confirmEditor(
-                        newEdition,
-                        listenerResponse.token,
-                        Request.DefaultUsers.User2,
-                        Request.DefaultUsers.User1);
+                    newEdition,
+                    listenerResponse.token,
+                    Request.DefaultUsers.User2,
+                    Request.DefaultUsers.User1);
 
                 // Act 
                 // Check permissions for edition info request
@@ -595,8 +562,8 @@ namespace SQE.ApiTest
                     get1,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User2
+                    true,
+                    Request.DefaultUsers.User2
                 );
 
                 // Assert
@@ -605,7 +572,7 @@ namespace SQE.ApiTest
                 Assert.False(user2Msg.primary.permission.isAdmin);
 
                 // Arrange (change permissions)
-                var updatePermissions = new DetailedUpdateEditorRightsDTO()
+                var updatePermissions = new DetailedUpdateEditorRightsDTO
                 {
                     mayWrite = true,
                     isAdmin = false,
@@ -624,8 +591,8 @@ namespace SQE.ApiTest
                     add2,
                     _client,
                     null,
-                    auth: true,
-                    requestUser: Request.DefaultUsers.User1,
+                    true,
+                    Request.DefaultUsers.User1,
                     shouldSucceed: false
                 );
 
@@ -726,7 +693,7 @@ namespace SQE.ApiTest
 
                 // Assert
                 Assert.Equal(HttpStatusCode.BadRequest, delete2Response.StatusCode); // Should fail for last admin
-                                                                                     // Kill the edition for real
+                // Kill the edition for real
                 await EditionHelpers.DeleteEdition(
                     _client,
                     newEdition,
@@ -762,6 +729,129 @@ namespace SQE.ApiTest
             //Todo: maybe run a database check here to ensure that all references to newEdition have been removed from all *_owner tables
         }
 
+        /// <summary>
+        ///     This checks whether a user can see invitations to become an editor
+        ///     that have not yet been accepted.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanViewOutstandingShareInvitations()
+        {
+            // Arrange
+            // Grab a new edition
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            try
+            {
+                // Act
+                // Send in the editor request 
+                var (_, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2);
+
+                // Act
+                // Check to see if outstanding request is accessible to user who received the invitation
+                var requestAvailable = new Get.V1_Editions_EditorInvitations();
+                var (httpShareRequestResponse, shareRequestMsg, _, _) = await Request.Send(
+                    requestAvailable,
+                    _client,
+                    null,
+                    true,
+                    Request.DefaultUsers.User2,
+                    requestRealtime: false
+                );
+
+                // Assert
+                httpShareRequestResponse.EnsureSuccessStatusCode();
+                Assert.NotEmpty(shareRequestMsg.editorInvitations);
+                var foundMatch = false;
+                foreach (var share in shareRequestMsg.editorInvitations)
+                    if (share.editionId == listenerResponse.editionId &&
+                        share.requestingAdminEmail == Request.DefaultUsers.User1.email)
+                    {
+                        Assert.Equal(share.date, listenerResponse.date);
+                        Assert.Equal(share.mayLock, listenerResponse.mayLock);
+                        Assert.Equal(share.mayRead, listenerResponse.mayRead);
+                        Assert.Equal(share.mayWrite, listenerResponse.mayWrite);
+                        Assert.Equal(share.isAdmin, listenerResponse.isAdmin);
+                        Assert.Equal(share.token, listenerResponse.token);
+                        foundMatch = true;
+                    }
+
+                Assert.True(foundMatch);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
+
+        /// <summary>
+        ///     This checks to make sure that an admin can see invitations to edit
+        ///     that have not yet been accepted.
+        /// </summary>
+        /// <returns></returns>
+        [Fact]
+        public async Task CanViewOutstandingShareRequests()
+        {
+            // Arrange
+            // Grab a new edition
+            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
+            try
+            {
+                // Act
+                // Send in the editor request 
+                var (httpResponse, listenerResponse) = await shareEdition(
+                    newEdition,
+                    Request.DefaultUsers.User1,
+                    Request.DefaultUsers.User2);
+
+                // Assert
+                httpResponse.EnsureSuccessStatusCode();
+                Assert.True(listenerResponse.mayRead);
+                Assert.True(listenerResponse.mayWrite);
+                Assert.True(listenerResponse.mayLock);
+                Assert.True(listenerResponse.isAdmin);
+                Assert.NotEqual(Guid.Empty, listenerResponse.token);
+
+                // Act
+                // Check to see if outstanding request is accessible to admin
+                var requestAvailable = new Get.V1_Editions_AdminShareRequests();
+                var (httpShareRequestResponse, shareRequestMsg, _, _) = await Request.Send(
+                    requestAvailable,
+                    _client,
+                    null,
+                    true,
+                    Request.DefaultUsers.User1,
+                    requestRealtime: false
+                );
+
+                // Assert
+                httpShareRequestResponse.EnsureSuccessStatusCode();
+                Assert.NotEmpty(shareRequestMsg.editorRequests);
+                var foundMatch = false;
+                foreach (var share in shareRequestMsg.editorRequests)
+                    if (share.editionId == listenerResponse.editionId &&
+                        share.editorEmail == Request.DefaultUsers.User2.email)
+                    {
+                        Assert.Equal(share.date, listenerResponse.date);
+                        Assert.Equal(share.mayLock, listenerResponse.mayLock);
+                        Assert.Equal(share.mayRead, listenerResponse.mayRead);
+                        Assert.Equal(share.mayWrite, listenerResponse.mayWrite);
+                        Assert.Equal(share.isAdmin, listenerResponse.isAdmin);
+                        foundMatch = true;
+                    }
+
+                Assert.True(foundMatch);
+            }
+            finally
+            {
+                // Cleanup
+                await EditionHelpers.DeleteEdition(_client, newEdition);
+            }
+        }
+
         [Fact]
         public async Task CanWriteShareEdition()
         {
@@ -788,7 +878,7 @@ namespace SQE.ApiTest
                     Request.DefaultUsers.User2,
                     Request.DefaultUsers.User1);
                 const string newName = "My cool new name";
-                var update = new EditionUpdateRequestDTO()
+                var update = new EditionUpdateRequestDTO
                 {
                     name = newName,
                     collaborators = null,
@@ -801,7 +891,7 @@ namespace SQE.ApiTest
                     changeNameReq,
                     _client,
                     StartConnectionAsync,
-                    auth: true,
+                    true,
                     requestRealtime: false,
                     requestUser: Request.DefaultUsers.User2,
                     listenerUser: Request.DefaultUsers.User1);
@@ -869,7 +959,7 @@ namespace SQE.ApiTest
                 newEd,
                 _client,
                 StartConnectionAsync,
-                auth: true,
+                true,
                 deterministic: false
             );
             response.EnsureSuccessStatusCode();
@@ -892,7 +982,7 @@ namespace SQE.ApiTest
                 newEd,
                 _client,
                 StartConnectionAsync,
-                auth: true,
+                true,
                 deterministic: false
             );
             response.EnsureSuccessStatusCode();
@@ -1064,7 +1154,7 @@ namespace SQE.ApiTest
             response.EnsureSuccessStatusCode();
             var oldName = msg.primary.name;
             const string name = "מגלה א";
-            var metrics = new UpdateEditionManuscriptMetricsDTO()
+            var metrics = new UpdateEditionManuscriptMetricsDTO
             {
                 width = 150,
                 height = 50,
@@ -1100,94 +1190,6 @@ namespace SQE.ApiTest
             Assert.Equal(metrics.yOrigin, msg2.metrics.yOrigin);
 
             await EditionHelpers.DeleteEdition(_client, editionId);
-        }
-
-        /// <summary>
-        /// This creates a share edition request. It uses a realtime listener to check that
-        /// the user who was requested as an editor receives realtime notification of the request.
-        /// </summary>
-        /// <param name="editionId">The edition being shared</param>
-        /// <param name="user1">The user initiating the share request</param>
-        /// <param name="user2">The user being requested as an editor</param>
-        /// <param name="permissionRequest">The permissions being requested for user2</param>
-        /// <param name="shouldSucceed">Whether or not the request should succeed</param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        private async Task<(HttpResponseMessage requesterResponse, EditorInvitationDTO listenerResponse)> shareEdition(uint editionId,
-            Request.UserAuthDetails user1, Request.UserAuthDetails user2, InviteEditorDTO permissionRequest = null, bool shouldSucceed = true)
-        {
-            if (permissionRequest == null)
-                permissionRequest = new InviteEditorDTO
-                {
-                    email = user2.email,
-                    mayLock = true,
-                    mayWrite = true,
-                    isAdmin = true
-                };
-
-            if (user2.email != permissionRequest.email)
-                throw new Exception("user2 must be the same user as in the permissionRequest");
-
-            var add1 = new Post.V1_Editions_EditionId_AddEditorRequest(editionId, permissionRequest);
-            var (httpResponse, _, _, listenerResponse) = await Request.Send(
-                add1,
-                _client,
-                StartConnectionAsync,
-                auth: true,
-                requestUser: user1,
-                listenerUser: user2, // User 2 will listen on SignalR for the request
-                requestRealtime: false,
-                listenToEdition: false
-            );
-
-            if (shouldSucceed)
-            {
-                httpResponse.EnsureSuccessStatusCode();
-                Assert.True(listenerResponse.mayRead);
-                Assert.Equal(permissionRequest.mayWrite, listenerResponse.mayWrite);
-                Assert.Equal(permissionRequest.mayLock, listenerResponse.mayLock);
-                Assert.Equal(permissionRequest.isAdmin, listenerResponse.isAdmin);
-                Assert.NotEqual(Guid.Empty, listenerResponse.token);
-            }
-
-            return (httpResponse, listenerResponse);
-        }
-
-        /// <summary>
-        /// A convenience method to confirm an editor invitation, this uses a realtime listener
-        /// to confirm that the admin who made the request is notified of the acceptance.
-        /// </summary>
-        /// <param name="editionId"><The edition being shared/param>
-        /// <param name="token">The token for the share invitation</param>
-        /// <param name="editor">The user object of the editor who accepts the invitation</param>
-        /// <param name="admin">The user object of the admin who made the share request</param>
-        /// <param name="shouldSucceed">Whether or not the operation is expected to succeed</param>
-        /// <returns></returns>
-        private async Task<(
-            HttpResponseMessage httpResponse,
-            DetailedEditorRightsDTO httpMessage,
-            DetailedEditorRightsDTO listenerMessage
-            )> confirmEditor(uint editionId, Guid token, Request.UserAuthDetails editor, Request.UserAuthDetails admin,
-                bool shouldSucceed = true)
-        {
-            var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(token, editionId);
-            var (httpConfirmResponse, shareConfirmMsg, _, listenerConfirmResponse) = await Request.Send(
-                confirmRequest,
-                _client,
-                StartConnectionAsync,
-                auth: true,
-                requestUser: editor,
-                listenerUser: admin, // User 1 will listen on the SignalR edition room for news of confirmation
-                requestRealtime: false
-            );
-
-            if (shouldSucceed)
-            {
-                httpConfirmResponse.EnsureSuccessStatusCode();
-                shareConfirmMsg.ShouldDeepEqual(listenerConfirmResponse);
-            }
-
-            return (httpConfirmResponse, shareConfirmMsg, listenerConfirmResponse);
         }
     }
 }

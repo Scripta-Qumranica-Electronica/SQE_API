@@ -15,17 +15,21 @@ namespace SQE.DatabaseAccess
     public interface ITextRepository
     {
         #region Line
+
         Task<LineData> CreateLineAsync(UserInfo editionUser,
             LineData lineData,
             uint fragmentId,
             uint anchorBefore = 0,
             uint anchorAfter = 0);
+
         Task<TextEdition> GetLineByIdAsync(UserInfo editionUser, uint lineId);
         Task<List<LineData>> GetLineIdsAsync(UserInfo editionUser, uint textFragmentId);
         Task<uint> RemoveLineAsync(UserInfo editionUser, uint lineId);
+
         Task<LineData> UpdateLineAsync(UserInfo editionUser,
             uint lineId,
             string lineName);
+
         #endregion
 
         #region Sign and its Interpretation
@@ -51,9 +55,6 @@ namespace SQE.DatabaseAccess
 
         Task<uint> RemoveSignAsync(UserInfo editionUser, uint signId);
 
-
-
-
         #endregion
 
         #region Text fragment
@@ -62,10 +63,12 @@ namespace SQE.DatabaseAccess
             TextFragmentData textFragmentData,
             uint? previousFragmentId,
             uint? nextFragmentId);
+
         Task<List<ArtefactDataModel>> GetArtefactsAsync(UserInfo editionUser, uint textFragmentId);
         Task<TextEdition> GetTextFragmentByIdAsync(UserInfo editionUser, uint textFragmentId);
         Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo editionUser);
         Task<uint> RemoveTextFragmentAsync(UserInfo editionUser, uint textFragmentId);
+
         Task<TextFragmentData> UpdateTextFragmentAsync(UserInfo editionUser,
             uint textFragmentId,
             string fragmentName,
@@ -77,7 +80,6 @@ namespace SQE.DatabaseAccess
 
     public class TextRepository : DbConnectionBase, ITextRepository
     {
-
         #region Interna
 
         private readonly IDatabaseWriter _databaseWriter;
@@ -97,11 +99,10 @@ namespace SQE.DatabaseAccess
             _attributeRepository = new AttributeRepository(config, databaseWriter);
             _commentaryRepository = new SignInterpretationCommentaryRepository(config, databaseWriter);
             _roiRepository = new RoiRepository(config, databaseWriter);
-
-
         }
 
         public IDbConnection Connection => OpenConnection();
+
         #endregion
 
 
@@ -110,13 +111,15 @@ namespace SQE.DatabaseAccess
         #region Line
 
         /// <summary>
-        /// Creates a new line in an edition and inserts it into the fragment identified by fragmentId.
-        /// It automatically creates the line start and end signs
+        ///     Creates a new line in an edition and inserts it into the fragment identified by fragmentId.
+        ///     It automatically creates the line start and end signs
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
-        /// <param name="lineData">line data object which must contain the line name and may contain
-        /// signs automatically added to to the line (except terminators, which are automatically
-        /// set)</param>
+        /// <param name="lineData">
+        ///     line data object which must contain the line name and may contain
+        ///     signs automatically added to to the line (except terminators, which are automatically
+        ///     set)
+        /// </param>
         /// <param name="fragmentId">Id of the fragment the line should be inserted into</param>
         /// <param name="anchorBefore">The interpretation id anchor before</param>
         /// <param name="anchorAfter">The interpretation id anchor aftere</param>
@@ -153,12 +156,8 @@ namespace SQE.DatabaseAccess
                         lineData.Signs = await CreateSignsAsync(editionUser,
                             lineData.LineId.GetValueOrDefault(),
                             lineData.Signs,
-                            anchorBefore > 0 ?
-                                new List<uint>() { anchorBefore } :
-                                new List<uint>(),
-                            anchorAfter > 0 ?
-                                new List<uint>() { anchorAfter } :
-                                new List<uint>());
+                            anchorBefore > 0 ? new List<uint> { anchorBefore } : new List<uint>(),
+                            anchorAfter > 0 ? new List<uint> { anchorAfter } : new List<uint>());
 
 
                         // End the transaction (it was all or nothing)
@@ -172,7 +171,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Gets the text of a line in an edition
+        ///     Gets the text of a line in an edition
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="lineId">Line id</param>
@@ -188,7 +187,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Get a list of all lines in a text fragment.
+        ///     Get a list of all lines in a text fragment.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Text fragment id</param>
@@ -206,7 +205,7 @@ namespace SQE.DatabaseAccess
 
 
         /// <summary>
-        /// Removes the line with the given Id together with all its signs.
+        ///     Removes the line with the given Id together with all its signs.
         /// </summary>
         /// <param name="editionUser"></param>
         /// <param name="lineId">Id of line</param>
@@ -214,10 +213,7 @@ namespace SQE.DatabaseAccess
         public async Task<uint> RemoveLineAsync(UserInfo editionUser, uint lineId)
         {
             var signIds = await _getChildrenIds(editionUser, TableData.Table.line, lineId);
-            foreach (var signId in signIds)
-            {
-                await RemoveSignAsync(editionUser, signId);
-            }
+            foreach (var signId in signIds) await RemoveSignAsync(editionUser, signId);
             return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.line), lineId);
         }
 
@@ -225,20 +221,17 @@ namespace SQE.DatabaseAccess
             uint lineId,
             string lineName)
         {
-
             await _setLineDataAsync(
                 editionUser,
                 lineId,
                 lineName,
                 false);
-            return new LineData() { LineId = lineId, LineName = lineName };
-
+            return new LineData { LineId = lineId, LineName = lineName };
         }
 
         #endregion
 
         #region Sign and its interpretation
-
 
         public async Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(UserInfo editionUser, uint signId)
         {
@@ -255,12 +248,11 @@ namespace SQE.DatabaseAccess
         }
 
 
-
         /// <summary>
-        /// Creates the signs from the information provided by the sign objects and adds them as
-        /// a path between the given anchors.
-        /// If more than one sign interpretation is provided for a sign, forking paths are created
-        /// fromthe different interpretations
+        ///     Creates the signs from the information provided by the sign objects and adds them as
+        ///     a path between the given anchors.
+        ///     If more than one sign interpretation is provided for a sign, forking paths are created
+        ///     fromthe different interpretations
         /// </summary>
         /// <param name="editionUser"></param>
         /// <param name="lineId"></param>
@@ -282,7 +274,6 @@ namespace SQE.DatabaseAccess
             var internalAnchorsBefore = anchorsBefore;
             foreach (var sign in signs)
             {
-
                 // First, create a simple entry in the sign table
                 var newSignData = await _createSignAsync(editionUser, lineId);
                 // Add the given sign interpretations which also inject the sign in the reading stream
@@ -304,14 +295,14 @@ namespace SQE.DatabaseAccess
                     // Create an list of next sign interpretations from the new anchors before
                     var nextSignInterpretations = internalAnchorsBefore.Select(
                         signInterpretationId => new NextSignInterpretation(
-                        signInterpretationId,
-                        (uint)editionUser.EditionEditorId)).Distinct().ToList();
+                            signInterpretationId,
+                            (uint)editionUser.EditionEditorId)).Distinct().ToList();
 
                     // Store this hashset into each signInterpretation of the previous set sign 
                     previousSignData.SignInterpretations.ForEach(
                         signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
-
                 }
+
                 previousSignData = newSignData;
                 newSigns.Add(newSignData);
             }
@@ -321,8 +312,8 @@ namespace SQE.DatabaseAccess
 
 
         /// <summary>
-        /// Adds interpretations to an existing sign.
-        /// The given interpretations are connected as parallel paths to the given anchors.
+        ///     Adds interpretations to an existing sign.
+        ///     The given interpretations are connected as parallel paths to the given anchors.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signId">Id of the sign</param>
@@ -337,7 +328,6 @@ namespace SQE.DatabaseAccess
             List<uint> anchorsBefore,
             List<uint> anchorsAfter)
         {
-
             using (var connection = OpenConnection())
             {
                 foreach (var signInterpretation in signInterpretations)
@@ -361,13 +351,10 @@ namespace SQE.DatabaseAccess
 
                         // If no fitting sign interpretation is found throw an error
                         if (signInterpretation.SignInterpretationId == null)
-                        {
-                            throw new StandardExceptions.DataNotWrittenException($"add new sign interpretation");
-                        }
+                            throw new StandardExceptions.DataNotWrittenException("add new sign interpretation");
 
 
                         newSignInterpretation = false;
-
                     }
                     else // Store the new sign interpretation id
                     {
@@ -380,8 +367,7 @@ namespace SQE.DatabaseAccess
                         connection,
                         StreamType.SignInterpretationStream,
                         signInterpretation.SignInterpretationId.GetValueOrDefault(),
-                        editionUser.EditionId.Value,
-                        false);
+                        editionUser.EditionId.Value);
 
                     // If the sign interpretation already existed than we have to move it.
                     positionDataRequestFactory.AddAction(
@@ -392,11 +378,11 @@ namespace SQE.DatabaseAccess
                     await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
 
                     // Add the attributes
-                    var attributes = newSignInterpretation ?
-                        await _attributeRepository.CreateAttributesAsync(
+                    var attributes = newSignInterpretation
+                        ? await _attributeRepository.CreateAttributesAsync(
                             editionUser,
                             signInterpretation.SignInterpretationId.GetValueOrDefault(),
-                        signInterpretation.Attributes)
+                            signInterpretation.Attributes)
                         : await _attributeRepository.ReplaceSignInterpretationAttributesAsync(
                             editionUser,
                             signInterpretation.SignInterpretationId.GetValueOrDefault(),
@@ -406,11 +392,11 @@ namespace SQE.DatabaseAccess
                     signInterpretation.Attributes.AddRange(attributes);
 
                     // Do the same with the commentaries
-                    var commentaries = newSignInterpretation ?
-                        await _commentaryRepository.CreateCommentariesAsync(
-                        editionUser,
-                        signInterpretation.SignInterpretationId.GetValueOrDefault(),
-                        signInterpretation.Commentaries)
+                    var commentaries = newSignInterpretation
+                        ? await _commentaryRepository.CreateCommentariesAsync(
+                            editionUser,
+                            signInterpretation.SignInterpretationId.GetValueOrDefault(),
+                            signInterpretation.Commentaries)
                         : await _commentaryRepository.ReplaceSignInterpretationCommentaries(
                             editionUser,
                             signInterpretation.SignInterpretationId.GetValueOrDefault(),
@@ -431,7 +417,6 @@ namespace SQE.DatabaseAccess
                             signInterpretation.SignInterpretationRois);
                     signInterpretation.Commentaries.Clear();
                     signInterpretation.Commentaries.AddRange(commentaries);
-
                 }
             }
 
@@ -439,9 +424,9 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Removes all attributes, commentaries, rois, and position data of the sign interpretation
-        /// connected with the given edition and by this removing
-        /// it from the given edition without touching it in respect to other editions
+        ///     Removes all attributes, commentaries, rois, and position data of the sign interpretation
+        ///     connected with the given edition and by this removing
+        ///     it from the given edition without touching it in respect to other editions
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
@@ -475,7 +460,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Removes the sign with the given Id together with all its interpretation.s
+        ///     Removes the sign with the given Id together with all its interpretation.s
         /// </summary>
         /// <param name="editionUser"></param>
         /// <param name="signId">Id of sign</param>
@@ -484,9 +469,7 @@ namespace SQE.DatabaseAccess
         {
             var signInterpretationIds = await GetAllSignInterpretationIdsForSignIdAsync(editionUser, signId);
             foreach (var signInterpretationId in signInterpretationIds)
-            {
                 await RemoveSignInterpretationAsync(editionUser, signInterpretationId);
-            }
             return await _removeElementAsync(editionUser, "line_to_sign", signId);
         }
 
@@ -494,24 +477,29 @@ namespace SQE.DatabaseAccess
 
         #region Text Fragment
 
-
         /// <summary>
-        /// Creates a new text fragment in an edition. If previousFragmentId or nextFragmentId are null, the missing
-        /// value will be automatically calculated. If both are null, then the new text fragment is added to the end
-        /// of the list of text fragments.
-        /// Each text fragment must have at least one line to hold break signs and to be accessible
-        /// by the textual system; thus the function automatically creates an empty line.
+        ///     Creates a new text fragment in an edition. If previousFragmentId or nextFragmentId are null, the missing
+        ///     value will be automatically calculated. If both are null, then the new text fragment is added to the end
+        ///     of the list of text fragments.
+        ///     Each text fragment must have at least one line to hold break signs and to be accessible
+        ///     by the textual system; thus the function automatically creates an empty line.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
-        /// <param name="textFragmentData">Text fragment data object which must have set the
-        /// name of the text fragments. If it contains lines they will be automatically injected,
-        /// otherwise an empty line with name "1" is added. Terminators are automatically set
-        /// and thus should not be included in this data object.</param>
-        /// <param name="previousFragmentId">Id of the text fragment that should directly precede the new text fragment,
-        /// may be null</param>
-        /// <param name="nextFragmentId">Id of the text fragment that should directly follow the new text fragment,
-        /// <param name="firstLineName">name of the first, empty line</param>
-        /// may be null</param>
+        /// <param name="textFragmentData">
+        ///     Text fragment data object which must have set the
+        ///     name of the text fragments. If it contains lines they will be automatically injected,
+        ///     otherwise an empty line with name "1" is added. Terminators are automatically set
+        ///     and thus should not be included in this data object.
+        /// </param>
+        /// <param name="previousFragmentId">
+        ///     Id of the text fragment that should directly precede the new text fragment,
+        ///     may be null
+        /// </param>
+        /// <param name="nextFragmentId">
+        ///     Id of the text fragment that should directly follow the new text fragment,
+        ///     <param name="firstLineName">name of the first, empty line</param>
+        ///     may be null
+        /// </param>
         /// <returns></returns>
         public async Task<TextFragmentData> CreateTextFragmentAsync(UserInfo editionUser,
             TextFragmentData textFragmentData,
@@ -546,13 +534,10 @@ namespace SQE.DatabaseAccess
 
                         var newLines = new List<LineData>();
                         foreach (var line in textFragmentData.Lines)
-                        {
                             newLines.Add(await CreateLineAsync(
                                 editionUser,
                                 line,
                                 newTextFragmentId));
-                        }
-
 
 
                         // End the transaction (it was all or nothing)
@@ -571,7 +556,7 @@ namespace SQE.DatabaseAccess
 
 
         /// <summary>
-        /// Gets a list of all artefacts with ROI's linked to text in the text fragment
+        ///     Gets a list of all artefacts with ROI's linked to text in the text fragment
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Text fragment id</param>
@@ -591,7 +576,7 @@ namespace SQE.DatabaseAccess
 
 
         /// <summary>
-        /// Gets the text of a text fragment in an edition
+        ///     Gets the text of a text fragment in an edition
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Text fragment id</param>
@@ -607,7 +592,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Get a list of all the text fragments in an edition
+        ///     Get a list of all the text fragments in an edition
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <returns>A list of all text fragments in the edition</returns>
@@ -623,7 +608,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Removes the text fragment with the given Id together with all its lines and their signs.
+        ///     Removes the text fragment with the given Id together with all its lines and their signs.
         /// </summary>
         /// <param name="editionUser"></param>
         /// <param name="textFragmentId">Id of text frgament</param>
@@ -631,18 +616,17 @@ namespace SQE.DatabaseAccess
         public async Task<uint> RemoveTextFragmentAsync(UserInfo editionUser, uint textFragmentId)
         {
             var lineIds = await _getChildrenIds(editionUser, TableData.Table.text_fragment, textFragmentId);
-            foreach (var lineId in lineIds)
-            {
-                await RemoveLineAsync(editionUser, lineId);
-            }
-            return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.text_fragment), textFragmentId); ;
+            foreach (var lineId in lineIds) await RemoveLineAsync(editionUser, lineId);
+            return await _removeElementAsync(editionUser, TableData.Name(TableData.Table.text_fragment),
+                textFragmentId);
+            ;
         }
 
 
         /// <summary>
-        /// Updates the details of a text fragment. If previousFragmentId or nextFragmentId are null, the missing
-        /// value will be automatically calculated. If both are null, the text fragment will not be moved.
-        /// If the fragmentName is null or "", the name will not be altered.
+        ///     Updates the details of a text fragment. If previousFragmentId or nextFragmentId are null, the missing
+        ///     value will be automatically calculated. If both are null, the text fragment will not be moved.
+        ///     If the fragmentName is null or "", the name will not be altered.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">id of the text fragment to change</param>
@@ -707,7 +691,6 @@ namespace SQE.DatabaseAccess
 
         private Terminators _getTerminators(UserInfo editionUser, TableData.Table table, uint elementId)
         {
-
             var query = $@"SELECT DISTINCT sign_interpretation_id 
                         {TableData.FromQueryPart(table, addPublicEdition: true)}
                         AND attribute_value_id in @Breaks
@@ -751,7 +734,8 @@ namespace SQE.DatabaseAccess
                     new[]
                     {
                         typeof(TextEdition), typeof(TextFragmentData), typeof(LineData), typeof(SignData),
-                        typeof(NextSignInterpretation), typeof(SignInterpretationData), typeof(SignInterpretationAttributeData),
+                        typeof(NextSignInterpretation), typeof(SignInterpretationData),
+                        typeof(SignInterpretationAttributeData),
                         typeof(SignInterpretationRoiData), typeof(uint?)
                     },
                     objects =>
@@ -801,13 +785,12 @@ namespace SQE.DatabaseAccess
 
                         if (nextSignInterpretation != null &&
                             (lastSignInterpretation.NextSignInterpretations.Count == 0 ||
-                            lastSignInterpretation.NextSignInterpretations.Last()?.NextSignInterpretationId !=
-                            nextSignInterpretation.NextSignInterpretationId))
-                        {
+                             lastSignInterpretation.NextSignInterpretations.Last()?.NextSignInterpretationId !=
+                             nextSignInterpretation.NextSignInterpretationId))
                             lastSignInterpretation.NextSignInterpretations.Add(nextSignInterpretation);
-                        }
 
-                        if (lastSignInterpretation.NextSignInterpretations.Count > 1) return newManuscript ? manuscript : null;
+                        if (lastSignInterpretation.NextSignInterpretations.Count > 1)
+                            return newManuscript ? manuscript : null;
 
                         if (lastSignInterpretation.Attributes.Count == 0 ||
                             lastSignInterpretation.Attributes.Last().AttributeValueId != charAttribute.AttributeValueId)
@@ -824,11 +807,10 @@ namespace SQE.DatabaseAccess
                         if (lastSignInterpretation.Attributes.Count > 1) return newManuscript ? manuscript : null;
 
                         if (roi != null && (lastSignInterpretation.SignInterpretationRois.Count == 0 ||
-                            lastSignInterpretation.SignInterpretationRois.Last().SignInterpretationRoiId !=
-                            roi.SignInterpretationRoiId))
-                        {
+                                            lastSignInterpretation.SignInterpretationRois.Last()
+                                                .SignInterpretationRoiId !=
+                                            roi.SignInterpretationRoiId))
                             lastSignInterpretation.SignInterpretationRois.Add(roi);
-                        }
 
                         if (lastSignInterpretation.SignInterpretationRois.Count > 1)
                             return newManuscript ? manuscript : null;
@@ -850,7 +832,6 @@ namespace SQE.DatabaseAccess
 
         private async Task<List<uint>> _getChildrenIds(UserInfo user, TableData.Table table, uint elementId)
         {
-
             using (var connection = OpenConnection())
             {
                 return (await connection.QueryAsync<uint>(
@@ -861,7 +842,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Gets the  data id for an element id
+        ///     Gets the  data id for an element id
         /// </summary>
         /// <param name="user">Edition user object</param>
         /// <param name="table">Name of the table</param>
@@ -881,7 +862,6 @@ namespace SQE.DatabaseAccess
 
         private async Task<uint> _removeElementAsync(UserInfo editionUser, string tableName, uint elementId)
         {
-
             var removeRequest = new MutationRequest(
                 MutateType.Delete,
                 new DynamicParameters(),
@@ -898,12 +878,11 @@ namespace SQE.DatabaseAccess
                 throw new StandardExceptions.DataNotWrittenException($"delete {tableName}");
 
             return elementId;
-
         }
 
         /// <summary>
-        /// Helper to create a new record of those tables which only have an id-field like Line, Sign ...."
-        /// The error string is created automatically using the table namen
+        ///     Helper to create a new record of those tables which only have an id-field like Line, Sign ...."
+        ///     The error string is created automatically using the table namen
         /// </summary>
         /// <param name="table">TableData reference</param>
         /// <returns>New id</returns>
@@ -928,8 +907,8 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Adds an element of text (sign, line, fragment) to its parent element.
-        /// The text of the error is automatically set using the names of the tables.
+        ///     Adds an element of text (sign, line, fragment) to its parent element.
+        ///     The text of the error is automatically set using the names of the tables.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="table">Name of the element table</param>
@@ -968,14 +947,16 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Set the name of an element
+        ///     Set the name of an element
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="table">The name of the table of the element</param>
         /// <param name="elementId">Id of the element to set</param>
         /// <param name="elementName">Name to be set</param>
-        /// <param name="create">Boolean whether a new text fragment should be created for this name. Set to
-        /// false if you are updating existing data.</param>
+        /// <param name="create">
+        ///     Boolean whether a new text fragment should be created for this name. Set to
+        ///     false if you are updating existing data.
+        /// </param>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task _setElementDataAsync(UserInfo editionUser,
             TableData.Table table,
@@ -993,7 +974,7 @@ namespace SQE.DatabaseAccess
                 create ? MutateType.Create : MutateType.Update,
                 createTextFragmentParameters,
                 $"{table}_data",
-                create ? null : (uint?)(await _getElementDataId(editionUser, table, elementId))
+                create ? null : (uint?)await _getElementDataId(editionUser, table, elementId)
             );
 
             // Commit the mutation
@@ -1004,19 +985,21 @@ namespace SQE.DatabaseAccess
 
             // Ensure that the entry was created
             if (createElementResponse.Count != 1
-                || (create && !createElementResponse.First().NewId.HasValue))
+                || create && !createElementResponse.First().NewId.HasValue)
                 throw new StandardExceptions.DataNotWrittenException($"create new {TableData.Name(table)} data");
         }
 
 
         /// <summary>
-        /// Creates a new element in an edition and inserts it into the parent identified by parentId.
-        /// If an name of the element is given, the name is also set
+        ///     Creates a new element in an edition and inserts it into the parent identified by parentId.
+        ///     If an name of the element is given, the name is also set
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="parentId">Id of the fragment the line should be inserted into</param>
-        /// <param name="elementName">Name of the new line;
-        /// may be null</param>
+        /// <param name="elementName">
+        ///     Name of the new line;
+        ///     may be null
+        /// </param>
         /// <returns>Id of the created Element</returns>
         public async Task<uint> _createElementAsync(UserInfo editionUser,
             TableData.Table table,
@@ -1047,7 +1030,7 @@ namespace SQE.DatabaseAccess
         #region Line
 
         /// <summary>
-        /// Adds a line to a fragment.
+        ///     Adds a line to a fragment.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="lineId">Id of line</param>
@@ -1062,7 +1045,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Gets the line data id for a line id
+        ///     Gets the line data id for a line id
         /// </summary>
         /// <param name="user">Edition user object</param>
         /// <param name="lineId">Id of the line</param>
@@ -1073,13 +1056,15 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Set the name of a line
+        ///     Set the name of a line
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="lineId">Id of the text fragment to set</param>
         /// <param name="lineName">Name to be set</param>
-        /// <param name="create">Boolean whether a new text fragment should be created for this name. Set to
-        /// false if you are updating existing data.</param>
+        /// <param name="create">
+        ///     Boolean whether a new text fragment should be created for this name. Set to
+        ///     false if you are updating existing data.
+        /// </param>
         private async Task _setLineDataAsync(UserInfo editionUser,
             uint lineId,
             string lineName,
@@ -1093,14 +1078,12 @@ namespace SQE.DatabaseAccess
                 create);
         }
 
-
-
         #endregion
 
         #region Sign and sign interpretation
 
         /// <summary>
-        /// Adds a sign to a line.
+        ///     Adds a sign to a line.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signId">Id of the sign</param>
@@ -1115,7 +1098,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Creates a new sign without all other sign data.
+        ///     Creates a new sign without all other sign data.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="lineId">Id of line to which the sign should belong</param>
@@ -1150,30 +1133,21 @@ namespace SQE.DatabaseAccess
             );
         }
 
-
-
-
-
-
-
-
         #endregion
 
 
         #region Text Fragment
 
-
-
-
-
         /// <summary>
-        /// Set the name of a text fragment
+        ///     Set the name of a text fragment
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Id of the text fragment to set</param>
         /// <param name="textFragmentName">Name to be set</param>
-        /// <param name="create">Boolean whether a new text fragment should be created for this name. Set to
-        /// false if you are updating existing data.</param>
+        /// <param name="create">
+        ///     Boolean whether a new text fragment should be created for this name. Set to
+        ///     false if you are updating existing data.
+        /// </param>
         /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task _setTextFragmentDataAsync(UserInfo editionUser,
             uint textFragmentId,
@@ -1186,13 +1160,12 @@ namespace SQE.DatabaseAccess
                 textFragmentId,
                 textFragmentName,
                 create);
-
         }
 
         /// <summary>
-        /// Set the position of a newly created text fragment, if anchorBefore or anchorAfter are null, they
-        /// will be automatically created.  If both are null, then the fragment is positioned at the end of
-        /// the list of text fragments.
+        ///     Set the position of a newly created text fragment, if anchorBefore or anchorAfter are null, they
+        ///     will be automatically created.  If both are null, then the fragment is positioned at the end of
+        ///     the list of text fragments.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="anchorBefore">Id of the directly preceding text fragment, may be null</param>
@@ -1300,7 +1273,7 @@ namespace SQE.DatabaseAccess
         {
             return await _moveTextFragments(
                 editionUser,
-                new List<uint>() { textFragmentId },
+                new List<uint> { textFragmentId },
                 newAnchorBefore,
                 newAnchorAfter
             );
@@ -1413,7 +1386,7 @@ namespace SQE.DatabaseAccess
             return await _createTextFragmentPositionRequestFactory(
                 editionUser,
                 anchorBefore,
-                new List<uint>() { textFragmentId },
+                new List<uint> { textFragmentId },
                 anchorAfter
             );
         }
@@ -1483,7 +1456,6 @@ namespace SQE.DatabaseAccess
                 textFragmentId,
                 manuscriptId
             );
-
         }
 
         /// <summary>

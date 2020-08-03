@@ -93,6 +93,7 @@ namespace SQE.API.Server.Services
                     editionUser.EditionId.Value
                 );
             }
+
             return artefacts;
         }
 
@@ -118,8 +119,8 @@ namespace SQE.API.Server.Services
             // Collect the updated artefacts
             var updatedArtefacts = await Task.WhenAll(
                 updates.artefactPlacements
-                .Select(async x => await GetEditionArtefactAsync(editionUser, x.artefactId, new List<string>()))
-                );
+                    .Select(async x => await GetEditionArtefactAsync(editionUser, x.artefactId, new List<string>()))
+            );
 
             // Create the tasks to broadcast the change to all subscribers of the editionId.
             // Exclude the client (not the user), which made the request, that client directly received the response.
@@ -132,9 +133,9 @@ namespace SQE.API.Server.Services
             // Wait for all tasks to finish before returning (otherwise the threads may get lost)
             await Task.WhenAll(broadcastTasks);
 
-            return new BatchUpdatedArtefactTransformDTO()
+            return new BatchUpdatedArtefactTransformDTO
             {
-                artefactPlacements = updatedArtefacts.Select(x => new UpdatedArtefactPlacementDTO()
+                artefactPlacements = updatedArtefacts.Select(x => new UpdatedArtefactPlacementDTO
                 {
                     artefactId = x.id,
                     placementEditorId = x.artefactPlacementEditorId ?? 0,
@@ -247,7 +248,7 @@ namespace SQE.API.Server.Services
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
             await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .DeletedArtefact(new DeleteDTO(EditionEntities.artefact, new List<uint>() { artefactId }));
+                .DeletedArtefact(new DeleteDTO(EditionEntities.artefact, new List<uint> { artefactId }));
             return new NoContentResult();
         }
 
