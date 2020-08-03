@@ -1,3 +1,4 @@
+using System.Data;
 using System.Linq;
 using Dapper;
 using Microsoft.Extensions.Configuration;
@@ -31,8 +32,8 @@ namespace qwb_to_sqe.Repositories
                 AND pistwr2.position_in_stream_id is null
 ";
 
-        public TextRepositoryExpanded(IConfiguration config, IDatabaseWriter databaseWriter) : base(config,
-            databaseWriter)
+        public TextRepositoryExpanded(IDbConnection conn, IDatabaseWriter databaseWriter, IAttributeRepository attributeRepository,
+            ISignInterpretationCommentaryRepository commentaryRepository, IRoiRepository roiRepository) : base(conn, databaseWriter, attributeRepository, commentaryRepository, roiRepository)
         {
         }
 
