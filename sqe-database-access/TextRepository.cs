@@ -84,21 +84,22 @@ namespace SQE.DatabaseAccess
 
         private readonly IDatabaseWriter _databaseWriter;
 
-        private readonly AttributeRepository _attributeRepository;
-        private readonly SignInterpretationCommentaryRepository _commentaryRepository;
-        private readonly RoiRepository _roiRepository;
+        private readonly IAttributeRepository _attributeRepository;
+        private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
+        private readonly IRoiRepository _roiRepository;
 
 
-        public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
+        public TextRepository(IDbConnection conn, IDatabaseWriter databaseWriter, IAttributeRepository attributeRepository,
+            ISignInterpretationCommentaryRepository commentaryRepository, IRoiRepository roiRepository) : base(conn)
         {
             _databaseWriter = databaseWriter;
 
             // Because some functions set or remove attributes, commentaries, or ROIs we sometimes need
             // objects of the repositories. If we don't want to create them from the beginning,
             // we would have to store the configuration to make it accessible for creation the object elsewhere
-            _attributeRepository = new AttributeRepository(config, databaseWriter);
-            _commentaryRepository = new SignInterpretationCommentaryRepository(config, databaseWriter);
-            _roiRepository = new RoiRepository(config, databaseWriter);
+            _attributeRepository = attributeRepository;
+            _commentaryRepository = commentaryRepository;
+            _roiRepository = roiRepository;
         }
 
         public IDbConnection Connection => OpenConnection();
@@ -130,7 +131,7 @@ namespace SQE.DatabaseAccess
             uint anchorBefore = 0,
             uint anchorAfter = 0)
         {
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            return await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
                     using (var transactionScope = new TransactionScope())
@@ -321,7 +322,7 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorsBefore">Ids of the anchors before</param>
         /// <param name="anchorsAfter">Ids of the ancors after</param>
         /// <returns>List of sign Interpretation objects with the new ids</returns>
-        /// <exception cref="DataNotWrittenException"></exception>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         public async Task<List<SignInterpretationData>> AddSignInterpretationsAsync(UserInfo editionUser,
             uint? signId,
             List<SignInterpretationData> signInterpretations,
@@ -506,7 +507,7 @@ namespace SQE.DatabaseAccess
             uint? previousFragmentId,
             uint? nextFragmentId)
         {
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            return await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
                     using (var transactionScope = new TransactionScope())
@@ -915,7 +916,7 @@ namespace SQE.DatabaseAccess
         /// <param name="elementId">Id of the element</param>
         /// <param name="parentId">Id of parent</param>
         /// <returns></returns>
-        /// <exception cref="DataNotWrittenException"></exception>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task _addElementToParentAsync(UserInfo editionUser,
             TableData.Table table, uint? elementId, uint? parentId)
         {
@@ -1107,7 +1108,7 @@ namespace SQE.DatabaseAccess
             uint lineId
         )
         {
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            return await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
                     using (var transactionScope = new TransactionScope())
@@ -1264,7 +1265,7 @@ namespace SQE.DatabaseAccess
         /// <param name="textFragmentId">Id of the text fragment for which a position is being created</param>
         /// <param name="anchorAfter">Id of the directly following text fragment, may be null</param>
         /// <returns>The id of the preceding and following text fragments</returns>
-        /// <exception cref="DataNotWrittenException"></exception>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(
             UserInfo editionUser,
             uint textFragmentId,
@@ -1399,8 +1400,8 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorBefore">Id of the first text fragment</param>
         /// <param name="anchorAfter">Id of the second text fragment</param>
         /// <returns></returns>
-        /// <exception cref="InputDataRuleViolationException"></exception>
-        /// <exception cref="ImproperInputDataException"></exception>
+        /// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
+        /// <exception cref="StandardExceptions.ImproperInputDataException"></exception>
         private static void _verifyTextFragmentsSequence(
             List<TextFragmentData> fragments,
             uint? anchorBefore,
@@ -1438,7 +1439,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="textFragmentId">Id of the text fragment to be added</param>
         /// <returns></returns>
-        /// <exception cref="DataNotWrittenException"></exception>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task _addTextFragmentToManuscript(UserInfo editionUser, uint textFragmentId)
         {
             uint manuscriptId;

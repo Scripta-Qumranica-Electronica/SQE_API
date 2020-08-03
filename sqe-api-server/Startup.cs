@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
@@ -46,7 +47,14 @@ namespace SQE.API.Server
         {
             services.AddCors();
 
+            var db = Configuration.GetConnectionString("MysqlDatabase");
+            var host = Configuration.GetConnectionString("MysqlHost");
+            var port = Configuration.GetConnectionString("MysqlPort");
+            var user = Configuration.GetConnectionString("MysqlUsername");
+            var pwd = Configuration.GetConnectionString("MysqlPassword");
+            var dbConnString = $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8mb4;AllowUserVariables=True;";
             // configure DI for application services
+            services.AddSingleton<IDbConnection>((sp) => new ReliableMySqlConnection(dbConnString));
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IEditionService, EditionService>();
             services.AddScoped<IImagedObjectService, ImagedObjectService>();

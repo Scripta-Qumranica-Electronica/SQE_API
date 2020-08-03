@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -52,8 +54,8 @@ namespace SQE.DatabaseAccess
     {
         private readonly IDatabaseWriter _databaseWriter;
 
-        public SignInterpretationCommentaryRepository(IConfiguration config, IDatabaseWriter databaseWriter) :
-            base(config)
+        public SignInterpretationCommentaryRepository(IDbConnection conn, IDatabaseWriter databaseWriter) :
+            base(conn)
         {
             _databaseWriter = databaseWriter;
         }

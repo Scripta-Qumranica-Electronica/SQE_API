@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Linq;
 using Dapper;
 using MailKit.Net.Smtp;
@@ -72,6 +73,14 @@ namespace SQE.API.Server.Helpers
             CheckConfig(configuration, "MysqlUsername", err, "$DatabaseSetting");
             CheckConfig(configuration, "MysqlPassword", err, "$DatabaseSetting");
 
+            var db = configuration.GetConnectionString("MysqlDatabase");
+            var host = configuration.GetConnectionString("MysqlHost");
+            var port = configuration.GetConnectionString("MysqlPort");
+            var user = configuration.GetConnectionString("MysqlUsername");
+            var pwd = configuration.GetConnectionString("MysqlPassword");
+            var dbConnString = $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8mb4;AllowUserVariables=True;";
+            var conn = new ReliableMySqlConnection(dbConnString);
+
             // Connect to the database and run a quick test query
             // Retry 5 times if the database is not yet up (3 second pause between retries)
             var policy = Policy
@@ -90,7 +99,7 @@ namespace SQE.API.Server.Helpers
                             );
                     }
                 );
-            policy.Execute(() => new DatabaseVerificationInstance(configuration).Verify());
+            policy.Execute(() => new DatabaseVerificationInstance(configuration, conn).Verify());
         }
 
         private static void CheckConfig(IConfiguration configuration,
@@ -117,7 +126,7 @@ namespace SQE.API.Server.Helpers
         {
             private readonly IConfiguration _config;
 
-            internal DatabaseVerificationInstance(IConfiguration configuration) : base(configuration)
+            internal DatabaseVerificationInstance(IConfiguration configuration, IDbConnection conn) : base(conn)
             {
                 _config = configuration;
             }

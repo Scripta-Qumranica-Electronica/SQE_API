@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -18,7 +19,7 @@ namespace SQE.DatabaseAccess
 
     public class ImageRepository : DbConnectionBase, IImageRepository
     {
-        public ImageRepository(IConfiguration config) : base(config)
+        public ImageRepository(IDbConnection conn) : base(conn)
         {
         }
 

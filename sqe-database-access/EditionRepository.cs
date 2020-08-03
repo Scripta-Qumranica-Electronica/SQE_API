@@ -60,9 +60,8 @@ namespace SQE.DatabaseAccess
         private readonly IConfiguration _config;
         private readonly IDatabaseWriter _databaseWriter;
 
-        public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
+        public EditionRepository(IDbConnection conn, IDatabaseWriter databaseWriter) : base(conn)
         {
-            _config = config;
             _databaseWriter = databaseWriter;
         }
 
@@ -278,7 +277,7 @@ namespace SQE.DatabaseAccess
                 ownerTables = (await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery)).ToList();
             }
 
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            return await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
                     // In an effort to speed this up further, I tried disabling foreign keys and unique checks.
@@ -982,7 +981,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
             string tableName,
             UserInfo editionUser)
         {
-            await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                     await connection.ExecuteAsync(
                         DeleteEditionFromTable.GetQuery(tableName),

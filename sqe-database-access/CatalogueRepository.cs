@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -28,7 +29,7 @@ namespace SQE.DatabaseAccess
 
     public class CatalogueRepository : DbConnectionBase, ICatalogueRepository
     {
-        public CatalogueRepository(IConfiguration config) : base(config)
+        public CatalogueRepository(IDbConnection conn) : base(conn)
         {
         }
 

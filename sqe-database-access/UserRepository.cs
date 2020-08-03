@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -49,7 +49,7 @@ namespace SQE.DatabaseAccess
 
     public class UserRepository : DbConnectionBase, IUserRepository
     {
-        public UserRepository(IConfiguration config) : base(config)
+        public UserRepository(IDbConnection conn) : base(conn)
         {
         }
 
@@ -253,7 +253,7 @@ namespace SQE.DatabaseAccess
             string surname = null,
             string organization = null)
         {
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            return await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
                     using (var transactionScope = new TransactionScope())
@@ -513,7 +513,7 @@ namespace SQE.DatabaseAccess
         /// <returns>Returns user information and secret token that are used to format the reset password email</returns>
         public async Task<DetailedUserWithToken> RequestResetForgottenPasswordAsync(string email)
         {
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            return await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
                     using (var transactionScope = new TransactionScope())

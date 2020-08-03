@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -53,7 +54,7 @@ namespace SQE.DatabaseAccess
     {
         private readonly IDatabaseWriter _databaseWriter;
 
-        public RoiRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
+        public RoiRepository(IDbConnection conn, IDatabaseWriter databaseWriter) : base(conn)
         {
             _databaseWriter = databaseWriter;
         }

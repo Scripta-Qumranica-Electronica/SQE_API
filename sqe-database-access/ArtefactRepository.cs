@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -74,7 +75,7 @@ namespace SQE.DatabaseAccess
     {
         private readonly IDatabaseWriter _databaseWriter;
 
-        public ArtefactRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
+        public ArtefactRepository(IDbConnection conn, IDatabaseWriter databaseWriter) : base(conn)
         {
             _databaseWriter = databaseWriter;
         }
@@ -266,7 +267,7 @@ namespace SQE.DatabaseAccess
 			var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
 			var res = string.Join("", binaryMask);
 			var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            return await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
                     using (var transactionScope = new TransactionScope())

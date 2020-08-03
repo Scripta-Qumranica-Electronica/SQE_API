@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -57,7 +58,7 @@ namespace SQE.DatabaseAccess
     {
         private readonly IDatabaseWriter _databaseWriter;
 
-        public AttributeRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
+        public AttributeRepository(IDbConnection conn, IDatabaseWriter databaseWriter) : base(conn)
         {
             _databaseWriter = databaseWriter;
         }
@@ -104,7 +105,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="deleteAttributeIds">List of ids of the attributes to be deleted</param>
         /// <returns>The list of the ids of deleted Attributes or empty list if the given list was null.</returns>
-        /// <exception cref="DataNotWrittenException"></exception>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         public async Task<List<uint>> DeleteAttributesAsync(UserInfo editionUser,
             List<uint> deleteAttributeIds)
         {
@@ -312,7 +313,7 @@ namespace SQE.DatabaseAccess
         ///     List of set attributes with the new sign interpretation attribute id set or empty list
         ///     if the list of attributes had been null.
         /// </returns>
-        /// <exception cref="DataNotWrittenException"></exception>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task<List<SignInterpretationAttributeData>> _createOrUpdateAttributesAsync(
             UserInfo editionUser,
             uint signInterpretationId,

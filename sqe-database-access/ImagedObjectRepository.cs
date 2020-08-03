@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -16,7 +17,7 @@ namespace SQE.DatabaseAccess
 
     public class ImagedObjectRepository : DbConnectionBase, IImagedObjectRepository
     {
-        public ImagedObjectRepository(IConfiguration config) : base(config)
+        public ImagedObjectRepository(IDbConnection conn) : base(conn)
         {
         }
 

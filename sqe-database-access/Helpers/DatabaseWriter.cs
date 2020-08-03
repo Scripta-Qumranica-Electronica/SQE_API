@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
-using Microsoft.Extensions.Configuration;
+using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
@@ -132,7 +132,7 @@ namespace SQE.DatabaseAccess.Helpers
 
     public class DatabaseWriter : DbConnectionBase, IDatabaseWriter
     {
-        public DatabaseWriter(IConfiguration config) : base(config)
+        public DatabaseWriter(IDbConnection conn) : base(conn)
         {
         }
 
@@ -159,7 +159,7 @@ namespace SQE.DatabaseAccess.Helpers
 
             // If there is no currently running transaction, start a new one
             if (Transaction.Current == null)
-                return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                return await Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                     async () =>
                     {
                         // Grab a transaction scope, we roll back all changes if any transactions fail

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using Polly.CircuitBreaker;
 using SQE.DatabaseAccess;
+using SQE.DatabaseAccess.Helpers;
 using Xunit;
 
 namespace SQE.ApiTest
@@ -17,8 +18,8 @@ namespace SQE.ApiTest
         // They are in use and all other tests pass, but some things, like ReliableMySqlDbCommand.Prepare() or 
         // ReliableMySqlConnection.DataSource, never get tested (I don't necessarily know what they all should do).
         // Perhaps something could be wrong there and we would not see it for a very long time.
-        private const int _retryCount = 21;
-        private const int _circuitBreakCount = 20;
+        private const int _retryCount = 11;
+        private const int _circuitBreakCount = 4;
 
         private static void ThrowMySqlException(Counter counter, uint sqlErrorCode)
         {
@@ -105,7 +106,7 @@ namespace SQE.ApiTest
 
             // Act
             var ex = Assert.Throws<MySqlException>(
-                () => DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlException(counter, code))
+                () => Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlException(counter, code))
             );
 
             // Assert
@@ -126,7 +127,7 @@ namespace SQE.ApiTest
 
             // Act
             var ex = Assert.Throws<MySqlException>(
-                () => DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlException(counter, code))
+                () => Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlException(counter, code))
             );
 
             // Assert
@@ -142,7 +143,7 @@ namespace SQE.ApiTest
 
             // Act
             ex = Assert.Throws<MySqlException>(
-                () => DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlExceptionWithReturn(counter, code))
+                () => Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(() => ThrowMySqlExceptionWithReturn(counter, code))
             );
 
             // Assert
@@ -159,7 +160,7 @@ namespace SQE.ApiTest
 
             // Act
             ex = await Assert.ThrowsAsync<MySqlException>(
-                () => DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                () => Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                     () => ThrowMySqlExceptionAsync(counter, code),
                     token
                 )
@@ -178,7 +179,7 @@ namespace SQE.ApiTest
 
             // Act
             ex = await Assert.ThrowsAsync<MySqlException>(
-                () => DatabaseCommunicationRetryPolicy.ExecuteRetry(
+                () => Retries.DatabaseCommunicationRetryPolicy.ExecuteRetry(
                     () => ThrowMySqlExceptionWithReturnAsync(counter, code),
                     token
                 )
@@ -197,7 +198,7 @@ namespace SQE.ApiTest
             // Arrange
             var counter = new Counter { Count = 0 };
             const uint code = 1040;
-            var policy = new DatabaseCommunicationCircuitBreakPolicy();
+            var policy = new Retries.DatabaseCommunicationCircuitBreakPolicy();
             const int repeatCount = 7;
             BrokenCircuitException retryEx = null;
 
@@ -216,7 +217,7 @@ namespace SQE.ApiTest
 
             // With return type
             // Arrange
-            policy = new DatabaseCommunicationCircuitBreakPolicy();
+            policy = new Retries.DatabaseCommunicationCircuitBreakPolicy();
             counter.Count = 0;
 
             // Act (even though we run this 7 times, the method itself should only run 5 times total)
@@ -235,7 +236,7 @@ namespace SQE.ApiTest
             // Async
             // Arrange
             counter.Count = 0;
-            policy = new DatabaseCommunicationCircuitBreakPolicy();
+            policy = new Retries.DatabaseCommunicationCircuitBreakPolicy();
             var token = new CancellationToken();
 
             // Act (even though we run this 7 times, the method itself should only run 5 times total)
@@ -253,7 +254,7 @@ namespace SQE.ApiTest
 
             // Async with return
             // Arrange
-            policy = new DatabaseCommunicationCircuitBreakPolicy();
+            policy = new Retries.DatabaseCommunicationCircuitBreakPolicy();
             counter.Count = 0;
 
             // Act (even though we run this 7 times, the method itself should only run 5 times total)
@@ -279,7 +280,7 @@ namespace SQE.ApiTest
             // Arrange
             var counter = new Counter { Count = 0 };
             const uint code = 1044;
-            var policy = new DatabaseCommunicationCircuitBreakPolicy();
+            var policy = new Retries.DatabaseCommunicationCircuitBreakPolicy();
             const int repeatCount = 7;
             MySqlException ex = null;
 
