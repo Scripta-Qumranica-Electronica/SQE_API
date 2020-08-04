@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace SQE.API.DTO
@@ -14,6 +15,7 @@ namespace SQE.API.DTO
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public SideDesignation catalogSide { get; set; }
 
+        [Required]
         public string imagedObjectId { get; set; }
         public uint manuscriptId { get; set; }
         public string editionName { get; set; }

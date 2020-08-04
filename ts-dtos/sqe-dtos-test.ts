@@ -9,15 +9,15 @@
  */
 
 
-export interface EditionScriptCollectionDTO {
+export interface editionScriptCollectionDTO {
     letters: CharacterShapeDTO[] | null;
 }
 
-export interface EditionScriptLinesDTO {
+export interface editionScriptLinesDTO {
     textFragments: ScriptTextFragmentDTO[] | null;
 }
 
-export interface CharacterShapeDTO {
+export interface characterShapeDTO {
     id: number;
     character: char | null;
     polygon: string | null;
@@ -26,36 +26,36 @@ export interface CharacterShapeDTO {
     attributes: string[] | null;
 }
 
-export interface ScriptTextFragmentDTO {
+export interface scriptTextFragmentDTO {
     textFragmentName: string | null;
     textFragmentId: number;
     lines: ScriptLineDTO[] | null;
 }
 
-export interface ScriptLineDTO {
+export interface scriptLineDTO {
     lineName: string | null;
     lineId: number;
     artefacts: ScriptArtefactCharactersDTO[] | null;
 }
 
-export interface ScriptArtefactCharactersDTO {
+export interface scriptArtefactCharactersDTO {
     artefactName: string | null;
     artefactId: number;
     placement: PlacementDTO | null;
     characters: SignInterpretationDTO[] | null;
 }
 
-export interface TextFragmentDataDTO {
+export interface textFragmentDataDTO {
     id: number;
     name: string | null;
     editorId: number;
 }
 
-export interface ArtefactTextFragmentMatchDTO {
+export interface artefactTextFragmentMatchDTO {
     suggested: boolean;
 }
 
-export interface ImagedObjectTextFragmentMatchDTO {
+export interface imagedObjectTextFragmentMatchDTO {
     editionId: number;
     manuscriptName: string | null;
     textFragmentId: number;
@@ -63,62 +63,62 @@ export interface ImagedObjectTextFragmentMatchDTO {
     side: string | null;
 }
 
-export interface TextFragmentDataListDTO {
+export interface textFragmentDataListDTO {
     textFragments: TextFragmentDataDTO[] | null;
 }
 
-export interface ArtefactTextFragmentMatchListDTO {
+export interface artefactTextFragmentMatchListDTO {
     textFragments: ArtefactTextFragmentMatchDTO[] | null;
 }
 
-export interface TextFragmentDTO {
+export interface textFragmentDTO {
     textFragmentId: number;
     textFragmentName: string | null;
     editorId: number;
     lines: LineDTO[] | null;
 }
 
-export interface LineDataDTO {
+export interface lineDataDTO {
     lineId: number;
     lineName: string | null;
 }
 
-export interface LineDataListDTO {
+export interface lineDataListDTO {
     lines: LineDataDTO[] | null;
 }
 
-export interface LineDTO {
+export interface lineDTO {
     lineId: number;
     lineName: string | null;
     editorId: number;
     signs: SignDTO[] | null;
 }
 
-export interface LineTextDTO {
+export interface lineTextDTO {
     licence: string | null;
     editors: { [key: string] : EditorDTO } | null;
 }
 
-export interface UpdateTextFragmentDTO {
+export interface updateTextFragmentDTO {
     name: string | null;
     previousTextFragmentId: number | null;
     nextTextFragmentId: number | null;
 }
 
-export interface CreateTextFragmentDTO {
+export interface createTextFragmentDTO {
     name: string;
 }
 
-export interface SignDTO {
+export interface signDTO {
     signInterpretations: SignInterpretationDTO[] | null;
 }
 
-export interface NextSignInterpretationDTO {
+export interface nextSignInterpretationDTO {
     nextSignInterpretationId: number;
     editorId: number;
 }
 
-export interface SignInterpretationDTO {
+export interface signInterpretationDTO {
     signInterpretationId: number;
     character: string | null;
     attributes: InterpretationAttributeDTO[] | null;
@@ -126,7 +126,7 @@ export interface SignInterpretationDTO {
     nextSignInterpretations: NextSignInterpretationDTO[] | null;
 }
 
-export interface InterpretationAttributeDTO {
+export interface interpretationAttributeDTO {
     interpretationAttributeId: number;
     sequence: number;
     attributeValueId: number;
@@ -135,19 +135,19 @@ export interface InterpretationAttributeDTO {
     value: float | null;
 }
 
-export interface PlacementDTO {
+export interface placementDTO {
     scale: number;
     rotate: number;
     zIndex: number;
     translate: TranslateDTO | null;
 }
 
-export interface TranslateDTO {
+export interface translateDTO {
     x: number;
     y: number;
 }
 
-export interface SimpleImageDTO {
+export interface simpleImageDTO {
     id: number;
     url: string | null;
     lightingType: Lighting | null;
@@ -160,41 +160,41 @@ export interface SimpleImageDTO {
     catalogNumber: number;
 }
 
-export interface ImageDTO {
+export interface imageDTO {
     imageToImageMapEditorId: number | null;
     regionInMasterImage: string | null;
     regionInImage: string | null;
     transformToMaster: string | null;
 }
 
-export interface SimpleImageListDTO {
+export interface simpleImageListDTO {
     images: SimpleImageDTO[] | null;
 }
 
-export interface ImageInstitutionDTO {
+export interface imageInstitutionDTO {
     name: string | null;
 }
 
-export interface ImageInstitutionListDTO {
+export interface imageInstitutionListDTO {
     institutions: ImageInstitutionDTO[] | null;
 }
 
-export interface InstitutionalImageDTO {
+export interface institutionalImageDTO {
     id: string | null;
     thumbnailUrl: string | null;
     license: string | null;
 }
 
-export interface InstitutionalImageListDTO {
+export interface institutionalImageListDTO {
     institutionalImages: InstitutionalImageDTO[] | null;
 }
 
-export interface ArtefactDataDTO {
+export interface artefactDataDTO {
     id: number;
     name: string;
 }
 
-export interface ArtefactDTO {
+export interface artefactDTO {
     editionId: number;
     imagedObjectId: string;
     imageId: number;
@@ -208,66 +208,66 @@ export interface ArtefactDTO {
     statusMessage: string | null;
 }
 
-export interface ArtefactSide {
+export interface artefactSide {
     
 }
 
-export interface ArtefactListDTO {
+export interface artefactListDTO {
     artefacts: ArtefactDTO[];
 }
 
-export interface ArtefactDataListDTO {
+export interface artefactDataListDTO {
     artefacts: ArtefactDataDTO[];
 }
 
-export interface ArtefactGroupDTO {
+export interface artefactGroupDTO {
     id: number;
 }
 
-export interface ArtefactGroupListDTO {
+export interface artefactGroupListDTO {
     artefactGroups: ArtefactGroupDTO[] | null;
 }
 
-export interface UpdateArtefactDTO {
+export interface updateArtefactDTO {
     mask: string | null;
     placement: PlacementDTO | null;
     name: string | null;
     statusMessage: string | null;
 }
 
-export interface UpdateArtefactPlacementDTO {
+export interface updateArtefactPlacementDTO {
     artefactId: number;
     isPlaced: boolean;
     placement: PlacementDTO | null;
 }
 
-export interface BatchUpdateArtefactPlacementDTO {
+export interface batchUpdateArtefactPlacementDTO {
     artefactPlacements: UpdateArtefactPlacementDTO[];
 }
 
-export interface UpdatedArtefactPlacementDTO {
+export interface updatedArtefactPlacementDTO {
     placementEditorId: number;
 }
 
-export interface BatchUpdatedArtefactTransformDTO {
+export interface batchUpdatedArtefactTransformDTO {
     artefactPlacements: UpdatedArtefactPlacementDTO[];
 }
 
-export interface UpdateArtefactGroupDTO {
+export interface updateArtefactGroupDTO {
     
 }
 
-export interface CreateArtefactDTO {
+export interface createArtefactDTO {
     masterImageId: number;
     mask: string;
 }
 
-export interface CreateArtefactGroupDTO {
+export interface createArtefactGroupDTO {
     name: string | null;
     artefacts: number[];
 }
 
-export interface EditionDTO {
+export interface editionDTO {
     id: number;
     name: string | null;
     editionDataEditorId: number;
@@ -282,60 +282,60 @@ export interface EditionDTO {
     copyright: string | null;
 }
 
-export interface EditionGroupDTO {
+export interface editionGroupDTO {
     primary: EditionDTO | null;
     others: EditionDTO[] | null;
 }
 
-export interface EditionListDTO {
+export interface editionListDTO {
     editions: List<EditionDTO>[] | null;
 }
 
-export interface PermissionDTO {
+export interface permissionDTO {
     mayRead: boolean;
     mayWrite: boolean;
     isAdmin: boolean;
 }
 
-export interface UpdateEditorRightsDTO {
+export interface updateEditorRightsDTO {
     mayLock: boolean;
 }
 
-export interface InviteEditorDTO {
+export interface inviteEditorDTO {
     email: string;
 }
 
-export interface DetailedEditorRightsDTO {
+export interface detailedEditorRightsDTO {
     email: string;
     editionId: number;
 }
 
-export interface DetailedUpdateEditorRightsDTO {
+export interface detailedUpdateEditorRightsDTO {
     editionId: number;
     editionName: string | null;
     date: Date | null;
 }
 
-export interface AdminEditorRequestDTO {
+export interface adminEditorRequestDTO {
     editorName: string | null;
     editorEmail: string | null;
 }
 
-export interface EditorInvitationDTO {
+export interface editorInvitationDTO {
     token: Guid | null;
     requestingAdminName: string | null;
     requestingAdminEmail: string | null;
 }
 
-export interface EditorInvitationListDTO {
+export interface editorInvitationListDTO {
     editorInvitations: EditorInvitationDTO[] | null;
 }
 
-export interface AdminEditorRequestListDTO {
+export interface adminEditorRequestListDTO {
     editorRequests: AdminEditorRequestDTO[] | null;
 }
 
-export interface TextEditionDTO {
+export interface textEditionDTO {
     manuscriptId: number;
     editionName: string | null;
     editorId: number;
@@ -344,49 +344,49 @@ export interface TextEditionDTO {
     textFragments: TextFragmentDTO[] | null;
 }
 
-export interface DeleteTokenDTO {
+export interface deleteTokenDTO {
     editionId: number;
     token: string | null;
 }
 
-export interface DeleteEditionEntityDTO {
+export interface deleteEditionEntityDTO {
     entityId: number;
     editorId: number;
 }
 
-export interface DeleteDTO {
+export interface deleteDTO {
     entity: EditionEntities | null;
     ids: number[] | null;
 }
 
-export interface EditionUpdateRequestDTO {
+export interface editionUpdateRequestDTO {
     metrics: UpdateEditionManuscriptMetricsDTO | null;
 }
 
-export interface EditionCopyDTO {
+export interface editionCopyDTO {
     name: string | null;
     copyrightHolder: string | null;
     collaborators: string | null;
 }
 
-export interface UpdateEditionManuscriptMetricsDTO {
+export interface updateEditionManuscriptMetricsDTO {
     width: number;
     height: number;
     xOrigin: number;
     yOrigin: number;
 }
 
-export interface EditionManuscriptMetricsDTO {
+export interface editionManuscriptMetricsDTO {
     ppi: number;
     editorId: number;
 }
 
-export interface LoginRequestDTO {
+export interface loginRequestDTO {
     email: string;
     password: string;
 }
 
-export interface UserUpdateRequestDTO {
+export interface userUpdateRequestDTO {
     password: string | null;
     email: string | null;
     organization: string | null;
@@ -394,81 +394,81 @@ export interface UserUpdateRequestDTO {
     surname: string | null;
 }
 
-export interface NewUserRequestDTO {
+export interface newUserRequestDTO {
     email: string;
     password: string;
 }
 
-export interface AccountActivationRequestDTO {
+export interface accountActivationRequestDTO {
     token: string;
 }
 
-export interface ResendUserAccountActivationRequestDTO {
+export interface resendUserAccountActivationRequestDTO {
     email: string;
 }
 
-export interface UnactivatedEmailUpdateRequestDTO {
+export interface unactivatedEmailUpdateRequestDTO {
     newEmail: string;
 }
 
-export interface ResetUserPasswordRequestDTO {
+export interface resetUserPasswordRequestDTO {
     email: string;
 }
 
-export interface ResetForgottenUserPasswordRequestDTO {
+export interface resetForgottenUserPasswordRequestDTO {
     password: string;
 }
 
-export interface ResetLoggedInUserPasswordRequestDTO {
+export interface resetLoggedInUserPasswordRequestDTO {
     oldPassword: string;
     newPassword: string;
 }
 
-export interface UserDTO {
+export interface userDTO {
     userId: number;
     email: string | null;
 }
 
-export interface DetailedUserDTO {
+export interface detailedUserDTO {
     forename: string | null;
     surname: string | null;
     organization: string | null;
     activated: boolean;
 }
 
-export interface DetailedUserTokenDTO {
+export interface detailedUserTokenDTO {
     token: string | null;
 }
 
-export interface EditorDTO {
+export interface editorDTO {
     email: string | null;
     forename: string | null;
     surname: string | null;
     organization: string | null;
 }
 
-export interface ImageStackDTO {
+export interface imageStackDTO {
     id: number | null;
     images: ImageDTO[] | null;
     masterIndex: number | null;
 }
 
-export interface ImagedObjectDTO {
+export interface imagedObjectDTO {
     id: string | null;
     recto: ImageStackDTO | null;
     verso: ImageStackDTO | null;
     artefacts: ArtefactDTO[] | null;
 }
 
-export interface ImagedObjectListDTO {
+export interface imagedObjectListDTO {
     imagedObjects: ImagedObjectDTO[] | null;
 }
 
-export interface WktPolygonDTO {
+export interface wktPolygonDTO {
     wktPolygon: string | null;
 }
 
-export interface SetInterpretationRoiDTO {
+export interface setInterpretationRoiDTO {
     artefactId: number;
     signInterpretationId: number | null;
     shape: string;
@@ -478,40 +478,40 @@ export interface SetInterpretationRoiDTO {
     valuesSet: boolean;
 }
 
-export interface InterpretationRoiDTO {
+export interface interpretationRoiDTO {
     interpretationRoiId: number;
     editorId: number;
 }
 
-export interface UpdatedInterpretationRoiDTO {
+export interface updatedInterpretationRoiDTO {
     oldInterpretationRoiId: number;
 }
 
-export interface SetInterpretationRoiDTOList {
+export interface setInterpretationRoiDTOList {
     rois: SetInterpretationRoiDTO[];
 }
 
-export interface InterpretationRoiDTOList {
+export interface interpretationRoiDTOList {
     rois: InterpretationRoiDTO[];
 }
 
-export interface UpdatedInterpretationRoiDTOList {
+export interface updatedInterpretationRoiDTOList {
     rois: UpdatedInterpretationRoiDTO[];
 }
 
-export interface BatchEditRoiDTO {
+export interface batchEditRoiDTO {
     createRois: InterpretationRoiDTO[] | null;
     updateRois: UpdatedInterpretationRoiDTO[] | null;
     deleteRois: number[] | null;
 }
 
-export interface BatchEditRoiResponseDTO {
+export interface batchEditRoiResponseDTO {
     createRois: InterpretationRoiDTO[];
     updateRois: UpdatedInterpretationRoiDTO[];
     deleteRois: number[];
 }
 
-export interface CatalogueMatchInputDTO {
+export interface catalogueMatchInputDTO {
     catalogSide: SideDesignation | null;
     imagedObjectId: string;
     manuscriptId: number;
@@ -526,7 +526,7 @@ export interface CatalogueMatchInputDTO {
     confirmed: boolean | null;
 }
 
-export interface CatalogueMatchDTO {
+export interface catalogueMatchDTO {
     imageCatalogId: number;
     institution: string | null;
     catalogueNumber1: string | null;
@@ -547,7 +547,7 @@ export interface CatalogueMatchDTO {
     dateOfConfirmation: Date | null;
 }
 
-export interface CatalogueMatchListDTO {
+export interface catalogueMatchListDTO {
     matches: CatalogueMatchDTO[] | null;
 }
 

@@ -33,7 +33,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-dto", "sqe-dto\sqe-dto.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{055DC416-8BED-4A81-9E30-C802D05C9B50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs", "Utilities\GenerateTypescriptDTOs\GenerateTypescriptDTOs.csproj", "{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs-deprecated", "Utilities\GenerateTypescriptDTOs-deprecated\GenerateTypescriptDTOs-deprecated.csproj", "{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqe-realtime-hub-builder", "sqe-realtime-hub-builder\sqe-realtime-hub-builder.csproj", "{AD0639BF-9A1B-41FE-97A3-34B89B6A9B62}"
 EndProject
@@ -46,6 +46,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "data-to-sqe", "data-to-sqe", "{40050D72-0A97-4FEA-981D-CB29FCA142C8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "qwb-to-sqe", "data-to-sqe\qwb-to-sqe\qwb-to-sqe.csproj", "{A6B475B9-EC6C-4F3F-AA95-8842FFAF3554}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateTypescriptDTOs", "Utilities\GenerateTypescriptDTOs\GenerateTypescriptDTOs.csproj", "{8E0A20C8-DC06-4F36-BFBE-B90DE8601C6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -93,6 +95,10 @@ Global
 		{A6B475B9-EC6C-4F3F-AA95-8842FFAF3554}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6B475B9-EC6C-4F3F-AA95-8842FFAF3554}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6B475B9-EC6C-4F3F-AA95-8842FFAF3554}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E0A20C8-DC06-4F36-BFBE-B90DE8601C6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E0A20C8-DC06-4F36-BFBE-B90DE8601C6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E0A20C8-DC06-4F36-BFBE-B90DE8601C6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E0A20C8-DC06-4F36-BFBE-B90DE8601C6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -104,6 +110,7 @@ Global
 		{CD5A6E67-04A3-41C0-AF00-233BE2BC79EC} = {055DC416-8BED-4A81-9E30-C802D05C9B50}
 		{298627C6-72BB-409D-92EE-EC5605078557} = {055DC416-8BED-4A81-9E30-C802D05C9B50}
 		{A6B475B9-EC6C-4F3F-AA95-8842FFAF3554} = {40050D72-0A97-4FEA-981D-CB29FCA142C8}
+		{8E0A20C8-DC06-4F36-BFBE-B90DE8601C6A} = {055DC416-8BED-4A81-9E30-C802D05C9B50}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28758AAA-F471-4702-917C-C7D7D498BA0C}
