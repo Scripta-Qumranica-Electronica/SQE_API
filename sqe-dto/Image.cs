@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace SQE.API.DTO
@@ -18,21 +19,24 @@ namespace SQE.API.DTO
             raking
         }
 
-        public uint id { get; set; }
-        public string url { get; set; }
+        [Required] public uint id { get; set; }
+        [Required] public string url { get; set; }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
+        [Required]
         public Lighting lightingType { get; set; }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
+        [Required]
         public Direction lightingDirection { get; set; }
 
-        public string[] waveLength { get; set; }
-        public string type { get; set; }
-        public string side { get; set; }
-        public uint ppi { get; set; }
-        public bool master { get; set; }
-        public uint catalogNumber { get; set; }
+        [Required] public string[] waveLength { get; set; }
+        [Required] public string type { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [Required] public SideDesignation side { get; set; }
+        [Required] public uint ppi { get; set; }
+        [Required] public bool master { get; set; }
+        [Required] public uint catalogNumber { get; set; }
     }
 
     public class ImageDTO : SimpleImageDTO
@@ -45,7 +49,7 @@ namespace SQE.API.DTO
 
     public class SimpleImageListDTO
     {
-        public SimpleImageDTO[] images { get; set; }
+        [Required] public SimpleImageDTO[] images { get; set; }
     }
 
     public class ImageInstitutionDTO
@@ -55,7 +59,7 @@ namespace SQE.API.DTO
             this.name = name;
         }
 
-        public string name { get; set; }
+        [Required] public string name { get; set; }
     }
 
     public class ImageInstitutionListDTO
@@ -65,18 +69,18 @@ namespace SQE.API.DTO
             this.institutions = institutions;
         }
 
-        public List<ImageInstitutionDTO> institutions { get; set; }
+        [Required] public List<ImageInstitutionDTO> institutions { get; set; }
     }
 
     public class InstitutionalImageDTO
     {
-        public string id { get; set; }
-        public string thumbnailUrl { get; set; }
-        public string license { get; set; }
+        [Required] public string id { get; set; }
+        [Required] public string thumbnailUrl { get; set; }
+        [Required] public string license { get; set; }
     }
 
     public class InstitutionalImageListDTO
     {
-        public List<InstitutionalImageDTO> institutionalImages { get; set; }
+        [Required] public List<InstitutionalImageDTO> institutionalImages { get; set; }
     }
 }

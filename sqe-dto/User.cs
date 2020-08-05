@@ -41,7 +41,7 @@ namespace SQE.API.DTO
         {
         }
 
-        public string password { get; set; }
+        [Required] public string password { get; set; }
         public string email { get; set; }
         public string organization { get; set; }
         public string forename { get; set; }
@@ -129,8 +129,8 @@ namespace SQE.API.DTO
     // The minimal data necessary to identify a user
     public class UserDTO
     {
-        public uint userId { get; set; }
-        public string email { get; set; }
+        [Required] public uint userId { get; set; }
+        [Required] public string email { get; set; }
     }
 
     // More detailed user data, this could be seen by colleagues who share an edition
@@ -139,18 +139,18 @@ namespace SQE.API.DTO
         public string forename { get; set; }
         public string surname { get; set; }
         public string organization { get; set; }
-        public bool activated { get; set; }
+        [Required] public bool activated { get; set; }
     }
 
     // A user may only receive his or her own DetailedUserTokenDTO
     public class DetailedUserTokenDTO : DetailedUserDTO
     {
-        public string token { get; set; }
+        [Required] public string token { get; set; }
     }
 
     public class EditorDTO
     {
-        public string email { get; set; }
+        [Required] public string email { get; set; }
         public string forename { get; set; }
         public string surname { get; set; }
         public string organization { get; set; }

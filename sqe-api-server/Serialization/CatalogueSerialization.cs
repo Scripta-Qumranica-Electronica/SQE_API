@@ -12,8 +12,8 @@ namespace SQE.API.Server.Serialization
             return new CatalogueMatchDTO
             {
                 catalogSide = cat.CatalogSide == 0
-                    ? CatalogueMatchInputDTO.SideDesignation.recto
-                    : CatalogueMatchInputDTO.SideDesignation.verso,
+                    ? SideDesignation.recto
+                    : SideDesignation.verso,
                 catalogueNumber1 = cat.CatalogueNumber1,
                 catalogueNumber2 = cat.CatalogueNumber2,
                 comment = cat.Comment,
@@ -24,8 +24,8 @@ namespace SQE.API.Server.Serialization
                 editionLocation2 = cat.EditionLocation2,
                 editionName = cat.EditionName,
                 editionSide = cat.EditionSide == 0
-                    ? CatalogueMatchInputDTO.SideDesignation.recto
-                    : CatalogueMatchInputDTO.SideDesignation.verso,
+                    ? SideDesignation.recto
+                    : SideDesignation.verso,
                 editionVolume = cat.EditionVolume,
                 filename = cat.Filename,
                 institution = cat.Institution,

@@ -181,13 +181,13 @@ namespace SQE.API.Server.Services
                 // Build the recto and verso Lists based on the "Side" value
                 switch (image.side)
                 {
-                    case "recto":
+                    case SideDesignation.recto:
                         recto.Add(image);
                         rectoCatalogId = image.catalogNumber;
                         if (image.master)
                             rectoMasterIndex = recto.Count - 1;
                         break;
-                    case "verso":
+                    case SideDesignation.verso:
                         verso.Add(image);
                         versoCatalogId = image.catalogNumber;
                         if (image.master)

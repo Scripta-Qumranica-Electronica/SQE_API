@@ -18,10 +18,10 @@ namespace SQE.API.DTO
         {
         }
 
-        public uint id { get; set; }
-        public string name { get; set; }
+        [Required] public uint id { get; set; }
+        [Required] public string name { get; set; }
 
-        public uint editorId { get; set; }
+        [Required] public uint editorId { get; set; }
     }
 
     public class ArtefactTextFragmentMatchDTO : TextFragmentDataDTO
@@ -46,13 +46,13 @@ namespace SQE.API.DTO
             this.suggested = suggested;
         }
 
-        public bool suggested { get; set; }
+        [Required] public bool suggested { get; set; }
     }
 
     public class ImagedObjectTextFragmentMatchDTO
     {
         public ImagedObjectTextFragmentMatchDTO(uint editionId, string manuscriptName, uint textFragmentId,
-            string textFragmentName, string side)
+            string textFragmentName, SideDesignation side)
         {
             this.editionId = editionId;
             this.manuscriptName = manuscriptName;
@@ -61,11 +61,11 @@ namespace SQE.API.DTO
             this.side = side;
         }
 
-        public uint editionId { get; set; }
-        public string manuscriptName { get; set; }
-        public uint textFragmentId { get; set; }
-        public string textFragmentName { get; set; }
-        public string side { get; set; }
+        [Required] public uint editionId { get; set; }
+        [Required] public string manuscriptName { get; set; }
+        [Required] public uint textFragmentId { get; set; }
+        [Required] public string textFragmentName { get; set; }
+        [Required] public SideDesignation side { get; set; }
     }
 
     public class TextFragmentDataListDTO
@@ -79,7 +79,7 @@ namespace SQE.API.DTO
         {
         }
 
-        public List<TextFragmentDataDTO> textFragments { get; set; }
+        [Required] public List<TextFragmentDataDTO> textFragments { get; set; }
     }
 
     public class ArtefactTextFragmentMatchListDTO
@@ -89,15 +89,15 @@ namespace SQE.API.DTO
             this.textFragments = textFragments;
         }
 
-        public List<ArtefactTextFragmentMatchDTO> textFragments { get; set; }
+        [Required] public List<ArtefactTextFragmentMatchDTO> textFragments { get; set; }
     }
 
     public class TextFragmentDTO
     {
-        public uint textFragmentId { get; set; }
-        public string textFragmentName { get; set; }
-        public uint editorId { get; set; }
-        public List<LineDTO> lines { get; set; }
+        [Required] public uint textFragmentId { get; set; }
+        [Required] public string textFragmentName { get; set; }
+        [Required] public uint editorId { get; set; }
+        [Required] public List<LineDTO> lines { get; set; }
     }
 
     public class LineDataDTO
@@ -112,8 +112,8 @@ namespace SQE.API.DTO
         {
         }
 
-        public uint lineId { get; set; }
-        public string lineName { get; set; }
+        [Required] public uint lineId { get; set; }
+        [Required] public string lineName { get; set; }
     }
 
     public class LineDataListDTO
@@ -127,21 +127,21 @@ namespace SQE.API.DTO
         {
         }
 
-        public List<LineDataDTO> lines { get; set; }
+        [Required] public List<LineDataDTO> lines { get; set; }
     }
 
     public class LineDTO
     {
-        public uint lineId { get; set; }
-        public string lineName { get; set; }
-        public uint editorId { get; set; }
-        public List<SignDTO> signs { get; set; }
+        [Required] public uint lineId { get; set; }
+        [Required] public string lineName { get; set; }
+        [Required] public uint editorId { get; set; }
+        [Required] public List<SignDTO> signs { get; set; }
     }
 
     public class LineTextDTO : LineDTO
     {
-        public string licence { get; set; }
-        public Dictionary<string, EditorDTO> editors { get; set; }
+        [Required] public string licence { get; set; }
+        [Required] public Dictionary<string, EditorDTO> editors { get; set; }
     }
 
     #endregion output DTOs

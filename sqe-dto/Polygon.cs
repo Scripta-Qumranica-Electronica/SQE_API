@@ -1,7 +1,9 @@
-﻿namespace SQE.API.DTO
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace SQE.API.DTO
 {
     public class WktPolygonDTO
     {
-        public string wktPolygon { get; set; }
+        [Required] public string wktPolygon { get; set; }
     }
 }

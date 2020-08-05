@@ -24,7 +24,7 @@ namespace SQE.API.DTO
     {
         [Required] public uint interpretationRoiId { get; set; }
 
-        public uint editorId { get; set; }
+        [Required] public uint editorId { get; set; }
     }
 
     public class UpdatedInterpretationRoiDTO : InterpretationRoiDTO
