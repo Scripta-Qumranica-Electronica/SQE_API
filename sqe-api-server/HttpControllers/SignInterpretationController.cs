@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +33,7 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint signInterpretationId,
             [FromBody] SignInterpretationCreateDTO newSignInterpretation)
         {
-            return null; //Not Implemented
+            throw new NotImplementedException(); //Not Implemented
         }
 
         /// <summary>
@@ -46,7 +47,7 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult> DeleteSignInterpretation([FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId)
         {
-            return null; //Not Implemented
+            throw new NotImplementedException(); //Not Implemented
         }
 
         /// <summary>
@@ -61,7 +62,7 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint signInterpretationId,
             [FromBody] string commentary)
         {
-            return null;  //Not Implemented
+            throw new NotImplementedException();  //Not Implemented
         }
 
         /// <summary>
@@ -76,7 +77,7 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint signInterpretationId,
             [FromBody] InterpretationAttributeCreateListDTO newSignInterpretationAttributes)
         {
-            return null;  //Not Implemented
+            throw new NotImplementedException();  //Not Implemented
         }
 
         /// <summary>
@@ -94,7 +95,7 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint attributeId,
             [FromBody] InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
         {
-            return null;  //Not Implemented
+            throw new NotImplementedException();  //Not Implemented
         }
 
         /// <summary>
@@ -109,7 +110,7 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint signInterpretationId,
             [FromRoute] uint attributeId)
         {
-            return null;  //Not Implemented
+            throw new NotImplementedException();  //Not Implemented
         }
     }
 }

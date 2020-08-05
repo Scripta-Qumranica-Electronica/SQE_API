@@ -6,6 +6,7 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
@@ -38,7 +39,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return null; //Not Implemented              
+                throw new NotImplementedException(, clientId: Context.ConnectionId); //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -60,7 +61,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                null; //Not Implemented              
+                throw new NotImplementedException(, clientId: Context.ConnectionId); //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -82,7 +83,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                null;  //Not Implemented              
+                throw new NotImplementedException(, clientId: Context.ConnectionId);  //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -104,7 +105,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return null;  //Not Implemented              
+                throw new NotImplementedException(, clientId: Context.ConnectionId);  //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -128,7 +129,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return null;  //Not Implemented              
+                throw new NotImplementedException(, clientId: Context.ConnectionId);  //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -150,7 +151,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                null;  //Not Implemented              
+                throw new NotImplementedException(, clientId: Context.ConnectionId);  //Not Implemented              
             }
             catch (ApiException err)
             {
