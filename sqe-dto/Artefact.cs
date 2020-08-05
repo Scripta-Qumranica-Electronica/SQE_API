@@ -51,14 +51,14 @@ namespace SQE.API.DTO
         [Required] public List<ArtefactDataDTO> artefacts { get; set; }
     }
 
-    public class ArtefactGroupDTO : UpdateArtefactGroupDTO
+    public class ArtefactGroupDTO : CreateArtefactGroupDTO
     {
         [Required] public uint id { get; set; }
     }
 
     public class ArtefactGroupListDTO
     {
-        public List<ArtefactGroupDTO> artefactGroups { get; set; }
+        [Required] public List<ArtefactGroupDTO> artefactGroups { get; set; }
     }
 
     public class UpdateArtefactDTO
@@ -76,6 +76,11 @@ namespace SQE.API.DTO
         public string statusMessage { get; set; }
     }
 
+    /// <summary>
+    /// A DTO for updating an artefact's placement. The placement may be changed or
+    /// removed completely. The PlacementDTO is not required because this update request
+    /// may be setting isPlaced to false.
+    /// </summary>
     public class UpdateArtefactPlacementDTO
     {
         [Required] public uint artefactId { get; set; }
@@ -100,10 +105,6 @@ namespace SQE.API.DTO
         [Required] public List<UpdatedArtefactPlacementDTO> artefactPlacements { get; set; }
     }
 
-    public class UpdateArtefactGroupDTO : CreateArtefactGroupDTO
-    {
-    }
-
     public class CreateArtefactDTO : UpdateArtefactDTO
     {
         [Required] public uint masterImageId { get; set; }
@@ -115,10 +116,15 @@ namespace SQE.API.DTO
         public override string mask { get; set; }
     }
 
-    public class CreateArtefactGroupDTO
+    public class UpdateArtefactGroupDTO
     {
         [MaxLength(255)] public string name { get; set; }
 
         [Required] [MinLength(1)] public List<uint> artefacts { get; set; }
+    }
+
+    public class CreateArtefactGroupDTO : UpdateArtefactGroupDTO
+    {
+        [Required] [MaxLength(255)] public new string name { get; set; }
     }
 }

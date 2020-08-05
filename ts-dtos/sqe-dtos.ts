@@ -10,44 +10,44 @@
 
 
 export interface EditionScriptCollectionDTO {
-    letters?: Array<CharacterShapeDTO>;
+    letters: Array<CharacterShapeDTO>;
 }
 
 export interface EditionScriptLinesDTO {
-    textFragments?: Array<ScriptTextFragmentDTO>;
+    textFragments: Array<ScriptTextFragmentDTO>;
 }
 
 export interface CharacterShapeDTO {
     id: number;
-    character?: string;
-    polygon?: string;
-    imageURL?: string;
+    character: string;
+    polygon: string;
+    imageURL: string;
     rotation: number;
-    attributes?: Array<string>;
+    attributes: Array<string>;
 }
 
 export interface ScriptTextFragmentDTO {
-    textFragmentName?: string;
+    textFragmentName: string;
     textFragmentId: number;
-    lines?: Array<ScriptLineDTO>;
+    lines: Array<ScriptLineDTO>;
 }
 
 export interface ScriptLineDTO {
-    lineName?: string;
+    lineName: string;
     lineId: number;
-    artefacts?: Array<ScriptArtefactCharactersDTO>;
+    artefacts: Array<ScriptArtefactCharactersDTO>;
 }
 
 export interface ScriptArtefactCharactersDTO {
-    artefactName?: string;
+    artefactName: string;
     artefactId: number;
-    placement?: PlacementDTO;
-    characters?: Array<SignInterpretationDTO>;
+    placement: PlacementDTO;
+    characters: Array<SignInterpretationDTO>;
 }
 
 export interface TextFragmentDataDTO {
     id: number;
-    name?: string;
+    name: string;
     editorId: number;
 }
 
@@ -57,46 +57,46 @@ export interface ArtefactTextFragmentMatchDTO extends TextFragmentDataDTO {
 
 export interface ImagedObjectTextFragmentMatchDTO {
     editionId: number;
-    manuscriptName?: string;
+    manuscriptName: string;
     textFragmentId: number;
-    textFragmentName?: string;
-    side?: string;
+    textFragmentName: string;
+    side: string;
 }
 
 export interface TextFragmentDataListDTO {
-    textFragments?: Array<TextFragmentDataDTO>;
+    textFragments: Array<TextFragmentDataDTO>;
 }
 
 export interface ArtefactTextFragmentMatchListDTO {
-    textFragments?: Array<ArtefactTextFragmentMatchDTO>;
+    textFragments: Array<ArtefactTextFragmentMatchDTO>;
 }
 
 export interface TextFragmentDTO {
     textFragmentId: number;
-    textFragmentName?: string;
+    textFragmentName: string;
     editorId: number;
-    lines?: Array<LineDTO>;
+    lines: Array<LineDTO>;
 }
 
 export interface LineDataDTO {
     lineId: number;
-    lineName?: string;
+    lineName: string;
 }
 
 export interface LineDataListDTO {
-    lines?: Array<LineDataDTO>;
+    lines: Array<LineDataDTO>;
 }
 
 export interface LineDTO {
     lineId: number;
-    lineName?: string;
+    lineName: string;
     editorId: number;
-    signs?: Array<SignDTO>;
+    signs: Array<SignDTO>;
 }
 
 export interface LineTextDTO extends LineDTO {
-    licence?: string;
-    editors?: { [key: string] : EditorDTO };
+    licence: string;
+    editors: { [key: string] : EditorDTO };
 }
 
 export interface UpdateTextFragmentDTO {
@@ -110,7 +110,7 @@ export interface CreateTextFragmentDTO extends UpdateTextFragmentDTO {
 }
 
 export interface SignDTO {
-    signInterpretations?: Array<SignInterpretationDTO>;
+    signInterpretations: Array<SignInterpretationDTO>;
 }
 
 export interface NextSignInterpretationDTO {
@@ -121,16 +121,16 @@ export interface NextSignInterpretationDTO {
 export interface SignInterpretationDTO {
     signInterpretationId: number;
     character?: string;
-    attributes?: Array<InterpretationAttributeDTO>;
-    rois?: Array<InterpretationRoiDTO>;
-    nextSignInterpretations?: Array<NextSignInterpretationDTO>;
+    attributes: Array<InterpretationAttributeDTO>;
+    rois: Array<InterpretationRoiDTO>;
+    nextSignInterpretations: Array<NextSignInterpretationDTO>;
 }
 
 export interface InterpretationAttributeDTO {
     interpretationAttributeId: number;
     sequence: number;
     attributeValueId: number;
-    attributeValueString?: string;
+    attributeValueString: string;
     editorId: number;
     value: number;
 }
@@ -149,12 +149,12 @@ export interface TranslateDTO {
 
 export interface SimpleImageDTO {
     id: number;
-    url?: string;
-    lightingType?: Lighting;
-    lightingDirection?: Direction;
-    waveLength?: Array<string>;
-    type?: string;
-    side?: string;
+    url: string;
+    lightingType: Lighting;
+    lightingDirection: Direction;
+    waveLength: Array<string>;
+    type: string;
+    side: string;
     ppi: number;
     master: boolean;
     catalogNumber: number;
@@ -168,25 +168,25 @@ export interface ImageDTO extends SimpleImageDTO {
 }
 
 export interface SimpleImageListDTO {
-    images?: Array<SimpleImageDTO>;
+    images: Array<SimpleImageDTO>;
 }
 
 export interface ImageInstitutionDTO {
-    name?: string;
+    name: string;
 }
 
 export interface ImageInstitutionListDTO {
-    institutions?: Array<ImageInstitutionDTO>;
+    institutions: Array<ImageInstitutionDTO>;
 }
 
 export interface InstitutionalImageDTO {
-    id?: string;
-    thumbnailUrl?: string;
-    license?: string;
+    id: string;
+    thumbnailUrl: string;
+    license: string;
 }
 
 export interface InstitutionalImageListDTO {
-    institutionalImages?: Array<InstitutionalImageDTO>;
+    institutionalImages: Array<InstitutionalImageDTO>;
 }
 
 export interface ArtefactDataDTO {
@@ -220,12 +220,12 @@ export interface ArtefactDataListDTO {
     artefacts: Array<ArtefactDataDTO>;
 }
 
-export interface ArtefactGroupDTO extends UpdateArtefactGroupDTO {
+export interface ArtefactGroupDTO extends CreateArtefactGroupDTO {
     id: number;
 }
 
 export interface ArtefactGroupListDTO {
-    artefactGroups?: Array<ArtefactGroupDTO>;
+    artefactGroups: Array<ArtefactGroupDTO>;
 }
 
 export interface UpdateArtefactDTO {
@@ -253,42 +253,42 @@ export interface BatchUpdatedArtefactTransformDTO {
     artefactPlacements: Array<UpdatedArtefactPlacementDTO>;
 }
 
-export interface UpdateArtefactGroupDTO extends CreateArtefactGroupDTO {
-    
-}
-
 export interface CreateArtefactDTO extends UpdateArtefactDTO {
     masterImageId: number;
     mask: string;
 }
 
-export interface CreateArtefactGroupDTO {
+export interface UpdateArtefactGroupDTO {
     name?: string;
     artefacts: Array<number>;
 }
 
+export interface CreateArtefactGroupDTO extends UpdateArtefactGroupDTO {
+    name: string;
+}
+
 export interface EditionDTO {
     id: number;
-    name?: string;
+    name: string;
     editionDataEditorId: number;
-    permission?: PermissionDTO;
-    owner?: UserDTO;
+    permission: PermissionDTO;
+    owner: UserDTO;
     thumbnailUrl?: string;
-    shares?: Array<DetailedEditorRightsDTO>;
-    metrics?: EditionManuscriptMetricsDTO;
+    shares: Array<DetailedEditorRightsDTO>;
+    metrics: EditionManuscriptMetricsDTO;
     locked: boolean;
     isPublic: boolean;
     lastEdit?: string;
-    copyright?: string;
+    copyright: string;
 }
 
 export interface EditionGroupDTO {
-    primary?: EditionDTO;
-    others?: Array<EditionDTO>;
+    primary: EditionDTO;
+    others: Array<EditionDTO>;
 }
 
 export interface EditionListDTO {
-    editions?: Array<Array<EditionDTO>>;
+    editions: Array<Array<EditionDTO>>;
 }
 
 export interface PermissionDTO {
@@ -312,41 +312,41 @@ export interface DetailedEditorRightsDTO extends UpdateEditorRightsDTO {
 
 export interface DetailedUpdateEditorRightsDTO extends UpdateEditorRightsDTO {
     editionId: number;
-    editionName?: string;
-    date?: string;
+    editionName: string;
+    date: string;
 }
 
 export interface AdminEditorRequestDTO extends DetailedUpdateEditorRightsDTO {
     editorName?: string;
-    editorEmail?: string;
+    editorEmail: string;
 }
 
 export interface EditorInvitationDTO extends DetailedUpdateEditorRightsDTO {
-    token?: string;
-    requestingAdminName?: string;
-    requestingAdminEmail?: string;
+    token: string;
+    requestingAdminName: string;
+    requestingAdminEmail: string;
 }
 
 export interface EditorInvitationListDTO {
-    editorInvitations?: Array<EditorInvitationDTO>;
+    editorInvitations: Array<EditorInvitationDTO>;
 }
 
 export interface AdminEditorRequestListDTO {
-    editorRequests?: Array<AdminEditorRequestDTO>;
+    editorRequests: Array<AdminEditorRequestDTO>;
 }
 
 export interface TextEditionDTO {
     manuscriptId: number;
-    editionName?: string;
+    editionName: string;
     editorId: number;
-    licence?: string;
-    editors?: { [key: string] : EditorDTO };
-    textFragments?: Array<TextFragmentDTO>;
+    licence: string;
+    editors: { [key: string] : EditorDTO };
+    textFragments: Array<TextFragmentDTO>;
 }
 
 export interface DeleteTokenDTO {
     editionId: number;
-    token?: string;
+    token: string;
 }
 
 export interface DeleteEditionEntityDTO {
@@ -355,8 +355,8 @@ export interface DeleteEditionEntityDTO {
 }
 
 export interface DeleteDTO {
-    entity?: EditionEntities;
-    ids?: Array<number>;
+    entity: EditionEntities;
+    ids: Array<number>;
 }
 
 export interface EditionUpdateRequestDTO extends EditionCopyDTO {
@@ -387,7 +387,7 @@ export interface LoginRequestDTO {
 }
 
 export interface UserUpdateRequestDTO {
-    password?: string;
+    password: string;
     email?: string;
     organization?: string;
     forename?: string;
@@ -426,7 +426,7 @@ export interface ResetLoggedInUserPasswordRequestDTO {
 
 export interface UserDTO {
     userId: number;
-    email?: string;
+    email: string;
 }
 
 export interface DetailedUserDTO extends UserDTO {
@@ -437,11 +437,11 @@ export interface DetailedUserDTO extends UserDTO {
 }
 
 export interface DetailedUserTokenDTO extends DetailedUserDTO {
-    token?: string;
+    token: string;
 }
 
 export interface EditorDTO {
-    email?: string;
+    email: string;
     forename?: string;
     surname?: string;
     organization?: string;
@@ -454,18 +454,18 @@ export interface ImageStackDTO {
 }
 
 export interface ImagedObjectDTO {
-    id?: string;
-    recto?: ImageStackDTO;
-    verso?: ImageStackDTO;
-    artefacts?: Array<ArtefactDTO>;
+    id: string;
+    recto: ImageStackDTO;
+    verso: ImageStackDTO;
+    artefacts: Array<ArtefactDTO>;
 }
 
 export interface ImagedObjectListDTO {
-    imagedObjects?: Array<ImagedObjectDTO>;
+    imagedObjects: Array<ImagedObjectDTO>;
 }
 
 export interface WktPolygonDTO {
-    wktPolygon?: string;
+    wktPolygon: string;
 }
 
 export interface SetInterpretationRoiDTO {
@@ -515,11 +515,11 @@ export interface CatalogueMatchInputDTO {
     catalogSide?: SideDesignation;
     imagedObjectId: string;
     manuscriptId: number;
-    editionName?: string;
-    editionVolume?: string;
-    editionLocation1?: string;
-    editionLocation2?: string;
-    editionSide?: SideDesignation;
+    editionName: string;
+    editionVolume: string;
+    editionLocation1: string;
+    editionLocation2: string;
+    editionSide: SideDesignation;
     comment?: string;
     textFragmentId: number;
     editionId: number;
@@ -528,27 +528,27 @@ export interface CatalogueMatchInputDTO {
 
 export interface CatalogueMatchDTO extends CatalogueMatchInputDTO {
     imageCatalogId: number;
-    institution?: string;
-    catalogueNumber1?: string;
+    institution: string;
+    catalogueNumber1: string;
     catalogueNumber2?: string;
     proxy?: string;
-    url?: string;
-    filename?: string;
-    suffix?: string;
-    thumbnail?: string;
-    license?: string;
+    url: string;
+    filename: string;
+    suffix: string;
+    thumbnail: string;
+    license: string;
     iaaEditionCatalogueId: number;
-    manuscriptName?: string;
-    name?: string;
-    matchAuthor?: string;
+    manuscriptName: string;
+    name: string;
+    matchAuthor: string;
     matchConfirmationAuthor?: string;
     matchId: number;
-    dateOfMatch?: string;
+    dateOfMatch: string;
     dateOfConfirmation?: string;
 }
 
 export interface CatalogueMatchListDTO {
-    matches?: Array<CatalogueMatchDTO>;
+    matches: Array<CatalogueMatchDTO>;
 }
 
 export enum Direction {

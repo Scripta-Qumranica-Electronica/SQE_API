@@ -8,41 +8,41 @@ namespace SQE.API.DTO
     // TODO: get rid of owner and instead provide a list of editors (don't give the email addresses)
     public class EditionDTO
     {
-        public uint id { get; set; }
-        public string name { get; set; }
-        public uint editionDataEditorId { get; set; }
-        public PermissionDTO permission { get; set; }
-        public UserDTO owner { get; set; }
+        [Required] public uint id { get; set; }
+        [Required] public string name { get; set; }
+        [Required] public uint editionDataEditorId { get; set; }
+        [Required] public PermissionDTO permission { get; set; }
+        [Required] public UserDTO owner { get; set; }
         public string thumbnailUrl { get; set; }
-        public List<DetailedEditorRightsDTO> shares { get; set; }
-        public EditionManuscriptMetricsDTO metrics { get; set; }
-        public bool locked { get; set; }
-        public bool isPublic { get; set; }
+        [Required] public List<DetailedEditorRightsDTO> shares { get; set; }
+        [Required] public EditionManuscriptMetricsDTO metrics { get; set; }
+        [Required] public bool locked { get; set; }
+        [Required] public bool isPublic { get; set; }
         public DateTime? lastEdit { set; get; }
-        public string copyright { get; set; }
+        [Required] public string copyright { get; set; }
     }
 
     public class EditionGroupDTO
     {
-        public EditionDTO primary { get; set; }
-        public IEnumerable<EditionDTO> others { get; set; }
+        [Required] public EditionDTO primary { get; set; }
+        [Required] public IEnumerable<EditionDTO> others { get; set; }
     }
 
     public class EditionListDTO
     {
-        public List<List<EditionDTO>> editions { get; set; }
+        [Required] public List<List<EditionDTO>> editions { get; set; }
     }
 
     public class PermissionDTO
     {
-        public bool mayRead { get; set; }
-        public bool mayWrite { get; set; }
-        public bool isAdmin { get; set; }
+        [Required] public bool mayRead { get; set; }
+        [Required] public bool mayWrite { get; set; }
+        [Required] public bool isAdmin { get; set; }
     }
 
     public class UpdateEditorRightsDTO : PermissionDTO
     {
-        public bool mayLock { get; set; }
+        [Required] public bool mayLock { get; set; }
     }
 
     public class InviteEditorDTO : UpdateEditorRightsDTO
@@ -58,59 +58,59 @@ namespace SQE.API.DTO
         [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
         public string email { get; set; }
 
-        public uint editionId { get; set; }
+        [Required] public uint editionId { get; set; }
     }
 
     public class DetailedUpdateEditorRightsDTO : UpdateEditorRightsDTO
     {
-        public uint editionId { get; set; }
-        public string editionName { get; set; }
-        public DateTime date { get; set; }
+        [Required] public uint editionId { get; set; }
+        [Required] public string editionName { get; set; }
+        [Required] public DateTime date { get; set; }
     }
 
     public class AdminEditorRequestDTO : DetailedUpdateEditorRightsDTO
     {
         public string editorName { get; set; }
-        public string editorEmail { get; set; }
+        [Required] public string editorEmail { get; set; }
     }
 
     public class EditorInvitationDTO : DetailedUpdateEditorRightsDTO
     {
-        public Guid token { get; set; }
-        public string requestingAdminName { get; set; }
-        public string requestingAdminEmail { get; set; }
+        [Required] public Guid token { get; set; }
+        [Required] public string requestingAdminName { get; set; }
+        [Required] public string requestingAdminEmail { get; set; }
     }
 
     public class EditorInvitationListDTO
     {
-        public List<EditorInvitationDTO> editorInvitations { get; set; }
+        [Required] public List<EditorInvitationDTO> editorInvitations { get; set; }
     }
 
     public class AdminEditorRequestListDTO
     {
-        public List<AdminEditorRequestDTO> editorRequests { get; set; }
+        [Required] public List<AdminEditorRequestDTO> editorRequests { get; set; }
     }
 
     public class TextEditionDTO
     {
-        public uint manuscriptId { get; set; }
-        public string editionName { get; set; }
-        public uint editorId { get; set; }
-        public string licence { get; set; }
-        public Dictionary<string, EditorDTO> editors { get; set; }
-        public List<TextFragmentDTO> textFragments { get; set; }
+        [Required] public uint manuscriptId { get; set; }
+        [Required] public string editionName { get; set; }
+        [Required] public uint editorId { get; set; }
+        [Required] public string licence { get; set; }
+        [Required] public Dictionary<string, EditorDTO> editors { get; set; }
+        [Required] public List<TextFragmentDTO> textFragments { get; set; }
     }
 
     public class DeleteTokenDTO
     {
-        public uint editionId { get; set; }
-        public string token { get; set; }
+        [Required] public uint editionId { get; set; }
+        [Required] public string token { get; set; }
     }
 
     public class DeleteEditionEntityDTO
     {
-        public uint entityId { get; set; }
-        public uint editorId { get; set; }
+        [Required] public uint entityId { get; set; }
+        [Required] public uint editorId { get; set; }
     }
 
 
@@ -149,9 +149,10 @@ namespace SQE.API.DTO
         }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
+        [Required]
         public EditionEntities entity { get; set; }
 
-        public List<uint> ids { get; set; }
+        [Required] public List<uint> ids { get; set; }
     }
 
     #region Request DTO's
@@ -220,16 +221,16 @@ namespace SQE.API.DTO
 
     public class UpdateEditionManuscriptMetricsDTO
     {
-        public uint width { get; set; }
-        public uint height { get; set; }
-        public int xOrigin { get; set; }
-        public int yOrigin { get; set; }
+        [Required] public uint width { get; set; }
+        [Required] public uint height { get; set; }
+        [Required] public int xOrigin { get; set; }
+        [Required] public int yOrigin { get; set; }
     }
 
     public class EditionManuscriptMetricsDTO : UpdateEditionManuscriptMetricsDTO
     {
-        public uint ppi { get; set; }
-        public uint editorId { get; set; }
+        [Required] public uint ppi { get; set; }
+        [Required] public uint editorId { get; set; }
     }
 
     #endregion Request DTO's
