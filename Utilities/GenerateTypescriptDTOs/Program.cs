@@ -83,7 +83,7 @@ export enum $Enum {
                 {
                     var intf = Interface.Replace("$Class", classDescription.typescriptType)
                         .Replace("$Fields",
-                            string.Join("\n    ", classDescription.fields.Select(x => $"{x.name}: {x.typescriptType}{(x.nullable ? " | null" : "")};")));
+                            string.Join("\n    ", classDescription.fields.Select(x => $"{x.name}{(x.nullable ? "?" : "")}: {x.typescriptType};")));
                     if (!string.IsNullOrEmpty(classDescription.comments))
                         outputFile.Write(classDescription.comments);
                     outputFile.Write(intf);
@@ -137,6 +137,10 @@ export enum $Enum {
             // Parse the code to the relevant members
             var code = new StreamReader(file.FullName).ReadToEnd();
             var tree = CSharpSyntaxTree.ParseText(code);
+            var Mscorlib = PortableExecutableReference.CreateFromFile(typeof(object).Assembly.Location);
+            var compilation = CSharpCompilation.Create("SQEDTO",
+                syntaxTrees: new[] { tree }, references: new[] { Mscorlib });
+            var model = compilation.GetSemanticModel(tree);
             var root = tree.GetCompilationUnitRoot();
 
             // Get all the classes in the file
@@ -146,7 +150,12 @@ export enum $Enum {
             // Parse individual classes
             foreach (var dtoClass in members)
             {
-                var classDetails = new ClassDescription(dtoClass.Identifier.ToString().ToPascalCase());
+                var dtoClassSymbol = model.GetDeclaredSymbol(dtoClass);
+                var baseClassName = dtoClassSymbol.BaseType.Name;
+                var classSignature = baseClassName == "Object"
+                    ? dtoClass.Identifier.ToString().ToPascalCase()
+                    : $"{dtoClass.Identifier.ToString().ToPascalCase()} extends {baseClassName.ToPascalCase()}";
+                var classDetails = new ClassDescription(classSignature);
                 foreach (var field in dtoClass.DescendantNodes().OfType<PropertyDeclarationSyntax>())
                 {
                     var (type, nullable) = ConvertToTypescriptType(field.Type, field.AttributeLists);
@@ -224,7 +233,7 @@ export enum $Enum {
                             var args = genType.TypeArgumentList.Arguments;
                             if (args.Count != 1)
                                 throw new Exception($"Array type has {args.Count} arguments");
-                            return ($"{SimpleTypeToTypescript(args.FirstOrDefault().ToString()).typeName}[]", !required);
+                            return ($"Array<{SimpleTypeToTypescript(args.FirstOrDefault().ToString()).typeName}>", !required);
                         }
                     // Parse a Dictionary for Typescript
                     case "Dictionary":
@@ -236,6 +245,9 @@ export enum $Enum {
                         }
                 }
             }
+
+            if (type.ToString().Contains("[]"))
+                return ($"Array<{SimpleTypeToTypescript(type.ToString().Replace("[]", "")).typeName}>", !required);
 
             // We are dealing with a non-generic type, parse it
             var (simpleType, nullable) = SimpleTypeToTypescript(type.ToString());
@@ -255,6 +267,8 @@ export enum $Enum {
             {
                 case "byte":
                 case "sbyte":
+                case "short":
+                case "ushort":
                 case "uint16":
                 case "uint32":
                 case "uint64":
@@ -262,17 +276,21 @@ export enum $Enum {
                 case "int32":
                 case "int64":
                 case "decimal":
+                case "float":
                 case "double":
                 case "single":
                 case "uint":
                 case "int":
+                case "long":
+                case "ulong":
                     return ("number", nullableSimple);
                 case "string":
+                case "char":
+                case "Guid":
+                case "DateTime":
                     return ("string", true);
                 case "bool":
                     return ("boolean", nullableSimple);
-                case "DateTime":
-                    return ("Date", true);
                 default:
                     return (type, true);
             }
