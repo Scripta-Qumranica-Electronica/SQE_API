@@ -60,7 +60,7 @@ export interface ImagedObjectTextFragmentMatchDTO {
     manuscriptName: string;
     textFragmentId: number;
     textFragmentName: string;
-    side: string;
+    side: SideDesignation;
 }
 
 export interface TextFragmentDataListDTO {
@@ -154,7 +154,7 @@ export interface SimpleImageDTO {
     lightingDirection: Direction;
     waveLength: Array<string>;
     type: string;
-    side: string;
+    side: SideDesignation;
     ppi: number;
     master: boolean;
     catalogNumber: number;
@@ -204,12 +204,8 @@ export interface ArtefactDTO extends ArtefactDataDTO {
     isPlaced: boolean;
     placement: PlacementDTO;
     artefactPlacementEditorId?: number;
-    side: string;
+    side: SideDesignation;
     statusMessage?: string;
-}
-
-export interface ArtefactSide {
-    
 }
 
 export interface ArtefactListDTO {
@@ -449,7 +445,7 @@ export interface EditorDTO {
 
 export interface ImageStackDTO {
     id?: number;
-    images?: Array<ImageDTO>;
+    images: Array<ImageDTO>;
     masterIndex?: number;
 }
 
@@ -551,28 +547,28 @@ export interface CatalogueMatchListDTO {
     matches: Array<CatalogueMatchDTO>;
 }
 
-export enum Direction {
-    left = 0,
-    right = 1,
-    top = 2,
-}
+export type Direction = 
+    'left' |
+    'right' |
+    'top'
+;
 
-export enum Lighting {
-    direct = 0,
-    raking = 1,
-}
+export type Lighting = 
+    'direct' |
+    'raking'
+;
 
-export enum EditionEntities {
-    edition = 0,
-    artefact = 1,
-    artefactGroup = 2,
-    textFragment = 3,
-    line = 4,
-    signInterpretation = 5,
-    roi = 6,
-}
+export type EditionEntities = 
+    'edition' |
+    'artefact' |
+    'artefactGroup' |
+    'textFragment' |
+    'line' |
+    'signInterpretation' |
+    'roi'
+;
 
-export enum SideDesignation {
-    recto = 0,
-    verso = 1,
-}
+export type SideDesignation = 
+    'recto' |
+    'verso'
+;

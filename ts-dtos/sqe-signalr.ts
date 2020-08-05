@@ -42,7 +42,6 @@ import {
 	InstitutionalImageListDTO,
 	ArtefactDataDTO,
 	ArtefactDTO,
-	ArtefactSide,
 	ArtefactListDTO,
 	ArtefactDataListDTO,
 	ArtefactGroupDTO,

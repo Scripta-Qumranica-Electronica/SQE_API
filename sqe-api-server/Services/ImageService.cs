@@ -43,7 +43,7 @@ namespace SQE.API.Server.Services
                 regionInImage = model.RegionOfMaster,
                 lightingDirection = GetLightingDirection(model.Type),
                 lightingType = GetLightingType(model.Type),
-                side = model.Side,
+                side = model.Side == "recto" ? SideDesignation.recto : SideDesignation.verso,
                 transformToMaster = model.TransformMatrix,
                 catalogNumber = model.ImageCatalogId,
                 master = model.Master
@@ -67,7 +67,7 @@ namespace SQE.API.Server.Services
             imagedObjectId = imagedObjectId.Replace("%2F", "/").Replace("%20", " ");
             var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
             return textFragments.Select(x => new ImagedObjectTextFragmentMatchDTO(
-                x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName, x.Side == 0 ? "recto" : "verso")
+                x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName, x.Side == 0 ? SideDesignation.recto : SideDesignation.verso)
             ).ToList();
         }
 

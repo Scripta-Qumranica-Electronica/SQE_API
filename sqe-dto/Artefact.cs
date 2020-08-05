@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace SQE.API.DTO
 {
@@ -30,15 +31,10 @@ namespace SQE.API.DTO
 
         public uint? artefactPlacementEditorId { get; set; }
 
-        [Required] public string side { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [Required] public SideDesignation side { get; set; }
 
         public string statusMessage { get; set; }
-
-        public class ArtefactSide
-        {
-            public const string recto = "recto";
-            public const string verso = "verso";
-        }
     }
 
     public class ArtefactListDTO

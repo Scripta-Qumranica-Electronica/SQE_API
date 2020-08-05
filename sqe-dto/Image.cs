@@ -32,7 +32,8 @@ namespace SQE.API.DTO
 
         [Required] public string[] waveLength { get; set; }
         [Required] public string type { get; set; }
-        [Required] public string side { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [Required] public SideDesignation side { get; set; }
         [Required] public uint ppi { get; set; }
         [Required] public bool master { get; set; }
         [Required] public uint catalogNumber { get; set; }

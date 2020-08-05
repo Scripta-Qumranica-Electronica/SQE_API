@@ -52,7 +52,7 @@ namespace SQE.API.DTO
     public class ImagedObjectTextFragmentMatchDTO
     {
         public ImagedObjectTextFragmentMatchDTO(uint editionId, string manuscriptName, uint textFragmentId,
-            string textFragmentName, string side)
+            string textFragmentName, SideDesignation side)
         {
             this.editionId = editionId;
             this.manuscriptName = manuscriptName;
@@ -65,7 +65,7 @@ namespace SQE.API.DTO
         [Required] public string manuscriptName { get; set; }
         [Required] public uint textFragmentId { get; set; }
         [Required] public string textFragmentName { get; set; }
-        [Required] public string side { get; set; }
+        [Required] public SideDesignation side { get; set; }
     }
 
     public class TextFragmentDataListDTO

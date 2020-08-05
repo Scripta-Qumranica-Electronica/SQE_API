@@ -4,14 +4,13 @@ using System.Text.Json.Serialization;
 
 namespace SQE.API.DTO
 {
+    public enum SideDesignation
+    {
+        recto,
+        verso
+    }
     public class CatalogueMatchInputDTO
     {
-        public enum SideDesignation
-        {
-            recto,
-            verso
-        }
-
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public SideDesignation catalogSide { get; set; }
 

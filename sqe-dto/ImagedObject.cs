@@ -6,7 +6,7 @@ namespace SQE.API.DTO
     public class ImageStackDTO
     {
         public uint? id { get; set; }
-        public List<ImageDTO> images { get; set; }
+        [Required] public List<ImageDTO> images { get; set; }
         public int? masterIndex { get; set; }
     }
 

@@ -37,9 +37,9 @@ export interface $Class {
 ";
 
         private const string _enum = @"
-export enum $Enum {
+export type $Enum = 
     $Vals
-}
+;
 ";
 
         private static void Main(string[] args)
@@ -93,7 +93,7 @@ export enum $Enum {
                 foreach (var enumDescription in enums)
                 {
                     var enumTs = _enum.Replace("$Enum", enumDescription.name)
-                        .Replace("$Vals", string.Join("\n    ", enumDescription.vals.Select((x, idx) => $"{x} = {idx},")));
+                        .Replace("$Vals", string.Join(" |\n    ", enumDescription.vals.Select(x => $"'{x}'")));
                     outputFile.Write(enumTs);
                 }
             }
