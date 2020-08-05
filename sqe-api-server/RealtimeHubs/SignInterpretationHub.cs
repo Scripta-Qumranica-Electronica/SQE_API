@@ -26,8 +26,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// Replaces the sign interpretation in the route with the submitted sign interpretation DTO.
         /// This is the only way to change a sign interpretation's character. The endpoint will create
         /// a new sign interpretation id with the submitted information, remove the old sign interpretation
-        /// id from the edition sign streams, and insert the new sign interpretation into its place its
-        /// place in the stream. 
+        /// id from the edition sign streams, and insert the new sign interpretation into its place in the stream. 
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation being replaced</param>
@@ -39,7 +38,29 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return null;            // await _catalogueService.CreateTextFragmentImagedObjectMatch(            //     await _userService.GetCurrentUserObjectAsync(null, true),            //     newMatch, clientId: Context.ConnectionId);              
+                return null; //Not Implemented              
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
+        /// by connecting all the deleted sign's next and previous nodes.
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
+        /// <returns>Ok or Error</returns>
+        [Authorize]
+        public async Task PostV1EditionsEditionIdSignInterpretationsSignInterpretationId(uint editionId, uint signInterpretationId)
+
+        {
+            try
+            {
+                null; //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -52,7 +73,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// Updates the commentary of a sign interpretation
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
-        /// <param name="signInterpretationId">ID of the sign interpretation being replaced</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
         /// <param name="string">The new commentary for the sign interpretation</param>
         /// <returns>Ok or Error</returns>
         [Authorize]
@@ -61,7 +82,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                null;            // await _catalogueService.CreateTextFragmentImagedObjectMatch(            //     await _userService.GetCurrentUserObjectAsync(null, true),            //     newMatch, clientId: Context.ConnectionId);              
+                null;  //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -83,7 +104,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return null;            // await _catalogueService.CreateTextFragmentImagedObjectMatch(            //     await _userService.GetCurrentUserObjectAsync(null, true),            //     newMatch, clientId: Context.ConnectionId);              
+                return null;  //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -107,7 +128,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return null;            // await _catalogueService.CreateTextFragmentImagedObjectMatch(            //     await _userService.GetCurrentUserObjectAsync(null, true),            //     newMatch, clientId: Context.ConnectionId);              
+                return null;  //Not Implemented              
             }
             catch (ApiException err)
             {
@@ -129,7 +150,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                null;            // await _catalogueService.CreateTextFragmentImagedObjectMatch(            //     await _userService.GetCurrentUserObjectAsync(null, true),            //     newMatch, clientId: Context.ConnectionId);              
+                null;  //Not Implemented              
             }
             catch (ApiException err)
             {

@@ -21,29 +21,39 @@ namespace SQE.API.Server.HttpControllers
         /// Replaces the sign interpretation in the route with the submitted sign interpretation DTO.
         /// This is the only way to change a sign interpretation's character. The endpoint will create
         /// a new sign interpretation id with the submitted information, remove the old sign interpretation
-        /// id from the edition sign streams, and insert the new sign interpretation into its place its
-        /// place in the stream. 
+        /// id from the edition sign streams, and insert the new sign interpretation into its place in the stream. 
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation being replaced</param>
         /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
         /// <returns>The new sign interpretation</returns>
         [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
-        public async Task<ActionResult<SignInterpretationDTO>> PostNewSignInterpretation([FromRoute] uint editionId,
+        public async Task<ActionResult<SignInterpretationDTO>> PostReplaceSignInterpretation([FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
             [FromBody] SignInterpretationCreateDTO newSignInterpretation)
         {
-            return null;
-            // await _catalogueService.CreateTextFragmentImagedObjectMatch(
-            //     await _userService.GetCurrentUserObjectAsync(null, true),
-            //     newMatch);
+            return null; //Not Implemented
+        }
+
+        /// <summary>
+        /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
+        /// by connecting all the deleted sign's next and previous nodes.
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
+        /// <returns>Ok or Error</returns>
+        [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
+        public async Task<ActionResult> DeleteSignInterpretation([FromRoute] uint editionId,
+            [FromRoute] uint signInterpretationId)
+        {
+            return null; //Not Implemented
         }
 
         /// <summary>
         /// Updates the commentary of a sign interpretation
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
-        /// <param name="signInterpretationId">ID of the sign interpretation being replaced</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
         /// <param name="string">The new commentary for the sign interpretation</param>
         /// <returns>Ok or Error</returns>
         [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/commentary")]
@@ -51,10 +61,7 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint signInterpretationId,
             [FromBody] string commentary)
         {
-            return null;
-            // await _catalogueService.CreateTextFragmentImagedObjectMatch(
-            //     await _userService.GetCurrentUserObjectAsync(null, true),
-            //     newMatch);
+            return null;  //Not Implemented
         }
 
         /// <summary>
@@ -65,14 +72,11 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="newSignInterpretationAttributes">Details of the attribute to be added</param>
         /// <returns>The updated sign interpretation</returns>
         [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes")]
-        public async Task<ActionResult<SignInterpretationDTO>> PutUpdatedSignInterpretationAttribute([FromRoute] uint editionId,
+        public async Task<ActionResult<SignInterpretationDTO>> PostSignInterpretationAttribute([FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
             [FromBody] InterpretationAttributeListDTO newSignInterpretationAttributes)
         {
-            return null;
-            // await _catalogueService.CreateTextFragmentImagedObjectMatch(
-            //     await _userService.GetCurrentUserObjectAsync(null, true),
-            //     newMatch);
+            return null;  //Not Implemented
         }
 
         /// <summary>
@@ -85,15 +89,12 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
         /// <returns>The updated sign interpretation</returns>
         [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeId}")]
-        public async Task<ActionResult<SignInterpretationDTO>> PutUpdatedSignInterpretationAttribute([FromRoute] uint editionId,
+        public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationAttribute([FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
             [FromRoute] uint attributeId,
             [FromBody] InterpretationAttributeDTO alteredSignInterpretationAttribute)
         {
-            return null;
-            // await _catalogueService.CreateTextFragmentImagedObjectMatch(
-            //     await _userService.GetCurrentUserObjectAsync(null, true),
-            //     newMatch);
+            return null;  //Not Implemented
         }
 
         /// <summary>
@@ -108,10 +109,7 @@ namespace SQE.API.Server.HttpControllers
             [FromRoute] uint signInterpretationId,
             [FromRoute] uint attributeId)
         {
-            return null;
-            // await _catalogueService.CreateTextFragmentImagedObjectMatch(
-            //     await _userService.GetCurrentUserObjectAsync(null, true),
-            //     newMatch);
+            return null;  //Not Implemented
         }
     }
 }
