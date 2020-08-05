@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,16 +20,64 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        /// Replaces the sign interpretation in the route with the submitted sign interpretation DTO.
-        /// This is the only way to change a sign interpretation's character. The endpoint will create
-        /// a new sign interpretation id with the submitted information, remove the old sign interpretation
-        /// id from the edition sign streams, and insert the new sign interpretation into its place in the stream. 
+        /// Retrieve a list of all possible attributes for an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being searched</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpGet("v1/editions/{editionId}/sign-interpretations-attributes")]
+        public async Task<ActionResult<AttributeListDTO>> GetAllEditionSignInterpretationAttributes([FromRoute] uint editionId)
+        {
+            throw new NotImplementedException(); //Not Implemented
+        }
+
+        /// <summary>
+        /// Retrieve a list of all possible attributes for an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpPost("v1/editions/{editionId}/sign-interpretations-attributes")]
+        public async Task<ActionResult<AttributeDTO>> CreateEditionSignInterpretationAttributes([FromRoute] uint editionId, [FromBody] CreateAttributeDTO newAttribute)
+        {
+            throw new NotImplementedException(); //Not Implemented
+        }
+
+        /// <summary>
+        /// Delete an attribute from an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <param name="attributeId">The ID of the attribute to delete</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpDelete("v1/editions/{editionId}/sign-interpretations-attributes/{attributeId}")]
+        public async Task<ActionResult> DeleteEditionSignInterpretationAttributes([FromRoute] uint editionId,
+            [FromRoute] uint attributeId)
+        {
+            throw new NotImplementedException(); //Not Implemented
+        }
+
+        /// <summary>
+        /// Change the details of an attribute in an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <param name="attributeId">The ID of the attribute to update</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpPut("v1/editions/{editionId}/sign-interpretations-attributes/{attributeId}")]
+        public async Task<ActionResult<AttributeDTO>> UpdateEditionSignInterpretationAttributes([FromRoute] uint editionId,
+            [FromRoute] uint attributeId, [FromBody] CreateAttributeDTO updatedAttribute)
+        {
+            throw new NotImplementedException(); //Not Implemented
+        }
+
+        /// <summary>
+        /// Creates a new sign interpretation 
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
-        /// <param name="signInterpretationId">ID of the sign interpretation being replaced</param>
         /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
         /// <returns>The new sign interpretation</returns>
-        [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
+        [HttpPost("v1/editions/{editionId}/sign-interpretations")]
         public async Task<ActionResult<SignInterpretationDTO>> PostReplaceSignInterpretation([FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
             [FromBody] SignInterpretationCreateDTO newSignInterpretation)

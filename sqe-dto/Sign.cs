@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
@@ -56,5 +57,38 @@ namespace SQE.API.DTO
     public class InterpretationAttributeListDTO
     {
         public List<InterpretationAttributeDTO> attributes { get; set; }
+    }
+
+    public enum AttributeTypes
+    {
+        Boolean,
+        Number,
+        String,
+    }
+
+    public class AttributeValueDTO
+    {
+        [Required] public string value { get; set; }
+        public string description { get; set; }
+        public string cssDirectives { get; set; }
+    }
+
+    public class CreateAttributeDTO
+    {
+        [Required] public string attributeName { get; set; }
+        [Required] public AttributeValueDTO[] values { get; set; }
+        public string description { get; set; }
+        [Required] public AttributeTypes attributeType { get; set; }
+    }
+
+    public class AttributeDTO : CreateArtefactDTO
+    {
+        [Required] public uint attributeId { get; set; }
+    }
+
+    public class AttributeListDTO
+    {
+        [Required]
+        public AttributeDTO[] attributes { get; set; }
     }
 }

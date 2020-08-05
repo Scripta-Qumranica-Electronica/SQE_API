@@ -7,6 +7,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
@@ -24,17 +25,99 @@ namespace SQE.API.Server.RealtimeHubs
     public partial class MainHub
     {
         /// <summary>
-        /// Replaces the sign interpretation in the route with the submitted sign interpretation DTO.
-        /// This is the only way to change a sign interpretation's character. The endpoint will create
-        /// a new sign interpretation id with the submitted information, remove the old sign interpretation
-        /// id from the edition sign streams, and insert the new sign interpretation into its place in the stream. 
+        /// Retrieve a list of all possible attributes for an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being searched</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [Authorize]
+        public async Task<AttributeListDTO> GetV1EditionsEditionIdSignInterpretationsAttributes(uint editionId)
+
+        {
+            try
+            {
+                throw new NotImplementedException(); //Not Implemented              
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Retrieve a list of all possible attributes for an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [Authorize]
+        public async Task<AttributeDTO> PostV1EditionsEditionIdSignInterpretationsAttributes(uint editionId, CreateAttributeDTO newAttribute)
+
+        {
+            try
+            {
+                throw new NotImplementedException(, clientId: Context.ConnectionId); //Not Implemented              
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Delete an attribute from an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <param name="attributeId">The ID of the attribute to delete</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [Authorize]
+        public async Task DeleteV1EditionsEditionIdSignInterpretationsAttributesAttributeId(uint editionId, uint attributeId)
+
+        {
+            try
+            {
+                throw new NotImplementedException(, clientId: Context.ConnectionId); //Not Implemented              
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Change the details of an attribute in an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <param name="attributeId">The ID of the attribute to update</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [Authorize]
+        public async Task<AttributeDTO> PutV1EditionsEditionIdSignInterpretationsAttributesAttributeId(uint editionId, uint attributeId, CreateAttributeDTO updatedAttribute)
+
+        {
+            try
+            {
+                throw new NotImplementedException(, clientId: Context.ConnectionId); //Not Implemented              
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Creates a new sign interpretation 
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
-        /// <param name="signInterpretationId">ID of the sign interpretation being replaced</param>
         /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
         /// <returns>The new sign interpretation</returns>
         [Authorize]
-        public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretationsSignInterpretationId(uint editionId, uint signInterpretationId, SignInterpretationCreateDTO newSignInterpretation)
+        public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretations(uint editionId, uint signInterpretationId, SignInterpretationCreateDTO newSignInterpretation)
 
         {
             try

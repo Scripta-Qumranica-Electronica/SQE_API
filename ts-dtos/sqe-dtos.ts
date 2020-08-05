@@ -377,6 +377,31 @@ export interface InterpretationAttributeCreateListDTO {
 export interface InterpretationAttributeListDTO {
     attributes: InterpretationAttributeDTO[];
 }
+export enum AttributeTypes {
+    Boolean = 0,
+    Number = 1,
+    String = 2
+}
+export interface AttributeValueDTO {
+    value: string;
+    description: string;
+    cssDirectives: string;
+}
+
+export interface CreateAttributeDTO {
+    attributeName: string;
+    values: AttributeValueDTO[];
+    description: string;
+    attributeType: AttributeTypes;
+}
+
+export interface AttributeDTO extends CreateArtefactDTO {
+    attributeId: number;
+}
+
+export interface AttributeListDTO {
+    attributes: AttributeDTO[];
+}
 
 export interface EditionScriptCollectionDTO {
     letters: CharacterShapeDTO[];

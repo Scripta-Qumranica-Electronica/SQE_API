@@ -74,6 +74,10 @@ import {
 	InterpretationAttributeDTO,
 	InterpretationAttributeCreateListDTO,
 	InterpretationAttributeListDTO,
+	AttributeValueDTO,
+	CreateAttributeDTO,
+	AttributeDTO,
+	AttributeListDTO,
 	EditionScriptCollectionDTO,
 	EditionScriptLinesDTO,
 	CharacterShapeDTO,
@@ -712,18 +716,56 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Replaces the sign interpretation in the route with the submitted sign interpretation DTO.
-	 * This is the only way to change a sign interpretation's character. The endpoint will create
-	 * a new sign interpretation id with the submitted information, remove the old sign interpretation
-	 * id from the edition sign streams, and insert the new sign interpretation into its place in the stream.
+	 * Retrieve a list of all possible attributes for an edition
+	 *
+	 * @param editionId - The ID of the edition being searched
+	 *
+	 */
+    public async getV1EditionsEditionIdSignInterpretationsAttributes(editionId: number): Promise<AttributeListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdSignInterpretationsAttributes', editionId);
+    }
+
+    /**
+	 * Retrieve a list of all possible attributes for an edition
+	 *
+	 * @param editionId - The ID of the edition being edited
+	 *
+	 */
+    public async postV1EditionsEditionIdSignInterpretationsAttributes(editionId: number, newAttribute: CreateAttributeDTO): Promise<AttributeDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsAttributes', editionId, newAttribute);
+    }
+
+    /**
+	 * Delete an attribute from an edition
+	 *
+	 * @param editionId - The ID of the edition being edited
+	 * @param attributeId - The ID of the attribute to delete
+	 *
+	 */
+    public async deleteV1EditionsEditionIdSignInterpretationsAttributesAttributeId(editionId: number, attributeId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsAttributesAttributeId', editionId, attributeId);
+    }
+
+    /**
+	 * Change the details of an attribute in an edition
+	 *
+	 * @param editionId - The ID of the edition being edited
+	 * @param attributeId - The ID of the attribute to update
+	 *
+	 */
+    public async putV1EditionsEditionIdSignInterpretationsAttributesAttributeId(editionId: number, attributeId: number, updatedAttribute: CreateAttributeDTO): Promise<AttributeDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsAttributesAttributeId', editionId, attributeId, updatedAttribute);
+    }
+
+    /**
+	 * Creates a new sign interpretation
 	 *
 	 * @param editionId - ID of the edition being changed
-	 * @param signInterpretationId - ID of the sign interpretation being replaced
 	 * @param newSignInterpretation - New sign interpretation data to be added
 	 * @returns - The new sign interpretation
 	 */
-    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number, newSignInterpretation: SignInterpretationCreateDTO): Promise<SignInterpretationDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId, newSignInterpretation);
+    public async postV1EditionsEditionIdSignInterpretations(editionId: number, signInterpretationId: number, newSignInterpretation: SignInterpretationCreateDTO): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretations', editionId, signInterpretationId, newSignInterpretation);
     }
 
     /**
