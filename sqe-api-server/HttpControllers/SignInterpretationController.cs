@@ -42,7 +42,7 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
         /// <returns>Ok or Error</returns>
-        [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
+        [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
         public async Task<ActionResult> DeleteSignInterpretation([FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId)
         {
@@ -74,7 +74,7 @@ namespace SQE.API.Server.HttpControllers
         [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes")]
         public async Task<ActionResult<SignInterpretationDTO>> PostSignInterpretationAttribute([FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
-            [FromBody] InterpretationAttributeListDTO newSignInterpretationAttributes)
+            [FromBody] InterpretationAttributeCreateListDTO newSignInterpretationAttributes)
         {
             return null;  //Not Implemented
         }
@@ -92,7 +92,7 @@ namespace SQE.API.Server.HttpControllers
         public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationAttribute([FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
             [FromRoute] uint attributeId,
-            [FromBody] InterpretationAttributeDTO alteredSignInterpretationAttribute)
+            [FromBody] InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
         {
             return null;  //Not Implemented
         }

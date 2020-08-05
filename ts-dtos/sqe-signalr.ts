@@ -70,7 +70,9 @@ import {
 	SignInterpretationBaseDTO,
 	SignInterpretationCreateDTO,
 	SignInterpretationDTO,
+	InterpretationAttributeCreateDTO,
 	InterpretationAttributeDTO,
+	InterpretationAttributeCreateListDTO,
 	InterpretationAttributeListDTO,
 	EditionScriptCollectionDTO,
 	EditionScriptLinesDTO,
@@ -732,8 +734,8 @@ export class SignalRUtilities {
 	 * @param signInterpretationId - ID of the sign interpretation being deleted
 	 * @returns - Ok or Error
 	 */
-    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number): Promise<void> {
-        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId);
+    public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId);
     }
 
     /**
@@ -756,7 +758,7 @@ export class SignalRUtilities {
 	 * @param newSignInterpretationAttributes - Details of the attribute to be added
 	 * @returns - The updated sign interpretation
 	 */
-    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(editionId: number, signInterpretationId: number, newSignInterpretationAttributes: InterpretationAttributeListDTO): Promise<SignInterpretationDTO> {
+    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(editionId: number, signInterpretationId: number, newSignInterpretationAttributes: InterpretationAttributeCreateListDTO): Promise<SignInterpretationDTO> {
         return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes', editionId, signInterpretationId, newSignInterpretationAttributes);
     }
 
@@ -770,7 +772,7 @@ export class SignalRUtilities {
 	 * @param alteredSignInterpretationAttribute - New details of the attribute
 	 * @returns - The updated sign interpretation
 	 */
-    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId(editionId: number, signInterpretationId: number, attributeId: number, alteredSignInterpretationAttribute: InterpretationAttributeDTO): Promise<SignInterpretationDTO> {
+    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId(editionId: number, signInterpretationId: number, attributeId: number, alteredSignInterpretationAttribute: InterpretationAttributeCreateDTO): Promise<SignInterpretationDTO> {
         return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId', editionId, signInterpretationId, attributeId, alteredSignInterpretationAttribute);
     }
 

@@ -343,7 +343,7 @@ export interface NextSignInterpretationDTO {
 
 export interface SignInterpretationBaseDTO {
     character: string;
-    attributes: InterpretationAttributeDTO[];
+    attributes: InterpretationAttributeCreateDTO[];
     rois: InterpretationRoiDTO[];
     commentary: string;
 }
@@ -354,16 +354,24 @@ export interface SignInterpretationCreateDTO extends SignInterpretationBaseDTO {
 
 export interface SignInterpretationDTO extends SignInterpretationBaseDTO {
     signInterpretationId: number;
+    attributes: InterpretationAttributeDTO[];
     nextSignInterpretations: NextSignInterpretationDTO[];
 }
-export interface InterpretationAttributeDTO {
+export interface InterpretationAttributeCreateDTO {
     interpretationAttributeId: number;
     sequence: number;
     attributeValueId: number;
     attributeValueString: string;
-    editorId: number;
     value: number;
     commentary: string;
+}
+
+export interface InterpretationAttributeDTO extends InterpretationAttributeCreateDTO {
+    editorId: number;
+}
+
+export interface InterpretationAttributeCreateListDTO {
+    attributes: InterpretationAttributeCreateDTO[];
 }
 
 export interface InterpretationAttributeListDTO {

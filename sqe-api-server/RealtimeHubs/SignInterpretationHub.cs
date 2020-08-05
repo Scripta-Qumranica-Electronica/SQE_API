@@ -55,7 +55,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
         /// <returns>Ok or Error</returns>
         [Authorize]
-        public async Task PostV1EditionsEditionIdSignInterpretationsSignInterpretationId(uint editionId, uint signInterpretationId)
+        public async Task DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(uint editionId, uint signInterpretationId)
 
         {
             try
@@ -99,7 +99,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="newSignInterpretationAttributes">Details of the attribute to be added</param>
         /// <returns>The updated sign interpretation</returns>
         [Authorize]
-        public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(uint editionId, uint signInterpretationId, InterpretationAttributeListDTO newSignInterpretationAttributes)
+        public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(uint editionId, uint signInterpretationId, InterpretationAttributeCreateListDTO newSignInterpretationAttributes)
 
         {
             try
@@ -123,7 +123,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
         /// <returns>The updated sign interpretation</returns>
         [Authorize]
-        public async Task<SignInterpretationDTO> PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId(uint editionId, uint signInterpretationId, uint attributeId, InterpretationAttributeDTO alteredSignInterpretationAttribute)
+        public async Task<SignInterpretationDTO> PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId(uint editionId, uint signInterpretationId, uint attributeId, InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
 
         {
             try
