@@ -216,7 +216,7 @@ export enum $Enum {
         /// <param name="attrs">The attributes of the property</param>
         /// <returns>A string representation of the Typescript type and a bool for the property's nullability</returns>
         /// <exception cref="Exception"></exception>
-        private static (string, bool) ConvertToTypescriptType(TypeSyntax type, SyntaxList<AttributeListSyntax> attrs)
+        private static (string typeName, bool nullable) ConvertToTypescriptType(TypeSyntax type, SyntaxList<AttributeListSyntax> attrs = default)
         {
             // Check the attributes for "required" properties
             var required = attrs.Any(x => x.ToString().Contains("Required"));
@@ -233,7 +233,7 @@ export enum $Enum {
                             var args = genType.TypeArgumentList.Arguments;
                             if (args.Count != 1)
                                 throw new Exception($"Array type has {args.Count} arguments");
-                            return ($"Array<{SimpleTypeToTypescript(args.FirstOrDefault().ToString()).typeName}>", !required);
+                            return ($"Array<{ConvertToTypescriptType(args.FirstOrDefault()).typeName}>", !required);
                         }
                     // Parse a Dictionary for Typescript
                     case "Dictionary":
