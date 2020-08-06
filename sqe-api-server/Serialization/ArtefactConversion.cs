@@ -40,7 +40,7 @@ namespace SQE.API.Server.Serialization
                 statusMessage = artefact.WorkStatusMessage,
 
                 name = artefact.Name,
-                side = artefact.CatalogSide == 0 ? ArtefactDTO.ArtefactSide.recto : ArtefactDTO.ArtefactSide.verso
+                side = artefact.CatalogSide == 0 ? SideDesignation.recto : SideDesignation.verso
             };
         }
 

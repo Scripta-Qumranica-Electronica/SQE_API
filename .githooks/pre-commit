@@ -81,7 +81,7 @@ cleanup_code
 generate_ts_from_dtos () {
     dotnet build Utilities/GenerateTypescriptDTOs
     dotnet build sqe-dto
-    dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp3.1/GenerateTypescriptDTOs.dll sqe-dto/bin/Debug/netcoreapp3.1/sqe-dto.dll ts-dtos/sqe-dtos.ts
+    dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp3.1/GenerateTypescriptDTOs.dll
     if test "$?" -ne 0; then 
         printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"

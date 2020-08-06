@@ -26,7 +26,7 @@ namespace SQE.API.DTO
 
     public class TranslateDTO
     {
-        public int x { get; set; }
-        public int y { get; set; }
+        [Required] public int x { get; set; }
+        [Required] public int y { get; set; }
     }
 }
