@@ -2,6 +2,21 @@ using System.Collections.Generic;
 
 namespace SQE.DatabaseAccess.Models
 {
+    public class SignEnterpretationAttributeEntry
+    {
+        public uint AttributeId { get; set; }
+        public string AttributeName { get; set; }
+        public string AttributeDescription { get; set; }
+        public uint AttributeCreator { get; set; }
+        public uint AttributeEditor { get; set; }
+        public uint AttributeValueId { get; set; }
+        public string AttributeStringValue { get; set; }
+        public string AttributeStringValueDescription { get; set; }
+        public uint AttributeValueCreator { get; set; }
+        public uint AttributeValueEditor { get; set; }
+        public string Css { get; set; }
+    }
+
     public class SignInterpretationAttributeData
     {
         public uint? SignInterpretationAttributeId { get; set; }

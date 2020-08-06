@@ -5,6 +5,7 @@ namespace SQE.DatabaseAccess.Models
     public class SignInterpretationCommentaryData
     {
         public uint? SignInterpretationCommentaryId { get; set; }
+        public uint? SignInterpretationCommentaryAuthorId { get; set; }
         public uint? SignInterpretationId { get; set; }
         public uint? AttributeId { get; set; }
         public string Commentary { get; set; }

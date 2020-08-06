@@ -20,18 +20,20 @@ namespace SQE.API.Server.RealtimeHubs
         private readonly IEditionService _editionService;
         private readonly ITextService _textService;
         private readonly IArtefactService _artefactService;
+        private readonly ISignInterpretationService _signInterpretationService;
         private readonly IImagedObjectService _imagedObjectService;
         private readonly IImageService _imageService;
         private readonly ICatalogService _catalogueService;
         private readonly IUtilService _utilService;
 
-        public MainHub(IRoiService roiService, IUserService userService, IEditionService editionService, ITextService textService, IArtefactService artefactService, IImagedObjectService imagedObjectService, IImageService imageService, ICatalogService catalogueService, IUtilService utilService)
+        public MainHub(IRoiService roiService, IUserService userService, IEditionService editionService, ITextService textService, IArtefactService artefactService, ISignInterpretationService signInterpretationService, IImagedObjectService imagedObjectService, IImageService imageService, ICatalogService catalogueService, IUtilService utilService)
         {
             _roiService = roiService;
             _userService = userService;
             _editionService = editionService;
             _textService = textService;
             _artefactService = artefactService;
+            _signInterpretationService = signInterpretationService;
             _imagedObjectService = imagedObjectService;
             _imageService = imageService;
             _catalogueService = catalogueService;

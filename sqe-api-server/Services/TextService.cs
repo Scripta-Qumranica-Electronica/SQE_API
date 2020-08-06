@@ -219,6 +219,7 @@ namespace SQE.API.Server.Services
                                                                 signInterpretationId =
                                                                     a.SignInterpretationId.GetValueOrDefault(),
                                                                 character = a.Character,
+                                                                //editorID = 
 
                                                                 attributes = a.Attributes.Select(
                                                                         b => new InterpretationAttributeDTO

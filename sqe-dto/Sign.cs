@@ -14,13 +14,17 @@ namespace SQE.API.DTO
         [Required] public uint editorId { get; set; }
     }
 
-    public class SignInterpretationBaseDTO
+    public class SignInterpretationCreateDTO
     {
-        [Required] public uint signInterpretationId { get; set; }
         public string character { get; set; }
         [Required] public List<InterpretationAttributeDTO> attributes { get; set; }
         [Required] public List<InterpretationRoiDTO> rois { get; set; }
         [Required] public List<NextSignInterpretationDTO> nextSignInterpretations { get; set; }
+    }
+
+    public class SignInterpretationDTO : SignInterpretationCreateDTO
+    {
+        [Required] public uint signInterpretationId { get; set; }
     }
 
     public class InterpretationAttributeCreateDTO
@@ -29,14 +33,13 @@ namespace SQE.API.DTO
         public byte sequence { get; set; }
         [Required] public uint attributeValueId { get; set; }
         [Required] public string attributeValueString { get; set; }
-        [Required] public uint editorId { get; set; }
         public float value { get; set; }
         public string commentary { get; set; }
     }
 
     public class InterpretationAttributeDTO : InterpretationAttributeCreateDTO
     {
-        public uint editorId { get; set; }
+        [Required] public uint editorId { get; set; }
     }
 
     public class InterpretationAttributeCreateListDTO
@@ -49,36 +52,41 @@ namespace SQE.API.DTO
         public List<InterpretationAttributeDTO> attributes { get; set; }
     }
 
-    public enum AttributeTypes
-    {
-        Boolean,
-        Number,
-        String,
-    }
-
-    public class AttributeValueDTO
+    public class CreateAttributeValueDTO
     {
         [Required] public string value { get; set; }
         public string description { get; set; }
         public string cssDirectives { get; set; }
     }
 
-    public class CreateAttributeDTO
+    public class AttributeValueDTO : CreateAttributeValueDTO
     {
-        [Required] public string attributeName { get; set; }
-        [Required] public AttributeValueDTO[] values { get; set; }
-        public string description { get; set; }
-        [Required] public AttributeTypes attributeType { get; set; }
+        [Required] public uint id { get; set; }
+        [Required] public uint creatorId { get; set; }
+        [Required] public uint editorId { get; set; }
     }
 
-    public class AttributeDTO : CreateArtefactDTO
+    public class AttributeBaseDTO
+    {
+        [Required] public string attributeName { get; set; }
+        public string description { get; set; }
+    }
+
+    public class CreateAttributeDTO : AttributeBaseDTO
+    {
+        [Required] public CreateAttributeValueDTO[] values { get; set; }
+    }
+
+    public class AttributeDTO : AttributeBaseDTO
     {
         [Required] public uint attributeId { get; set; }
+        [Required] public AttributeValueDTO[] values { get; set; }
+        [Required] public uint creatorId { get; set; }
+        [Required] public uint editorId { get; set; }
     }
 
     public class AttributeListDTO
     {
-        [Required]
-        public AttributeDTO[] attributes { get; set; }
+        [Required] public AttributeDTO[] attributes { get; set; }
     }
 }

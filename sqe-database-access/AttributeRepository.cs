@@ -12,6 +12,7 @@ namespace SQE.DatabaseAccess
 {
     public interface IAttributeRepository
     {
+        Task<IEnumerable<SignEnterpretationAttributeEntry>> GetAllEditionAttributesAsync(UserInfo editionUser);
         Task<List<SignInterpretationAttributeData>> CreateAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes);
@@ -60,6 +61,16 @@ namespace SQE.DatabaseAccess
         public AttributeRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
             _databaseWriter = databaseWriter;
+        }
+
+        public async Task<IEnumerable<SignEnterpretationAttributeEntry>> GetAllEditionAttributesAsync(UserInfo editionUser)
+        {
+            using (var connection = OpenConnection())
+            {
+                return await connection.QueryAsync<SignEnterpretationAttributeEntry>(
+                    GetAllEditionSignInterpretationAttributesQuery.GetQuery,
+                    new { editionUser.EditionId });
+            }
         }
 
         /// <summary>

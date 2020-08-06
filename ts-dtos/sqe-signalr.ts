@@ -29,8 +29,18 @@ import {
 	CreateTextFragmentDTO,
 	SignDTO,
 	NextSignInterpretationDTO,
+	SignInterpretationCreateDTO,
 	SignInterpretationDTO,
+	InterpretationAttributeCreateDTO,
 	InterpretationAttributeDTO,
+	InterpretationAttributeCreateListDTO,
+	InterpretationAttributeListDTO,
+	CreateAttributeValueDTO,
+	AttributeValueDTO,
+	AttributeBaseDTO,
+	CreateAttributeDTO,
+	AttributeDTO,
+	AttributeListDTO,
 	PlacementDTO,
 	TranslateDTO,
 	SimpleImageDTO,
@@ -713,111 +723,6 @@ export class SignalRUtilities {
 	 */
     public async getV1EditionsEditionIdSignInterpretationsAttributes(editionId: number): Promise<AttributeListDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdSignInterpretationsAttributes', editionId);
-    }
-
-    /**
-	 * Retrieve a list of all possible attributes for an edition
-	 *
-	 * @param editionId - The ID of the edition being edited
-	 *
-	 */
-    public async postV1EditionsEditionIdSignInterpretationsAttributes(editionId: number, newAttribute: CreateAttributeDTO): Promise<AttributeDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsAttributes', editionId, newAttribute);
-    }
-
-    /**
-	 * Delete an attribute from an edition
-	 *
-	 * @param editionId - The ID of the edition being edited
-	 * @param attributeId - The ID of the attribute to delete
-	 *
-	 */
-    public async deleteV1EditionsEditionIdSignInterpretationsAttributesAttributeId(editionId: number, attributeId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsAttributesAttributeId', editionId, attributeId);
-    }
-
-    /**
-	 * Change the details of an attribute in an edition
-	 *
-	 * @param editionId - The ID of the edition being edited
-	 * @param attributeId - The ID of the attribute to update
-	 *
-	 */
-    public async putV1EditionsEditionIdSignInterpretationsAttributesAttributeId(editionId: number, attributeId: number, updatedAttribute: CreateAttributeDTO): Promise<AttributeDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsAttributesAttributeId', editionId, attributeId, updatedAttribute);
-    }
-
-    /**
-	 * Creates a new sign interpretation
-	 *
-	 * @param editionId - ID of the edition being changed
-	 * @param newSignInterpretation - New sign interpretation data to be added
-	 * @returns - The new sign interpretation
-	 */
-    public async postV1EditionsEditionIdSignInterpretations(editionId: number, signInterpretationId: number, newSignInterpretation: SignInterpretationCreateDTO): Promise<SignInterpretationDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretations', editionId, signInterpretationId, newSignInterpretation);
-    }
-
-    /**
-	 * Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-	 * by connecting all the deleted sign's next and previous nodes.
-	 *
-	 * @param editionId - ID of the edition being changed
-	 * @param signInterpretationId - ID of the sign interpretation being deleted
-	 * @returns - Ok or Error
-	 */
-    public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId);
-    }
-
-    /**
-	 * Updates the commentary of a sign interpretation
-	 *
-	 * @param editionId - ID of the edition being changed
-	 * @param signInterpretationId - ID of the sign interpretation whose commentary is being changed
-	 * @param string - The new commentary for the sign interpretation
-	 * @returns - Ok or Error
-	 */
-    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationIdCommentary(editionId: number, signInterpretationId: number, commentary: string): Promise<void> {
-        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdCommentary', editionId, signInterpretationId, commentary);
-    }
-
-    /**
-	 * This adds a new attribute to the specified sign interpretation.
-	 *
-	 * @param editionId - ID of the edition being changed
-	 * @param signInterpretationId - ID of the sign interpretation for adding a new attribute
-	 * @param newSignInterpretationAttributes - Details of the attribute to be added
-	 * @returns - The updated sign interpretation
-	 */
-    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(editionId: number, signInterpretationId: number, newSignInterpretationAttributes: InterpretationAttributeCreateListDTO): Promise<SignInterpretationDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes', editionId, signInterpretationId, newSignInterpretationAttributes);
-    }
-
-    /**
-	 * This changes the values of the specified sign interpretation attribute,
-	 * mainly used to change commentary.
-	 *
-	 * @param editionId - ID of the edition being changed
-	 * @param signInterpretationId - ID of the sign interpretation being altered
-	 * @param attributeId - Id of the attribute to be altered
-	 * @param alteredSignInterpretationAttribute - New details of the attribute
-	 * @returns - The updated sign interpretation
-	 */
-    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId(editionId: number, signInterpretationId: number, attributeId: number, alteredSignInterpretationAttribute: InterpretationAttributeCreateDTO): Promise<SignInterpretationDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId', editionId, signInterpretationId, attributeId, alteredSignInterpretationAttribute);
-    }
-
-    /**
-	 * This deletes the specified attribute from the specified sign interpretation.
-	 *
-	 * @param editionId - ID of the edition being changed
-	 * @param signInterpretationId - ID of the sign interpretation being alteres
-	 * @param attributeId - Id of the attribute being removed
-	 * @returns - Ok or Error
-	 */
-    public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId(editionId: number, signInterpretationId: number, attributeId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeId', editionId, signInterpretationId, attributeId);
     }
 
     /**

@@ -118,21 +118,68 @@ export interface NextSignInterpretationDTO {
     editorId: number;
 }
 
-export interface SignInterpretationDTO {
-    signInterpretationId: number;
+export interface SignInterpretationCreateDTO {
     character?: string;
     attributes: Array<InterpretationAttributeDTO>;
     rois: Array<InterpretationRoiDTO>;
     nextSignInterpretations: Array<NextSignInterpretationDTO>;
 }
 
-export interface InterpretationAttributeDTO {
+export interface SignInterpretationDTO extends SignInterpretationCreateDTO {
+    signInterpretationId: number;
+}
+
+export interface InterpretationAttributeCreateDTO {
     interpretationAttributeId: number;
     sequence: number;
     attributeValueId: number;
     attributeValueString: string;
-    editorId: number;
     value: number;
+    commentary?: string;
+}
+
+export interface InterpretationAttributeDTO extends InterpretationAttributeCreateDTO {
+    editorId: number;
+}
+
+export interface InterpretationAttributeCreateListDTO {
+    attributes?: Array<InterpretationAttributeCreateDTO>;
+}
+
+export interface InterpretationAttributeListDTO {
+    attributes?: Array<InterpretationAttributeDTO>;
+}
+
+export interface CreateAttributeValueDTO {
+    value: string;
+    description?: string;
+    cssDirectives?: string;
+}
+
+export interface AttributeValueDTO extends CreateAttributeValueDTO {
+    id: number;
+    creatorId: number;
+    editorId: number;
+}
+
+export interface AttributeBaseDTO {
+    attributeName: string;
+    description?: string;
+}
+
+export interface CreateAttributeDTO extends AttributeBaseDTO {
+    values: Array<CreateAttributeValueDTO>;
+}
+
+export interface AttributeDTO extends AttributeBaseDTO {
+    attributeId: number;
+    values: Array<AttributeValueDTO>;
+    creatorId: number;
+    editorId: number;
+}
+
+export interface AttributeListDTO {
+    attributes: Array<AttributeDTO>;
 }
 
 export interface PlacementDTO {
