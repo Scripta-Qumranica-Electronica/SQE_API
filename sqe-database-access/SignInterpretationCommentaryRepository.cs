@@ -28,14 +28,14 @@ namespace SQE.DatabaseAccess
         Task<List<uint>> DeleteAllCommentariesForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
 
-        Task<SignInterpretationCommentaryDataSearchData> GetSignInterpretationCommentaryByIdAsync(UserInfo editionUser,
+        Task<SignInterpretationCommentaryData> GetSignInterpretationCommentaryByIdAsync(UserInfo editionUser,
             uint signInterpretationCommentaryId);
 
-        Task<List<SignInterpretationCommentaryDataSearchData>> GetSignInterpretationCommentariesByDataAsync(
+        Task<IEnumerable<SignInterpretationCommentaryData>> GetSignInterpretationCommentariesByDataAsync(
             UserInfo editionUser,
             SignInterpretationCommentaryDataSearchData dataSearchData);
 
-        Task<List<SignInterpretationCommentaryDataSearchData>> GetSignInterpretationCommentariesByInterpretationId(
+        Task<IEnumerable<SignInterpretationCommentaryData>> GetSignInterpretationCommentariesByInterpretationId(
             UserInfo editionUser,
             uint signInterpretationId);
 
@@ -154,7 +154,7 @@ namespace SQE.DatabaseAccess
         /// <param name="signInterpretationCommentaryId">Id of the commentary to be retrieved</param>
         /// <returns>Sign interpretation commentary with the given id</returns>
         /// <exception cref="DataNotFoundException"></exception>
-        public async Task<SignInterpretationCommentaryDataSearchData> GetSignInterpretationCommentaryByIdAsync(
+        public async Task<SignInterpretationCommentaryData> GetSignInterpretationCommentaryByIdAsync(
             UserInfo editionUser,
             uint signInterpretationCommentaryId)
         {
@@ -167,7 +167,7 @@ namespace SQE.DatabaseAccess
                 editionUser,
                 searchData);
 
-            if (result.Count != 1)
+            if (result.Count() != 1)
                 throw new StandardExceptions.DataNotFoundException(
                     "sign interpretation commentary",
                     signInterpretationCommentaryId
@@ -181,7 +181,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="dataSearchData">Sign interpretation commentary search data object</param>
         /// <returns>List of sign interpretation commentary data - if nothing had been found the list is empty.</returns>
-        public async Task<List<SignInterpretationCommentaryDataSearchData>>
+        public async Task<IEnumerable<SignInterpretationCommentaryData>>
             GetSignInterpretationCommentariesByDataAsync(
                 UserInfo editionUser,
                 SignInterpretationCommentaryDataSearchData dataSearchData)
@@ -191,10 +191,9 @@ namespace SQE.DatabaseAccess
                 dataSearchData.getSearchParameterString());
             using (var connection = OpenConnection())
             {
-                var result = await connection.QueryAsync<SignInterpretationCommentaryDataSearchData>(
+                return await connection.QueryAsync<SignInterpretationCommentaryData>(
                     query,
                     new { editionUser.EditionId });
-                return result == null ? new List<SignInterpretationCommentaryDataSearchData>() : result.ToList();
             }
         }
 
@@ -204,7 +203,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>List of sign interpretation commentaries</returns>
-        public async Task<List<SignInterpretationCommentaryDataSearchData>>
+        public async Task<IEnumerable<SignInterpretationCommentaryData>>
             GetSignInterpretationCommentariesByInterpretationId(
                 UserInfo editionUser,
                 uint signInterpretationId)

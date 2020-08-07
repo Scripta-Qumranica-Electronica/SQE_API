@@ -5,7 +5,7 @@ namespace SQE.DatabaseAccess.Models
     public class SignInterpretationData
     {
         public uint? SignInterpretationId { get; set; }
-        public List<uint> WordIds { get; set; } = new List<uint>();
+        public List<uint> SignStreamSectionIds { get; set; } = new List<uint>();
 
         public List<SignInterpretationAttributeData> Attributes { get; set; } =
             new List<SignInterpretationAttributeData>();
@@ -20,17 +20,25 @@ namespace SQE.DatabaseAccess.Models
             new List<SignInterpretationRoiData>();
 
         public string Character { get; set; }
+        public bool IsVariant { get; set; }
     }
 
     public class NextSignInterpretation
     {
-        public readonly uint NextSignInterpretationId;
-        public readonly uint SignSequenceAuthor;
+        public uint NextSignInterpretationId { get; set; }
+        public uint SignSequenceAuthor { get; set; }
+        public bool IsMain { get; set; }
+        public uint PositionCreatorId { get; set; }
+        public uint PositionEditorId { get; set; }
 
         public NextSignInterpretation(uint nextSignInterpretationId, uint signSequenceAuthor)
         {
             NextSignInterpretationId = nextSignInterpretationId;
             SignSequenceAuthor = signSequenceAuthor;
+        }
+
+        public NextSignInterpretation()
+        {
         }
 
         // The override for Equals and GetHashCode methods here enable the

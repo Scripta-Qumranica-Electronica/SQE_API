@@ -11,15 +11,18 @@ namespace SQE.API.DTO
     public class NextSignInterpretationDTO
     {
         [Required] public uint nextSignInterpretationId { get; set; }
+        [Required] public uint creatorId { get; set; }
         [Required] public uint editorId { get; set; }
     }
 
     public class SignInterpretationCreateDTO
     {
         public string character { get; set; }
-        [Required] public List<InterpretationAttributeDTO> attributes { get; set; }
-        [Required] public List<InterpretationRoiDTO> rois { get; set; }
-        [Required] public List<NextSignInterpretationDTO> nextSignInterpretations { get; set; }
+        [Required] public InterpretationAttributeDTO[] attributes { get; set; }
+        [Required] public InterpretationRoiDTO[] rois { get; set; }
+        [Required] public NextSignInterpretationDTO[] nextSignInterpretations { get; set; }
+        [Required] public bool isVariant { get; set; }
+        public CommentaryDTO commentary { get; set; }
     }
 
     public class SignInterpretationDTO : SignInterpretationCreateDTO
@@ -27,19 +30,26 @@ namespace SQE.API.DTO
         [Required] public uint signInterpretationId { get; set; }
     }
 
-    public class InterpretationAttributeCreateDTO
+    public class InterpretationAttributeBaseDTO
     {
-        [Required] public uint interpretationAttributeId { get; set; }
         public byte sequence { get; set; }
+        [Required] public uint attributeId { get; set; }
         [Required] public uint attributeValueId { get; set; }
-        [Required] public string attributeValueString { get; set; }
         public float value { get; set; }
+    }
+
+    public class InterpretationAttributeCreateDTO : InterpretationAttributeBaseDTO
+    {
         public string commentary { get; set; }
     }
 
-    public class InterpretationAttributeDTO : InterpretationAttributeCreateDTO
+    public class InterpretationAttributeDTO : InterpretationAttributeBaseDTO
     {
+        [Required] public uint interpretationAttributeId { get; set; }
+        [Required] public string attributeValueString { get; set; }
+        [Required] public uint creatorId { get; set; }
         [Required] public uint editorId { get; set; }
+        public CommentaryDTO commentary { get; set; }
     }
 
     public class InterpretationAttributeCreateListDTO

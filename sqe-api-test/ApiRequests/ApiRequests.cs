@@ -356,6 +356,39 @@ namespace SQE.ApiTest.ApiRequests
     }
 
     /// <summary>
+    ///     Subclass of EditionRequestObject for all requests made on a line
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class SignInterpretationRequestObject<Tinput, Toutput, TListener> : EditionRequestObject<Tinput, Toutput, TListener>
+    {
+        public readonly uint signInterpretationId;
+
+        /// <summary>
+        ///     Provides an TextFragmentRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="lineId">The id of the line to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public SignInterpretationRequestObject(uint editionId, uint signInterpretationId, Tinput payload) : base(editionId, null, payload)
+        {
+            this.signInterpretationId = signInterpretationId;
+        }
+
+        protected override string HttpPath()
+        {
+            return base.HttpPath().Replace("/sign-interpretation-id", $"/{signInterpretationId.ToString()}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, signInterpretationId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, signInterpretationId, payload);
+        }
+    }
+
+    /// <summary>
     ///     Subclass of EditionRequestObject for all requests made on an artefact
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>

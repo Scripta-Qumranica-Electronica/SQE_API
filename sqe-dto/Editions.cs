@@ -113,6 +113,13 @@ namespace SQE.API.DTO
         [Required] public uint editorId { get; set; }
     }
 
+    public class CommentaryDTO
+    {
+        [Required] public uint creatorId { get; set; }
+        [Required] public uint editorId { get; set; }
+        [Required] public string commentary { get; set; }
+    }
+
 
     /// <summary>
     ///     This is a list of all entities in an edition, including the edition itself.

@@ -58,8 +58,8 @@ namespace SQE.API.Server.Serialization
                 {
                     signInterpretationId = x.SignInterpretationId,
                     character = x.SignInterpretationCharacter.ToString(),
-                    attributes = x.Attributes.Select(y => y.ToDTO()).ToList(),
-                    nextSignInterpretations = x.NextCharacters.Select(z => z.ToDTO()).ToList(),
+                    attributes = x.Attributes.Select(y => y.ToDTO()).ToArray(),
+                    nextSignInterpretations = x.NextCharacters.Select(z => z.ToDTO()).ToArray(),
                     rois = x.Rois.Take(1).Select(a => new InterpretationRoiDTO
                     {
                         artefactId = sac.ArtefactId,
@@ -81,7 +81,7 @@ namespace SQE.API.Server.Serialization
                                 // TODO: make sure all values are valid in the database, then probably remove this check
                                 .Where(i => i.IsValid && !i.IsEmpty)
                                 .ToList()).Union()) // Union applies the CascadedPolygonUnion
-                    }).ToList() // The rois attribute must be a list
+                    }).ToArray() // The rois attribute must be a list
                 }).ToList() // The characters attribute is a list
             };
         }

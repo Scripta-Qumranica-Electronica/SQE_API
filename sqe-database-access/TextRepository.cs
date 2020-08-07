@@ -795,7 +795,7 @@ namespace SQE.DatabaseAccess
                         if (lastSignInterpretation.Attributes.Count == 0 ||
                             lastSignInterpretation.Attributes.Last().AttributeValueId != charAttribute.AttributeValueId)
                         {
-                            charAttribute.AttributeString = attributeDict.TryGetValue(
+                            charAttribute.AttributeValueString = attributeDict.TryGetValue(
                                 charAttribute.AttributeValueId.GetValueOrDefault(),
                                 out var val
                             )
@@ -816,7 +816,7 @@ namespace SQE.DatabaseAccess
                             return newManuscript ? manuscript : null;
 
                         if (wordId != null)
-                            lastSignInterpretation.WordIds.Add(wordId.Value);
+                            lastSignInterpretation.SignStreamSectionIds.Add(wordId.Value);
                         return newManuscript ? manuscript : null;
                     },
                     new { terminators.StartId, terminators.EndId, editionUser.EditionId },

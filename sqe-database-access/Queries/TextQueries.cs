@@ -71,7 +71,7 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 		sign_interpretation_attribute.sign_interpretation_attribute_id AS SignInterpretationAttributeId,
 		sign_interpretation_attribute.attribute_value_id AS AttributeValueId,
 		sign_interpretation_attribute.sequence AS Sequence,
-		sign_interpretation_attribute_author.user_id AS SignInterpretationAttributeAuthor,
+		sign_interpretation_attribute_author.user_id AS SignInterpretationAttributeEditorId,
 		sign_interpretation_attribute.numeric_value AS NumericValue,
 
 		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,

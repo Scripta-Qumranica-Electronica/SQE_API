@@ -31,6 +31,7 @@ import {
 	NextSignInterpretationDTO,
 	SignInterpretationCreateDTO,
 	SignInterpretationDTO,
+	InterpretationAttributeBaseDTO,
 	InterpretationAttributeCreateDTO,
 	InterpretationAttributeDTO,
 	InterpretationAttributeCreateListDTO,
@@ -79,6 +80,7 @@ import {
 	TextEditionDTO,
 	DeleteTokenDTO,
 	DeleteEditionEntityDTO,
+	CommentaryDTO,
 	DeleteDTO,
 	EditionUpdateRequestDTO,
 	EditionCopyDTO,
@@ -723,6 +725,29 @@ export class SignalRUtilities {
 	 */
     public async getV1EditionsEditionIdSignInterpretationsAttributes(editionId: number): Promise<AttributeListDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdSignInterpretationsAttributes', editionId);
+    }
+
+    /**
+	 * Retrieve the details of a sign interpretation in an edition
+	 *
+	 * @param editionId - The ID of the edition being searched
+	 * @param signInterpretationId - The desired sign interpretation id
+	 *
+	 */
+    public async getV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId);
+    }
+
+    /**
+	 * This adds a new attribute to the specified sign interpretation.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation for adding a new attribute
+	 * @param newSignInterpretationAttributes - Details of the attribute to be added
+	 * @returns - The updated sign interpretation
+	 */
+    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(editionId: number, signInterpretationId: number, newSignInterpretationAttributes: InterpretationAttributeCreateDTO): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes', editionId, signInterpretationId, newSignInterpretationAttributes);
     }
 
     /**

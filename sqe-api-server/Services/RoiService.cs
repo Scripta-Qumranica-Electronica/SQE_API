@@ -70,7 +70,7 @@ namespace SQE.API.Server.Services
             return new InterpretationRoiDTO
             {
                 artefactId = roi.ArtefactId.GetValueOrDefault(),
-                editorId = roi.SignInterpretationRoiAuthor.GetValueOrDefault(),
+                editorId = roi.SignInterpretationRoiEditorId.GetValueOrDefault(),
                 exceptional = roi.Exceptional.GetValueOrDefault(),
                 interpretationRoiId = roi.SignInterpretationRoiId.GetValueOrDefault(),
                 translate = new TranslateDTO
@@ -94,7 +94,7 @@ namespace SQE.API.Server.Services
                         x => new InterpretationRoiDTO
                         {
                             artefactId = x.ArtefactId.GetValueOrDefault(),
-                            editorId = x.SignInterpretationRoiAuthor.GetValueOrDefault(),
+                            editorId = x.SignInterpretationRoiEditorId.GetValueOrDefault(),
                             exceptional = x.Exceptional.GetValueOrDefault(),
                             interpretationRoiId = x.SignInterpretationRoiId.GetValueOrDefault(),
                             translate = new TranslateDTO
@@ -296,7 +296,7 @@ namespace SQE.API.Server.Services
             return new InterpretationRoiDTO
             {
                 artefactId = x.ArtefactId.GetValueOrDefault(),
-                editorId = x.SignInterpretationRoiAuthor.GetValueOrDefault(),
+                editorId = x.SignInterpretationRoiEditorId.GetValueOrDefault(),
                 exceptional = x.Exceptional.GetValueOrDefault(),
                 interpretationRoiId = x.SignInterpretationRoiId.GetValueOrDefault(),
                 signInterpretationId = x.SignInterpretationId.GetValueOrDefault(),
@@ -316,7 +316,7 @@ namespace SQE.API.Server.Services
             return new UpdatedInterpretationRoiDTO
             {
                 artefactId = x.ArtefactId.GetValueOrDefault(),
-                editorId = x.SignInterpretationRoiAuthor.GetValueOrDefault(),
+                editorId = x.SignInterpretationRoiEditorId.GetValueOrDefault(),
                 exceptional = x.Exceptional.GetValueOrDefault(),
                 interpretationRoiId = x.SignInterpretationRoiId.GetValueOrDefault(),
                 oldInterpretationRoiId = x.OldSignInterpretationRoiId,

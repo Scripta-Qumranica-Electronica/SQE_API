@@ -33,6 +33,20 @@ namespace SQE.API.Server.HttpControllers
             return await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(await _userService.GetCurrentUserObjectAsync(editionId, false)); //Not Implemented
         }
 
+        /// <summary>
+        /// Retrieve the details of a sign interpretation in an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being searched</param>
+        /// <param name="signInterpretationId">The desired sign interpretation id</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [AllowAnonymous]
+        [HttpGet("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
+        public async Task<ActionResult<SignInterpretationDTO>> GetAllEditionSignInterpretationAttributes([FromRoute] uint editionId, uint signInterpretationId)
+        {
+            return await _signInterpretationService.GetEditionSignInterpretationAsync(await _userService.GetCurrentUserObjectAsync(editionId, false), signInterpretationId); //Not Implemented
+        }
+
         // /// <summary>
         // /// Create a new attribute for an edition
         // /// </summary>
@@ -82,7 +96,7 @@ namespace SQE.API.Server.HttpControllers
         // /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
         // /// <returns>The new sign interpretation</returns>
         // [HttpPost("v1/editions/{editionId}/sign-interpretations")]
-        // public async Task<ActionResult<SignInterpretationDTO>> PostReplaceSignInterpretation([FromRoute] uint editionId,
+        // public async Task<ActionResult<SignInterpretationDTO>> PostNewSignInterpretation([FromRoute] uint editionId,
         //     [FromBody] SignInterpretationCreateDTO newSignInterpretation)
         // {
         //     throw new NotImplementedException(); //Not Implemented
@@ -116,22 +130,25 @@ namespace SQE.API.Server.HttpControllers
         // {
         //     throw new NotImplementedException();  //Not Implemented
         // }
-        //
-        // /// <summary>
-        // /// This adds a new attribute to the specified sign interpretation.
-        // /// </summary>
-        // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="signInterpretationId">ID of the sign interpretation for adding a new attribute</param>
-        // /// <param name="newSignInterpretationAttributes">Details of the attribute to be added</param>
-        // /// <returns>The updated sign interpretation</returns>
-        // [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes")]
-        // public async Task<ActionResult<SignInterpretationDTO>> PostSignInterpretationAttribute([FromRoute] uint editionId,
-        //     [FromRoute] uint signInterpretationId,
-        //     [FromBody] InterpretationAttributeCreateListDTO newSignInterpretationAttributes)
-        // {
-        //     throw new NotImplementedException();  //Not Implemented
-        // }
-        //
+
+        /// <summary>
+        /// This adds a new attribute to the specified sign interpretation.
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation for adding a new attribute</param>
+        /// <param name="newSignInterpretationAttributes">Details of the attribute to be added</param>
+        /// <returns>The updated sign interpretation</returns>
+        [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes")]
+        public async Task<ActionResult<SignInterpretationDTO>> PostSignInterpretationAttribute([FromRoute] uint editionId,
+            [FromRoute] uint signInterpretationId,
+            [FromBody] InterpretationAttributeCreateDTO newSignInterpretationAttributes)
+        {
+            return await _signInterpretationService.CreateSignInterpretationAttributeAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, false),
+                signInterpretationId,
+                newSignInterpretationAttributes);  //Not Implemented
+        }
+
         // /// <summary>
         // /// This changes the values of the specified sign interpretation attribute,
         // /// mainly used to change commentary.

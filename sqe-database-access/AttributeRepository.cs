@@ -12,10 +12,13 @@ namespace SQE.DatabaseAccess
 {
     public interface IAttributeRepository
     {
-        Task<IEnumerable<SignEnterpretationAttributeEntry>> GetAllEditionAttributesAsync(UserInfo editionUser);
+        Task<IEnumerable<SignInterpretationAttributeEntry>> GetAllEditionAttributesAsync(UserInfo editionUser);
         Task<List<SignInterpretationAttributeData>> CreateAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes);
+        Task<List<SignInterpretationAttributeData>> CreateAttributesAsync(UserInfo editionUser,
+            uint signInterpretationId,
+            SignInterpretationAttributeData newAttribute);
 
         Task<List<SignInterpretationAttributeData>> UpdateAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
@@ -63,11 +66,11 @@ namespace SQE.DatabaseAccess
             _databaseWriter = databaseWriter;
         }
 
-        public async Task<IEnumerable<SignEnterpretationAttributeEntry>> GetAllEditionAttributesAsync(UserInfo editionUser)
+        public async Task<IEnumerable<SignInterpretationAttributeEntry>> GetAllEditionAttributesAsync(UserInfo editionUser)
         {
             using (var connection = OpenConnection())
             {
-                return await connection.QueryAsync<SignEnterpretationAttributeEntry>(
+                return await connection.QueryAsync<SignInterpretationAttributeEntry>(
                     GetAllEditionSignInterpretationAttributesQuery.GetQuery,
                     new { editionUser.EditionId });
             }
@@ -88,6 +91,14 @@ namespace SQE.DatabaseAccess
                 signInterpretationId,
                 newAttributes,
                 MutateType.Create);
+        }
+
+        public async Task<List<SignInterpretationAttributeData>> CreateAttributesAsync(UserInfo editionUser,
+            uint signInterpretationId,
+            SignInterpretationAttributeData newAttribute)
+        {
+            return await CreateAttributesAsync(editionUser, signInterpretationId,
+                new List<SignInterpretationAttributeData>() { newAttribute });
         }
 
         /// <summary>

@@ -115,6 +115,7 @@ export interface SignDTO {
 
 export interface NextSignInterpretationDTO {
     nextSignInterpretationId: number;
+    creatorId: number;
     editorId: number;
 }
 
@@ -123,23 +124,31 @@ export interface SignInterpretationCreateDTO {
     attributes: Array<InterpretationAttributeDTO>;
     rois: Array<InterpretationRoiDTO>;
     nextSignInterpretations: Array<NextSignInterpretationDTO>;
+    isVariant: boolean;
+    commentary?: CommentaryDTO;
 }
 
 export interface SignInterpretationDTO extends SignInterpretationCreateDTO {
     signInterpretationId: number;
 }
 
-export interface InterpretationAttributeCreateDTO {
-    interpretationAttributeId: number;
+export interface InterpretationAttributeBaseDTO {
     sequence: number;
+    attributeId: number;
     attributeValueId: number;
-    attributeValueString: string;
     value: number;
+}
+
+export interface InterpretationAttributeCreateDTO extends InterpretationAttributeBaseDTO {
     commentary?: string;
 }
 
-export interface InterpretationAttributeDTO extends InterpretationAttributeCreateDTO {
+export interface InterpretationAttributeDTO extends InterpretationAttributeBaseDTO {
+    interpretationAttributeId: number;
+    attributeValueString: string;
+    creatorId: number;
     editorId: number;
+    commentary?: CommentaryDTO;
 }
 
 export interface InterpretationAttributeCreateListDTO {
@@ -397,6 +406,12 @@ export interface DeleteEditionEntityDTO {
     editorId: number;
 }
 
+export interface CommentaryDTO {
+    creatorId: number;
+    editorId: number;
+    commentary: string;
+}
+
 export interface DeleteDTO {
     entity: EditionEntities;
     ids: Array<number>;
@@ -523,6 +538,7 @@ export interface SetInterpretationRoiDTO {
 
 export interface InterpretationRoiDTO extends SetInterpretationRoiDTO {
     interpretationRoiId: number;
+    creatorId: number;
     editorId: number;
 }
 
