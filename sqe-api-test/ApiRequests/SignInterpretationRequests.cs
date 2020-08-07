@@ -26,6 +26,7 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="editionId"></param>
             public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes(uint editionId, uint signInterpretationId, InterpretationAttributeCreateDTO payload) : base(editionId, signInterpretationId, payload)
             {
+                listenerMethod.Add("UpdatedSignInterpretation");
             }
         }
 

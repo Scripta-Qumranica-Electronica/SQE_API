@@ -66,11 +66,12 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, signInterpretationAddAttribute);
 
                 // Act
-                var (httpResponse, httpData, _, _) =
-                    await Request.Send(request, _client, auth: true, deterministic: false);
+                var (httpResponse, httpData, _, listenerData) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
 
                 // Assert
                 httpResponse.EnsureSuccessStatusCode();
+                httpData.ShouldDeepEqual(listenerData);
                 Assert.Equal(signInterpretation.attributes.Length + 1, httpData.attributes.Length);
                 Assert.Equal(signInterpretation.signInterpretationId, httpData.signInterpretationId);
                 Assert.Equal(signInterpretation.character, httpData.character);

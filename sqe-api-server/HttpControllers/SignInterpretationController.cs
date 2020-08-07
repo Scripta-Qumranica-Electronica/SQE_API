@@ -171,7 +171,7 @@ namespace SQE.API.Server.HttpControllers
         // /// This deletes the specified attribute from the specified sign interpretation.
         // /// </summary>
         // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="signInterpretationId">ID of the sign interpretation being alteres</param>
+        // /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
         // /// <param name="attributeId">Id of the attribute being removed</param>
         // /// <returns>Ok or Error</returns>
         // [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeId}")]

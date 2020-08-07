@@ -1276,4 +1276,21 @@ export class SignalRUtilities {
         this._connection.off('BatchUpdatedArtefactTransform', handler)
     }
 
+
+    /**
+	 * Add a listener for when the server broadcasts the update of a sign interpretation
+	 *
+	 */
+    public connectUpdatedSignInterpretation(handler: (msg: SignInterpretationDTO) => void): void {
+        this._connection.on('UpdatedSignInterpretation', handler)
+    }
+
+    /**
+	 * Remove an existing listener that triggers when the server broadcasts the update of a sign interpretation
+	 *
+	 */
+    public disconnectUpdatedSignInterpretation(handler: (msg: SignInterpretationDTO) => void): void {
+        this._connection.off('UpdatedSignInterpretation', handler)
+    }
+
 } 
