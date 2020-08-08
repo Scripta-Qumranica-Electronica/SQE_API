@@ -133,10 +133,10 @@ export interface SignInterpretationDTO extends SignInterpretationCreateDTO {
 }
 
 export interface InterpretationAttributeBaseDTO {
-    sequence: number;
+    sequence?: number;
     attributeId: number;
     attributeValueId: number;
-    value: number;
+    value?: number;
 }
 
 export interface InterpretationAttributeCreateDTO extends InterpretationAttributeBaseDTO {
@@ -406,10 +406,13 @@ export interface DeleteEditionEntityDTO {
     editorId: number;
 }
 
-export interface CommentaryDTO {
+export interface CommentaryCreateDTO {
+    commentary?: string;
+}
+
+export interface CommentaryDTO extends CommentaryCreateDTO {
     creatorId: number;
     editorId: number;
-    commentary: string;
 }
 
 export interface DeleteDTO {

@@ -31,8 +31,9 @@ namespace qwb_to_sqe.Repositories
                 AND pistwr2.position_in_stream_id is null
 ";
 
-        public TextRepositoryExpanded(IConfiguration config, IDatabaseWriter databaseWriter) : base(config,
-            databaseWriter)
+        public TextRepositoryExpanded(IConfiguration config, IDatabaseWriter databaseWriter, IAttributeRepository attributeRepository,
+            ISignInterpretationCommentaryRepository commentaryRepository, IRoiRepository roiRepository) : base(config,
+            databaseWriter, attributeRepository, commentaryRepository, roiRepository)
         {
         }
 

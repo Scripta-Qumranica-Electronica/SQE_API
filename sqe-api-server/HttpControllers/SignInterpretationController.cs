@@ -115,21 +115,24 @@ namespace SQE.API.Server.HttpControllers
         // {
         //     throw new NotImplementedException(); //Not Implemented
         // }
-        //
-        // /// <summary>
-        // /// Updates the commentary of a sign interpretation
-        // /// </summary>
-        // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
-        // /// <param name="string">The new commentary for the sign interpretation</param>
-        // /// <returns>Ok or Error</returns>
-        // [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/commentary")]
-        // public async Task<ActionResult> PutSignInterpretationCommentary([FromRoute] uint editionId,
-        //     [FromRoute] uint signInterpretationId,
-        //     [FromBody] string commentary)
-        // {
-        //     throw new NotImplementedException();  //Not Implemented
-        // }
+
+        /// <summary>
+        /// Updates the commentary of a sign interpretation
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
+        /// <param name="string">The new commentary for the sign interpretation</param>
+        /// <returns>Ok or Error</returns>
+        [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/commentary")]
+        public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationCommentary([FromRoute] uint editionId,
+            [FromRoute] uint signInterpretationId,
+            [FromBody] CommentaryCreateDTO commentary)
+        {
+            return await _signInterpretationService.CreateOrUpdateSignInterpretationCommentaryAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                signInterpretationId,
+                commentary);
+        }
 
         /// <summary>
         /// This adds a new attribute to the specified sign interpretation.
@@ -149,23 +152,27 @@ namespace SQE.API.Server.HttpControllers
                 newSignInterpretationAttributes);
         }
 
-        // /// <summary>
-        // /// This changes the values of the specified sign interpretation attribute,
-        // /// mainly used to change commentary.
-        // /// </summary>
-        // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
-        // /// <param name="attributeId">Id of the attribute to be altered</param>
-        // /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
-        // /// <returns>The updated sign interpretation</returns>
-        // [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeId}")]
-        // public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationAttribute([FromRoute] uint editionId,
-        //     [FromRoute] uint signInterpretationId,
-        //     [FromRoute] uint attributeId,
-        //     [FromBody] InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
-        // {
-        //     throw new NotImplementedException();  //Not Implemented
-        // }
+        /// <summary>
+        /// This changes the values of the specified sign interpretation attribute,
+        /// mainly used to change commentary.
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
+        /// <param name="attributeId">Id of the attribute to be altered</param>
+        /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
+        /// <returns>The updated sign interpretation</returns>
+        [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeValueId}")]
+        public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationAttribute([FromRoute] uint editionId,
+            [FromRoute] uint signInterpretationId,
+            [FromRoute] uint attributeValueId,
+            [FromBody] InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
+        {
+            return await _signInterpretationService.UpdateSignInterpretationAttributeAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                signInterpretationId,
+                attributeValueId,
+                alteredSignInterpretationAttribute);
+        }
 
         /// <summary>
         /// This deletes the specified attribute value from the specified sign interpretation.

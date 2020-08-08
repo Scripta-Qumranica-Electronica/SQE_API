@@ -84,21 +84,22 @@ namespace SQE.DatabaseAccess
 
         private readonly IDatabaseWriter _databaseWriter;
 
-        private readonly AttributeRepository _attributeRepository;
-        private readonly SignInterpretationCommentaryRepository _commentaryRepository;
-        private readonly RoiRepository _roiRepository;
+        private readonly IAttributeRepository _attributeRepository;
+        private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
+        private readonly IRoiRepository _roiRepository;
 
 
-        public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
+        public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter, IAttributeRepository attributeRepository,
+            ISignInterpretationCommentaryRepository commentaryRepository, IRoiRepository roiRepository) : base(config)
         {
             _databaseWriter = databaseWriter;
 
             // Because some functions set or remove attributes, commentaries, or ROIs we sometimes need
             // objects of the repositories. If we don't want to create them from the beginning,
             // we would have to store the configuration to make it accessible for creation the object elsewhere
-            _attributeRepository = new AttributeRepository(config, databaseWriter);
-            _commentaryRepository = new SignInterpretationCommentaryRepository(config, databaseWriter);
-            _roiRepository = new RoiRepository(config, databaseWriter);
+            _attributeRepository = attributeRepository;
+            _commentaryRepository = commentaryRepository;
+            _roiRepository = roiRepository;
         }
 
         public IDbConnection Connection => OpenConnection();

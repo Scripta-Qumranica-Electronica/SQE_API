@@ -13,8 +13,10 @@ namespace SQE.API.Server.Services
     {
         Task<AttributeListDTO> GetEditionSignInterpretationAttributesAsync(UserInfo user);
         Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user, uint signInterpretationId);
+        Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(UserInfo user, uint signInterpretationId, CommentaryCreateDTO commentary, string clientId = null);
+
         Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationId, InterpretationAttributeCreateDTO attribute, string clientId = null);
-        Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationAttributeId, InterpretationAttributeCreateDTO attribute, string clientId = null);
+        Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO attribute, string clientId = null);
         Task<NoContentResult> DeleteSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationAttributeId, uint attributeValueId, string clientId = null);
     }
 
@@ -51,6 +53,22 @@ namespace SQE.API.Server.Services
             return signInterpretation.ToDTO();
         }
 
+        public async Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(UserInfo user,
+            uint signInterpretationId, CommentaryCreateDTO commentary, string clientId = null)
+        {
+            await _commentaryRepository.CreateOrUpdateCommentaryAsync(user, signInterpretationId, null,
+                commentary.commentary);
+
+            var updatedSignInterpretation = (await
+                _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId)).ToDTO();
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .UpdatedSignInterpretation(updatedSignInterpretation);
+
+            return updatedSignInterpretation;
+        }
+
         public async Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(UserInfo user,
             uint signInterpretationId, InterpretationAttributeCreateDTO attribute, string clientId = null)
         {
@@ -83,9 +101,25 @@ namespace SQE.API.Server.Services
         }
 
         public async Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(UserInfo user,
-            uint signInterpretationAttributeId, InterpretationAttributeCreateDTO attribute, string clientId = null)
+            uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO attribute,
+            string clientId = null)
         {
-            return null;
+            if (attribute.sequence.HasValue || attribute.value.HasValue)
+                await _attributeRepository.UpdateAttributeForSignInterpretationAsync(user, signInterpretationId,
+                    attributeValueId, attribute.sequence, attribute.value);
+
+            if (!string.IsNullOrEmpty(attribute.commentary))
+                await _commentaryRepository.CreateOrUpdateCommentaryAsync(user, signInterpretationId, attributeValueId,
+                    attribute.commentary);
+
+            var updatedSignInterpretation = (await
+                _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId)).ToDTO();
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .UpdatedSignInterpretation(updatedSignInterpretation);
+
+            return updatedSignInterpretation;
         }
 
         public async Task<NoContentResult> DeleteSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationId, uint attributeValueId, string clientId = null)

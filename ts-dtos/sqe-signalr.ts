@@ -80,6 +80,7 @@ import {
 	TextEditionDTO,
 	DeleteTokenDTO,
 	DeleteEditionEntityDTO,
+	CommentaryCreateDTO,
 	CommentaryDTO,
 	DeleteDTO,
 	EditionUpdateRequestDTO,
@@ -739,6 +740,18 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Updates the commentary of a sign interpretation
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation whose commentary is being changed
+	 * @param string - The new commentary for the sign interpretation
+	 * @returns - Ok or Error
+	 */
+    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationIdCommentary(editionId: number, signInterpretationId: number, commentary: CommentaryCreateDTO): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdCommentary', editionId, signInterpretationId, commentary);
+    }
+
+    /**
 	 * This adds a new attribute to the specified sign interpretation.
 	 *
 	 * @param editionId - ID of the edition being changed
@@ -748,6 +761,20 @@ export class SignalRUtilities {
 	 */
     public async postV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(editionId: number, signInterpretationId: number, newSignInterpretationAttributes: InterpretationAttributeCreateDTO): Promise<SignInterpretationDTO> {
         return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes', editionId, signInterpretationId, newSignInterpretationAttributes);
+    }
+
+    /**
+	 * This changes the values of the specified sign interpretation attribute,
+	 * mainly used to change commentary.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation being altered
+	 * @param attributeId - Id of the attribute to be altered
+	 * @param alteredSignInterpretationAttribute - New details of the attribute
+	 * @returns - The updated sign interpretation
+	 */
+    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId(editionId: number, signInterpretationId: number, attributeValueId: number, alteredSignInterpretationAttribute: InterpretationAttributeCreateDTO): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId', editionId, signInterpretationId, attributeValueId, alteredSignInterpretationAttribute);
     }
 
     /**

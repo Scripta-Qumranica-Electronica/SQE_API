@@ -113,11 +113,15 @@ namespace SQE.API.DTO
         [Required] public uint editorId { get; set; }
     }
 
-    public class CommentaryDTO
+    public class CommentaryCreateDTO
+    {
+        public string commentary { get; set; }
+    }
+
+    public class CommentaryDTO : CommentaryCreateDTO
     {
         [Required] public uint creatorId { get; set; }
         [Required] public uint editorId { get; set; }
-        [Required] public string commentary { get; set; }
     }
 
 

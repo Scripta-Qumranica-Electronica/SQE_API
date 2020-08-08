@@ -32,10 +32,10 @@ namespace SQE.API.DTO
 
     public class InterpretationAttributeBaseDTO
     {
-        public byte sequence { get; set; }
+        public byte? sequence { get; set; }
         [Required] public uint attributeId { get; set; }
         [Required] public uint attributeValueId { get; set; }
-        public float value { get; set; }
+        public float? value { get; set; }
     }
 
     public class InterpretationAttributeCreateDTO : InterpretationAttributeBaseDTO

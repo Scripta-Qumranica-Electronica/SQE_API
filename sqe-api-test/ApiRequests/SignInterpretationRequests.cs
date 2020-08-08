@@ -34,6 +34,29 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary : SignInterpretationRequestObject<CommentaryCreateDTO, SignInterpretationDTO, SignInterpretationDTO>
+        {
+            /// <summary>
+            /// Create a new attribute on the specified sign interpretation
+            /// </summary>
+            /// <param name="editionId"></param>
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary(uint editionId, uint signInterpretationId, CommentaryCreateDTO payload) : base(editionId, signInterpretationId, payload)
+            {
+                listenerMethod.Add("UpdatedSignInterpretation");
+            }
+        }
+
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeId : SignInterpretationAttributeRequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO, SignInterpretationDTO>
+        {
+            /// <summary>
+            /// Updates an attribute of the specified sign interpretation
+            /// </summary>
+            /// <param name="editionId"></param>
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeId(uint editionId, uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO payload) : base(editionId, signInterpretationId, attributeValueId, payload)
+            {
+                listenerMethod.Add("UpdatedSignInterpretation");
+            }
+        }
 
     }
 

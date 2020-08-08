@@ -32,6 +32,9 @@ namespace SQE.DatabaseAccess
         Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
 
+        Task UpdateAttributeForSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId, uint attributeValueId, byte? sequence, float? numericValue);
+
         Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(UserInfo editionUser,
             uint signInterpretationAttributeId);
 
@@ -53,7 +56,6 @@ namespace SQE.DatabaseAccess
         Task<List<uint>> GetSignInterpretationAttributeIdsByInterpretationId(
             UserInfo editionUser,
             uint signInterpretationId);
-
 
         Task<List<SignInterpretationAttributeData>> ReplaceSignInterpretationAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
@@ -287,10 +289,11 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        ///     Deletes all attributes for the sign interpretation referred by its id
+        ///     Deletes the specified attribute value from the sign interpretation referred by its id
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
-        /// <param name="signInterpretationId">Id of sign interpretation</param>
+        /// <param name="signInterpretationId">Id of sign interpretation to be altered</param>
+        /// <param name="attributeValueId">Id of attribute value to remove</param>
         /// <returns>List of ids of delete attributes</returns>
         public async Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId, uint attributeValueId)
@@ -329,10 +332,45 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
+        ///     Updates the specified attribute value from the sign interpretation referred by its id
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="signInterpretationId">Id of sign interpretation to be altered</param>
+        /// <param name="attributeValueId">Id of attribute value to update</param>
+        /// <returns>List of ids of delete attributes</returns>
+        public async Task UpdateAttributeForSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId, uint attributeValueId, byte? sequence, float? numericValue)
+        {
+            if (!sequence.HasValue && !numericValue.HasValue)
+                return;
+
+            var searchData = new SignInterpretationAttributeDataSearchData
+            {
+                SignInterpretationId = signInterpretationId,
+                AttributeValueId = attributeValueId
+            };
+
+            var signInterpretationAttributeId = (await GetSignInterpretationAttributeIdsByDataAsync(
+                editionUser,
+                searchData)).FirstOrDefault();
+
+            var attributeData =
+                await GetSignInterpretationAttributeByIdAsync(editionUser, signInterpretationAttributeId);
+
+            if (attributeData.NumericValue == numericValue && attributeData.Sequence == sequence)
+                return;
+
+            attributeData.NumericValue ??= numericValue;
+            attributeData.Sequence ??= sequence;
+
+            await UpdateAttributesAsync(editionUser, signInterpretationId, new List<SignInterpretationAttributeData>() { attributeData });
+        }
+
+        /// <summary>
         ///     Deletes all existing attributes of a sign interpretation and add the new attributes to it
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
-        /// <param name="signInterpretationId">Id of sogn itnerpretation</param>
+        /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <param name="newAttributes">List of new sign interpretation attributes</param>
         /// <returns>List of the new sign interpretation attributes with the new ids</returns>
         /// <exception cref="NotImplementedException"></exception>
