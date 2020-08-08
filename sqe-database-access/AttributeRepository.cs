@@ -26,6 +26,9 @@ namespace SQE.DatabaseAccess
 
         Task<List<uint>> DeleteAttributesAsync(UserInfo editionUser, List<uint> deleteAttributeIds);
 
+        Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId, uint attributeValueId);
+
         Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
 
@@ -135,7 +138,8 @@ namespace SQE.DatabaseAccess
                 id => new MutationRequest(
                     MutateType.Delete,
                     new DynamicParameters(),
-                    "sign_interpretation_attribute")).ToList();
+                    "sign_interpretation_attribute",
+                    id)).ToList();
 
             var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
@@ -280,6 +284,30 @@ namespace SQE.DatabaseAccess
             return await GetSignInterpretationAttributeIdsByDataAsync(
                 editionUser,
                 searchData);
+        }
+
+        /// <summary>
+        ///     Deletes all attributes for the sign interpretation referred by its id
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="signInterpretationId">Id of sign interpretation</param>
+        /// <returns>List of ids of delete attributes</returns>
+        public async Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId, uint attributeValueId)
+        {
+            var searchData = new SignInterpretationAttributeDataSearchData
+            {
+                SignInterpretationId = signInterpretationId,
+                AttributeValueId = attributeValueId
+            };
+
+            var attributes = await GetSignInterpretationAttributeIdsByDataAsync(
+                editionUser,
+                searchData);
+
+            return await DeleteAttributesAsync(
+                editionUser,
+                attributes);
         }
 
 

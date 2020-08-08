@@ -144,9 +144,9 @@ namespace SQE.API.Server.HttpControllers
             [FromBody] InterpretationAttributeCreateDTO newSignInterpretationAttributes)
         {
             return await _signInterpretationService.CreateSignInterpretationAttributeAsync(
-                await _userService.GetCurrentUserObjectAsync(editionId, false),
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
                 signInterpretationId,
-                newSignInterpretationAttributes);  //Not Implemented
+                newSignInterpretationAttributes);
         }
 
         // /// <summary>
@@ -166,20 +166,22 @@ namespace SQE.API.Server.HttpControllers
         // {
         //     throw new NotImplementedException();  //Not Implemented
         // }
-        //
-        // /// <summary>
-        // /// This deletes the specified attribute from the specified sign interpretation.
-        // /// </summary>
-        // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
-        // /// <param name="attributeId">Id of the attribute being removed</param>
-        // /// <returns>Ok or Error</returns>
-        // [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeId}")]
-        // public async Task<ActionResult> DeleteSignInterpretationAttribute([FromRoute] uint editionId,
-        //     [FromRoute] uint signInterpretationId,
-        //     [FromRoute] uint attributeId)
-        // {
-        //     throw new NotImplementedException();  //Not Implemented
-        // }
+
+        /// <summary>
+        /// This deletes the specified attribute value from the specified sign interpretation.
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
+        /// <param name="attributeValueId">Id of the attribute being removed</param>
+        /// <returns>Ok or Error</returns>
+        [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeValueId}")]
+        public async Task<ActionResult> DeleteSignInterpretationAttribute([FromRoute] uint editionId,
+            [FromRoute] uint signInterpretationId,
+            [FromRoute] uint attributeValueId)
+        {
+            return await _signInterpretationService.DeleteSignInterpretationAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),
+                signInterpretationId,
+                attributeValueId);
+        }
     }
 }

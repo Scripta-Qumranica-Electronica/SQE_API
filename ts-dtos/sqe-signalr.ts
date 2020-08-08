@@ -751,6 +751,18 @@ export class SignalRUtilities {
     }
 
     /**
+	 * This deletes the specified attribute value from the specified sign interpretation.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation being altered
+	 * @param attributeValueId - Id of the attribute being removed
+	 * @returns - Ok or Error
+	 */
+    public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId(editionId: number, signInterpretationId: number, attributeValueId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId', editionId, signInterpretationId, attributeValueId);
+    }
+
+    /**
 	 * Creates a new artefact with the provided data.
 	 * If no mask is provided, a placeholder mask will be created with the values:
 	 * "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for

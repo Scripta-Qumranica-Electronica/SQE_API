@@ -39,6 +39,16 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Delete
     {
-
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeId : SignInterpretationAttributeRequestObject<EmptyInput, EmptyOutput, SignInterpretationDTO>
+        {
+            /// <summary>
+            /// Deletes an attribute from the specified sign interpretation
+            /// </summary>
+            /// <param name="editionId"></param>
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeId(uint editionId, uint signInterpretationId, uint attributeValueId) : base(editionId, signInterpretationId, attributeValueId, null)
+            {
+                listenerMethod.Add("UpdatedSignInterpretation");
+            }
+        }
     }
 }

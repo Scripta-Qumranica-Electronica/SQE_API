@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
@@ -14,7 +15,7 @@ namespace SQE.API.Server.Services
         Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user, uint signInterpretationId);
         Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationId, InterpretationAttributeCreateDTO attribute, string clientId = null);
         Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationAttributeId, InterpretationAttributeCreateDTO attribute, string clientId = null);
-        Task DeleteSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationAttributeId, string clientId = null);
+        Task<NoContentResult> DeleteSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationAttributeId, uint attributeValueId, string clientId = null);
     }
 
     public class SignInterpretationService : ISignInterpretationService
@@ -87,9 +88,19 @@ namespace SQE.API.Server.Services
             return null;
         }
 
-        public Task DeleteSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationAttributeId, string clientId = null)
+        public async Task<NoContentResult> DeleteSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationId, uint attributeValueId, string clientId = null)
         {
-            return null;
+            await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(user, signInterpretationId,
+                attributeValueId);
+
+            var updatedSignInterpretation = (await
+                _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId)).ToDTO();
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .UpdatedSignInterpretation(updatedSignInterpretation);
+
+            return new NoContentResult();
         }
     }
 }

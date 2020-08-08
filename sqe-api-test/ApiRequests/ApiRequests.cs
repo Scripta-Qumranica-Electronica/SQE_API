@@ -356,7 +356,7 @@ namespace SQE.ApiTest.ApiRequests
     }
 
     /// <summary>
-    ///     Subclass of EditionRequestObject for all requests made on a line
+    ///     Subclass of EditionRequestObject for all requests made on a sign interpretation
     /// </summary>
     /// <typeparam name="Tinput">The type of the request payload</typeparam>
     /// <typeparam name="Toutput">The API endpoint return type</typeparam>
@@ -365,7 +365,7 @@ namespace SQE.ApiTest.ApiRequests
         public readonly uint signInterpretationId;
 
         /// <summary>
-        ///     Provides an TextFragmentRequestObject for all API requests made on an edition
+        ///     Provides a SignInterpretationRequestObject for all API requests made on an edition
         /// </summary>
         /// <param name="editionId">The id of the edition to perform the request on</param>
         /// <param name="lineId">The id of the line to perform the request on</param>
@@ -385,6 +385,39 @@ namespace SQE.ApiTest.ApiRequests
             return signalR => payload == null
                 ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, signInterpretationId)
                 : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, signInterpretationId, payload);
+        }
+    }
+
+    /// <summary>
+    ///     Subclass of EditionRequestObject for all requests made on a sign interpretation attribute value
+    /// </summary>
+    /// <typeparam name="Tinput">The type of the request payload</typeparam>
+    /// <typeparam name="Toutput">The API endpoint return type</typeparam>
+    public class SignInterpretationAttributeRequestObject<Tinput, Toutput, TListener> : SignInterpretationRequestObject<Tinput, Toutput, TListener>
+    {
+        public readonly uint attributeValueId;
+
+        /// <summary>
+        ///     Provides an SignInterpretationAttributeRequestObject for all API requests made on an edition
+        /// </summary>
+        /// <param name="editionId">The id of the edition to perform the request on</param>
+        /// <param name="lineId">The id of the line to perform the request on</param>
+        /// <param name="payload">Payload to be sent to the API endpoint</param>
+        public SignInterpretationAttributeRequestObject(uint editionId, uint signInterpretationId, uint attributeValueId, Tinput payload) : base(editionId, signInterpretationId, payload)
+        {
+            this.attributeValueId = attributeValueId;
+        }
+
+        protected override string HttpPath()
+        {
+            return base.HttpPath().Replace("/attribute-id", $"/{attributeValueId.ToString()}");
+        }
+
+        public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+        {
+            return signalR => payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString(), editionId, signInterpretationId, attributeValueId)
+                : signalR.InvokeAsync<T>(SignalrRequestString(), editionId, signInterpretationId, attributeValueId, payload);
         }
     }
 

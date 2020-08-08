@@ -93,6 +93,111 @@ namespace SQE.ApiTest
             }
         }
 
+        // [Fact]
+        // public async Task CannotCreateNonexistentAttributeForSignInterpretation()
+        // {
+        //     using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+        //     {
+        //         // Arrange
+        //         var editionId = await editionCreator.CreateEdition();
+        //         var signInterpretation = await GetEditionSignInterpretation(editionId);
+        //         var signInterpretationAddAttribute = new InterpretationAttributeCreateDTO()
+        //         {
+        //             attributeId = 23894632,
+        //             attributeValueId = 999999999,
+        //         };
+        //         var request = new Post.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes(editionId,
+        //             signInterpretation.signInterpretationId, signInterpretationAddAttribute);
+        //
+        //         // Act
+        //         var (httpResponse, httpData, _, listenerData) =
+        //             await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+        //
+        //         // Assert
+        //         httpResponse.EnsureSuccessStatusCode();
+        //         httpData.ShouldDeepEqual(listenerData);
+        //         Assert.Equal(signInterpretation.attributes.Length + 1, httpData.attributes.Length);
+        //         Assert.Equal(signInterpretation.signInterpretationId, httpData.signInterpretationId);
+        //         Assert.Equal(signInterpretation.character, httpData.character);
+        //         Assert.Equal(signInterpretation.commentary, httpData.commentary);
+        //         Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
+        //         signInterpretation.rois.ShouldDeepEqual(httpData.rois);
+        //         Assert.True(httpData.attributes.Any(x => x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
+        //         var responseAttr = httpData.attributes.FirstOrDefault(x =>
+        //             x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
+        //         Assert.Null(responseAttr.commentary);
+        //         Assert.Equal(0, responseAttr.sequence);
+        //         Assert.Equal(0, responseAttr.value);
+        //         Assert.NotEqual<uint>(0, responseAttr.creatorId);
+        //         Assert.NotEqual<uint>(0, responseAttr.editorId);
+        //         Assert.NotEqual<uint>(0, responseAttr.attributeId);
+        //         Assert.NotEqual<uint>(0, responseAttr.attributeValueId);
+        //         Assert.NotEqual<uint>(0, responseAttr.interpretationAttributeId);
+        //         Assert.False(string.IsNullOrEmpty(responseAttr.attributeValueString));
+        //     }
+        // }
+
+        [Fact]
+        public async Task CanDeleteAttributeFromSignInterpretation()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var editionId = await editionCreator.CreateEdition();
+                var signInterpretation = await GetEditionSignInterpretation(editionId);
+                var signInterpretationAddAttribute = new InterpretationAttributeCreateDTO()
+                {
+                    attributeId = 8,
+                    attributeValueId = 33,
+                };
+                var request = new Post.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes(editionId,
+                    signInterpretation.signInterpretationId, signInterpretationAddAttribute);
+
+                // Act
+                var (httpResponse, httpData, _, listenerData) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+
+                // Assert
+                httpResponse.EnsureSuccessStatusCode();
+                httpData.ShouldDeepEqual(listenerData);
+                Assert.Equal(signInterpretation.attributes.Length + 1, httpData.attributes.Length);
+                Assert.Equal(signInterpretation.signInterpretationId, httpData.signInterpretationId);
+                Assert.Equal(signInterpretation.character, httpData.character);
+                Assert.Equal(signInterpretation.commentary, httpData.commentary);
+                Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
+                signInterpretation.rois.ShouldDeepEqual(httpData.rois);
+                Assert.True(httpData.attributes.Any(x => x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
+                var responseAttr = httpData.attributes.FirstOrDefault(x =>
+                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
+                Assert.Null(responseAttr.commentary);
+                Assert.Equal(0, responseAttr.sequence);
+                Assert.Equal(0, responseAttr.value);
+                Assert.NotEqual<uint>(0, responseAttr.creatorId);
+                Assert.NotEqual<uint>(0, responseAttr.editorId);
+                Assert.NotEqual<uint>(0, responseAttr.attributeId);
+                Assert.NotEqual<uint>(0, responseAttr.attributeValueId);
+                Assert.NotEqual<uint>(0, responseAttr.interpretationAttributeId);
+                Assert.False(string.IsNullOrEmpty(responseAttr.attributeValueString));
+
+                // Delete the new attribute
+                var delRequest =
+                    new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeId(editionId,
+                        signInterpretation.signInterpretationId, 33);
+                var (delResponse, delData, _, delListenerData) =
+                    await Request.Send(delRequest, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+
+                // Assert
+                delResponse.EnsureSuccessStatusCode();
+                Assert.Equal(signInterpretation.attributes.Length, delListenerData.attributes.Length);
+                Assert.Equal(signInterpretation.signInterpretationId, delListenerData.signInterpretationId);
+                Assert.Equal(signInterpretation.character, delListenerData.character);
+                Assert.Equal(signInterpretation.commentary, delListenerData.commentary);
+                Assert.Equal(signInterpretation.isVariant, delListenerData.isVariant);
+                signInterpretation.rois.ShouldDeepEqual(delListenerData.rois);
+                Assert.False(delListenerData.attributes.Any(x => x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
+            }
+        }
+
         /// <summary>
         /// Find a sign interpretation id in the edition
         /// </summary>

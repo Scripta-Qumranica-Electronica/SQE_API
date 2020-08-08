@@ -163,7 +163,47 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return await _signInterpretationService.CreateSignInterpretationAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, false), signInterpretationId, newSignInterpretationAttributes, clientId: Context.ConnectionId);  //Not Implemented              
+                return await _signInterpretationService.CreateSignInterpretationAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, newSignInterpretationAttributes, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        // /// <summary>
+        // /// This changes the values of the specified sign interpretation attribute,
+        // /// mainly used to change commentary.
+        // /// </summary>
+        // /// <param name="editionId">ID of the edition being changed</param>
+        // /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
+        // /// <param name="attributeId">Id of the attribute to be altered</param>
+        // /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
+        // /// <returns>The updated sign interpretation</returns>
+        // [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeId}")]
+        // public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationAttribute([FromRoute] uint editionId,
+        //     [FromRoute] uint signInterpretationId,
+        //     [FromRoute] uint attributeId,
+        //     [FromBody] InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
+        // {
+        //     throw new NotImplementedException();  //Not Implemented
+        // }
+
+        /// <summary>
+        /// This deletes the specified attribute value from the specified sign interpretation.
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
+        /// <param name="attributeValueId">Id of the attribute being removed</param>
+        /// <returns>Ok or Error</returns>
+        [Authorize]
+        public async Task DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId)
+
+        {
+            try
+            {
+                await _signInterpretationService.DeleteSignInterpretationAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, attributeValueId, clientId: Context.ConnectionId);
             }
             catch (ApiException err)
             {
