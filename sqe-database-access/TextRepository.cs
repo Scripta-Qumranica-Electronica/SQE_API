@@ -380,7 +380,7 @@ namespace SQE.DatabaseAccess
 
                     // Add the attributes
                     var attributes = newSignInterpretation
-                        ? await _attributeRepository.CreateAttributesAsync(
+                        ? await _attributeRepository.CreateSignInterpretationAttributesAsync(
                             editionUser,
                             signInterpretation.SignInterpretationId.GetValueOrDefault(),
                             signInterpretation.Attributes)

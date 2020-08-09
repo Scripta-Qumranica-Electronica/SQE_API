@@ -167,8 +167,16 @@ namespace GenerateTypescriptInterfaces
         private static string ParseComments(string comment)
         {
             var xDoc = new XmlDocument();
-            comment = StripComments(comment);
-            xDoc.LoadXml($"<root>{comment.Replace("///", "")}</root>");
+            try
+            {
+                comment = StripComments(comment);
+                xDoc.LoadXml($"<root>{comment.Replace("///", "")}</root>");
+            }
+            catch (System.Xml.XmlException e)
+            {
+                Console.WriteLine(comment);
+                Console.WriteLine(e);
+            }
 
             // Get the summary text for the method
             var summary = xDoc.GetElementsByTagName("summary");

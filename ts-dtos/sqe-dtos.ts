@@ -165,23 +165,34 @@ export interface CreateAttributeValueDTO {
     cssDirectives?: string;
 }
 
-export interface AttributeValueDTO extends CreateAttributeValueDTO {
+export interface UpdateAttributeValueDTO extends CreateAttributeValueDTO {
     id: number;
+}
+
+export interface AttributeValueDTO extends UpdateAttributeValueDTO {
     creatorId: number;
     editorId: number;
 }
 
 export interface AttributeBaseDTO {
-    attributeName: string;
     description?: string;
 }
 
 export interface CreateAttributeDTO extends AttributeBaseDTO {
+    attributeName: string;
     values: Array<CreateAttributeValueDTO>;
+}
+
+export interface UpdateAttributeDTO extends AttributeBaseDTO {
+    attributeName?: string;
+    createValues: Array<CreateAttributeValueDTO>;
+    updateValues: Array<UpdateAttributeValueDTO>;
+    deleteValues: Array<number>;
 }
 
 export interface AttributeDTO extends AttributeBaseDTO {
     attributeId: number;
+    attributeName: string;
     values: Array<AttributeValueDTO>;
     creatorId: number;
     editorId: number;
@@ -628,6 +639,7 @@ export type EditionEntities =
     'edition' |
     'artefact' |
     'artefactGroup' |
+    'attribute' |
     'textFragment' |
     'line' |
     'signInterpretation' |

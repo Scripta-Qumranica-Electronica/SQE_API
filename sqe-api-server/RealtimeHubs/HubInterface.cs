@@ -158,10 +158,45 @@ namespace SQE.API.Server.RealtimeHubs
         Task BatchUpdatedArtefactTransform(BatchUpdatedArtefactTransformDTO returnedData);
 
         /// <summary>
+        ///     broadcasts the create of a sign interpretation
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task CreatedSignInterpretation(SignInterpretationDTO returnedData);
+
+        /// <summary>
         ///     broadcasts the update of a sign interpretation
         /// </summary>
         /// <param name="returnedData"></param>
         /// <returns></returns>
         Task UpdatedSignInterpretation(SignInterpretationDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the delete of a sign interpretation
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task DeletedSignInterpretation(DeleteDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the creation of an attribute
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task CreatedAttribute(AttributeDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the update of an attribute
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task UpdatedAttribute(AttributeDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the delete of an attribute
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task DeletedAttribute(DeleteDTO returnedData);
     }
 }

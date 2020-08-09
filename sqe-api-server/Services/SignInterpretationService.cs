@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -12,12 +13,43 @@ namespace SQE.API.Server.Services
     public interface ISignInterpretationService
     {
         Task<AttributeListDTO> GetEditionSignInterpretationAttributesAsync(UserInfo user);
-        Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user, uint signInterpretationId);
-        Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(UserInfo user, uint signInterpretationId, CommentaryCreateDTO commentary, string clientId = null);
-
-        Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationId, InterpretationAttributeCreateDTO attribute, string clientId = null);
-        Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO attribute, string clientId = null);
-        Task<NoContentResult> DeleteSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationAttributeId, uint attributeValueId, string clientId = null);
+        Task<AttributeDTO> CreateEditionAttributeAsync(
+            UserInfo user,
+            CreateAttributeDTO newAttribute,
+            string clientId = null);
+        Task<AttributeDTO> UpdateEditionAttributeAsync(
+            UserInfo user,
+            uint attributeId,
+            UpdateAttributeDTO updatedAttribute,
+            string clientId = null);
+        Task<NoContentResult> DeleteEditionAttributeAsync(
+            UserInfo user,
+            uint attributeId,
+            string clientId = null);
+        Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(
+            UserInfo user,
+            uint signInterpretationId);
+        Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(
+            UserInfo user,
+            uint signInterpretationId,
+            CommentaryCreateDTO commentary,
+            string clientId = null);
+        Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(
+            UserInfo user,
+            uint signInterpretationId,
+            InterpretationAttributeCreateDTO attribute,
+            string clientId = null);
+        Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(
+            UserInfo user,
+            uint signInterpretationId,
+            uint attributeValueId,
+            InterpretationAttributeCreateDTO attribute,
+            string clientId = null);
+        Task<NoContentResult> DeleteSignInterpretationAttributeAsync(
+            UserInfo user,
+            uint signInterpretationAttributeId,
+            uint attributeValueId,
+            string clientId = null);
     }
 
     public class SignInterpretationService : ISignInterpretationService
@@ -43,6 +75,61 @@ namespace SQE.API.Server.Services
         public async Task<AttributeListDTO> GetEditionSignInterpretationAttributesAsync(UserInfo user)
         {
             return (await _attributeRepository.GetAllEditionAttributesAsync(user)).ToDTO();
+        }
+
+        public async Task<AttributeDTO> CreateEditionAttributeAsync(UserInfo user, CreateAttributeDTO newAttribute,
+            string clientId = null)
+        {
+            var newAttributeId = await _attributeRepository.CreateEditionAttribute(
+                user,
+                newAttribute.attributeName,
+                newAttribute.description,
+                newAttribute.values.Select(x => new SignInterpretationAttributeValueInput()
+                {
+                    AttributeStringValue = x.value,
+                    AttributeStringValueDescription = x.description,
+                    Css = x.cssDirectives,
+                }));
+
+            var createdAttribute = (await _attributeRepository.GetEditionAttributeAsync(user, newAttributeId)).ToDTO().attributes.FirstOrDefault();
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .CreatedAttribute(createdAttribute);
+
+            return createdAttribute;
+        }
+
+        public async Task<AttributeDTO> UpdateEditionAttributeAsync(UserInfo user, uint attributeId,
+            UpdateAttributeDTO updatedAttribute, string clientId = null)
+        {
+            await _attributeRepository.UpdateEditionAttribute(
+                user,
+                attributeId,
+                updatedAttribute.attributeName,
+                updatedAttribute.description,
+                updatedAttribute.createValues.Select(x => x.FromDTO()),
+                updatedAttribute.updateValues.Select(x => x.FromDTO()),
+                updatedAttribute.deleteValues);
+
+            var updatedAttributeDetails = (await _attributeRepository.GetEditionAttributeAsync(user, attributeId)).ToDTO().attributes.FirstOrDefault();
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .UpdatedAttribute(updatedAttributeDetails);
+
+            return updatedAttributeDetails;
+        }
+
+        public async Task<NoContentResult> DeleteEditionAttributeAsync(UserInfo user, uint attributeId, string clientId = null)
+        {
+            await _attributeRepository.DeleteEditionAttributeAsync(user, attributeId);
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .DeletedAttribute(new DeleteDTO(EditionEntities.attribute, attributeId));
+
+            return new NoContentResult();
         }
 
         public async Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user, uint signInterpretationId)
@@ -78,7 +165,7 @@ namespace SQE.API.Server.Services
                 NumericValue = attribute.value,
                 Sequence = attribute.sequence,
             };
-            await _attributeRepository.CreateAttributesAsync(user, signInterpretationId, createAttribute);
+            await _attributeRepository.CreateSignInterpretationAttributesAsync(user, signInterpretationId, createAttribute);
 
             if (!string.IsNullOrEmpty(attribute.commentary))
             {

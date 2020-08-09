@@ -113,5 +113,26 @@ namespace SQE.API.Server.Serialization
                 isVariant = si.IsVariant,
             };
         }
+
+        public static SignInterpretationAttributeValueInput FromDTO(this CreateAttributeValueDTO cav)
+        {
+            return new SignInterpretationAttributeValueInput()
+            {
+                AttributeStringValue = cav.value,
+                AttributeStringValueDescription = cav.description,
+                Css = cav.cssDirectives,
+            };
+        }
+
+        public static SignInterpretationAttributeValue FromDTO(this UpdateAttributeValueDTO uav)
+        {
+            return new SignInterpretationAttributeValue()
+            {
+                AttributeValueId = uav.id,
+                AttributeStringValue = uav.value,
+                AttributeStringValueDescription = uav.description,
+                Css = uav.cssDirectives,
+            };
+        }
     }
 }

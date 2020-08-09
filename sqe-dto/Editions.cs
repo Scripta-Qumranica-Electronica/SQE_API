@@ -135,6 +135,7 @@ namespace SQE.API.DTO
         edition,
         artefact,
         artefactGroup,
+        attribute,
         textFragment,
         line,
         signInterpretation,

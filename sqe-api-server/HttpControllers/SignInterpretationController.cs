@@ -24,13 +24,13 @@ namespace SQE.API.Server.HttpControllers
         /// Retrieve a list of all possible attributes for an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being searched</param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <returns>A list of and edition's attributes and their details</returns>
         [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/sign-interpretations-attributes")]
         public async Task<ActionResult<AttributeListDTO>> GetAllEditionSignInterpretationAttributes([FromRoute] uint editionId)
         {
-            return await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(await _userService.GetCurrentUserObjectAsync(editionId, false)); //Not Implemented
+            return await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, false));
         }
 
         /// <summary>
@@ -38,57 +38,64 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         /// <param name="editionId">The ID of the edition being searched</param>
         /// <param name="signInterpretationId">The desired sign interpretation id</param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <returns>The details of the desired sign interpretation</returns>
         [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
-        public async Task<ActionResult<SignInterpretationDTO>> GetAllEditionSignInterpretationAttributes([FromRoute] uint editionId, uint signInterpretationId)
+        public async Task<ActionResult<SignInterpretationDTO>> GetEditionSignInterpretationDetails([FromRoute] uint editionId, uint signInterpretationId)
         {
-            return await _signInterpretationService.GetEditionSignInterpretationAsync(await _userService.GetCurrentUserObjectAsync(editionId, false), signInterpretationId); //Not Implemented
+            return await _signInterpretationService.GetEditionSignInterpretationAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, false),
+                signInterpretationId);
         }
 
-        // /// <summary>
-        // /// Create a new attribute for an edition
-        // /// </summary>
-        // /// <param name="editionId">The ID of the edition being edited</param>
-        // /// <param name="newAttribute">The details of the new attribute/param>
-        // /// <returns></returns>
-        // /// <exception cref="NotImplementedException"></exception>
-        // [HttpPost("v1/editions/{editionId}/sign-interpretations-attributes")]
-        // public async Task<ActionResult<AttributeDTO>> CreateEditionSignInterpretationAttributes([FromRoute] uint editionId, [FromBody] CreateAttributeDTO newAttribute)
-        // {
-        //     throw new NotImplementedException(); //Not Implemented
-        // }
-        //
-        // /// <summary>
-        // /// Delete an attribute from an edition
-        // /// </summary>
-        // /// <param name="editionId">The ID of the edition being edited</param>
-        // /// <param name="attributeId">The ID of the attribute to delete</param>
-        // /// <returns></returns>
-        // /// <exception cref="NotImplementedException"></exception>
-        // [HttpDelete("v1/editions/{editionId}/sign-interpretations-attributes/{attributeId}")]
-        // public async Task<ActionResult> DeleteEditionSignInterpretationAttributes([FromRoute] uint editionId,
-        //     [FromRoute] uint attributeId)
-        // {
-        //     throw new NotImplementedException(); //Not Implemented
-        // }
-        //
-        // /// <summary>
-        // /// Change the details of an attribute in an edition
-        // /// </summary>
-        // /// <param name="editionId">The ID of the edition being edited</param>
-        // /// <param name="attributeId">The ID of the attribute to update</param>
-        // /// <param name="updatedAttribute">The details of the updated attribute</param>
-        // /// <returns></returns>
-        // /// <exception cref="NotImplementedException"></exception>
-        // [HttpPut("v1/editions/{editionId}/sign-interpretations-attributes/{attributeId}")]
-        // public async Task<ActionResult<AttributeDTO>> UpdateEditionSignInterpretationAttributes([FromRoute] uint editionId,
-        //     [FromRoute] uint attributeId, [FromBody] CreateAttributeDTO updatedAttribute)
-        // {
-        //     throw new NotImplementedException(); //Not Implemented
-        // }
-        //
+        /// <summary>
+        /// Create a new attribute for an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <param name="newAttribute">The details of the new attribute</param>
+        /// <returns>The details of the newly created attribute</returns>
+        [HttpPost("v1/editions/{editionId}/sign-interpretations-attributes")]
+        public async Task<ActionResult<AttributeDTO>> CreateEditionSignInterpretationAttributes([FromRoute] uint editionId, [FromBody] CreateAttributeDTO newAttribute)
+        {
+            return await _signInterpretationService.CreateEditionAttributeAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                newAttribute);
+        }
+
+        /// <summary>
+        /// Delete an attribute from an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <param name="attributeId">The ID of the attribute to delete</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpDelete("v1/editions/{editionId}/sign-interpretations-attributes/{attributeId}")]
+        public async Task<ActionResult> DeleteEditionSignInterpretationAttributes([FromRoute] uint editionId,
+            [FromRoute] uint attributeId)
+        {
+            return await _signInterpretationService.DeleteEditionAttributeAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                attributeId);
+        }
+
+        /// <summary>
+        /// Change the details of an attribute in an edition
+        /// </summary>
+        /// <param name="editionId">The ID of the edition being edited</param>
+        /// <param name="attributeId">The ID of the attribute to update</param>
+        /// <param name="updatedAttribute">The details of the updated attribute</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        [HttpPut("v1/editions/{editionId}/sign-interpretations-attributes/{attributeId}")]
+        public async Task<ActionResult<AttributeDTO>> UpdateEditionSignInterpretationAttributes([FromRoute] uint editionId,
+            [FromRoute] uint attributeId, [FromBody] UpdateAttributeDTO updatedAttribute)
+        {
+            return await _signInterpretationService.UpdateEditionAttributeAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                attributeId,
+                updatedAttribute);
+        }
+
         // /// <summary>
         // /// Creates a new sign interpretation 
         // /// </summary>
@@ -121,7 +128,7 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
-        /// <param name="string">The new commentary for the sign interpretation</param>
+        /// <param name="commentary">The new commentary for the sign interpretation</param>
         /// <returns>Ok or Error</returns>
         [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/commentary")]
         public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationCommentary([FromRoute] uint editionId,
@@ -158,7 +165,7 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
-        /// <param name="attributeId">Id of the attribute to be altered</param>
+        /// <param name="attributeValueId">Id of the attribute value to be altered</param>
         /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
         /// <returns>The updated sign interpretation</returns>
         [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeValueId}")]

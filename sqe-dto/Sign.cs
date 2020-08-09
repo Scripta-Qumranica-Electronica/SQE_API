@@ -69,27 +69,40 @@ namespace SQE.API.DTO
         public string cssDirectives { get; set; }
     }
 
-    public class AttributeValueDTO : CreateAttributeValueDTO
+    public class UpdateAttributeValueDTO : CreateAttributeValueDTO
     {
         [Required] public uint id { get; set; }
+    }
+
+    public class AttributeValueDTO : UpdateAttributeValueDTO
+    {
         [Required] public uint creatorId { get; set; }
         [Required] public uint editorId { get; set; }
     }
 
     public class AttributeBaseDTO
     {
-        [Required] public string attributeName { get; set; }
         public string description { get; set; }
     }
 
     public class CreateAttributeDTO : AttributeBaseDTO
     {
+        [Required] public string attributeName { get; set; }
         [Required] public CreateAttributeValueDTO[] values { get; set; }
+    }
+
+    public class UpdateAttributeDTO : AttributeBaseDTO
+    {
+        public string attributeName { get; set; }
+        [Required] public CreateAttributeValueDTO[] createValues { get; set; }
+        [Required] public UpdateAttributeValueDTO[] updateValues { get; set; }
+        [Required] public uint[] deleteValues { get; set; }
     }
 
     public class AttributeDTO : AttributeBaseDTO
     {
         [Required] public uint attributeId { get; set; }
+        [Required] public string attributeName { get; set; }
         [Required] public AttributeValueDTO[] values { get; set; }
         [Required] public uint creatorId { get; set; }
         [Required] public uint editorId { get; set; }
