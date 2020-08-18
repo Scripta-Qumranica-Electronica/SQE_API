@@ -17,10 +17,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using CaseExtensions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -135,12 +137,68 @@ namespace sqe_realtime_hub_builder
             var code = new StreamReader(file.FullName).ReadToEnd();
             var tree = CSharpSyntaxTree.ParseText(code);
             var root = tree.GetCompilationUnitRoot();
-            var members = root.DescendantNodes().OfType<MemberDeclarationSyntax>().ToList();
-            var hubInterfaces = new List<string>();
+            var members = root.DescendantNodes().OfType<MemberDeclarationSyntax>();
 
             // Verify the controller is properly formatted with no disallowed attributes
             VerifyControllerClassName(members);
 
+            var hubInterfaces = WriteHub(hubFolder, controllerName, root, members);
+            WriteTestingApiRequest(Path.Combine(hubFolder, "..", "..", "sqe-api-test"), controllerName, root, members);
+
+            // return info for any dependency injected fields
+            return (AnalyzeController(members), hubInterfaces);
+        }
+
+        private static void VerifyControllerClassName(IEnumerable<MemberDeclarationSyntax> members)
+        {
+            // Get classes and ensure there is only one in the file
+            var classes = members.OfType<ClassDeclarationSyntax>().ToList();
+            if (classes.Count != 1)
+                throw new Exception(
+                    $"Each Controller file should have only one class, this file has {classes.Count} classes."
+                );
+
+            // Grab the controller class and ensure it only has two attributes
+            var controllerClass = classes.First();
+            var controllerAttrs = controllerClass.AttributeLists.ToList();
+            if (controllerAttrs.Count > 2)
+                throw new Exception(
+                    "The SQE API only supports controller classes with the [Authorize] and [ApiController] attributes."
+                );
+
+            var isControllerClass = false;
+            var isAuthorized = false;
+            var hasPath = false;
+
+            // Loop over attributes to ensure it has one ApiController attribute, one Authorize attribute, and no
+            // route paths.
+            foreach (var attr in controllerAttrs)
+            {
+                if (attr.Attributes.Count(x => x.Name.ToString() == "ApiController") == 1)
+                    isControllerClass = true;
+                if (attr.Attributes.Count(x => x.Name.ToString() == "Authorize") == 1)
+                    isAuthorized = true;
+                if (attr.Attributes.Count(
+                        x =>
+                            x.Name.ToString().IndexOf("Route", StringComparison.CurrentCultureIgnoreCase) >= 0
+                            || x.Name.ToString().IndexOf("Http", StringComparison.CurrentCultureIgnoreCase) >= 0
+                    )
+                    > 0)
+                    hasPath = true;
+            }
+
+            if (!isControllerClass)
+                throw new Exception("This controller class must have the attribute [ApiController].");
+            if (!isAuthorized)
+                throw new Exception("This controller class must have the attribute [Authorize].");
+            if (hasPath)
+                throw new Exception("The SQE API does not support controllers with class level routing attributes.");
+        }
+
+        private static List<string> WriteHub(string hubFolder, string controllerName, CompilationUnitSyntax root, IEnumerable<MemberDeclarationSyntax> members)
+        {
+            var hubInterfaces = new List<string>();
+            
             // Begin writing analyzed controller to Hub
             Console.WriteLine($"Writing to {Path.Combine(hubFolder, $"{controllerName}Hub.cs")}");
             using (var outputFile = new StreamWriter(Path.Combine(hubFolder, $"{controllerName}Hub.cs")))
@@ -220,54 +278,174 @@ namespace sqe_realtime_hub_builder
                 outputFile.WriteLine("\t}\n}");
             }
 
-            // return info for any dependency injected fields
-            return (AnalyzeController(members), hubInterfaces);
+            return hubInterfaces;
         }
-
-        private static void VerifyControllerClassName(List<MemberDeclarationSyntax> members)
+        
+        private static void WriteTestingApiRequest(string testFolder, string controllerName, CompilationUnitSyntax root, IEnumerable<MemberDeclarationSyntax> members)
         {
-            // Get classes and ensure there is only one in the file
-            var classes = members.OfType<ClassDeclarationSyntax>().ToList();
-            if (classes.Count != 1)
-                throw new Exception(
-                    $"Each Controller file should have only one class, this file has {classes.Count} classes."
-                );
-
-            // Grab the controller class and ensure it only has two attributes
-            var controllerClass = classes.First();
-            var controllerAttrs = controllerClass.AttributeLists.ToList();
-            if (controllerAttrs.Count > 2)
-                throw new Exception(
-                    "The SQE API only supports controller classes with the [Authorize] and [ApiController] attributes."
-                );
-
-            var isControllerClass = false;
-            var isAuthorized = false;
-            var hasPath = false;
-
-            // Loop over attributes to ensure it has one ApiController attribute, one Authorize attribute, and no
-            // route paths.
-            foreach (var attr in controllerAttrs)
+            // Begin writing analyzed controller to Hub
+            Console.WriteLine($"Writing to {Path.Combine(testFolder, "ApiRequests", $"test-{controllerName}Requests.cs")}");
+            using (var outputFile = new StreamWriter(Path.Combine(testFolder, "ApiRequests", $"test-{controllerName}Requests.cs")))
             {
-                if (attr.Attributes.Count(x => x.Name.ToString() == "ApiController") == 1)
-                    isControllerClass = true;
-                if (attr.Attributes.Count(x => x.Name.ToString() == "Authorize") == 1)
-                    isAuthorized = true;
-                if (attr.Attributes.Count(
-                        x =>
-                            x.Name.ToString().IndexOf("Route", StringComparison.CurrentCultureIgnoreCase) >= 0
-                            || x.Name.ToString().IndexOf("Http", StringComparison.CurrentCultureIgnoreCase) >= 0
-                    )
-                    > 0)
-                    hasPath = true;
-            }
+                // Write disclaimer to file
+                outputFile.Write(_autogenFileDisclaimer);
 
-            if (!isControllerClass)
-                throw new Exception("This controller class must have the attribute [ApiController].");
-            if (!isAuthorized)
-                throw new Exception("This controller class must have the attribute [Authorize].");
-            if (hasPath)
-                throw new Exception("The SQE API does not support controllers with class level routing attributes.");
+                // Write using statements and namespace
+                outputFile.WriteLine(@"
+using System.Collections.Generic;
+using SQE.API.DTO;
+
+namespace SQE.ApiTest.ApiRequests
+{
+");
+
+                var parsedControllerMethods = new ApiRequestsDescription();
+                // Parse individual methods
+                foreach (var method in members.OfType<MethodDeclarationSyntax>().ToList())
+                {
+                    var statements = method.Body.Statements;
+                    var function = statements.FirstOrDefault().DescendantNodes();
+                    var methodDescription = new ApiRequestEndpointDescription
+                    {
+                        comments = method.GetLeadingTrivia().ToString().Trim()
+                    };
+
+                    // Copy the comments
+
+                    // Get the return type
+                    var oType = method.ReturnType.ToString();
+                    const string pat = @"([a-zA-Z]+)>";
+
+                    // Instantiate the regular expression object.
+                    var r = new Regex(pat, RegexOptions.IgnoreCase);
+
+                    // Match the regular expression pattern against a text string.
+                    var m = r.Match(oType);
+                    while (m.Success)
+                    {
+                        oType = m.Groups[1].ToString();
+                        m = m.NextMatch();
+                    }
+                    methodDescription.OType = oType.ToString() == "ActionResult" ? "EmptyOutput" : oType.ToString();
+                    
+                    // Format the method name and grab authorization
+                    var (anonymousAllowed, methodName, httpRequestType, httpPath) =
+                        GetMethodNameAndAuthorization(method, controllerName);
+
+                    methodDescription.HttpString = httpPath.Replace("[controller]", controllerName);
+
+                    // Format the method parameters
+                    foreach (var param in method.ParameterList.Parameters)
+                    {
+                        if (param.AttributeLists.ToString().Contains("FromBody") &&
+                            methodDescription.bodyParams == null)
+                        {
+                            methodDescription.bodyParams =
+                                new ParameterDescription(param.Type.ToString(), "payload");
+                            methodDescription.IType = param.Type.ToString();
+                        }
+                            
+                            
+                        if (param.AttributeLists.ToString().Contains("FromRoute"))
+                            methodDescription.routeParams
+                                .Add(new ParameterDescription(param.Type.ToString(), param.Identifier.ToString()));
+                        
+                        if (param.AttributeLists.ToString().Contains("FromQuery"))
+                            methodDescription.queryParams
+                                .Add(new ParameterDescription(param.Type.ToString(), "optional = null"));
+                    }
+                    
+                    switch (httpRequestType.ToLowerInvariant())
+                    {
+                        case "get":
+                            if (!parsedControllerMethods.requests.ContainsKey(HttpMethod.Get))
+                                parsedControllerMethods.requests.TryAdd(HttpMethod.Get,
+                                    new List<ApiRequestEndpointDescription>());
+                            if (parsedControllerMethods.requests.TryGetValue(HttpMethod.Get, out var lsGet))
+                                lsGet.Add(methodDescription);
+                            break;
+                        case "post":
+                            if (!parsedControllerMethods.requests.ContainsKey(HttpMethod.Post))
+                                parsedControllerMethods.requests.TryAdd(HttpMethod.Post,
+                                    new List<ApiRequestEndpointDescription>());
+                            if (parsedControllerMethods.requests.TryGetValue(HttpMethod.Post, out var lsPost))
+                                lsPost.Add(methodDescription);
+                            break;
+                        case "put":
+                            if (!parsedControllerMethods.requests.ContainsKey(HttpMethod.Put))
+                                parsedControllerMethods.requests.TryAdd(HttpMethod.Put,
+                                    new List<ApiRequestEndpointDescription>());
+                            if (parsedControllerMethods.requests.TryGetValue(HttpMethod.Put, out var lsPut))
+                                lsPut.Add(methodDescription);
+                            break;
+                        case "delete":
+                            if (!parsedControllerMethods.requests.ContainsKey(HttpMethod.Delete))
+                                parsedControllerMethods.requests.TryAdd(HttpMethod.Delete,
+                                    new List<ApiRequestEndpointDescription>());
+                            if (parsedControllerMethods.requests.TryGetValue(HttpMethod.Delete, out var lsDelete))
+                                lsDelete.Add(methodDescription);
+                            break;
+                        default:
+                            throw new Exception("Unsupported http verb");
+                    }
+                }
+
+                foreach (var httpVerb in parsedControllerMethods.requests.Keys)
+                {
+                    outputFile.WriteLine(@$"
+    public static partial class {httpVerb}
+    {{
+");
+                    if (!parsedControllerMethods.requests.TryGetValue(httpVerb, out var endpoints)) continue;
+                    foreach (var endpoint in endpoints)
+                    {
+                        var endpointInputType = endpoint.IType == null ? "EmptyInput" : endpoint.IType.ToString();
+                        var endpointOutputType = endpoint.OType == null ? "EmptyOutput" : endpoint.OType.ToString();
+                        var endpointListenerType = httpVerb.ToString().ToLowerInvariant() switch
+                        {
+                            "get" => "EmptyOutput",
+                            "post" => endpointOutputType,
+                            "put" => endpointOutputType,
+                            "delete" => "DeleteDTO",
+                            _ => throw new Exception("Unsupported http verb")
+                        };
+                        var methodName = endpoint.HttpString.Replace("\"", "")
+                            .ToPascalCase()
+                            .Replace("/", "_")
+                            .Replace("{", "")
+                            .Replace("}", "");
+                        var constructorParams = string.Join(",", new List<ParameterDescription>()
+                            .Concat(endpoint.routeParams)
+                            .Concat(new List<ParameterDescription>() {endpoint.bodyParams})
+                            .Concat(endpoint.queryParams)
+                            .Where(x => x != null)
+                            .Select(x => $"{x.ParamType.ToString()} {x.ParamName}"));
+                        var baseConstructorParams = new List<string>();
+                        if (endpoint.routeParams.Any(x => x.ParamName == "editionId"))
+                            baseConstructorParams.Add("editionId");
+                        if (endpoint.queryParams.Any())
+                            baseConstructorParams.Add("optional");
+                        if (endpoint.routeParams.Any(x => x.ParamName == "editionId") && !endpoint.queryParams.Any())
+                            baseConstructorParams.Add("null");
+                        if (endpoint.bodyParams != null)
+                            baseConstructorParams.Add("payload");
+                        outputFile.WriteLine($@"
+        public class {methodName}
+        : {(endpoint.routeParams.Any(x => x.ParamName == "editionId") ? "EditionRequestObject" : "RequestObject")}<{endpointInputType}, {endpointOutputType}, {endpointListenerType}>
+        {{
+            {endpoint.comments}
+            public {methodName}({constructorParams}) 
+                : base({string.Join(", ", baseConstructorParams)}) {{ }}
+        }}
+");
+                        
+                    }
+                    outputFile.WriteLine("\t}");
+                }
+                
+                // Write ending to the file
+                outputFile.WriteLine("\n}");
+            }
         }
 
         private static void WriteMethodCommentsToFile(MethodDeclarationSyntax method, StreamWriter outputFile)
@@ -348,7 +526,7 @@ namespace sqe_realtime_hub_builder
             return (anonymousAllowed, $"{httpRequestType}{formattedPath}", httpRequestType, httpPath);
         }
 
-        private static List<ControllerField> AnalyzeController(List<MemberDeclarationSyntax> elements)
+        private static List<ControllerField> AnalyzeController(IEnumerable<MemberDeclarationSyntax> elements)
         {
             var cls = elements.OfType<ClassDeclarationSyntax>().ToList();
             // Check for more than one class (there should only ever be one).
@@ -461,7 +639,7 @@ namespace sqe_realtime_hub_builder
                 : $"\t\tTask {type}{char.ToUpper(item[0]) + item.Substring(1)}({responseType} returnedData);";
         }
 
-        private static void WriteHubController(List<ControllerField> fields, string projectRoot, string hubFolder)
+        private static void WriteHubController(IReadOnlyCollection<ControllerField> fields, string projectRoot, string hubFolder)
         {
             var template = new StreamReader($"{projectRoot}/HubConstructorTemplate.txt").ReadToEnd();
             template = template
@@ -536,6 +714,59 @@ namespace sqe_realtime_hub_builder
                 var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(obj.modifiers + obj.name + obj.type));
                 return BitConverter.ToInt32(hashed, 0);
             }
+        }
+
+        private class ParameterDescription
+        {
+            public ParameterDescription(string paramType, string paramName)
+            {
+                ParamType = paramType;
+                ParamName = paramName;
+            }
+
+            public string ParamType { get; set; }
+            public string ParamName { get; set; }
+        }
+
+        private class ApiRequestEndpointDescription
+        {
+            public ApiRequestEndpointDescription()
+            {
+                this.routeParams = new List<ParameterDescription>();
+                this.queryParams = new List<ParameterDescription>();
+            }
+
+            public string IType { get; set; }
+            public string OType { get; set; }
+            public string ListenerType { get; set; }
+            public string HttpString { get; set; }
+            public List<ParameterDescription> routeParams { get; set; }
+            public List<ParameterDescription> queryParams { get; set; }
+            public ParameterDescription bodyParams { get; set; }
+            public string comments { get; set; }
+        }
+
+        private class ApiRequestsDescription
+        {
+            public ApiRequestsDescription()
+            {
+                this.requests = new Dictionary<HttpMethod, List<ApiRequestEndpointDescription>>();
+            }
+            public Dictionary<HttpMethod, List<ApiRequestEndpointDescription>> requests{ get; set; }
+        }
+        
+        /// <summary>
+        ///     An empty request payload object
+        /// </summary>
+        public class EmptyInput
+        {
+        }
+
+        /// <summary>
+        ///     An empty request response object
+        /// </summary>
+        public class EmptyOutput
+        {
         }
     }
 }

@@ -58,7 +58,7 @@ namespace SQE.ApiTest.Helpers
         public static async
             Task<(HttpResponseMessage httpResponseMessage, Toutput httpResponse, Toutput signalrResponse, Tlistener
                 listenerResponse)> Send<Tinput, Toutput, Tlistener>(
-                RequestObject<Tinput, Toutput, Tlistener> request,
+                IRequestObject<Tinput, Toutput, Tlistener> request,
                 HttpClient http = null,
                 Func<string, Task<HubConnection>> realtime = null,
                 bool auth = false,
@@ -101,18 +101,17 @@ namespace SQE.ApiTest.Helpers
             // Set up a SignalR listener if desired (this hub connection must be different than the one used to make
             // the API request.
             if (listenerUser != null
-                && request.requestVerb != HttpMethod.Get
+                && request.GetRequestVerb() != HttpMethod.Get
                 && realtime != null
-                && request.listenerMethod.Any()
-                && request.GetType().IsSubclassOf(typeof(EditionRequestObject<Tinput, Toutput, Tlistener>)))
+                && request.GetListenerMethods().Any()
+                && request.GetEditionId().HasValue)
             {
-                var editionRequest = request as EditionRequestObject<Tinput, Toutput, Tlistener>;
                 signalrListener = await realtime(jwt2);
                 // Subscribe to messages on the edition
                 if (listenToEdition)
-                    await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
+                    await signalrListener.InvokeAsync("SubscribeToEdition", request.GetEditionId().Value);
                 // Register a listener for messages returned by this API request
-                foreach (var listener in request.listenerMethod)
+                foreach (var listener in request.GetListenerMethods())
                     signalrListener.On<Tlistener>(listener, receivedData => listenerResponse = receivedData);
 
                 // Reload the listener if connection is lost
@@ -121,9 +120,9 @@ namespace SQE.ApiTest.Helpers
                     await Task.Delay(new Random().Next(0, 5) * 1000);
                     await signalrListener.StartAsync();
                     // Subscribe to messages on the edition
-                    await signalrListener.InvokeAsync("SubscribeToEdition", editionRequest?.editionId);
+                    await signalrListener.InvokeAsync("SubscribeToEdition", request.GetEditionId().Value);
                     // Register a listener for messages returned by this API request
-                    foreach (var listener in request.listenerMethod)
+                    foreach (var listener in request.GetListenerMethods())
                         signalrListener.On<Tlistener>(listener, receivedData => listenerResponse = receivedData);
                 };
             }
@@ -172,7 +171,7 @@ namespace SQE.ApiTest.Helpers
 
             // If no listener is running, return the response from the request
             if (listenerUser == null
-                || request.requestVerb == HttpMethod.Get)
+                || request.GetRequestVerb() == HttpMethod.Get)
                 return (httpResponseMessage, httpResponse, signalrResponse, listenerResponse);
 
             // Otherwise, wait up to 20 seconds for the listener to receive the message before giving up
