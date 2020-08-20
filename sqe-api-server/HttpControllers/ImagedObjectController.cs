@@ -99,7 +99,7 @@ namespace SQE.API.Server.HttpControllers
         /// <returns></returns>
         [AllowAnonymous]
         [HttpGet("v1/imaged-objects/{imagedObjectId}/text-fragments")]
-        public async Task<ActionResult<List<ImagedObjectTextFragmentMatchDTO>>> ListImageTextFragments(
+        public async Task<ActionResult<ImagedObjectTextFragmentMatchListDTO>> ListImageTextFragments(
             [FromRoute] string imagedObjectId)
         {
             return await _imageService.GetImageTextFragmentsAsync(imagedObjectId);

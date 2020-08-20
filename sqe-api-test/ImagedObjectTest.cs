@@ -78,10 +78,10 @@ LIMIT 50";
                 _client);
 
             response.EnsureSuccessStatusCode();
-            Assert.Equal(1, msg.Count);
-            Assert.Equal("4Q7", msg.First().manuscriptName);
-            Assert.Equal("frg. 1", msg.First().textFragmentName);
-            Assert.Equal((uint)9423, msg.First().textFragmentId);
+            Assert.Equal(1, msg.matches.Count);
+            Assert.Equal("4Q7", msg.matches.First().manuscriptName);
+            Assert.Equal("frg. 1", msg.matches.First().textFragmentName);
+            Assert.Equal((uint)9423, msg.matches.First().textFragmentId);
         }
 
         /// <summary>

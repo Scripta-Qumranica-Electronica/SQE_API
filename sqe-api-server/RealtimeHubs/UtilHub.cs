@@ -22,26 +22,26 @@ namespace SQE.API.Server.RealtimeHubs
 {
     public partial class MainHub
     {
-/// <summary>
+        /// <summary>
         ///     Checks a WKT polygon to ensure validity. If the polygon is invalid,
         ///     it attempts to construct a valid polygon that matches the original
         ///     as closely as possible.
         /// </summary>
         /// <param name="payload">JSON object with the WKT polygon to validate</param>
-[Authorize]
-public async Task<WktPolygonDTO> PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
+        [Authorize]
+        public async Task<WktPolygonDTO> PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
 
-    {
-        try
         {
-                        return await _utilService.RepairWktPolygonAsync(payload.wktPolygon, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _utilService.RepairWktPolygonAsync(payload.wktPolygon, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
+
+
     }
-
-
-	}
 }

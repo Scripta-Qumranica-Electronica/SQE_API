@@ -103,16 +103,15 @@ namespace SQE.ApiTest.Helpers
             if (listenerUser != null
                 && request.GetRequestVerb() != HttpMethod.Get
                 && realtime != null
-                && request.GetListenerMethods().Any()
-                && request.GetEditionId().HasValue)
+                && !string.IsNullOrEmpty(request.GetListenerMethod()))
             {
                 signalrListener = await realtime(jwt2);
                 // Subscribe to messages on the edition
+                listenToEdition &= request.GetEditionId().HasValue;
                 if (listenToEdition)
                     await signalrListener.InvokeAsync("SubscribeToEdition", request.GetEditionId().Value);
                 // Register a listener for messages returned by this API request
-                foreach (var listener in request.GetListenerMethods())
-                    signalrListener.On<Tlistener>(listener, receivedData => listenerResponse = receivedData);
+                signalrListener.On<Tlistener>(request.GetListenerMethod(), receivedData => listenerResponse = receivedData);
 
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
@@ -120,10 +119,10 @@ namespace SQE.ApiTest.Helpers
                     await Task.Delay(new Random().Next(0, 5) * 1000);
                     await signalrListener.StartAsync();
                     // Subscribe to messages on the edition
-                    await signalrListener.InvokeAsync("SubscribeToEdition", request.GetEditionId().Value);
+                    if (listenToEdition)
+                        await signalrListener.InvokeAsync("SubscribeToEdition", request.GetEditionId().Value);
                     // Register a listener for messages returned by this API request
-                    foreach (var listener in request.GetListenerMethods())
-                        signalrListener.On<Tlistener>(listener, receivedData => listenerResponse = receivedData);
+                    signalrListener.On<Tlistener>(request.GetListenerMethod(), receivedData => listenerResponse = receivedData);
                 };
             }
 
@@ -162,7 +161,8 @@ namespace SQE.ApiTest.Helpers
                 // If the request should succeed and an HTTP request was also made, check that they are the same
                 if (shouldSucceed
                     && deterministic
-                    && http != null)
+                    && http != null
+                    && typeof(Toutput) == typeof(Tlistener))
                     signalrResponse.ShouldDeepEqual(httpResponse);
 
                 // Cleanup

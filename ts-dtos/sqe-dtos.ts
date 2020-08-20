@@ -63,6 +63,10 @@ export interface ImagedObjectTextFragmentMatchDTO {
     side: SideDesignation;
 }
 
+export interface ImagedObjectTextFragmentMatchListDTO {
+    matches?: Array<ImagedObjectTextFragmentMatchDTO>;
+}
+
 export interface TextFragmentDataListDTO {
     textFragments: Array<TextFragmentDataDTO>;
 }

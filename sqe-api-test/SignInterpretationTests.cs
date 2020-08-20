@@ -251,7 +251,7 @@ namespace SQE.ApiTest
                     value = val,
                 };
                 var updRequest1 =
-                    new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeId(editionId,
+                    new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(editionId,
                         signInterpretation.signInterpretationId, attributeValueId, updateSignInterpretationAddAttribute);
                 var (updResponse, updData, _, updListenerData) =
                     await Request.Send(updRequest1, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: false, requestRealtime: false);
@@ -283,7 +283,7 @@ namespace SQE.ApiTest
                     commentary = commentary
                 };
                 var updRequest2 =
-                    new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeId(editionId,
+                    new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(editionId,
                         signInterpretation.signInterpretationId, attributeValueId, updateSignInterpretationAddAttribute);
                 (updResponse, updData, _, updListenerData) =
                     await Request.Send(updRequest2, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: false, requestRealtime: false);
@@ -352,7 +352,7 @@ namespace SQE.ApiTest
 
                 // Delete the new attribute
                 var delRequest =
-                    new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeId(editionId,
+                    new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(editionId,
                         signInterpretation.signInterpretationId, 33);
                 var (delResponse, delData, _, delListenerData) =
                     await Request.Send(delRequest, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);

@@ -15,7 +15,7 @@ namespace SQE.API.Server.Services
         ImageDTO ImageToDTO(Image model);
         Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
         Task<InstitutionalImageListDTO> GetInstitutionImagesAsync(string institution);
-        Task<List<ImagedObjectTextFragmentMatchDTO>> GetImageTextFragmentsAsync(string imagedObjectId);
+        Task<ImagedObjectTextFragmentMatchListDTO> GetImageTextFragmentsAsync(string imagedObjectId);
     }
 
     public class ImageService : IImageService
@@ -62,13 +62,17 @@ namespace SQE.API.Server.Services
             return (await _imageRepo.InstitutionImages(institution)).ToDTO();
         }
 
-        public async Task<List<ImagedObjectTextFragmentMatchDTO>> GetImageTextFragmentsAsync(string imagedObjectId)
+        public async Task<ImagedObjectTextFragmentMatchListDTO> GetImageTextFragmentsAsync(string imagedObjectId)
         {
             imagedObjectId = imagedObjectId.Replace("%2F", "/").Replace("%20", " ");
             var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
-            return textFragments.Select(x => new ImagedObjectTextFragmentMatchDTO(
-                x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName, x.Side == 0 ? SideDesignation.recto : SideDesignation.verso)
-            ).ToList();
+            return new ImagedObjectTextFragmentMatchListDTO()
+            {
+                matches = textFragments.Select(x => new ImagedObjectTextFragmentMatchDTO(
+                    x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName, x.Side == 0 ? SideDesignation.recto : SideDesignation.verso)
+                ).ToList()
+            };
+
         }
 
         private static string GetType(byte type)

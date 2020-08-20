@@ -22,11 +22,11 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<InviteEditorDTO, EmptyOutput, EmptyOutput>
         {
             /// <summary>
-        ///     Adds an editor to the specified edition
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="payload">JSON object with the attributes of the new editor</param>
-            public V1_Editions_EditionId_AddEditorRequest(uint editionId,InviteEditorDTO payload) 
+            ///     Adds an editor to the specified edition
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="payload">JSON object with the attributes of the new editor</param>
+            public V1_Editions_EditionId_AddEditorRequest(uint editionId, InviteEditorDTO payload)
                 : base(editionId, null, payload) { }
         }
 
@@ -35,10 +35,10 @@ namespace SQE.ApiTest.ApiRequests
         : RequestObject<EmptyInput, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
         {
             /// <summary>
-        ///     Confirm addition of an editor to the specified edition
-        /// </summary>
-        /// <param name="token">JWT for verifying the request confirmation</param>
-            public V1_Editions_ConfirmEditorship_Token(string token) 
+            ///     Confirm addition of an editor to the specified edition
+            /// </summary>
+            /// <param name="token">JWT for verifying the request confirmation</param>
+            public V1_Editions_ConfirmEditorship_Token(string token)
                 : base() { }
         }
 
@@ -47,15 +47,15 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<EditionCopyDTO, EditionDTO, EditionDTO>
         {
             /// <summary>
-        ///     Creates a copy of the specified edition
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="request">JSON object with the attributes to be changed in the copied edition</param>
-            public V1_Editions_EditionId(uint editionId,EditionCopyDTO payload) 
+            ///     Creates a copy of the specified edition
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="request">JSON object with the attributes to be changed in the copied edition</param>
+            public V1_Editions_EditionId(uint editionId, EditionCopyDTO payload)
                 : base(editionId, null, payload) { }
         }
 
-	}
+    }
 
     public static partial class GET
     {
@@ -65,11 +65,11 @@ namespace SQE.ApiTest.ApiRequests
         : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Get a list of requests issued by the current user for other users
-        ///     to become editors of a shared edition
-        /// </summary>
-        /// <returns></returns>
-            public V1_Editions_AdminShareRequests() 
+            ///     Get a list of requests issued by the current user for other users
+            ///     to become editors of a shared edition
+            /// </summary>
+            /// <returns></returns>
+            public V1_Editions_AdminShareRequests()
                 : base() { }
         }
 
@@ -78,10 +78,10 @@ namespace SQE.ApiTest.ApiRequests
         : RequestObject<EmptyInput, EditorInvitationListDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Get a list of invitations issued to the current user to become an editor of a shared edition
-        /// </summary>
-        /// <returns></returns>
-            public V1_Editions_EditorInvitations() 
+            ///     Get a list of invitations issued to the current user to become an editor of a shared edition
+            /// </summary>
+            /// <returns></returns>
+            public V1_Editions_EditorInvitations()
                 : base() { }
         }
 
@@ -90,10 +90,10 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<EmptyInput, EditionGroupDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides details about the specified edition and all accessible alternate editions
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-            public V1_Editions_EditionId(uint editionId) 
+            ///     Provides details about the specified edition and all accessible alternate editions
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            public V1_Editions_EditionId(uint editionId)
                 : base(editionId, null) { }
         }
 
@@ -102,9 +102,9 @@ namespace SQE.ApiTest.ApiRequests
         : RequestObject<EmptyInput, EditionListDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides a listing of all editions accessible to the current user
-        /// </summary>
-            public V1_Editions() 
+            ///     Provides a listing of all editions accessible to the current user
+            /// </summary>
+            public V1_Editions()
                 : base() { }
         }
 
@@ -113,11 +113,11 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<EmptyInput, EditionScriptCollectionDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides spatial data for all letters in the edition
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <returns></returns>
-            public _V1_Editions_EditionId_ScriptCollection(uint editionId) 
+            ///     Provides spatial data for all letters in the edition
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <returns></returns>
+            public _V1_Editions_EditionId_ScriptCollection(uint editionId)
                 : base(editionId, null) { }
         }
 
@@ -126,16 +126,16 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<EmptyInput, EditionScriptLinesDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides spatial data for all letters in the edition organized and oriented
-        ///     by lines.
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <returns></returns>
-            public _V1_Editions_EditionId_ScriptLines(uint editionId) 
+            ///     Provides spatial data for all letters in the edition organized and oriented
+            ///     by lines.
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <returns></returns>
+            public _V1_Editions_EditionId_ScriptLines(uint editionId)
                 : base(editionId, null) { }
         }
 
-	}
+    }
 
     public static partial class PUT
     {
@@ -145,12 +145,12 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
         {
             /// <summary>
-        ///     Changes the rights for an editor of the specified edition
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
-        /// <param name="payload">JSON object with the attributes of the new editor</param>
-            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId,string editorEmailId,UpdateEditorRightsDTO payload) 
+            ///     Changes the rights for an editor of the specified edition
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
+            /// <param name="payload">JSON object with the attributes of the new editor</param>
+            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
                 : base(editionId, null, payload) { }
         }
 
@@ -159,15 +159,15 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<EditionUpdateRequestDTO, EditionDTO, EditionDTO>
         {
             /// <summary>
-        ///     Updates data for the specified edition
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="request">JSON object with the attributes to be updated</param>
-            public V1_Editions_EditionId(uint editionId,EditionUpdateRequestDTO payload) 
+            ///     Updates data for the specified edition
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="request">JSON object with the attributes to be updated</param>
+            public V1_Editions_EditionId(uint editionId, EditionUpdateRequestDTO payload)
                 : base(editionId, null, payload) { }
         }
 
-	}
+    }
 
     public static partial class DELETE
     {
@@ -177,15 +177,15 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<EmptyInput, DeleteTokenDTO, DeleteDTO>
         {
             /// <summary>
-        ///     Provides details about the specified edition and all accessible alternate editions
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
-        /// <param name="token">token required when using optional 'deleteForAllEditors'</param>
-            public V1_Editions_EditionId(uint editionId,List<string> optional = null,string optional = null) 
+            ///     Provides details about the specified edition and all accessible alternate editions
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
+            /// <param name="token">token required when using optional 'deleteForAllEditors'</param>
+            public V1_Editions_EditionId(uint editionId, List<string> optional = null, string optional = null)
                 : base(editionId, optional) { }
         }
 
-	}
+    }
 
 }

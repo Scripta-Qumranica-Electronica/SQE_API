@@ -198,7 +198,7 @@ namespace sqe_realtime_hub_builder
         private static List<string> WriteHub(string hubFolder, string controllerName, CompilationUnitSyntax root, IEnumerable<MemberDeclarationSyntax> members)
         {
             var hubInterfaces = new List<string>();
-            
+
             // Begin writing analyzed controller to Hub
             Console.WriteLine($"Writing to {Path.Combine(hubFolder, $"{controllerName}Hub.cs")}");
             using (var outputFile = new StreamWriter(Path.Combine(hubFolder, $"{controllerName}Hub.cs")))
@@ -280,7 +280,7 @@ namespace sqe_realtime_hub_builder
 
             return hubInterfaces;
         }
-        
+
         private static void WriteTestingApiRequest(string testFolder, string controllerName, CompilationUnitSyntax root, IEnumerable<MemberDeclarationSyntax> members)
         {
             // Begin writing analyzed controller to Hub
@@ -327,7 +327,7 @@ namespace SQE.ApiTest.ApiRequests
                         m = m.NextMatch();
                     }
                     methodDescription.OType = oType.ToString() == "ActionResult" ? "EmptyOutput" : oType.ToString();
-                    
+
                     // Format the method name and grab authorization
                     var (anonymousAllowed, methodName, httpRequestType, httpPath) =
                         GetMethodNameAndAuthorization(method, controllerName);
@@ -344,17 +344,17 @@ namespace SQE.ApiTest.ApiRequests
                                 new ParameterDescription(param.Type.ToString(), "payload");
                             methodDescription.IType = param.Type.ToString();
                         }
-                            
-                            
+
+
                         if (param.AttributeLists.ToString().Contains("FromRoute"))
                             methodDescription.routeParams
                                 .Add(new ParameterDescription(param.Type.ToString(), param.Identifier.ToString()));
-                        
+
                         if (param.AttributeLists.ToString().Contains("FromQuery"))
                             methodDescription.queryParams
                                 .Add(new ParameterDescription(param.Type.ToString(), "optional = null"));
                     }
-                    
+
                     switch (httpRequestType.ToLowerInvariant())
                     {
                         case "get":
@@ -416,7 +416,7 @@ namespace SQE.ApiTest.ApiRequests
                             .Replace("}", "");
                         var constructorParams = string.Join(",", new List<ParameterDescription>()
                             .Concat(endpoint.routeParams)
-                            .Concat(new List<ParameterDescription>() {endpoint.bodyParams})
+                            .Concat(new List<ParameterDescription>() { endpoint.bodyParams })
                             .Concat(endpoint.queryParams)
                             .Where(x => x != null)
                             .Select(x => $"{x.ParamType.ToString()} {x.ParamName}"));
@@ -438,11 +438,11 @@ namespace SQE.ApiTest.ApiRequests
                 : base({string.Join(", ", baseConstructorParams)}) {{ }}
         }}
 ");
-                        
+
                     }
                     outputFile.WriteLine("\t}");
                 }
-                
+
                 // Write ending to the file
                 outputFile.WriteLine("\n}");
             }
@@ -752,9 +752,9 @@ namespace SQE.ApiTest.ApiRequests
             {
                 this.requests = new Dictionary<HttpMethod, List<ApiRequestEndpointDescription>>();
             }
-            public Dictionary<HttpMethod, List<ApiRequestEndpointDescription>> requests{ get; set; }
+            public Dictionary<HttpMethod, List<ApiRequestEndpointDescription>> requests { get; set; }
         }
-        
+
         /// <summary>
         ///     An empty request payload object
         /// </summary>

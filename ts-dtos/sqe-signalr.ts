@@ -18,6 +18,7 @@ import {
 	TextFragmentDataDTO,
 	ArtefactTextFragmentMatchDTO,
 	ImagedObjectTextFragmentMatchDTO,
+	ImagedObjectTextFragmentMatchListDTO,
 	TextFragmentDataListDTO,
 	ArtefactTextFragmentMatchListDTO,
 	TextFragmentDTO,
@@ -646,7 +647,7 @@ export class SignalRUtilities {
 	 * @param imagedObjectId - Id of the imaged object
 	 *
 	 */
-    public async getV1ImagedObjectsImagedObjectIdTextFragments(imagedObjectId: string): Promise<ImagedObjectTextFragmentMatchDTO[]> {
+    public async getV1ImagedObjectsImagedObjectIdTextFragments(imagedObjectId: string): Promise<ImagedObjectTextFragmentMatchListDTO> {
         return await this._connection.invoke('GetV1ImagedObjectsImagedObjectIdTextFragments', imagedObjectId);
     }
 

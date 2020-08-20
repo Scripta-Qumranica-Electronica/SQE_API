@@ -22,10 +22,10 @@ namespace SQE.ApiTest.ApiRequests
         : RequestObject<EmptyInput, SimpleImageListDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides information for the specified imaged object.
-        /// </summary>
-        /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-            public V1_ImagedObjects_ImagedObjectId(string imagedObjectId) 
+            ///     Provides information for the specified imaged object.
+            /// </summary>
+            /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+            public V1_ImagedObjects_ImagedObjectId(string imagedObjectId)
                 : base() { }
         }
 
@@ -34,13 +34,13 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<EmptyInput, ImagedObjectDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides information for the specified imaged object related to the specified edition, can include images and also
-        ///     their masks with optional.
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-        /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
-            public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(uint editionId,string imagedObjectId,List<string> optional = null) 
+            ///     Provides information for the specified imaged object related to the specified edition, can include images and also
+            ///     their masks with optional.
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+            /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
+            public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(uint editionId, string imagedObjectId, List<string> optional = null)
                 : base(editionId, optional) { }
         }
 
@@ -49,12 +49,12 @@ namespace SQE.ApiTest.ApiRequests
         : EditionRequestObject<EmptyInput, ImagedObjectListDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
-        ///     optional.
-        /// </summary>
-        /// <param name="editionId">Unique Id of the desired edition</param>
-        /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
-            public V1_Editions_EditionId_ImagedObjects(uint editionId,List<string> optional = null) 
+            ///     Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
+            ///     optional.
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
+            public V1_Editions_EditionId_ImagedObjects(uint editionId, List<string> optional = null)
                 : base(editionId, optional) { }
         }
 
@@ -63,9 +63,9 @@ namespace SQE.ApiTest.ApiRequests
         : RequestObject<EmptyInput, ImageInstitutionListDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides a list of all institutional image providers.
-        /// </summary>
-            public V1_ImagedObjects_Institutions() 
+            ///     Provides a list of all institutional image providers.
+            /// </summary>
+            public V1_ImagedObjects_Institutions()
                 : base() { }
         }
 
@@ -74,25 +74,25 @@ namespace SQE.ApiTest.ApiRequests
         : RequestObject<EmptyInput, InstitutionalImageListDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides a list of all institutional image providers.
-        /// </summary>
-            public V1_ImagedObjects_Institutions_Institution(string institution) 
+            ///     Provides a list of all institutional image providers.
+            /// </summary>
+            public V1_ImagedObjects_Institutions_Institution(string institution)
                 : base() { }
         }
 
 
         public class V1_ImagedObjects_ImagedObjectId_TextFragments
-        : RequestObject<EmptyInput, ImagedObjectTextFragmentMatchDTO, EmptyOutput>
+        : RequestObject<EmptyInput, ImagedObjectTextFragmentMatchListDTO, EmptyOutput>
         {
             /// <summary>
-        ///     Provides a list of all text fragments that should correspond to the imaged object.
-        /// </summary>
-        /// <param name="imagedObjectId">Id of the imaged object</param>
-        /// <returns></returns>
-            public V1_ImagedObjects_ImagedObjectId_TextFragments(string imagedObjectId) 
+            ///     Provides a list of all text fragments that should correspond to the imaged object.
+            /// </summary>
+            /// <param name="imagedObjectId">Id of the imaged object</param>
+            /// <returns></returns>
+            public V1_ImagedObjects_ImagedObjectId_TextFragments(string imagedObjectId)
                 : base() { }
         }
 
-	}
+    }
 
 }

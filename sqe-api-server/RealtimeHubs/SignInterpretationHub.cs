@@ -23,91 +23,91 @@ namespace SQE.API.Server.RealtimeHubs
 {
     public partial class MainHub
     {
-/// <summary>
+        /// <summary>
         /// Retrieve a list of all possible attributes for an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being searched</param>
         /// <returns>A list of and edition's attributes and their details</returns>
-[AllowAnonymous]
-public async Task<AttributeListDTO> GetV1EditionsEditionIdSignInterpretationsAttributes(uint editionId)
+        [AllowAnonymous]
+        public async Task<AttributeListDTO> GetV1EditionsEditionIdSignInterpretationsAttributes(uint editionId)
 
-    {
-        try
         {
-                        return await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(                await _userService.GetCurrentUserObjectAsync(editionId, false));              
+            try
+            {
+                return await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(await _userService.GetCurrentUserObjectAsync(editionId, false));
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// Retrieve the details of a sign interpretation in an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being searched</param>
         /// <param name="signInterpretationId">The desired sign interpretation id</param>
         /// <returns>The details of the desired sign interpretation</returns>
-[AllowAnonymous]
-public async Task<SignInterpretationDTO> GetV1EditionsEditionIdSignInterpretationsSignInterpretationId(uint editionId, uint signInterpretationId)
+        [AllowAnonymous]
+        public async Task<SignInterpretationDTO> GetV1EditionsEditionIdSignInterpretationsSignInterpretationId(uint editionId, uint signInterpretationId)
 
-    {
-        try
         {
-                        return await _signInterpretationService.GetEditionSignInterpretationAsync(                await _userService.GetCurrentUserObjectAsync(editionId, false),                signInterpretationId);              
+            try
+            {
+                return await _signInterpretationService.GetEditionSignInterpretationAsync(await _userService.GetCurrentUserObjectAsync(editionId, false), signInterpretationId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// Create a new attribute for an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being edited</param>
         /// <param name="newAttribute">The details of the new attribute</param>
         /// <returns>The details of the newly created attribute</returns>
-[Authorize]
-public async Task<AttributeDTO> PostV1EditionsEditionIdSignInterpretationsAttributes(uint editionId, CreateAttributeDTO newAttribute)
+        [Authorize]
+        public async Task<AttributeDTO> PostV1EditionsEditionIdSignInterpretationsAttributes(uint editionId, CreateAttributeDTO newAttribute)
 
-    {
-        try
         {
-                        return await _signInterpretationService.CreateEditionAttributeAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                newAttribute, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _signInterpretationService.CreateEditionAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newAttribute, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// Delete an attribute from an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being edited</param>
         /// <param name="attributeId">The ID of the attribute to delete</param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-[Authorize]
-public async Task DeleteV1EditionsEditionIdSignInterpretationsAttributesAttributeId(uint editionId, uint attributeId)
+        [Authorize]
+        public async Task DeleteV1EditionsEditionIdSignInterpretationsAttributesAttributeId(uint editionId, uint attributeId)
 
-    {
-        try
         {
-                        await _signInterpretationService.DeleteEditionAttributeAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                attributeId, clientId: Context.ConnectionId);              
+            try
+            {
+                await _signInterpretationService.DeleteEditionAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), attributeId, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// Change the details of an attribute in an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being edited</param>
@@ -115,22 +115,22 @@ public async Task DeleteV1EditionsEditionIdSignInterpretationsAttributesAttribut
         /// <param name="updatedAttribute">The details of the updated attribute</param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-[Authorize]
-public async Task<AttributeDTO> PutV1EditionsEditionIdSignInterpretationsAttributesAttributeId(uint editionId, uint attributeId, UpdateAttributeDTO updatedAttribute)
+        [Authorize]
+        public async Task<AttributeDTO> PutV1EditionsEditionIdSignInterpretationsAttributesAttributeId(uint editionId, uint attributeId, UpdateAttributeDTO updatedAttribute)
 
-    {
-        try
         {
-                        return await _signInterpretationService.UpdateEditionAttributeAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                attributeId,                updatedAttribute, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _signInterpretationService.UpdateEditionAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), attributeId, updatedAttribute, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-// /// <summary>
+        // /// <summary>
         // /// Creates a new sign interpretation 
         // /// </summary>
         // /// <param name="editionId">ID of the edition being changed</param>
@@ -164,44 +164,44 @@ public async Task<AttributeDTO> PutV1EditionsEditionIdSignInterpretationsAttribu
         /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
         /// <param name="commentary">The new commentary for the sign interpretation</param>
         /// <returns>Ok or Error</returns>
-[Authorize]
-public async Task<SignInterpretationDTO> PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdCommentary(uint editionId, uint signInterpretationId, CommentaryCreateDTO commentary)
+        [Authorize]
+        public async Task<SignInterpretationDTO> PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdCommentary(uint editionId, uint signInterpretationId, CommentaryCreateDTO commentary)
 
-    {
-        try
         {
-                        return await _signInterpretationService.CreateOrUpdateSignInterpretationCommentaryAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                signInterpretationId,                commentary, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _signInterpretationService.CreateOrUpdateSignInterpretationCommentaryAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, commentary, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// This adds a new attribute to the specified sign interpretation.
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation for adding a new attribute</param>
         /// <param name="newSignInterpretationAttributes">Details of the attribute to be added</param>
         /// <returns>The updated sign interpretation</returns>
-[Authorize]
-public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(uint editionId, uint signInterpretationId, InterpretationAttributeCreateDTO newSignInterpretationAttributes)
+        [Authorize]
+        public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributes(uint editionId, uint signInterpretationId, InterpretationAttributeCreateDTO newSignInterpretationAttributes)
 
-    {
-        try
         {
-                        return await _signInterpretationService.CreateSignInterpretationAttributeAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                signInterpretationId,                newSignInterpretationAttributes, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _signInterpretationService.CreateSignInterpretationAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, newSignInterpretationAttributes, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// This changes the values of the specified sign interpretation attribute,
         /// mainly used to change commentary.
         /// </summary>
@@ -210,42 +210,42 @@ public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretati
         /// <param name="attributeValueId">Id of the attribute value to be altered</param>
         /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
         /// <returns>The updated sign interpretation</returns>
-[Authorize]
-public async Task<SignInterpretationDTO> PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
+        [Authorize]
+        public async Task<SignInterpretationDTO> PutV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
 
-    {
-        try
         {
-                        return await _signInterpretationService.UpdateSignInterpretationAttributeAsync(                await _userService.GetCurrentUserObjectAsync(editionId, true),                signInterpretationId,                attributeValueId,                alteredSignInterpretationAttribute, clientId: Context.ConnectionId);              
+            try
+            {
+                return await _signInterpretationService.UpdateSignInterpretationAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, attributeValueId, alteredSignInterpretationAttribute, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
 
 
-/// <summary>
+        /// <summary>
         /// This deletes the specified attribute value from the specified sign interpretation.
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
         /// <param name="attributeValueId">Id of the attribute being removed</param>
         /// <returns>Ok or Error</returns>
-[Authorize]
-public async Task DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId)
+        [Authorize]
+        public async Task DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId)
 
-    {
-        try
         {
-                        await _signInterpretationService.DeleteSignInterpretationAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true),                signInterpretationId,                attributeValueId, clientId: Context.ConnectionId);              
+            try
+            {
+                await _signInterpretationService.DeleteSignInterpretationAttributeAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, attributeValueId, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
         }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
+
+
     }
-
-
-	}
 }

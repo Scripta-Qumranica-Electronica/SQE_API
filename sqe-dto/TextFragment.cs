@@ -68,6 +68,11 @@ namespace SQE.API.DTO
         [Required] public SideDesignation side { get; set; }
     }
 
+    public class ImagedObjectTextFragmentMatchListDTO
+    {
+        public List<ImagedObjectTextFragmentMatchDTO> matches { get; set; }
+    }
+
     public class TextFragmentDataListDTO
     {
         public TextFragmentDataListDTO(List<TextFragmentDataDTO> textFragments)

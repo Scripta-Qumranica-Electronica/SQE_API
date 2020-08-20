@@ -101,7 +101,7 @@ namespace SQE.ApiTest
             )> confirmEditor(uint editionId, Guid token, Request.UserAuthDetails editor, Request.UserAuthDetails admin,
             bool shouldSucceed = true)
         {
-            var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(token, editionId);
+            var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(token.ToString());
             var (httpConfirmResponse, shareConfirmMsg, _, listenerConfirmResponse) = await Request.Send(
                 confirmRequest,
                 _client,

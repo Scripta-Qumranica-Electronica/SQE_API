@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -6,209 +7,440 @@ using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
+    public static partial class Delete
+    {
+
+
+        public class V1_Editions_EditionId
+        : RequestObject<EmptyInput, DeleteTokenDTO, DeleteTokenDTO>
+        {
+            public readonly uint EditionId;
+            public readonly List<string> Optional;
+            public readonly string Token;
+
+            /// <summary>
+            ///     Provides details about the specified edition and all accessible alternate editions
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
+            /// <param name="token">token required when using optional 'deleteForAllEditors'</param>
+            public V1_Editions_EditionId(uint editionId, List<string> optional = null, string token = null)
+                : base(null)
+            {
+                this.EditionId = editionId;
+                this.Optional = optional;
+                this.Token = token;
+                this.listenerMethod = "DeletedEdition";
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath.Replace("/edition-id", $"/{EditionId.ToString()}")
+                    + (Optional != null ? $"?optional={string.Join(",", Optional)}" : "")
+                    + (Token != null ? $"&token={Token}" : "");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), EditionId, Optional, Token);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return EditionId;
+                }
+            }
+        }
+    }
+
     public static partial class Get
     {
-        public class V1_Editions_AdminShareRequests : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
+
+
+        public class V1_Editions_AdminShareRequests
+        : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
         {
+
+
             /// <summary>
-            ///     Requests a list of all outstanding editor requests made by the current user
+            ///     Get a list of requests issued by the current user for other users
+            ///     to become editors of a shared edition
             /// </summary>
-            public V1_Editions_AdminShareRequests() : base(null)
+            /// <returns></returns>
+            public V1_Editions_AdminShareRequests()
+                : base(null)
             {
+
+
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath;
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+            }
+
+
+        }
+
+        public class V1_Editions_EditorInvitations
+        : RequestObject<EmptyInput, EditorInvitationListDTO, EmptyOutput>
+        {
+
+
+            /// <summary>
+            ///     Get a list of invitations issued to the current user to become an editor of a shared edition
+            /// </summary>
+            /// <returns></returns>
+            public V1_Editions_EditorInvitations()
+                : base(null)
+            {
+
+
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath;
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+            }
+
+
+        }
+
+        public class V1_Editions_EditionId
+        : RequestObject<EmptyInput, EditionGroupDTO, EmptyOutput>
+        {
+            public readonly uint EditionId;
+
+            /// <summary>
+            ///     Provides details about the specified edition and all accessible alternate editions
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            public V1_Editions_EditionId(uint editionId)
+                : base(null)
+            {
+                this.EditionId = editionId;
+
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath.Replace("/edition-id", $"/{EditionId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), EditionId);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return EditionId;
+                }
             }
         }
 
-        public class V1_Editions_EditorInvitations : RequestObject<EmptyInput, EditorInvitationListDTO, EmptyOutput>
+        public class V1_Editions
+        : RequestObject<EmptyInput, EditionListDTO, EmptyOutput>
         {
+
+
             /// <summary>
-            ///     Requests a list of all outstanding editor requests made by the current user
+            ///     Provides a listing of all editions accessible to the current user
             /// </summary>
-            public V1_Editions_EditorInvitations() : base(null)
+            public V1_Editions()
+                : base(null)
             {
+
+
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath;
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+            }
+
+
+        }
+
+        public class _V1_Editions_EditionId_ScriptCollection
+        : RequestObject<EmptyInput, EditionScriptCollectionDTO, EmptyOutput>
+        {
+            public readonly uint EditionId;
+
+            /// <summary>
+            ///     Provides spatial data for all letters in the edition
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <returns></returns>
+            public _V1_Editions_EditionId_ScriptCollection(uint editionId)
+                : base(null)
+            {
+                this.EditionId = editionId;
+
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath.Replace("/edition-id", $"/{EditionId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), EditionId);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return EditionId;
+                }
             }
         }
 
-        public class V1_Editions : RequestObject<EmptyInput, EditionListDTO, EmptyOutput>
+        public class _V1_Editions_EditionId_ScriptLines
+        : RequestObject<EmptyInput, EditionScriptLinesDTO, EmptyOutput>
         {
-            /// <summary>
-            ///     Request a listing of all editions available to the user
-            /// </summary>
-            public V1_Editions() : base(null)
-            {
-            }
-        }
+            public readonly uint EditionId;
 
-        public class V1_Editions_EditionId : EditionRequestObject<EmptyInput, EditionGroupDTO, EmptyOutput>
-        {
             /// <summary>
-            ///     Request information about a specific edition
+            ///     Provides spatial data for all letters in the edition organized and oriented
+            ///     by lines.
             /// </summary>
-            /// <param name="editionId">The editionId for the desired edition</param>
-            public V1_Editions_EditionId(uint editionId) : base(editionId)
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <returns></returns>
+            public _V1_Editions_EditionId_ScriptLines(uint editionId)
+                : base(null)
             {
+                this.EditionId = editionId;
+
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath.Replace("/edition-id", $"/{EditionId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), EditionId);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return EditionId;
+                }
             }
         }
     }
 
     public static partial class Post
     {
-        public class V1_Editions_EditionId : EditionRequestObject<EditionCopyDTO, EditionDTO, EditionDTO>
-        {
-            /// <summary>
-            ///     Request to create a copy of an edition
-            /// </summary>
-            /// <param name="editionId">Id of the edition to be copied</param>
-            public V1_Editions_EditionId(uint editionId, EditionCopyDTO payload) : base(editionId, null, payload)
-            {
-            }
-        }
 
-        public class
-            V1_Editions_EditionId_AddEditorRequest : EditionRequestObject<InviteEditorDTO, EmptyOutput,
-                EditorInvitationDTO>
+
+        public class V1_Editions_EditionId_AddEditorRequest
+        : RequestObject<InviteEditorDTO, EmptyOutput, EditorInvitationDTO>
         {
+            public readonly uint EditionId;
+            public readonly InviteEditorDTO Payload;
+
             /// <summary>
-            ///     Request to add an editor to an edition
+            ///     Adds an editor to the specified edition
             /// </summary>
-            /// <param name="editionId">The editionId for the desired edition</param>
-            /// <param name="payload">An object containing the settings for the editor and editor rights</param>
-            public V1_Editions_EditionId_AddEditorRequest(uint editionId, InviteEditorDTO payload) : base(
-                editionId,
-                null,
-                payload
-            )
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="payload">JSON object with the attributes of the new editor</param>
+            public V1_Editions_EditionId_AddEditorRequest(uint editionId, InviteEditorDTO payload)
+                : base(payload)
             {
-                listenerMethod.Add("RequestedEditor");
+                this.EditionId = editionId;
+                this.Payload = payload;
+                this.listenerMethod = "RequestedEditor";
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath.Replace("/edition-id", $"/{EditionId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), EditionId, Payload);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return EditionId;
+                }
             }
         }
 
         public class V1_Editions_ConfirmEditorship_Token
-            : EditionEditorConfirmationObject<string, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
+        : RequestObject<EmptyInput, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
         {
-            public V1_Editions_ConfirmEditorship_Token(Guid token, uint editionId) : base(token, editionId)
+            public readonly string Token;
+
+            /// <summary>
+            ///     Confirm addition of an editor to the specified edition
+            /// </summary>
+            /// <param name="token">JWT for verifying the request confirmation</param>
+            public V1_Editions_ConfirmEditorship_Token(string token)
+                : base(null)
             {
-                listenerMethod.Add("CreatedEditor");
+                this.Token = token;
+                this.listenerMethod = "CreatedEditor";
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath.Replace("/token", $"/{Token.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), Token);
+            }
+
+
+        }
+
+        public class V1_Editions_EditionId
+        : RequestObject<EditionCopyDTO, EditionDTO, EditionDTO>
+        {
+            public readonly uint EditionId;
+            public readonly EditionCopyDTO Payload;
+
+            /// <summary>
+            ///     Creates a copy of the specified edition
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="request">JSON object with the attributes to be changed in the copied edition</param>
+            public V1_Editions_EditionId(uint editionId, EditionCopyDTO payload)
+                : base(payload)
+            {
+                this.EditionId = editionId;
+                this.Payload = payload;
+                this.listenerMethod = "CreatedEdition";
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath.Replace("/edition-id", $"/{EditionId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), EditionId, Payload);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return EditionId;
+                }
             }
         }
     }
 
     public static partial class Put
     {
+
+
         public class V1_Editions_EditionId_Editors_EditorEmailId
-            : EditionEditorRequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
+        : RequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
         {
-            /// <summary>
-            ///     Request to change the access rights of an editor to an edition
-            /// </summary>
-            /// <param name="editionId">The editionId for the desired edition</param>
-            /// <param name="payload">An object containing the settings for the editor and editor rights</param>
-            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId,
-                string editorEmail,
-                UpdateEditorRightsDTO payload) : base(
-                editionId,
-                editorEmail,
-                null,
-                payload
-            )
-            {
-                listenerMethod.Add("UpdatedEditionEditor");
-            }
-        }
+            public readonly uint EditionId;
+            public readonly string EditorEmailId;
+            public readonly UpdateEditorRightsDTO Payload;
 
-        public class V1_Editions_EditionId : EditionRequestObject<EditionUpdateRequestDTO, EditionDTO, EditionDTO>
-        {
             /// <summary>
-            ///     Request to update data for the specified edition
+            ///     Changes the rights for an editor of the specified edition
             /// </summary>
             /// <param name="editionId">Unique Id of the desired edition</param>
-            /// <param name="payload">JSON object with the attributes to be updated</param>
-            public V1_Editions_EditionId(uint editionId, EditionUpdateRequestDTO payload) : base(
-                editionId,
-                null,
-                payload
-            )
+            /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
+            /// <param name="payload">JSON object with the attributes of the new editor</param>
+            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
+                : base(payload)
             {
-                listenerMethod.Add("UpdatedEdition");
-            }
-        }
-    }
-
-    public static partial class Delete
-    {
-        public class V1_Editions_EditionId : EditionRequestObject<EmptyInput, DeleteTokenDTO, DeleteTokenDTO>
-        {
-            private readonly List<string> _optional;
-            private readonly string _token;
-
-            /// <summary>
-            ///     Request to delete an edition
-            /// </summary>
-            /// <param name="editionId">Unique Id of the desired edition</param>
-            /// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
-            /// <param name="token">token required when using optional 'deleteForAllEditors'</param>
-            public V1_Editions_EditionId(uint editionId, List<string> optional, string token) : base(editionId)
-            {
-                _optional = optional;
-                _token = token;
-                listenerMethod.Add("DeletedEdition");
+                this.EditionId = editionId;
+                this.EditorEmailId = editorEmailId;
+                this.Payload = payload;
+                this.listenerMethod = "CreatedEditor";
             }
 
             protected override string HttpPath()
             {
-                var http = requestPath.Replace("/edition-id", $"/{editionId.ToString()}");
-                if (_optional.Count > 0)
-                    http += "?optional[]=" + string.Join("&", _optional);
-                if (!string.IsNullOrEmpty(_token))
-                    http += $"{(_optional.Count > 0 ? "&" : "?")}token={_token}";
-                return http;
+                return requestPath.Replace("/edition-id", $"/{EditionId.ToString()}").Replace("/editor-email-id", $"/{EditorEmailId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), editionId, _optional, _token);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), EditionId, EditorEmailId, Payload);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return EditionId;
+                }
+            }
+        }
+
+        public class V1_Editions_EditionId
+        : RequestObject<EditionUpdateRequestDTO, EditionDTO, EditionDTO>
+        {
+            public readonly uint EditionId;
+            public readonly EditionUpdateRequestDTO Payload;
+
+            /// <summary>
+            ///     Updates data for the specified edition
+            /// </summary>
+            /// <param name="editionId">Unique Id of the desired edition</param>
+            /// <param name="request">JSON object with the attributes to be updated</param>
+            public V1_Editions_EditionId(uint editionId, EditionUpdateRequestDTO payload)
+                : base(payload)
+            {
+                this.EditionId = editionId;
+                this.Payload = payload;
+                this.listenerMethod = "UpdatedEdition";
+            }
+
+            protected override string HttpPath()
+            {
+                return requestPath.Replace("/edition-id", $"/{EditionId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), EditionId, Payload);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return EditionId;
+                }
             }
         }
     }
-}
 
-// /*ApiRequests Template*/
-// public static partial class Get
-// {
-//     public static partial class V1
-//     {
-//         public static class Editions
-//         {
-//             
-//         }
-//     }
-// }
-//
-// public static partial class Post
-// {
-//     public static partial class V1
-//     {
-//         public static class Editions
-//         {
-//         }
-//     }
-// }
-//
-// public static partial class Put
-// {
-//     public static partial class V1
-//     {
-//         public static class Editions
-//         {
-//         }
-//     }
-// }
-//
-// public static partial class Delete
-// {
-//     public static partial class V1
-//     {
-//         public static class Editions
-//         {
-//         }
-//     }
-// }
+}
