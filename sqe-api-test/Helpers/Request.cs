@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -51,14 +50,14 @@ namespace SQE.ApiTest.Helpers
         ///     Whether the request is expected to return the same response from multiple requests.
         ///     This method will throw an error if the request is deterministic but the http and realtime responses differ.
         /// </param>
-        /// <typeparam name="Tinput">Type of the request payload (this is automatically inferred from the request argument).</typeparam>
-        /// <typeparam name="Toutput">Type of the API response (this is automatically inferred from the request argument).</typeparam>
+        /// <typeparam name="TInput">Type of the request payload (this is automatically inferred from the request argument).</typeparam>
+        /// <typeparam name="TOutput">Type of the API response (this is automatically inferred from the request argument).</typeparam>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
         public static async
-            Task<(HttpResponseMessage httpResponseMessage, Toutput httpResponse, Toutput signalrResponse, Tlistener
-                listenerResponse)> Send<Tinput, Toutput, Tlistener>(
-                IRequestObject<Tinput, Toutput, Tlistener> request,
+            Task<(HttpResponseMessage httpResponseMessage, TOutput httpResponse, TOutput signalrResponse, Tlistener
+                listenerResponse)> Send<TInput, TOutput, Tlistener>(
+                IRequestObject<TInput, TOutput, Tlistener> request,
                 HttpClient http = null,
                 Func<string, Task<HubConnection>> realtime = null,
                 bool auth = false,
@@ -82,8 +81,8 @@ namespace SQE.ApiTest.Helpers
 
             // Set up the initial variables and their values
             HttpResponseMessage httpResponseMessage = null;
-            var httpResponse = default(Toutput);
-            var signalrResponse = default(Toutput);
+            var httpResponse = default(TOutput);
+            var signalrResponse = default(TOutput);
             var listenerResponse = default(Tlistener);
             HubConnection signalrListener = null;
             string jwt1 = null;
@@ -131,11 +130,11 @@ namespace SQE.ApiTest.Helpers
             if (http != null
                 && httpObj != null)
             {
-                (httpResponseMessage, httpResponse) = await SendHttpRequestAsync<Tinput, Toutput>(
+                (httpResponseMessage, httpResponse) = await SendHttpRequestAsync<TInput, TOutput>(
                     http,
-                    httpObj.requestVerb,
-                    httpObj.requestString,
-                    httpObj.payload,
+                    httpObj.RequestVerb,
+                    httpObj.RequestString,
+                    httpObj.Payload,
                     jwt1
                 );
 
@@ -150,7 +149,7 @@ namespace SQE.ApiTest.Helpers
                 try
                 {
                     signalR = await realtime(jwt1);
-                    signalrResponse = await request.SignalrRequest<Toutput>()(signalR);
+                    signalrResponse = await request.SignalrRequest<TOutput>()(signalR);
                 }
                 catch (Exception)
                 {
@@ -162,7 +161,7 @@ namespace SQE.ApiTest.Helpers
                 if (shouldSucceed
                     && deterministic
                     && http != null
-                    && typeof(Toutput) == typeof(Tlistener))
+                    && typeof(TOutput) == typeof(Tlistener))
                     signalrResponse.ShouldDeepEqual(httpResponse);
 
                 // Cleanup

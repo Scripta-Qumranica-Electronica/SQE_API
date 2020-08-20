@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace GenerateTestRequestObjects
 {
@@ -57,8 +56,8 @@ namespace GenerateTestRequestObjects
     {
         public ApiRequestEndpointDescription()
         {
-            this.routeParams = new List<ParameterDescription>();
-            this.queryParams = new List<ParameterDescription>();
+            routeParams = new List<ParameterDescription>();
+            queryParams = new List<ParameterDescription>();
         }
 
         public HttpMethod RequestType { get; set; }
@@ -77,14 +76,18 @@ namespace GenerateTestRequestObjects
     {
         public ApiRequestsDescription()
         {
-            this.requests = new Dictionary<HttpMethod, List<ApiRequestEndpointDescription>>();
+            requests = new Dictionary<HttpMethod, List<ApiRequestEndpointDescription>>();
         }
+
         public Dictionary<HttpMethod, List<ApiRequestEndpointDescription>> requests { get; set; }
     }
 
     public class MethodDescription<TSyntax> where TSyntax : SyntaxNode
     {
-        public MethodDescription() { }
+        public MethodDescription()
+        {
+        }
+
         public MethodDescription(string symbol, TSyntax syntax) : this()
         {
             Symbol = symbol;
