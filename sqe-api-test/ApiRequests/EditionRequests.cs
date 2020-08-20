@@ -18,10 +18,14 @@ using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
     public static partial class Delete
     {
+
+
         public class V1_Editions_EditionId
-            : RequestObject<EmptyInput, DeleteTokenDTO, DeleteTokenDTO>
+        : RequestObject<EmptyInput, DeleteTokenDTO, DeleteTokenDTO>
         {
             private readonly uint _editionId;
             private readonly List<string> _optional;
@@ -45,8 +49,8 @@ namespace SQE.ApiTest.ApiRequests
             protected override string HttpPath()
             {
                 return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                       + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "")
-                       + (_token != null ? $"&token={_token}" : "");
+                    + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "")
+                    + (_token != null ? $"&token={_token}" : "");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -65,9 +69,25 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Get
     {
+
+
         public class V1_Editions_AdminShareRequests
-            : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
+        : RequestObject<EmptyInput, AdminEditorRequestListDTO, EmptyOutput>
         {
+
+
+            /// <summary>
+            ///     Get a list of requests issued by the current user for other users
+            ///     to become editors of a shared edition
+            /// </summary>
+            /// <returns></returns>
+            public V1_Editions_AdminShareRequests()
+
+            {
+
+
+            }
+
             protected override string HttpPath()
             {
                 return RequestPath;
@@ -77,11 +97,26 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
             }
+
+
         }
 
         public class V1_Editions_EditorInvitations
-            : RequestObject<EmptyInput, EditorInvitationListDTO, EmptyOutput>
+        : RequestObject<EmptyInput, EditorInvitationListDTO, EmptyOutput>
         {
+
+
+            /// <summary>
+            ///     Get a list of invitations issued to the current user to become an editor of a shared edition
+            /// </summary>
+            /// <returns></returns>
+            public V1_Editions_EditorInvitations()
+
+            {
+
+
+            }
+
             protected override string HttpPath()
             {
                 return RequestPath;
@@ -91,10 +126,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
             }
+
+
         }
 
         public class V1_Editions_EditionId
-            : RequestObject<EmptyInput, EditionGroupDTO, EmptyOutput>
+        : RequestObject<EmptyInput, EditionGroupDTO, EmptyOutput>
         {
             private readonly uint _editionId;
 
@@ -106,6 +143,7 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
             }
 
             protected override string HttpPath()
@@ -127,8 +165,20 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions
-            : RequestObject<EmptyInput, EditionListDTO, EmptyOutput>
+        : RequestObject<EmptyInput, EditionListDTO, EmptyOutput>
         {
+
+
+            /// <summary>
+            ///     Provides a listing of all editions accessible to the current user
+            /// </summary>
+            public V1_Editions()
+
+            {
+
+
+            }
+
             protected override string HttpPath()
             {
                 return RequestPath;
@@ -138,10 +188,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
             }
+
+
         }
 
         public class _V1_Editions_EditionId_ScriptCollection
-            : RequestObject<EmptyInput, EditionScriptCollectionDTO, EmptyOutput>
+        : RequestObject<EmptyInput, EditionScriptCollectionDTO, EmptyOutput>
         {
             private readonly uint _editionId;
 
@@ -154,6 +206,7 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
             }
 
             protected override string HttpPath()
@@ -175,7 +228,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class _V1_Editions_EditionId_ScriptLines
-            : RequestObject<EmptyInput, EditionScriptLinesDTO, EmptyOutput>
+        : RequestObject<EmptyInput, EditionScriptLinesDTO, EmptyOutput>
         {
             private readonly uint _editionId;
 
@@ -189,6 +242,7 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
             }
 
             protected override string HttpPath()
@@ -212,8 +266,10 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
+
+
         public class V1_Editions_EditionId_AddEditorRequest
-            : RequestObject<InviteEditorDTO, EmptyOutput, EditorInvitationDTO>
+        : RequestObject<InviteEditorDTO, EmptyOutput, EditorInvitationDTO>
         {
             private readonly uint _editionId;
             private readonly InviteEditorDTO _payload;
@@ -250,7 +306,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_ConfirmEditorship_Token
-            : RequestObject<EmptyInput, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
+        : RequestObject<EmptyInput, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
         {
             private readonly string _token;
 
@@ -267,17 +323,19 @@ namespace SQE.ApiTest.ApiRequests
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/token", $"/{_token}");
+                return RequestPath.Replace("/token", $"/{_token.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _token);
             }
+
+
         }
 
         public class V1_Editions_EditionId
-            : RequestObject<EditionCopyDTO, EditionDTO, EditionDTO>
+        : RequestObject<EditionCopyDTO, EditionDTO, EditionDTO>
         {
             private readonly uint _editionId;
             private readonly EditionCopyDTO _payload;
@@ -316,8 +374,10 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
+
+
         public class V1_Editions_EditionId_Editors_EditorEmailId
-            : RequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
+        : RequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO, DetailedEditorRightsDTO>
         {
             private readonly uint _editionId;
             private readonly string _editorEmailId;
@@ -329,8 +389,7 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
             /// <param name="payload">JSON object with the attributes of the new editor</param>
-            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId, string editorEmailId,
-                UpdateEditorRightsDTO payload)
+            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
@@ -341,8 +400,7 @@ namespace SQE.ApiTest.ApiRequests
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/editor-email-id", $"/{_editorEmailId}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/editor-email-id", $"/{_editorEmailId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -359,7 +417,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId
-            : RequestObject<EditionUpdateRequestDTO, EditionDTO, EditionDTO>
+        : RequestObject<EditionUpdateRequestDTO, EditionDTO, EditionDTO>
         {
             private readonly uint _editionId;
             private readonly EditionUpdateRequestDTO _payload;
@@ -395,4 +453,5 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
     }
+
 }

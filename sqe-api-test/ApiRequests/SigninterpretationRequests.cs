@@ -11,22 +11,27 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
     public static partial class Delete
     {
+
+
         public class V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId
-            : RequestObject<EmptyInput, EmptyOutput, DeleteDTO>
+        : RequestObject<EmptyInput, EmptyOutput, DeleteDTO>
         {
-            private readonly uint _attributeId;
             private readonly uint _editionId;
+            private readonly uint _attributeId;
 
             /// <summary>
-            ///     Delete an attribute from an edition
+            /// Delete an attribute from an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being edited</param>
             /// <param name="attributeId">The ID of the attribute to delete</param>
@@ -42,8 +47,7 @@ namespace SQE.ApiTest.ApiRequests
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/attribute-id", $"/{_attributeId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/attribute-id", $"/{_attributeId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -60,21 +64,20 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId
-            : RequestObject<EmptyInput, EmptyOutput, SignInterpretationDTO>
+        : RequestObject<EmptyInput, EmptyOutput, SignInterpretationDTO>
         {
-            private readonly uint _attributeValueId;
             private readonly uint _editionId;
             private readonly uint _signInterpretationId;
+            private readonly uint _attributeValueId;
 
             /// <summary>
-            ///     This deletes the specified attribute value from the specified sign interpretation.
+            /// This deletes the specified attribute value from the specified sign interpretation.
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
             /// <param name="attributeValueId">Id of the attribute being removed</param>
             /// <returns>Ok or Error</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(
-                uint editionId, uint signInterpretationId, uint attributeValueId)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId)
 
             {
                 _editionId = editionId;
@@ -85,15 +88,12 @@ namespace SQE.ApiTest.ApiRequests
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}")
-                    .Replace("/attribute-value-id", $"/{_attributeValueId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}").Replace("/attribute-value-id", $"/{_attributeValueId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId,
-                    _attributeValueId);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _attributeValueId);
             }
 
             public override uint? GetEditionId()
@@ -107,13 +107,15 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Get
     {
+
+
         public class V1_Editions_EditionId_SignInterpretationsAttributes
-            : RequestObject<EmptyInput, AttributeListDTO, EmptyOutput>
+        : RequestObject<EmptyInput, AttributeListDTO, EmptyOutput>
         {
             private readonly uint _editionId;
 
             /// <summary>
-            ///     Retrieve a list of all possible attributes for an edition
+            /// Retrieve a list of all possible attributes for an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being searched</param>
             /// <returns>A list of and edition's attributes and their details</returns>
@@ -121,6 +123,7 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
             }
 
             protected override string HttpPath()
@@ -142,30 +145,33 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId
-            : RequestObject<EmptyInput, SignInterpretationDTO, EmptyOutput>
+        : RequestObject<EmptyInput, SignInterpretationDTO, EmptyOutput>
         {
             private readonly uint _editionId;
+            private readonly uint _signInterpretationId;
 
             /// <summary>
-            ///     Retrieve the details of a sign interpretation in an edition
+            /// Retrieve the details of a sign interpretation in an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being searched</param>
             /// <param name="signInterpretationId">The desired sign interpretation id</param>
             /// <returns>The details of the desired sign interpretation</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(uint editionId)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(uint editionId, uint signInterpretationId)
 
             {
                 _editionId = editionId;
+                _signInterpretationId = signInterpretationId;
+
             }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId);
             }
 
             public override uint? GetEditionId()
@@ -179,14 +185,16 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
+
+
         public class V1_Editions_EditionId_SignInterpretationsAttributes
-            : RequestObject<CreateAttributeDTO, AttributeDTO, AttributeDTO>
+        : RequestObject<CreateAttributeDTO, AttributeDTO, AttributeDTO>
         {
             private readonly uint _editionId;
             private readonly CreateAttributeDTO _payload;
 
             /// <summary>
-            ///     Create a new attribute for an edition
+            /// Create a new attribute for an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being edited</param>
             /// <param name="newAttribute">The details of the new attribute</param>
@@ -218,21 +226,20 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes
-            : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO, SignInterpretationDTO>
+        : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO, SignInterpretationDTO>
         {
             private readonly uint _editionId;
-            private readonly InterpretationAttributeCreateDTO _payload;
             private readonly uint _signInterpretationId;
+            private readonly InterpretationAttributeCreateDTO _payload;
 
             /// <summary>
-            ///     This adds a new attribute to the specified sign interpretation.
+            /// This adds a new attribute to the specified sign interpretation.
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation for adding a new attribute</param>
             /// <param name="newSignInterpretationAttributes">Details of the attribute to be added</param>
             /// <returns>The updated sign interpretation</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes(uint editionId,
-                uint signInterpretationId, InterpretationAttributeCreateDTO payload)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes(uint editionId, uint signInterpretationId, InterpretationAttributeCreateDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
@@ -243,14 +250,12 @@ namespace SQE.ApiTest.ApiRequests
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR =>
-                    signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _payload);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _payload);
             }
 
             public override uint? GetEditionId()
@@ -264,23 +269,24 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
+
+
         public class V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId
-            : RequestObject<UpdateAttributeDTO, AttributeDTO, AttributeDTO>
+        : RequestObject<UpdateAttributeDTO, AttributeDTO, AttributeDTO>
         {
-            private readonly uint _attributeId;
             private readonly uint _editionId;
+            private readonly uint _attributeId;
             private readonly UpdateAttributeDTO _payload;
 
             /// <summary>
-            ///     Change the details of an attribute in an edition
+            /// Change the details of an attribute in an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being edited</param>
             /// <param name="attributeId">The ID of the attribute to update</param>
             /// <param name="updatedAttribute">The details of the updated attribute</param>
             /// <returns></returns>
             /// <exception cref="NotImplementedException"></exception>
-            public V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(uint editionId, uint attributeId,
-                UpdateAttributeDTO payload)
+            public V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(uint editionId, uint attributeId, UpdateAttributeDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
@@ -291,8 +297,7 @@ namespace SQE.ApiTest.ApiRequests
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/attribute-id", $"/{_attributeId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/attribute-id", $"/{_attributeId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -309,11 +314,11 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary
-            : RequestObject<CommentaryCreateDTO, SignInterpretationDTO, SignInterpretationDTO>
+        : RequestObject<CommentaryCreateDTO, SignInterpretationDTO, SignInterpretationDTO>
         {
             private readonly uint _editionId;
-            private readonly CommentaryCreateDTO _payload;
             private readonly uint _signInterpretationId;
+            private readonly CommentaryCreateDTO _payload;
 
             // /// <summary>
             // /// Creates a new sign interpretation 
@@ -343,14 +348,13 @@ namespace SQE.ApiTest.ApiRequests
             // }
 
             /// <summary>
-            ///     Updates the commentary of a sign interpretation
+            /// Updates the commentary of a sign interpretation
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
             /// <param name="commentary">The new commentary for the sign interpretation</param>
             /// <returns>Ok or Error</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary(uint editionId,
-                uint signInterpretationId, CommentaryCreateDTO payload)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary(uint editionId, uint signInterpretationId, CommentaryCreateDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
@@ -361,14 +365,12 @@ namespace SQE.ApiTest.ApiRequests
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR =>
-                    signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _payload);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _payload);
             }
 
             public override uint? GetEditionId()
@@ -380,25 +382,23 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId
-            : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO, SignInterpretationDTO>
+        : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO, SignInterpretationDTO>
         {
-            private readonly uint _attributeValueId;
             private readonly uint _editionId;
-            private readonly InterpretationAttributeCreateDTO _payload;
             private readonly uint _signInterpretationId;
+            private readonly uint _attributeValueId;
+            private readonly InterpretationAttributeCreateDTO _payload;
 
             /// <summary>
-            ///     This changes the values of the specified sign interpretation attribute,
-            ///     mainly used to change commentary.
+            /// This changes the values of the specified sign interpretation attribute,
+            /// mainly used to change commentary.
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
             /// <param name="attributeValueId">Id of the attribute value to be altered</param>
             /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
             /// <returns>The updated sign interpretation</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(
-                uint editionId, uint signInterpretationId, uint attributeValueId,
-                InterpretationAttributeCreateDTO payload)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
@@ -410,15 +410,12 @@ namespace SQE.ApiTest.ApiRequests
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}")
-                    .Replace("/attribute-value-id", $"/{_attributeValueId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}").Replace("/attribute-value-id", $"/{_attributeValueId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId,
-                    _attributeValueId, _payload);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _attributeValueId, _payload);
             }
 
             public override uint? GetEditionId()
@@ -429,4 +426,5 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
     }
+
 }

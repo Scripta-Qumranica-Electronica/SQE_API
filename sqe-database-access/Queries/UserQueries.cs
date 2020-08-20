@@ -240,7 +240,8 @@ WHERE user_id = @UserId AND pw = SHA2(@Pw, 224)
     internal static class GetEditorInfo
     {
         public const string GetQuery = @"
-SELECT user_id AS UserId, forename AS Forename, surname AS Surname, organization AS Organization
+SELECT user_id AS UserId, forename AS Forename, surname AS Surname, organization AS Organization,
+       edition_editor_id AS EditorId
 FROM edition_editor
 JOIN user USING(user_id)
 WHERE edition_editor.edition_id = @EditionId";

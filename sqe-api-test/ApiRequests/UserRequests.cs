@@ -11,17 +11,35 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
     public static partial class Get
     {
+
+
         public class V1_Users
-            : RequestObject<EmptyInput, UserDTO, EmptyOutput>
+        : RequestObject<EmptyInput, UserDTO, EmptyOutput>
         {
+
+
+            /// <summary>
+            ///     Provides the user details for a user with valid JWT in the Authorize header
+            /// </summary>
+            /// <returns>A UserDTO for user account.</returns>
+            public V1_Users()
+
+            {
+
+
+            }
+
             protected override string HttpPath()
             {
                 return RequestPath;
@@ -31,13 +49,17 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
             }
+
+
         }
     }
 
     public static partial class Post
     {
+
+
         public class V1_Users_Login
-            : RequestObject<LoginRequestDTO, DetailedUserTokenDTO, EmptyOutput>
+        : RequestObject<LoginRequestDTO, DetailedUserTokenDTO, EmptyOutput>
         {
             private readonly LoginRequestDTO _payload;
 
@@ -53,6 +75,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -64,10 +87,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
 
         public class V1_Users_ChangeUnactivatedEmail
-            : RequestObject<UnactivatedEmailUpdateRequestDTO, EmptyOutput, EmptyOutput>
+        : RequestObject<UnactivatedEmailUpdateRequestDTO, EmptyOutput, EmptyOutput>
         {
             private readonly UnactivatedEmailUpdateRequestDTO _payload;
 
@@ -80,6 +105,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -91,10 +117,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
 
         public class V1_Users_ChangeForgottenPassword
-            : RequestObject<ResetForgottenUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
+        : RequestObject<ResetForgottenUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
         {
             private readonly ResetForgottenUserPasswordRequestDTO _payload;
 
@@ -106,6 +134,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -117,10 +146,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
 
         public class V1_Users_ChangePassword
-            : RequestObject<ResetLoggedInUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
+        : RequestObject<ResetLoggedInUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
         {
             private readonly ResetLoggedInUserPasswordRequestDTO _payload;
 
@@ -132,6 +163,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -143,10 +175,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
 
         public class V1_Users_ConfirmRegistration
-            : RequestObject<AccountActivationRequestDTO, EmptyOutput, EmptyOutput>
+        : RequestObject<AccountActivationRequestDTO, EmptyOutput, EmptyOutput>
         {
             private readonly AccountActivationRequestDTO _payload;
 
@@ -159,6 +193,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -170,10 +205,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
 
         public class V1_Users_ForgotPassword
-            : RequestObject<ResetUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
+        : RequestObject<ResetUserPasswordRequestDTO, EmptyOutput, EmptyOutput>
         {
             private readonly ResetUserPasswordRequestDTO _payload;
 
@@ -185,6 +222,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -196,10 +234,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
 
         public class V1_Users
-            : RequestObject<NewUserRequestDTO, UserDTO, EmptyOutput>
+        : RequestObject<NewUserRequestDTO, UserDTO, EmptyOutput>
         {
             private readonly NewUserRequestDTO _payload;
 
@@ -212,6 +252,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -223,10 +264,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
 
         public class V1_Users_ResendActivationEmail
-            : RequestObject<ResendUserAccountActivationRequestDTO, EmptyOutput, EmptyOutput>
+        : RequestObject<ResendUserAccountActivationRequestDTO, EmptyOutput, EmptyOutput>
         {
             private readonly ResendUserAccountActivationRequestDTO _payload;
 
@@ -239,6 +282,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -250,13 +294,17 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
     }
 
     public static partial class Put
     {
+
+
         public class V1_Users
-            : RequestObject<UserUpdateRequestDTO, DetailedUserDTO, EmptyOutput>
+        : RequestObject<UserUpdateRequestDTO, DetailedUserDTO, EmptyOutput>
         {
             private readonly UserUpdateRequestDTO _payload;
 
@@ -273,6 +321,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -284,6 +333,9 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
+
+
         }
     }
+
 }

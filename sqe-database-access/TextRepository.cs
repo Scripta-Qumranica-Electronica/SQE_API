@@ -728,8 +728,7 @@ namespace SQE.DatabaseAccess
                     new { editionUser.EditionId }
                 )).ToDictionary(
                     row => row.attributeValueId,
-                    row => row.attributeString
-                );
+                    row => row);
                 var scrolls = await connection.QueryAsync(
                     GetTextChunk.GetQuery,
                     new[]
@@ -796,12 +795,12 @@ namespace SQE.DatabaseAccess
                         if (lastSignInterpretation.Attributes.Count == 0 ||
                             lastSignInterpretation.Attributes.Last().AttributeValueId != charAttribute.AttributeValueId)
                         {
-                            charAttribute.AttributeValueString = attributeDict.TryGetValue(
+                            (charAttribute.AttributeValueString, charAttribute.AttributeId) = attributeDict.TryGetValue(
                                 charAttribute.AttributeValueId.GetValueOrDefault(),
                                 out var val
                             )
-                                ? val
-                                : null;
+                                ? (val.attributeString, val.attributeId)
+                                : (null, 0);
                             lastSignInterpretation.Attributes.Add(charAttribute);
                         }
 

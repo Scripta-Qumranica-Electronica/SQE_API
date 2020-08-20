@@ -68,6 +68,7 @@ namespace SQE.DatabaseAccess.Models
 
     public class AttributeDefinition
     {
+        public uint attributeId { get; set; }
         public uint attributeValueId { get; set; }
         public string attributeString { get; set; }
     }

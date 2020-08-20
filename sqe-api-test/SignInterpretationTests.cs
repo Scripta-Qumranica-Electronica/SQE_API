@@ -46,6 +46,34 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        public async Task CanGetAttributesOfSpecificSignInterpretation()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var editionId = await editionCreator.CreateEdition();
+                var signInterpretation = await GetEditionSignInterpretation(editionId);
+
+                var request = new Get.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(editionId, signInterpretation.signInterpretationId);
+
+                // Act
+                var (httpResponse, httpData, signalrData, _) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: true);
+
+                // Assert
+                httpResponse.EnsureSuccessStatusCode();
+                httpData.ShouldDeepEqual(signalrData);
+                Assert.Equal(signInterpretation.attributes.Length, httpData.attributes.Length);
+                Assert.Equal(signInterpretation.signInterpretationId, httpData.signInterpretationId);
+                Assert.Equal(signInterpretation.character, httpData.character);
+                Assert.Equal(signInterpretation.commentary, httpData.commentary);
+                Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
+                signInterpretation.rois.ShouldDeepEqual(httpData.rois);
+                signInterpretation.attributes.ShouldDeepEqual(httpData.attributes);
+            }
+        }
+
+        [Fact]
         public async Task CanCreateNewAttributeForSignInterpretation()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))

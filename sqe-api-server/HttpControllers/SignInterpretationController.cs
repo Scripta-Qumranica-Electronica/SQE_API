@@ -41,7 +41,7 @@ namespace SQE.API.Server.HttpControllers
         /// <returns>The details of the desired sign interpretation</returns>
         [AllowAnonymous]
         [HttpGet("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
-        public async Task<ActionResult<SignInterpretationDTO>> GetEditionSignInterpretationDetails([FromRoute] uint editionId, uint signInterpretationId)
+        public async Task<ActionResult<SignInterpretationDTO>> GetEditionSignInterpretationDetails([FromRoute] uint editionId, [FromRoute] uint signInterpretationId)
         {
             return await _signInterpretationService.GetEditionSignInterpretationAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId, false),
@@ -149,7 +149,8 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="newSignInterpretationAttributes">Details of the attribute to be added</param>
         /// <returns>The updated sign interpretation</returns>
         [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes")]
-        public async Task<ActionResult<SignInterpretationDTO>> PostSignInterpretationAttribute([FromRoute] uint editionId,
+        public async Task<ActionResult<SignInterpretationDTO>> PostSignInterpretationAttribute(
+            [FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
             [FromBody] InterpretationAttributeCreateDTO newSignInterpretationAttributes)
         {
@@ -169,7 +170,8 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
         /// <returns>The updated sign interpretation</returns>
         [HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeValueId}")]
-        public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationAttribute([FromRoute] uint editionId,
+        public async Task<ActionResult<SignInterpretationDTO>> PutSignInterpretationAttribute(
+            [FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
             [FromRoute] uint attributeValueId,
             [FromBody] InterpretationAttributeCreateDTO alteredSignInterpretationAttribute)
@@ -189,7 +191,8 @@ namespace SQE.API.Server.HttpControllers
         /// <param name="attributeValueId">Id of the attribute being removed</param>
         /// <returns>Ok or Error</returns>
         [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/attributes/{attributeValueId}")]
-        public async Task<ActionResult> DeleteSignInterpretationAttribute([FromRoute] uint editionId,
+        public async Task<ActionResult> DeleteSignInterpretationAttribute(
+            [FromRoute] uint editionId,
             [FromRoute] uint signInterpretationId,
             [FromRoute] uint attributeValueId)
         {

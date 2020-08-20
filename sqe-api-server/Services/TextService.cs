@@ -166,6 +166,7 @@ namespace SQE.API.Server.Services
             return newTextFragmentData;
         }
 
+        // TODO: rewrite this and the following method to use a ToDTO() serialization method instead.
         /// <summary>
         ///     Serialize a TextEdition and the list of its editors to a TextEditionDTO.
         /// </summary>
@@ -175,7 +176,7 @@ namespace SQE.API.Server.Services
         private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)
         {
             var editorList =
-                editors.ToDictionary(editor => editor.UserId.ToString(),
+                editors.ToDictionary(editor => editor.EditorId.ToString(),
                     editor => new EditorDTO
                     {
                         forename = editor.Forename,
@@ -228,11 +229,15 @@ namespace SQE.API.Server.Services
                                                                                 b.SignInterpretationAttributeId
                                                                                     .GetValueOrDefault(),
                                                                             sequence = b.Sequence.GetValueOrDefault(),
+                                                                            attributeId = b.AttributeId
+                                                                                .GetValueOrDefault(),
                                                                             attributeValueId =
                                                                                 b.AttributeValueId.GetValueOrDefault(),
                                                                             attributeValueString = b.AttributeValueString,
                                                                             editorId = b
                                                                                 .SignInterpretationAttributeEditorId
+                                                                                .GetValueOrDefault(),
+                                                                            creatorId = b.SignInterpretationAttributeCreatorId
                                                                                 .GetValueOrDefault(),
                                                                             value = b.NumericValue.GetValueOrDefault()
                                                                         }
@@ -294,7 +299,7 @@ namespace SQE.API.Server.Services
         {
             var editorList =
                 editors.ToDictionary(
-                    editor => editor.UserId.ToString(),
+                    editor => editor.EditorId.ToString(),
                     editor => new EditorDTO
                     {
                         forename = editor.Forename,

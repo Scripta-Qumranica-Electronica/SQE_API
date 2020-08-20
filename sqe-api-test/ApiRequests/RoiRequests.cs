@@ -11,16 +11,21 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
     public static partial class Delete
     {
+
+
         public class V1_Editions_EditionId_Rois_RoiId
-            : RequestObject<EmptyInput, EmptyOutput, EmptyOutput>
+        : RequestObject<EmptyInput, EmptyOutput, EmptyOutput>
         {
             private readonly uint _editionId;
             private readonly uint _roiId;
@@ -35,12 +40,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _roiId = roiId;
+
             }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/roi-id", $"/{_roiId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/roi-id", $"/{_roiId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -59,8 +64,10 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Get
     {
+
+
         public class V1_Editions_EditionId_Rois_RoiId
-            : RequestObject<EmptyInput, InterpretationRoiDTO, EmptyOutput>
+        : RequestObject<EmptyInput, InterpretationRoiDTO, EmptyOutput>
         {
             private readonly uint _editionId;
             private readonly uint _roiId;
@@ -75,12 +82,12 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _roiId = roiId;
+
             }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/roi-id", $"/{_roiId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/roi-id", $"/{_roiId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -99,8 +106,10 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
+
+
         public class V1_Editions_EditionId_Rois
-            : RequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO, EmptyOutput>
+        : RequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO, EmptyOutput>
         {
             private readonly uint _editionId;
             private readonly SetInterpretationRoiDTO _payload;
@@ -115,6 +124,7 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
@@ -136,7 +146,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Rois_Batch
-            : RequestObject<SetInterpretationRoiDTOList, InterpretationRoiDTOList, InterpretationRoiDTOList>
+        : RequestObject<SetInterpretationRoiDTOList, InterpretationRoiDTOList, InterpretationRoiDTOList>
         {
             private readonly uint _editionId;
             private readonly SetInterpretationRoiDTOList _payload;
@@ -173,7 +183,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Rois_BatchEdit
-            : RequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO, BatchEditRoiResponseDTO>
+        : RequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO, BatchEditRoiResponseDTO>
         {
             private readonly uint _editionId;
             private readonly BatchEditRoiDTO _payload;
@@ -212,12 +222,14 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
+
+
         public class V1_Editions_EditionId_Rois_RoiId
-            : RequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO, EmptyOutput>
+        : RequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO, EmptyOutput>
         {
             private readonly uint _editionId;
-            private readonly SetInterpretationRoiDTO _payload;
             private readonly uint _roiId;
+            private readonly SetInterpretationRoiDTO _payload;
 
             /// <summary>
             ///     Update an existing sign ROI in the given edition of a scroll
@@ -231,12 +243,12 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _roiId = roiId;
                 _payload = payload;
+
             }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/roi-id", $"/{_roiId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/roi-id", $"/{_roiId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -253,7 +265,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Rois_Batch
-            : RequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
+        : RequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
         {
             private readonly uint _editionId;
             private readonly InterpretationRoiDTOList _payload;
@@ -289,4 +301,5 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
     }
+
 }
