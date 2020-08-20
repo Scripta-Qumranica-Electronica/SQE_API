@@ -119,6 +119,98 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        public async Task CanAddAttributeToEdition()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var editionId = await editionCreator.CreateEdition();
+
+                var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
+                var (_, httpData, _, _) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                CreateAttributeValueDTO[] newAttrValues = {new CreateAttributeValueDTO()
+                {
+                    value = "the first type",
+                    cssDirectives = "color: blue;",
+                    description = "This is the first of a new way to describe a piece of data"
+                }};
+                var newAttribute = new CreateAttributeDTO()
+                {
+                    attributeName = "new attr",
+                    description = "Some very exciting new way to describe a piece of data",
+                    values = newAttrValues
+                };
+
+                // Create the new attribute
+                var createRequest = new Post.V1_Editions_EditionId_SignInterpretationsAttributes(editionId, newAttribute);
+                var (respInfo, createdHttpAttribute, _, createdListenerAttribute) =
+                    await Request.Send(
+                        createRequest,
+                        _client,
+                        StartConnectionAsync,
+                        true,
+                        listenerUser: Request.DefaultUsers.User1,
+                        deterministic: false,
+                        requestRealtime: false
+                    );
+
+                // Assert
+                respInfo.EnsureSuccessStatusCode();
+                createdHttpAttribute.ShouldDeepEqual(createdListenerAttribute);
+                var (_, newAttrs, _, _) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                Assert.Single(newAttrs.attributes.Where(x => x.attributeName == newAttribute.attributeName
+                                                               && x.description == newAttribute.description));
+                var returnedNewAttr = newAttrs.attributes
+                    .First(x => x.attributeName == newAttribute.attributeName
+                                && x.description == newAttribute.description);
+                Assert.Single(returnedNewAttr.values);
+                Assert.Single(returnedNewAttr.values.Where(x => x.value == newAttrValues.First().value
+                    && x.description == newAttrValues.First().description
+                    && x.cssDirectives == newAttrValues.First().cssDirectives));
+                Assert.Equal(httpData.attributes.Length + 1, newAttrs.attributes.Length);
+            }
+        }
+
+        [Fact]
+        public async Task CanDeleteAttributeFromEdition()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var editionId = await editionCreator.CreateEdition();
+
+                var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
+                var (_, httpData, _, _) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                var deleteAttribute = httpData.attributes.Last().attributeId;
+
+                // Delete the new attribute
+                var deleteRequest = new Delete.V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(editionId, deleteAttribute);
+                var (respInfo, updatedHttpAttribute, _, updatedListenerAttribute) =
+                    await Request.Send(
+                        deleteRequest,
+                        _client,
+                        StartConnectionAsync,
+                        true,
+                        listenerUser: Request.DefaultUsers.User1,
+                        deterministic: false,
+                        requestRealtime: false
+                    );
+
+                // Assert
+                respInfo.EnsureSuccessStatusCode();
+                Assert.Equal(deleteAttribute, updatedListenerAttribute.ids.First());
+                Assert.Equal(EditionEntities.attribute, updatedListenerAttribute.entity);
+                var (_, newAttrs, _, _) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                Assert.Empty(newAttrs.attributes.Where(x => x.attributeId == deleteAttribute));
+                Assert.Equal(httpData.attributes.Length - 1, newAttrs.attributes.Length);
+            }
+        }
+
+        [Fact]
         public async Task CanCreateSignInterpretationCommentary()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))

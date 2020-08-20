@@ -11,21 +11,16 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
-
-
     public static partial class Delete
     {
-
-
         public class V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId
-        : RequestObject<EmptyInput, EmptyOutput, EmptyOutput>
+            : RequestObject<EmptyInput, EmptyOutput, EmptyOutput>
         {
             private readonly uint _iaaEditionCatalogToTextFragmentId;
 
@@ -38,29 +33,25 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _iaaEditionCatalogToTextFragmentId = iaaEditionCatalogToTextFragmentId;
-
             }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/iaa-edition-catalog-to-text-fragment-id", $"/{_iaaEditionCatalogToTextFragmentId.ToString()}");
+                return RequestPath.Replace("/iaa-edition-catalog-to-text-fragment-id",
+                    $"/{_iaaEditionCatalogToTextFragmentId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _iaaEditionCatalogToTextFragmentId);
             }
-
-
         }
     }
 
     public static partial class Get
     {
-
-
         public class V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments
-        : RequestObject<EmptyInput, CatalogueMatchListDTO, EmptyOutput>
+            : RequestObject<EmptyInput, CatalogueMatchListDTO, EmptyOutput>
         {
             private readonly string _imagedObjectId;
 
@@ -72,24 +63,21 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _imagedObjectId = imagedObjectId;
-
             }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/imaged-object-id", $"/{_imagedObjectId.ToString()}");
+                return RequestPath.Replace("/imaged-object-id", $"/{_imagedObjectId}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _imagedObjectId);
             }
-
-
         }
 
         public class V1_Catalogue_TextFragments_TextFragmentId_ImagedObjects
-        : RequestObject<EmptyInput, CatalogueMatchListDTO, EmptyOutput>
+            : RequestObject<EmptyInput, CatalogueMatchListDTO, EmptyOutput>
         {
             private readonly uint _textFragmentId;
 
@@ -101,7 +89,6 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _textFragmentId = textFragmentId;
-
             }
 
             protected override string HttpPath()
@@ -113,12 +100,10 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _textFragmentId);
             }
-
-
         }
 
         public class V1_Catalogue_Editions_EditionId_ImagedObjectTextFragmentMatches
-        : RequestObject<EmptyInput, CatalogueMatchListDTO, EmptyOutput>
+            : RequestObject<EmptyInput, CatalogueMatchListDTO, EmptyOutput>
         {
             private readonly uint _editionId;
 
@@ -130,7 +115,6 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
-
             }
 
             protected override string HttpPath()
@@ -152,7 +136,7 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Catalogue_Manuscript_ManuscriptId_ImagedObjectTextFragmentMatches
-        : RequestObject<EmptyInput, CatalogueMatchListDTO, EmptyOutput>
+            : RequestObject<EmptyInput, CatalogueMatchListDTO, EmptyOutput>
         {
             private readonly uint _manuscriptId;
 
@@ -164,7 +148,6 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _manuscriptId = manuscriptId;
-
             }
 
             protected override string HttpPath()
@@ -176,17 +159,13 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _manuscriptId);
             }
-
-
         }
     }
 
     public static partial class Post
     {
-
-
         public class V1_Catalogue
-        : RequestObject<CatalogueMatchInputDTO, EmptyOutput, EmptyOutput>
+            : RequestObject<CatalogueMatchInputDTO, EmptyOutput, EmptyOutput>
         {
             private readonly CatalogueMatchInputDTO _payload;
 
@@ -199,7 +178,6 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
-
             }
 
             protected override string HttpPath()
@@ -211,12 +189,10 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
-
-
         }
 
         public class V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId
-        : RequestObject<EmptyInput, EmptyOutput, EmptyOutput>
+            : RequestObject<EmptyInput, EmptyOutput, EmptyOutput>
         {
             private readonly uint _iaaEditionCatalogToTextFragmentId;
 
@@ -229,21 +205,18 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _iaaEditionCatalogToTextFragmentId = iaaEditionCatalogToTextFragmentId;
-
             }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/iaa-edition-catalog-to-text-fragment-id", $"/{_iaaEditionCatalogToTextFragmentId.ToString()}");
+                return RequestPath.Replace("/iaa-edition-catalog-to-text-fragment-id",
+                    $"/{_iaaEditionCatalogToTextFragmentId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _iaaEditionCatalogToTextFragmentId);
             }
-
-
         }
     }
-
 }
