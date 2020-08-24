@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
@@ -170,6 +171,73 @@ namespace SQE.ApiTest
                     && x.description == newAttrValues.First().description
                     && x.cssDirectives == newAttrValues.First().cssDirectives));
                 Assert.Equal(httpData.attributes.Length + 1, newAttrs.attributes.Length);
+            }
+        }
+
+        [Fact]
+        public async Task CanUpdateAttributeInEdition()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var editionId = await editionCreator.CreateEdition();
+
+                var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
+                var (_, httpData, _, _) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                var attributeValueForUpdate = httpData.attributes.FirstOrDefault().values.FirstOrDefault();
+                var attributeValueForDelete = httpData.attributes.FirstOrDefault().values.Last();
+                var updateAttribute = new UpdateAttributeDTO()
+                {
+                    createValues = new CreateAttributeValueDTO[1] {new CreateAttributeValueDTO()
+                    {
+                        cssDirectives = "vertical-align: super; font-size: 50%;",
+                        description = "Some small raised thing",
+                        value = "TINY_UPPER"
+                    }},
+                    updateValues = new UpdateAttributeValueDTO[1] {new UpdateAttributeValueDTO()
+                    {
+                        id = attributeValueForUpdate.id,
+                        cssDirectives = "font-weight: bold;",
+                        description = attributeValueForUpdate.description,
+                        value = "AMAZING_NEW_VALUE"
+                    }},
+                    deleteValues = new uint[1] { attributeValueForDelete.id }
+                };
+
+                // Act
+                var updateRequest = new Put.V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(editionId, httpData.attributes.First().attributeId, updateAttribute);
+                await updateRequest.Send(
+                        _client,
+                        StartConnectionAsync,
+                        true,
+                        listenerUser: Request.DefaultUsers.User1,
+                        deterministic: false,
+                        requestRealtime: false,
+                        listenToEdition: true,
+                        listeningFor: new List<ListenerMethods>() { updateRequest.AvailableListeners.UpdatedAttribute }
+                    );
+
+                // Assert
+                updateRequest.HttpResponseObject.ShouldDeepEqual(updateRequest.UpdatedAttribute);
+                // The update contains the expected data
+                Assert.Contains(updateRequest.HttpResponseObject.values, (x =>
+                    x.description == updateAttribute.createValues.FirstOrDefault().description
+                    && x.cssDirectives == updateAttribute.createValues.FirstOrDefault().cssDirectives
+                    && x.value == updateAttribute.createValues.FirstOrDefault().value));
+                Assert.Contains(updateRequest.HttpResponseObject.values, (x =>
+                    x.id != attributeValueForUpdate.id
+                    && x.description == updateAttribute.updateValues.FirstOrDefault().description
+                    && x.cssDirectives == updateAttribute.updateValues.FirstOrDefault().cssDirectives
+                    && x.value == updateAttribute.updateValues.FirstOrDefault().value));
+                Assert.DoesNotContain(updateRequest.HttpResponseObject.values, (x => x.id == attributeValueForDelete.id));
+
+                // The update appears when getting all attributes
+                var (_, newAttrs, _, _) =
+                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                Assert.Contains(newAttrs.attributes, (x => x.attributeId == httpData.attributes.First().attributeId));
+                newAttrs.attributes.First(x => x.attributeId == httpData.attributes.First().attributeId)
+                    .ShouldDeepEqual(updateRequest.HttpResponseObject);
             }
         }
 

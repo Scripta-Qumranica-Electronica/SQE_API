@@ -103,20 +103,28 @@ namespace SQE.API.Server.Services
         public async Task<AttributeDTO> UpdateEditionAttributeAsync(UserInfo user, uint attributeId,
             UpdateAttributeDTO updatedAttribute, string clientId = null)
         {
-            await _attributeRepository.UpdateEditionAttribute(
+            var updatedAttributeId = await _attributeRepository.UpdateEditionAttribute(
                 user,
                 attributeId,
-                updatedAttribute.attributeName,
-                updatedAttribute.description,
+                null,
+                null,
                 updatedAttribute.createValues.Select(x => x.FromDTO()),
                 updatedAttribute.updateValues.Select(x => x.FromDTO()),
                 updatedAttribute.deleteValues);
 
-            var updatedAttributeDetails = (await _attributeRepository.GetEditionAttributeAsync(user, attributeId)).ToDTO().attributes.FirstOrDefault();
+            var updatedAttributeDetails = (await _attributeRepository.GetEditionAttributeAsync(user, updatedAttributeId)).ToDTO().attributes.FirstOrDefault();
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .UpdatedAttribute(updatedAttributeDetails);
+            if (updatedAttributeId != attributeId) // Broadcast the changes as a create and a delete
+            {
+                await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                    .CreatedAttribute(updatedAttributeDetails);
+                await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                    .DeletedAttribute(new DeleteDTO(EditionEntities.attribute, attributeId));
+
+            }
+            else // Broadcast the changes as an update
+                await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                    .UpdatedAttribute(updatedAttributeDetails);
 
             return updatedAttributeDetails;
         }

@@ -58,16 +58,16 @@ namespace GenerateTestRequestObjects
         {
             routeParams = new List<ParameterDescription>();
             queryParams = new List<ParameterDescription>();
+            listeners = new List<ParameterDescription>();
         }
 
         public HttpMethod RequestType { get; set; }
         public string IType { get; set; }
         public string OType { get; set; }
-        public string ListenerType { get; set; }
-        public string listenerName { get; set; }
         public string HttpString { get; set; }
         public List<ParameterDescription> routeParams { get; set; }
         public List<ParameterDescription> queryParams { get; set; }
+        public List<ParameterDescription> listeners { get; set; }
         public ParameterDescription bodyParams { get; set; }
         public string comments { get; set; }
     }

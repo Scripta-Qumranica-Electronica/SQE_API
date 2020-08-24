@@ -70,6 +70,8 @@ namespace GenerateTestRequestObjects
                 .SelectMany(x => x.Syntax.Members)
                 .OfType<MethodDeclarationSyntax>();
 
+            var completeListenerList = new List<ParameterDescription>();
+
             // Begin walking the syntax tree in order to parse the controller classes
             foreach (var tree in compilation.SyntaxTrees)
             {
@@ -83,11 +85,22 @@ namespace GenerateTestRequestObjects
                     if (!Helpers.SyntaxNodeHelper.TryGetParentSyntax(node, out namespaceDeclarationSyntax)) continue;
                     if (namespaceDeclarationSyntax.Name.ToString() != "SQE.API.Server.HttpControllers") continue;
 
-                    await Parsers.ParseAndWriteClassesAsync(testFolder, node, semModels, serviceMethods,
-                        broadcastMethods, project);
+                    completeListenerList = completeListenerList.Concat((await Parsers.ParseAndWriteClassesAsync(testFolder, node, semModels, serviceMethods,
+                        broadcastMethods, project))).ToList();
+
                 }
             }
 
+            // Write the Enum with completeListenerList
+            var listenerEnumPath = Path.Combine(testFolder, "ApiRequests", "ListenerMethods.cs");
+            Console.WriteLine($"Writing listener methods enum to {listenerEnumPath}");
+            completeListenerList = completeListenerList.Distinct().ToList();
+            using (var outputFile = new StreamWriter(listenerEnumPath))
+            {
+                await Writers.WriteListenerEnumsAsync(completeListenerList, outputFile);
+            }
+
+            // Finish
             Console.WriteLine("Successfully parsed all endpoints.");
         }
     }

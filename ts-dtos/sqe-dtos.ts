@@ -187,8 +187,7 @@ export interface CreateAttributeDTO extends AttributeBaseDTO {
     values: Array<CreateAttributeValueDTO>;
 }
 
-export interface UpdateAttributeDTO extends AttributeBaseDTO {
-    attributeName?: string;
+export interface UpdateAttributeDTO {
     createValues: Array<CreateAttributeValueDTO>;
     updateValues: Array<UpdateAttributeValueDTO>;
     deleteValues: Array<number>;

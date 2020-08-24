@@ -18,13 +18,23 @@ using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
     public static partial class Delete
     {
+
+
         public class V1_Editions_EditionId_Artefacts_ArtefactId
-            : RequestObject<EmptyInput, EmptyOutput, DeleteDTO>
+        : RequestObject<EmptyInput, EmptyOutput, DeleteDTO>
         {
-            private readonly uint _artefactId;
             private readonly uint _editionId;
+            private readonly uint _artefactId;
+
+            public class Listeners
+            {
+                public ListenerMethods DeletedArtefact = ListenerMethods.DeletedArtefact;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Deletes the specified artefact
@@ -37,12 +47,18 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _artefactId = artefactId;
                 ListenerMethod = "DeletedArtefact";
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.DeletedArtefact, (DeletedArtefactIsNull, DeletedArtefactListener));
+                AvailableListeners = new Listeners();
             }
+
+            public DeleteDTO DeletedArtefact { get; private set; }
+            private void DeletedArtefactListener(HubConnection signalrListener) => signalrListener.On<DeleteDTO>("DeletedArtefact", receivedData => DeletedArtefact = receivedData);
+            private bool DeletedArtefactIsNull() => DeletedArtefact == null;
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/artefact-id", $"/{_artefactId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/artefact-id", $"/{_artefactId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -59,10 +75,16 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId
-            : RequestObject<EmptyInput, DeleteDTO, DeleteDTO>
+        : RequestObject<EmptyInput, DeleteDTO, DeleteDTO>
         {
-            private readonly uint _artefactGroupId;
             private readonly uint _editionId;
+            private readonly uint _artefactGroupId;
+
+            public class Listeners
+            {
+                public ListenerMethods DeletedArtefactGroup = ListenerMethods.DeletedArtefactGroup;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Deletes the specified artefact group.
@@ -76,12 +98,18 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _artefactGroupId = artefactGroupId;
                 ListenerMethod = "DeletedArtefactGroup";
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.DeletedArtefactGroup, (DeletedArtefactGroupIsNull, DeletedArtefactGroupListener));
+                AvailableListeners = new Listeners();
             }
+
+            public DeleteDTO DeletedArtefactGroup { get; private set; }
+            private void DeletedArtefactGroupListener(HubConnection signalrListener) => signalrListener.On<DeleteDTO>("DeletedArtefactGroup", receivedData => DeletedArtefactGroup = receivedData);
+            private bool DeletedArtefactGroupIsNull() => DeletedArtefactGroup == null;
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/artefact-group-id", $"/{_artefactGroupId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/artefact-group-id", $"/{_artefactGroupId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -100,12 +128,16 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Get
     {
+
+
         public class V1_Editions_EditionId_Artefacts_ArtefactId
-            : RequestObject<EmptyInput, ArtefactDTO, EmptyOutput>
+        : RequestObject<EmptyInput, ArtefactDTO, EmptyOutput>
         {
-            private readonly uint _artefactId;
             private readonly uint _editionId;
+            private readonly uint _artefactId;
             private readonly List<string> _optional;
+
+
 
             /// <summary>
             ///     Provides a listing of all artefacts that are part of the specified edition
@@ -113,20 +145,22 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="artefactId">Unique Id of the desired artefact</param>
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
-            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId,
-                List<string> optional = null)
+            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId, List<string> optional = null)
 
             {
                 _editionId = editionId;
                 _artefactId = artefactId;
                 _optional = optional;
+
+
             }
+
+
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                           .Replace("/artefact-id", $"/{_artefactId.ToString()}")
-                       + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/artefact-id", $"/{_artefactId.ToString()}")
+                    + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -143,10 +177,12 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Artefacts_ArtefactId_Rois
-            : RequestObject<EmptyInput, InterpretationRoiDTOList, EmptyOutput>
+        : RequestObject<EmptyInput, InterpretationRoiDTOList, EmptyOutput>
         {
-            private readonly uint _artefactId;
             private readonly uint _editionId;
+            private readonly uint _artefactId;
+
+
 
             /// <summary>
             ///     Provides a listing of all rois belonging to an artefact in the specified edition
@@ -158,12 +194,15 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _artefactId = artefactId;
+
+
             }
+
+
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/artefact-id", $"/{_artefactId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/artefact-id", $"/{_artefactId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -180,10 +219,12 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Artefacts
-            : RequestObject<EmptyInput, ArtefactListDTO, EmptyOutput>
+        : RequestObject<EmptyInput, ArtefactListDTO, EmptyOutput>
         {
             private readonly uint _editionId;
             private readonly List<string> _optional;
+
+
 
             /// <summary>
             ///     Provides a listing of all artefacts that are part of the specified edition
@@ -195,12 +236,16 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _optional = optional;
+
+
             }
+
+
 
             protected override string HttpPath()
             {
                 return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                       + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "");
+                    + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -217,11 +262,13 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments
-            : RequestObject<EmptyInput, ArtefactTextFragmentMatchListDTO, EmptyOutput>
+        : RequestObject<EmptyInput, ArtefactTextFragmentMatchListDTO, EmptyOutput>
         {
-            private readonly uint _artefactId;
             private readonly uint _editionId;
+            private readonly uint _artefactId;
             private readonly List<string> _optional;
+
+
 
             /// <summary>
             ///     Provides a listing of text fragments that have text in the specified artefact.
@@ -231,20 +278,22 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <param name="artefactId">Unique Id of the desired artefact</param>
             /// <param name="optional">Add "suggested" to include possible matches suggested by the system</param>
-            public V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments(uint editionId, uint artefactId,
-                List<string> optional = null)
+            public V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments(uint editionId, uint artefactId, List<string> optional = null)
 
             {
                 _editionId = editionId;
                 _artefactId = artefactId;
                 _optional = optional;
+
+
             }
+
+
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                           .Replace("/artefact-id", $"/{_artefactId.ToString()}")
-                       + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/artefact-id", $"/{_artefactId.ToString()}")
+                    + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -261,9 +310,11 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ArtefactGroups
-            : RequestObject<EmptyInput, ArtefactGroupListDTO, EmptyOutput>
+        : RequestObject<EmptyInput, ArtefactGroupListDTO, EmptyOutput>
         {
             private readonly uint _editionId;
+
+
 
             /// <summary>
             ///     Gets a listing of all artefact groups in the edition
@@ -274,7 +325,11 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
+
             }
+
+
 
             protected override string HttpPath()
             {
@@ -295,10 +350,12 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId
-            : RequestObject<EmptyInput, ArtefactGroupDTO, EmptyOutput>
+        : RequestObject<EmptyInput, ArtefactGroupDTO, EmptyOutput>
         {
-            private readonly uint _artefactGroupId;
             private readonly uint _editionId;
+            private readonly uint _artefactGroupId;
+
+
 
             /// <summary>
             ///     Gets the details of a specific artefact group in the edition
@@ -311,12 +368,15 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _artefactGroupId = artefactGroupId;
+
+
             }
+
+
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/artefact-group-id", $"/{_artefactGroupId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/artefact-group-id", $"/{_artefactGroupId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -335,11 +395,19 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
+
+
         public class V1_Editions_EditionId_Artefacts
-            : RequestObject<CreateArtefactDTO, ArtefactDTO, ArtefactDTO>
+        : RequestObject<CreateArtefactDTO, ArtefactDTO, ArtefactDTO>
         {
             private readonly uint _editionId;
             private readonly CreateArtefactDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedArtefact = ListenerMethods.CreatedArtefact;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Creates a new artefact with the provided data.
@@ -357,7 +425,14 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _payload = payload;
                 ListenerMethod = "CreatedArtefact";
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.CreatedArtefact, (CreatedArtefactIsNull, CreatedArtefactListener));
+                AvailableListeners = new Listeners();
             }
+
+            public ArtefactDTO CreatedArtefact { get; private set; }
+            private void CreatedArtefactListener(HubConnection signalrListener) => signalrListener.On<ArtefactDTO>("CreatedArtefact", receivedData => CreatedArtefact = receivedData);
+            private bool CreatedArtefactIsNull() => CreatedArtefact == null;
 
             protected override string HttpPath()
             {
@@ -378,10 +453,12 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Artefacts_BatchTransformation
-            : RequestObject<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO, EmptyOutput>
+        : RequestObject<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO, EmptyOutput>
         {
             private readonly uint _editionId;
             private readonly BatchUpdateArtefactPlacementDTO _payload;
+
+
 
             /// <summary>
             ///     Updates the positional data for a batch of artefacts
@@ -389,13 +466,16 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <param name="payload">A BatchUpdateArtefactTransformDTO with a list of the desired updates</param>
             /// <returns></returns>
-            public V1_Editions_EditionId_Artefacts_BatchTransformation(uint editionId,
-                BatchUpdateArtefactPlacementDTO payload)
+            public V1_Editions_EditionId_Artefacts_BatchTransformation(uint editionId, BatchUpdateArtefactPlacementDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
                 _payload = payload;
+
+
             }
+
+
 
             protected override string HttpPath()
             {
@@ -416,10 +496,16 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ArtefactGroups
-            : RequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
+        : RequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
         {
             private readonly uint _editionId;
             private readonly CreateArtefactGroupDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedArtefactGroup = ListenerMethods.CreatedArtefactGroup;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Creates a new artefact group with the submitted data.
@@ -435,7 +521,14 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _payload = payload;
                 ListenerMethod = "CreatedArtefactGroup";
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.CreatedArtefactGroup, (CreatedArtefactGroupIsNull, CreatedArtefactGroupListener));
+                AvailableListeners = new Listeners();
             }
+
+            public ArtefactGroupDTO CreatedArtefactGroup { get; private set; }
+            private void CreatedArtefactGroupListener(HubConnection signalrListener) => signalrListener.On<ArtefactGroupDTO>("CreatedArtefactGroup", receivedData => CreatedArtefactGroup = receivedData);
+            private bool CreatedArtefactGroupIsNull() => CreatedArtefactGroup == null;
 
             protected override string HttpPath()
             {
@@ -458,12 +551,20 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Put
     {
+
+
         public class V1_Editions_EditionId_Artefacts_ArtefactId
-            : RequestObject<UpdateArtefactDTO, ArtefactDTO, ArtefactDTO>
+        : RequestObject<UpdateArtefactDTO, ArtefactDTO, ArtefactDTO>
         {
-            private readonly uint _artefactId;
             private readonly uint _editionId;
+            private readonly uint _artefactId;
             private readonly UpdateArtefactDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedArtefact = ListenerMethods.UpdatedArtefact;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Updates the specified artefact.
@@ -480,20 +581,25 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="artefactId">Unique Id of the desired artefact</param>
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
-            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId,
-                UpdateArtefactDTO payload)
+            public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
                 _artefactId = artefactId;
                 _payload = payload;
                 ListenerMethod = "UpdatedArtefact";
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.UpdatedArtefact, (UpdatedArtefactIsNull, UpdatedArtefactListener));
+                AvailableListeners = new Listeners();
             }
+
+            public ArtefactDTO UpdatedArtefact { get; private set; }
+            private void UpdatedArtefactListener(HubConnection signalrListener) => signalrListener.On<ArtefactDTO>("UpdatedArtefact", receivedData => UpdatedArtefact = receivedData);
+            private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/artefact-id", $"/{_artefactId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/artefact-id", $"/{_artefactId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -510,11 +616,17 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId
-            : RequestObject<UpdateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
+        : RequestObject<UpdateArtefactGroupDTO, ArtefactGroupDTO, ArtefactGroupDTO>
         {
-            private readonly uint _artefactGroupId;
             private readonly uint _editionId;
+            private readonly uint _artefactGroupId;
             private readonly UpdateArtefactGroupDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedArtefactGroup = ListenerMethods.UpdatedArtefactGroup;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Updates the details of an artefact group.
@@ -525,26 +637,30 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="artefactGroupId">Id of the artefact group to be updated</param>
             /// <param name="payload">Parameters that the artefact group should be changed to</param>
             /// <returns></returns>
-            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId,
-                UpdateArtefactGroupDTO payload)
+            public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(uint editionId, uint artefactGroupId, UpdateArtefactGroupDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
                 _artefactGroupId = artefactGroupId;
                 _payload = payload;
                 ListenerMethod = "UpdatedArtefactGroup";
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.UpdatedArtefactGroup, (UpdatedArtefactGroupIsNull, UpdatedArtefactGroupListener));
+                AvailableListeners = new Listeners();
             }
+
+            public ArtefactGroupDTO UpdatedArtefactGroup { get; private set; }
+            private void UpdatedArtefactGroupListener(HubConnection signalrListener) => signalrListener.On<ArtefactGroupDTO>("UpdatedArtefactGroup", receivedData => UpdatedArtefactGroup = receivedData);
+            private bool UpdatedArtefactGroupIsNull() => UpdatedArtefactGroup == null;
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/artefact-group-id", $"/{_artefactGroupId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/artefact-group-id", $"/{_artefactGroupId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR =>
-                    signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _artefactGroupId, _payload);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _artefactGroupId, _payload);
             }
 
             public override uint? GetEditionId()
@@ -555,4 +671,5 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
     }
+
 }

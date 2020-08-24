@@ -91,9 +91,8 @@ namespace SQE.API.DTO
         [Required] public CreateAttributeValueDTO[] values { get; set; }
     }
 
-    public class UpdateAttributeDTO : AttributeBaseDTO
+    public class UpdateAttributeDTO
     {
-        public string attributeName { get; set; }
         [Required] public CreateAttributeValueDTO[] createValues { get; set; }
         [Required] public UpdateAttributeValueDTO[] updateValues { get; set; }
         [Required] public uint[] deleteValues { get; set; }

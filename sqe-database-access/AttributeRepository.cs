@@ -18,7 +18,7 @@ namespace SQE.DatabaseAccess
         Task<IEnumerable<SignInterpretationAttributeEntry>> GetEditionAttributeAsync(UserInfo editionUser,
             uint attributeId);
         Task<uint> CreateEditionAttribute(UserInfo editionUser, string attributeName, string attributeDescription, IEnumerable<SignInterpretationAttributeValueInput> attributeValues);
-        Task UpdateEditionAttribute(UserInfo editionUser, uint attributeId, string attributeName,
+        Task<uint> UpdateEditionAttribute(UserInfo editionUser, uint attributeId, string attributeName,
             string attributeDescription,
             IEnumerable<SignInterpretationAttributeValueInput> createAttributeValues,
             IEnumerable<SignInterpretationAttributeValue> updateAttributeValues,
@@ -164,7 +164,7 @@ namespace SQE.DatabaseAccess
         /// <param name="updateAttributeValues">A list of attribute values to be updated</param>
         /// <param name="deleteAttributeValues">A list of attribute value ids to be deleted</param>
         /// <returns></returns>
-        public async Task UpdateEditionAttribute(UserInfo editionUser, uint attributeId, string attributeName,
+        public async Task<uint> UpdateEditionAttribute(UserInfo editionUser, uint attributeId, string attributeName,
             string attributeDescription,
             IEnumerable<SignInterpretationAttributeValueInput> createAttributeValues,
             IEnumerable<SignInterpretationAttributeValue> updateAttributeValues,
@@ -173,7 +173,7 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope())
             {
                 // First get the actual details of the attribute
-                var existingAttribute = await GetEditionAttributeAsync(editionUser, attributeId);
+                var existingAttribute = (await GetEditionAttributeAsync(editionUser, attributeId)).AsList();
 
                 // Throw an error if the attribute id is not found
                 if (!existingAttribute.Any())
@@ -183,22 +183,32 @@ namespace SQE.DatabaseAccess
                 if (!string.IsNullOrEmpty(attributeName)
                     && !existingAttribute.Any(x => x.AttributeName == attributeName))
                 {
-                    // Check for attribute name collisions
-                    var allAttributes = await GetAllEditionAttributesAsync(editionUser);
-
                     // Throw an error if the attribute name is not unique
                     if (existingAttribute.Any(x => x.AttributeName == attributeName))
                         throw new StandardExceptions.ConflictingDataException("attribute");
                 }
 
-                // Write the attribute update
-                await _createOrUpdateEditionAttribute(editionUser, attributeName, attributeDescription, attributeId);
+                // Write the attribute update if we have a new name or description
+                var updatedAttributeID = string.IsNullOrEmpty(attributeName) && string.IsNullOrEmpty(attributeDescription) ?
+                    attributeId
+                    : await _createOrUpdateEditionAttribute(editionUser, attributeName, attributeDescription, attributeId);
+
+                // Merge the existing attribute values with the newly requested ones if a new attribute was created
+                if (updatedAttributeID != attributeId)
+                    createAttributeValues = createAttributeValues.ToList().Concat(existingAttribute
+                        .Select(x =>
+                            new SignInterpretationAttributeValueInput()
+                            {
+                                AttributeStringValue = x.AttributeStringValue,
+                                AttributeStringValueDescription = x.AttributeStringValueDescription,
+                                Css = x.Css
+                            }));
 
                 // Write the new attribute values
                 await Task.WhenAll(createAttributeValues.Select(x =>
                     _createOrUpdateEditionAttributeValue(
                         editionUser,
-                        attributeId,
+                        updatedAttributeID,
                         x.AttributeStringValue,
                         x.AttributeStringValueDescription,
                         x.Css)));
@@ -207,7 +217,7 @@ namespace SQE.DatabaseAccess
                 await Task.WhenAll(updateAttributeValues.Select(x =>
                     _createOrUpdateEditionAttributeValue(
                         editionUser,
-                        attributeId,
+                        updatedAttributeID,
                         x.AttributeStringValue,
                         x.AttributeStringValueDescription,
                         x.Css,
@@ -225,6 +235,8 @@ namespace SQE.DatabaseAccess
 
                 // Complete transaction
                 transactionScope.Complete();
+
+                return updatedAttributeID;
             }
         }
 
@@ -290,10 +302,10 @@ namespace SQE.DatabaseAccess
                 attributeId);
             var writeRequest = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateRequest);
 
-            if (!attributeId.HasValue && !writeRequest.FirstOrDefault().NewId.HasValue)
-                throw new StandardExceptions.DataNotWrittenException("create new attribute");
+            if (!writeRequest.FirstOrDefault().NewId.HasValue)
+                throw new StandardExceptions.DataNotWrittenException($"{(attributeId.HasValue ? "update" : "create")} new attribute");
 
-            return attributeId ?? writeRequest.FirstOrDefault().NewId.Value;
+            return writeRequest.FirstOrDefault().NewId.Value;
         }
 
         private async Task<uint> _createOrUpdateEditionAttributeValue(UserInfo editionUser, uint attributeId, string attributeStringValue,
@@ -310,8 +322,9 @@ namespace SQE.DatabaseAccess
                 attributeValueId);
             var writeRequest = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateRequest);
 
-            if (!attributeValueId.HasValue && !writeRequest.FirstOrDefault().NewId.HasValue)
-                throw new StandardExceptions.DataNotWrittenException("create new attribute value");
+            if (!writeRequest.FirstOrDefault().NewId.HasValue)
+                throw new StandardExceptions.DataNotWrittenException(
+                    $"{(attributeValueId.HasValue ? "update" : "create")} new attribute value");
 
             attributeValueId ??= writeRequest.FirstOrDefault().NewId.Value;
 
@@ -320,7 +333,7 @@ namespace SQE.DatabaseAccess
                 return attributeValueId.Value;
 
             var createCssParams = new DynamicParameters();
-            createCssParams.Add("@attribute_value_id", attributeValueId);
+            createCssParams.Add("@attribute_value_id", writeRequest.FirstOrDefault().NewId);
             createCssParams.Add("@css", attributeValueCss);
             var mutateCssRequest = new MutationRequest(
                 MutateType.Create,

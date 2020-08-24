@@ -96,7 +96,7 @@ namespace GenerateTestRequestObjects
         /// <param name="serviceMethods"></param>
         /// <param name="project"></param>
         /// <returns></returns>
-        public static async Task ParseAndWriteClassesAsync(string testFolder, ClassDeclarationSyntax node,
+        public static async Task<List<ParameterDescription>> ParseAndWriteClassesAsync(string testFolder, ClassDeclarationSyntax node,
             IEnumerable<SemanticModel> semModels,
             IEnumerable<MethodDescription<MethodDeclarationSyntax>> serviceMethods,
             IEnumerable<MethodDeclarationSyntax> broadcastMethods, Project project)
@@ -140,6 +140,7 @@ namespace SQE.ApiTest.ApiRequests
 
                 // Write ending to the file
                 await outputFile.WriteLineAsync("\n}");
+                return parsedControllerMethods.requests.SelectMany(x => x.Value.SelectMany(y => y.listeners)).ToList();
             }
         }
 
@@ -256,18 +257,19 @@ namespace SQE.ApiTest.ApiRequests
                     // We capture the last broadcast method (the current test system can only handle a single listener)
                     while (match.Success)
                     {
-                        methodDescription.listenerName = match.Groups[1].ToString();
+                        var listenerName = match.Groups[1].ToString();
+                        // If there is a broadcast, find its type
+                        if (!string.IsNullOrEmpty(listenerName))
+                        {
+                            var broadcastMethodDescription = broadcastMethods.First(x =>
+                                x.Identifier.ToString() == listenerName);
+                            methodDescription.listeners.Add(new ParameterDescription(broadcastMethodDescription.ParameterList.Parameters.First()
+                                .Type.ToString(), listenerName));
+                        }
                         match = match.NextMatch();
                     }
 
-                    // If there is a broadcast, find its type
-                    if (!string.IsNullOrEmpty(methodDescription.listenerName))
-                    {
-                        var broadcastMethodDescription = broadcastMethods.First(x =>
-                            x.Identifier.ToString() == methodDescription.listenerName);
-                        methodDescription.ListenerType = broadcastMethodDescription.ParameterList.Parameters.First()
-                            .Type.ToString();
-                    }
+
                 }
                 catch
                 {
