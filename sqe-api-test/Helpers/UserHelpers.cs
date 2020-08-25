@@ -11,7 +11,7 @@ namespace SQE.ApiTest.Helpers
 {
     public class UserHelpers
     {
-        private static uint userCount;
+        private static uint _userCount;
 
         /// <summary>
         ///     Create a user with random information.
@@ -22,17 +22,17 @@ namespace SQE.ApiTest.Helpers
         public static async Task<DetailedUserDTO> CreateRandomUserAsync(HttpClient client, string password)
         {
             var user = new NewUserRequestDTO(
-                $"sequential.user{userCount}@fakeEmail.edu",
+                $"sequential.user{_userCount}@fakeEmail.edu",
                 password,
-                $"Company {userCount}",
-                $"forename {userCount}",
-                $"surname {userCount}"
+                $"Company {_userCount}",
+                $"forename {_userCount}",
+                $"surname {_userCount}"
             );
 
             var userAcctMsg = await CreateUserAccountAsync(client, user);
 
             await ActivateUserAccountAsync(client, userAcctMsg);
-            userCount++;
+            _userCount++;
             return userAcctMsg;
         }
 
@@ -79,7 +79,7 @@ namespace SQE.ApiTest.Helpers
         /// <param name="shouldSucceed">Optional, whether the action should succeed</param>
         /// <returns>void</returns>
         private static async Task ActivateUserAccountAsync(HttpClient client,
-            DetailedUserDTO user,
+            UserDTO user,
             bool shouldSucceed = true)
         {
             var userToken = await GetToken(user.email, "ACTIVATE_ACCOUNT"); // Get  token from DB
@@ -113,15 +113,15 @@ namespace SQE.ApiTest.Helpers
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        private static async Task CleanupUserAccountAsync(DetailedUserDTO user, DatabaseQuery db)
+        private static async Task CleanupUserAccountAsync(UserDTO user, DatabaseQuery db)
         {
-            const string deleteNewUserSQL = "DELETE FROM user WHERE email = @Email";
-            const string deleteEmailTokenSQL = "DELETE FROM user_email_token WHERE user_id = @UserId";
+            const string deleteNewUserSql = "DELETE FROM user WHERE email = @Email";
+            const string deleteEmailTokenSql = "DELETE FROM user_email_token WHERE user_id = @UserId";
             var deleteEmailTokenParams = new DynamicParameters();
             deleteEmailTokenParams.Add("@UserId", user.userId);
             deleteEmailTokenParams.Add("@Email", user.email);
-            await db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
-            await db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
+            await db.RunExecuteAsync(deleteEmailTokenSql, deleteEmailTokenParams);
+            await db.RunExecuteAsync(deleteNewUserSql, deleteEmailTokenParams);
         }
 
         /// <summary>
@@ -133,17 +133,17 @@ namespace SQE.ApiTest.Helpers
         private static async Task<UserObj> GetUserByEmail(string email, bool shouldSucceed = true)
         {
             var db = new DatabaseQuery();
-            const string checkForUserSQL = "SELECT * FROM user WHERE email = @Email";
+            const string checkForUserSql = "SELECT * FROM user WHERE email = @Email";
 
-            var checkForUserSQLParams = new DynamicParameters();
-            checkForUserSQLParams.Add("@Email", email);
+            var checkForUserSqlParams = new DynamicParameters();
+            checkForUserSqlParams.Add("@Email", email);
             if (shouldSucceed)
                 return await db.RunQuerySingleAsync<UserObj>(
-                    checkForUserSQL,
-                    checkForUserSQLParams
+                    checkForUserSql,
+                    checkForUserSqlParams
                 ); // Get user from DB
 
-            var users = await db.RunQueryAsync<UserObj>(checkForUserSQL, checkForUserSQLParams); // Get user from DB
+            var users = await db.RunQueryAsync<UserObj>(checkForUserSql, checkForUserSqlParams); // Get user from DB
             Assert.Empty(users);
             return new UserObj();
         }
@@ -159,7 +159,7 @@ namespace SQE.ApiTest.Helpers
         private static async Task<Token> GetToken(string email, string type, bool shouldSucceed = true)
         {
             var db = new DatabaseQuery();
-            const string getNewUserTokenSQL = @"
+            const string getNewUserTokenSql = @"
 SELECT token, date_created, type 
 FROM user_email_token 
   JOIN user USING(user_id) 
@@ -170,7 +170,7 @@ WHERE email = @Email AND type = @Type";
             checkForUserSQLParams.Add("@Type", type);
 
             // Get tokens from DB
-            var tokens = (await db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams)).ToList();
+            var tokens = (await db.RunQueryAsync<Token>(getNewUserTokenSql, checkForUserSQLParams)).ToList();
 
             if (shouldSucceed)
             {
@@ -186,37 +186,37 @@ WHERE email = @Email AND type = @Type";
         {
             public UserCreator(NewUserRequestDTO newUser, HttpClient client, DatabaseQuery db, bool activate = true)
             {
-                _newUser = newUser;
-                _client = client;
-                _db = db;
-                _activate = activate;
+                NewUser = newUser;
+                Client = client;
+                Db = db;
+                Activate = activate;
             }
 
-            private DetailedUserDTO user { get; set; }
-            private NewUserRequestDTO _newUser { get; }
-            private HttpClient _client { get; }
-            private DatabaseQuery _db { get; }
-            private bool _activate { get; }
+            private DetailedUserDTO User { get; set; }
+            private NewUserRequestDTO NewUser { get; }
+            private HttpClient Client { get; }
+            private DatabaseQuery Db { get; }
+            private bool Activate { get; }
 
             public void Dispose()
             {
                 // This seems to work properly even though it is an antipattern.
                 // There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
                 // Maybe using try/finally in the individual tests would ultimately be safer.
-                Task.Run<Task>(async () => await CleanupUserAccountAsync(user, _db)).Wait();
+                Task.Run<Task>(async () => await CleanupUserAccountAsync(User, Db)).Wait();
             }
 
             public async Task<DetailedUserDTO> CreateUser()
             {
-                user = await CreateUserAccountAsync(_client, _newUser);
-                if (_activate)
-                    await ActivateUserAccountAsync(_client, user);
-                return user;
+                User = await CreateUserAccountAsync(Client, NewUser);
+                if (Activate)
+                    await ActivateUserAccountAsync(Client, User);
+                return User;
             }
 
             public void UpdateUserDetails(DetailedUserDTO updatedUser)
             {
-                user = updatedUser;
+                User = updatedUser;
             }
         }
 

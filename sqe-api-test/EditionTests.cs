@@ -49,26 +49,27 @@ namespace SQE.ApiTest
             if (permissionRequest == null)
                 permissionRequest = new InviteEditorDTO
                 {
-                    email = user2.email,
+                    email = user2.Email,
                     mayLock = true,
                     mayWrite = true,
                     isAdmin = true
                 };
 
-            if (user2.email != permissionRequest.email)
+            if (user2.Email != permissionRequest.email)
                 throw new Exception("user2 must be the same user as in the permissionRequest");
 
             var add1 = new Post.V1_Editions_EditionId_AddEditorRequest(editionId, permissionRequest);
-            var (httpResponse, _, _, listenerResponse) = await Request.Send(
-                add1,
+            await add1.Send(
                 _client,
                 StartConnectionAsync,
                 true,
                 user1,
                 user2, // User 2 will listen on SignalR for the request
                 requestRealtime: false,
-                listenToEdition: false
+                listenToEdition: false,
+                listeningFor: add1.AvailableListeners.RequestedEditor
             );
+            var (httpResponse, listenerResponse) = (add1.HttpResponseMessage, add1.RequestedEditor);
 
             if (shouldSucceed)
             {
@@ -102,15 +103,17 @@ namespace SQE.ApiTest
             bool shouldSucceed = true)
         {
             var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(token.ToString());
-            var (httpConfirmResponse, shareConfirmMsg, _, listenerConfirmResponse) = await Request.Send(
-                confirmRequest,
+            await confirmRequest.Send(
                 _client,
                 StartConnectionAsync,
                 true,
                 editor,
                 admin, // User 1 will listen on the SignalR edition room for news of confirmation
-                requestRealtime: false
+                requestRealtime: false,
+                listeningFor: confirmRequest.AvailableListeners.CreatedEditor
             );
+            var (httpConfirmResponse, shareConfirmMsg, listenerConfirmResponse) = (confirmRequest.HttpResponseMessage,
+                confirmRequest.HttpResponseObject, confirmRequest.CreatedEditor);
 
             if (shouldSucceed)
             {
@@ -155,26 +158,26 @@ namespace SQE.ApiTest
                 Assert.Equal(shareConfirmMsg.mayWrite, listenerConfirmResponse.mayWrite);
                 Assert.Equal(shareConfirmMsg.mayLock, listenerConfirmResponse.mayLock);
                 Assert.Equal(shareConfirmMsg.mayRead, listenerConfirmResponse.mayRead);
-                Assert.Equal(Request.DefaultUsers.User2.email, listenerConfirmResponse.email);
+                Assert.Equal(Request.DefaultUsers.User2.Email, listenerConfirmResponse.email);
 
                 // Arrange
                 // User 1 should get the basic info about the shared edition
                 var get1 = new Get.V1_Editions_EditionId(newEdition);
-                var (_, user1Msg, _, _) = await Request.Send(
-                    get1,
+                await get1.Send(
                     _client,
                     null,
                     true
                 );
+                var user1Msg = get1.HttpResponseObject;
 
                 // User 2 should get the basic info about the shared edition
-                var (_, user2Msg, _, _) = await Request.Send(
-                    get1,
+                await get1.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User2
                 );
+                var user2Msg = get1.HttpResponseObject;
 
                 // Assert
                 Assert.Equal(user1Msg.primary.id, user2Msg.primary.id);
@@ -211,7 +214,7 @@ namespace SQE.ApiTest
                 // Arrange
                 var newPermissions = new InviteEditorDTO
                 {
-                    email = Request.DefaultUsers.User2.email,
+                    email = Request.DefaultUsers.User2.Email,
                     mayLock = false,
                     mayWrite = false,
                     isAdmin = false
@@ -232,13 +235,13 @@ namespace SQE.ApiTest
                 // Act 
                 // Check permissions for edition info request
                 var get1 = new Get.V1_Editions_EditionId(newEdition);
-                var (_, user2Msg, _, _) = await Request.Send(
-                    get1,
+                await get1.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User2
                 );
+                var user2Msg = get1.HttpResponseObject;
 
                 // Assert
                 // Permissions are correct
@@ -261,13 +264,13 @@ namespace SQE.ApiTest
                     newPermissions.email,
                     updatePermissions
                 );
-                var (_, share2Msg, _, _) = await Request.Send(
-                    add2,
+                await add2.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User1
                 );
+                var share2Msg = add2.HttpResponseObject;
 
                 // Assert
                 Assert.True(share2Msg.mayRead);
@@ -277,13 +280,13 @@ namespace SQE.ApiTest
 
                 // Act 
                 // Check permissions for edition info request
-                var (_, user2Msg2, _, _) = await Request.Send(
-                    get1,
+                await get1.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User2
                 );
+                var user2Msg2 = get1.HttpResponseObject;
 
                 // Assert
                 Assert.True(user2Msg2.primary.permission.mayWrite);
@@ -297,13 +300,13 @@ namespace SQE.ApiTest
                     newPermissions.email,
                     updatePermissions
                 );
-                var (_, share3Msg, _, _) = await Request.Send(
-                    add3,
+                await add3.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User2
                 );
+                var share3Msg = add3.HttpResponseObject;
 
                 // Assert
                 Assert.True(share3Msg.mayRead);
@@ -383,7 +386,7 @@ namespace SQE.ApiTest
                 // Arrange
                 var newPermissions = new InviteEditorDTO
                 {
-                    email = Request.DefaultUsers.User2.email,
+                    email = Request.DefaultUsers.User2.Email,
                     mayWrite = false,
                     isAdmin = false,
                     mayLock = true
@@ -425,7 +428,7 @@ namespace SQE.ApiTest
                 // Arrange
                 var newPermissions = new InviteEditorDTO
                 {
-                    email = Request.DefaultUsers.User2.email,
+                    email = Request.DefaultUsers.User2.Email,
                     mayLock = false,
                     mayWrite = false,
                     isAdmin = false
@@ -446,13 +449,13 @@ namespace SQE.ApiTest
                 // Act 
                 // Check permissions for edition info request
                 var get1 = new Get.V1_Editions_EditionId(newEdition);
-                var (_, user2Msg, _, _) = await Request.Send(
-                    get1,
+                await get1.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User2
                 );
+                var user2Msg = get1.HttpResponseObject;
 
                 // Assert
                 // Permissions are correct
@@ -475,8 +478,7 @@ namespace SQE.ApiTest
                     newPermissions.email,
                     updatePermissions
                 );
-                var (share2Response, share2Msg, _, _) = await Request.Send(
-                    add2,
+                await add2.Send(
                     _client,
                     null,
                     true,
@@ -485,7 +487,7 @@ namespace SQE.ApiTest
                 );
 
                 // Assert
-                Assert.Equal(HttpStatusCode.BadRequest, share2Response.StatusCode);
+                Assert.Equal(HttpStatusCode.BadRequest, add2.HttpResponseMessage.StatusCode);
             }
             finally
             {
@@ -537,7 +539,7 @@ namespace SQE.ApiTest
                 // Arrange
                 var newPermissions = new InviteEditorDTO
                 {
-                    email = Request.DefaultUsers.User2.email,
+                    email = Request.DefaultUsers.User2.Email,
                     mayLock = false,
                     mayWrite = false,
                     isAdmin = false
@@ -558,13 +560,13 @@ namespace SQE.ApiTest
                 // Act 
                 // Check permissions for edition info request
                 var get1 = new Get.V1_Editions_EditionId(newEdition);
-                var (_, user2Msg, _, _) = await Request.Send(
-                    get1,
+                await get1.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User2
                 );
+                var user2Msg = get1.HttpResponseObject;
 
                 // Assert
                 // Permissions are correct
@@ -587,8 +589,7 @@ namespace SQE.ApiTest
                     newPermissions.email,
                     updatePermissions
                 );
-                var (share2Response, share2Msg, _, _) = await Request.Send(
-                    add2,
+                await add2.Send(
                     _client,
                     null,
                     true,
@@ -597,7 +598,7 @@ namespace SQE.ApiTest
                 );
 
                 // Assert
-                Assert.Equal(HttpStatusCode.BadRequest, share2Response.StatusCode);
+                Assert.Equal(HttpStatusCode.BadRequest, add2.HttpResponseMessage.StatusCode);
             }
             finally
             {
@@ -618,7 +619,7 @@ namespace SQE.ApiTest
                 // Arrange
                 var newPermissions = new InviteEditorDTO
                 {
-                    email = Request.DefaultUsers.User2.email,
+                    email = Request.DefaultUsers.User2.Email,
                     mayLock = true,
                     mayWrite = true,
                     isAdmin = false
@@ -644,7 +645,7 @@ namespace SQE.ApiTest
                     await Request.GetJwtViaHttpAsync(
                         _client,
                         new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                        { Email = Request.DefaultUsers.User2.Email, Password = Request.DefaultUsers.User2.Password }
                     )
                 );
 
@@ -659,7 +660,7 @@ namespace SQE.ApiTest
                     await Request.GetJwtViaHttpAsync(
                         _client,
                         new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                        { Email = Request.DefaultUsers.User1.Email, Password = Request.DefaultUsers.User1.Password }
                     )
                 );
                 user1Resp.EnsureSuccessStatusCode();
@@ -672,7 +673,7 @@ namespace SQE.ApiTest
                     await Request.GetJwtViaHttpAsync(
                         _client,
                         new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                        { Email = Request.DefaultUsers.User2.Email, Password = Request.DefaultUsers.User2.Password }
                     )
                 );
                 Assert.Equal(HttpStatusCode.Forbidden, user2Resp.StatusCode);
@@ -687,7 +688,7 @@ namespace SQE.ApiTest
                     await Request.GetJwtViaHttpAsync(
                         _client,
                         new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                        { Email = Request.DefaultUsers.User1.Email, Password = Request.DefaultUsers.User1.Password }
                     )
                 );
 
@@ -700,7 +701,7 @@ namespace SQE.ApiTest
                     true,
                     true,
                     new Request.UserAuthDetails
-                    { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                    { Email = Request.DefaultUsers.User1.Email, Password = Request.DefaultUsers.User1.Password }
                 );
                 var (user1Resp2, user1Msg2) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
@@ -710,7 +711,7 @@ namespace SQE.ApiTest
                     await Request.GetJwtViaHttpAsync(
                         _client,
                         new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                        { Email = Request.DefaultUsers.User1.Email, Password = Request.DefaultUsers.User1.Password }
                     )
                 );
                 if (user1Resp2.StatusCode == HttpStatusCode.NoContent)
@@ -752,14 +753,14 @@ namespace SQE.ApiTest
                 // Act
                 // Check to see if outstanding request is accessible to user who received the invitation
                 var requestAvailable = new Get.V1_Editions_EditorInvitations();
-                var (httpShareRequestResponse, shareRequestMsg, _, _) = await Request.Send(
-                    requestAvailable,
+                await requestAvailable.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User2,
                     requestRealtime: false
                 );
+                var (httpShareRequestResponse, shareRequestMsg) = (requestAvailable.HttpResponseMessage, requestAvailable.HttpResponseObject);
 
                 // Assert
                 httpShareRequestResponse.EnsureSuccessStatusCode();
@@ -767,7 +768,7 @@ namespace SQE.ApiTest
                 var foundMatch = false;
                 foreach (var share in shareRequestMsg.editorInvitations)
                     if (share.editionId == listenerResponse.editionId &&
-                        share.requestingAdminEmail == Request.DefaultUsers.User1.email)
+                        share.requestingAdminEmail == Request.DefaultUsers.User1.Email)
                     {
                         Assert.Equal(share.date, listenerResponse.date);
                         Assert.Equal(share.mayLock, listenerResponse.mayLock);
@@ -818,14 +819,14 @@ namespace SQE.ApiTest
                 // Act
                 // Check to see if outstanding request is accessible to admin
                 var requestAvailable = new Get.V1_Editions_AdminShareRequests();
-                var (httpShareRequestResponse, shareRequestMsg, _, _) = await Request.Send(
-                    requestAvailable,
+                await requestAvailable.Send(
                     _client,
                     null,
                     true,
                     Request.DefaultUsers.User1,
                     requestRealtime: false
                 );
+                var (httpShareRequestResponse, shareRequestMsg) = (requestAvailable.HttpResponseMessage, requestAvailable.HttpResponseObject);
 
                 // Assert
                 httpShareRequestResponse.EnsureSuccessStatusCode();
@@ -833,7 +834,7 @@ namespace SQE.ApiTest
                 var foundMatch = false;
                 foreach (var share in shareRequestMsg.editorRequests)
                     if (share.editionId == listenerResponse.editionId &&
-                        share.editorEmail == Request.DefaultUsers.User2.email)
+                        share.editorEmail == Request.DefaultUsers.User2.Email)
                     {
                         Assert.Equal(share.date, listenerResponse.date);
                         Assert.Equal(share.mayLock, listenerResponse.mayLock);
@@ -858,7 +859,7 @@ namespace SQE.ApiTest
             // Arrange
             var newPermissions = new InviteEditorDTO
             {
-                email = Request.DefaultUsers.User2.email,
+                email = Request.DefaultUsers.User2.Email,
                 mayLock = false,
                 mayWrite = true,
                 isAdmin = false
@@ -887,14 +888,15 @@ namespace SQE.ApiTest
 
                 // Act
                 var changeNameReq = new Put.V1_Editions_EditionId(newEdition, update);
-                var (updateResp, updateMsg, _, listenerMsg) = await Request.Send(
-                    changeNameReq,
+                await changeNameReq.Send(
                     _client,
                     StartConnectionAsync,
                     true,
                     requestRealtime: false,
                     requestUser: Request.DefaultUsers.User2,
-                    listenerUser: Request.DefaultUsers.User1);
+                    listenerUser: Request.DefaultUsers.User1,
+                    listeningFor: changeNameReq.AvailableListeners.UpdatedEdition);
+                var (updateMsg, listenerMsg) = (changeNameReq.HttpResponseObject, changeNameReq.UpdatedEdition);
 
                 // Assert
                 Assert.Equal(update.name, updateMsg.name);
@@ -908,7 +910,7 @@ namespace SQE.ApiTest
                     await Request.GetJwtViaHttpAsync(
                         _client,
                         new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User1.email, password = Request.DefaultUsers.User1.password }
+                        { Email = Request.DefaultUsers.User1.Email, Password = Request.DefaultUsers.User1.Password }
                     )
                 );
                 user1Resp.EnsureSuccessStatusCode();
@@ -921,7 +923,7 @@ namespace SQE.ApiTest
                     await Request.GetJwtViaHttpAsync(
                         _client,
                         new Request.UserAuthDetails
-                        { email = Request.DefaultUsers.User2.email, password = Request.DefaultUsers.User2.password }
+                        { Email = Request.DefaultUsers.User2.Email, Password = Request.DefaultUsers.User2.Password }
                     )
                 );
                 user2Resp.EnsureSuccessStatusCode();
@@ -955,13 +957,13 @@ namespace SQE.ApiTest
 
             //Act
             var newEd = new Post.V1_Editions_EditionId(editionId, newScrollRequest);
-            var (response, msg, rt, lt) = await Request.Send(
-                newEd,
+            await newEd.Send(
                 _client,
                 StartConnectionAsync,
                 true,
                 deterministic: false
             );
+            var (response, msg, rt, lt) = (newEd.HttpResponseMessage, newEd.HttpResponseObject, newEd.SignalrResponseObject, newEd.CreatedEdition);
             response.EnsureSuccessStatusCode();
 
             // Assert
@@ -978,13 +980,13 @@ namespace SQE.ApiTest
             newEd = new Post.V1_Editions_EditionId(editionId, newScrollRequest);
 
             //Act
-            (response, msg, rt, lt) = await Request.Send(
-                newEd,
+            await newEd.Send(
                 _client,
                 StartConnectionAsync,
                 true,
                 deterministic: false
             );
+            (response, msg, rt, lt) = (newEd.HttpResponseMessage, newEd.HttpResponseObject, newEd.SignalrResponseObject, newEd.CreatedEdition);
             response.EnsureSuccessStatusCode();
 
             // Assert

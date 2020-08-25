@@ -32,14 +32,6 @@ namespace GenerateTestRequestObjects
                         : $"ListenerMethod = \"{endpoint.listeners.LastOrDefault().ParamName}\";";
                     var endpointInputType = endpoint.IType == null ? "EmptyInput" : endpoint.IType;
                     var endpointOutputType = endpoint.OType == null ? "EmptyOutput" : endpoint.OType;
-                    var endpointListenerType = httpVerb.ToString().ToLowerInvariant() switch
-                    {
-                        "get" => "EmptyOutput",
-                        "post" => string.IsNullOrEmpty(endpoint.listeners.LastOrDefault()?.ParamType) ? "EmptyOutput" : endpoint.listeners.LastOrDefault().ParamType,
-                        "put" => string.IsNullOrEmpty(endpoint.listeners.LastOrDefault()?.ParamType) ? "EmptyOutput" : endpoint.listeners.LastOrDefault().ParamType,
-                        "delete" => string.IsNullOrEmpty(endpoint.listeners.LastOrDefault()?.ParamType) ? "EmptyOutput" : endpoint.listeners.LastOrDefault().ParamType,
-                        _ => throw new Exception("Unsupported http verb")
-                    };
                     var listenersClass = endpoint.listeners.Count == 0
                         ? ""
                         : $@"public class Listeners
@@ -88,7 +80,7 @@ namespace GenerateTestRequestObjects
 
                     await outputFile.WriteLineAsync($@"
                 public class {methodName}
-                : RequestObject<{endpointInputType}, {endpointOutputType}, {endpointListenerType}>
+                : RequestObject<{endpointInputType}, {endpointOutputType}>
                 {{
                     {string.Join("\n", constructorParams.Select(x => $"private readonly {x.ParamType} _{x.ParamName.ToCamelCase()};"))}
 

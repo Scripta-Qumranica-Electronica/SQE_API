@@ -11,25 +11,19 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
-
-
     public static partial class Delete
     {
-
-
         public class V1_Editions_EditionId_Rois_RoiId
-        : RequestObject<EmptyInput, EmptyOutput, EmptyOutput>
+            : RequestObject<EmptyInput, EmptyOutput>
         {
             private readonly uint _editionId;
             private readonly uint _roiId;
-
 
 
             /// <summary>
@@ -42,15 +36,13 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _roiId = roiId;
-
-
             }
-
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/roi-id", $"/{_roiId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/roi-id", $"/{_roiId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -69,14 +61,11 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Get
     {
-
-
         public class V1_Editions_EditionId_Rois_RoiId
-        : RequestObject<EmptyInput, InterpretationRoiDTO, EmptyOutput>
+            : RequestObject<EmptyInput, InterpretationRoiDTO>
         {
             private readonly uint _editionId;
             private readonly uint _roiId;
-
 
 
             /// <summary>
@@ -89,15 +78,13 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _roiId = roiId;
-
-
             }
-
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/roi-id", $"/{_roiId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/roi-id", $"/{_roiId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -116,14 +103,11 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-
-
         public class V1_Editions_EditionId_Rois
-        : RequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO, EmptyOutput>
+            : RequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO>
         {
             private readonly uint _editionId;
             private readonly SetInterpretationRoiDTO _payload;
-
 
 
             /// <summary>
@@ -136,10 +120,7 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-
-
             }
-
 
 
             protected override string HttpPath()
@@ -161,16 +142,10 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Rois_Batch
-        : RequestObject<SetInterpretationRoiDTOList, InterpretationRoiDTOList, InterpretationRoiDTOList>
+            : RequestObject<SetInterpretationRoiDTOList, InterpretationRoiDTOList>
         {
             private readonly uint _editionId;
             private readonly SetInterpretationRoiDTOList _payload;
-
-            public class Listeners
-            {
-                public ListenerMethods CreatedRoisBatch = ListenerMethods.CreatedRoisBatch;
-            };
-            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Creates new sign ROI's in the given edition of a scroll
@@ -188,9 +163,20 @@ namespace SQE.ApiTest.ApiRequests
                 AvailableListeners = new Listeners();
             }
 
+            public Listeners AvailableListeners { get; }
+
             public InterpretationRoiDTOList CreatedRoisBatch { get; private set; }
-            private void CreatedRoisBatchListener(HubConnection signalrListener) => signalrListener.On<InterpretationRoiDTOList>("CreatedRoisBatch", receivedData => CreatedRoisBatch = receivedData);
-            private bool CreatedRoisBatchIsNull() => CreatedRoisBatch == null;
+
+            private void CreatedRoisBatchListener(HubConnection signalrListener)
+            {
+                signalrListener.On<InterpretationRoiDTOList>("CreatedRoisBatch",
+                    receivedData => CreatedRoisBatch = receivedData);
+            }
+
+            private bool CreatedRoisBatchIsNull()
+            {
+                return CreatedRoisBatch == null;
+            }
 
             protected override string HttpPath()
             {
@@ -208,19 +194,18 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-        }
-
-        public class V1_Editions_EditionId_Rois_BatchEdit
-        : RequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO, BatchEditRoiResponseDTO>
-        {
-            private readonly uint _editionId;
-            private readonly BatchEditRoiDTO _payload;
 
             public class Listeners
             {
-                public ListenerMethods EditedRoisBatch = ListenerMethods.EditedRoisBatch;
-            };
-            public Listeners AvailableListeners { get; }
+                public ListenerMethods CreatedRoisBatch = ListenerMethods.CreatedRoisBatch;
+            }
+        }
+
+        public class V1_Editions_EditionId_Rois_BatchEdit
+            : RequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO>
+        {
+            private readonly uint _editionId;
+            private readonly BatchEditRoiDTO _payload;
 
             /// <summary>
             ///     Processes a series of create/update/delete ROI requests in the given edition of a scroll
@@ -238,9 +223,20 @@ namespace SQE.ApiTest.ApiRequests
                 AvailableListeners = new Listeners();
             }
 
+            public Listeners AvailableListeners { get; }
+
             public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
-            private void EditedRoisBatchListener(HubConnection signalrListener) => signalrListener.On<BatchEditRoiResponseDTO>("EditedRoisBatch", receivedData => EditedRoisBatch = receivedData);
-            private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
+
+            private void EditedRoisBatchListener(HubConnection signalrListener)
+            {
+                signalrListener.On<BatchEditRoiResponseDTO>("EditedRoisBatch",
+                    receivedData => EditedRoisBatch = receivedData);
+            }
+
+            private bool EditedRoisBatchIsNull()
+            {
+                return EditedRoisBatch == null;
+            }
 
             protected override string HttpPath()
             {
@@ -258,20 +254,22 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
+
+            public class Listeners
+            {
+                public ListenerMethods EditedRoisBatch = ListenerMethods.EditedRoisBatch;
+            }
         }
     }
 
     public static partial class Put
     {
-
-
         public class V1_Editions_EditionId_Rois_RoiId
-        : RequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO, EmptyOutput>
+            : RequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO>
         {
             private readonly uint _editionId;
-            private readonly uint _roiId;
             private readonly SetInterpretationRoiDTO _payload;
-
+            private readonly uint _roiId;
 
 
             /// <summary>
@@ -286,15 +284,13 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _roiId = roiId;
                 _payload = payload;
-
-
             }
-
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/roi-id", $"/{_roiId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/roi-id", $"/{_roiId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -311,16 +307,10 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Rois_Batch
-        : RequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
+            : RequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
         {
             private readonly uint _editionId;
             private readonly InterpretationRoiDTOList _payload;
-
-            public class Listeners
-            {
-                public ListenerMethods UpdatedRoisBatch = ListenerMethods.UpdatedRoisBatch;
-            };
-            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Update existing sign ROI's in the given edition of a scroll
@@ -338,9 +328,20 @@ namespace SQE.ApiTest.ApiRequests
                 AvailableListeners = new Listeners();
             }
 
+            public Listeners AvailableListeners { get; }
+
             public UpdatedInterpretationRoiDTOList UpdatedRoisBatch { get; private set; }
-            private void UpdatedRoisBatchListener(HubConnection signalrListener) => signalrListener.On<UpdatedInterpretationRoiDTOList>("UpdatedRoisBatch", receivedData => UpdatedRoisBatch = receivedData);
-            private bool UpdatedRoisBatchIsNull() => UpdatedRoisBatch == null;
+
+            private void UpdatedRoisBatchListener(HubConnection signalrListener)
+            {
+                signalrListener.On<UpdatedInterpretationRoiDTOList>("UpdatedRoisBatch",
+                    receivedData => UpdatedRoisBatch = receivedData);
+            }
+
+            private bool UpdatedRoisBatchIsNull()
+            {
+                return UpdatedRoisBatch == null;
+            }
 
             protected override string HttpPath()
             {
@@ -358,7 +359,11 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedRoisBatch = ListenerMethods.UpdatedRoisBatch;
+            }
         }
     }
-
 }

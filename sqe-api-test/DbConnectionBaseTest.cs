@@ -17,8 +17,8 @@ namespace SQE.ApiTest
         // They are in use and all other tests pass, but some things, like ReliableMySqlDbCommand.Prepare() or 
         // ReliableMySqlConnection.DataSource, never get tested (I don't necessarily know what they all should do).
         // Perhaps something could be wrong there and we would not see it for a very long time.
-        private const int _retryCount = 21;
-        private const int _circuitBreakCount = 20;
+        private const int RetryCount = 21;
+        private const int CircuitBreakCount = 20;
 
         private static void ThrowMySqlException(Counter counter, uint sqlErrorCode)
         {
@@ -132,7 +132,7 @@ namespace SQE.ApiTest
             // Assert
             watch.Stop();
             Assert.Equal(code, ex.Code);
-            Assert.Equal(_retryCount, counter.Count); // This should have tried a total of _retryCount times.
+            Assert.Equal(RetryCount, counter.Count); // This should have tried a total of _retryCount times.
             Assert.True(watch.ElapsedMilliseconds > minExecutionTime);
 
             // With return type
@@ -148,7 +148,7 @@ namespace SQE.ApiTest
             // Assert
             watch.Stop();
             Assert.Equal(code, ex.Code);
-            Assert.Equal(_retryCount, counter.Count); // This should have tried a total of _retryCount times.
+            Assert.Equal(RetryCount, counter.Count); // This should have tried a total of _retryCount times.
             Assert.True(watch.ElapsedMilliseconds > minExecutionTime);
 
             // With Async
@@ -168,7 +168,7 @@ namespace SQE.ApiTest
             // Assert
             watch.Stop();
             Assert.Equal(code, ex.Code);
-            Assert.Equal(_retryCount, counter.Count); // This should have tried a total of _retryCount times.
+            Assert.Equal(RetryCount, counter.Count); // This should have tried a total of _retryCount times.
             Assert.True(watch.ElapsedMilliseconds > minExecutionTime);
 
             // Async with return type
@@ -187,7 +187,7 @@ namespace SQE.ApiTest
             // Assert
             watch.Stop();
             Assert.Equal(code, ex.Code);
-            Assert.Equal(_retryCount, counter.Count); // This should have tried a total of _retryCount times.
+            Assert.Equal(RetryCount, counter.Count); // This should have tried a total of _retryCount times.
             Assert.True(watch.ElapsedMilliseconds > minExecutionTime);
         }
 
@@ -210,7 +210,7 @@ namespace SQE.ApiTest
             // Assert
             Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
             Assert.Equal(
-                _circuitBreakCount,
+                CircuitBreakCount,
                 counter.Count
             ); // This should have tried a total of x times, before the breaker engaged.
 
@@ -228,7 +228,7 @@ namespace SQE.ApiTest
             // Assert
             Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
             Assert.Equal(
-                _circuitBreakCount,
+                CircuitBreakCount,
                 counter.Count
             ); // This should have tried a total of x times, before the breaker engaged.
 
@@ -247,7 +247,7 @@ namespace SQE.ApiTest
             // Assert
             Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
             Assert.Equal(
-                _circuitBreakCount,
+                CircuitBreakCount,
                 counter.Count
             ); // This should have tried a total of x times, before the breaker engaged.
 
@@ -268,7 +268,7 @@ namespace SQE.ApiTest
             // Assert
             Assert.Equal(code, ((MySqlException)retryEx.InnerException).Code);
             Assert.Equal(
-                _circuitBreakCount,
+                CircuitBreakCount,
                 counter.Count
             ); // This should have tried a total of x times, before the breaker engaged.
         }

@@ -44,8 +44,7 @@ namespace SQE.ApiTest
 
             // Act
             var getApiRequest = new Get.V1_Editions_EditionId_ArtefactGroups(editionId);
-            var (httpMessage, httpBody, signalr, _) = await Request.Send(
-                getApiRequest,
+            await getApiRequest.Send(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -54,7 +53,7 @@ namespace SQE.ApiTest
                 listenToEdition: false
             );
 
-            return (httpMessage, httpBody, signalr);
+            return (getApiRequest.HttpResponseMessage, getApiRequest.HttpResponseObject, getApiRequest.SignalrResponseObject);
         }
 
         /// <summary>
@@ -76,8 +75,7 @@ namespace SQE.ApiTest
             // Act
             var getApiRequest =
                 new Get.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
-            var (httpMessage, httpBody, signalr, _) = await Request.Send(
-                getApiRequest,
+            await getApiRequest.Send(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -86,7 +84,7 @@ namespace SQE.ApiTest
                 listenToEdition: false
             );
 
-            return (httpMessage, httpBody, signalr);
+            return (getApiRequest.HttpResponseMessage, getApiRequest.HttpResponseObject, getApiRequest.SignalrResponseObject);
         }
 
         /// <summary>
@@ -115,8 +113,7 @@ namespace SQE.ApiTest
 
             // Act
             var createApiRequest = new Post.V1_Editions_EditionId_ArtefactGroups(editionId, artefactGroup);
-            var (httpMessage, httpBody, signalr, listener) = await Request.Send(
-                createApiRequest,
+            await createApiRequest.Send(
                 _client,
                 null,
                 true,
@@ -126,6 +123,8 @@ namespace SQE.ApiTest
                 false,
                 listenToEdition: user2 != null
             );
+            var (httpMessage, httpBody, signalr, listener) = (createApiRequest.HttpResponseMessage,
+                createApiRequest.HttpResponseObject, createApiRequest.SignalrResponseObject, createApiRequest.CreatedArtefactGroup);
 
             // Assert
             if (shouldSucceed)
@@ -168,8 +167,7 @@ namespace SQE.ApiTest
             // Act
             var updateApiRequest =
                 new Put.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId, artefactGroup);
-            var (httpMessage, httpBody, signalr, listener) = await Request.Send(
-                updateApiRequest,
+            await updateApiRequest.Send(
                 _client,
                 null,
                 true,
@@ -179,6 +177,8 @@ namespace SQE.ApiTest
                 false,
                 listenToEdition: user2 != null
             );
+            var (httpMessage, httpBody, signalr, listener) = (updateApiRequest.HttpResponseMessage,
+                updateApiRequest.HttpResponseObject, updateApiRequest.SignalrResponseObject, updateApiRequest.UpdatedArtefactGroup);
 
             // Assert
             if (shouldSucceed)
@@ -214,8 +214,7 @@ namespace SQE.ApiTest
             // Act
             var deleteApiRequest =
                 new Delete.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
-            var (httpMessage, httpBody, signalr, listener) = await Request.Send(
-                deleteApiRequest,
+            await deleteApiRequest.Send(
                 realtime ? null : _client,
                 realtime ? StartConnectionAsync : (Func<string, Task<HubConnection>>)null,
                 true,
@@ -225,6 +224,8 @@ namespace SQE.ApiTest
                 false,
                 listenToEdition: user2 != null
             );
+            var (httpMessage, httpBody, signalr, listener) = (deleteApiRequest.HttpResponseMessage, deleteApiRequest.HttpResponseObject,
+                deleteApiRequest.SignalrResponseObject, deleteApiRequest.DeletedArtefactGroup);
 
             // Assert
             if (shouldSucceed)

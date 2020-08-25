@@ -11,24 +11,18 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
-
-
     public static partial class Post
     {
-
-
         public class V1_Utils_RepairWktPolygon
-        : RequestObject<WktPolygonDTO, WktPolygonDTO, EmptyOutput>
+            : RequestObject<WktPolygonDTO, WktPolygonDTO>
         {
             private readonly WktPolygonDTO _payload;
-
 
 
             /// <summary>
@@ -41,10 +35,7 @@ namespace SQE.ApiTest.ApiRequests
                 : base(payload)
             {
                 _payload = payload;
-
-
             }
-
 
 
             protected override string HttpPath()
@@ -56,9 +47,6 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
             }
-
-
         }
     }
-
 }

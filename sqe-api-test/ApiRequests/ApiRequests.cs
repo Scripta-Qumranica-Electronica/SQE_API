@@ -21,41 +21,103 @@ namespace SQE.ApiTest.ApiRequests
         public TInput Payload { get; set; }
     }
 
-    public interface IRequestObject<TInput, in TOutput, TListener>
+    public interface IRequestObject
     {
         /// <summary>
-        ///     Returns an HttpRequestObject with the information needed to make a request to the HTTP server for this API endpoint
+        ///     Issues the request to the API and stores the response.
+        ///     At least `http` or `realtime` must be provided.  If using a listener, you
+        ///     will receive a HubConnection as a response from this method. You must
+        ///     wait some appropriate amount of time for the desired listener message
+        ///     to be received and close the connection yourself on success/fail.
         /// </summary>
-        /// <returns>May return null if HTTP requests are not possible with this endpoint</returns>
-        HttpRequestObject<TInput> GetHttpRequestObject();
+        /// <param name="http">
+        ///     An HttpClient to run the request on;
+        ///     may be null if no request should be made to the HTTP server.
+        /// </param>
+        /// <param name="realtime">
+        ///     A function to acquire a SignalR hub connection;
+        ///     may be null if no request should be made to the SignalR server.
+        /// </param>
+        /// <param name="auth">
+        ///     Whether to use authentication (default false).
+        ///     If no user1 is provided the default user "test" will be used.
+        /// </param>
+        /// <param name="requestUser">
+        ///     User object for authentication.
+        ///     If no User is provided, the default "test" user is used.
+        /// </param>
+        /// <param name="listenerUser">
+        ///     User object for authentication of the listener.
+        ///     If no User is provided, listenerUser = user1.
+        /// </param>
+        /// <param name="shouldSucceed">Whether the request is expected to succeed.</param>
+        /// <param name="deterministic">
+        ///     Whether the request is expected to return the same response from multiple requests.
+        ///     This method will throw an error if the request is deterministic but the http and realtime responses differ.
+        /// </param>
+        /// <param name="requestRealtime">Whether a realtime request should be made.</param>
+        /// <param name="listenToEdition">Whether a listener should register for messages on the edition id.</param>
+        /// <param name="listeningFor">The desired listener methods.</param>
+        /// <returns>HubConnection</returns>
+        Task Send(
+            IEnumerable<ListenerMethods> listeningFor,
+            HttpClient http = null,
+            Func<string, Task<HubConnection>> realtime = null,
+            bool auth = false,
+            Request.UserAuthDetails requestUser = null,
+            Request.UserAuthDetails listenerUser = null,
+            bool shouldSucceed = true,
+            bool deterministic = true,
+            bool requestRealtime = true,
+            bool listenToEdition = true);
 
         /// <summary>
-        ///     Returns a function that can make a SignalR request to this API endpoint
-        ///     The function that is returned requires a HubConnection as its only argument
+        ///     Issues the request to the API and stores the response.
+        ///     At least `http` or `realtime` must be provided.  If using a listener, you
+        ///     will receive a HubConnection as a response from this method. You must
+        ///     wait some appropriate amount of time for the desired listener message
+        ///     to be received and close the connection yourself on success/fail.
         /// </summary>
-        /// <typeparam name="T">The compiler checks to make sure T == TOutput</typeparam>
-        /// <returns></returns>
-        Func<HubConnection, Task<T>> SignalrRequest<T>()
-            where T : TOutput;
-
-        /// <summary>
-        ///     Returns the string name of the endpoint's SignalR broadcast method
-        /// </summary>
-        /// <returns></returns>
-        string GetListenerMethod();
-
-        /// <summary>
-        ///     Returns the HTTP request verb of the endpoint
-        /// </summary>
-        /// <returns></returns>
-        HttpMethod GetRequestVerb();
-
-        /// <summary>
-        ///     Returns the edition id of the particular request, or null if
-        ///     the endpoint is not associated with an edition id
-        /// </summary>
-        /// <returns></returns>
-        uint? GetEditionId();
+        /// <param name="http">
+        ///     An HttpClient to run the request on;
+        ///     may be null if no request should be made to the HTTP server.
+        /// </param>
+        /// <param name="realtime">
+        ///     A function to acquire a SignalR hub connection;
+        ///     may be null if no request should be made to the SignalR server.
+        /// </param>
+        /// <param name="auth">
+        ///     Whether to use authentication (default false).
+        ///     If no user1 is provided the default user "test" will be used.
+        /// </param>
+        /// <param name="requestUser">
+        ///     User object for authentication.
+        ///     If no User is provided, the default "test" user is used.
+        /// </param>
+        /// <param name="listenerUser">
+        ///     User object for authentication of the listener.
+        ///     If no User is provided, listenerUser = user1.
+        /// </param>
+        /// <param name="shouldSucceed">Whether the request is expected to succeed.</param>
+        /// <param name="deterministic">
+        ///     Whether the request is expected to return the same response from multiple requests.
+        ///     This method will throw an error if the request is deterministic but the http and realtime responses differ.
+        /// </param>
+        /// <param name="requestRealtime">Whether a realtime request should be made.</param>
+        /// <param name="listenToEdition">Whether a listener should register for messages on the edition id.</param>
+        /// <param name="listeningFor">The desired listener method.</param>
+        /// <returns>HubConnection</returns>
+        Task Send(
+            HttpClient http = null,
+            Func<string, Task<HubConnection>> realtime = null,
+            bool auth = false,
+            Request.UserAuthDetails requestUser = null,
+            Request.UserAuthDetails listenerUser = null,
+            bool shouldSucceed = true,
+            bool deterministic = true,
+            bool requestRealtime = true,
+            bool listenToEdition = true,
+            ListenerMethods listeningFor = default);
     }
 
     /// <summary>
@@ -64,7 +126,7 @@ namespace SQE.ApiTest.ApiRequests
     /// <typeparam name="TInput">The type of the request payload</typeparam>
     /// <typeparam name="TOutput">The API endpoint return type</typeparam>
     /// <typeparam name="TListener">The API endpoint signalr broadcast type</typeparam>
-    public abstract class RequestObject<TInput, TOutput, TListener> : IRequestObject<TInput, TOutput, TListener>
+    public abstract class RequestObject<TInput, TOutput> : IRequestObject
     {
         private readonly TInput _payload;
         private readonly HttpMethod _requestVerb;
@@ -151,50 +213,17 @@ namespace SQE.ApiTest.ApiRequests
                    + RequestPath.Replace("/", "_").ToPascalCase();
         }
 
-        /// <summary>
-        ///     Issues the request to the API and stores the response.
-        ///     At least `http` or `realtime` must be provided.  If using a listener, you
-        ///     will receive a HubConnection as a response from this method. You must
-        ///     wait some appropriate amount of time for the desired listener message
-        ///     to be received and close the connection yourself on success/fail.
-        /// </summary>
-        /// <param name="http">
-        ///     An HttpClient to run the request on;
-        ///     may be null if no request should be made to the HTTP server.
-        /// </param>
-        /// <param name="realtime">
-        ///     A function to acquire a SignalR hub connection;
-        ///     may be null if no request should be made to the SignalR server.
-        /// </param>
-        /// <param name="auth">
-        ///     Whether to use authentication (default false).
-        ///     If no user1 is provided the default user "test" will be used.
-        /// </param>
-        /// <param name="requestUser">
-        ///     User object for authentication.
-        ///     If no User is provided, the default "test" user is used.
-        /// </param>
-        /// <param name="listenerUser">
-        ///     User object for authentication of the listener.
-        ///     If no User is provided, listenerUser = user1.
-        /// </param>
-        /// <param name="shouldSucceed">Whether the request is expected to succeed.</param>
-        /// <param name="deterministic">
-        ///     Whether the request is expected to return the same response from multiple requests.
-        ///     This method will throw an error if the request is deterministic but the http and realtime responses differ.
-        /// </param>
-        /// <returns>HubConnection</returns>
         public async Task Send(
-                HttpClient http = null,
-                Func<string, Task<HubConnection>> realtime = null,
-                bool auth = false,
-                Request.UserAuthDetails requestUser = null,
-                Request.UserAuthDetails listenerUser = null,
-                bool shouldSucceed = true,
-                bool deterministic = true,
-                bool requestRealtime = true,
-                bool listenToEdition = true,
-                IEnumerable<ListenerMethods> listeningFor = null)
+            IEnumerable<ListenerMethods> listeningFor,
+            HttpClient http = null,
+            Func<string, Task<HubConnection>> realtime = null,
+            bool auth = false,
+            Request.UserAuthDetails requestUser = null,
+            Request.UserAuthDetails listenerUser = null,
+            bool shouldSucceed = true,
+            bool deterministic = true,
+            bool requestRealtime = true,
+            bool listenToEdition = true)
         {
             // Throw an error if no transport protocol has been provided
             if (http == null
@@ -240,6 +269,7 @@ namespace SQE.ApiTest.ApiRequests
                     if (_listenerDict.TryGetValue(listener, out var val))
                         val.StartListener(signalrListener);
                 }
+
 
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
@@ -293,8 +323,7 @@ namespace SQE.ApiTest.ApiRequests
                 // If the request should succeed and an HTTP request was also made, check that they are the same
                 if (shouldSucceed
                     && deterministic
-                    && http != null
-                    && typeof(TOutput) == typeof(TListener))
+                    && http != null)
                     SignalrResponseObject.ShouldDeepEqual(HttpResponseObject);
 
                 // Cleanup
@@ -322,6 +351,31 @@ namespace SQE.ApiTest.ApiRequests
             if (shouldSucceed)
                 Assert.Empty(listeningFor.Where(x =>
                     !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull()));
+        }
+
+        public async Task Send(
+            HttpClient http = null,
+            Func<string, Task<HubConnection>> realtime = null,
+            bool auth = false,
+            Request.UserAuthDetails requestUser = null,
+            Request.UserAuthDetails listenerUser = null,
+            bool shouldSucceed = true,
+            bool deterministic = true,
+            bool requestRealtime = true,
+            bool listenToEdition = true,
+            ListenerMethods listeningFor = default)
+        {
+            await Send(
+                new List<ListenerMethods>() { listeningFor },
+                http,
+                realtime,
+                auth,
+                requestUser,
+                listenerUser,
+                shouldSucceed,
+                deterministic,
+                requestRealtime,
+                listenToEdition);
         }
     }
 

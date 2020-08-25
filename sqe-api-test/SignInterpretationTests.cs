@@ -25,11 +25,11 @@ namespace SQE.ApiTest
             var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(EditionHelpers.GetEditionId());
 
             // Act
-            var (httpResponse, httpData, signalRData, _) = await Request.Send(
-                request,
+            await request.Send(
                 _client,
                 StartConnectionAsync,
                 true);
+            var (httpResponse, httpData, signalRData) = (request.HttpResponseMessage, request.HttpResponseObject, request.SignalrResponseObject);
 
             // Assert
             httpResponse.EnsureSuccessStatusCode();
@@ -58,8 +58,8 @@ namespace SQE.ApiTest
                 var request = new Get.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(editionId, signInterpretation.signInterpretationId);
 
                 // Act
-                var (httpResponse, httpData, signalrData, _) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: true);
+                await request.Send(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: true);
+                var (httpResponse, httpData, signalrData) = (request.HttpResponseMessage, request.HttpResponseObject, request.SignalrResponseObject);
 
                 // Assert
                 httpResponse.EnsureSuccessStatusCode();
@@ -91,8 +91,8 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, signInterpretationAddAttribute);
 
                 // Act
-                var (httpResponse, httpData, _, listenerData) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+                await request.Send(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false, listeningFor: request.AvailableListeners.UpdatedSignInterpretation);
+                var (httpResponse, httpData, listenerData) = (request.HttpResponseMessage, request.HttpResponseObject, request.UpdatedSignInterpretation);
 
                 // Assert
                 httpResponse.EnsureSuccessStatusCode();
@@ -128,8 +128,8 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                var (_, httpData, _, _) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                var httpData = request.HttpResponseObject;
                 CreateAttributeValueDTO[] newAttrValues = {new CreateAttributeValueDTO()
                 {
                     value = "the first type",
@@ -145,22 +145,23 @@ namespace SQE.ApiTest
 
                 // Create the new attribute
                 var createRequest = new Post.V1_Editions_EditionId_SignInterpretationsAttributes(editionId, newAttribute);
-                var (respInfo, createdHttpAttribute, _, createdListenerAttribute) =
-                    await Request.Send(
-                        createRequest,
-                        _client,
-                        StartConnectionAsync,
-                        true,
-                        listenerUser: Request.DefaultUsers.User1,
-                        deterministic: false,
-                        requestRealtime: false
-                    );
+                await createRequest.Send(
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: false,
+                    requestRealtime: false,
+                    listeningFor: createRequest.AvailableListeners.CreatedAttribute
+                );
+                var (respInfo, createdHttpAttribute, createdListenerAttribute) = (createRequest.HttpResponseMessage,
+                    createRequest.HttpResponseObject, createRequest.CreatedAttribute);
 
                 // Assert
                 respInfo.EnsureSuccessStatusCode();
                 createdHttpAttribute.ShouldDeepEqual(createdListenerAttribute);
-                var (_, newAttrs, _, _) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                var newAttrs = request.HttpResponseObject;
                 Assert.Single(newAttrs.attributes.Where(x => x.attributeName == newAttribute.attributeName
                                                                && x.description == newAttribute.description));
                 var returnedNewAttr = newAttrs.attributes
@@ -183,8 +184,8 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                var (_, httpData, _, _) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                var httpData = request.HttpResponseObject;
                 var attributeValueForUpdate = httpData.attributes.FirstOrDefault().values.FirstOrDefault();
                 var attributeValueForDelete = httpData.attributes.FirstOrDefault().values.Last();
                 var updateAttribute = new UpdateAttributeDTO()
@@ -208,17 +209,18 @@ namespace SQE.ApiTest
                 // Act
                 var updateRequest = new Put.V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(editionId, httpData.attributes.First().attributeId, updateAttribute);
                 await updateRequest.Send(
-                        _client,
-                        StartConnectionAsync,
-                        true,
-                        listenerUser: Request.DefaultUsers.User1,
-                        deterministic: false,
-                        requestRealtime: false,
-                        listenToEdition: true,
-                        listeningFor: new List<ListenerMethods>() { updateRequest.AvailableListeners.UpdatedAttribute }
-                    );
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: false,
+                    requestRealtime: false,
+                    listenToEdition: true,
+                    listeningFor: updateRequest.AvailableListeners.UpdatedAttribute
+                );
 
                 // Assert
+                // The listener should return the same as the http request
                 updateRequest.HttpResponseObject.ShouldDeepEqual(updateRequest.UpdatedAttribute);
                 // The update contains the expected data
                 Assert.Contains(updateRequest.HttpResponseObject.values, (x =>
@@ -233,8 +235,8 @@ namespace SQE.ApiTest
                 Assert.DoesNotContain(updateRequest.HttpResponseObject.values, (x => x.id == attributeValueForDelete.id));
 
                 // The update appears when getting all attributes
-                var (_, newAttrs, _, _) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                var newAttrs = request.HttpResponseObject;
                 Assert.Contains(newAttrs.attributes, (x => x.attributeId == httpData.attributes.First().attributeId));
                 newAttrs.attributes.First(x => x.attributeId == httpData.attributes.First().attributeId)
                     .ShouldDeepEqual(updateRequest.HttpResponseObject);
@@ -250,29 +252,29 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                var (_, httpData, _, _) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                var httpData = request.HttpResponseObject;
                 var deleteAttribute = httpData.attributes.Last().attributeId;
 
                 // Delete the new attribute
                 var deleteRequest = new Delete.V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(editionId, deleteAttribute);
-                var (respInfo, updatedHttpAttribute, _, updatedListenerAttribute) =
-                    await Request.Send(
-                        deleteRequest,
-                        _client,
-                        StartConnectionAsync,
-                        true,
-                        listenerUser: Request.DefaultUsers.User1,
-                        deterministic: false,
-                        requestRealtime: false
-                    );
+                await deleteRequest.Send(
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: false,
+                    requestRealtime: false,
+                    listeningFor: deleteRequest.AvailableListeners.DeletedAttribute
+                );
+                var (respInfo, updatedListenerAttribute) = (deleteRequest.HttpResponseMessage, deleteRequest.DeletedAttribute);
 
                 // Assert
                 respInfo.EnsureSuccessStatusCode();
                 Assert.Equal(deleteAttribute, updatedListenerAttribute.ids.First());
                 Assert.Equal(EditionEntities.attribute, updatedListenerAttribute.entity);
-                var (_, newAttrs, _, _) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                var newAttrs = request.HttpResponseObject;
                 Assert.Empty(newAttrs.attributes.Where(x => x.attributeId == deleteAttribute));
                 Assert.Equal(httpData.attributes.Length - 1, newAttrs.attributes.Length);
             }
@@ -300,8 +302,9 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, commentary);
 
                 // Act
-                var (httpResponse, httpData, _, listenerData) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+                await request.Send(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false, listeningFor: request.AvailableListeners.UpdatedSignInterpretation);
+                var (httpResponse, httpData, listenerData) = (request.HttpResponseMessage,
+                    request.HttpResponseObject, request.UpdatedSignInterpretation);
 
                 // Assert
                 httpResponse.EnsureSuccessStatusCode();
@@ -324,8 +327,15 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, commentary);
 
                 // Act
-                var (http2Response, http2Data, _, listener2Data) =
-                    await Request.Send(request2, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+                await request2.Send(
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: true,
+                    requestRealtime: false,
+                    listeningFor: request2.AvailableListeners.UpdatedSignInterpretation);
+                var (http2Response, http2Data, listener2Data) = (request2.HttpResponseMessage, request2.HttpResponseObject, request2.UpdatedSignInterpretation);
 
                 // Assert
                 http2Response.EnsureSuccessStatusCode();
@@ -402,8 +412,16 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, signInterpretationAddAttribute);
 
                 // Act
-                var (httpResponse, httpData, _, listenerData) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+                await request.Send(
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: true,
+                    requestRealtime: false,
+                    listeningFor: request.AvailableListeners.UpdatedSignInterpretation);
+                var (httpResponse, httpData, listenerData) = (request.HttpResponseMessage,
+                    request.HttpResponseObject, request.UpdatedSignInterpretation);
 
                 // Assert
                 httpResponse.EnsureSuccessStatusCode();
@@ -441,8 +459,15 @@ namespace SQE.ApiTest
                 var updRequest1 =
                     new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(editionId,
                         signInterpretation.signInterpretationId, attributeValueId, updateSignInterpretationAddAttribute);
-                var (updResponse, updData, _, updListenerData) =
-                    await Request.Send(updRequest1, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: false, requestRealtime: false);
+                await updRequest1.Send(
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: false,
+                    requestRealtime: false,
+                    listeningFor: updRequest1.AvailableListeners.UpdatedSignInterpretation);
+                var (updResponse, updData, updListenerData) = (updRequest1.HttpResponseMessage, updRequest1.HttpResponseObject, updRequest1.UpdatedSignInterpretation);
 
                 // Assert
                 updResponse.EnsureSuccessStatusCode();
@@ -473,8 +498,16 @@ namespace SQE.ApiTest
                 var updRequest2 =
                     new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(editionId,
                         signInterpretation.signInterpretationId, attributeValueId, updateSignInterpretationAddAttribute);
-                (updResponse, updData, _, updListenerData) =
-                    await Request.Send(updRequest2, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: false, requestRealtime: false);
+                await updRequest2.Send(
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: false,
+                    requestRealtime: false,
+                    listeningFor: updRequest2.AvailableListeners.UpdatedSignInterpretation);
+                (updResponse, updData, updListenerData) = (updRequest2.HttpResponseMessage, updRequest2.HttpResponseObject,
+                    updRequest2.UpdatedSignInterpretation);
 
                 // Assert
                 updResponse.EnsureSuccessStatusCode();
@@ -512,8 +545,16 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, signInterpretationAddAttribute);
 
                 // Act
-                var (httpResponse, httpData, _, listenerData) =
-                    await Request.Send(request, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+                await request.Send(
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: true,
+                    requestRealtime: false,
+                    listeningFor: request.AvailableListeners.UpdatedSignInterpretation);
+                var (httpResponse, httpData, listenerData) = (request.HttpResponseMessage,
+                    request.HttpResponseObject, request.UpdatedSignInterpretation);
 
                 // Assert
                 httpResponse.EnsureSuccessStatusCode();
@@ -542,8 +583,15 @@ namespace SQE.ApiTest
                 var delRequest =
                     new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(editionId,
                         signInterpretation.signInterpretationId, 33);
-                var (delResponse, delData, _, delListenerData) =
-                    await Request.Send(delRequest, _client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1, deterministic: true, requestRealtime: false);
+                await delRequest.Send(
+                    _client,
+                    StartConnectionAsync,
+                    true,
+                    listenerUser: Request.DefaultUsers.User1,
+                    deterministic: true,
+                    requestRealtime: false,
+                    listeningFor: delRequest.AvailableListeners.UpdatedSignInterpretation);
+                var (delResponse, delListenerData) = (delRequest.HttpResponseMessage, delRequest.UpdatedSignInterpretation);
 
                 // Assert
                 delResponse.EnsureSuccessStatusCode();
@@ -565,10 +613,12 @@ namespace SQE.ApiTest
         private async Task<SignInterpretationDTO> GetEditionSignInterpretation(uint editionId)
         {
             var textFragmentsRequest = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            var (_, textFragments, _, _) = await Request.Send(textFragmentsRequest, _client, auth: true);
+            await textFragmentsRequest.Send(_client, auth: true);
+            var textFragments = textFragmentsRequest.HttpResponseObject;
             foreach (var textRequest in textFragments.textFragments.Select(tf => new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(editionId, tf.id)))
             {
-                var (_, text, _, _) = await Request.Send(textRequest, _client, auth: true);
+                await textRequest.Send(_client, auth: true);
+                var text = textRequest.HttpResponseObject;
                 foreach (var si in from ttf
                     in text.textFragments
                                    from tl

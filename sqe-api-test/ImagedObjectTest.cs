@@ -40,7 +40,8 @@ namespace SQE.ApiTest
         {
             var editionId = EditionHelpers.GetEditionId();
             var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId);
-            var (httpResponse, httpData, signalrData, _) = await Request.Send(req, _client, StartConnectionAsync);
+            await req.Send(_client, StartConnectionAsync);
+            var (httpResponse, httpData, signalrData) = (req.HttpResponseMessage, req.HttpResponseObject, req.SignalrResponseObject);
             httpResponse.EnsureSuccessStatusCode();
             httpData.ShouldDeepEqual(signalrData);
             return (editionId, httpData.imagedObjects.FirstOrDefault().id);
@@ -72,10 +73,8 @@ LIMIT 50";
             // so we need to encode the URL first (remember this!!!).
             var id = HttpUtility.UrlEncode("IAA-275%2F1-1");
             var textFragRequest = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(id);
-
-            var (response, msg, _, _) = await Request.Send(
-                textFragRequest,
-                _client);
+            await textFragRequest.Send(_client);
+            var (response, msg) = (textFragRequest.HttpResponseMessage, textFragRequest.HttpResponseObject);
 
             response.EnsureSuccessStatusCode();
             Assert.Equal(1, msg.matches.Count);

@@ -30,14 +30,13 @@ namespace SQE.ApiTest
             };
 
             var polygonValidation = new Post.V1_Utils_RepairWktPolygon(goodPolygon);
-
-            var (validationResponse, validation, rtResponse, _) =
-                await Request.Send(
-                    polygonValidation,
-                    _client,
-                    StartConnectionAsync,
-                    true
-                );
+            await polygonValidation.Send(
+                _client,
+                StartConnectionAsync,
+                true
+            );
+            var (validationResponse, validation, rtResponse) = (polygonValidation.HttpResponseMessage,
+                polygonValidation.HttpResponseObject, polygonValidation.SignalrResponseObject);
 
             var wkr = new WKTReader();
             // Assert
@@ -59,15 +58,14 @@ namespace SQE.ApiTest
             };
 
             var polygonValidation = new Post.V1_Utils_RepairWktPolygon(badPolygon);
-
-            var (validationResponse, validation, rtValidation, _) =
-                await Request.Send(
-                    polygonValidation,
-                    _client,
-                    StartConnectionAsync,
-                    true,
-                    shouldSucceed: false
-                );
+            await polygonValidation.Send(
+                _client,
+                StartConnectionAsync,
+                true,
+                shouldSucceed: false
+            );
+            var (validationResponse, validation, rtValidation) = (polygonValidation.HttpResponseMessage,
+                polygonValidation.HttpResponseObject, polygonValidation.SignalrResponseObject);
 
             // Assert
             // The response should indicate a bad request
