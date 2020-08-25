@@ -30,8 +30,10 @@ import {
 	CreateTextFragmentDTO,
 	SignDTO,
 	NextSignInterpretationDTO,
+	SignInterpretationBaseDTO,
 	SignInterpretationCreateDTO,
 	SignInterpretationDTO,
+	SignInterpretationListDTO,
 	InterpretationAttributeBaseDTO,
 	InterpretationAttributeCreateDTO,
 	InterpretationAttributeDTO,
@@ -777,6 +779,17 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Creates a new sign interpretation
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param newSignInterpretation - New sign interpretation data to be added
+	 * @returns - The new sign interpretation
+	 */
+    public async postV1EditionsEditionIdSignInterpretations(editionId: number, newSignInterpretation: SignInterpretationCreateDTO): Promise<SignInterpretationListDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretations', editionId, newSignInterpretation);
+    }
+
+    /**
 	 * Updates the commentary of a sign interpretation
 	 *
 	 * @param editionId - ID of the edition being changed
@@ -1357,7 +1370,7 @@ export class SignalRUtilities {
 	 * Add a listener for when the server broadcasts the create of a sign interpretation
 	 *
 	 */
-    public connectCreatedSignInterpretation(handler: (msg: SignInterpretationDTO) => void): void {
+    public connectCreatedSignInterpretation(handler: (msg: SignInterpretationListDTO) => void): void {
         this._connection.on('CreatedSignInterpretation', handler)
     }
 
@@ -1365,7 +1378,7 @@ export class SignalRUtilities {
 	 * Remove an existing listener that triggers when the server broadcasts the create of a sign interpretation
 	 *
 	 */
-    public disconnectCreatedSignInterpretation(handler: (msg: SignInterpretationDTO) => void): void {
+    public disconnectCreatedSignInterpretation(handler: (msg: SignInterpretationListDTO) => void): void {
         this._connection.off('CreatedSignInterpretation', handler)
     }
 

@@ -15,19 +15,34 @@ namespace SQE.API.DTO
         [Required] public uint editorId { get; set; }
     }
 
-    public class SignInterpretationCreateDTO
+    public class SignInterpretationBaseDTO
     {
         public string character { get; set; }
+        [Required] public bool isVariant { get; set; }
+    }
+
+    public class SignInterpretationCreateDTO : SignInterpretationBaseDTO
+    {
+        public uint lineId { get; set; }
+        public uint[] previousSignInterpretationIds { get; set; }
+        public uint[] nextSignInterpretationIds { get; set; }
+        [Required] public InterpretationAttributeCreateDTO[] attributes { get; set; }
+        [Required] public SetInterpretationRoiDTO[] rois { get; set; }
+        public CommentaryCreateDTO commentary { get; set; }
+    }
+
+    public class SignInterpretationDTO : SignInterpretationBaseDTO
+    {
+        [Required] public uint signInterpretationId { get; set; }
+        [Required] public NextSignInterpretationDTO[] nextSignInterpretations { get; set; }
         [Required] public InterpretationAttributeDTO[] attributes { get; set; }
         [Required] public InterpretationRoiDTO[] rois { get; set; }
-        [Required] public NextSignInterpretationDTO[] nextSignInterpretations { get; set; }
-        [Required] public bool isVariant { get; set; }
         public CommentaryDTO commentary { get; set; }
     }
 
-    public class SignInterpretationDTO : SignInterpretationCreateDTO
+    public class SignInterpretationListDTO
     {
-        [Required] public uint signInterpretationId { get; set; }
+        public SignInterpretationDTO[] signInterpretations { get; set; }
     }
 
     public class InterpretationAttributeBaseDTO

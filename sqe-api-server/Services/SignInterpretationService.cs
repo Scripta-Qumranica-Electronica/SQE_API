@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,11 @@ namespace SQE.API.Server.Services
         Task<NoContentResult> DeleteEditionAttributeAsync(
             UserInfo user,
             uint attributeId,
+            string clientId = null);
+
+        Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
+            UserInfo user,
+            SignInterpretationCreateDTO signInterpretation,
             string clientId = null);
         Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(
             UserInfo user,
@@ -58,18 +64,21 @@ namespace SQE.API.Server.Services
         private readonly IAttributeRepository _attributeRepository;
         private readonly ISignInterpretationRepository _signInterpretationRepository;
         private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
+        private readonly ITextRepository _textRepository;
 
 
         public SignInterpretationService(
             IHubContext<MainHub, ISQEClient> hubContext,
             IAttributeRepository attributeRepository,
             ISignInterpretationRepository signInterpretationRepository,
-            ISignInterpretationCommentaryRepository commentaryRepository)
+            ISignInterpretationCommentaryRepository commentaryRepository,
+            ITextRepository textRepository)
         {
             _hubContext = hubContext;
             _attributeRepository = attributeRepository;
             _signInterpretationRepository = signInterpretationRepository;
             _commentaryRepository = commentaryRepository;
+            _textRepository = textRepository;
         }
 
         public async Task<AttributeListDTO> GetEditionSignInterpretationAttributesAsync(UserInfo user)
@@ -138,6 +147,35 @@ namespace SQE.API.Server.Services
                 .DeletedAttribute(new DeleteDTO(EditionEntities.attribute, attributeId));
 
             return new NoContentResult();
+        }
+
+        public async Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
+            UserInfo user,
+            SignInterpretationCreateDTO signInterpretation,
+            string clientId = null)
+        {
+            var createdSignInterpretation = await _textRepository.CreateSignsAsync(
+                user,
+                signInterpretation.lineId,
+                new List<SignData>() { signInterpretation.ToSignData() },
+                signInterpretation.previousSignInterpretationIds.ToList(),
+                signInterpretation.nextSignInterpretationIds.ToList());
+
+            // Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
+            var alteredSignInterpretations = await Task.WhenAll( // Await all async operations
+                signInterpretation.previousSignInterpretationIds.ToList() // Take list of previous sign interpretation ids
+                .Concat(createdSignInterpretation.SelectMany(x => // Concat all sign interpretation ids from createdSignInterpretation
+                    x.SignInterpretations
+                        .Where(y => y.SignInterpretationId.HasValue)
+                        .Select(y => y.SignInterpretationId.Value)))
+                .Select(async x => await GetEditionSignInterpretationAsync(user, x))); // Get the SignInterpretationDTO fpr each sign interpretation
+            var response = new SignInterpretationListDTO() { signInterpretations = alteredSignInterpretations.ToArray() };
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .CreatedSignInterpretation(response);
+
+            return response;
         }
 
         public async Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user, uint signInterpretationId)

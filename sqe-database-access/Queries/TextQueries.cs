@@ -20,6 +20,7 @@ WITH RECURSIVE sign_interpretation_ids
 				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
 				position_in_stream_owner.edition_id,
+				position_in_stream.creator_id,
 				@X := 0 AS sequence
 		FROM position_in_stream
 			JOIN position_in_stream_owner 
@@ -35,6 +36,7 @@ WITH RECURSIVE sign_interpretation_ids
 				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
 				sign_interpretation_ids.edition_id,
+				position_in_stream.creator_id,
 				@X := @X + 1 AS sequence
 		FROM  sign_interpretation_ids
 			JOIN position_in_stream 
@@ -64,6 +66,7 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 		sign_interpretation.sign_id AS signId,
 		sign_interpretation_ids.next_sign_interpretation_id AS nextSignInterpretationId,
 		sign_interpretation_ids.edition_editor_id AS signSequenceAuthor,
+		sign_interpretation_ids.creator_id AS PositionCreatorId,
 
 		signInterpretationId,
 		sign_interpretation.`character` AS `character`,

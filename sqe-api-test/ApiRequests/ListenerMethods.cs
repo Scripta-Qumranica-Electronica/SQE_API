@@ -23,6 +23,7 @@ namespace SQE.ApiTest.ApiRequests
         EditedRoisBatch,
         UpdatedRoisBatch,
         CreatedAttribute,
+        CreatedSignInterpretation,
         UpdatedSignInterpretation,
         DeletedAttribute,
         UpdatedAttribute,

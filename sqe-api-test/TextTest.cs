@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -19,7 +20,7 @@ namespace SQE.ApiTest
         {
         }
 
-        private async Task<(uint editionId, uint textFragmentId)> _getTextFragmentIds(uint? editionId = null)
+        private async Task<(uint editionId, uint textFragmentId)> _getRandomTextFragmentId(uint? editionId = null)
         {
             var usedEditionId = editionId ?? EditionHelpers.GetEditionId();
 
@@ -129,7 +130,7 @@ namespace SQE.ApiTest
 
         private async Task<(uint editionId, uint textFragmentId, uint lineId)> _getLine()
         {
-            var (editionId, textFragmentId) = await _getTextFragmentIds();
+            var (editionId, textFragmentId) = await _getRandomTextFragmentId();
             var getLineDataRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
                 editionId,
                 textFragmentId
@@ -463,7 +464,7 @@ namespace SQE.ApiTest
         public async Task CanGetAnonymousEditionTextFragment()
         {
             // Arrange
-            var (editionId, textFragmentId) = await _getTextFragmentIds();
+            var (editionId, textFragmentId) = await _getRandomTextFragmentId();
 
             // Act
             var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
@@ -522,7 +523,7 @@ namespace SQE.ApiTest
         public async Task CanGetAnonymousEditionTextLineData()
         {
             // Arrange
-            var (editionId, textFragmentId) = await _getTextFragmentIds();
+            var (editionId, textFragmentId) = await _getRandomTextFragmentId();
 
             // Act
             var lineDataRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(

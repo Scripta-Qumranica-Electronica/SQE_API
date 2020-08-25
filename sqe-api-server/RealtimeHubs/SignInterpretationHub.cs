@@ -130,18 +130,27 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
 
-        // /// <summary>
-        // /// Creates a new sign interpretation 
-        // /// </summary>
-        // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
-        // /// <returns>The new sign interpretation</returns>
-        // [HttpPost("v1/editions/{editionId}/sign-interpretations")]
-        // public async Task<ActionResult<SignInterpretationDTO>> PostNewSignInterpretation([FromRoute] uint editionId,
-        //     [FromBody] SignInterpretationCreateDTO newSignInterpretation)
-        // {
-        //     throw new NotImplementedException(); //Not Implemented
-        // }
+        /// <summary>
+        /// Creates a new sign interpretation 
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+        /// <returns>The new sign interpretation</returns>
+        [Authorize]
+        public async Task<SignInterpretationListDTO> PostV1EditionsEditionIdSignInterpretations(uint editionId, SignInterpretationCreateDTO newSignInterpretation)
+
+        {
+            try
+            {
+                return await _signInterpretationService.CreateSignInterpretationAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newSignInterpretation, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
         //
         // /// <summary>
         // /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream

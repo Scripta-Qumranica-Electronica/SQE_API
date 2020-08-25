@@ -254,6 +254,8 @@ namespace SQE.API.Server.Services
                                                                                 b.SignInterpretationId,
                                                                             editorId = b.SignInterpretationRoiEditorId
                                                                                 .GetValueOrDefault(),
+                                                                            creatorId = b.SignInterpretationRoiCreatorId
+                                                                                .GetValueOrDefault(),
                                                                             artefactId =
                                                                                 b.ArtefactId.GetValueOrDefault(),
                                                                             shape = b.Shape,
@@ -275,7 +277,8 @@ namespace SQE.API.Server.Services
                                                                         {
                                                                             nextSignInterpretationId =
                                                                                 b.NextSignInterpretationId,
-                                                                            editorId = b.SignSequenceAuthor
+                                                                            editorId = b.SignSequenceAuthor,
+                                                                            creatorId = b.PositionCreatorId
                                                                         }
                                                                     )
                                                                     .ToArray()
@@ -350,6 +353,8 @@ namespace SQE.API.Server.Services
                                                     interpretationRoiId = b.SignInterpretationRoiId.GetValueOrDefault(),
                                                     signInterpretationId = b.SignInterpretationId.GetValueOrDefault(),
                                                     editorId = b.SignInterpretationRoiEditorId.GetValueOrDefault(),
+                                                    creatorId = b.SignInterpretationRoiCreatorId
+                                                        .GetValueOrDefault(),
                                                     artefactId = b.ArtefactId.GetValueOrDefault(),
                                                     shape = b.Shape,
                                                     translate = new TranslateDTO
@@ -367,7 +372,8 @@ namespace SQE.API.Server.Services
                                                 b => new NextSignInterpretationDTO
                                                 {
                                                     nextSignInterpretationId = b.NextSignInterpretationId,
-                                                    editorId = b.SignSequenceAuthor
+                                                    editorId = b.SignSequenceAuthor,
+                                                    creatorId = b.PositionCreatorId,
                                                 }
                                             )
                                             .ToArray()

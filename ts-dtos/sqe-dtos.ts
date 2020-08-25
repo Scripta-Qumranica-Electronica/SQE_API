@@ -123,17 +123,30 @@ export interface NextSignInterpretationDTO {
     editorId: number;
 }
 
-export interface SignInterpretationCreateDTO {
+export interface SignInterpretationBaseDTO {
     character?: string;
+    isVariant: boolean;
+}
+
+export interface SignInterpretationCreateDTO extends SignInterpretationBaseDTO {
+    lineId: number;
+    previousSignInterpretationIds?: Array<number>;
+    nextSignInterpretationIds?: Array<number>;
+    attributes: Array<InterpretationAttributeCreateDTO>;
+    rois: Array<SetInterpretationRoiDTO>;
+    commentary?: CommentaryCreateDTO;
+}
+
+export interface SignInterpretationDTO extends SignInterpretationBaseDTO {
+    signInterpretationId: number;
+    nextSignInterpretations: Array<NextSignInterpretationDTO>;
     attributes: Array<InterpretationAttributeDTO>;
     rois: Array<InterpretationRoiDTO>;
-    nextSignInterpretations: Array<NextSignInterpretationDTO>;
-    isVariant: boolean;
     commentary?: CommentaryDTO;
 }
 
-export interface SignInterpretationDTO extends SignInterpretationCreateDTO {
-    signInterpretationId: number;
+export interface SignInterpretationListDTO {
+    signInterpretations?: Array<SignInterpretationDTO>;
 }
 
 export interface InterpretationAttributeBaseDTO {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -605,6 +606,73 @@ namespace SQE.ApiTest
             }
         }
 
+        [Fact]
+        public async Task CanCreateNewSignInterpretation()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var editionId = await editionCreator.CreateEdition();
+                var textFragments = await EditionHelpers.GetEditionTextFragmentWithSigns(editionId, _client, Request.DefaultUsers.User1);
+                var textFragment = textFragments.textFragments.First(x => x.lines.Any(y => y.signs.Count > 2));
+                var line = textFragment.lines.First(y => y.signs.Count > 2);
+                var previousSignInterpretation = line.signs.First().signInterpretations.Last().signInterpretationId;
+                var nextSignInterpretation = line.signs[1].signInterpretations.First().signInterpretationId;
+                var newSignInterpretation = new SignInterpretationCreateDTO()
+                {
+                    character = "ט",
+                    isVariant = false,
+                    commentary = new CommentaryCreateDTO()
+                    {
+                        commentary = "I just made this one up."
+                    },
+                    attributes = new InterpretationAttributeCreateDTO[] {new InterpretationAttributeCreateDTO()
+                    {
+                        attributeId = 1,
+                        attributeValueId = 1,
+                        sequence = 1
+                    }},
+                    lineId = line.lineId,
+                    previousSignInterpretationIds = new uint[] { previousSignInterpretation },
+                    nextSignInterpretationIds = new uint[] { nextSignInterpretation },
+                    rois = new SetInterpretationRoiDTO[0]
+                };
+
+                // Act
+                var newSignInterpretationRequest = new Post.V1_Editions_EditionId_SignInterpretations(editionId, newSignInterpretation);
+                await newSignInterpretationRequest.Send(
+                    _client,
+                    StartConnectionAsync,
+                    auth: true,
+                    listenToEdition: true,
+                    listeningFor: newSignInterpretationRequest.AvailableListeners.CreatedSignInterpretation,
+                    requestRealtime: false);
+
+                // Assert
+                newSignInterpretationRequest.HttpResponseMessage.EnsureSuccessStatusCode();
+                newSignInterpretationRequest.HttpResponseObject.ShouldDeepEqual(newSignInterpretationRequest.CreatedSignInterpretation);
+                Assert.Equal(2, newSignInterpretationRequest.HttpResponseObject.signInterpretations.Length);
+
+                // Get the text of this text fragment again
+                var alteredTextFragment = await EditionHelpers.GetEditionTextFragmentWithSigns(editionId, _client, Request.DefaultUsers.User1);
+                var signs = alteredTextFragment.textFragments.First(x => x.textFragmentId == textFragment.textFragmentId)
+                    .lines.First(x => x.lineId == line.lineId).signs;
+
+                // Make sure the two updated/new sign interpretations are in the stream
+                signs.First().signInterpretations.First().ShouldDeepEqual(newSignInterpretationRequest.HttpResponseObject.signInterpretations.First());
+                Assert.Contains(signs,
+                    (x => x.signInterpretations.Any(y =>
+                        y.IsDeepEqual(newSignInterpretationRequest.HttpResponseObject.signInterpretations.First()))));
+                // Set our commentary to null for deep equal test
+                newSignInterpretationRequest.HttpResponseObject.signInterpretations.Last().commentary = null;
+                newSignInterpretationRequest.HttpResponseObject.signInterpretations.Last().attributes.First().commentary = null;
+                Assert.Contains(signs,
+                    (x => x.signInterpretations.Any(y =>
+                        y.IsDeepEqual(newSignInterpretationRequest.HttpResponseObject.signInterpretations.Last()))));
+            }
+
+        }
+
         /// <summary>
         /// Find a sign interpretation id in the edition
         /// </summary>
@@ -622,7 +690,7 @@ namespace SQE.ApiTest
                 foreach (var si in from ttf
                     in text.textFragments
                                    from tl
-             in ttf.lines
+                 in ttf.lines
                                    from sign
                       in tl.signs
                                    from si

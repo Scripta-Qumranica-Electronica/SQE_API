@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
 using SQE.API.DTO;
 using SQE.DatabaseAccess.Models;
 
@@ -132,6 +133,68 @@ namespace SQE.API.Server.Serialization
                 AttributeStringValue = uav.value,
                 AttributeStringValueDescription = uav.description,
                 Css = uav.cssDirectives,
+            };
+        }
+
+        public static List<SignInterpretationAttributeData> ToSignInterpretationAttributeDatas(
+            this SignInterpretationCreateDTO sicd)
+        {
+            return sicd.attributes.Select(x => new SignInterpretationAttributeData()
+            {
+                AttributeId = x.attributeId,
+                AttributeValueId = x.attributeValueId,
+                Sequence = x.sequence,
+                NumericValue = x.value
+            }).ToList();
+        }
+
+        public static List<SignInterpretationCommentaryData> ToSignInterpretationCommentaryDatas(
+            this SignInterpretationCreateDTO sicd)
+        {
+            var response = sicd.attributes.Select(x => new SignInterpretationCommentaryData()
+            {
+                AttributeId = x.attributeId,
+                Commentary = sicd.commentary.commentary
+            }).ToList();
+            if (sicd.commentary != null)
+                response.Add(new SignInterpretationCommentaryData() { Commentary = sicd.commentary.commentary });
+            return response;
+        }
+
+        public static List<SignInterpretationRoiData> ToSignInterpretationRoiDatas(
+            this SignInterpretationCreateDTO sicd)
+        {
+            return sicd.rois.Select(x => new SignInterpretationRoiData()
+            {
+                ArtefactId = x.artefactId,
+                Exceptional = x.exceptional,
+                Shape = x.shape,
+                TranslateX = x.translate.x,
+                TranslateY = x.translate.y,
+                StanceRotation = x.stanceRotation,
+                ValuesSet = x.valuesSet
+            }).ToList();
+        }
+
+        public static SignInterpretationData ToSignInterpretationData(this SignInterpretationCreateDTO sicd)
+        {
+            return new SignInterpretationData()
+            {
+                Attributes = sicd.ToSignInterpretationAttributeDatas(),
+                Character = sicd.character,
+                Commentaries = sicd.ToSignInterpretationCommentaryDatas(),
+                IsVariant = sicd.isVariant,
+                NextSignInterpretations = null,
+                SignInterpretationRois = sicd.ToSignInterpretationRoiDatas()
+            };
+        }
+
+        public static SignData ToSignData(this SignInterpretationCreateDTO sicd)
+        {
+            return new SignData()
+            {
+                SignId = null,
+                SignInterpretations = new List<SignInterpretationData>() { sicd.ToSignInterpretationData() }
             };
         }
     }

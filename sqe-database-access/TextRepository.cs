@@ -269,10 +269,10 @@ namespace SQE.DatabaseAccess
         )
         {
             var newSigns = new List<SignData>();
-            SignData previousSignData = null;
-            // Stores for each sign the actual anchors afte which it should be injected
+            // SignData previousSignData = null;
+            // Stores for each sign the actual anchors after which it should be injected
             // into th reading stream
-            var internalAnchorsBefore = anchorsBefore;
+            // var internalAnchorsBefore = anchorsBefore;
             foreach (var sign in signs)
             {
                 // First, create a simple entry in the sign table
@@ -281,30 +281,30 @@ namespace SQE.DatabaseAccess
                 newSignData.SignInterpretations = await AddSignInterpretationsAsync(editionUser,
                     newSignData.SignId,
                     sign.SignInterpretations,
-                    internalAnchorsBefore,
+                    anchorsBefore,
                     anchorsAfter);
 
                 // Set the new sign interpretation ids as anchors before the next sign
-                internalAnchorsBefore = newSignData.SignInterpretations.Select(
-                    si => si.SignInterpretationId.GetValueOrDefault()).ToList();
+                // anchorsBefore = newSignData.SignInterpretations.Select(
+                //     si => si.SignInterpretationId.GetValueOrDefault()).ToList();
 
-                // If already a sign had been set adhjust its nextSignInterpretations
+                // If already a sign had been set adjust its nextSignInterpretations
                 // TODO do we need this here? (Ingo)
-                if (previousSignData != null)
-                {
-                    // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
-                    // Create an list of next sign interpretations from the new anchors before
-                    var nextSignInterpretations = internalAnchorsBefore.Select(
-                        signInterpretationId => new NextSignInterpretation(
-                            signInterpretationId,
-                            (uint)editionUser.EditionEditorId)).Distinct().ToList();
+                // if (previousSignData != null)
+                // {
+                //     // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
+                //     // Create a list of next sign interpretations from the new anchors before
+                //     var nextSignInterpretations = internalAnchorsBefore.Select(
+                //         signInterpretationId => new NextSignInterpretation(
+                //             signInterpretationId,
+                //             (uint)editionUser.EditionEditorId)).Distinct().ToList();
+                //
+                //     // Store this hashset into each signInterpretation of the previous set sign 
+                //     previousSignData.SignInterpretations.ForEach(
+                //         signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
+                // }
 
-                    // Store this hashset into each signInterpretation of the previous set sign 
-                    previousSignData.SignInterpretations.ForEach(
-                        signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
-                }
-
-                previousSignData = newSignData;
+                // previousSignData = newSignData;
                 newSigns.Add(newSignData);
             }
 
@@ -320,7 +320,7 @@ namespace SQE.DatabaseAccess
         /// <param name="signId">Id of the sign</param>
         /// <param name="signInterpretations">List of sign interpretation objects</param>
         /// <param name="anchorsBefore">Ids of the anchors before</param>
-        /// <param name="anchorsAfter">Ids of the ancors after</param>
+        /// <param name="anchorsAfter">Ids of the anchors after</param>
         /// <returns>List of sign Interpretation objects with the new ids</returns>
         /// <exception cref="DataNotWrittenException"></exception>
         public async Task<List<SignInterpretationData>> AddSignInterpretationsAsync(UserInfo editionUser,

@@ -96,18 +96,20 @@ namespace SQE.API.Server.HttpControllers
                 updatedAttribute);
         }
 
-        // /// <summary>
-        // /// Creates a new sign interpretation 
-        // /// </summary>
-        // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
-        // /// <returns>The new sign interpretation</returns>
-        // [HttpPost("v1/editions/{editionId}/sign-interpretations")]
-        // public async Task<ActionResult<SignInterpretationDTO>> PostNewSignInterpretation([FromRoute] uint editionId,
-        //     [FromBody] SignInterpretationCreateDTO newSignInterpretation)
-        // {
-        //     throw new NotImplementedException(); //Not Implemented
-        // }
+        /// <summary>
+        /// Creates a new sign interpretation 
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+        /// <returns>The new sign interpretation</returns>
+        [HttpPost("v1/editions/{editionId}/sign-interpretations")]
+        public async Task<ActionResult<SignInterpretationListDTO>> PostNewSignInterpretation([FromRoute] uint editionId,
+            [FromBody] SignInterpretationCreateDTO newSignInterpretation)
+        {
+            return await _signInterpretationService.CreateSignInterpretationAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                newSignInterpretation);
+        }
         //
         // /// <summary>
         // /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream

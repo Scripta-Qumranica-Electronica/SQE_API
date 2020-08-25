@@ -237,7 +237,6 @@ namespace SQE.ApiTest.ApiRequests
                 throw new Exception("Setting up a listener requires auth");
 
             // Set up the initial variables and their values
-            HttpResponseMessage httpResponseMessage = null;
             HubConnection signalrListener = null;
             string jwt1 = null;
             string jwt2 = null;
@@ -248,15 +247,13 @@ namespace SQE.ApiTest.ApiRequests
                     ? await Request.GetJwtViaHttpAsync(http, requestUser ?? null)
                     : await Request.GetJwtViaRealtimeAsync(realtime, requestUser ?? null);
 
-            if (auth && listenerUser != null)
+            if (auth && listeningFor.Any() && realtime != null)
                 jwt2 = await Request.GetJwtViaRealtimeAsync(realtime, listenerUser);
 
             // Set up a SignalR listener if desired (this hub connection must be different than the one used to make
             // the API request.
-            if (listenerUser != null
-                && GetRequestVerb() != HttpMethod.Get
-                && realtime != null
-                && !string.IsNullOrEmpty(GetListenerMethod()))
+            if (listeningFor.Any()
+                && realtime != null)
             {
                 signalrListener = await realtime(jwt2);
                 // Subscribe to messages on the edition
@@ -269,7 +266,6 @@ namespace SQE.ApiTest.ApiRequests
                     if (_listenerDict.TryGetValue(listener, out var val))
                         val.StartListener(signalrListener);
                 }
-
 
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
@@ -331,7 +327,7 @@ namespace SQE.ApiTest.ApiRequests
             }
 
             // If no listener is running, return the response from the request
-            if (listenerUser == null
+            if (!listeningFor.Any()
                 || GetRequestVerb() == HttpMethod.Get)
                 return;
 
