@@ -37,10 +37,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _attributeId = attributeId;
-                ListenerMethod = "DeletedAttribute";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.DeletedAttribute, (DeletedAttributeIsNull, DeletedAttributeListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -103,11 +101,9 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 _attributeValueId = attributeValueId;
-                ListenerMethod = "UpdatedSignInterpretation";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
                     (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -251,10 +247,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "CreatedAttribute";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedAttribute, (CreatedAttributeIsNull, CreatedAttributeListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -312,11 +306,9 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "CreatedSignInterpretation";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedSignInterpretation,
                     (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -378,11 +370,9 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 _payload = payload;
-                ListenerMethod = "UpdatedSignInterpretation";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
                     (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -450,10 +440,8 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _attributeId = attributeId;
                 _payload = payload;
-                ListenerMethod = "UpdatedAttribute";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedAttribute, (UpdatedAttributeIsNull, UpdatedAttributeListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -531,11 +519,9 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 _payload = payload;
-                ListenerMethod = "UpdatedSignInterpretation";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
                     (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -604,11 +590,9 @@ namespace SQE.ApiTest.ApiRequests
                 _signInterpretationId = signInterpretationId;
                 _attributeValueId = attributeValueId;
                 _payload = payload;
-                ListenerMethod = "UpdatedSignInterpretation";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
                     (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }

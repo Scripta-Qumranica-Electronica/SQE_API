@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
 using MySql.Data.MySqlClient;
-using Newtonsoft.Json;
 
 namespace SQE.ApiTest.Helpers
 {
@@ -24,12 +24,13 @@ namespace SQE.ApiTest.Helpers
             using (var r = new StreamReader(projectDirectory + "/../../sqe-api-server/appsettings.json"))
             {
                 var json = r.ReadToEnd();
-                dynamic settings = JsonConvert.DeserializeObject(json);
-                var db = settings.ConnectionStrings.MysqlDatabase;
-                var host = settings.ConnectionStrings.MysqlHost;
-                var port = settings.ConnectionStrings.MysqlPort;
-                var user = settings.ConnectionStrings.MysqlUsername;
-                var pwd = settings.ConnectionStrings.MysqlPassword;
+                //dynamic settings = JsonSerializer.Deserialize<object>(json);
+                var connectionStrings = JsonDocument.Parse(json).RootElement.GetProperty("ConnectionStrings");
+                var db = connectionStrings.GetProperty("MysqlDatabase").GetString();
+                var host = connectionStrings.GetProperty("MysqlHost").GetString();
+                var port = connectionStrings.GetProperty("MysqlPort").GetString();
+                var user = connectionStrings.GetProperty("MysqlUsername").GetString();
+                var pwd = connectionStrings.GetProperty("MysqlPassword").GetString();
                 _connection = $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8;";
             }
         }
@@ -61,6 +62,10 @@ namespace SQE.ApiTest.Helpers
             {
                 return await connection.ExecuteAsync(sql, parameters);
             }
+        }
+
+        private class DatabaseSettings
+        {
         }
     }
 }

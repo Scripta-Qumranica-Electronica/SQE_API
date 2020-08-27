@@ -61,7 +61,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        ///     Creates new commentary für a sign intepretation
+        ///     Creates new commentary for a sign interpretation
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>

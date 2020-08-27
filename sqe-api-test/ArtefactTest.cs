@@ -48,8 +48,9 @@ namespace SQE.ApiTest
                 true,
                 Request.DefaultUsers.User1,
                 listenToEdition: false);
-            var (response, artefactResponse, artefactRtResponse) = (artRequest.HttpResponseMessage, artRequest.HttpResponseObject,
-                    artRequest.SignalrResponseObject);
+            var (response, artefactResponse, artefactRtResponse) = (artRequest.HttpResponseMessage,
+                artRequest.HttpResponseObject,
+                artRequest.SignalrResponseObject);
             response.EnsureSuccessStatusCode();
             artefactResponse.ShouldDeepEqual(artefactRtResponse);
             return artefactResponse;
@@ -484,7 +485,8 @@ namespace SQE.ApiTest
                     auth: true,
                     shouldSucceed: false
                 );
-                var (artefactResponse, artefact) = (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
+                var (artefactResponse, artefact) = (newArtefactObject.HttpResponseMessage,
+                    newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -517,7 +519,8 @@ namespace SQE.ApiTest
                     auth: true,
                     shouldSucceed: false
                 );
-                (artefactResponse, artefact) = (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
+                (artefactResponse, artefact) =
+                    (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -552,7 +555,8 @@ namespace SQE.ApiTest
                     auth: true,
                     shouldSucceed: false
                 );
-                (artefactResponse, artefact) = (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
+                (artefactResponse, artefact) =
+                    (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -589,7 +593,8 @@ namespace SQE.ApiTest
                     auth: true,
                     shouldSucceed: false
                 );
-                (artefactResponse, artefact) = (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
+                (artefactResponse, artefact) =
+                    (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -626,7 +631,8 @@ namespace SQE.ApiTest
                     auth: true,
                     shouldSucceed: false
                 );
-                (artefactResponse, artefact) = (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
+                (artefactResponse, artefact) =
+                    (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request

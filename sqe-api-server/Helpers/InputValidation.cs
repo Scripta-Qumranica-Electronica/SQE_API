@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NetTopologySuite.IO;
 using NetTopologySuite.Simplify;
-using Newtonsoft.Json;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
@@ -53,7 +53,7 @@ namespace SQE.API.Server.Helpers
             try
             {
                 // Test that the string is valid JSON that can be parsed into a valid instance of the TransformMatrix class.
-                _ = JsonConvert.DeserializeObject<TransformMatrix>(transformMatrix);
+                _ = JsonSerializer.Deserialize<TransformMatrix>(transformMatrix);
                 return true;
             }
             catch

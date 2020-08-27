@@ -41,7 +41,8 @@ namespace SQE.ApiTest
             var editionId = EditionHelpers.GetEditionId();
             var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId);
             await req.Send(_client, StartConnectionAsync);
-            var (httpResponse, httpData, signalrData) = (req.HttpResponseMessage, req.HttpResponseObject, req.SignalrResponseObject);
+            var (httpResponse, httpData, signalrData) =
+                (req.HttpResponseMessage, req.HttpResponseObject, req.SignalrResponseObject);
             httpResponse.EnsureSuccessStatusCode();
             httpData.ShouldDeepEqual(signalrData);
             return (editionId, httpData.imagedObjects.FirstOrDefault().id);

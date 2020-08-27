@@ -1,8 +1,8 @@
 using System.Collections;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.API.Server.Helpers
@@ -35,7 +35,7 @@ namespace SQE.API.Server.Helpers
                 context.Response.StatusCode = (int)httpException.StatusCode;
                 context.Response.ContentType = "application/json; charset=utf-8";
                 await context.Response.WriteAsync(
-                    JsonConvert.SerializeObject(
+                    JsonSerializer.Serialize(
                         new ApiExceptionError(nameof(httpException), httpException.Error,
                             httpException is IExceptionWithData exceptionWithData
                                 ? exceptionWithData.CustomReturnedData

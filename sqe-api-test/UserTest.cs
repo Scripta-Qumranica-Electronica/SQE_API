@@ -393,7 +393,8 @@ namespace SQE.ApiTest
                     auth: true,
                     requestUser: userAuth
                 );
-                var (response, loggedInUser) = (userLoginRequest.HttpResponseMessage, userLoginRequest.HttpResponseObject);
+                var (response, loggedInUser) =
+                    (userLoginRequest.HttpResponseMessage, userLoginRequest.HttpResponseObject);
 
                 // Assert (login)
                 response.EnsureSuccessStatusCode();

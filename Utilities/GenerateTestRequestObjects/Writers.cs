@@ -27,9 +27,6 @@ namespace GenerateTestRequestObjects
                 if (!parsedControllerMethods.requests.TryGetValue(httpVerb, out var endpoints)) continue;
                 foreach (var endpoint in endpoints)
                 {
-                    var listener = string.IsNullOrEmpty(endpoint.listeners.LastOrDefault()?.ParamName)
-                        ? ""
-                        : $"ListenerMethod = \"{endpoint.listeners.LastOrDefault().ParamName}\";";
                     var endpointInputType = endpoint.IType == null ? "EmptyInput" : endpoint.IType;
                     var endpointOutputType = endpoint.OType == null ? "EmptyOutput" : endpoint.OType;
                     var listenersClass = endpoint.listeners.Count == 0
@@ -44,8 +41,7 @@ namespace GenerateTestRequestObjects
                         ? ""
                         : $@"AvailableListeners = new Listeners();
                 {string.Join("\n", endpoint.listeners.Select(x =>
-                            $"_listenerDict.Add(ListenerMethods.{x.ParamName}, ({x.ParamName}IsNull, {x.ParamName}Listener));"))}
-                AvailableListeners = new Listeners();";
+                            $"_listenerDict.Add(ListenerMethods.{x.ParamName}, ({x.ParamName}IsNull, {x.ParamName}Listener));"))}";
                     var listenerMethods = endpoint.listeners.Count == 0
                         ? ""
                         : string.Join("\n", endpoint.listeners.Select(x => $@"public {x.ParamType} {x.ParamName} {{ get; private set; }}
@@ -91,7 +87,6 @@ namespace GenerateTestRequestObjects
                         {(constructorParams.Any(x => x.ParamName == "payload") ? ": base(payload)" : "")} 
                     {{  
                         {string.Join("\n", constructorParams.Select(x => $"_{x.ParamName.ToCamelCase()} = {x.ParamName};"))}
-                        {listener}
                         {listenersInstantiation}
                     }}
 

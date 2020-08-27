@@ -36,10 +36,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _artefactId = artefactId;
-                ListenerMethod = "DeletedArtefact";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.DeletedArtefact, (DeletedArtefactIsNull, DeletedArtefactListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -98,11 +96,9 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _artefactGroupId = artefactGroupId;
-                ListenerMethod = "DeletedArtefactGroup";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.DeletedArtefactGroup,
                     (DeletedArtefactGroupIsNull, DeletedArtefactGroupListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -415,10 +411,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "CreatedArtefact";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedArtefact, (CreatedArtefactIsNull, CreatedArtefactListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -518,11 +512,9 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "CreatedArtefactGroup";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedArtefactGroup,
                     (CreatedArtefactGroupIsNull, CreatedArtefactGroupListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -595,10 +587,8 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _artefactId = artefactId;
                 _payload = payload;
-                ListenerMethod = "UpdatedArtefact";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedArtefact, (UpdatedArtefactIsNull, UpdatedArtefactListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -663,11 +653,9 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _artefactGroupId = artefactGroupId;
                 _payload = payload;
-                ListenerMethod = "UpdatedArtefactGroup";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedArtefactGroup,
                     (UpdatedArtefactGroupIsNull, UpdatedArtefactGroupListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }

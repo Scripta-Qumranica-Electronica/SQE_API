@@ -53,7 +53,8 @@ namespace SQE.ApiTest
                 listenToEdition: false
             );
 
-            return (getApiRequest.HttpResponseMessage, getApiRequest.HttpResponseObject, getApiRequest.SignalrResponseObject);
+            return (getApiRequest.HttpResponseMessage, getApiRequest.HttpResponseObject,
+                getApiRequest.SignalrResponseObject);
         }
 
         /// <summary>
@@ -84,7 +85,8 @@ namespace SQE.ApiTest
                 listenToEdition: false
             );
 
-            return (getApiRequest.HttpResponseMessage, getApiRequest.HttpResponseObject, getApiRequest.SignalrResponseObject);
+            return (getApiRequest.HttpResponseMessage, getApiRequest.HttpResponseObject,
+                getApiRequest.SignalrResponseObject);
         }
 
         /// <summary>
@@ -124,7 +126,8 @@ namespace SQE.ApiTest
                 listenToEdition: user2 != null
             );
             var (httpMessage, httpBody, signalr, listener) = (createApiRequest.HttpResponseMessage,
-                createApiRequest.HttpResponseObject, createApiRequest.SignalrResponseObject, createApiRequest.CreatedArtefactGroup);
+                createApiRequest.HttpResponseObject, createApiRequest.SignalrResponseObject,
+                createApiRequest.CreatedArtefactGroup);
 
             // Assert
             if (shouldSucceed)
@@ -178,7 +181,8 @@ namespace SQE.ApiTest
                 listenToEdition: user2 != null
             );
             var (httpMessage, httpBody, signalr, listener) = (updateApiRequest.HttpResponseMessage,
-                updateApiRequest.HttpResponseObject, updateApiRequest.SignalrResponseObject, updateApiRequest.UpdatedArtefactGroup);
+                updateApiRequest.HttpResponseObject, updateApiRequest.SignalrResponseObject,
+                updateApiRequest.UpdatedArtefactGroup);
 
             // Assert
             if (shouldSucceed)
@@ -224,7 +228,8 @@ namespace SQE.ApiTest
                 false,
                 listenToEdition: user2 != null
             );
-            var (httpMessage, httpBody, signalr, listener) = (deleteApiRequest.HttpResponseMessage, deleteApiRequest.HttpResponseObject,
+            var (httpMessage, httpBody, signalr, listener) = (deleteApiRequest.HttpResponseMessage,
+                deleteApiRequest.HttpResponseObject,
                 deleteApiRequest.SignalrResponseObject, deleteApiRequest.DeletedArtefactGroup);
 
             // Assert

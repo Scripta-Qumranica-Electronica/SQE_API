@@ -157,10 +157,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "CreatedRoisBatch";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedRoisBatch, (CreatedRoisBatchIsNull, CreatedRoisBatchListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -217,10 +215,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "EditedRoisBatch";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.EditedRoisBatch, (EditedRoisBatchIsNull, EditedRoisBatchListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -322,10 +318,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "UpdatedRoisBatch";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedRoisBatch, (UpdatedRoisBatchIsNull, UpdatedRoisBatchListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }

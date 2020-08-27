@@ -5,7 +5,6 @@ using NetTopologySuite.IO;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
-using SQE.ApiTest.Helpers;
 using Xunit;
 
 namespace SQE.ApiTest

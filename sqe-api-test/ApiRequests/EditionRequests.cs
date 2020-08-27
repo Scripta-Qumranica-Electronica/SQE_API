@@ -39,10 +39,8 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _optional = optional;
                 _token = token;
-                ListenerMethod = "DeletedEdition";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.DeletedEdition, (DeletedEditionIsNull, DeletedEditionListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -257,10 +255,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "RequestedEditor";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.RequestedEditor, (RequestedEditorIsNull, RequestedEditorListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -314,10 +310,8 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _token = token;
-                ListenerMethod = "CreatedEditor";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedEditor, (CreatedEditorIsNull, CreatedEditorListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -367,10 +361,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "CreatedEdition";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedEdition, (CreatedEditionIsNull, CreatedEditionListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -433,10 +425,8 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _editorEmailId = editorEmailId;
                 _payload = payload;
-                ListenerMethod = "CreatedEditor";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedEditor, (CreatedEditorIsNull, CreatedEditorListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -494,10 +484,8 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "UpdatedEdition";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.UpdatedEdition, (UpdatedEditionIsNull, UpdatedEditionListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }

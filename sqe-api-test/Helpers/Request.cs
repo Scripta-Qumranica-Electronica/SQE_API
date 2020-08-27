@@ -3,9 +3,9 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
-using Newtonsoft.Json;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.Helpers
@@ -42,7 +42,7 @@ namespace SQE.ApiTest.Helpers
 
                     if (payload != null) // Add payload if it exists.
                     {
-                        var json = JsonConvert.SerializeObject(payload);
+                        var json = JsonSerializer.Serialize(payload);
                         var jsonPayload = new StringContent(json, Encoding.UTF8, "application/json");
                         requestMessage.Content = jsonPayload;
                     }
@@ -53,7 +53,7 @@ namespace SQE.ApiTest.Helpers
                     {
                         var responseBody = await response.Content.ReadAsStringAsync();
                         if (response.StatusCode == HttpStatusCode.OK)
-                            parsedClass = JsonConvert.DeserializeObject<T2>(responseBody);
+                            parsedClass = JsonSerializer.Deserialize<T2>(responseBody);
                     }
                 }
                 catch (HttpRequestException e)

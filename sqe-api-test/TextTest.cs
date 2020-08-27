@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -29,7 +28,8 @@ namespace SQE.ApiTest
                 _client,
                 StartConnectionAsync
             );
-            var (fragmentsResponse, textFragments) = (textFragmentRequestObject.HttpResponseMessage, textFragmentRequestObject.HttpResponseObject);
+            var (fragmentsResponse, textFragments) = (textFragmentRequestObject.HttpResponseMessage,
+                textFragmentRequestObject.HttpResponseObject);
             fragmentsResponse.EnsureSuccessStatusCode();
 
             return (usedEditionId, textFragmentId: textFragments.textFragments.First().id);
@@ -60,7 +60,8 @@ namespace SQE.ApiTest
                 requestUser: user,
                 auth: auth
             );
-            var (fragmentsResponse, textFragments) = (newTextFragReqObj.HttpResponseMessage, newTextFragReqObj.HttpResponseObject);
+            var (fragmentsResponse, textFragments) =
+                (newTextFragReqObj.HttpResponseMessage, newTextFragReqObj.HttpResponseObject);
 
             fragmentsResponse.EnsureSuccessStatusCode();
             return textFragments;
@@ -69,10 +70,10 @@ namespace SQE.ApiTest
         private async Task<(uint editionId, TextFragmentDataListDTO textFragments)> _createEditionWithTextFragments(
             EditionHelpers.EditionCreator editionCreator)
         {
-            var editionId =
-                await editionCreator.CreateEdition(); // Get a newly cloned edition
-            var textFragments =
-                await _getEditionTextFragments(editionId, true); // Get all the text fragments in the edition
+            // Get a newly cloned edition
+            var editionId = await editionCreator.CreateEdition();
+            // Get all the text fragments in the edition
+            var textFragments = await _getEditionTextFragments(editionId, true);
             return (editionId, textFragments);
         }
 
@@ -99,7 +100,6 @@ namespace SQE.ApiTest
             );
             // You can run this realtime or HTTP, both should be tested at least once
             if (realtime)
-            {
                 await newTextFragmentRequestObject.Send(
                     null,
                     StartConnectionAsync,
@@ -108,9 +108,7 @@ namespace SQE.ApiTest
                     shouldSucceed: shouldSucceed,
                     deterministic: false
                 );
-            }
             else
-            {
                 await newTextFragmentRequestObject.Send(
                     _client,
                     null,
@@ -119,7 +117,6 @@ namespace SQE.ApiTest
                     shouldSucceed: shouldSucceed,
                     deterministic: false
                 );
-            }
 
             var (response, msg, realtimeMsg) = (newTextFragmentRequestObject.HttpResponseMessage,
                 newTextFragmentRequestObject.HttpResponseObject, newTextFragmentRequestObject.SignalrResponseObject);
@@ -139,7 +136,8 @@ namespace SQE.ApiTest
                 _client,
                 StartConnectionAsync
             );
-            var (lineResponse, lines) = (getLineDataRequestObject.HttpResponseMessage, getLineDataRequestObject.HttpResponseObject);
+            var (lineResponse, lines) = (getLineDataRequestObject.HttpResponseMessage,
+                getLineDataRequestObject.HttpResponseObject);
             lineResponse.EnsureSuccessStatusCode();
 
             return (editionId, textFragmentId, lines.lines.First().lineId);
@@ -291,7 +289,8 @@ namespace SQE.ApiTest
                     true,
                     deterministic: false
                 );
-                var (response, msg) = (newTextFragmentRequestObject.HttpResponseMessage, newTextFragmentRequestObject.HttpResponseObject);
+                var (response, msg) = (newTextFragmentRequestObject.HttpResponseMessage,
+                    newTextFragmentRequestObject.HttpResponseObject);
 
                 // Assert
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -347,7 +346,8 @@ namespace SQE.ApiTest
                     true,
                     deterministic: false
                 );
-                var (response, msg) = (newTextFragmentRequestObject.HttpResponseMessage, newTextFragmentRequestObject.HttpResponseObject);
+                var (response, msg) = (newTextFragmentRequestObject.HttpResponseMessage,
+                    newTextFragmentRequestObject.HttpResponseObject);
 
                 // Assert
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -475,7 +475,8 @@ namespace SQE.ApiTest
                 _client,
                 StartConnectionAsync
             );
-            var (response, msg) = (textFragmentRequestObject.HttpResponseMessage, textFragmentRequestObject.HttpResponseObject);
+            var (response, msg) = (textFragmentRequestObject.HttpResponseMessage,
+                textFragmentRequestObject.HttpResponseObject);
 
             // Assert
             response.EnsureSuccessStatusCode();
@@ -567,7 +568,8 @@ namespace SQE.ApiTest
                     true,
                     deterministic: false
                 );
-                var (response, msg) = (newTextFragmentRequestObject.HttpResponseMessage, newTextFragmentRequestObject.HttpResponseObject);
+                var (response, msg) = (newTextFragmentRequestObject.HttpResponseMessage,
+                    newTextFragmentRequestObject.HttpResponseObject);
 
                 // Assert
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);

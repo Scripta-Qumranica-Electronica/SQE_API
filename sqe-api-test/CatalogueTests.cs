@@ -4,7 +4,6 @@ using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
-using SQE.ApiTest.Helpers;
 using Xunit;
 
 namespace SQE.ApiTest

@@ -760,7 +760,8 @@ namespace SQE.ApiTest
                     Request.DefaultUsers.User2,
                     requestRealtime: false
                 );
-                var (httpShareRequestResponse, shareRequestMsg) = (requestAvailable.HttpResponseMessage, requestAvailable.HttpResponseObject);
+                var (httpShareRequestResponse, shareRequestMsg) = (requestAvailable.HttpResponseMessage,
+                    requestAvailable.HttpResponseObject);
 
                 // Assert
                 httpShareRequestResponse.EnsureSuccessStatusCode();
@@ -826,7 +827,8 @@ namespace SQE.ApiTest
                     Request.DefaultUsers.User1,
                     requestRealtime: false
                 );
-                var (httpShareRequestResponse, shareRequestMsg) = (requestAvailable.HttpResponseMessage, requestAvailable.HttpResponseObject);
+                var (httpShareRequestResponse, shareRequestMsg) = (requestAvailable.HttpResponseMessage,
+                    requestAvailable.HttpResponseObject);
 
                 // Assert
                 httpShareRequestResponse.EnsureSuccessStatusCode();
@@ -963,7 +965,8 @@ namespace SQE.ApiTest
                 true,
                 deterministic: false
             );
-            var (response, msg, rt, lt) = (newEd.HttpResponseMessage, newEd.HttpResponseObject, newEd.SignalrResponseObject, newEd.CreatedEdition);
+            var (response, msg, rt, lt) = (newEd.HttpResponseMessage, newEd.HttpResponseObject,
+                newEd.SignalrResponseObject, newEd.CreatedEdition);
             response.EnsureSuccessStatusCode();
 
             // Assert
@@ -986,7 +989,8 @@ namespace SQE.ApiTest
                 true,
                 deterministic: false
             );
-            (response, msg, rt, lt) = (newEd.HttpResponseMessage, newEd.HttpResponseObject, newEd.SignalrResponseObject, newEd.CreatedEdition);
+            (response, msg, rt, lt) = (newEd.HttpResponseMessage, newEd.HttpResponseObject, newEd.SignalrResponseObject,
+                newEd.CreatedEdition);
             response.EnsureSuccessStatusCode();
 
             // Assert

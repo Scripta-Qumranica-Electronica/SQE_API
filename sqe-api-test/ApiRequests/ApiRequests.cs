@@ -117,7 +117,7 @@ namespace SQE.ApiTest.ApiRequests
             bool deterministic = true,
             bool requestRealtime = true,
             bool listenToEdition = true,
-            ListenerMethods listeningFor = default);
+            ListenerMethods? listeningFor = null);
     }
 
     /// <summary>
@@ -128,14 +128,13 @@ namespace SQE.ApiTest.ApiRequests
     /// <typeparam name="TListener">The API endpoint signalr broadcast type</typeparam>
     public abstract class RequestObject<TInput, TOutput> : IRequestObject
     {
+        protected readonly Dictionary<ListenerMethods, (Func<bool> IsNull, Action<HubConnection> StartListener)>
+            _listenerDict;
+
         private readonly TInput _payload;
         private readonly HttpMethod _requestVerb;
         protected readonly string RequestPath;
         protected string ListenerMethod = null;
-        public HttpResponseMessage HttpResponseMessage { get; protected set; }
-        public TOutput HttpResponseObject { get; protected set; }
-        public TOutput SignalrResponseObject { get; protected set; }
-        protected readonly Dictionary<ListenerMethods, (Func<bool> IsNull, Action<HubConnection> StartListener)> _listenerDict;
 
         /// <summary>
         ///     Provides a RequestObject used by the Request Class in SQE.ApiTest.Helpers to access an API endpoint
@@ -159,59 +158,9 @@ namespace SQE.ApiTest.ApiRequests
             _listenerDict = new Dictionary<ListenerMethods, (Func<bool>, Action<HubConnection>)>();
         }
 
-        public virtual HttpRequestObject<TInput> GetHttpRequestObject()
-        {
-            return new HttpRequestObject<TInput>
-            {
-                RequestVerb = _requestVerb,
-                RequestString = HttpPath(),
-                Payload = _payload
-            };
-        }
-
-        public virtual Func<HubConnection, Task<T>> SignalrRequest<T>()
-            where T : TOutput
-        {
-            return signalR => _payload == null
-                ? signalR.InvokeAsync<T>(SignalrRequestString())
-                : signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
-        }
-
-        public string GetListenerMethod()
-        {
-            return ListenerMethod;
-        }
-
-        public HttpMethod GetRequestVerb()
-        {
-            return _requestVerb;
-        }
-
-        public virtual uint? GetEditionId()
-        {
-            return null;
-        }
-
-        /// <summary>
-        ///     Returns the HTTP request string with all route and query
-        ///     parameters interpolated.
-        /// </summary>
-        /// <returns></returns>
-        protected virtual string HttpPath()
-        {
-            return RequestPath;
-        }
-
-        /// <summary>
-        ///     Formats the API endpoint method name for the SignalR server
-        /// </summary>
-        /// <returns></returns>
-        protected string SignalrRequestString()
-        {
-            return _requestVerb.ToString().First().ToString().ToUpper()
-                   + _requestVerb.ToString().Substring(1).ToLower()
-                   + RequestPath.Replace("/", "_").ToPascalCase();
-        }
+        public HttpResponseMessage HttpResponseMessage { get; protected set; }
+        public TOutput HttpResponseObject { get; protected set; }
+        public TOutput SignalrResponseObject { get; protected set; }
 
         public async Task Send(
             IEnumerable<ListenerMethods> listeningFor,
@@ -262,10 +211,8 @@ namespace SQE.ApiTest.ApiRequests
                     await signalrListener.InvokeAsync("SubscribeToEdition", GetEditionId().Value);
                 // Register listeners for messages returned by this API request
                 foreach (var listener in listeningFor)
-                {
                     if (_listenerDict.TryGetValue(listener, out var val))
                         val.StartListener(signalrListener);
-                }
 
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
@@ -277,10 +224,8 @@ namespace SQE.ApiTest.ApiRequests
                         await signalrListener.InvokeAsync("SubscribeToEdition", GetEditionId().Value);
                     // Register listeners for messages returned by this API request
                     foreach (var listener in listeningFor)
-                    {
                         if (_listenerDict.TryGetValue(listener, out var val))
                             val.StartListener(signalrListener);
-                    }
                 };
             }
 
@@ -359,10 +304,12 @@ namespace SQE.ApiTest.ApiRequests
             bool deterministic = true,
             bool requestRealtime = true,
             bool listenToEdition = true,
-            ListenerMethods listeningFor = default)
+            ListenerMethods? listeningFor = null)
         {
             await Send(
-                new List<ListenerMethods>() { listeningFor },
+                listeningFor.HasValue
+                    ? new List<ListenerMethods> { listeningFor.Value }
+                    : new List<ListenerMethods>(),
                 http,
                 realtime,
                 auth,
@@ -372,6 +319,60 @@ namespace SQE.ApiTest.ApiRequests
                 deterministic,
                 requestRealtime,
                 listenToEdition);
+        }
+
+        public virtual HttpRequestObject<TInput> GetHttpRequestObject()
+        {
+            return new HttpRequestObject<TInput>
+            {
+                RequestVerb = _requestVerb,
+                RequestString = HttpPath(),
+                Payload = _payload
+            };
+        }
+
+        public virtual Func<HubConnection, Task<T>> SignalrRequest<T>()
+            where T : TOutput
+        {
+            return signalR => _payload == null
+                ? signalR.InvokeAsync<T>(SignalrRequestString())
+                : signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
+        }
+
+        public string GetListenerMethod()
+        {
+            return ListenerMethod;
+        }
+
+        public HttpMethod GetRequestVerb()
+        {
+            return _requestVerb;
+        }
+
+        public virtual uint? GetEditionId()
+        {
+            return null;
+        }
+
+        /// <summary>
+        ///     Returns the HTTP request string with all route and query
+        ///     parameters interpolated.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string HttpPath()
+        {
+            return RequestPath;
+        }
+
+        /// <summary>
+        ///     Formats the API endpoint method name for the SignalR server
+        /// </summary>
+        /// <returns></returns>
+        protected string SignalrRequestString()
+        {
+            return _requestVerb.ToString().First().ToString().ToUpper()
+                   + _requestVerb.ToString().Substring(1).ToLower()
+                   + RequestPath.Replace("/", "_").ToPascalCase();
         }
     }
 

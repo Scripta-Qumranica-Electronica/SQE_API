@@ -269,10 +269,10 @@ namespace SQE.DatabaseAccess
         )
         {
             var newSigns = new List<SignData>();
-            // SignData previousSignData = null;
+            SignData previousSignData = null;
             // Stores for each sign the actual anchors after which it should be injected
             // into th reading stream
-            // var internalAnchorsBefore = anchorsBefore;
+            var internalAnchorsBefore = anchorsBefore;
             foreach (var sign in signs)
             {
                 // First, create a simple entry in the sign table
@@ -285,26 +285,26 @@ namespace SQE.DatabaseAccess
                     anchorsAfter);
 
                 // Set the new sign interpretation ids as anchors before the next sign
-                // anchorsBefore = newSignData.SignInterpretations.Select(
-                //     si => si.SignInterpretationId.GetValueOrDefault()).ToList();
+                anchorsBefore = newSignData.SignInterpretations.Select(
+                    si => si.SignInterpretationId.GetValueOrDefault()).ToList();
 
                 // If already a sign had been set adjust its nextSignInterpretations
                 // TODO do we need this here? (Ingo)
-                // if (previousSignData != null)
-                // {
-                //     // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
-                //     // Create a list of next sign interpretations from the new anchors before
-                //     var nextSignInterpretations = internalAnchorsBefore.Select(
-                //         signInterpretationId => new NextSignInterpretation(
-                //             signInterpretationId,
-                //             (uint)editionUser.EditionEditorId)).Distinct().ToList();
-                //
-                //     // Store this hashset into each signInterpretation of the previous set sign 
-                //     previousSignData.SignInterpretations.ForEach(
-                //         signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
-                // }
+                if (previousSignData != null)
+                {
+                    // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
+                    // Create a list of next sign interpretations from the new anchors before
+                    var nextSignInterpretations = internalAnchorsBefore.Select(
+                        signInterpretationId => new NextSignInterpretation(
+                            signInterpretationId,
+                            (uint)editionUser.EditionEditorId)).Distinct().ToList();
 
-                // previousSignData = newSignData;
+                    // Store this hashset into each signInterpretation of the previous set sign 
+                    previousSignData.SignInterpretations.ForEach(
+                        signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
+                }
+
+                previousSignData = newSignData;
                 newSigns.Add(newSignData);
             }
 
@@ -1180,17 +1180,17 @@ namespace SQE.DatabaseAccess
             uint? anchorAfter)
         {
             // Prepare the response object
-            PositionDataRequestFactory positionDataRequestFactory;
-            (positionDataRequestFactory, anchorBefore, anchorAfter) = await _createTextFragmentPositionRequestFactory(
+            PositionDataRequestHelper positionDataRequestHelper;
+            (positionDataRequestHelper, anchorBefore, anchorAfter) = await _createTextFragmentPositionRequestFactory(
                 editionUser,
                 anchorBefore,
                 textFragmentId,
                 anchorAfter
             );
 
-            positionDataRequestFactory.AddAction(PositionAction.DisconnectNeighbouringAnchors);
-            positionDataRequestFactory.AddAction(PositionAction.CreatePathFromItems);
-            var requests = await positionDataRequestFactory.CreateRequestsAsync();
+            positionDataRequestHelper.AddAction(PositionAction.DisconnectNeighbouringAnchors);
+            positionDataRequestHelper.AddAction(PositionAction.CreatePathFromItems);
+            var requests = await positionDataRequestHelper.CreateRequestsAsync();
 
             // Commit the mutation
             var textFragmentMutationResults =
@@ -1233,16 +1233,16 @@ namespace SQE.DatabaseAccess
                     "must provide either a previous or next text fragment id"
                 );
 
-            PositionDataRequestFactory positionDataRequestFactory;
-            (positionDataRequestFactory, newAnchorBefore, newAnchorAfter) =
+            PositionDataRequestHelper positionDataRequestHelper;
+            (positionDataRequestHelper, newAnchorBefore, newAnchorAfter) =
                 await _createTextFragmentPositionRequestFactory(
                     editionUser,
                     newAnchorBefore,
                     textFragmentIds,
                     newAnchorAfter
                 );
-            positionDataRequestFactory.AddAction(PositionAction.MoveInBetween);
-            var requests = await positionDataRequestFactory.CreateRequestsAsync();
+            positionDataRequestHelper.AddAction(PositionAction.MoveInBetween);
+            var requests = await positionDataRequestHelper.CreateRequestsAsync();
             var shiftTextFragmentMutationResults =
                 await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
@@ -1280,7 +1280,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        ///     Create a PositionDataRequestFactory from the submitted data. If anchorBefore or anchorAfter are null,
+        ///     Create a PositionDataRequestHelper from the submitted data. If anchorBefore or anchorAfter are null,
         ///     the missing data will be automatically calculated. If both are null, the submitted text fragments
         ///     will be positioned at the end of the list of text fragments for the edition.
         /// </summary>
@@ -1288,8 +1288,8 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorBefore">Id of the text fragment preceding the text fragments being positioned, may be null</param>
         /// <param name="textFragmentIds">Text fragments to be positioned</param>
         /// <param name="anchorAfter">Id of the text fragment following the text fragments being positioned, may be null</param>
-        /// <returns>A PositionDataRequestFactory along with the ids of the previous and next text fragments</returns>
-        private async Task<(PositionDataRequestFactory positionDataRequestFactory, uint? previousTextFragmentId, uint?
+        /// <returns>A PositionDataRequestHelper along with the ids of the previous and next text fragments</returns>
+        private async Task<(PositionDataRequestHelper positionDataRequestFactory, uint? previousTextFragmentId, uint?
                 nextTextFragmentId)>
             _createTextFragmentPositionRequestFactory(UserInfo editionUser,
                 uint? anchorBefore,
@@ -1297,7 +1297,7 @@ namespace SQE.DatabaseAccess
                 uint? anchorAfter)
         {
             // Prepare the response object
-            PositionDataRequestFactory positionDataRequestFactory;
+            PositionDataRequestHelper positionDataRequestHelper;
             using (var connection = OpenConnection())
             {
                 // Verify that anchorBefore and anchorAfter are valid values if they exist
@@ -1305,7 +1305,7 @@ namespace SQE.DatabaseAccess
                 _verifyTextFragmentsSequence(fragments, anchorBefore, anchorAfter);
 
                 // Set the current text fragment position factory
-                positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
+                positionDataRequestHelper = await PositionDataRequestFactory.CreateInstanceAsync(
                     connection,
                     StreamType.TextFragmentStream,
                     textFragmentIds,
@@ -1341,7 +1341,7 @@ namespace SQE.DatabaseAccess
 
                 // Add the before anchor for the new text fragment
                 if (anchorBefore.HasValue)
-                    positionDataRequestFactory.AddAnchorBefore(anchorBefore.Value);
+                    positionDataRequestHelper.AddAnchorBefore(anchorBefore.Value);
 
                 // If no anchorAfter has been specified, set it to the text fragment following anchorBefore
                 if (!anchorAfter.HasValue)
@@ -1360,14 +1360,14 @@ namespace SQE.DatabaseAccess
 
                 // Add the after anchor for the new text fragment
                 if (anchorAfter.HasValue)
-                    positionDataRequestFactory.AddAnchorAfter(anchorAfter.Value);
+                    positionDataRequestHelper.AddAnchorAfter(anchorAfter.Value);
             }
 
-            return (positionDataRequestFactory, anchorBefore, anchorAfter);
+            return (positionDataRequestHelper, anchorBefore, anchorAfter);
         }
 
         /// <summary>
-        ///     Create a PositionDataRequestFactory from the submitted data. If anchorBefore or anchorAfter are null,
+        ///     Create a PositionDataRequestHelper from the submitted data. If anchorBefore or anchorAfter are null,
         ///     the missing data will be automatically calculated. If both are null, the submitted text fragments
         ///     will be positioned at the end of the list of text fragments for the edition.
         /// </summary>
@@ -1375,8 +1375,8 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorBefore">Id of the text fragment preceding the text fragments being positioned, may be null</param>
         /// <param name="textFragmentId">Text fragment to be positioned</param>
         /// <param name="anchorAfter">Id of the text fragment following the text fragments being positioned, may be null</param>
-        /// <returns>A PositionDataRequestFactory along with the ids of the previous and next text fragments</returns>
-        private async Task<(PositionDataRequestFactory positionDataRequestFactory, uint? previousTextFragmentId, uint?
+        /// <returns>A PositionDataRequestHelper along with the ids of the previous and next text fragments</returns>
+        private async Task<(PositionDataRequestHelper positionDataRequestFactory, uint? previousTextFragmentId, uint?
                 nextTextFragmentId)>
             _createTextFragmentPositionRequestFactory(UserInfo editionUser,
                 uint? anchorBefore,

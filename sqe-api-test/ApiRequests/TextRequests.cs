@@ -240,11 +240,9 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
-                ListenerMethod = "CreatedTextFragment";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedTextFragment,
                     (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }
@@ -309,11 +307,9 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _textFragmentId = textFragmentId;
                 _payload = payload;
-                ListenerMethod = "CreatedTextFragment";
                 AvailableListeners = new Listeners();
                 _listenerDict.Add(ListenerMethods.CreatedTextFragment,
                     (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
-                AvailableListeners = new Listeners();
             }
 
             public Listeners AvailableListeners { get; }

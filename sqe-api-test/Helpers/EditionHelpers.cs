@@ -80,7 +80,8 @@ namespace SQE.ApiTest.Helpers
                 requestUser: user,
                 auth: auth
             );
-            var (response, editionResponse) = (getEditionObject.HttpResponseMessage, getEditionObject.HttpResponseObject);
+            var (response, editionResponse) =
+                (getEditionObject.HttpResponseMessage, getEditionObject.HttpResponseObject);
             response.EnsureSuccessStatusCode();
 
             return editionResponse.primary;
@@ -158,6 +159,49 @@ namespace SQE.ApiTest.Helpers
             }
         }
 
+        public static async Task<List<TextFragmentDataDTO>> GetEditionTextFragments(uint editionId, HttpClient client,
+            Request.UserAuthDetails user = null)
+        {
+            var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments(editionId);
+            await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+            return textFragmentRequestObject.HttpResponseObject.textFragments;
+        }
+
+        public static async Task<TextEditionDTO> GetEditionTextFragmentWithSigns(uint editionId, HttpClient client,
+            Request.UserAuthDetails user = null, uint? textFragmentId = null)
+        {
+            if (textFragmentId.HasValue)
+            {
+                var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+                    editionId,
+                    textFragmentId.Value
+                );
+                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+                if (!textFragmentRequestObject.HttpResponseObject.textFragments.Any(x =>
+                    x.lines.Any(y =>
+                        y.signs.Count(z =>
+                            z.signInterpretations.Any(a => a.attributes.Any(b => b.attributeValueId == 1))) > 2)))
+                    throw new Exception(
+                        $"The edition {editionId} fragment {textFragmentId.Value} doesn't have any lines with 3 or more signs");
+                return textFragmentRequestObject.HttpResponseObject;
+            }
+
+            var textFragments = await GetEditionTextFragments(editionId, client, user);
+            foreach (var textFragment in textFragments)
+            {
+                var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+                    editionId,
+                    textFragment.id
+                );
+                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+                if (textFragmentRequestObject.HttpResponseObject.textFragments.Any(x =>
+                    x.lines.Any(y => y.signs.Count > 2)))
+                    return textFragmentRequestObject.HttpResponseObject;
+            }
+
+            throw new Exception($"The edition {editionId} doesn't have any fragments with 3 or more signs");
+        }
+
         /// <summary>
         ///     This class can be used in a using block to clone an edition for tests. At the end of the using block,
         ///     it will automatically delete the newly created edition.
@@ -207,42 +251,6 @@ namespace SQE.ApiTest.Helpers
                 EditionId = await CreateCopyOfEdition(_client, EditionId, _name, _userAuthDetails);
                 return EditionId;
             }
-        }
-
-        public static async Task<List<TextFragmentDataDTO>> GetEditionTextFragments(uint editionId, HttpClient client, Request.UserAuthDetails user = null)
-        {
-            var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
-            return textFragmentRequestObject.HttpResponseObject.textFragments;
-        }
-
-        public static async Task<TextEditionDTO> GetEditionTextFragmentWithSigns(uint editionId, HttpClient client, Request.UserAuthDetails user = null, uint? textFragmentId = null)
-        {
-            if (textFragmentId.HasValue)
-            {
-                var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
-                    editionId,
-                    textFragmentId.Value
-                );
-                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
-                if (!textFragmentRequestObject.HttpResponseObject.textFragments.Any(x => x.lines.Any(y => y.signs.Count > 2)))
-                    throw new Exception($"The edition {editionId} fragment {textFragmentId.Value} doesn't have any lines with 3 or more signs");
-                return textFragmentRequestObject.HttpResponseObject;
-            }
-
-            var textFragments = await GetEditionTextFragments(editionId, client, user);
-            foreach (var textFragment in textFragments)
-            {
-                var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
-                    editionId,
-                    textFragment.id
-                );
-                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
-                if (textFragmentRequestObject.HttpResponseObject.textFragments.Any(x => x.lines.Any(y => y.signs.Count > 2)))
-                    return textFragmentRequestObject.HttpResponseObject;
-            }
-
-            throw new Exception($"The edition {editionId} doesn't have any fragments with 3 or more signs");
         }
     }
 }
