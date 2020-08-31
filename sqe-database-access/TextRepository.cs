@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using MySqlX.XDevAPI;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -35,7 +36,7 @@ namespace SQE.DatabaseAccess
         #region Sign and its Interpretation
 
         Task<List<SignInterpretationData>> AddSignInterpretationsAsync(UserInfo editionUser,
-            uint? signId,
+            uint signId,
             List<SignInterpretationData> signInterpretations,
             List<uint> anchorsBefore,
             List<uint> anchorsAfter);
@@ -43,7 +44,14 @@ namespace SQE.DatabaseAccess
 
         Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
             uint lineId,
-            List<SignData> signs,
+            IEnumerable<SignData> signs,
+            List<uint> anchorsBefore,
+            List<uint> anchorsAfter
+        );
+
+        Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
+            uint lineId,
+            SignData signs,
             List<uint> anchorsBefore,
             List<uint> anchorsAfter
         );
@@ -83,7 +91,6 @@ namespace SQE.DatabaseAccess
         #region Interna
 
         private readonly IDatabaseWriter _databaseWriter;
-
         private readonly IAttributeRepository _attributeRepository;
         private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
         private readonly IRoiRepository _roiRepository;
@@ -101,8 +108,6 @@ namespace SQE.DatabaseAccess
             _commentaryRepository = commentaryRepository;
             _roiRepository = roiRepository;
         }
-
-        public IDbConnection Connection => OpenConnection();
 
         #endregion
 
@@ -253,7 +258,7 @@ namespace SQE.DatabaseAccess
         ///     Creates the signs from the information provided by the sign objects and adds them as
         ///     a path between the given anchors.
         ///     If more than one sign interpretation is provided for a sign, forking paths are created
-        ///     fromthe different interpretations
+        ///     from the different interpretations
         /// </summary>
         /// <param name="editionUser"></param>
         /// <param name="lineId"></param>
@@ -263,52 +268,88 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         public async Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
             uint lineId,
-            List<SignData> signs,
+            IEnumerable<SignData> signs,
             List<uint> anchorsBefore,
             List<uint> anchorsAfter
         )
         {
             var newSigns = new List<SignData>();
-            SignData previousSignData = null;
-            // Stores for each sign the actual anchors after which it should be injected
-            // into th reading stream
-            var internalAnchorsBefore = anchorsBefore;
-            foreach (var sign in signs)
+            // SignData previousSignData = null;
+            // // Stores for each sign the actual anchors after which it should be injected
+            // // into th reading stream
+            // var internalAnchorsBefore = anchorsBefore;
+            using (var transactionScope = new TransactionScope())
             {
-                // First, create a simple entry in the sign table
-                var newSignData = await _createSignAsync(editionUser, lineId);
-                // Add the given sign interpretations which also inject the sign in the reading stream
-                newSignData.SignInterpretations = await AddSignInterpretationsAsync(editionUser,
-                    newSignData.SignId,
-                    sign.SignInterpretations,
-                    anchorsBefore,
-                    anchorsAfter);
-
-                // Set the new sign interpretation ids as anchors before the next sign
-                anchorsBefore = newSignData.SignInterpretations.Select(
-                    si => si.SignInterpretationId.GetValueOrDefault()).ToList();
-
-                // If already a sign had been set adjust its nextSignInterpretations
-                // TODO do we need this here? (Ingo)
-                if (previousSignData != null)
+                foreach (var sign in signs)
                 {
-                    // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
-                    // Create a list of next sign interpretations from the new anchors before
-                    var nextSignInterpretations = internalAnchorsBefore.Select(
-                        signInterpretationId => new NextSignInterpretation(
-                            signInterpretationId,
-                            (uint)editionUser.EditionEditorId)).Distinct().ToList();
+                    // First, create a simple entry in the sign table
+                    var newSignId = await _createSignAsync(editionUser, lineId);
+                    var newSignData = new SignData()
+                    {
+                        SignId = newSignId,
+                        // Add the given sign interpretations which also inject the sign in the reading stream
+                        SignInterpretations = await AddSignInterpretationsAsync(editionUser,
+                            newSignId,
+                            sign.SignInterpretations,
+                            anchorsBefore,
+                            anchorsAfter)
+                    };
 
-                    // Store this hashset into each signInterpretation of the previous set sign 
-                    previousSignData.SignInterpretations.ForEach(
-                        signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
+                    //Note: the following commented code probably did not do what was intended. If
+                    // 2 signs (c and d) were inserted with 'a' before and 'b' after, then the resulting streams
+                    // are a -> b; a -> c -> b; a -> c -> d -> b;  This is probably not the intended consequence.
+                    // The code as it stands now would produce the following result: a -> b; a -> c -> b; a -> d -> b.
+                    // That is probably the expected result.
+
+                    // // Set the new sign interpretation ids as anchors before the next sign
+                    // anchorsBefore = newSignData.SignInterpretations.Select(
+                    //     si => si.SignInterpretationId.GetValueOrDefault()).ToList();
+                    //
+                    // // If already a sign had been set adjust its nextSignInterpretations
+                    // // TODO do we need this here? (Ingo)
+                    // if (previousSignData != null)
+                    // {
+                    //     // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
+                    //     // Create a list of next sign interpretations from the new anchors before
+                    //     var nextSignInterpretations = internalAnchorsBefore.Select(
+                    //         signInterpretationId => new NextSignInterpretation(
+                    //             signInterpretationId,
+                    //             editionUser.EditionEditorId.Value)).Distinct().ToList();
+                    //
+                    //     // Store this hashset into each signInterpretation of the previous set sign 
+                    //     previousSignData.SignInterpretations.ForEach(
+                    //         signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
+                    // }
+                    //
+                    // previousSignData = newSignData;
+                    newSigns.Add(newSignData);
                 }
-
-                previousSignData = newSignData;
-                newSigns.Add(newSignData);
+                transactionScope.Complete();
             }
 
             return newSigns;
+        }
+
+        /// <summary>
+        ///     Creates the sign from the information provided by the sign object and adds it as
+        ///     a path between the given anchors.
+        ///     If more than one sign interpretation is provided for a sign, forking paths are created
+        ///     from the different interpretations
+        /// </summary>
+        /// <param name="editionUser"></param>
+        /// <param name="lineId"></param>
+        /// <param name="sign"></param>
+        /// <param name="anchorsBefore"></param>
+        /// <param name="anchorsAfter"></param>
+        /// <returns></returns>
+        public async Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
+            uint lineId,
+            SignData sign,
+            List<uint> anchorsBefore,
+            List<uint> anchorsAfter
+        )
+        {
+            return await this.CreateSignsAsync(editionUser, lineId, new List<SignData>() { sign }, anchorsBefore, anchorsAfter);
         }
 
 
@@ -324,7 +365,7 @@ namespace SQE.DatabaseAccess
         /// <returns>List of sign Interpretation objects with the new ids</returns>
         /// <exception cref="DataNotWrittenException"></exception>
         public async Task<List<SignInterpretationData>> AddSignInterpretationsAsync(UserInfo editionUser,
-            uint? signId,
+            uint signId,
             List<SignInterpretationData> signInterpretations,
             List<uint> anchorsBefore,
             List<uint> anchorsAfter)
@@ -333,7 +374,7 @@ namespace SQE.DatabaseAccess
             {
                 foreach (var signInterpretation in signInterpretations)
                 {
-                    // Flag which marks if the sign interpretation had to be created from the scratch
+                    // Flag which marks if the sign interpretation had to be created from scratch
                     var newSignInterpretation = true;
                     var createSignInterpretationIdParameters = new DynamicParameters();
                     createSignInterpretationIdParameters.Add("@SignId", signId);
@@ -1103,34 +1144,31 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="lineId">Id of line to which the sign should belong</param>
         /// <returns></returns>
-        public async Task<SignData> _createSignAsync(UserInfo editionUser,
+        public async Task<uint> _createSignAsync(UserInfo editionUser,
             uint lineId
         )
         {
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
-                async () =>
-                {
-                    using (var transactionScope = new TransactionScope())
-                    {
-                        // Create the new text fragment abstract id
-                        var newSignId = await _simpleInsertAsync(
-                            TableData.Table.sign);
-                        ;
+            // return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            //     async () =>
+            //     {
+            using (var transactionScope = new TransactionScope())
+            {
+                // Create the new sign abstract id
+                var newSignId = await _simpleInsertAsync(
+                    TableData.Table.sign);
+                ;
 
-                        // Add the new text fragment to the edition manuscript
-                        await _addSignToLine(editionUser, newSignId, lineId);
+                // Add the new sign to the edition manuscript by linking it to a line
+                await _addSignToLine(editionUser, newSignId, lineId);
 
-                        // End the transaction (it was all or nothing)
-                        transactionScope.Complete();
+                // End the transaction (it was all or nothing)
+                transactionScope.Complete();
 
-                        // Package the new text fragment to return to user
-                        return new SignData
-                        {
-                            SignId = newSignId
-                        };
-                    }
-                }
-            );
+                // Package the new sign to return to user
+                return newSignId;
+            }
+            //     }
+            // );
         }
 
         #endregion

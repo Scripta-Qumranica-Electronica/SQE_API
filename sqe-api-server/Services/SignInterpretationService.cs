@@ -157,7 +157,7 @@ namespace SQE.API.Server.Services
             var createdSignInterpretation = await _textRepository.CreateSignsAsync(
                 user,
                 signInterpretation.lineId,
-                new List<SignData>() { signInterpretation.ToSignData() },
+                signInterpretation.ToSignData(),
                 signInterpretation.previousSignInterpretationIds.ToList(),
                 signInterpretation.nextSignInterpretationIds.ToList());
 
