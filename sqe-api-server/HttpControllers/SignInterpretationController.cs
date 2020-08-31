@@ -110,20 +110,22 @@ namespace SQE.API.Server.HttpControllers
                 await _userService.GetCurrentUserObjectAsync(editionId, true),
                 newSignInterpretation);
         }
-        //
-        // /// <summary>
-        // /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-        // /// by connecting all the deleted sign's next and previous nodes.
-        // /// </summary>
-        // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
-        // /// <returns>Ok or Error</returns>
-        // [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
-        // public async Task<ActionResult> DeleteSignInterpretation([FromRoute] uint editionId,
-        //     [FromRoute] uint signInterpretationId)
-        // {
-        //     throw new NotImplementedException(); //Not Implemented
-        // }
+
+        /// <summary>
+        /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
+        /// by connecting all the deleted sign's next and previous nodes.
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
+        /// <returns>Ok or Error</returns>
+        [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
+        public async Task<ActionResult> DeleteSignInterpretation([FromRoute] uint editionId,
+            [FromRoute] uint signInterpretationId)
+        {
+            return await _signInterpretationService.DeleteSignInterpretationAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                signInterpretationId); //Not Implemented
+        }
 
         /// <summary>
         /// Updates the commentary of a sign interpretation

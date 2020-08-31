@@ -58,7 +58,7 @@ namespace SQE.DatabaseAccess
 
         Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(UserInfo editionUser, uint signId);
 
-        Task<uint> RemoveSignInterpretationAsync(UserInfo editionUser,
+        Task RemoveSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
 
         Task<uint> RemoveSignAsync(UserInfo editionUser, uint signId);
@@ -473,32 +473,35 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>Id of the sign interpretation</returns>
-        public async Task<uint> RemoveSignInterpretationAsync(UserInfo editionUser,
+        public async Task RemoveSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId)
         {
-            // Remove all attributes
-            await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(editionUser, signInterpretationId);
-            // Remove all commentaries
-            await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(editionUser,
-                signInterpretationId);
-            // Remove all ROIs
-            await _roiRepository.DeleteAllRoisForSignInterpretationAsync(editionUser, signInterpretationId);
-
-            // Take out from path
-            using (var connection = OpenConnection())
+            using (var transactionScope = new TransactionScope())
             {
-                var positionDataRequest = await PositionDataRequestFactory.CreateInstanceAsync(
-                    connection,
-                    StreamType.SignInterpretationStream,
-                    signInterpretationId,
-                    editionUser.EditionId.Value,
-                    true);
-                positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
-                var requests = await positionDataRequest.CreateRequestsAsync();
-                await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
-            }
+                // Remove all attributes
+                await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(editionUser, signInterpretationId);
+                // Remove all commentaries
+                await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(editionUser,
+                    signInterpretationId);
+                // Remove all ROIs
+                await _roiRepository.DeleteAllRoisForSignInterpretationAsync(editionUser, signInterpretationId);
 
-            return signInterpretationId;
+                // Take out from path
+                using (var connection = OpenConnection())
+                {
+                    var positionDataRequest = await PositionDataRequestFactory.CreateInstanceAsync(
+                        connection,
+                        StreamType.SignInterpretationStream,
+                        signInterpretationId,
+                        editionUser.EditionId.Value,
+                        true);
+                    positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
+                    var requests = await positionDataRequest.CreateRequestsAsync();
+                    await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+                }
+
+                transactionScope.Complete();
+            }
         }
 
         /// <summary>

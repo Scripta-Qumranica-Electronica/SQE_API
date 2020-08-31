@@ -169,7 +169,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
-        public async Task CanCreateNewSignInterpretation()
+        public async Task CanCreateAndDeleteSignInterpretation()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))
             {
@@ -236,48 +236,60 @@ namespace SQE.ApiTest
                 Assert.Contains(signs,
                     x => x.signInterpretations.Any(y =>
                         y.IsDeepEqual(newSignInterpretationRequest.HttpResponseObject.signInterpretations.First())));
-                // Set our commentary to null for deep equal test
-                newSignInterpretationRequest.HttpResponseObject.signInterpretations.Last().commentary = null;
-                newSignInterpretationRequest.HttpResponseObject.signInterpretations.Last().attributes.First()
-                    .commentary = null;
-                var interpretationMatchingCreate = signs.Where(x => x.signInterpretations.Any(y =>
-                    y.signInterpretationId == newSignInterpretationRequest.HttpResponseObject.signInterpretations
-                        .Last().signInterpretationId));
-                if (!interpretationMatchingCreate.Any())
-                {
-                    _output.WriteLine("********************************************");
-                    _output.WriteLine("*Failure for CanCreateNewSignInterpretation:");
-                    _output.WriteLine("*Desired new sign interpretation");
-                    _output.WriteLine("********************************************");
-                    _output.WriteLine(JsonSerializer.Serialize(newSignInterpretation, new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
-                    }));
-                    _output.WriteLine("\n********************************************");
-                    _output.WriteLine("*Alterations from newly created sign interpretation:");
-                    _output.WriteLine(
-                        $"*Edition {editionId}, fragment {textFragment.textFragmentId}, line id {line.lineId}.");
-                    _output.WriteLine("********************************************");
-                    _output.WriteLine(JsonSerializer.Serialize(
-                        newSignInterpretationRequest.HttpResponseObject.signInterpretations, new JsonSerializerOptions
-                        {
-                            WriteIndented = true,
-                            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
-                        }));
-                    _output.WriteLine("\n********************************************");
-                    _output.WriteLine("*Get request sign interpretations:");
-                    _output.WriteLine("********************************************");
-                    _output.WriteLine(JsonSerializer.Serialize(signs, new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
-                    }));
 
-                    Assert.NotEmpty(interpretationMatchingCreate);
+                // Check that we have a matching sign interpretation in the stream
+                var newlyCreatedInterpretation = newSignInterpretationRequest.HttpResponseObject.signInterpretations
+                    .Last();
+                var interpretationMatchingCreate = signs.FirstOrDefault(x => x.signInterpretations.Any(y =>
+                    y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId))
+                    .signInterpretations.First(y => y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId);
+                Assert.Equal(newlyCreatedInterpretation.character, interpretationMatchingCreate.character);
+                newlyCreatedInterpretation.nextSignInterpretations.ShouldDeepEqual(interpretationMatchingCreate.nextSignInterpretations);
+                newlyCreatedInterpretation.rois.ShouldDeepEqual(interpretationMatchingCreate.rois);
+                Assert.Equal(newlyCreatedInterpretation.isVariant, interpretationMatchingCreate.isVariant);
+                Assert.Equal(newlyCreatedInterpretation.attributes.Length, interpretationMatchingCreate.attributes.Length);
+                foreach (var attr in newlyCreatedInterpretation.attributes)
+                {
+                    var attrMatch =
+                        interpretationMatchingCreate.attributes.First(x => x.attributeValueId == attr.attributeValueId);
+                    Assert.Equal(attrMatch.creatorId, attr.creatorId);
+                    Assert.Equal(attrMatch.editorId, attr.editorId);
+                    Assert.Equal(attrMatch.attributeValueString, attr.attributeValueString);
+                    Assert.Equal(attrMatch.interpretationAttributeId, attr.interpretationAttributeId);
+                    Assert.Equal(attrMatch.sequence, attr.sequence);
+                    Assert.Equal(attrMatch.value, attr.value);
+                    Assert.Equal(attrMatch.attributeId, attr.attributeId);
                 }
 
-                Assert.NotEmpty(interpretationMatchingCreate);
+                // Act Delete new sign interpretation
+                var deleteRequest = new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(editionId, newlyCreatedInterpretation.signInterpretationId);
+                await deleteRequest.Send(
+                    _client,
+                    StartConnectionAsync,
+                    auth: true,
+                    listenToEdition: true,
+                    listeningFor: deleteRequest.AvailableListeners.DeletedSignInterpretation);
+
+                // Assert
+                Assert.Equal(EditionEntities.signInterpretation, deleteRequest.DeletedSignInterpretation.entity);
+                Assert.Equal(newlyCreatedInterpretation.signInterpretationId, deleteRequest.DeletedSignInterpretation.ids.First());
+
+                // Get the sign stream again
+                alteredTextFragment =
+                    await EditionHelpers.GetEditionTextFragmentWithSigns(editionId, _client,
+                        Request.DefaultUsers.User1);
+                signs = alteredTextFragment.textFragments
+                    .First(x => x.textFragmentId == textFragment.textFragmentId)
+                    .lines.First(x => x.lineId == line.lineId).signs;
+                // Make sure the deleted sign is really gone
+                Assert.Empty(signs.Where(x => x.signInterpretations.Any(y => y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId)));
+                var flattenedSigns = signs.SelectMany(x => x.signInterpretations);
+
+                // Make sure that the sign stream is not broken; the first sign interpretation should
+                // still connect to something.
+                Assert.NotEmpty(flattenedSigns.Where(
+                    x => flattenedSigns.First().nextSignInterpretations.Any(
+                        y => y.nextSignInterpretationId == x.signInterpretationId)));
             }
         }
 

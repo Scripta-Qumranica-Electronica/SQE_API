@@ -32,6 +32,10 @@ namespace SQE.API.Server.Services
             UserInfo user,
             SignInterpretationCreateDTO signInterpretation,
             string clientId = null);
+        Task<NoContentResult> DeleteSignInterpretationAsync(
+            UserInfo user,
+            uint signInterpretationId,
+            string clientId = null);
         Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(
             UserInfo user,
             uint signInterpretationId);
@@ -176,6 +180,23 @@ namespace SQE.API.Server.Services
                 .CreatedSignInterpretation(response);
 
             return response;
+        }
+
+        public async Task<NoContentResult> DeleteSignInterpretationAsync(
+            UserInfo user,
+            uint signInterpretationId,
+            string clientId = null)
+        {
+            await _textRepository.RemoveSignInterpretationAsync(user, signInterpretationId);
+
+            // TODO: Should we also gather and sign interpretations prior to this one in the signstream and
+            // broadcast that information as well? Should that also be returned to the original requester?
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .DeletedSignInterpretation(new DeleteDTO(EditionEntities.signInterpretation, signInterpretationId));
+
+            return new NoContentResult();
         }
 
         public async Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user, uint signInterpretationId)

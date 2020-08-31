@@ -790,6 +790,18 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
+	 * by connecting all the deleted sign's next and previous nodes.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation being deleted
+	 * @returns - Ok or Error
+	 */
+    public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId);
+    }
+
+    /**
 	 * Updates the commentary of a sign interpretation
 	 *
 	 * @param editionId - ID of the edition being changed

@@ -80,6 +80,69 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId
+            : RequestObject<EmptyInput, EmptyOutput>
+        {
+            private readonly uint _editionId;
+            private readonly uint _signInterpretationId;
+
+            /// <summary>
+            ///     Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
+            ///     by connecting all the deleted sign's next and previous nodes.
+            /// </summary>
+            /// <param name="editionId">ID of the edition being changed</param>
+            /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
+            /// <returns>Ok or Error</returns>
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(uint editionId,
+                uint signInterpretationId)
+
+            {
+                _editionId = editionId;
+                _signInterpretationId = signInterpretationId;
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.DeletedSignInterpretation,
+                    (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
+            }
+
+            public Listeners AvailableListeners { get; }
+
+            public DeleteDTO DeletedSignInterpretation { get; private set; }
+
+            private void DeletedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<DeleteDTO>("DeletedSignInterpretation",
+                    receivedData => DeletedSignInterpretation = receivedData);
+            }
+
+            private bool DeletedSignInterpretationIsNull()
+            {
+                return DeletedSignInterpretation == null;
+            }
+
+            protected override string HttpPath()
+            {
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return _editionId;
+                }
+            }
+
+            public class Listeners
+            {
+                public ListenerMethods DeletedSignInterpretation = ListenerMethods.DeletedSignInterpretation;
+            }
+        }
+
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId
             : RequestObject<EmptyInput, EmptyOutput>
         {
@@ -489,21 +552,6 @@ namespace SQE.ApiTest.ApiRequests
             private readonly uint _editionId;
             private readonly CommentaryCreateDTO _payload;
             private readonly uint _signInterpretationId;
-
-            //
-            // /// <summary>
-            // /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-            // /// by connecting all the deleted sign's next and previous nodes.
-            // /// </summary>
-            // /// <param name="editionId">ID of the edition being changed</param>
-            // /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
-            // /// <returns>Ok or Error</returns>
-            // [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
-            // public async Task<ActionResult> DeleteSignInterpretation([FromRoute] uint editionId,
-            //     [FromRoute] uint signInterpretationId)
-            // {
-            //     throw new NotImplementedException(); //Not Implemented
-            // }
 
             /// <summary>
             ///     Updates the commentary of a sign interpretation

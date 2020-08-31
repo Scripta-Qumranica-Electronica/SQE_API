@@ -151,20 +151,27 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
 
-        //
-        // /// <summary>
-        // /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-        // /// by connecting all the deleted sign's next and previous nodes.
-        // /// </summary>
-        // /// <param name="editionId">ID of the edition being changed</param>
-        // /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
-        // /// <returns>Ok or Error</returns>
-        // [HttpDelete("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
-        // public async Task<ActionResult> DeleteSignInterpretation([FromRoute] uint editionId,
-        //     [FromRoute] uint signInterpretationId)
-        // {
-        //     throw new NotImplementedException(); //Not Implemented
-        // }
+        /// <summary>
+        /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
+        /// by connecting all the deleted sign's next and previous nodes.
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
+        /// <returns>Ok or Error</returns>
+        [Authorize]
+        public async Task DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(uint editionId, uint signInterpretationId)
+
+        {
+            try
+            {
+                await _signInterpretationService.DeleteSignInterpretationAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, clientId: Context.ConnectionId); //Not Implemented              
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
 
         /// <summary>
         /// Updates the commentary of a sign interpretation
