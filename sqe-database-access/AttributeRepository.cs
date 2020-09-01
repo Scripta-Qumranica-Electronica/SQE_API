@@ -24,7 +24,7 @@ namespace SQE.DatabaseAccess
             IEnumerable<SignInterpretationAttributeValue> updateAttributeValues,
             IEnumerable<uint> deleteAttributeValues);
         Task DeleteEditionAttributeAsync(UserInfo editionUser, uint attributeId);
-        Task DeleteEditionAttributeValueAsync(UserInfo editionUser, uint attributeValueId);
+        // Task DeleteEditionAttributeValueAsync(UserInfo editionUser, uint attributeValueId);
         Task<List<SignInterpretationAttributeData>> CreateSignInterpretationAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes);
@@ -278,16 +278,16 @@ namespace SQE.DatabaseAccess
             }
         }
 
-        /// <summary>
-        /// Delete the specified attribute value from the edition
-        /// </summary>
-        /// <param name="editionUser">The edition user details object</param>
-        /// <param name="attributeValueId">The unique id of the attribute value to be deleted</param>
-        /// <returns></returns>
-        public async Task DeleteEditionAttributeValueAsync(UserInfo editionUser, uint attributeValueId)
-        {
-
-        }
+        // /// <summary>
+        // /// Delete the specified attribute value from the edition
+        // /// </summary>
+        // /// <param name="editionUser">The edition user details object</param>
+        // /// <param name="attributeValueId">The unique id of the attribute value to be deleted</param>
+        // /// <returns></returns>
+        // public async Task DeleteEditionAttributeValueAsync(UserInfo editionUser, uint attributeValueId)
+        // {
+        //
+        // }
 
         private async Task<uint> _createOrUpdateEditionAttribute(UserInfo editionUser, string attributeName,
             string attributeDescription, uint? attributeId = null)

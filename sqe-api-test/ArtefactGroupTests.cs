@@ -271,7 +271,7 @@ namespace SQE.ApiTest
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
@@ -310,7 +310,7 @@ namespace SQE.ApiTest
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
@@ -376,7 +376,7 @@ namespace SQE.ApiTest
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
@@ -399,7 +399,7 @@ namespace SQE.ApiTest
                 Assert.Contains("already in another group", errorMsg);
                 Assert.Equal(HttpStatusCode.BadRequest, secondHttpMsg.StatusCode);
                 Assert.Equal(artefactGroupName, artefactGroupList.artefactGroups.FirstOrDefault().name);
-                Assert.Equal(1, artefactGroupList.artefactGroups.Count());
+                Assert.Single(artefactGroupList.artefactGroups);
                 createdArtefactGroup.artefacts.Sort();
                 artefactGroupList.artefactGroups.FirstOrDefault().artefacts.Sort();
                 Assert.Equal(createdArtefactGroup.artefacts,
@@ -439,7 +439,7 @@ namespace SQE.ApiTest
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
@@ -463,7 +463,7 @@ namespace SQE.ApiTest
                 updatedAG.artefacts.Sort();
                 Assert.Equal(updatedArtefacts, updatedAG.artefacts);
                 Assert.Equal(createdArtefactGroup.id, updatedAG.id);
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
 
                 await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
             }

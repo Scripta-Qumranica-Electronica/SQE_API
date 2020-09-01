@@ -90,7 +90,6 @@ namespace SQE.ApiTest
             Assert.True(artefact.editionId > 0);
             Assert.True(artefact.id > 0);
             Assert.NotNull(artefact.imagedObjectId);
-            Assert.NotNull(artefact.side);
             Assert.NotNull(artefact.mask);
         }
 

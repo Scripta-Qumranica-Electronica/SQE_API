@@ -151,7 +151,7 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.commentary, httpData.commentary);
                 Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
                 signInterpretation.rois.ShouldDeepEqual(httpData.rois);
-                Assert.True(httpData.attributes.Any(x =>
+                Assert.Contains(httpData.attributes, (x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
@@ -548,7 +548,7 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.commentary, httpData.commentary);
                 Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
                 signInterpretation.rois.ShouldDeepEqual(httpData.rois);
-                Assert.True(httpData.attributes.Any(x =>
+                Assert.Contains(httpData.attributes, (x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
@@ -588,7 +588,7 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.commentary, delListenerData.commentary);
                 Assert.Equal(signInterpretation.isVariant, delListenerData.isVariant);
                 signInterpretation.rois.ShouldDeepEqual(delListenerData.rois);
-                Assert.False(delListenerData.attributes.Any(x =>
+                Assert.DoesNotContain(delListenerData.attributes, (x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
             }
         }
@@ -812,7 +812,7 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.commentary, httpData.commentary);
                 Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
                 signInterpretation.rois.ShouldDeepEqual(httpData.rois);
-                Assert.True(httpData.attributes.Any(x =>
+                Assert.Contains(httpData.attributes, (x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
@@ -861,8 +861,7 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.character, updData.character);
                 Assert.Equal(signInterpretation.commentary, updData.commentary);
                 Assert.Equal(signInterpretation.isVariant, updData.isVariant);
-                Assert.True(updData.attributes
-                    .Any(x => x.attributeValueId == attributeValueId));
+                Assert.Contains(updData.attributes, (x => x.attributeValueId == attributeValueId));
                 var upd1SignInterpretationAttribute = updData.attributes
                     .First(x => x.attributeValueId == attributeValueId);
                 Assert.Equal(seq, upd1SignInterpretationAttribute.sequence);
@@ -904,8 +903,7 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.character, updData.character);
                 Assert.Equal(signInterpretation.commentary, updData.commentary);
                 Assert.Equal(signInterpretation.isVariant, updData.isVariant);
-                Assert.True(updData.attributes
-                    .Any(x => x.attributeValueId == attributeValueId));
+                Assert.Contains(updData.attributes, (x => x.attributeValueId == attributeValueId));
                 var upd2SignInterpretationAttribute = updData.attributes
                     .First(x => x.attributeValueId == attributeValueId);
                 Assert.Equal(seq, upd2SignInterpretationAttribute.sequence);
