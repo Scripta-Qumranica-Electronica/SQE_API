@@ -1,0 +1,34 @@
+name: Test .NET API
+
+on: push
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.301
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Start Docker
+        run: docker-compose -f docker/dev/docker-compose.yml up -d
+      - name: Test
+        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput='/coverage.info' /p:Exclude="[xunit.*]*%2c[*]SQE.API.Server.Helpers.EmailSender%2c[*]SQE.API.Server.Helpers.StartupChecks%2c[*]SQE.API.Server.Program%2c[*]SQE.DatabaseAccess.Helpers.ApiException%2c[*]SQE.DatabaseAccess.Helpers.StandardExceptions%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlDbCommand%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlConnection"
+
+  report:
+
+    needs: build
+
+    steps:
+      - name: Report coverage
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: /coverage.info
