@@ -29,6 +29,9 @@ jobs:
         env:
           COMPOSE_HTTP_TIMEOUT: 320
         run: docker-compose -f docker/dev/docker-compose.yml up -d
+        
+      - name: Wait for Docker
+        run: sleep 15
 
       - name: Test
         env:
