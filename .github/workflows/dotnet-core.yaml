@@ -24,6 +24,7 @@ jobs:
 
   report:
 
+    runs-on: ubuntu-20.04
     needs: build
 
     steps:
