@@ -29,14 +29,15 @@ jobs:
         env:
           COMPOSE_HTTP_TIMEOUT: 320
         run: docker-compose -f docker/dev/docker-compose.yml up -d
-        
-      - name: Wait for Docker
-        run: sleep 15
 
       - name: Test
         env:
           DOTNET_CLI_TELEMETRY_OPTOUT: 1
-        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput='./coverage.info' /p:Exclude="[xunit.*]*%2c[*]SQE.API.Server.Helpers.EmailSender%2c[*]SQE.API.Server.Helpers.StartupChecks%2c[*]SQE.API.Server.Program%2c[*]SQE.DatabaseAccess.Helpers.ApiException%2c[*]SQE.DatabaseAccess.Helpers.StandardExceptions%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlDbCommand%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlConnection" -l "console;verbosity=diagnostic"
+        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput='./coverage.info' /p:Exclude="[xunit.*]*%2c[*]SQE.API.Server.Helpers.EmailSender%2c[*]SQE.API.Server.Helpers.StartupChecks%2c[*]SQE.API.Server.Program%2c[*]SQE.DatabaseAccess.Helpers.ApiException%2c[*]SQE.DatabaseAccess.Helpers.StandardExceptions%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlDbCommand%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlConnection" -l "console;verbosity=diagnostic" --blame
+        
+      - name: Debug failure
+        if: failure()
+        run: find ./sqe-api-test/TestResults -name 'Sequence*.xml' | xargs cat
 
       - name: Report coverage
         if: success()
