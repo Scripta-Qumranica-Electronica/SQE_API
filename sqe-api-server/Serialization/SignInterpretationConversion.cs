@@ -109,7 +109,8 @@ namespace SQE.API.Server.Serialization
                 signInterpretationId = si.SignInterpretationId ?? 0,
                 attributes = si.Attributes.Select(x => x.ToDTO(si.Commentaries)).ToArray(),
                 rois = si.SignInterpretationRois.Select(x => x.ToDTO()).ToArray(),
-                nextSignInterpretations = si.NextSignInterpretations.Select(x => x.ToDTO()).ToArray(),
+                nextSignInterpretations = si.NextSignInterpretations.Where(x => x != null)
+                    .Select(x => x.ToDTO()).ToArray(),
                 commentary = si.Commentaries.Where(x => !x.AttributeId.HasValue).Select(x => x.ToDTO()).FirstOrDefault(),
                 isVariant = si.IsVariant,
             };

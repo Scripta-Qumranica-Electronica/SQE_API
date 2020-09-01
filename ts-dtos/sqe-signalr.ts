@@ -802,6 +802,30 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Links two sign interpretations in the edition's sign stream
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - The sign interpretation to be linked to the nextSignInterpretationId
+	 * @param nextSignInterpretationId - The sign interpretation to become the new next sign interpretation
+	 * @returns - The updated sign interpretation
+	 */
+    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationIdLinkToNextSignInterpretationId(editionId: number, signInterpretationId: number, nextSignInterpretationId: number): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdLinkToNextSignInterpretationId', editionId, signInterpretationId, nextSignInterpretationId);
+    }
+
+    /**
+	 * Links two sign interpretations in the edition's sign stream
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - The sign interpretation to be unlinked from the nextSignInterpretationId
+	 * @param nextSignInterpretationId - The sign interpretation to removed as next sign interpretation
+	 * @returns - The updated sign interpretation
+	 */
+    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationIdUnlinkFromNextSignInterpretationId(editionId: number, signInterpretationId: number, nextSignInterpretationId: number): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdUnlinkFromNextSignInterpretationId', editionId, signInterpretationId, nextSignInterpretationId);
+    }
+
+    /**
 	 * Updates the commentary of a sign interpretation
 	 *
 	 * @param editionId - ID of the edition being changed

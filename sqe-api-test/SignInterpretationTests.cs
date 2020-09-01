@@ -294,6 +294,106 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        public async Task CanLinkSignInterpretations()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var editionId = await editionCreator.CreateEdition();
+                var signStream =
+                    (await EditionHelpers.GetEditionTextFragmentWithSigns(editionId, _client,
+                        Request.DefaultUsers.User1)).textFragments
+                    .Where(x => x.lines.Any(y => y.signs.Count > 2))
+                    .SelectMany(x => x.lines)
+                    .SelectMany(x => x.signs)
+                    .SelectMany(x => x.signInterpretations);
+                var firstSignInterpretation = signStream.First();
+                var lastSignInterpretation = signStream.Last();
+                Assert.Empty(firstSignInterpretation.nextSignInterpretations.Where(x => x.nextSignInterpretationId == lastSignInterpretation.signInterpretationId));
+
+                // Act
+                var linkRequest = new Post.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId(
+                    editionId,
+                    firstSignInterpretation.signInterpretationId,
+                    lastSignInterpretation.signInterpretationId);
+                await linkRequest.Send(
+                    _client,
+                    StartConnectionAsync,
+                    auth: true,
+                    requestRealtime: true,
+                    listeningFor: linkRequest.AvailableListeners.UpdatedSignInterpretation
+                );
+
+                // Assert
+                linkRequest.HttpResponseObject.ShouldDeepEqual(linkRequest.UpdatedSignInterpretation);
+                Assert.Contains(linkRequest.HttpResponseObject.nextSignInterpretations,
+                    x => x.nextSignInterpretationId == lastSignInterpretation.signInterpretationId);
+
+                // get the sign stream again
+                var newSignStream =
+                    (await EditionHelpers.GetEditionTextFragmentWithSigns(editionId, _client,
+                        Request.DefaultUsers.User1)).textFragments
+                    .Where(x => x.lines.Any(y => y.signs.Count > 2))
+                    .SelectMany(x => x.lines)
+                    .SelectMany(x => x.signs)
+                    .SelectMany(x => x.signInterpretations);
+
+                Assert.Contains(newSignStream.First().nextSignInterpretations,
+                    x => x.nextSignInterpretationId == lastSignInterpretation.signInterpretationId);
+            }
+        }
+
+        [Fact]
+        public async Task CanUnlinkSignInterpretations()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var editionId = await editionCreator.CreateEdition();
+                var signStream =
+                    (await EditionHelpers.GetEditionTextFragmentWithSigns(editionId, _client,
+                        Request.DefaultUsers.User1)).textFragments
+                    .Where(x => x.lines.Any(y => y.signs.Count > 2))
+                    .SelectMany(x => x.lines)
+                    .SelectMany(x => x.signs)
+                    .SelectMany(x => x.signInterpretations);
+                var firstSignInterpretation = signStream.First();
+                var nextSignInterpretation = signStream
+                    .First(x => firstSignInterpretation.nextSignInterpretations
+                        .Any(y => y.nextSignInterpretationId == x.signInterpretationId));
+                // Act
+                var linkRequest = new Post.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId(
+                    editionId,
+                    firstSignInterpretation.signInterpretationId,
+                    nextSignInterpretation.signInterpretationId);
+                await linkRequest.Send(
+                    _client,
+                    StartConnectionAsync,
+                    auth: true,
+                    requestRealtime: true,
+                    listeningFor: linkRequest.AvailableListeners.UpdatedSignInterpretation
+                );
+
+                // Assert
+                linkRequest.HttpResponseObject.ShouldDeepEqual(linkRequest.UpdatedSignInterpretation);
+                Assert.DoesNotContain(linkRequest.HttpResponseObject.nextSignInterpretations,
+                    x => x.nextSignInterpretationId == nextSignInterpretation.signInterpretationId);
+
+                // get the sign stream again
+                var newSignStream =
+                    (await EditionHelpers.GetEditionTextFragmentWithSigns(editionId, _client,
+                        Request.DefaultUsers.User1)).textFragments
+                    .Where(x => x.lines.Any(y => y.signs.Count > 2))
+                    .SelectMany(x => x.lines)
+                    .SelectMany(x => x.signs)
+                    .SelectMany(x => x.signInterpretations);
+
+                Assert.DoesNotContain(newSignStream.First().nextSignInterpretations,
+                    x => x.nextSignInterpretationId == nextSignInterpretation.signInterpretationId);
+            }
+        }
+
+        [Fact]
         public async Task CanCreateSignInterpretationCommentary()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))

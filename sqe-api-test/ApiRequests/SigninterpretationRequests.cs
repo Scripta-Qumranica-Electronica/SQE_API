@@ -412,6 +412,140 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId
+            : RequestObject<EmptyInput, SignInterpretationDTO>
+        {
+            private readonly uint _editionId;
+            private readonly uint _nextSignInterpretationId;
+            private readonly uint _signInterpretationId;
+
+            /// <summary>
+            ///     Links two sign interpretations in the edition's sign stream
+            /// </summary>
+            /// <param name="editionId">ID of the edition being changed</param>
+            /// <param name="signInterpretationId">The sign interpretation to be linked to the nextSignInterpretationId</param>
+            /// <param name="nextSignInterpretationId">The sign interpretation to become the new next sign interpretation</param>
+            /// <returns>The updated sign interpretation</returns>
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId(
+                uint editionId, uint signInterpretationId, uint nextSignInterpretationId)
+
+            {
+                _editionId = editionId;
+                _signInterpretationId = signInterpretationId;
+                _nextSignInterpretationId = nextSignInterpretationId;
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
+                    (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+            }
+
+            public Listeners AvailableListeners { get; }
+
+            public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
+
+            private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation",
+                    receivedData => UpdatedSignInterpretation = receivedData);
+            }
+
+            private bool UpdatedSignInterpretationIsNull()
+            {
+                return UpdatedSignInterpretation == null;
+            }
+
+            protected override string HttpPath()
+            {
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}")
+                    .Replace("/next-sign-interpretation-id", $"/{_nextSignInterpretationId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId,
+                    _nextSignInterpretationId);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return _editionId;
+                }
+            }
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
+            }
+        }
+
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId
+            : RequestObject<EmptyInput, SignInterpretationDTO>
+        {
+            private readonly uint _editionId;
+            private readonly uint _nextSignInterpretationId;
+            private readonly uint _signInterpretationId;
+
+            /// <summary>
+            ///     Links two sign interpretations in the edition's sign stream
+            /// </summary>
+            /// <param name="editionId">ID of the edition being changed</param>
+            /// <param name="signInterpretationId">The sign interpretation to be unlinked from the nextSignInterpretationId</param>
+            /// <param name="nextSignInterpretationId">The sign interpretation to removed as next sign interpretation</param>
+            /// <returns>The updated sign interpretation</returns>
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId(
+                uint editionId, uint signInterpretationId, uint nextSignInterpretationId)
+
+            {
+                _editionId = editionId;
+                _signInterpretationId = signInterpretationId;
+                _nextSignInterpretationId = nextSignInterpretationId;
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
+                    (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+            }
+
+            public Listeners AvailableListeners { get; }
+
+            public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
+
+            private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation",
+                    receivedData => UpdatedSignInterpretation = receivedData);
+            }
+
+            private bool UpdatedSignInterpretationIsNull()
+            {
+                return UpdatedSignInterpretation == null;
+            }
+
+            protected override string HttpPath()
+            {
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}")
+                    .Replace("/next-sign-interpretation-id", $"/{_nextSignInterpretationId.ToString()}");
+            }
+
+            public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+            {
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId,
+                    _nextSignInterpretationId);
+            }
+
+            public override uint? GetEditionId()
+            {
+                {
+                    return _editionId;
+                }
+            }
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
+            }
+        }
+
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes
             : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO>
         {

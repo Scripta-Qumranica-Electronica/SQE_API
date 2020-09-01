@@ -128,6 +128,42 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
+        /// Links two sign interpretations in the edition's sign stream 
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">The sign interpretation to be linked to the nextSignInterpretationId</param>
+        /// <param name="nextSignInterpretationId">The sign interpretation to become the new next sign interpretation</param>
+        /// <returns>The updated sign interpretation</returns>
+        [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/link-to/{nextSignInterpretationId}")]
+        public async Task<ActionResult<SignInterpretationDTO>> PostLinkSignInterpretations([FromRoute] uint editionId,
+            [FromRoute] uint signInterpretationId,
+            [FromRoute] uint nextSignInterpretationId)
+        {
+            return await _signInterpretationService.LinkSignInterpretationsAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                signInterpretationId,
+                nextSignInterpretationId);
+        }
+
+        /// <summary>
+        /// Links two sign interpretations in the edition's sign stream 
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">The sign interpretation to be unlinked from the nextSignInterpretationId</param>
+        /// <param name="nextSignInterpretationId">The sign interpretation to removed as next sign interpretation</param>
+        /// <returns>The updated sign interpretation</returns>
+        [HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}/unlink-from/{nextSignInterpretationId}")]
+        public async Task<ActionResult<SignInterpretationDTO>> PostUnlinkSignInterpretations([FromRoute] uint editionId,
+            [FromRoute] uint signInterpretationId,
+            [FromRoute] uint nextSignInterpretationId)
+        {
+            return await _signInterpretationService.UnlinkSignInterpretationsAsync(
+                await _userService.GetCurrentUserObjectAsync(editionId, true),
+                signInterpretationId,
+                nextSignInterpretationId);
+        }
+
+        /// <summary>
         /// Updates the commentary of a sign interpretation
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>

@@ -135,6 +135,7 @@ export interface SignInterpretationCreateDTO extends SignInterpretationBaseDTO {
     attributes: Array<InterpretationAttributeCreateDTO>;
     rois: Array<SetInterpretationRoiDTO>;
     commentary?: CommentaryCreateDTO;
+    breakPreviousAndNextSignInterpretations: boolean;
 }
 
 export interface SignInterpretationDTO extends SignInterpretationBaseDTO {

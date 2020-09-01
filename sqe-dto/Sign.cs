@@ -29,6 +29,7 @@ namespace SQE.API.DTO
         [Required] public InterpretationAttributeCreateDTO[] attributes { get; set; }
         [Required] public SetInterpretationRoiDTO[] rois { get; set; }
         public CommentaryCreateDTO commentary { get; set; }
+        public bool breakPreviousAndNextSignInterpretations { get; set; } = false;
     }
 
     public class SignInterpretationDTO : SignInterpretationBaseDTO

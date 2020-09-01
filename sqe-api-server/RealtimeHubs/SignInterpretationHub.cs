@@ -174,6 +174,50 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
+        /// Links two sign interpretations in the edition's sign stream 
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">The sign interpretation to be linked to the nextSignInterpretationId</param>
+        /// <param name="nextSignInterpretationId">The sign interpretation to become the new next sign interpretation</param>
+        /// <returns>The updated sign interpretation</returns>
+        [Authorize]
+        public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdLinkToNextSignInterpretationId(uint editionId, uint signInterpretationId, uint nextSignInterpretationId)
+
+        {
+            try
+            {
+                return await _signInterpretationService.LinkSignInterpretationsAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, nextSignInterpretationId, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Links two sign interpretations in the edition's sign stream 
+        /// </summary>
+        /// <param name="editionId">ID of the edition being changed</param>
+        /// <param name="signInterpretationId">The sign interpretation to be unlinked from the nextSignInterpretationId</param>
+        /// <param name="nextSignInterpretationId">The sign interpretation to removed as next sign interpretation</param>
+        /// <returns>The updated sign interpretation</returns>
+        [Authorize]
+        public async Task<SignInterpretationDTO> PostV1EditionsEditionIdSignInterpretationsSignInterpretationIdUnlinkFromNextSignInterpretationId(uint editionId, uint signInterpretationId, uint nextSignInterpretationId)
+
+        {
+            try
+            {
+                return await _signInterpretationService.UnlinkSignInterpretationsAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), signInterpretationId, nextSignInterpretationId, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
         /// Updates the commentary of a sign interpretation
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>

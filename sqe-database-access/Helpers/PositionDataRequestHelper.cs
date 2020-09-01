@@ -98,6 +98,31 @@ namespace SQE.DatabaseAccess.Helpers
         /// </summary>
         /// <param name="dbConnection">IDbConnection for making queries to the database</param>
         /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="addExistingAnchors">
+        ///     Boolean whether or not to automatically add the anchors before and after
+        ///     the itemIds to the factory
+        /// </param>
+        /// <returns></returns>
+        public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
+            IDbConnection dbConnection,
+            StreamType streamType,
+            uint editionId,
+            bool addExistingAnchors = false)
+        {
+            var newObject =
+                new PositionDataRequestHelper(dbConnection, streamType, new List<uint>(), editionId);
+            if (addExistingAnchors) await newObject.AddExistingAnchorsAsync();
+            return newObject;
+        }
+
+        /// <summary>
+        ///     Create a new PositionDataRequestHelper object with several items.
+        ///     We use an async factory method since we may need to await the
+        ///     response from AddExistingAnchors().
+        /// </summary>
+        /// <param name="dbConnection">IDbConnection for making queries to the database</param>
+        /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
         /// <param name="itemIds">A list of item ids which should form a path</param>
         /// <param name="editionId">Id of the edition</param>
         /// <param name="addExistingAnchors">

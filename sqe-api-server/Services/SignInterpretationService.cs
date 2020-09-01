@@ -36,6 +36,16 @@ namespace SQE.API.Server.Services
             UserInfo user,
             uint signInterpretationId,
             string clientId = null);
+        Task<SignInterpretationDTO> LinkSignInterpretationsAsync(
+            UserInfo user,
+            uint firstSignInterpretationId,
+            uint secondSignInterpretationId,
+            string clientId = null);
+        Task<SignInterpretationDTO> UnlinkSignInterpretationsAsync(
+            UserInfo user,
+            uint firstSignInterpretationId,
+            uint secondSignInterpretationId,
+            string clientId = null);
         Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(
             UserInfo user,
             uint signInterpretationId);
@@ -163,7 +173,8 @@ namespace SQE.API.Server.Services
                 signInterpretation.lineId,
                 signInterpretation.ToSignData(),
                 signInterpretation.previousSignInterpretationIds.ToList(),
-                signInterpretation.nextSignInterpretationIds.ToList());
+                signInterpretation.nextSignInterpretationIds.ToList(),
+                signInterpretation.breakPreviousAndNextSignInterpretations);
 
             // Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
             var alteredSignInterpretations = await Task.WhenAll( // Await all async operations
@@ -197,6 +208,41 @@ namespace SQE.API.Server.Services
                 .DeletedSignInterpretation(new DeleteDTO(EditionEntities.signInterpretation, signInterpretationId));
 
             return new NoContentResult();
+        }
+
+        public async Task<SignInterpretationDTO> LinkSignInterpretationsAsync(
+            UserInfo user,
+            uint firstSignInterpretationId,
+            uint secondSignInterpretationId,
+            string clientId = null)
+        {
+            await _textRepository.LinkSignInterpretationsAsync(user, firstSignInterpretationId,
+                secondSignInterpretationId);
+            var changedSignInterpretation = await GetEditionSignInterpretationAsync(user, firstSignInterpretationId);
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .UpdatedSignInterpretation(changedSignInterpretation);
+
+            return changedSignInterpretation;
+        }
+
+        public async Task<SignInterpretationDTO> UnlinkSignInterpretationsAsync(
+            UserInfo user,
+            uint firstSignInterpretationId,
+            uint secondSignInterpretationId,
+            string clientId = null)
+        {
+            await _textRepository.UnlinkSignInterpretationsAsync(user, firstSignInterpretationId,
+                secondSignInterpretationId);
+            var changedSignInterpretation = await GetEditionSignInterpretationAsync(user, firstSignInterpretationId);
+
+            // Broadcast the changes
+            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+                .UpdatedSignInterpretation(changedSignInterpretation);
+
+            return changedSignInterpretation;
+
         }
 
         public async Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user, uint signInterpretationId)
