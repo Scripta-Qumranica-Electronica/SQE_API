@@ -21,14 +21,8 @@ jobs:
         run: docker-compose -f docker/dev/docker-compose.yml up -d
       - name: Test
         run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput='/coverage.info' /p:Exclude="[xunit.*]*%2c[*]SQE.API.Server.Helpers.EmailSender%2c[*]SQE.API.Server.Helpers.StartupChecks%2c[*]SQE.API.Server.Program%2c[*]SQE.DatabaseAccess.Helpers.ApiException%2c[*]SQE.DatabaseAccess.Helpers.StandardExceptions%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlDbCommand%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlConnection"
-
-  report:
-
-    runs-on: ubuntu-20.04
-    needs: build
-
-    steps:
       - name: Report coverage
+        if: success()
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
