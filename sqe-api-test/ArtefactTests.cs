@@ -37,7 +37,7 @@ namespace SQE.ApiTest
         /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
         /// <param name="jwt">A JWT can be added the request to access private editions.</param>
         /// <returns></returns>
-        private async Task<ArtefactListDTO> GetEditionArtefacts(uint? editionId = null)
+        public async Task<ArtefactListDTO> GetEditionArtefacts(uint? editionId = null)
         {
             editionId ??= EditionHelpers.GetEditionId();
 
@@ -962,6 +962,24 @@ namespace SQE.ApiTest
 
                 // Assert (update name)
                 Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
+            }
+        }
+
+        [Fact]
+        public async Task CanGetEditionAretefactRois()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+                var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+
+                // Act
+                var getArtefactRois = new Get.V1_Editions_EditionId_Artefacts_ArtefactId_Rois(newEdition, artefactId);
+                await getArtefactRois.Send(_client, StartConnectionAsync, auth: true);
+
+                getArtefactRois.HttpResponseObject.ShouldDeepEqual(getArtefactRois.SignalrResponseObject);
+                getArtefactRois.HttpResponseObject.rois.ShouldDeepEqual(rois);
             }
         }
     }

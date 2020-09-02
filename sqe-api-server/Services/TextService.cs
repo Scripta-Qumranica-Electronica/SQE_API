@@ -251,7 +251,7 @@ namespace SQE.API.Server.Services
                                                                                 b.SignInterpretationRoiId
                                                                                     .GetValueOrDefault(),
                                                                             signInterpretationId =
-                                                                                b.SignInterpretationId,
+                                                                                b.SignInterpretationId.GetValueOrDefault(),
                                                                             editorId = b.SignInterpretationRoiEditorId
                                                                                 .GetValueOrDefault(),
                                                                             creatorId = b.SignInterpretationRoiCreatorId

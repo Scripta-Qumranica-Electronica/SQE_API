@@ -25,7 +25,7 @@ namespace SQE.ApiTest
         {
         }
 
-        private int _testCount;
+        private static int _testCount;
 
         /// <summary>
         ///     Get a listing of all the artefact groups in an edition
@@ -212,7 +212,9 @@ namespace SQE.ApiTest
         {
             // Arrange
             user ??= Request.DefaultUsers.User1;
-            var realtime = user2 != null || _testCount % 1 == 0;
+
+            // Do every other request in realtime
+            var realtime = _testCount % 2 == 1;
             _testCount += 1;
 
             // Act
@@ -220,13 +222,14 @@ namespace SQE.ApiTest
                 new Delete.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
             await deleteApiRequest.Send(
                 realtime ? null : _client,
-                realtime ? StartConnectionAsync : (Func<string, Task<HubConnection>>)null,
+                StartConnectionAsync,
                 true,
                 user,
-                user2,
+                user2 ?? user,
                 shouldSucceed,
                 false,
-                listenToEdition: user2 != null
+                requestRealtime: realtime,
+                listeningFor: deleteApiRequest.AvailableListeners.DeletedArtefactGroup
             );
             var (httpMessage, httpBody, signalr, listener) = (deleteApiRequest.HttpResponseMessage,
                 deleteApiRequest.HttpResponseObject,
@@ -237,6 +240,8 @@ namespace SQE.ApiTest
             {
                 Assert.Equal(EditionEntities.artefactGroup, realtime ? signalr.entity : httpBody.entity);
                 Assert.Equal(artefactGroupId, realtime ? signalr.ids.FirstOrDefault() : httpBody.ids.FirstOrDefault());
+                Assert.Equal(EditionEntities.artefactGroup, deleteApiRequest.DeletedArtefactGroup.entity);
+                Assert.Contains(deleteApiRequest.DeletedArtefactGroup.ids, x => x == artefactGroupId);
             }
 
             return (httpMessage, httpBody, signalr, listener);

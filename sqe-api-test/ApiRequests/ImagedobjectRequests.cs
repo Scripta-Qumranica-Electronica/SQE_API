@@ -148,30 +148,30 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_ImagedObjects_Institutions_Institution
+        public class V1_ImagedObjects_Institutions_InstitutionName
             : RequestObject<EmptyInput, InstitutionalImageListDTO>
         {
-            private readonly string _institution;
+            private readonly string _institutionName;
 
 
             /// <summary>
             ///     Provides a list of all institutional image providers.
             /// </summary>
-            public V1_ImagedObjects_Institutions_Institution(string institution)
+            public V1_ImagedObjects_Institutions_InstitutionName(string institutionName)
 
             {
-                _institution = institution;
+                _institutionName = institutionName;
             }
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/institution", $"/{_institution}");
+                return RequestPath.Replace("/institution-name", $"/{_institutionName}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _institution);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _institutionName);
             }
         }
 

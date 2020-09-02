@@ -62,14 +62,14 @@ namespace SQE.API.Server.Serialization
         {
             return new InterpretationRoiDTO()
             {
-                artefactId = sr.ArtefactId ?? 0,
-                creatorId = sr.SignInterpretationRoiCreatorId ?? 0,
-                editorId = sr.SignInterpretationRoiEditorId ?? 0,
-                exceptional = sr.Exceptional ?? false,
-                interpretationRoiId = sr.SignInterpretationRoiId ?? 0,
+                artefactId = sr.ArtefactId.GetValueOrDefault(),
+                creatorId = sr.SignInterpretationRoiCreatorId.GetValueOrDefault(),
+                editorId = sr.SignInterpretationRoiEditorId.GetValueOrDefault(),
+                exceptional = sr.Exceptional.GetValueOrDefault(),
+                interpretationRoiId = sr.SignInterpretationRoiId.GetValueOrDefault(),
                 shape = sr.Shape,
-                signInterpretationId = sr.SignInterpretationId,
-                stanceRotation = sr.StanceRotation ?? 0,
+                signInterpretationId = sr.SignInterpretationId.GetValueOrDefault(),
+                stanceRotation = sr.StanceRotation.GetValueOrDefault(),
                 translate = sr.TranslateX.HasValue && sr.TranslateY.HasValue
                     ? new TranslateDTO()
                     {
@@ -77,7 +77,7 @@ namespace SQE.API.Server.Serialization
                         y = sr.TranslateY.Value,
                     }
                     : null,
-                valuesSet = sr.ValuesSet ?? false,
+                valuesSet = sr.ValuesSet.GetValueOrDefault(),
             };
         }
 

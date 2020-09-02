@@ -1,5 +1,8 @@
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DeepEqual.Syntax;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 
@@ -48,6 +51,15 @@ namespace SQE.ApiTest.Helpers
                 user
             );
             apiRequest.HttpResponseMessage.EnsureSuccessStatusCode();
+        }
+
+        public static async Task<InterpretationRoiDTOList> GetArtefactRois(uint editionId, uint artefactId, HttpClient client,
+            Func<string, Task<HubConnection>> signalr, bool auth = false)
+        {
+            var request = new Get.V1_Editions_EditionId_Artefacts_ArtefactId_Rois(editionId, artefactId);
+            await request.Send(client, signalr, auth: auth);
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            return request.HttpResponseObject;
         }
     }
 }

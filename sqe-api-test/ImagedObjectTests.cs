@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -265,6 +266,51 @@ namespace SQE.ApiTest
                         }
 
             Assert.True(foundArtefactWithMask);
+        }
+
+        [Fact]
+        public async Task CanGetInstitutionalImages()
+        {
+            await GetInstitutionImagedObjectsAsync("IAA", _client, StartConnectionAsync);
+        }
+
+        [Fact]
+        public async Task CanGetImagedObjectTextFragment()
+        {
+            // Note that "IAA-1039-1" had text fragment matches at the time this test was written.
+            // Make sure to check the database for errors if this test fails.
+            var textFragmentMatches =
+                    await GetImagedObjectTextFragmentMatchesAsync("IAA-1039-1", _client, StartConnectionAsync);
+
+            Assert.NotNull(textFragmentMatches);
+            Assert.NotEmpty(textFragmentMatches.matches);
+            Assert.NotNull(textFragmentMatches.matches.First().manuscriptName);
+            Assert.NotNull(textFragmentMatches.matches.First().textFragmentName);
+            Assert.NotEqual<uint>(0, textFragmentMatches.matches.First().editionId);
+            Assert.NotEqual<uint>(0, textFragmentMatches.matches.First().textFragmentId);
+        }
+
+        public async static Task<InstitutionalImageListDTO> GetInstitutionImagedObjectsAsync(string institution, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
+        {
+            // Act
+            var request = new Get.V1_ImagedObjects_Institutions_InstitutionName(institution);
+            await request.Send(client, signalr);
+
+            // Assert
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            Assert.NotEmpty(request.HttpResponseObject.institutionalImages);
+            return request.HttpResponseObject;
+        }
+
+        public async static Task<ImagedObjectTextFragmentMatchListDTO> GetImagedObjectTextFragmentMatchesAsync(string imagedObjectId, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
+        {
+            // Act
+            var request = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(imagedObjectId);
+            await request.Send(client, signalr);
+
+            // Assert
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            return request.HttpResponseObject;
         }
     }
 }

@@ -143,17 +143,17 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class V1_Catalogue_Manuscript_ManuscriptId_ImagedObjectTextFragmentMatches
+        public class V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches
             : RequestObject<EmptyInput, CatalogueMatchListDTO>
         {
             private readonly uint _manuscriptId;
 
 
             /// <summary>
-            ///     Get a listing of all corresponding imaged objects and transcribed text fragment in a specified edition
+            ///     Get a listing of all corresponding imaged objects and transcribed text fragment in a specified manuscript
             /// </summary>
-            /// <param name="manuscriptId">Unique Id of the edition to search for imaged objects to text fragment matches</param>
-            public V1_Catalogue_Manuscript_ManuscriptId_ImagedObjectTextFragmentMatches(uint manuscriptId)
+            /// <param name="manuscriptId">Unique Id of the manuscript to search for imaged objects to text fragment matches</param>
+            public V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches(uint manuscriptId)
 
             {
                 _manuscriptId = manuscriptId;

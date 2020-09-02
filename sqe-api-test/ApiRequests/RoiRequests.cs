@@ -25,7 +25,6 @@ namespace SQE.ApiTest.ApiRequests
             private readonly uint _editionId;
             private readonly uint _roiId;
 
-
             /// <summary>
             ///     Deletes a sign ROI from the given edition of a scroll
             /// </summary>
@@ -36,8 +35,23 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _roiId = roiId;
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.DeletedRoi, (DeletedRoiIsNull, DeletedRoiListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
+            public DeleteDTO DeletedRoi { get; private set; }
+
+            private void DeletedRoiListener(HubConnection signalrListener)
+            {
+                signalrListener.On<DeleteDTO>("DeletedRoi", receivedData => DeletedRoi = receivedData);
+            }
+
+            private bool DeletedRoiIsNull()
+            {
+                return DeletedRoi == null;
+            }
 
             protected override string HttpPath()
             {
@@ -55,6 +69,11 @@ namespace SQE.ApiTest.ApiRequests
                 {
                     return _editionId;
                 }
+            }
+
+            public class Listeners
+            {
+                public ListenerMethods DeletedRoi = ListenerMethods.DeletedRoi;
             }
         }
     }
@@ -109,7 +128,6 @@ namespace SQE.ApiTest.ApiRequests
             private readonly uint _editionId;
             private readonly SetInterpretationRoiDTO _payload;
 
-
             /// <summary>
             ///     Creates new sign ROI in the given edition of a scroll
             /// </summary>
@@ -120,8 +138,24 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _payload = payload;
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.CreatedRoi, (CreatedRoiIsNull, CreatedRoiListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
+            public InterpretationRoiDTO CreatedRoi { get; private set; }
+
+            private void CreatedRoiListener(HubConnection signalrListener)
+            {
+                signalrListener.On<InterpretationRoiDTO>("CreatedRoi",
+                    receivedData => CreatedRoi = receivedData);
+            }
+
+            private bool CreatedRoiIsNull()
+            {
+                return CreatedRoi == null;
+            }
 
             protected override string HttpPath()
             {
@@ -138,6 +172,11 @@ namespace SQE.ApiTest.ApiRequests
                 {
                     return _editionId;
                 }
+            }
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedRoi = ListenerMethods.CreatedRoi;
             }
         }
 
@@ -267,7 +306,6 @@ namespace SQE.ApiTest.ApiRequests
             private readonly SetInterpretationRoiDTO _payload;
             private readonly uint _roiId;
 
-
             /// <summary>
             ///     Update an existing sign ROI in the given edition of a scroll
             /// </summary>
@@ -280,8 +318,24 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _roiId = roiId;
                 _payload = payload;
+                AvailableListeners = new Listeners();
+                _listenerDict.Add(ListenerMethods.UpdatedRoi, (UpdatedRoiIsNull, UpdatedRoiListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
+            public UpdatedInterpretationRoiDTO UpdatedRoi { get; private set; }
+
+            private void UpdatedRoiListener(HubConnection signalrListener)
+            {
+                signalrListener.On<UpdatedInterpretationRoiDTO>("UpdatedRoi",
+                    receivedData => UpdatedRoi = receivedData);
+            }
+
+            private bool UpdatedRoiIsNull()
+            {
+                return UpdatedRoi == null;
+            }
 
             protected override string HttpPath()
             {
@@ -299,6 +353,11 @@ namespace SQE.ApiTest.ApiRequests
                 {
                     return _editionId;
                 }
+            }
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedRoi = ListenerMethods.UpdatedRoi;
             }
         }
 

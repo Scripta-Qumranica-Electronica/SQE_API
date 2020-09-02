@@ -56,11 +56,11 @@ namespace SQE.API.Server.HttpControllers
         }
 
         /// <summary>
-        ///     Get a listing of all corresponding imaged objects and transcribed text fragment in a specified edition
+        ///     Get a listing of all corresponding imaged objects and transcribed text fragment in a specified manuscript
         /// </summary>
-        /// <param name="manuscriptId">Unique Id of the edition to search for imaged objects to text fragment matches</param>
+        /// <param name="manuscriptId">Unique Id of the manuscript to search for imaged objects to text fragment matches</param>
         [AllowAnonymous]
-        [HttpGet("v1/catalogue/manuscript/{manuscriptId}/imaged-object-text-fragment-matches")]
+        [HttpGet("v1/catalogue/manuscripts/{manuscriptId}/imaged-object-text-fragment-matches")]
         public async Task<ActionResult<CatalogueMatchListDTO>> GetImagedObjectsAndTextFragmentsOfManuscript(
             [FromRoute] uint manuscriptId)
         {

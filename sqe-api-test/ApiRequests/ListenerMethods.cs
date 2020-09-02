@@ -19,15 +19,18 @@ namespace SQE.ApiTest.ApiRequests
         CreatedEdition,
         UpdatedEdition,
         DeletedEdition,
+        CreatedRoi,
         CreatedRoisBatch,
         EditedRoisBatch,
+        UpdatedRoi,
         UpdatedRoisBatch,
+        DeletedRoi,
         CreatedAttribute,
         CreatedSignInterpretation,
         UpdatedSignInterpretation,
         DeletedAttribute,
         DeletedSignInterpretation,
         UpdatedAttribute,
-        CreatedTextFragment,
+        CreatedTextFragment
     }
 }

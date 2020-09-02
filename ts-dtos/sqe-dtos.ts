@@ -559,7 +559,7 @@ export interface WktPolygonDTO {
 
 export interface SetInterpretationRoiDTO {
     artefactId: number;
-    signInterpretationId?: number;
+    signInterpretationId: number;
     shape: string;
     translate: TranslateDTO;
     stanceRotation: number;

@@ -639,8 +639,8 @@ export class SignalRUtilities {
 	 *
 	 *
 	 */
-    public async getV1ImagedObjectsInstitutionsInstitution(institution: string): Promise<InstitutionalImageListDTO> {
-        return await this._connection.invoke('GetV1ImagedObjectsInstitutionsInstitution', institution);
+    public async getV1ImagedObjectsInstitutionsInstitutionName(institutionName: string): Promise<InstitutionalImageListDTO> {
+        return await this._connection.invoke('GetV1ImagedObjectsInstitutionsInstitutionName', institutionName);
     }
 
     /**
@@ -684,13 +684,13 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Get a listing of all corresponding imaged objects and transcribed text fragment in a specified edition
+	 * Get a listing of all corresponding imaged objects and transcribed text fragment in a specified manuscript
 	 *
-	 * @param manuscriptId - Unique Id of the edition to search for imaged objects to text fragment matches
+	 * @param manuscriptId - Unique Id of the manuscript to search for imaged objects to text fragment matches
 	 *
 	 */
-    public async getV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches(manuscriptId: number): Promise<CatalogueMatchListDTO> {
-        return await this._connection.invoke('GetV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches', manuscriptId);
+    public async getV1CatalogueManuscriptsManuscriptIdImagedObjectTextFragmentMatches(manuscriptId: number): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueManuscriptsManuscriptIdImagedObjectTextFragmentMatches', manuscriptId);
     }
 
     /**
