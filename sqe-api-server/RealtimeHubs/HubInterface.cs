@@ -67,13 +67,6 @@ namespace SQE.API.Server.RealtimeHubs
         Task UpdatedEdition(EditionDTO returnedData);
 
         /// <summary>
-        ///     broadcasts a new ROI has been created
-        /// </summary>
-        /// <param name="returnedData">Details of the newly created ROI</param>
-        /// <returns></returns>
-        Task CreatedRoi(InterpretationRoiDTO returnedData);
-
-        /// <summary>
         ///     broadcasts one or more new ROI's have been created
         /// </summary>
         /// <param name="returnedData">Details of the newly created ROI's</param>
@@ -86,13 +79,6 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="returnedData">Details of the updated ROI's</param>
         /// <returns></returns>
         Task EditedRoisBatch(BatchEditRoiResponseDTO returnedData);
-
-        /// <summary>
-        ///     broadcasts a ROI has been updated
-        /// </summary>
-        /// <param name="returnedData">Details of the updated ROI</param>
-        /// <returns></returns>
-        Task UpdatedRoi(UpdatedInterpretationRoiDTO returnedData);
 
         /// <summary>
         ///     broadcasts one or more new ROI's have been updated

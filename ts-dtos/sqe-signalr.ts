@@ -1182,23 +1182,6 @@ export class SignalRUtilities {
 
 
     /**
-	 * Add a listener for when the server broadcasts a new ROI has been created
-	 *
-	 */
-    public connectCreatedRoi(handler: (msg: InterpretationRoiDTO) => void): void {
-        this._connection.on('CreatedRoi', handler)
-    }
-
-    /**
-	 * Remove an existing listener that triggers when the server broadcasts a new ROI has been created
-	 *
-	 */
-    public disconnectCreatedRoi(handler: (msg: InterpretationRoiDTO) => void): void {
-        this._connection.off('CreatedRoi', handler)
-    }
-
-
-    /**
 	 * Add a listener for when the server broadcasts one or more new ROI's have been created
 	 *
 	 */
@@ -1229,23 +1212,6 @@ export class SignalRUtilities {
 	 */
     public disconnectEditedRoisBatch(handler: (msg: BatchEditRoiResponseDTO) => void): void {
         this._connection.off('EditedRoisBatch', handler)
-    }
-
-
-    /**
-	 * Add a listener for when the server broadcasts a ROI has been updated
-	 *
-	 */
-    public connectUpdatedRoi(handler: (msg: UpdatedInterpretationRoiDTO) => void): void {
-        this._connection.on('UpdatedRoi', handler)
-    }
-
-    /**
-	 * Remove an existing listener that triggers when the server broadcasts a ROI has been updated
-	 *
-	 */
-    public disconnectUpdatedRoi(handler: (msg: UpdatedInterpretationRoiDTO) => void): void {
-        this._connection.off('UpdatedRoi', handler)
     }
 
 
