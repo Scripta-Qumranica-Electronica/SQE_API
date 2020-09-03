@@ -54,14 +54,14 @@ namespace SQE.ApiTest.Helpers
 
             // Act
             var request1 = new Post.V1_Editions_EditionId_Rois(editionId, newRoi1);
-            await request1.Send(client, signalr, auth: true, deterministic: false, requestRealtime: false, listeningFor: request1.AvailableListeners.CreatedRoi);
+            await request1.Send(client, signalr, auth: true, deterministic: false, requestRealtime: false, listeningFor: request1.AvailableListeners.CreatedRoisBatch);
 
             var request2 = new Post.V1_Editions_EditionId_Rois(editionId, newRoi2);
-            await request2.Send(null, signalr, auth: true, deterministic: false, listeningFor: request2.AvailableListeners.CreatedRoi);
+            await request2.Send(null, signalr, auth: true, deterministic: false, listeningFor: request2.AvailableListeners.CreatedRoisBatch);
 
             // Assert
-            request1.HttpResponseObject.ShouldDeepEqual(request1.CreatedRoi);
-            request2.SignalrResponseObject.ShouldDeepEqual(request2.CreatedRoi);
+            request1.HttpResponseObject.ShouldDeepEqual(request1.CreatedRoisBatch.rois.First());
+            request2.SignalrResponseObject.ShouldDeepEqual(request2.CreatedRoisBatch.rois.First());
             request1.HttpResponseObject.Matches(newRoi1);
             request2.SignalrResponseObject.Matches(newRoi2);
 
@@ -102,13 +102,13 @@ namespace SQE.ApiTest.Helpers
             SetInterpretationRoiDTO updatedRoi)
         {
             var request = new Put.V1_Editions_EditionId_Rois_RoiId(editionId, roiId, updatedRoi);
-            await request.Send(client, signalr, auth: true, requestRealtime: client == null, listeningFor: request.AvailableListeners.UpdatedRoi);
+            await request.Send(client, signalr, auth: true, requestRealtime: client == null, deterministic: false, listeningFor: request.AvailableListeners.EditedRoisBatch);
 
             var controllerResponse = client == null ? request.SignalrResponseObject : request.HttpResponseObject;
-            request.UpdatedRoi.ShouldDeepEqual(controllerResponse);
+            request.EditedRoisBatch.updateRois.First().ShouldDeepEqual(controllerResponse);
             Assert.Equal(roiId, controllerResponse.oldInterpretationRoiId);
             controllerResponse.Matches(updatedRoi);
-            return request.UpdatedRoi;
+            return request.EditedRoisBatch.updateRois.First();
         }
 
         public static void Matches(this InterpretationRoiDTO ird, SetInterpretationRoiDTO sird)

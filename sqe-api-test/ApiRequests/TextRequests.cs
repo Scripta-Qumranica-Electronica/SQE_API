@@ -11,18 +11,24 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
     public static partial class Get
     {
+
+
         public class V1_Editions_EditionId_TextFragments
-            : RequestObject<EmptyInput, TextFragmentDataListDTO>
+        : RequestObject<EmptyInput, TextFragmentDataListDTO>
         {
             private readonly uint _editionId;
+
 
 
             /// <summary>
@@ -34,7 +40,9 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
             }
+
 
 
             protected override string HttpPath()
@@ -56,10 +64,11 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_TextFragments_TextFragmentId_Artefacts
-            : RequestObject<EmptyInput, ArtefactDataListDTO>
+        : RequestObject<EmptyInput, ArtefactDataListDTO>
         {
             private readonly uint _editionId;
             private readonly uint _textFragmentId;
+
 
 
             /// <summary>
@@ -73,13 +82,14 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _textFragmentId = textFragmentId;
+
             }
+
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/text-fragment-id", $"/{_textFragmentId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/text-fragment-id", $"/{_textFragmentId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -96,10 +106,11 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_TextFragments_TextFragmentId_Lines
-            : RequestObject<EmptyInput, LineDataListDTO>
+        : RequestObject<EmptyInput, LineDataListDTO>
         {
             private readonly uint _editionId;
             private readonly uint _textFragmentId;
+
 
 
             /// <summary>
@@ -113,13 +124,14 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _textFragmentId = textFragmentId;
+
             }
+
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/text-fragment-id", $"/{_textFragmentId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/text-fragment-id", $"/{_textFragmentId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -136,10 +148,11 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_TextFragments_TextFragmentId
-            : RequestObject<EmptyInput, TextEditionDTO>
+        : RequestObject<EmptyInput, TextEditionDTO>
         {
             private readonly uint _editionId;
             private readonly uint _textFragmentId;
+
 
 
             /// <summary>
@@ -156,13 +169,14 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _textFragmentId = textFragmentId;
+
             }
+
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/text-fragment-id", $"/{_textFragmentId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/text-fragment-id", $"/{_textFragmentId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -179,10 +193,11 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Lines_LineId
-            : RequestObject<EmptyInput, LineTextDTO>
+        : RequestObject<EmptyInput, LineTextDTO>
         {
             private readonly uint _editionId;
             private readonly uint _lineId;
+
 
 
             /// <summary>
@@ -199,13 +214,14 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _lineId = lineId;
+
             }
+
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/line-id", $"/{_lineId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/line-id", $"/{_lineId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -224,11 +240,19 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
+
+
         public class V1_Editions_EditionId_TextFragments
-            : RequestObject<CreateTextFragmentDTO, TextFragmentDataDTO>
+        : RequestObject<CreateTextFragmentDTO, TextFragmentDataDTO>
         {
             private readonly uint _editionId;
             private readonly CreateTextFragmentDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Creates a new text fragment in the given edition of a scroll
@@ -241,24 +265,12 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _payload = payload;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.CreatedTextFragment,
-                    (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
+                _listenerDict.Add(ListenerMethods.CreatedTextFragment, (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
             }
-
-            public Listeners AvailableListeners { get; }
 
             public TextFragmentDataDTO CreatedTextFragment { get; private set; }
-
-            private void CreatedTextFragmentListener(HubConnection signalrListener)
-            {
-                signalrListener.On<TextFragmentDataDTO>("CreatedTextFragment",
-                    receivedData => CreatedTextFragment = receivedData);
-            }
-
-            private bool CreatedTextFragmentIsNull()
-            {
-                return CreatedTextFragment == null;
-            }
+            private void CreatedTextFragmentListener(HubConnection signalrListener) => signalrListener.On<TextFragmentDataDTO>("CreatedTextFragment", receivedData => CreatedTextFragment = receivedData);
+            private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
 
             protected override string HttpPath()
             {
@@ -276,22 +288,25 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-
-            public class Listeners
-            {
-                public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
-            }
         }
     }
 
     public static partial class Put
     {
+
+
         public class V1_Editions_EditionId_TextFragments_TextFragmentId
-            : RequestObject<UpdateTextFragmentDTO, TextFragmentDataDTO>
+        : RequestObject<UpdateTextFragmentDTO, TextFragmentDataDTO>
         {
             private readonly uint _editionId;
-            private readonly UpdateTextFragmentDTO _payload;
             private readonly uint _textFragmentId;
+            private readonly UpdateTextFragmentDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Updates the specified text fragment with the submitted properties
@@ -300,37 +315,23 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="textFragmentId">Id of the text fragment being updates</param>
             /// <param name="updatedTextFragment">Details of the updated text fragment</param>
             /// <returns>The details of the updated text fragment</returns>
-            public V1_Editions_EditionId_TextFragments_TextFragmentId(uint editionId, uint textFragmentId,
-                UpdateTextFragmentDTO payload)
+            public V1_Editions_EditionId_TextFragments_TextFragmentId(uint editionId, uint textFragmentId, UpdateTextFragmentDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
                 _textFragmentId = textFragmentId;
                 _payload = payload;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.CreatedTextFragment,
-                    (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
+                _listenerDict.Add(ListenerMethods.CreatedTextFragment, (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
             }
-
-            public Listeners AvailableListeners { get; }
 
             public TextFragmentDataDTO CreatedTextFragment { get; private set; }
-
-            private void CreatedTextFragmentListener(HubConnection signalrListener)
-            {
-                signalrListener.On<TextFragmentDataDTO>("CreatedTextFragment",
-                    receivedData => CreatedTextFragment = receivedData);
-            }
-
-            private bool CreatedTextFragmentIsNull()
-            {
-                return CreatedTextFragment == null;
-            }
+            private void CreatedTextFragmentListener(HubConnection signalrListener) => signalrListener.On<TextFragmentDataDTO>("CreatedTextFragment", receivedData => CreatedTextFragment = receivedData);
+            private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/text-fragment-id", $"/{_textFragmentId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/text-fragment-id", $"/{_textFragmentId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -344,11 +345,7 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-
-            public class Listeners
-            {
-                public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
-            }
         }
     }
+
 }

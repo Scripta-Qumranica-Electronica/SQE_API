@@ -247,7 +247,7 @@ namespace SQE.ApiTest.ApiRequests
                         x.Symbol == invokedSymbol.ToString());
 
                     var body = invokedSyntax.Syntax.Body.ToString();
-                    const string broadcastRx = @"\.Clients\.(?:.|\n)*\.([a-zA-Z]+)\((?:.|\n)*?\);";
+                    const string broadcastRx = @"\.Clients\s*?\.(?:.|\n)*?\)\s*?\.([a-zA-Z]+)\((?:.|\n)*?\)\s?;";
                     // Instantiate the regular expression object.
                     var rx = new Regex(broadcastRx, RegexOptions.Multiline);
 
@@ -263,8 +263,16 @@ namespace SQE.ApiTest.ApiRequests
                         {
                             var broadcastMethodDescription = broadcastMethods.First(x =>
                                 x.Identifier.ToString() == listenerName);
-                            methodDescription.listeners.Add(new ParameterDescription(broadcastMethodDescription.ParameterList.Parameters.First()
-                                .Type.ToString(), listenerName));
+                            var listenDescription = new ParameterDescription(broadcastMethodDescription.ParameterList
+                                .Parameters.First()
+                                .Type.ToString(), listenerName);
+
+                            // Insert the listener into the method description if is does not already exist
+                            if (!methodDescription.listeners.Any(x =>
+                                x.ParamName == listenDescription.ParamName
+                                && x.ParamType == x.ParamType))
+                                methodDescription.listeners.Add(new ParameterDescription(broadcastMethodDescription.ParameterList.Parameters.First()
+                                    .Type.ToString(), listenerName));
                         }
                         match = match.NextMatch();
                     }

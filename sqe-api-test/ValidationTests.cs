@@ -16,12 +16,12 @@ namespace SQE.ApiTest
         /// <returns>Void</returns>
         private static async Task _testBadPoly(string poly, string expectedResult)
         {
-            var repaired = await GeometryValidation.ValidatePolygonAsync(poly, "artefact", true);
+            var repaired = GeometryValidation.ValidatePolygon(poly, "artefact", true);
             Assert.Equal(_removeWktSpaces(expectedResult), _removeWktSpaces(repaired));
 
             try
             {
-                await GeometryValidation.ValidatePolygonAsync(poly, "artefact");
+                GeometryValidation.ValidatePolygon(poly, "artefact");
             }
             catch (Exception err)
             {

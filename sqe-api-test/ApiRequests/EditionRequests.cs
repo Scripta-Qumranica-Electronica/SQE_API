@@ -18,14 +18,24 @@ using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
     public static partial class Delete
     {
+
+
         public class V1_Editions_EditionId
-            : RequestObject<EmptyInput, DeleteTokenDTO>
+        : RequestObject<EmptyInput, DeleteTokenDTO>
         {
             private readonly uint _editionId;
             private readonly List<string> _optional;
             private readonly string _token;
+
+            public class Listeners
+            {
+                public ListenerMethods DeletedEdition = ListenerMethods.DeletedEdition;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Provides details about the specified edition and all accessible alternate editions
@@ -43,26 +53,15 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.DeletedEdition, (DeletedEditionIsNull, DeletedEditionListener));
             }
 
-            public Listeners AvailableListeners { get; }
-
             public DeleteTokenDTO DeletedEdition { get; private set; }
-
-            private void DeletedEditionListener(HubConnection signalrListener)
-            {
-                signalrListener.On<DeleteTokenDTO>("DeletedEdition",
-                    receivedData => DeletedEdition = receivedData);
-            }
-
-            private bool DeletedEditionIsNull()
-            {
-                return DeletedEdition == null;
-            }
+            private void DeletedEditionListener(HubConnection signalrListener) => signalrListener.On<DeleteTokenDTO>("DeletedEdition", receivedData => DeletedEdition = receivedData);
+            private bool DeletedEditionIsNull() => DeletedEdition == null;
 
             protected override string HttpPath()
             {
                 return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                       + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "")
-                       + (_token != null ? $"&token={_token}" : "");
+                    + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "")
+                    + (_token != null ? $"&token={_token}" : "");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -76,19 +75,34 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-
-            public class Listeners
-            {
-                public ListenerMethods DeletedEdition = ListenerMethods.DeletedEdition;
-            }
         }
     }
 
     public static partial class Get
     {
+
+
         public class V1_Editions_AdminShareRequests
-            : RequestObject<EmptyInput, AdminEditorRequestListDTO>
+        : RequestObject<EmptyInput, AdminEditorRequestListDTO>
         {
+
+
+
+
+            /// <summary>
+            ///     Get a list of requests issued by the current user for other users
+            ///     to become editors of a shared edition
+            /// </summary>
+            /// <returns></returns>
+            public V1_Editions_AdminShareRequests()
+
+            {
+
+
+            }
+
+
+
             protected override string HttpPath()
             {
                 return RequestPath;
@@ -98,11 +112,30 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
             }
+
+
         }
 
         public class V1_Editions_EditorInvitations
-            : RequestObject<EmptyInput, EditorInvitationListDTO>
+        : RequestObject<EmptyInput, EditorInvitationListDTO>
         {
+
+
+
+
+            /// <summary>
+            ///     Get a list of invitations issued to the current user to become an editor of a shared edition
+            /// </summary>
+            /// <returns></returns>
+            public V1_Editions_EditorInvitations()
+
+            {
+
+
+            }
+
+
+
             protected override string HttpPath()
             {
                 return RequestPath;
@@ -112,12 +145,15 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
             }
+
+
         }
 
         public class V1_Editions_EditionId
-            : RequestObject<EmptyInput, EditionGroupDTO>
+        : RequestObject<EmptyInput, EditionGroupDTO>
         {
             private readonly uint _editionId;
+
 
 
             /// <summary>
@@ -128,7 +164,9 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
             }
+
 
 
             protected override string HttpPath()
@@ -150,8 +188,24 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions
-            : RequestObject<EmptyInput, EditionListDTO>
+        : RequestObject<EmptyInput, EditionListDTO>
         {
+
+
+
+
+            /// <summary>
+            ///     Provides a listing of all editions accessible to the current user
+            /// </summary>
+            public V1_Editions()
+
+            {
+
+
+            }
+
+
+
             protected override string HttpPath()
             {
                 return RequestPath;
@@ -161,12 +215,15 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
             }
+
+
         }
 
         public class _V1_Editions_EditionId_ScriptCollection
-            : RequestObject<EmptyInput, EditionScriptCollectionDTO>
+        : RequestObject<EmptyInput, EditionScriptCollectionDTO>
         {
             private readonly uint _editionId;
+
 
 
             /// <summary>
@@ -178,7 +235,9 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
             }
+
 
 
             protected override string HttpPath()
@@ -200,9 +259,10 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class _V1_Editions_EditionId_ScriptLines
-            : RequestObject<EmptyInput, EditionScriptLinesDTO>
+        : RequestObject<EmptyInput, EditionScriptLinesDTO>
         {
             private readonly uint _editionId;
+
 
 
             /// <summary>
@@ -215,7 +275,9 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
+
             }
+
 
 
             protected override string HttpPath()
@@ -239,11 +301,19 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
+
+
         public class V1_Editions_EditionId_AddEditorRequest
-            : RequestObject<InviteEditorDTO, EmptyOutput>
+        : RequestObject<InviteEditorDTO, EmptyOutput>
         {
             private readonly uint _editionId;
             private readonly InviteEditorDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods RequestedEditor = ListenerMethods.RequestedEditor;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Adds an editor to the specified edition
@@ -259,20 +329,9 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.RequestedEditor, (RequestedEditorIsNull, RequestedEditorListener));
             }
 
-            public Listeners AvailableListeners { get; }
-
             public EditorInvitationDTO RequestedEditor { get; private set; }
-
-            private void RequestedEditorListener(HubConnection signalrListener)
-            {
-                signalrListener.On<EditorInvitationDTO>("RequestedEditor",
-                    receivedData => RequestedEditor = receivedData);
-            }
-
-            private bool RequestedEditorIsNull()
-            {
-                return RequestedEditor == null;
-            }
+            private void RequestedEditorListener(HubConnection signalrListener) => signalrListener.On<EditorInvitationDTO>("RequestedEditor", receivedData => RequestedEditor = receivedData);
+            private bool RequestedEditorIsNull() => RequestedEditor == null;
 
             protected override string HttpPath()
             {
@@ -290,17 +349,18 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-
-            public class Listeners
-            {
-                public ListenerMethods RequestedEditor = ListenerMethods.RequestedEditor;
-            }
         }
 
         public class V1_Editions_ConfirmEditorship_Token
-            : RequestObject<EmptyInput, DetailedEditorRightsDTO>
+        : RequestObject<EmptyInput, DetailedEditorRightsDTO>
         {
             private readonly string _token;
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedEditor = ListenerMethods.CreatedEditor;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Confirm addition of an editor to the specified edition
@@ -314,24 +374,13 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.CreatedEditor, (CreatedEditorIsNull, CreatedEditorListener));
             }
 
-            public Listeners AvailableListeners { get; }
-
             public DetailedEditorRightsDTO CreatedEditor { get; private set; }
-
-            private void CreatedEditorListener(HubConnection signalrListener)
-            {
-                signalrListener.On<DetailedEditorRightsDTO>("CreatedEditor",
-                    receivedData => CreatedEditor = receivedData);
-            }
-
-            private bool CreatedEditorIsNull()
-            {
-                return CreatedEditor == null;
-            }
+            private void CreatedEditorListener(HubConnection signalrListener) => signalrListener.On<DetailedEditorRightsDTO>("CreatedEditor", receivedData => CreatedEditor = receivedData);
+            private bool CreatedEditorIsNull() => CreatedEditor == null;
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/token", $"/{_token}");
+                return RequestPath.Replace("/token", $"/{_token.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -339,17 +388,20 @@ namespace SQE.ApiTest.ApiRequests
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _token);
             }
 
-            public class Listeners
-            {
-                public ListenerMethods CreatedEditor = ListenerMethods.CreatedEditor;
-            }
+
         }
 
         public class V1_Editions_EditionId
-            : RequestObject<EditionCopyDTO, EditionDTO>
+        : RequestObject<EditionCopyDTO, EditionDTO>
         {
             private readonly uint _editionId;
             private readonly EditionCopyDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedEdition = ListenerMethods.CreatedEdition;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Creates a copy of the specified edition
@@ -365,19 +417,9 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.CreatedEdition, (CreatedEditionIsNull, CreatedEditionListener));
             }
 
-            public Listeners AvailableListeners { get; }
-
             public EditionDTO CreatedEdition { get; private set; }
-
-            private void CreatedEditionListener(HubConnection signalrListener)
-            {
-                signalrListener.On<EditionDTO>("CreatedEdition", receivedData => CreatedEdition = receivedData);
-            }
-
-            private bool CreatedEditionIsNull()
-            {
-                return CreatedEdition == null;
-            }
+            private void CreatedEditionListener(HubConnection signalrListener) => signalrListener.On<EditionDTO>("CreatedEdition", receivedData => CreatedEdition = receivedData);
+            private bool CreatedEditionIsNull() => CreatedEdition == null;
 
             protected override string HttpPath()
             {
@@ -395,22 +437,25 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-
-            public class Listeners
-            {
-                public ListenerMethods CreatedEdition = ListenerMethods.CreatedEdition;
-            }
         }
     }
 
     public static partial class Put
     {
+
+
         public class V1_Editions_EditionId_Editors_EditorEmailId
-            : RequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO>
+        : RequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO>
         {
             private readonly uint _editionId;
             private readonly string _editorEmailId;
             private readonly UpdateEditorRightsDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedEditor = ListenerMethods.CreatedEditor;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Changes the rights for an editor of the specified edition
@@ -418,8 +463,7 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <param name="editorEmailId">Email address of the editor whose permissions are being changed</param>
             /// <param name="payload">JSON object with the attributes of the new editor</param>
-            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId, string editorEmailId,
-                UpdateEditorRightsDTO payload)
+            public V1_Editions_EditionId_Editors_EditorEmailId(uint editionId, string editorEmailId, UpdateEditorRightsDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
@@ -429,25 +473,13 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.CreatedEditor, (CreatedEditorIsNull, CreatedEditorListener));
             }
 
-            public Listeners AvailableListeners { get; }
-
             public DetailedEditorRightsDTO CreatedEditor { get; private set; }
-
-            private void CreatedEditorListener(HubConnection signalrListener)
-            {
-                signalrListener.On<DetailedEditorRightsDTO>("CreatedEditor",
-                    receivedData => CreatedEditor = receivedData);
-            }
-
-            private bool CreatedEditorIsNull()
-            {
-                return CreatedEditor == null;
-            }
+            private void CreatedEditorListener(HubConnection signalrListener) => signalrListener.On<DetailedEditorRightsDTO>("CreatedEditor", receivedData => CreatedEditor = receivedData);
+            private bool CreatedEditorIsNull() => CreatedEditor == null;
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    .Replace("/editor-email-id", $"/{_editorEmailId}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/editor-email-id", $"/{_editorEmailId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -461,18 +493,19 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-
-            public class Listeners
-            {
-                public ListenerMethods CreatedEditor = ListenerMethods.CreatedEditor;
-            }
         }
 
         public class V1_Editions_EditionId
-            : RequestObject<EditionUpdateRequestDTO, EditionDTO>
+        : RequestObject<EditionUpdateRequestDTO, EditionDTO>
         {
             private readonly uint _editionId;
             private readonly EditionUpdateRequestDTO _payload;
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedEdition = ListenerMethods.UpdatedEdition;
+            };
+            public Listeners AvailableListeners { get; }
 
             /// <summary>
             ///     Updates data for the specified edition
@@ -488,19 +521,9 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.UpdatedEdition, (UpdatedEditionIsNull, UpdatedEditionListener));
             }
 
-            public Listeners AvailableListeners { get; }
-
             public EditionDTO UpdatedEdition { get; private set; }
-
-            private void UpdatedEditionListener(HubConnection signalrListener)
-            {
-                signalrListener.On<EditionDTO>("UpdatedEdition", receivedData => UpdatedEdition = receivedData);
-            }
-
-            private bool UpdatedEditionIsNull()
-            {
-                return UpdatedEdition == null;
-            }
+            private void UpdatedEditionListener(HubConnection signalrListener) => signalrListener.On<EditionDTO>("UpdatedEdition", receivedData => UpdatedEdition = receivedData);
+            private bool UpdatedEditionIsNull() => UpdatedEdition == null;
 
             protected override string HttpPath()
             {
@@ -518,11 +541,7 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-
-            public class Listeners
-            {
-                public ListenerMethods UpdatedEdition = ListenerMethods.UpdatedEdition;
-            }
         }
     }
+
 }

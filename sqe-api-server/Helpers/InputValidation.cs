@@ -75,12 +75,12 @@ namespace SQE.API.Server.Helpers
         ///     version of the polygon with that error
         /// </param>
         /// <returns>A WKT string with the cleaned polygon</returns>
-        public static async Task<string> ValidatePolygonAsync(string wktPolygon, string entityName, bool fix = false)
+        public static string ValidatePolygon(string wktPolygon, string entityName, bool fix = false)
         {
-            // Wrap the private validation method in a Task so we can asynchronously call this non-trivial method
+            // Previously we wrapped the private validation method in a Task so we can asynchronously call this non-trivial method
             // But see the docs: https://docs.microsoft.com/en-us/aspnet/core/performance/performance-best-practices?view=aspnetcore-3.1
-            // Those docs explicitly warn against do `await Task.Run`.
-            return await Task.Run(() => _validatePolygon(wktPolygon, entityName, fix));
+            // Those docs explicitly warn against doing `await Task.Run`, so this is now synchronous.
+            return _validatePolygon(wktPolygon, entityName, fix);
         }
 
         /// <summary>

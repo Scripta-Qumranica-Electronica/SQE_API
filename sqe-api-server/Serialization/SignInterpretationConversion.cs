@@ -81,6 +81,11 @@ namespace SQE.API.Server.Serialization
             };
         }
 
+        public static IEnumerable<InterpretationRoiDTO> ToDTO(this IEnumerable<SignInterpretationRoiData> sr)
+        {
+            return sr.Select(x => x.ToDTO());
+        }
+
         public static NextSignInterpretationDTO ToDTO(this NextSignInterpretation nsi)
         {
             return new NextSignInterpretationDTO()
@@ -108,7 +113,7 @@ namespace SQE.API.Server.Serialization
                 character = si.Character,
                 signInterpretationId = si.SignInterpretationId ?? 0,
                 attributes = si.Attributes.Select(x => x.ToDTO(si.Commentaries)).ToArray(),
-                rois = si.SignInterpretationRois.Select(x => x.ToDTO()).ToArray(),
+                rois = si.SignInterpretationRois.ToDTO().ToArray(),
                 nextSignInterpretations = si.NextSignInterpretations.Where(x => x != null)
                     .Select(x => x.ToDTO()).ToArray(),
                 commentary = si.Commentaries.Where(x => !x.AttributeId.HasValue).Select(x => x.ToDTO()).FirstOrDefault(),
