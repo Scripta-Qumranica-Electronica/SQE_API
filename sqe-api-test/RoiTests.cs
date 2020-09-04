@@ -35,6 +35,16 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        public async Task CanBatchCreateEditionRoi()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+                await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition, true);
+            }
+        }
+
+        [Fact]
         public async Task CanGetEditionRoi()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))
@@ -86,6 +96,27 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanUpdateEditionRoi()
         {
+            await UpdateEditionRoi(false);
+        }
+
+        [Fact]
+        public async Task CanBatchUpdateEditionRoi()
+        {
+            await UpdateEditionRoi(true);
+        }
+
+        [Fact]
+        public async Task CanBatchEditRois()
+        {
+            // Test the HTTP transport
+            await BatchEditRois(false);
+
+            // Test the SignalR transport
+            await BatchEditRois(true);
+        }
+
+        private async Task UpdateEditionRoi(bool batch)
+        {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))
             {
                 // Arrange
@@ -126,9 +157,9 @@ namespace SQE.ApiTest
 
                 // Act
                 var updatedRoi1 = await RoiHelpers.UpdateEditionRoi(_client, StartConnectionAsync, newEdition,
-                    rois.First().interpretationRoiId, updateRoi1);
+                    rois.First().interpretationRoiId, updateRoi1, batch);
                 var updatedRoi2 = await RoiHelpers.UpdateEditionRoi(null, StartConnectionAsync, newEdition,
-                    rois.Last().interpretationRoiId, updateRoi2);
+                    rois.Last().interpretationRoiId, updateRoi2, batch);
 
                 // Assert
                 // Check that it is not returned with a get
@@ -142,6 +173,63 @@ namespace SQE.ApiTest
                 var retrievedUpdatedRoi2 =
                     updatedRoiList.rois.First(x => x.interpretationRoiId == updatedRoi2.interpretationRoiId);
                 retrievedUpdatedRoi2.Matches(updatedRoi2);
+            }
+        }
+
+        public async Task BatchEditRois(bool realtime)
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                // Create two new rois, one will get altered, one will be deleted
+                var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+                var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var roiForUpdate = rois.First();
+                var updatedRoi = new UpdateInterpretationRoiDTO
+                {
+                    artefactId = roiForUpdate.artefactId,
+                    exceptional = true,
+                    interpretationRoiId = roiForUpdate.interpretationRoiId,
+                    shape = roiForUpdate.shape,
+                    signInterpretationId = roiForUpdate.signInterpretationId,
+                    stanceRotation = 354,
+                    translate = roiForUpdate.translate,
+                    valuesSet = true
+                };
+                var roiForDelete = rois.Last();
+                var newRoi = new SetInterpretationRoiDTO()
+                {
+                    artefactId = artefactId,
+                    exceptional = false,
+                    shape = "POLYGON((1 1,2 1,2 2,1 2,1 1))",
+                    signInterpretationId = updatedRoi.signInterpretationId,
+                    stanceRotation = 77,
+                    valuesSet = true,
+                    translate = new TranslateDTO()
+                    {
+                        x = 100,
+                        y = 100
+                    }
+                };
+                var batchRoiRequest = new BatchEditRoiDTO()
+                {
+                    createRois = new List<SetInterpretationRoiDTO>() { newRoi },
+                    deleteRois = new List<uint>() { roiForDelete.interpretationRoiId },
+                    updateRois = new List<UpdateInterpretationRoiDTO>() { updatedRoi }
+                };
+
+                // Act
+                var request = new Post.V1_Editions_EditionId_Rois_BatchEdit(newEdition, batchRoiRequest);
+                await request.Send(
+                    realtime ? null : _client,
+                    StartConnectionAsync,
+                    auth: true,
+                    requestRealtime: realtime,
+                    listeningFor: request.AvailableListeners.EditedRoisBatch);
+
+                // Assert
+                var controllerResponse = realtime ? request.SignalrResponseObject : request.HttpResponseObject;
+                controllerResponse.ShouldDeepEqual(request.EditedRoisBatch);
             }
         }
     }

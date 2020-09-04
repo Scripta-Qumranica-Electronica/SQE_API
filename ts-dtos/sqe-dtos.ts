@@ -567,8 +567,11 @@ export interface SetInterpretationRoiDTO {
     valuesSet: boolean;
 }
 
-export interface InterpretationRoiDTO extends SetInterpretationRoiDTO {
+export interface UpdateInterpretationRoiDTO extends SetInterpretationRoiDTO {
     interpretationRoiId: number;
+}
+
+export interface InterpretationRoiDTO extends UpdateInterpretationRoiDTO {
     creatorId: number;
     editorId: number;
 }
@@ -585,13 +588,17 @@ export interface InterpretationRoiDTOList {
     rois: Array<InterpretationRoiDTO>;
 }
 
+export interface UpdateInterpretationRoiDTOList {
+    rois: Array<UpdateInterpretationRoiDTO>;
+}
+
 export interface UpdatedInterpretationRoiDTOList {
     rois: Array<UpdatedInterpretationRoiDTO>;
 }
 
 export interface BatchEditRoiDTO {
-    createRois?: Array<InterpretationRoiDTO>;
-    updateRois?: Array<UpdatedInterpretationRoiDTO>;
+    createRois?: Array<SetInterpretationRoiDTO>;
+    updateRois?: Array<UpdateInterpretationRoiDTO>;
     deleteRois?: Array<number>;
 }
 

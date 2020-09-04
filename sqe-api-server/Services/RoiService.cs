@@ -39,7 +39,7 @@ namespace SQE.API.Server.Services
             string clientId = null);
 
         Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(UserInfo editionUser,
-            InterpretationRoiDTOList updatedRois,
+            UpdateInterpretationRoiDTOList updatedRois,
             string clientId = null);
 
         Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
@@ -167,9 +167,9 @@ namespace SQE.API.Server.Services
             SetInterpretationRoiDTO updatedRoi,
             string clientId = null)
         {
-            var fullUpdatedRoi = updatedRoi.ToInterpretationRoiDTO(roiId);
+            var fullUpdatedRoi = updatedRoi.ToUpdateInterpretationRoiDTO(roiId);
 
-            var updateRoisDTO = (await UpdateRoisInternalAsync(editionUser, new InterpretationRoiDTOList { rois = new List<InterpretationRoiDTO> { fullUpdatedRoi } }))
+            var updateRoisDTO = (await UpdateRoisInternalAsync(editionUser, new List<UpdateInterpretationRoiDTO> { fullUpdatedRoi }))
                 .rois;
 
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
@@ -183,10 +183,10 @@ namespace SQE.API.Server.Services
         }
 
         public async Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(UserInfo editionUser,
-            InterpretationRoiDTOList updatedRois,
+            UpdateInterpretationRoiDTOList updatedRois,
             string clientId = null)
         {
-            var updateRoisDTO = await UpdateRoisInternalAsync(editionUser, updatedRois);
+            var updateRoisDTO = await UpdateRoisInternalAsync(editionUser, updatedRois.rois);
 
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
             // made the request, that client directly received the response.
@@ -199,14 +199,14 @@ namespace SQE.API.Server.Services
         }
 
         private async Task<UpdatedInterpretationRoiDTOList> UpdateRoisInternalAsync(UserInfo editionUser,
-            InterpretationRoiDTOList updatedRois)
+            IEnumerable<UpdateInterpretationRoiDTO> updatedRois)
         {
             return new UpdatedInterpretationRoiDTOList
             {
                 rois = (
                         await _roiRepository.UpdateRoisAsync( // Write new rois
                             editionUser,
-                            updatedRois.rois.ToSignInterpretationRoiData().ToList()
+                            updatedRois.ToSignInterpretationRoiData().ToList()
                         )
                     )
                     .ToUpdateDTO()

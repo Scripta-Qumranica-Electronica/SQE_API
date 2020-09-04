@@ -324,10 +324,10 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_Rois_Batch
-        : RequestObject<InterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
+        : RequestObject<UpdateInterpretationRoiDTOList, UpdatedInterpretationRoiDTOList>
         {
             private readonly uint _editionId;
-            private readonly InterpretationRoiDTOList _payload;
+            private readonly UpdateInterpretationRoiDTOList _payload;
 
             public class Listeners
             {
@@ -340,7 +340,7 @@ namespace SQE.ApiTest.ApiRequests
             /// </summary>
             /// <param name="editionId">Id of the edition</param>
             /// <param name="updateRois">A JSON object with an array of the updated ROI details</param>
-            public V1_Editions_EditionId_Rois_Batch(uint editionId, InterpretationRoiDTOList payload)
+            public V1_Editions_EditionId_Rois_Batch(uint editionId, UpdateInterpretationRoiDTOList payload)
                 : base(payload)
             {
                 _editionId = editionId;

@@ -45,53 +45,63 @@ namespace SQE.ApiTest
         public async Task CanGetImagedObjectsAndTextFragmentsOfEdition()
         {
             // Act
-            var requestobj = new Get.V1_Catalogue_Editions_EditionId_ImagedObjectTextFragmentMatches(894);
-            await requestobj.Send(_client, StartConnectionAsync);
-
-            // Assert
-            requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
-            Assert.NotEmpty(requestobj.HttpResponseObject.matches);
-            var firstMatch = requestobj.HttpResponseObject.matches.First();
-            ConfirmValidMatch(firstMatch);
+            await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfEdition(894, _client, StartConnectionAsync);
         }
 
         [Fact]
         public async Task CanGetImagedObjectsAndTextFragmentsOfManuscript()
         {
             // Act
-            var requestobj = new Get.V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches(894);
-            await requestobj.Send(_client, StartConnectionAsync);
-
-            // Assert
-            requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
-            Assert.NotEmpty(requestobj.HttpResponseObject.matches);
-            var firstMatch = requestobj.HttpResponseObject.matches.First();
-            ConfirmValidMatch(firstMatch);
+            await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfManuscript(894, _client, StartConnectionAsync);
         }
 
-        private void ConfirmValidMatch(CatalogueMatchDTO match)
+        [Fact]
+        public async Task CanCreateNewImagedObjectTextFragmentMatch()
         {
-            Assert.NotNull(match.matchAuthor);
-            if (match.confirmed.HasValue)
-            {
-                Assert.NotNull(match.matchConfirmationAuthor);
-                Assert.NotNull(match.dateOfConfirmation);
-            }
-            if (!match.confirmed.HasValue)
-            {
-                Assert.Null(match.matchConfirmationAuthor);
-                Assert.Null(match.dateOfConfirmation);
-            }
-            Assert.Null(match.matchConfirmationAuthor);
-            Assert.NotNull(match.manuscriptName);
-            Assert.NotNull(match.name);
-            Assert.NotNull(match.imagedObjectId);
-            Assert.NotNull(match.institution);
-            Assert.NotNull(match.editionName);
-            Assert.NotNull(match.filename);
-            Assert.NotNull(match.thumbnail);
-            Assert.NotNull(match.url);
-            Assert.NotNull(match.dateOfMatch);
+            // Arrange
+            var availableImagedObjects = await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
+            var textFragments = await TextHelpers.GetEditionTextFragments(1, _client, StartConnectionAsync);
+            var imagedObjectId = availableImagedObjects.institutionalImages.First().id;
+            var textFragmentId = textFragments.textFragments.First().id;
+
+            // Act
+            await CatalogueHelpers.CreateImagedObjectTextFragmentMatch(
+                SideDesignation.recto,
+                imagedObjectId,
+                1,
+                "DJD",
+                "Some Volume",
+                "Some text number designation",
+                "Some fragment designation",
+                SideDesignation.recto,
+                "This is test of the system",
+                textFragmentId,
+                1,
+                _client,
+                StartConnectionAsync);
+        }
+
+        [Fact]
+        public async Task CanConfirmAndUnconfirmImagedObjectTextFragmentMatch()
+        {
+            // Arrange
+            var editionId = 894U;
+            var matches = await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfEdition(editionId, _client, StartConnectionAsync);
+            var firstUnconfirmedMatch = matches.matches.First(x => x.confirmed == null);
+
+            // Act
+            await CatalogueHelpers.ConfirmTextFragmentImagedObjectMatch(
+                editionId,
+                firstUnconfirmedMatch.matchId,
+                _client,
+                StartConnectionAsync,
+                Request.DefaultUsers.User1);
+            await CatalogueHelpers.UnconfirmTextFragmentImagedObjectMatch(
+                editionId,
+                firstUnconfirmedMatch.matchId,
+                _client,
+                StartConnectionAsync,
+                Request.DefaultUsers.User1);
         }
     }
 }

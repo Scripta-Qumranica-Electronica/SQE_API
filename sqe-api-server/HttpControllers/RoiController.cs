@@ -108,7 +108,7 @@ namespace SQE.API.Server.HttpControllers
         [HttpPut("v1/editions/{editionId}/rois/batch")]
         public async Task<ActionResult<UpdatedInterpretationRoiDTOList>> UpdateRois(
             [FromRoute] uint editionId,
-            [FromBody] InterpretationRoiDTOList updateRois)
+            [FromBody] UpdateInterpretationRoiDTOList updateRois)
         {
             return await _roiService.UpdateRoisAsync(
                 await _userService.GetCurrentUserObjectAsync(editionId, true),

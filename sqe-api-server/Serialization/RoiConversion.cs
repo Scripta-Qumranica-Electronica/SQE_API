@@ -23,6 +23,22 @@ namespace SQE.API.Server.Serialization
             };
         }
 
+        public static SignInterpretationRoiData ToSignInterpretationRoiData(this UpdateInterpretationRoiDTO x)
+        {
+            return new SignInterpretationRoiData
+            {
+                SignInterpretationId = x.signInterpretationId,
+                SignInterpretationRoiId = x.interpretationRoiId,
+                ArtefactId = x.artefactId,
+                Exceptional = x.exceptional,
+                TranslateX = x.translate.x,
+                TranslateY = x.translate.y,
+                Shape = GeometryValidation.ValidatePolygon(x.shape, "roi"),
+                ValuesSet = x.valuesSet,
+                StanceRotation = x.stanceRotation,
+            };
+        }
+
         public static SignInterpretationRoiData ToSignInterpRoiData(this InterpretationRoiDTO x)
         {
             return new SignInterpretationRoiData
@@ -40,6 +56,11 @@ namespace SQE.API.Server.Serialization
         }
 
         public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(this IEnumerable<SetInterpretationRoiDTO> x)
+        {
+            return x.Select(x => x.ToSignInterpretationRoiData());
+        }
+
+        public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(this IEnumerable<UpdateInterpretationRoiDTO> x)
         {
             return x.Select(x => x.ToSignInterpretationRoiData());
         }
@@ -92,9 +113,9 @@ namespace SQE.API.Server.Serialization
             return x.Select(x => x.ToSignInterpRoiData());
         }
 
-        public static InterpretationRoiDTO ToInterpretationRoiDTO(this SetInterpretationRoiDTO x, uint roiId)
+        public static UpdateInterpretationRoiDTO ToUpdateInterpretationRoiDTO(this SetInterpretationRoiDTO x, uint roiId)
         {
-            return new InterpretationRoiDTO
+            return new UpdateInterpretationRoiDTO
             {
                 artefactId = x.artefactId,
                 interpretationRoiId = roiId,

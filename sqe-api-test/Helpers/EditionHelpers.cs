@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DeepEqual.Syntax;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using Xunit;
@@ -251,6 +253,15 @@ namespace SQE.ApiTest.Helpers
                 EditionId = await CreateCopyOfEdition(_client, EditionId, _name, _userAuthDetails);
                 return EditionId;
             }
+        }
+
+        public static async Task<EditionListDTO> GetAllEditions(HttpClient client, Func<string, Task<HubConnection>> signalr, Request.UserAuthDetails user = null)
+        {
+            var request = new Get.V1_Editions();
+            await request.Send(client, signalr, auth: user != null, requestUser: user);
+
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            return request.HttpResponseObject;
         }
     }
 }

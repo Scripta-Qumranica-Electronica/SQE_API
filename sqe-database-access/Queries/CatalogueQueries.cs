@@ -213,6 +213,21 @@ WHERE users_system_roles.user_id = @UserId
 ";
     }
 
+    internal static class EditionCatalogTextFragmentMatchConfirmationUpdateQuery
+    {
+        public const string GetQuery = @"
+UPDATE iaa_edition_catalog_to_text_fragment_confirmation 
+JOIN users_system_roles USING(user_id)
+    SET iaa_edition_catalog_to_text_fragment_confirmation.user_id = @UserId, 
+        iaa_edition_catalog_to_text_fragment_confirmation.confirmed = @Confirmed
+WHERE iaa_edition_catalog_to_text_fragment_id = @IaaEditionCatalogToTextFragmentId
+    AND (iaa_edition_catalog_to_text_fragment_confirmation.user_id != @UserId
+        AND iaa_edition_catalog_to_text_fragment_confirmation.confirmed != @Confirmed)
+    AND users_system_roles.user_id = @UserId
+    AND users_system_roles.system_roles_id = 2
+";
+    }
+
     internal static class EditionCatalogImageCatalogMatchInsertQuery
     {
         public const string GetQuery = @"

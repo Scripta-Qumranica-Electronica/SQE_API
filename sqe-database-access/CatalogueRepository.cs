@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -145,6 +146,17 @@ namespace SQE.DatabaseAccess
                 var textFragmentImagedObjectMatchId =
                     await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
 
+                // If no record was inserted, then it already exists.  So collect it from the DB
+                if (textFragmentImagedObjectMatchId == 0)
+                    textFragmentImagedObjectMatchId = await connection.QuerySingleAsync<uint>(@"SELECT iaa_edition_catalog_to_text_fragment_id
+FROM iaa_edition_catalog_to_text_fragment
+WHERE text_fragment_id = @TextFragmentId
+    AND iaa_edition_catalog_id = @IaaEditionCatalogId", new
+                    {
+                        IaaEditionCatalogId = editionCatalogueId,
+                        TextFragmentId = textFragmentId
+                    });
+
 
                 await connection.ExecuteAsync(EditionCatalogImageCatalogMatchInsertQuery.GetQuery, new
                 {
@@ -177,7 +189,35 @@ namespace SQE.DatabaseAccess
         {
             using (var connection = OpenConnection())
             {
-                await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery, new
+                try
+                {
+                    await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery, new
+                    {
+                        IaaEditionCatalogToTextFragmentId = editionCatalogToTextFragmentId,
+                        UserId = userId,
+                        Confirmed = confirm
+                    });
+                }
+                catch (SystemException e)
+                {
+                    await ChangeImagedObjectTextFragmentMatchConfirmationAsync(userId, editionCatalogToTextFragmentId, (bool?)null);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Confirm or reject a edition catalog to text fragment match.
+        /// </summary>
+        /// <param name="userId">User's unique id</param>
+        /// <param name="editionCatalogToTextFragmentId">Unique id of the record to confirm or reject</param>
+        /// <param name="confirm">Boolean whether the match is confirmed (true) or rejected (false)</param>
+        /// <returns></returns>
+        public async Task ChangeImagedObjectTextFragmentMatchConfirmationAsync(uint userId, uint editionCatalogToTextFragmentId,
+            bool? confirm)
+        {
+            using (var connection = OpenConnection())
+            {
+                await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationUpdateQuery.GetQuery, new
                 {
                     IaaEditionCatalogToTextFragmentId = editionCatalogToTextFragmentId,
                     UserId = userId,

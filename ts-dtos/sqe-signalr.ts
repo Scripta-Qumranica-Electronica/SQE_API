@@ -110,10 +110,12 @@ import {
 	ImagedObjectListDTO,
 	WktPolygonDTO,
 	SetInterpretationRoiDTO,
+	UpdateInterpretationRoiDTO,
 	InterpretationRoiDTO,
 	UpdatedInterpretationRoiDTO,
 	SetInterpretationRoiDTOList,
 	InterpretationRoiDTOList,
+	UpdateInterpretationRoiDTOList,
 	UpdatedInterpretationRoiDTOList,
 	BatchEditRoiDTO,
 	BatchEditRoiResponseDTO,
@@ -198,7 +200,7 @@ export class SignalRUtilities {
 	 * @param updateRois - A JSON object with an array of the updated ROI details
 	 *
 	 */
-    public async putV1EditionsEditionIdRoisBatch(editionId: number, updateRois: InterpretationRoiDTOList): Promise<UpdatedInterpretationRoiDTOList> {
+    public async putV1EditionsEditionIdRoisBatch(editionId: number, updateRois: UpdateInterpretationRoiDTOList): Promise<UpdatedInterpretationRoiDTOList> {
         return await this._connection.invoke('PutV1EditionsEditionIdRoisBatch', editionId, updateRois);
     }
 

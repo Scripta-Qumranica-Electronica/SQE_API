@@ -129,7 +129,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="editionId">Id of the edition</param>
         /// <param name="updateRois">A JSON object with an array of the updated ROI details</param>
         [Authorize]
-        public async Task<UpdatedInterpretationRoiDTOList> PutV1EditionsEditionIdRoisBatch(uint editionId, InterpretationRoiDTOList updateRois)
+        public async Task<UpdatedInterpretationRoiDTOList> PutV1EditionsEditionIdRoisBatch(uint editionId, UpdateInterpretationRoiDTOList updateRois)
 
         {
             try

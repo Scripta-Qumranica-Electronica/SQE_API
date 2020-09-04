@@ -271,14 +271,14 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanGetInstitutionalImages()
         {
-            await GetInstitutionImagedObjectsAsync("IAA", _client, StartConnectionAsync);
+            await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
         }
 
         [Fact]
         public async Task CanGetSpecifiedImagedObject()
         {
             // Arrange
-            var availableImagedObjects = await GetInstitutionImagedObjectsAsync("IAA", _client, StartConnectionAsync);
+            var availableImagedObjects = await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
 
             // Act
             var imagedObject = await GetSpecificImagedObjectAsync(availableImagedObjects.institutionalImages.First().id,
@@ -302,18 +302,6 @@ namespace SQE.ApiTest
             Assert.NotNull(textFragmentMatches.matches.First().textFragmentName);
             Assert.NotEqual<uint>(0, textFragmentMatches.matches.First().editionId);
             Assert.NotEqual<uint>(0, textFragmentMatches.matches.First().textFragmentId);
-        }
-
-        public async static Task<InstitutionalImageListDTO> GetInstitutionImagedObjectsAsync(string institution, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
-        {
-            // Act
-            var request = new Get.V1_ImagedObjects_Institutions_InstitutionName(institution);
-            await request.Send(client, signalr);
-
-            // Assert
-            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
-            Assert.NotEmpty(request.HttpResponseObject.institutionalImages);
-            return request.HttpResponseObject;
         }
 
         public async static Task<SimpleImageListDTO> GetSpecificImagedObjectAsync(string imagedObjectId, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
