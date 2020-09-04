@@ -161,7 +161,7 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>
-        [HttpGet("/v1/[controller]s/{editionId}/script-collection")]
+        [HttpGet("v1/[controller]s/{editionId}/script-collection")]
         public async Task<ActionResult<EditionScriptCollectionDTO>> GetEditionScriptCollection(
             [FromRoute] uint editionId)
         {
@@ -175,7 +175,7 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>
-        [HttpGet("/v1/[controller]s/{editionId}/script-lines")]
+        [HttpGet("v1/[controller]s/{editionId}/script-lines")]
         public async Task<ActionResult<EditionScriptLinesDTO>> GetEditionScriptLines(
             [FromRoute] uint editionId)
         {

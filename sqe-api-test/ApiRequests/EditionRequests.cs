@@ -219,7 +219,7 @@ namespace SQE.ApiTest.ApiRequests
 
         }
 
-        public class _V1_Editions_EditionId_ScriptCollection
+        public class V1_Editions_EditionId_ScriptCollection
         : RequestObject<EmptyInput, EditionScriptCollectionDTO>
         {
             private readonly uint _editionId;
@@ -231,7 +231,7 @@ namespace SQE.ApiTest.ApiRequests
             /// </summary>
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <returns></returns>
-            public _V1_Editions_EditionId_ScriptCollection(uint editionId)
+            public V1_Editions_EditionId_ScriptCollection(uint editionId)
 
             {
                 _editionId = editionId;
@@ -258,7 +258,7 @@ namespace SQE.ApiTest.ApiRequests
             }
         }
 
-        public class _V1_Editions_EditionId_ScriptLines
+        public class V1_Editions_EditionId_ScriptLines
         : RequestObject<EmptyInput, EditionScriptLinesDTO>
         {
             private readonly uint _editionId;
@@ -271,7 +271,7 @@ namespace SQE.ApiTest.ApiRequests
             /// </summary>
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <returns></returns>
-            public _V1_Editions_EditionId_ScriptLines(uint editionId)
+            public V1_Editions_EditionId_ScriptLines(uint editionId)
 
             {
                 _editionId = editionId;

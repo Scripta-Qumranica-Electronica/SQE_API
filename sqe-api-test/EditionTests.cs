@@ -1197,5 +1197,88 @@ namespace SQE.ApiTest
 
             await EditionHelpers.DeleteEdition(_client, editionId);
         }
+
+        [Fact]
+        public async Task CanGetEditionScriptChart()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+                var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                // Position the artefact so its ROIs have a global coordinate.
+                var artefactPositionRequest = new Put.V1_Editions_EditionId_Artefacts_ArtefactId(newEdition, artefactId, new UpdateArtefactDTO()
+                {
+                    mask = null,
+                    name = null,
+                    placement = new PlacementDTO()
+                    {
+                        rotate = 0,
+                        scale = (decimal)1.0,
+                        translate = new TranslateDTO()
+                        {
+                            x = 0,
+                            y = 0
+                        },
+                        zIndex = 0
+                    }
+                });
+                artefactPositionRequest.Send(_client);
+
+                // Act
+                var request = new Get.V1_Editions_EditionId_ScriptCollection(newEdition);
+                await request.Send(_client, StartConnectionAsync, auth: true);
+
+                // Assert
+                request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+                // TODO: perhaps verify that the shape is correct
+                request.HttpResponseObject.letters.Select(x => x.id).ShouldDeepEqual(rois.Select(x => x.interpretationRoiId).First());
+            }
+        }
+
+        [Fact]
+        public async Task CanGetEditionLineScriptChart()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+                var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                // Position the artefact so its ROIs have a global coordinate.
+                var artefactPositionRequest = new Put.V1_Editions_EditionId_Artefacts_ArtefactId(newEdition, artefactId, new UpdateArtefactDTO()
+                {
+                    mask = null,
+                    name = null,
+                    placement = new PlacementDTO()
+                    {
+                        rotate = 0,
+                        scale = (decimal)1.0,
+                        translate = new TranslateDTO()
+                        {
+                            x = 0,
+                            y = 0
+                        },
+                        zIndex = 0
+                    }
+                });
+                artefactPositionRequest.Send(_client);
+
+                // Act
+                var request = new Get.V1_Editions_EditionId_ScriptLines(newEdition);
+                await request.Send(_client, StartConnectionAsync, auth: true);
+
+                // Assert
+                request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+                // TODO: perhaps verify that the shape is correct
+                Assert.Contains(request.HttpResponseObject.textFragments,
+                    x =>
+                        x.lines.Any(
+                            y => y.artefacts.Any(
+                                z => z.characters.Any(
+                                    a => a.rois.Any(
+                                        b => b.interpretationRoiId ==
+                                             rois.Select(x => x.interpretationRoiId).First())))));
+            }
+        }
     }
 }

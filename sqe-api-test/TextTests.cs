@@ -484,6 +484,29 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        public async Task CanGetAnonymousArtefactsOfTextFragment()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+                var (artefactId, _) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var scriptRequest = new Get.V1_Editions_EditionId_ScriptLines(newEdition);
+                await scriptRequest.Send(_client, StartConnectionAsync, auth: true);
+                var textFragmentId = scriptRequest.HttpResponseObject.textFragments.First().textFragmentId;
+
+                // Act
+                var request =
+                    new Get.V1_Editions_EditionId_TextFragments_TextFragmentId_Artefacts(newEdition, textFragmentId);
+                await request.Send(_client, StartConnectionAsync, auth: true);
+
+                // assert
+                request.HttpResponseObject.ShouldDeepEqual(request.HttpResponseObject);
+                Assert.Contains(request.HttpResponseObject.artefacts, x => x.id == artefactId);
+            }
+        }
+
+        [Fact]
         public async Task CanGetAnonymousEditionTextFragmentData()
         {
             // Arrange

@@ -275,6 +275,20 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        public async Task CanGetSpecifiedImagedObject()
+        {
+            // Arrange
+            var availableImagedObjects = await GetInstitutionImagedObjectsAsync("IAA", _client, StartConnectionAsync);
+
+            // Act
+            var imagedObject = await GetSpecificImagedObjectAsync(availableImagedObjects.institutionalImages.First().id,
+                _client, StartConnectionAsync);
+
+            // Assert
+            Assert.NotEmpty(imagedObject.images);
+        }
+
+        [Fact]
         public async Task CanGetImagedObjectTextFragment()
         {
             // Note that "IAA-1039-1" had text fragment matches at the time this test was written.
@@ -299,6 +313,18 @@ namespace SQE.ApiTest
             // Assert
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
             Assert.NotEmpty(request.HttpResponseObject.institutionalImages);
+            return request.HttpResponseObject;
+        }
+
+        public async static Task<SimpleImageListDTO> GetSpecificImagedObjectAsync(string imagedObjectId, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
+        {
+            // Act
+            var request = new Get.V1_ImagedObjects_ImagedObjectId(imagedObjectId);
+            await request.Send(client, signalr);
+
+            // Assert
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            Assert.NotEmpty(request.HttpResponseObject.images);
             return request.HttpResponseObject;
         }
 
