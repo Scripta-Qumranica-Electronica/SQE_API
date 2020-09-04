@@ -8,7 +8,7 @@ namespace SQE.API.Server.Services
 {
     public interface IUtilService
     {
-        Task<WktPolygonDTO> RepairWktPolygonAsync(string wktPolygon, string clientId = null);
+        WktPolygonDTO RepairWktPolygonAsync(string wktPolygon, string clientId = null);
     }
 
     public class UtilService : IUtilService
@@ -20,7 +20,7 @@ namespace SQE.API.Server.Services
             _hubContext = hubContext;
         }
 
-        public async Task<WktPolygonDTO> RepairWktPolygonAsync(string wktPolygon, string clientId = null)
+        public WktPolygonDTO RepairWktPolygonAsync(string wktPolygon, string clientId = null)
         {
             var repaired = GeometryValidation.ValidatePolygon(wktPolygon, "polygon", true);
             return new WktPolygonDTO { wktPolygon = repaired };

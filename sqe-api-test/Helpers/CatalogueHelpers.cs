@@ -175,7 +175,7 @@ namespace SQE.ApiTest.Helpers
             Assert.NotNull(match.filename);
             Assert.NotNull(match.thumbnail);
             Assert.NotNull(match.url);
-            Assert.NotNull(match.dateOfMatch);
+            Assert.True(match.dateOfMatch < DateTime.Now);
         }
     }
 }

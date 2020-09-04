@@ -26,7 +26,7 @@ namespace SQE.API.Server.HttpControllers
         [HttpPost("v1/[controller]s/repair-wkt-polygon")]
         public async Task<ActionResult<WktPolygonDTO>> RepairWktPolygon([FromBody] WktPolygonDTO payload)
         {
-            return await _utilService.RepairWktPolygonAsync(payload.wktPolygon);
+            return _utilService.RepairWktPolygonAsync(payload.wktPolygon);
         }
     }
 }

@@ -37,7 +37,7 @@ jobs:
       - name: Test
         env:
           DOTNET_CLI_TELEMETRY_OPTOUT: 1
-        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput='./coverage.info' /p:Exclude="[xunit.*]*%2c[*]SQE.API.Server.Helpers.EmailSender%2c[*]SQE.API.Server.Helpers.StartupChecks%2c[*]SQE.API.Server.Program%2c[*]SQE.DatabaseAccess.Helpers.ApiException%2c[*]SQE.DatabaseAccess.Helpers.StandardExceptions%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlDbCommand%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlConnection" -l "console;verbosity=diagnostic" --blame
+        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput='./coverage.info' /p:Exclude="[xunit.*]*%2c[*]SQE.API.Server.Helpers.EmailSender%2c[*]SQE.API.Server.Helpers.StartupChecks%2c[*]SQE.API.Server.Program%2c[*]SQE.DatabaseAccess.Helpers.ApiException%2c[*]SQE.DatabaseAccess.Helpers.StandardExceptions%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlDbCommand%2c[*]SQE.DatabaseAccess.DbConnectionBase.ReliableMySqlConnection%2c[*]GenerateTestRequestObjects%2c[*]GenerateTypescriptDTOs%2c[*]GenerateTypescriptInterfaces%2c[*]Program%2c[*]sqe_realtime_hub_builder%2c[*]" -l "console;verbosity=diagnostic" --blame
         
       - name: Debug possible failure
         if: failure()

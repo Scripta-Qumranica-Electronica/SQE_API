@@ -105,16 +105,6 @@ namespace SQE.ApiTest
             await UpdateEditionRoi(true);
         }
 
-        [Fact]
-        public async Task CanBatchEditRois()
-        {
-            // Test the HTTP transport
-            await BatchEditRois(false);
-
-            // Test the SignalR transport
-            await BatchEditRois(true);
-        }
-
         private async Task UpdateEditionRoi(bool batch)
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))
@@ -176,7 +166,10 @@ namespace SQE.ApiTest
             }
         }
 
-        public async Task BatchEditRois(bool realtime)
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CanBatchEditRois(bool realtime)
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client))
             {

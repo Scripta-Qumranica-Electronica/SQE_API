@@ -1223,7 +1223,7 @@ namespace SQE.ApiTest
                         zIndex = 0
                     }
                 });
-                artefactPositionRequest.Send(_client);
+                await artefactPositionRequest.Send(_client, auth: true);
 
                 // Act
                 var request = new Get.V1_Editions_EditionId_ScriptCollection(newEdition);
@@ -1261,7 +1261,7 @@ namespace SQE.ApiTest
                         zIndex = 0
                     }
                 });
-                artefactPositionRequest.Send(_client);
+                await artefactPositionRequest.Send(_client, auth: true);
 
                 // Act
                 var request = new Get.V1_Editions_EditionId_ScriptLines(newEdition);

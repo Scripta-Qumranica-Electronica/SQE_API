@@ -34,7 +34,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return await _utilService.RepairWktPolygonAsync(payload.wktPolygon, clientId: Context.ConnectionId);
+                return _utilService.RepairWktPolygonAsync(payload.wktPolygon, clientId: Context.ConnectionId);
             }
             catch (ApiException err)
             {
