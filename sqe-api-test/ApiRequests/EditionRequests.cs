@@ -60,7 +60,7 @@ namespace SQE.ApiTest.ApiRequests
             protected override string HttpPath()
             {
                 return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                    + (_optional != null ? $"?optional={string.Join(",", _optional)}" : "")
+                    + (_optional != null ? $"?optional={string.Join("&optional=", _optional)}" : "")
                     + (_token != null ? $"&token={_token}" : "");
             }
 

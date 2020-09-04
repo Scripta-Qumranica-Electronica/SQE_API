@@ -55,41 +55,41 @@ namespace SQE.API.Server.Serialization
                 matches = catList.Select(x => x.ToDTO()).ToArray()
             };
         }
-
-        public static InstitutionalImageDTO ToInstitutionalImageDTO(this CatalogueMatch cat)
-        {
-            return new InstitutionalImageDTO
-            {
-                id = cat.ImagedObjectId,
-                license = cat.License,
-                thumbnailUrl = $"{cat.Proxy}${cat.Url}${cat.Filename}/full/150,/0/${cat.Suffix}"
-            };
-        }
-
-        public static InstitutionalImageListDTO ToInstitutionalImageListDTO(this IEnumerable<CatalogueMatch> catList)
-        {
-            return new InstitutionalImageListDTO
-            {
-                institutionalImages = catList.Select(x => x.ToInstitutionalImageDTO()).ToList()
-            };
-        }
-
-        public static TextFragmentDataDTO ToTextFragmentDataDTO(this CatalogueMatch cat)
-        {
-            return new TextFragmentDataDTO
-            {
-                editorId = 0,
-                id = cat.TextFragmentId,
-                name = cat.Name
-            };
-        }
-
-        public static TextFragmentDataListDTO ToTextFragmentDataListingDTO(this IEnumerable<CatalogueMatch> catList)
-        {
-            return new TextFragmentDataListDTO
-            {
-                textFragments = catList.Select(x => x.ToTextFragmentDataDTO()).ToList()
-            };
-        }
+        //
+        // public static InstitutionalImageDTO ToInstitutionalImageDTO(this CatalogueMatch cat)
+        // {
+        //     return new InstitutionalImageDTO
+        //     {
+        //         id = cat.ImagedObjectId,
+        //         license = cat.License,
+        //         thumbnailUrl = $"{cat.Proxy}${cat.Url}${cat.Filename}/full/150,/0/${cat.Suffix}"
+        //     };
+        // }
+        //
+        // public static InstitutionalImageListDTO ToInstitutionalImageListDTO(this IEnumerable<CatalogueMatch> catList)
+        // {
+        //     return new InstitutionalImageListDTO
+        //     {
+        //         institutionalImages = catList.Select(x => x.ToInstitutionalImageDTO()).ToList()
+        //     };
+        // }
+        //
+        // public static TextFragmentDataDTO ToTextFragmentDataDTO(this CatalogueMatch cat)
+        // {
+        //     return new TextFragmentDataDTO
+        //     {
+        //         editorId = 0,
+        //         id = cat.TextFragmentId,
+        //         name = cat.Name
+        //     };
+        // }
+        //
+        // public static TextFragmentDataListDTO ToTextFragmentDataListingDTO(this IEnumerable<CatalogueMatch> catList)
+        // {
+        //     return new TextFragmentDataListDTO
+        //     {
+        //         textFragments = catList.Select(x => x.ToTextFragmentDataDTO()).ToList()
+        //     };
+        // }
     }
 }

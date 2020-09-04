@@ -42,9 +42,9 @@ namespace SQE.API.Server.Services
             UpdateInterpretationRoiDTOList updatedRois,
             string clientId = null);
 
-        Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
-            List<uint> deleteRois,
-            string clientId = null);
+        // Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
+        //     List<uint> deleteRois,
+        //     string clientId = null);
 
         Task<NoContentResult> DeleteRoiAsync(UserInfo editionUser,
             uint deleteRoi,
@@ -229,20 +229,20 @@ namespace SQE.API.Server.Services
             return new NoContentResult();
         }
 
-        public async Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
-            List<uint> deleteRois,
-            string clientId = null)
-        {
-            var response = await DeleteRoisInternalAsync(editionUser, deleteRois);
-
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            await _hubContext.Clients
-                .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .DeletedRoi(new DeleteDTO(EditionEntities.roi, response));
-
-            return response;
-        }
+        // public async Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
+        //     List<uint> deleteRois,
+        //     string clientId = null)
+        // {
+        //     var response = await DeleteRoisInternalAsync(editionUser, deleteRois);
+        //
+        //     // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+        //     // made the request, that client directly received the response.
+        //     await _hubContext.Clients
+        //         .GroupExcept(editionUser.EditionId.ToString(), clientId)
+        //         .DeletedRoi(new DeleteDTO(EditionEntities.roi, response));
+        //
+        //     return response;
+        // }
 
         private async Task<List<uint>> DeleteRoisInternalAsync(UserInfo editionUser,
             List<uint> deleteRois)

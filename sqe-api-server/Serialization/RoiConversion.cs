@@ -39,21 +39,21 @@ namespace SQE.API.Server.Serialization
             };
         }
 
-        public static SignInterpretationRoiData ToSignInterpRoiData(this InterpretationRoiDTO x)
-        {
-            return new SignInterpretationRoiData
-            {
-                SignInterpretationId = x.signInterpretationId,
-                SignInterpretationRoiId = x.interpretationRoiId,
-                ArtefactId = x.artefactId,
-                Exceptional = x.exceptional,
-                TranslateX = x.translate.x,
-                TranslateY = x.translate.y,
-                Shape = GeometryValidation.ValidatePolygon(x.shape, "roi"),
-                ValuesSet = x.valuesSet,
-                StanceRotation = x.stanceRotation,
-            };
-        }
+        // public static SignInterpretationRoiData ToSignInterpRoiData(this InterpretationRoiDTO x)
+        // {
+        //     return new SignInterpretationRoiData
+        //     {
+        //         SignInterpretationId = x.signInterpretationId,
+        //         SignInterpretationRoiId = x.interpretationRoiId,
+        //         ArtefactId = x.artefactId,
+        //         Exceptional = x.exceptional,
+        //         TranslateX = x.translate.x,
+        //         TranslateY = x.translate.y,
+        //         Shape = GeometryValidation.ValidatePolygon(x.shape, "roi"),
+        //         ValuesSet = x.valuesSet,
+        //         StanceRotation = x.stanceRotation,
+        //     };
+        // }
 
         public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(this IEnumerable<SetInterpretationRoiDTO> x)
         {
@@ -92,26 +92,26 @@ namespace SQE.API.Server.Serialization
             return x.Select(x => x.ToUpdateDTO());
         }
 
-        private static SignInterpretationRoiData ToSignInterpretationRoiData(InterpretationRoiDTO x)
-        {
-            return new SignInterpretationRoiData
-            {
-                SignInterpretationRoiId = x.interpretationRoiId,
-                SignInterpretationId = x.signInterpretationId,
-                ArtefactId = x.artefactId,
-                Exceptional = x.exceptional,
-                TranslateX = x.translate.x,
-                TranslateY = x.translate.y,
-                Shape = GeometryValidation.ValidatePolygon(x.shape, "roi"),
-                ValuesSet = x.valuesSet,
-                StanceRotation = x.stanceRotation
-            };
-        }
-
-        public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(this IEnumerable<InterpretationRoiDTO> x)
-        {
-            return x.Select(x => x.ToSignInterpRoiData());
-        }
+        // private static SignInterpretationRoiData ToSignInterpretationRoiData(InterpretationRoiDTO x)
+        // {
+        //     return new SignInterpretationRoiData
+        //     {
+        //         SignInterpretationRoiId = x.interpretationRoiId,
+        //         SignInterpretationId = x.signInterpretationId,
+        //         ArtefactId = x.artefactId,
+        //         Exceptional = x.exceptional,
+        //         TranslateX = x.translate.x,
+        //         TranslateY = x.translate.y,
+        //         Shape = GeometryValidation.ValidatePolygon(x.shape, "roi"),
+        //         ValuesSet = x.valuesSet,
+        //         StanceRotation = x.stanceRotation
+        //     };
+        // }
+        //
+        // public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(this IEnumerable<InterpretationRoiDTO> x)
+        // {
+        //     return x.Select(x => x.ToSignInterpRoiData());
+        // }
 
         public static UpdateInterpretationRoiDTO ToUpdateInterpretationRoiDTO(this SetInterpretationRoiDTO x, uint roiId)
         {

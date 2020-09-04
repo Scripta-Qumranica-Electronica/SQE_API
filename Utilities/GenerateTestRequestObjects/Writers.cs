@@ -70,7 +70,7 @@ namespace GenerateTestRequestObjects
                             (qp.ParamType.Contains("List<")
                              || qp.ParamType.Contains("Enumerable<")
                              || qp.ParamType.Contains("[")
-                                ? $"{qp.ParamName}={{string.Join(\",\", _{qp.ParamName.ToCamelCase()})}}\""
+                                ? $"{qp.ParamName}={{string.Join(\"&optional=\", _{qp.ParamName.ToCamelCase()})}}\""
                                 : $"{qp.ParamName}={{_{qp.ParamName.ToCamelCase()}}}\"")} : """")";
                     }
 

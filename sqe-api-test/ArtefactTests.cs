@@ -27,6 +27,7 @@ namespace SQE.ApiTest
 
         private readonly DatabaseQuery _db;
         private readonly WKTReader _wkr = new WKTReader();
+        private static bool _images = true;
 
         private const string version = "v1";
         private const string controller = "artefacts";
@@ -40,8 +41,13 @@ namespace SQE.ApiTest
         public async Task<ArtefactListDTO> GetEditionArtefacts(uint? editionId = null)
         {
             editionId ??= EditionHelpers.GetEditionId();
-
-            var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId.Value, new List<string> { "masks" });
+            var optional = new List<string> { "masks" };
+            if (_images)
+            {
+                optional.Add("images");
+                _images = !_images;
+            }
+            var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId.Value, optional);
             await artRequest.Send(
                 _client,
                 StartConnectionAsync,
