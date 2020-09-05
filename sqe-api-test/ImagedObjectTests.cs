@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -150,22 +151,22 @@ namespace SQE.ApiTest
         {
             // Arrange
             var (editionId, objectId) = await GetEditionImagesWithArtefact();
-            var path = editionImagedObjectbyId.Replace("$EditionId", editionId.ToString())
-                           .Replace("$ImageObjectId", objectId)
-                       + "?optional=artefacts&optional=masks";
 
             // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectDTO>(
+            var request = new Get.V1_Editions_EditionId_ImagedObjects_ImagedObjectId(
+                editionId,
+                objectId,
+                new List<string>() { "artefacts", "masks" });
+            await request.Send(
                 _client,
-                HttpMethod.Get,
-                path,
-                null
+                StartConnectionAsync,
+                auth: true
             );
 
             // Assert
-            response.EnsureSuccessStatusCode();
+            request.HttpResponseMessage.EnsureSuccessStatusCode();
             var foundArtefactWithMask = false;
-            foreach (var art in msg.artefacts)
+            foreach (var art in request.HttpResponseObject.artefacts)
                 if (!string.IsNullOrEmpty(art.mask))
                 {
                     foundArtefactWithMask = true;

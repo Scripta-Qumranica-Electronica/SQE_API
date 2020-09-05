@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using MySql.Data.MySqlClient;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -197,9 +198,10 @@ WHERE text_fragment_id = @TextFragmentId
                         Confirmed = confirm
                     });
                 }
-                catch (SystemException e)
+                catch (MySqlException e)
                 {
-                    await ChangeImagedObjectTextFragmentMatchConfirmationAsync(userId, editionCatalogToTextFragmentId, (bool?)null);
+                    if (e.Number == 1062)
+                        await ChangeImagedObjectTextFragmentMatchConfirmationAsync(userId, editionCatalogToTextFragmentId, (bool?)null);
                 }
             }
         }
