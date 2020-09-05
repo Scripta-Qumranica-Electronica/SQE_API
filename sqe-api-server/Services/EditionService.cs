@@ -587,24 +587,6 @@ The Scripta Qumranica Electronica team</body></html>";
             };
         }
 
-        internal static UserToken OwnerToModel(UserDTO user)
-        {
-            return new UserToken
-            {
-                UserId = user.userId,
-                Email = user.email
-            };
-        }
-
-        internal static Permission PermissionDtoTOModel(PermissionDTO permission)
-        {
-            return new Permission
-            {
-                IsAdmin = permission.isAdmin,
-                MayWrite = permission.mayWrite
-            };
-        }
-
         private static DetailedEditorRightsDTO _permissionsToEditorRightsDTO(string editorEmail,
             bool mayRead,
             bool mayWrite,

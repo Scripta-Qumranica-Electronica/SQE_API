@@ -38,14 +38,14 @@ namespace SQE.DatabaseAccess.Models
     public class EditionCatalogueEntry
     {
         public uint IaaEditionCatalogId { get; set; }
-        public string Manuscript { get; set; }
-        public string EditionName { get; set; }
-        public string EditionVolume { get; set; }
-        public string EditionLocation1 { get; set; }
-        public string EditionLocation2 { get; set; }
-        public byte EditionSide { get; set; }
-        public string Comment { get; set; }
-        public uint ManuscriptId { get; set; }
-        public uint EditionId { get; set; }
+        // public string Manuscript { get; set; }
+        // public string EditionName { get; set; }
+        // public string EditionVolume { get; set; }
+        // public string EditionLocation1 { get; set; }
+        // public string EditionLocation2 { get; set; }
+        // public byte EditionSide { get; set; }
+        // public string Comment { get; set; }
+        // public uint ManuscriptId { get; set; }
+        // public uint EditionId { get; set; }
     }
 }

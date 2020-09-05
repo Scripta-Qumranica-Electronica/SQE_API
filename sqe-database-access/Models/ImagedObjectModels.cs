@@ -11,13 +11,6 @@ namespace SQE.DatabaseAccess.Models
         public string Catalog2 { get; set; }
     }
 
-    public class ImageStack
-    {
-        public uint Id { get; set; }
-        public List<Image> Images { set; get; }
-        public int MasterIndex { set; get; }
-    }
-
     public class ImagedObjectTextFragmentMatch
     {
         public uint EditionId { get; set; }

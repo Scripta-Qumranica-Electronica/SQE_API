@@ -43,26 +43,6 @@ namespace SQE.API.Server.Helpers
         private static extern void c_char_free(IntPtr ptr);
 
         /// <summary>
-        ///     The validator checks that the transformMatrix is indeed valid JSON that can be successfully
-        ///     parsed into the SQE.SqeHttpApi.DataAccess.Models.TransformMatrix class.
-        /// </summary>
-        /// <param name="transformMatrix">A JSON string with a transform matrix object.</param>
-        /// <returns></returns>
-        public static bool ValidateTransformMatrix(string transformMatrix)
-        {
-            try
-            {
-                // Test that the string is valid JSON that can be parsed into a valid instance of the TransformMatrix class.
-                _ = JsonSerializer.Deserialize<TransformMatrix>(transformMatrix);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
         ///     Validate that the wkt polygon is indeed correct. If it is not, the method will
         ///     throw an error. When the fix parameter is set to true, it will try to repair it and
         ///     send the repaired version of the polygon back with the error.  If the polygon cannot be

@@ -91,8 +91,7 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope())
             using (var connection = OpenConnection())
             {
-                //var existingMatches = await GetTextFragmentMatchesForImagedObjectAsync(imagedObjectId);
-                var existingEditionCats = await connection.QueryAsync<EditionCatalogueEntry>(
+                var existingEditionCats = (await connection.QueryAsync<EditionCatalogueEntry>(
                     EditionCatalogueQuery.GetQuery(false, false, string.IsNullOrEmpty(canonicalEditionName),
                         string.IsNullOrEmpty(canonicalEditionVolume), string.IsNullOrEmpty(canonicalEditionLoc1),
                         string.IsNullOrEmpty(canonicalEditionLoc2), true,
@@ -107,7 +106,7 @@ namespace SQE.DatabaseAccess
                         Comment = comment,
                         EditionId = editionId,
                         UserId = userId
-                    });
+                    })).ToList();
                 var editionCatalogueId = existingEditionCats.Any()
                     ? existingEditionCats.First().IaaEditionCatalogId
                     : (uint?)null;

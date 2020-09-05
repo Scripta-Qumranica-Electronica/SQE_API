@@ -70,12 +70,6 @@ namespace SQE.DatabaseAccess.Models
         public uint EditionId { get; set; }
     }
 
-    public class Share
-    {
-        public UserToken UserToken { get; set; }
-        public Permission Permission { get; set; }
-    }
-
     public class TextEdition
     {
         public readonly List<TextFragmentData> fragments = new List<TextFragmentData>();

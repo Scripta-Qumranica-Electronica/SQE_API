@@ -183,50 +183,50 @@ WHERE edition_id = @EditionId";
         }
     }
 
-    internal static class EditionLockQuery
-    {
-        public const string GetQuery = @"
-SELECT locked AS Locked
-FROM edition_editor
-JOIN edition USING(edition_id)
-WHERE edition_id = @EditionId";
-
-        internal class Result
-        {
-            public bool Locked { get; set; } // locked is TINYINT, which is 8-bit unsigned like C# bool.  Is it ok/safe?
-        }
-    }
-
-    // TODO: probably delete this.
-    internal static class ScrollVersionGroupLimitQuery
-    {
-        private const string DefaultLimit = " sv1.user_id = 1 ";
-
-        private const string UserLimit = " sv1.user_id = @UserId ";
-
-        private const string CoalesceScrollVersions = @"scroll_version_id IN 
-            (SELECT sv2.scroll_version_id
-            FROM scroll_version sv1
-            JOIN scroll_version_group USING(edition_id)
-            JOIN scroll_version sv2 ON sv2.edition_id = scroll_version_group.edition_id
-            WHERE sv1.scroll_version_id = @ScrollVersionId";
-
-        // You must add a parameter `@ScrollVersionId` to any query using this.
-        public const string LimitToScrollVersionGroup = CoalesceScrollVersions + ")";
-
-        // You must add a parameter `@ScrollVersionId` to any query using this.
-        public const string LimitToScrollVersionGroupNoAuth = CoalesceScrollVersions + " AND " + DefaultLimit + ")";
-
-        // You must add the parameters `@ScrollVersionId` and `@UserId` to any query using this.
-        public const string LimitToScrollVersionGroupAndUser =
-            CoalesceScrollVersions + " AND (" + DefaultLimit + " OR " + UserLimit + "))";
-
-        public const string LimitScrollVersionGroupToDefaultUser = @"
-            scroll_version.user_id = 1 ";
-
-        public const string LimitScrollVersionGroupToUser =
-            LimitScrollVersionGroupToDefaultUser + " OR scroll_version.user_id = @UserId ";
-    }
+    //     internal static class EditionLockQuery
+    //     {
+    //         public const string GetQuery = @"
+    // SELECT locked AS Locked
+    // FROM edition_editor
+    // JOIN edition USING(edition_id)
+    // WHERE edition_id = @EditionId";
+    //
+    //         internal class Result
+    //         {
+    //             public bool Locked { get; set; } // locked is TINYINT, which is 8-bit unsigned like C# bool.  Is it ok/safe?
+    //         }
+    //     }
+    //
+    //     // TODO: probably delete this.
+    //     internal static class ScrollVersionGroupLimitQuery
+    //     {
+    //         private const string DefaultLimit = " sv1.user_id = 1 ";
+    //
+    //         private const string UserLimit = " sv1.user_id = @UserId ";
+    //
+    //         private const string CoalesceScrollVersions = @"scroll_version_id IN 
+    //             (SELECT sv2.scroll_version_id
+    //             FROM scroll_version sv1
+    //             JOIN scroll_version_group USING(edition_id)
+    //             JOIN scroll_version sv2 ON sv2.edition_id = scroll_version_group.edition_id
+    //             WHERE sv1.scroll_version_id = @ScrollVersionId";
+    //
+    //         // You must add a parameter `@ScrollVersionId` to any query using this.
+    //         public const string LimitToScrollVersionGroup = CoalesceScrollVersions + ")";
+    //
+    //         // You must add a parameter `@ScrollVersionId` to any query using this.
+    //         public const string LimitToScrollVersionGroupNoAuth = CoalesceScrollVersions + " AND " + DefaultLimit + ")";
+    //
+    //         // You must add the parameters `@ScrollVersionId` and `@UserId` to any query using this.
+    //         public const string LimitToScrollVersionGroupAndUser =
+    //             CoalesceScrollVersions + " AND (" + DefaultLimit + " OR " + UserLimit + "))";
+    //
+    //         public const string LimitScrollVersionGroupToDefaultUser = @"
+    //             scroll_version.user_id = 1 ";
+    //
+    //         public const string LimitScrollVersionGroupToUser =
+    //             LimitScrollVersionGroupToDefaultUser + " OR scroll_version.user_id = @UserId ";
+    //     }
 
     #region editor queries
 
@@ -290,44 +290,44 @@ WHERE edition_editor.edition_id = @EditionId
             WHERE edition_id = @EditionId)";
     }
 
-    internal static class CopyEditionDataForTableQuery
-    {
-        // You must add a parameter `@ScrollVersionId` and `@CopyToScrollVersionId` to use this.
-        public static string GetQuery(string tableName, string tableIdColumn)
-        {
-            return $@"INSERT IGNORE INTO {tableName} ({tableIdColumn}, edition_editor_id, edition_id) 
-            SELECT {tableIdColumn}, @EditionEditorId, @CopyToEditionId 
-            FROM {tableName} 
-            WHERE edition_id = @EditionId";
-        }
-    }
-
-    internal static class GetOwnerTableDataForQuery
-    {
-        // You must add a parameter `@EditionId`.
-        public static string GetQuery(string tableName, string tableIdColumn)
-        {
-            return $@"SELECT {tableIdColumn} 
-            FROM {tableName} 
-            WHERE edition_id = @EditionId";
-        }
-    }
-
-    internal static class WriteOwnerTableData
-    {
-        public static string GetQuery(string tableName,
-            string tableIdColumn,
-            uint editionId,
-            uint editionEditorId,
-            List<uint> dataIds)
-        {
-            return $@"INSERT INTO {tableName} (edition_id, edition_editor_id, {tableIdColumn})
-            VALUES {string.Join(
-                    ",",
-                    dataIds.Select(x => $"({editionId},{editionEditorId},{x.ToString()})"))
-                }";
-        }
-    }
+    // internal static class CopyEditionDataForTableQuery
+    // {
+    //     // You must add a parameter `@ScrollVersionId` and `@CopyToScrollVersionId` to use this.
+    //     public static string GetQuery(string tableName, string tableIdColumn)
+    //     {
+    //         return $@"INSERT IGNORE INTO {tableName} ({tableIdColumn}, edition_editor_id, edition_id) 
+    //         SELECT {tableIdColumn}, @EditionEditorId, @CopyToEditionId 
+    //         FROM {tableName} 
+    //         WHERE edition_id = @EditionId";
+    //     }
+    // }
+    //
+    // internal static class GetOwnerTableDataForQuery
+    // {
+    //     // You must add a parameter `@EditionId`.
+    //     public static string GetQuery(string tableName, string tableIdColumn)
+    //     {
+    //         return $@"SELECT {tableIdColumn} 
+    //         FROM {tableName} 
+    //         WHERE edition_id = @EditionId";
+    //     }
+    // }
+    //
+    // internal static class WriteOwnerTableData
+    // {
+    //     public static string GetQuery(string tableName,
+    //         string tableIdColumn,
+    //         uint editionId,
+    //         uint editionEditorId,
+    //         List<uint> dataIds)
+    //     {
+    //         return $@"INSERT INTO {tableName} (edition_id, edition_editor_id, {tableIdColumn})
+    //         VALUES {string.Join(
+    //                 ",",
+    //                 dataIds.Select(x => $"({editionId},{editionEditorId},{x.ToString()})"))
+    //             }";
+    //     }
+    // }
 
     internal static class UpdateEditionLegalDetailsQuery
     {
@@ -360,23 +360,23 @@ WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
         }
     }
 
-    internal static class LockEditionQuery
-    {
-        internal const string GetQuery = @"
-UPDATE edition
-SET locked = 1
-WHERE edition_id = @EditionId
-";
-    }
-
-    internal static class UnlockEditionQuery
-    {
-        internal const string GetQuery = @"
-UPDATE edition
-SET locked = 0
-WHERE edition_id = @EditionId
-";
-    }
+    //     internal static class LockEditionQuery
+    //     {
+    //         internal const string GetQuery = @"
+    // UPDATE edition
+    // SET locked = 1
+    // WHERE edition_id = @EditionId
+    // ";
+    //     }
+    //
+    //     internal static class UnlockEditionQuery
+    //     {
+    //         internal const string GetQuery = @"
+    // UPDATE edition
+    // SET locked = 0
+    // WHERE edition_id = @EditionId
+    // ";
+    //     }
 
     internal static class EditionScriptQuery
     {

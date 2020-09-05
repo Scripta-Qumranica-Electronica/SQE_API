@@ -32,11 +32,11 @@ namespace SQE.DatabaseAccess
             uint signInterpretationId,
             SignInterpretationAttributeData newAttribute);
 
-        Task<List<SignInterpretationAttributeData>> UpdateSignInterpretationAttributesAsync(UserInfo editionUser,
-            uint signInterpretationId,
-            List<SignInterpretationAttributeData> updateAttributes);
-
-        Task<List<uint>> DeleteSignInterpretationAttributesAsync(UserInfo editionUser, List<uint> deleteAttributeIds);
+        // Task<List<SignInterpretationAttributeData>> UpdateSignInterpretationAttributesAsync(UserInfo editionUser,
+        //     uint signInterpretationId,
+        //     List<SignInterpretationAttributeData> updateAttributes);
+        //
+        // Task<List<uint>> DeleteSignInterpretationAttributesAsync(UserInfo editionUser, List<uint> deleteAttributeIds);
 
         Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId, uint attributeValueId);
@@ -47,8 +47,8 @@ namespace SQE.DatabaseAccess
         Task UpdateAttributeForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId, uint attributeValueId, byte? sequence, float? numericValue);
 
-        Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(UserInfo editionUser,
-            uint signInterpretationAttributeId);
+        // Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(UserInfo editionUser,
+        //     uint signInterpretationAttributeId);
 
         Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByDataAsync(
             UserInfo editionUser,
@@ -58,16 +58,16 @@ namespace SQE.DatabaseAccess
             UserInfo editionUser,
             uint signInterpretationId);
 
-        Task<uint> GetSignInterpretationAttributeIdByIdAsync(UserInfo editionUser,
-            uint signInterpretationAttributeId);
-
-        Task<List<uint>> GetSignInterpretationAttributeIdsByDataAsync(
-            UserInfo editionUser,
-            SignInterpretationAttributeDataSearchData dataSearchData);
-
-        Task<List<uint>> GetSignInterpretationAttributeIdsByInterpretationId(
-            UserInfo editionUser,
-            uint signInterpretationId);
+        // Task<uint> GetSignInterpretationAttributeIdByIdAsync(UserInfo editionUser,
+        //     uint signInterpretationAttributeId);
+        //
+        // Task<List<uint>> GetSignInterpretationAttributeIdsByDataAsync(
+        //     UserInfo editionUser,
+        //     SignInterpretationAttributeDataSearchData dataSearchData);
+        //
+        // Task<List<uint>> GetSignInterpretationAttributeIdsByInterpretationId(
+        //     UserInfo editionUser,
+        //     uint signInterpretationId);
 
         Task<List<SignInterpretationAttributeData>> ReplaceSignInterpretationAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
@@ -483,33 +483,33 @@ namespace SQE.DatabaseAccess
                 searchData);
         }
 
-        /// <summary>
-        ///     Gets the attribute with the given id
-        /// </summary>
-        /// <param name="editionUser">Edition user object</param>
-        /// <param name="signInterpretationAttributeId">Id of the attribute to be retrieved</param>
-        /// <returns>Sign interpretation attribute with the given id</returns>
-        /// <exception cref="DataNotFoundException"></exception>
-        public async Task<uint> GetSignInterpretationAttributeIdByIdAsync(
-            UserInfo editionUser,
-            uint signInterpretationAttributeId)
-        {
-            var searchData = new SignInterpretationAttributeDataSearchData
-            {
-                SignInterpretationAttributeId = signInterpretationAttributeId
-            };
-
-            var result = await GetSignInterpretationAttributeIdsByDataAsync(
-                editionUser,
-                searchData);
-
-            if (result.Count != 1)
-                throw new StandardExceptions.DataNotFoundException(
-                    "sign interpretation attribute",
-                    signInterpretationAttributeId
-                );
-            return result.First();
-        }
+        // /// <summary>
+        // ///     Gets the attribute with the given id
+        // /// </summary>
+        // /// <param name="editionUser">Edition user object</param>
+        // /// <param name="signInterpretationAttributeId">Id of the attribute to be retrieved</param>
+        // /// <returns>Sign interpretation attribute with the given id</returns>
+        // /// <exception cref="DataNotFoundException"></exception>
+        // public async Task<uint> GetSignInterpretationAttributeIdByIdAsync(
+        //     UserInfo editionUser,
+        //     uint signInterpretationAttributeId)
+        // {
+        //     var searchData = new SignInterpretationAttributeDataSearchData
+        //     {
+        //         SignInterpretationAttributeId = signInterpretationAttributeId
+        //     };
+        //
+        //     var result = await GetSignInterpretationAttributeIdsByDataAsync(
+        //         editionUser,
+        //         searchData);
+        //
+        //     if (result.Count != 1)
+        //         throw new StandardExceptions.DataNotFoundException(
+        //             "sign interpretation attribute",
+        //             signInterpretationAttributeId
+        //         );
+        //     return result.First();
+        // }
 
         /// <summary>
         ///     Retrieves all sign interpretation attribute ids which match the data provided by searchData
