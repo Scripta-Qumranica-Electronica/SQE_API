@@ -89,7 +89,91 @@ namespace SQE.DatabaseAccess.Helpers
         MoveInBetween
     }
 
-    public class PositionDataRequestFactory
+    public static class PositionDataRequestFactory
+    {
+        /// <summary>
+        ///     Create a new PositionDataRequestHelper object with several items.
+        ///     We use an async factory method since we may need to await the
+        ///     response from AddExistingAnchors().
+        /// </summary>
+        /// <param name="dbConnection">IDbConnection for making queries to the database</param>
+        /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="addExistingAnchors">
+        ///     Boolean whether or not to automatically add the anchors before and after
+        ///     the itemIds to the factory
+        /// </param>
+        /// <returns></returns>
+        public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
+            IDbConnection dbConnection,
+            StreamType streamType,
+            uint editionId,
+            bool addExistingAnchors = false)
+        {
+            var newObject =
+                new PositionDataRequestHelper(dbConnection, streamType, new List<uint>(), editionId);
+            if (addExistingAnchors) await newObject.AddExistingAnchorsAsync();
+            return newObject;
+        }
+
+        /// <summary>
+        ///     Create a new PositionDataRequestHelper object with several items.
+        ///     We use an async factory method since we may need to await the
+        ///     response from AddExistingAnchors().
+        /// </summary>
+        /// <param name="dbConnection">IDbConnection for making queries to the database</param>
+        /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
+        /// <param name="itemIds">A list of item ids which should form a path</param>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="addExistingAnchors">
+        ///     Boolean whether or not to automatically add the anchors before and after
+        ///     the itemIds to the factory
+        /// </param>
+        /// <returns></returns>
+        public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
+            IDbConnection dbConnection,
+            StreamType streamType,
+            List<uint> itemIds,
+            uint editionId,
+            bool addExistingAnchors = false)
+        {
+            var newObject =
+                new PositionDataRequestHelper(dbConnection, streamType, itemIds, editionId);
+            if (addExistingAnchors) await newObject.AddExistingAnchorsAsync();
+            return newObject;
+        }
+
+        /// <summary>
+        ///     Create a new PositionDataRequestHelper object with only one item.
+        ///     We use an async factory method since we may need to await the
+        ///     response from AddExistingAnchors().
+        /// </summary>
+        /// <param name="dbConnection">IDbConnection for making queries to the database</param>
+        /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
+        /// <param name="itemId">Id of the item to be manipulated</param>
+        /// <param name="editionId">Id of the edition</param>
+        /// <param name="addExistingAnchors">
+        ///     Boolean whether or not to automatically
+        ///     add the anchors before and after
+        ///     the itemIds to the factory
+        /// </param>
+        /// <returns></returns>
+        public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
+            IDbConnection dbConnection,
+            StreamType streamType,
+            uint itemId,
+            uint editionId,
+            bool addExistingAnchors = false)
+        {
+            return await CreateInstanceAsync(
+                dbConnection, streamType,
+                new List<uint> { itemId },
+                editionId,
+                addExistingAnchors);
+        }
+    }
+
+    public class PositionDataRequestHelper
     {
         private readonly List<PositionAction> _actions = new List<PositionAction>();
         private readonly IDbConnection _dbConnection;
@@ -110,7 +194,7 @@ namespace SQE.DatabaseAccess.Helpers
         /// <param name="streamType">Type of stream</param>
         /// <param name="itemIds">Ids of items to be processed as stream</param>
         /// <param name="editionId">Id of the edition we are dealing with</param>
-        private PositionDataRequestFactory(IDbConnection dbConnection, StreamType streamType, List<uint> itemIds,
+        internal PositionDataRequestHelper(IDbConnection dbConnection, StreamType streamType, List<uint> itemIds,
             uint editionId)
         {
             _dbConnection = dbConnection;
@@ -140,62 +224,6 @@ namespace SQE.DatabaseAccess.Helpers
         public List<uint> AnchorsBefore { get; } = new List<uint>();
         public List<uint> AnchorsAfter { get; } = new List<uint>();
 
-
-        /// <summary>
-        ///     Create a new PositionDataRequestFactory object with several items.
-        ///     We use an async factory method since we may need to await the
-        ///     response from AddExistingAnchors().
-        /// </summary>
-        /// <param name="dbConnection">IDbConnection for making queries to the database</param>
-        /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
-        /// <param name="itemIds">A list of item ids which should form a path</param>
-        /// <param name="editionId">Id of the edition</param>
-        /// <param name="addExistingAnchors">
-        ///     Boolean whether or not to automatically add the anchors before and after
-        ///     the itemIds to the factory
-        /// </param>
-        /// <returns></returns>
-        public static async Task<PositionDataRequestFactory> CreateInstanceAsync(
-            IDbConnection dbConnection,
-            StreamType streamType,
-            List<uint> itemIds,
-            uint editionId,
-            bool addExistingAnchors = false)
-        {
-            var newObject =
-                new PositionDataRequestFactory(dbConnection, streamType, itemIds, editionId);
-            if (addExistingAnchors) await newObject.AddExistingAnchorsAsync();
-            return newObject;
-        }
-
-        /// <summary>
-        ///     Create a new PositionDataRequestFactory object with only one item.
-        ///     We use an async factory method since we may need to await the
-        ///     response from AddExistingAnchors().
-        /// </summary>
-        /// <param name="dbConnection">IDbConnection for making queries to the database</param>
-        /// <param name="streamType">An enum for either the sign stream or the text fragment stream</param>
-        /// <param name="itemId">Id of the item to be manipulated</param>
-        /// <param name="editionId">Id of the edition</param>
-        /// <param name="addExistingAnchors">
-        ///     Boolean whether or not to automatically
-        ///     add the anchors before and after
-        ///     the itemIds to the factory
-        /// </param>
-        /// <returns></returns>
-        public static async Task<PositionDataRequestFactory> CreateInstanceAsync(
-            IDbConnection dbConnection,
-            StreamType streamType,
-            uint itemId,
-            uint editionId,
-            bool addExistingAnchors = false)
-        {
-            return await CreateInstanceAsync(
-                dbConnection, streamType,
-                new List<uint> { itemId },
-                editionId,
-                addExistingAnchors);
-        }
 
         /// <summary>
         ///     Adds all existing anchors which exist before the first and after the last item to the object
@@ -442,7 +470,7 @@ namespace SQE.DatabaseAccess.Helpers
                         // The disconnected items must be connected to the loose items before
                         foreach (var looseNeighbourBefore in looseNeighboursBefore)
                         {
-                            var tmpFactory = await CreateInstanceAsync(
+                            var tmpFactory = await PositionDataRequestFactory.CreateInstanceAsync(
                                 _dbConnection,
                                 _streamType,
                                 new List<uint> { looseNeighbourBefore, neighbourAfter.NextItemId },

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
@@ -12,18 +13,39 @@ namespace SQE.DatabaseAccess
 {
     public interface IAttributeRepository
     {
-        Task<List<SignInterpretationAttributeData>> CreateAttributesAsync(UserInfo editionUser,
+        Task<IEnumerable<SignInterpretationAttributeEntry>> GetAllEditionAttributesAsync(UserInfo editionUser);
+
+        Task<IEnumerable<SignInterpretationAttributeEntry>> GetEditionAttributeAsync(UserInfo editionUser,
+            uint attributeId);
+        Task<uint> CreateEditionAttribute(UserInfo editionUser, string attributeName, string attributeDescription, IEnumerable<SignInterpretationAttributeValueInput> attributeValues);
+        Task<uint> UpdateEditionAttribute(UserInfo editionUser, uint attributeId, string attributeName,
+            string attributeDescription,
+            IEnumerable<SignInterpretationAttributeValueInput> createAttributeValues,
+            IEnumerable<SignInterpretationAttributeValue> updateAttributeValues,
+            IEnumerable<uint> deleteAttributeValues);
+        Task DeleteEditionAttributeAsync(UserInfo editionUser, uint attributeId);
+        // Task DeleteEditionAttributeValueAsync(UserInfo editionUser, uint attributeValueId);
+        Task<List<SignInterpretationAttributeData>> CreateSignInterpretationAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes);
+        Task<List<SignInterpretationAttributeData>> CreateSignInterpretationAttributesAsync(UserInfo editionUser,
+            uint signInterpretationId,
+            SignInterpretationAttributeData newAttribute);
 
-        Task<List<SignInterpretationAttributeData>> UpdateAttributesAsync(UserInfo editionUser,
+        Task<List<SignInterpretationAttributeData>> UpdateSignInterpretationAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> updateAttributes);
 
-        Task<List<uint>> DeleteAttributesAsync(UserInfo editionUser, List<uint> deleteAttributeIds);
+        Task<List<uint>> DeleteSignInterpretationAttributesAsync(UserInfo editionUser, List<uint> deleteAttributeIds);
+
+        Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId, uint attributeValueId);
 
         Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
+
+        Task UpdateAttributeForSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId, uint attributeValueId, byte? sequence, float? numericValue);
 
         Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(UserInfo editionUser,
             uint signInterpretationAttributeId);
@@ -47,7 +69,6 @@ namespace SQE.DatabaseAccess
             UserInfo editionUser,
             uint signInterpretationId);
 
-
         Task<List<SignInterpretationAttributeData>> ReplaceSignInterpretationAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes);
@@ -63,13 +84,274 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
+        /// Get all attributes associated with a particular edition
+        /// </summary>
+        /// <param name="editionUser">The edition user details object</param>
+        /// <returns>The details of the attributes associated with a particular edition</returns>
+        public async Task<IEnumerable<SignInterpretationAttributeEntry>> GetAllEditionAttributesAsync(UserInfo editionUser)
+        {
+            using (var connection = OpenConnection())
+            {
+                return await connection.QueryAsync<SignInterpretationAttributeEntry>(
+                    GetAllEditionSignInterpretationAttributesQuery.GetQuery(),
+                    new { editionUser.EditionId });
+            }
+        }
+
+        /// <summary>
+        /// Get attributes associated with a particular edition by its unique id
+        /// </summary>
+        /// <param name="editionUser">The edition user details object</param>
+        /// <param name="attributeId">The unique id of the desired attribute</param>
+        /// <returns>The details of the desired attribute</returns>
+        public async Task<IEnumerable<SignInterpretationAttributeEntry>> GetEditionAttributeAsync(UserInfo editionUser, uint attributeId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return await connection.QueryAsync<SignInterpretationAttributeEntry>(
+                    GetAllEditionSignInterpretationAttributesQuery.GetQuery(attributeId),
+                    new { editionUser.EditionId, AttributeId = attributeId });
+            }
+        }
+
+        /// <summary>
+        /// Create a new attribute for an edition. The attribute may have 0 or more
+        /// values associated with it.
+        /// </summary>
+        /// <param name="editionUser">The edition user details object</param>
+        /// <param name="attributeName">Name of the new attribute</param>
+        /// <param name="attributeDescription">Description of the attribute</param>
+        /// <param name="attributeValues">A list of 0 or more possible values for the attribute</param>
+        /// <returns>The unique id of the newly created attribute</returns>
+        public async Task<uint> CreateEditionAttribute(UserInfo editionUser, string attributeName,
+            string attributeDescription, IEnumerable<SignInterpretationAttributeValueInput> attributeValues)
+        {
+            using (var transactionScope = new TransactionScope())
+            {
+                // First check for attribute name collisions
+                var existingAttribute = await GetAllEditionAttributesAsync(editionUser);
+
+                // Throw an error if the attribute name is not unique
+                if (existingAttribute.Any(x => x.AttributeName == attributeName))
+                    throw new StandardExceptions.ConflictingDataException("attribute");
+
+                // Write the new attribute
+                var newAttributeId = await _createOrUpdateEditionAttribute(editionUser, attributeName, attributeDescription);
+
+                // Write the new attribute values
+                await Task.WhenAll(attributeValues.Select(x =>
+                    _createOrUpdateEditionAttributeValue(
+                        editionUser,
+                        newAttributeId,
+                        x.AttributeStringValue,
+                        x.AttributeStringValueDescription,
+                        x.Css)));
+
+                // Complete transaction and return the id of the new attribute
+                transactionScope.Complete();
+                return newAttributeId;
+            }
+        }
+
+        /// <summary>
+        /// Update the details of an attribute in an edition.
+        /// </summary>
+        /// <param name="editionUser">The edition user details object</param>
+        /// <param name="attributeId">The unique id of the attribute to be updated</param>
+        /// <param name="attributeName">The new name for the updated attribute (no change if null or empty)</param>
+        /// <param name="attributeDescription">The new description of the updated attribute (no change if null or empty)</param>
+        /// <param name="createAttributeValues">A list of attribute values to be created</param>
+        /// <param name="updateAttributeValues">A list of attribute values to be updated</param>
+        /// <param name="deleteAttributeValues">A list of attribute value ids to be deleted</param>
+        /// <returns></returns>
+        public async Task<uint> UpdateEditionAttribute(UserInfo editionUser, uint attributeId, string attributeName,
+            string attributeDescription,
+            IEnumerable<SignInterpretationAttributeValueInput> createAttributeValues,
+            IEnumerable<SignInterpretationAttributeValue> updateAttributeValues,
+            IEnumerable<uint> deleteAttributeValues)
+        {
+            using (var transactionScope = new TransactionScope())
+            {
+                // First get the actual details of the attribute
+                var existingAttribute = (await GetEditionAttributeAsync(editionUser, attributeId)).AsList();
+
+                // Throw an error if the attribute id is not found
+                if (!existingAttribute.Any())
+                    throw new StandardExceptions.DataNotFoundException("attribute", attributeId);
+
+                // Check if there is an attribute name update
+                if (!string.IsNullOrEmpty(attributeName)
+                    && !existingAttribute.Any(x => x.AttributeName == attributeName))
+                {
+                    // Throw an error if the attribute name is not unique
+                    if (existingAttribute.Any(x => x.AttributeName == attributeName))
+                        throw new StandardExceptions.ConflictingDataException("attribute");
+                }
+
+                // Write the attribute update if we have a new name or description
+                var updatedAttributeID = string.IsNullOrEmpty(attributeName) && string.IsNullOrEmpty(attributeDescription) ?
+                    attributeId
+                    : await _createOrUpdateEditionAttribute(editionUser, attributeName, attributeDescription, attributeId);
+
+                // Merge the existing attribute values with the newly requested ones if a new attribute was created
+                if (updatedAttributeID != attributeId)
+                    createAttributeValues = createAttributeValues.ToList().Concat(existingAttribute
+                        .Select(x =>
+                            new SignInterpretationAttributeValueInput()
+                            {
+                                AttributeStringValue = x.AttributeStringValue,
+                                AttributeStringValueDescription = x.AttributeStringValueDescription,
+                                Css = x.Css
+                            }));
+
+                // Write the new attribute values
+                await Task.WhenAll(createAttributeValues.Select(x =>
+                    _createOrUpdateEditionAttributeValue(
+                        editionUser,
+                        updatedAttributeID,
+                        x.AttributeStringValue,
+                        x.AttributeStringValueDescription,
+                        x.Css)));
+
+                // Write the attribute value updates
+                await Task.WhenAll(updateAttributeValues.Select(x =>
+                    _createOrUpdateEditionAttributeValue(
+                        editionUser,
+                        updatedAttributeID,
+                        x.AttributeStringValue,
+                        x.AttributeStringValueDescription,
+                        x.Css,
+                        x.AttributeValueId)));
+
+                // Write the attribute value deletes
+                await Task.WhenAll(deleteAttributeValues.Select(x =>
+                    _databaseWriter.WriteToDatabaseAsync(
+                        editionUser,
+                        new MutationRequest(
+                            MutateType.Delete,
+                            new DynamicParameters(),
+                            "attribute_value",
+                            x))));
+
+                // Complete transaction
+                transactionScope.Complete();
+
+                return updatedAttributeID;
+            }
+        }
+
+        /// <summary>
+        /// Delete the specified attribute from the edition
+        /// </summary>
+        /// <param name="editionUser">The edition user details object</param>
+        /// <param name="attributeId">The unique id of the attribute to be deleted</param>
+        /// <returns></returns>
+        public async Task DeleteEditionAttributeAsync(UserInfo editionUser, uint attributeId)
+        {
+            using (var transactionScope = new TransactionScope())
+            {
+                // First get the actual details of the attribute
+                var existingAttribute = await GetEditionAttributeAsync(editionUser, attributeId);
+
+                // Throw an error if the attribute id is not found
+                if (!existingAttribute.Any())
+                    throw new StandardExceptions.DataNotFoundException("attribute", attributeId);
+
+                // Delete the attribute values
+                var attributeValueDeleteRequests = existingAttribute.Select(x => x.AttributeValueId)
+                    .Distinct()
+                    .Select(x => _databaseWriter.WriteToDatabaseAsync(
+                        editionUser,
+                        new MutationRequest(MutateType.Delete, new DynamicParameters(), "attribute_value", x)));
+                await Task.WhenAll(attributeValueDeleteRequests);
+
+                // Delete the attribute
+                var deleteAttributeRequest = new MutationRequest(
+                    MutateType.Delete,
+                    new DynamicParameters(),
+                    "attribute",
+                    attributeId);
+                await _databaseWriter.WriteToDatabaseAsync(editionUser, deleteAttributeRequest);
+
+                // Complete transaction 
+                transactionScope.Complete();
+            }
+        }
+
+        // /// <summary>
+        // /// Delete the specified attribute value from the edition
+        // /// </summary>
+        // /// <param name="editionUser">The edition user details object</param>
+        // /// <param name="attributeValueId">The unique id of the attribute value to be deleted</param>
+        // /// <returns></returns>
+        // public async Task DeleteEditionAttributeValueAsync(UserInfo editionUser, uint attributeValueId)
+        // {
+        //
+        // }
+
+        private async Task<uint> _createOrUpdateEditionAttribute(UserInfo editionUser, string attributeName,
+            string attributeDescription, uint? attributeId = null)
+        {
+            var createParams = new DynamicParameters();
+            createParams.Add("@name", attributeName);
+            createParams.Add("@description", attributeDescription);
+            var mutateRequest = new MutationRequest(
+                attributeId.HasValue ? MutateType.Update : MutateType.Create,
+                createParams,
+                "attribute",
+                attributeId);
+            var writeRequest = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateRequest);
+
+            if (!writeRequest.FirstOrDefault().NewId.HasValue)
+                throw new StandardExceptions.DataNotWrittenException($"{(attributeId.HasValue ? "update" : "create")} new attribute");
+
+            return writeRequest.FirstOrDefault().NewId.Value;
+        }
+
+        private async Task<uint> _createOrUpdateEditionAttributeValue(UserInfo editionUser, uint attributeId, string attributeStringValue,
+            string attributeValueDescription, string attributeValueCss, uint? attributeValueId = null)
+        {
+            var createParams = new DynamicParameters();
+            createParams.Add("@attribute_id", attributeId);
+            createParams.Add("@string_value", attributeStringValue);
+            createParams.Add("@description", attributeValueDescription);
+            var mutateRequest = new MutationRequest(
+                attributeValueId.HasValue ? MutateType.Update : MutateType.Create,
+                createParams,
+                "attribute_value",
+                attributeValueId);
+            var writeRequest = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateRequest);
+
+            if (!writeRequest.FirstOrDefault().NewId.HasValue)
+                throw new StandardExceptions.DataNotWrittenException(
+                    $"{(attributeValueId.HasValue ? "update" : "create")} new attribute value");
+
+            attributeValueId ??= writeRequest.FirstOrDefault().NewId.Value;
+
+            // Check to see if a CSS value should be written, early return for no CSS string
+            if (string.IsNullOrEmpty(attributeValueCss))
+                return attributeValueId.Value;
+
+            var createCssParams = new DynamicParameters();
+            createCssParams.Add("@attribute_value_id", writeRequest.FirstOrDefault().NewId);
+            createCssParams.Add("@css", attributeValueCss);
+            var mutateCssRequest = new MutationRequest(
+                MutateType.Create,
+                createCssParams,
+                "attribute_value_css");
+            await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateCssRequest);
+
+            return attributeValueId.Value;
+        }
+
+        /// <summary>
         ///     Creates new attributes für a sign interpretation
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <param name="newAttributes">List of new attributes</param>
         /// <returns>List of new attributes</returns>
-        public async Task<List<SignInterpretationAttributeData>> CreateAttributesAsync(UserInfo editionUser,
+        public async Task<List<SignInterpretationAttributeData>> CreateSignInterpretationAttributesAsync(UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes)
         {
@@ -79,6 +361,14 @@ namespace SQE.DatabaseAccess
                 MutateType.Create);
         }
 
+        public async Task<List<SignInterpretationAttributeData>> CreateSignInterpretationAttributesAsync(UserInfo editionUser,
+            uint signInterpretationId,
+            SignInterpretationAttributeData newAttribute)
+        {
+            return await CreateSignInterpretationAttributesAsync(editionUser, signInterpretationId,
+                new List<SignInterpretationAttributeData>() { newAttribute });
+        }
+
         /// <summary>
         ///     Update the given attributes
         /// </summary>
@@ -86,7 +376,7 @@ namespace SQE.DatabaseAccess
         /// <param name="signInterpretaionId">Id of sign interpretation</param>
         /// <param name="updateAttributes">List of Attributes with the new values</param>
         /// <returns>Returns the list of Attributes which contain the new ids</returns>
-        public async Task<List<SignInterpretationAttributeData>> UpdateAttributesAsync(
+        public async Task<List<SignInterpretationAttributeData>> UpdateSignInterpretationAttributesAsync(
             UserInfo editionUser,
             uint signInterpretationId,
             List<SignInterpretationAttributeData> updateAttributes)
@@ -105,7 +395,7 @@ namespace SQE.DatabaseAccess
         /// <param name="deleteAttributeIds">List of ids of the attributes to be deleted</param>
         /// <returns>The list of the ids of deleted Attributes or empty list if the given list was null.</returns>
         /// <exception cref="DataNotWrittenException"></exception>
-        public async Task<List<uint>> DeleteAttributesAsync(UserInfo editionUser,
+        public async Task<List<uint>> DeleteSignInterpretationAttributesAsync(UserInfo editionUser,
             List<uint> deleteAttributeIds)
         {
             if (deleteAttributeIds == null) return new List<uint>();
@@ -113,7 +403,8 @@ namespace SQE.DatabaseAccess
                 id => new MutationRequest(
                     MutateType.Delete,
                     new DynamicParameters(),
-                    "sign_interpretation_attribute")).ToList();
+                    "sign_interpretation_attribute",
+                    id)).ToList();
 
             var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
@@ -260,6 +551,31 @@ namespace SQE.DatabaseAccess
                 searchData);
         }
 
+        /// <summary>
+        ///     Deletes the specified attribute value from the sign interpretation referred by its id
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="signInterpretationId">Id of sign interpretation to be altered</param>
+        /// <param name="attributeValueId">Id of attribute value to remove</param>
+        /// <returns>List of ids of delete attributes</returns>
+        public async Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId, uint attributeValueId)
+        {
+            var searchData = new SignInterpretationAttributeDataSearchData
+            {
+                SignInterpretationId = signInterpretationId,
+                AttributeValueId = attributeValueId
+            };
+
+            var attributes = await GetSignInterpretationAttributeIdsByDataAsync(
+                editionUser,
+                searchData);
+
+            return await DeleteSignInterpretationAttributesAsync(
+                editionUser,
+                attributes);
+        }
+
 
         /// <summary>
         ///     Deletes all attributes for the sign interpretation referred by its id
@@ -273,16 +589,51 @@ namespace SQE.DatabaseAccess
             var attributes = await GetSignInterpretationAttributeIdsByInterpretationId(
                 editionUser,
                 signInterpretationId);
-            return await DeleteAttributesAsync(
+            return await DeleteSignInterpretationAttributesAsync(
                 editionUser,
                 attributes);
+        }
+
+        /// <summary>
+        ///     Updates the specified attribute value from the sign interpretation referred by its id
+        /// </summary>
+        /// <param name="editionUser">Edition user object</param>
+        /// <param name="signInterpretationId">Id of sign interpretation to be altered</param>
+        /// <param name="attributeValueId">Id of attribute value to update</param>
+        /// <returns>List of ids of delete attributes</returns>
+        public async Task UpdateAttributeForSignInterpretationAsync(UserInfo editionUser,
+            uint signInterpretationId, uint attributeValueId, byte? sequence, float? numericValue)
+        {
+            if (!sequence.HasValue && !numericValue.HasValue)
+                return;
+
+            var searchData = new SignInterpretationAttributeDataSearchData
+            {
+                SignInterpretationId = signInterpretationId,
+                AttributeValueId = attributeValueId
+            };
+
+            var signInterpretationAttributeId = (await GetSignInterpretationAttributeIdsByDataAsync(
+                editionUser,
+                searchData)).FirstOrDefault();
+
+            var attributeData =
+                await GetSignInterpretationAttributeByIdAsync(editionUser, signInterpretationAttributeId);
+
+            if (attributeData.NumericValue == numericValue && attributeData.Sequence == sequence)
+                return;
+
+            attributeData.NumericValue ??= numericValue;
+            attributeData.Sequence ??= sequence;
+
+            await UpdateSignInterpretationAttributesAsync(editionUser, signInterpretationId, new List<SignInterpretationAttributeData>() { attributeData });
         }
 
         /// <summary>
         ///     Deletes all existing attributes of a sign interpretation and add the new attributes to it
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
-        /// <param name="signInterpretationId">Id of sogn itnerpretation</param>
+        /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <param name="newAttributes">List of new sign interpretation attributes</param>
         /// <returns>List of the new sign interpretation attributes with the new ids</returns>
         /// <exception cref="NotImplementedException"></exception>
@@ -295,7 +646,7 @@ namespace SQE.DatabaseAccess
             await DeleteAllAttributesForSignInterpretationAsync(
                 editionUser,
                 signInterpretationId);
-            return await CreateAttributesAsync(editionUser, signInterpretationId, newAttributes);
+            return await CreateSignInterpretationAttributesAsync(editionUser, signInterpretationId, newAttributes);
         }
 
 

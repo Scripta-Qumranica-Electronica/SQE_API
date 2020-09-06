@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using SQE.DatabaseAccess.Models;
-using static SQE.DatabaseAccess.Helpers.SignInterpretationFactory;
 
 namespace SQE.DatabaseAccess.Helpers
 {
@@ -15,7 +14,7 @@ namespace SQE.DatabaseAccess.Helpers
             {
                 SignInterpretations = new List<SignInterpretationData>
                 {
-                    CreateCharacterInterpretation(character,
+                    SignInterpretationFactory.CreateCharacterInterpretation(character,
                         width, readability, probability)
                 }
             };
@@ -25,7 +24,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData> { CreateSpaceInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData> { SignInterpretationFactory.CreateSpaceInterpretation(width, probability) }
             };
         }
 
@@ -33,7 +32,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData> { CreateVacatInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData> { SignInterpretationFactory.CreateVacatInterpretation(width, probability) }
             };
         }
 
@@ -41,7 +40,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData> { CreateDamagedInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData> { SignInterpretationFactory.CreateDamagedInterpretation(width, probability) }
             };
         }
 
@@ -51,7 +50,7 @@ namespace SQE.DatabaseAccess.Helpers
             {
                 SignInterpretations = new List<SignInterpretationData>
                 {
-                    CreateTerminatorInterpretation(table, terminatorType)
+                    SignInterpretationFactory.CreateTerminatorInterpretation(table, terminatorType)
                 }
             };
         }

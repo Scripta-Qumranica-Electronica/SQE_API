@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using MySqlX.XDevAPI;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -35,22 +36,72 @@ namespace SQE.DatabaseAccess
         #region Sign and its Interpretation
 
         Task<List<SignInterpretationData>> AddSignInterpretationsAsync(UserInfo editionUser,
-            uint? signId,
+            uint signId,
             List<SignInterpretationData> signInterpretations,
             List<uint> anchorsBefore,
-            List<uint> anchorsAfter);
+            List<uint> anchorsAfter,
+            bool breakAnchors = false);
 
 
         Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
             uint lineId,
-            List<SignData> signs,
+            IEnumerable<SignData> signs,
             List<uint> anchorsBefore,
-            List<uint> anchorsAfter
+            List<uint> anchorsAfter,
+            bool breakNeighboringAnchors = false
         );
+
+        Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
+            uint lineId,
+            SignData signs,
+            List<uint> anchorsBefore,
+            List<uint> anchorsAfter,
+            bool breakNeighboringAnchors = false
+        );
+
+        Task LinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            IEnumerable<uint> firstSignInterpretations,
+            IEnumerable<uint> secondSignInterpretations);
+
+        Task LinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            IEnumerable<uint> firstSignInterpretations,
+            uint secondSignInterpretation);
+
+        Task LinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            uint firstSignInterpretation,
+            IEnumerable<uint> secondSignInterpretations);
+
+        Task LinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            uint firstSignInterpretation,
+            uint secondSignInterpretation);
+
+        Task UnlinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            IEnumerable<uint> firstSignInterpretations,
+            IEnumerable<uint> secondSignInterpretations);
+
+        Task UnlinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            IEnumerable<uint> firstSignInterpretations,
+            uint secondSignInterpretation);
+
+        Task UnlinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            uint firstSignInterpretation,
+            IEnumerable<uint> secondSignInterpretations);
+
+        Task UnlinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            uint firstSignInterpretation,
+            uint secondSignInterpretation);
 
         Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(UserInfo editionUser, uint signId);
 
-        Task<uint> RemoveSignInterpretationAsync(UserInfo editionUser,
+        Task RemoveSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId);
 
         Task<uint> RemoveSignAsync(UserInfo editionUser, uint signId);
@@ -83,25 +134,27 @@ namespace SQE.DatabaseAccess
         #region Interna
 
         private readonly IDatabaseWriter _databaseWriter;
+        private readonly IAttributeRepository _attributeRepository;
+        private readonly ISignInterpretationRepository _signInterpretationRepository;
+        private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
+        private readonly IRoiRepository _roiRepository;
+        private readonly List<uint> signAttributeControlCharacters = new List<uint>() { 10, 11, 12, 13, 14, 15 };
 
-        private readonly AttributeRepository _attributeRepository;
-        private readonly SignInterpretationCommentaryRepository _commentaryRepository;
-        private readonly RoiRepository _roiRepository;
 
-
-        public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
+        public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter, IAttributeRepository attributeRepository,
+            ISignInterpretationRepository signInterpretationRepository, ISignInterpretationCommentaryRepository commentaryRepository,
+            IRoiRepository roiRepository) : base(config)
         {
             _databaseWriter = databaseWriter;
 
             // Because some functions set or remove attributes, commentaries, or ROIs we sometimes need
             // objects of the repositories. If we don't want to create them from the beginning,
             // we would have to store the configuration to make it accessible for creation the object elsewhere
-            _attributeRepository = new AttributeRepository(config, databaseWriter);
-            _commentaryRepository = new SignInterpretationCommentaryRepository(config, databaseWriter);
-            _roiRepository = new RoiRepository(config, databaseWriter);
+            _attributeRepository = attributeRepository;
+            _signInterpretationRepository = signInterpretationRepository;
+            _commentaryRepository = commentaryRepository;
+            _roiRepository = roiRepository;
         }
-
-        public IDbConnection Connection => OpenConnection();
 
         #endregion
 
@@ -252,7 +305,7 @@ namespace SQE.DatabaseAccess
         ///     Creates the signs from the information provided by the sign objects and adds them as
         ///     a path between the given anchors.
         ///     If more than one sign interpretation is provided for a sign, forking paths are created
-        ///     fromthe different interpretations
+        ///     from the different interpretations
         /// </summary>
         /// <param name="editionUser"></param>
         /// <param name="lineId"></param>
@@ -262,54 +315,283 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         public async Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
             uint lineId,
-            List<SignData> signs,
+            IEnumerable<SignData> signs,
             List<uint> anchorsBefore,
-            List<uint> anchorsAfter
+            List<uint> anchorsAfter,
+            bool breakNeighboringAnchors = false
         )
         {
             var newSigns = new List<SignData>();
-            SignData previousSignData = null;
-            // Stores for each sign the actual anchors afte which it should be injected
-            // into th reading stream
-            var internalAnchorsBefore = anchorsBefore;
-            foreach (var sign in signs)
+            // SignData previousSignData = null;
+            // // Stores for each sign the actual anchors after which it should be injected
+            // // into th reading stream
+            // var internalAnchorsBefore = anchorsBefore;
+            using (var transactionScope = new TransactionScope())
             {
-                // First, create a simple entry in the sign table
-                var newSignData = await _createSignAsync(editionUser, lineId);
-                // Add the given sign interpretations which also inject the sign in the reading stream
-                newSignData.SignInterpretations = await AddSignInterpretationsAsync(editionUser,
-                    newSignData.SignId,
-                    sign.SignInterpretations,
-                    internalAnchorsBefore,
-                    anchorsAfter);
-
-                // Set the new sign interpretation ids as anchors before the next sign
-                internalAnchorsBefore = newSignData.SignInterpretations.Select(
-                    si => si.SignInterpretationId.GetValueOrDefault()).ToList();
-
-                // If already a sign had been set adhjust its nextSignInterpretations
-                // TODO do we need this here? (Ingo)
-                if (previousSignData != null)
+                foreach (var sign in signs)
                 {
-                    // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
-                    // Create an list of next sign interpretations from the new anchors before
-                    var nextSignInterpretations = internalAnchorsBefore.Select(
-                        signInterpretationId => new NextSignInterpretation(
-                            signInterpretationId,
-                            (uint)editionUser.EditionEditorId)).Distinct().ToList();
+                    // First, create a simple entry in the sign table
+                    var newSignId = await _createSignAsync(editionUser, lineId);
+                    var newSignData = new SignData()
+                    {
+                        SignId = newSignId,
+                        // Add the given sign interpretations which also inject the sign in the reading stream
+                        SignInterpretations = await AddSignInterpretationsAsync(editionUser,
+                            newSignId,
+                            sign.SignInterpretations,
+                            anchorsBefore,
+                            anchorsAfter,
+                            breakNeighboringAnchors)
+                    };
 
-                    // Store this hashset into each signInterpretation of the previous set sign 
-                    previousSignData.SignInterpretations.ForEach(
-                        signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
+                    //Note: the following commented code probably did not do what was intended. If
+                    // 2 signs (c and d) were inserted with 'a' before and 'b' after, then the resulting streams
+                    // are a -> b; a -> c -> b; a -> c -> d -> b;  This is probably not the intended consequence.
+                    // The code as it stands now would produce the following result: a -> b; a -> c -> b; a -> d -> b.
+                    // That is probably the expected result.
+
+                    // // Set the new sign interpretation ids as anchors before the next sign
+                    // anchorsBefore = newSignData.SignInterpretations.Select(
+                    //     si => si.SignInterpretationId.GetValueOrDefault()).ToList();
+                    //
+                    // // If already a sign had been set adjust its nextSignInterpretations
+                    // // TODO do we need this here? (Ingo)
+                    // if (previousSignData != null)
+                    // {
+                    //     // NOTE Ingo changed the collection of nextSignInterpretationIds from hashset to list
+                    //     // Create a list of next sign interpretations from the new anchors before
+                    //     var nextSignInterpretations = internalAnchorsBefore.Select(
+                    //         signInterpretationId => new NextSignInterpretation(
+                    //             signInterpretationId,
+                    //             editionUser.EditionEditorId.Value)).Distinct().ToList();
+                    //
+                    //     // Store this hashset into each signInterpretation of the previous set sign 
+                    //     previousSignData.SignInterpretations.ForEach(
+                    //         signInterpretation => signInterpretation.NextSignInterpretations = nextSignInterpretations);
+                    // }
+                    //
+                    // previousSignData = newSignData;
+                    newSigns.Add(newSignData);
                 }
-
-                previousSignData = newSignData;
-                newSigns.Add(newSignData);
+                transactionScope.Complete();
             }
 
             return newSigns;
         }
 
+        /// <summary>
+        ///     Creates the sign from the information provided by the sign object and adds it as
+        ///     a path between the given anchors.
+        ///     If more than one sign interpretation is provided for a sign, forking paths are created
+        ///     from the different interpretations
+        /// </summary>
+        /// <param name="editionUser"></param>
+        /// <param name="lineId"></param>
+        /// <param name="sign"></param>
+        /// <param name="anchorsBefore"></param>
+        /// <param name="anchorsAfter"></param>
+        /// <returns></returns>
+        public async Task<List<SignData>> CreateSignsAsync(UserInfo editionUser,
+            uint lineId,
+            SignData sign,
+            List<uint> anchorsBefore,
+            List<uint> anchorsAfter,
+            bool breakNeighboringAnchors = false
+        )
+        {
+            return await CreateSignsAsync(editionUser, lineId, new List<SignData>() { sign }, anchorsBefore, anchorsAfter, breakNeighboringAnchors);
+        }
+
+        /// <summary>
+        /// Join each member of firstSignInterpretations with each member of secondSignInterpretations
+        /// in the edition sign stream.
+        /// </summary>
+        /// <param name="editionUser">The details of the edition and user</param>
+        /// <param name="firstSignInterpretations">A list of sign interpretations to link to each member of secondSignInterpretations</param>
+        /// <param name="secondSignInterpretations">A list of sign interpretations to be set as next sign interpretation for
+        /// each member of firstSignInterpretations</param>
+        /// <returns></returns>
+        public async Task LinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            IEnumerable<uint> firstSignInterpretations,
+            IEnumerable<uint> secondSignInterpretations)
+        {
+            using (var transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
+            {
+                // Get a new PositionDataRequestFactory
+                var positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
+                    connection,
+                    StreamType.SignInterpretationStream,
+                    editionUser.EditionId.Value);
+
+                // Feed the data to the request factory.
+                positionDataRequestFactory.AddAction(PositionAction.ConnectAnchors);
+                positionDataRequestFactory.AddAnchorsAfter(secondSignInterpretations.ToList());
+                positionDataRequestFactory.AddAnchorsBefore(firstSignInterpretations.ToList());
+
+                // Get the mutation request and run it
+                var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
+                await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+
+                transactionScope.Complete();
+            }
+        }
+
+        /// <summary>
+        /// Join each member of firstSignInterpretations with secondSignInterpretation
+        /// in the edition sign stream.
+        /// </summary>
+        /// <param name="editionUser">The details of the edition and user</param>
+        /// <param name="firstSignInterpretations">A list of sign interpretations to link to the secondSignInterpretation</param>
+        /// <param name="secondSignInterpretation">The sign interpretation to be set as next sign interpretation for
+        /// each member of firstSignInterpretations</param>
+        /// <returns></returns>
+        public async Task LinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            IEnumerable<uint> firstSignInterpretations,
+            uint secondSignInterpretation)
+        {
+            await LinkSignInterpretationsAsync(editionUser, firstSignInterpretations,
+                new List<uint>() { secondSignInterpretation });
+        }
+
+        /// <summary>
+        /// Join firstSignInterpretation with each member of secondSignInterpretations
+        /// in the edition sign stream.
+        /// </summary>
+        /// <param name="editionUser">The details of the edition and user</param>
+        /// <param name="firstSignInterpretation">The sign interpretation to link to each member of secondSignInterpretations</param>
+        /// <param name="secondSignInterpretations">A list of sign interpretations to be set as next sign interpretation for
+        /// each member of firstSignInterpretations</param>
+        /// <returns></returns>
+        public async Task LinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            uint firstSignInterpretation,
+            IEnumerable<uint> secondSignInterpretations)
+        {
+            await LinkSignInterpretationsAsync(editionUser, new List<uint>() { firstSignInterpretation },
+                secondSignInterpretations);
+        }
+
+        /// <summary>
+        /// Join firstSignInterpretation to secondSignInterpretation
+        /// in the edition sign stream.
+        /// </summary>
+        /// <param name="editionUser">The details of the edition and user</param>
+        /// <param name="firstSignInterpretation">The sign interpretations to link to secondSignInterpretation</param>
+        /// <param name="secondSignInterpretation">The sign interpretations to be set as next sign interpretation for
+        /// firstSignInterpretation</param>
+        /// <returns></returns>
+        public async Task LinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            uint firstSignInterpretation,
+            uint secondSignInterpretation)
+        {
+            await LinkSignInterpretationsAsync(editionUser, new List<uint>() { firstSignInterpretation },
+                new List<uint>() { secondSignInterpretation });
+        }
+
+        /// <summary>
+        /// Join each member of firstSignInterpretations with each member of secondSignInterpretations
+        /// in the edition sign stream.
+        /// </summary>
+        /// <param name="editionUser">The details of the edition and user</param>
+        /// <param name="firstSignInterpretations">A list of sign interpretations to link to each member of secondSignInterpretations</param>
+        /// <param name="secondSignInterpretations">A list of sign interpretations to be set as next sign interpretation for
+        /// each member of firstSignInterpretations</param>
+        /// <returns></returns>
+        public async Task UnlinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            IEnumerable<uint> firstSignInterpretations,
+            IEnumerable<uint> secondSignInterpretations)
+        {
+            var secondSignInterpretationsData = await Task.WhenAll(secondSignInterpretations
+                .Select(async x => await _signInterpretationRepository.GetSignInterpretationById(editionUser, x)));
+
+            // Do not process request if there is an attempt to unlink a control character
+            if (secondSignInterpretationsData.Any(
+                x => x.Attributes.Any(
+                    y => signAttributeControlCharacters.Contains(y.AttributeValueId.Value)
+                )))
+                throw new StandardExceptions.InputDataRuleViolationException(
+                    "cannot unlink control sign interpretations");
+
+            using (var transactionScope = new TransactionScope())
+            using (var connection = OpenConnection())
+            {
+                // Get a new PositionDataRequestFactory
+                var positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
+                    connection,
+                    StreamType.SignInterpretationStream,
+                    secondSignInterpretations.ToList(),
+                    editionUser.EditionId.Value);
+
+                // Feed the data to the request factory.
+                positionDataRequestFactory.AddAction(PositionAction.TakeOutPathOfItems);
+                positionDataRequestFactory.AddAnchorsBefore(firstSignInterpretations.ToList());
+
+                // Get the mutation request and run it
+                var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
+                await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+
+                transactionScope.Complete();
+            }
+        }
+
+        /// <summary>
+        /// Join each member of firstSignInterpretations with secondSignInterpretation
+        /// in the edition sign stream.
+        /// </summary>
+        /// <param name="editionUser">The details of the edition and user</param>
+        /// <param name="firstSignInterpretations">A list of sign interpretations to link to the secondSignInterpretation</param>
+        /// <param name="secondSignInterpretation">The sign interpretation to be set as next sign interpretation for
+        /// each member of firstSignInterpretations</param>
+        /// <returns></returns>
+        public async Task UnlinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            IEnumerable<uint> firstSignInterpretations,
+            uint secondSignInterpretation)
+        {
+            await UnlinkSignInterpretationsAsync(editionUser, firstSignInterpretations,
+                new List<uint>() { secondSignInterpretation });
+        }
+
+        /// <summary>
+        /// Join firstSignInterpretation with each member of secondSignInterpretations
+        /// in the edition sign stream.
+        /// </summary>
+        /// <param name="editionUser">The details of the edition and user</param>
+        /// <param name="firstSignInterpretation">The sign interpretation to link to each member of secondSignInterpretations</param>
+        /// <param name="secondSignInterpretations">A list of sign interpretations to be set as next sign interpretation for
+        /// each member of firstSignInterpretations</param>
+        /// <returns></returns>
+        public async Task UnlinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            uint firstSignInterpretation,
+            IEnumerable<uint> secondSignInterpretations)
+        {
+            await UnlinkSignInterpretationsAsync(editionUser, new List<uint>() { firstSignInterpretation },
+                secondSignInterpretations);
+        }
+
+        /// <summary>
+        /// Join firstSignInterpretation to secondSignInterpretation
+        /// in the edition sign stream.
+        /// </summary>
+        /// <param name="editionUser">The details of the edition and user</param>
+        /// <param name="firstSignInterpretation">The sign interpretations to link to secondSignInterpretation</param>
+        /// <param name="secondSignInterpretation">The sign interpretations to be set as next sign interpretation for
+        /// firstSignInterpretation</param>
+        /// <returns></returns>
+        public async Task UnlinkSignInterpretationsAsync(
+            UserInfo editionUser,
+            uint firstSignInterpretation,
+            uint secondSignInterpretation)
+        {
+            await UnlinkSignInterpretationsAsync(editionUser, new List<uint>() { firstSignInterpretation },
+                new List<uint>() { secondSignInterpretation });
+        }
 
         /// <summary>
         ///     Adds interpretations to an existing sign.
@@ -319,20 +601,22 @@ namespace SQE.DatabaseAccess
         /// <param name="signId">Id of the sign</param>
         /// <param name="signInterpretations">List of sign interpretation objects</param>
         /// <param name="anchorsBefore">Ids of the anchors before</param>
-        /// <param name="anchorsAfter">Ids of the ancors after</param>
+        /// <param name="anchorsAfter">Ids of the anchors after</param>
+        /// <param name="breakAnchors"></param>
         /// <returns>List of sign Interpretation objects with the new ids</returns>
         /// <exception cref="DataNotWrittenException"></exception>
         public async Task<List<SignInterpretationData>> AddSignInterpretationsAsync(UserInfo editionUser,
-            uint? signId,
+            uint signId,
             List<SignInterpretationData> signInterpretations,
             List<uint> anchorsBefore,
-            List<uint> anchorsAfter)
+            List<uint> anchorsAfter,
+            bool breakAnchors = false)
         {
             using (var connection = OpenConnection())
             {
                 foreach (var signInterpretation in signInterpretations)
                 {
-                    // Flag which marks if the sign interpretation had to be created from the scratch
+                    // Flag which marks if the sign interpretation had to be created from scratch
                     var newSignInterpretation = true;
                     var createSignInterpretationIdParameters = new DynamicParameters();
                     createSignInterpretationIdParameters.Add("@SignId", signId);
@@ -372,6 +656,8 @@ namespace SQE.DatabaseAccess
                     // If the sign interpretation already existed than we have to move it.
                     positionDataRequestFactory.AddAction(
                         newSignInterpretation ? PositionAction.CreatePathFromItems : PositionAction.MoveInBetween);
+                    if (breakAnchors)
+                        positionDataRequestFactory.AddAction(PositionAction.DisconnectNeighbouringAnchors);
                     positionDataRequestFactory.AddAnchorsAfter(anchorsAfter);
                     positionDataRequestFactory.AddAnchorsBefore(anchorsBefore);
                     var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
@@ -379,7 +665,7 @@ namespace SQE.DatabaseAccess
 
                     // Add the attributes
                     var attributes = newSignInterpretation
-                        ? await _attributeRepository.CreateAttributesAsync(
+                        ? await _attributeRepository.CreateSignInterpretationAttributesAsync(
                             editionUser,
                             signInterpretation.SignInterpretationId.GetValueOrDefault(),
                             signInterpretation.Attributes)
@@ -431,32 +717,35 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <returns>Id of the sign interpretation</returns>
-        public async Task<uint> RemoveSignInterpretationAsync(UserInfo editionUser,
+        public async Task RemoveSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId)
         {
-            // Remove all attributes
-            await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(editionUser, signInterpretationId);
-            // Remove all commentaries
-            await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(editionUser,
-                signInterpretationId);
-            // Remove all ROIs
-            await _roiRepository.DeleteAllRoisForSignInterpretationAsync(editionUser, signInterpretationId);
-
-            // Take out from path
-            using (var connection = OpenConnection())
+            using (var transactionScope = new TransactionScope())
             {
-                var positionDataRequest = await PositionDataRequestFactory.CreateInstanceAsync(
-                    connection,
-                    StreamType.SignInterpretationStream,
-                    signInterpretationId,
-                    editionUser.EditionId.Value,
-                    true);
-                positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
-                var requests = await positionDataRequest.CreateRequestsAsync();
-                await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
-            }
+                // Remove all attributes
+                await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(editionUser, signInterpretationId);
+                // Remove all commentaries
+                await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(editionUser,
+                    signInterpretationId);
+                // Remove all ROIs
+                await _roiRepository.DeleteAllRoisForSignInterpretationAsync(editionUser, signInterpretationId);
 
-            return signInterpretationId;
+                // Take out from path
+                using (var connection = OpenConnection())
+                {
+                    var positionDataRequest = await PositionDataRequestFactory.CreateInstanceAsync(
+                        connection,
+                        StreamType.SignInterpretationStream,
+                        signInterpretationId,
+                        editionUser.EditionId.Value,
+                        true);
+                    positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
+                    var requests = await positionDataRequest.CreateRequestsAsync();
+                    await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+                }
+
+                transactionScope.Complete();
+            }
         }
 
         /// <summary>
@@ -727,8 +1016,7 @@ namespace SQE.DatabaseAccess
                     new { editionUser.EditionId }
                 )).ToDictionary(
                     row => row.attributeValueId,
-                    row => row.attributeString
-                );
+                    row => row);
                 var scrolls = await connection.QueryAsync(
                     GetTextChunk.GetQuery,
                     new[]
@@ -795,12 +1083,12 @@ namespace SQE.DatabaseAccess
                         if (lastSignInterpretation.Attributes.Count == 0 ||
                             lastSignInterpretation.Attributes.Last().AttributeValueId != charAttribute.AttributeValueId)
                         {
-                            charAttribute.AttributeString = attributeDict.TryGetValue(
+                            (charAttribute.AttributeValueString, charAttribute.AttributeId) = attributeDict.TryGetValue(
                                 charAttribute.AttributeValueId.GetValueOrDefault(),
                                 out var val
                             )
-                                ? val
-                                : null;
+                                ? (val.attributeString, val.attributeId)
+                                : (null, 0);
                             lastSignInterpretation.Attributes.Add(charAttribute);
                         }
 
@@ -816,7 +1104,7 @@ namespace SQE.DatabaseAccess
                             return newManuscript ? manuscript : null;
 
                         if (wordId != null)
-                            lastSignInterpretation.WordIds.Add(wordId.Value);
+                            lastSignInterpretation.SignStreamSectionIds.Add(wordId.Value);
                         return newManuscript ? manuscript : null;
                     },
                     new { terminators.StartId, terminators.EndId, editionUser.EditionId },
@@ -1103,34 +1391,31 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="lineId">Id of line to which the sign should belong</param>
         /// <returns></returns>
-        public async Task<SignData> _createSignAsync(UserInfo editionUser,
+        public async Task<uint> _createSignAsync(UserInfo editionUser,
             uint lineId
         )
         {
-            return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
-                async () =>
-                {
-                    using (var transactionScope = new TransactionScope())
-                    {
-                        // Create the new text fragment abstract id
-                        var newSignId = await _simpleInsertAsync(
-                            TableData.Table.sign);
-                        ;
+            // return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
+            //     async () =>
+            //     {
+            using (var transactionScope = new TransactionScope())
+            {
+                // Create the new sign abstract id
+                var newSignId = await _simpleInsertAsync(
+                    TableData.Table.sign);
+                ;
 
-                        // Add the new text fragment to the edition manuscript
-                        await _addSignToLine(editionUser, newSignId, lineId);
+                // Add the new sign to the edition manuscript by linking it to a line
+                await _addSignToLine(editionUser, newSignId, lineId);
 
-                        // End the transaction (it was all or nothing)
-                        transactionScope.Complete();
+                // End the transaction (it was all or nothing)
+                transactionScope.Complete();
 
-                        // Package the new text fragment to return to user
-                        return new SignData
-                        {
-                            SignId = newSignId
-                        };
-                    }
-                }
-            );
+                // Package the new sign to return to user
+                return newSignId;
+            }
+            //     }
+            // );
         }
 
         #endregion
@@ -1180,17 +1465,17 @@ namespace SQE.DatabaseAccess
             uint? anchorAfter)
         {
             // Prepare the response object
-            PositionDataRequestFactory positionDataRequestFactory;
-            (positionDataRequestFactory, anchorBefore, anchorAfter) = await _createTextFragmentPositionRequestFactory(
+            PositionDataRequestHelper positionDataRequestHelper;
+            (positionDataRequestHelper, anchorBefore, anchorAfter) = await _createTextFragmentPositionRequestFactory(
                 editionUser,
                 anchorBefore,
                 textFragmentId,
                 anchorAfter
             );
 
-            positionDataRequestFactory.AddAction(PositionAction.DisconnectNeighbouringAnchors);
-            positionDataRequestFactory.AddAction(PositionAction.CreatePathFromItems);
-            var requests = await positionDataRequestFactory.CreateRequestsAsync();
+            positionDataRequestHelper.AddAction(PositionAction.DisconnectNeighbouringAnchors);
+            positionDataRequestHelper.AddAction(PositionAction.CreatePathFromItems);
+            var requests = await positionDataRequestHelper.CreateRequestsAsync();
 
             // Commit the mutation
             var textFragmentMutationResults =
@@ -1233,16 +1518,16 @@ namespace SQE.DatabaseAccess
                     "must provide either a previous or next text fragment id"
                 );
 
-            PositionDataRequestFactory positionDataRequestFactory;
-            (positionDataRequestFactory, newAnchorBefore, newAnchorAfter) =
+            PositionDataRequestHelper positionDataRequestHelper;
+            (positionDataRequestHelper, newAnchorBefore, newAnchorAfter) =
                 await _createTextFragmentPositionRequestFactory(
                     editionUser,
                     newAnchorBefore,
                     textFragmentIds,
                     newAnchorAfter
                 );
-            positionDataRequestFactory.AddAction(PositionAction.MoveInBetween);
-            var requests = await positionDataRequestFactory.CreateRequestsAsync();
+            positionDataRequestHelper.AddAction(PositionAction.MoveInBetween);
+            var requests = await positionDataRequestHelper.CreateRequestsAsync();
             var shiftTextFragmentMutationResults =
                 await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
@@ -1280,7 +1565,7 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        ///     Create a PositionDataRequestFactory from the submitted data. If anchorBefore or anchorAfter are null,
+        ///     Create a PositionDataRequestHelper from the submitted data. If anchorBefore or anchorAfter are null,
         ///     the missing data will be automatically calculated. If both are null, the submitted text fragments
         ///     will be positioned at the end of the list of text fragments for the edition.
         /// </summary>
@@ -1288,8 +1573,8 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorBefore">Id of the text fragment preceding the text fragments being positioned, may be null</param>
         /// <param name="textFragmentIds">Text fragments to be positioned</param>
         /// <param name="anchorAfter">Id of the text fragment following the text fragments being positioned, may be null</param>
-        /// <returns>A PositionDataRequestFactory along with the ids of the previous and next text fragments</returns>
-        private async Task<(PositionDataRequestFactory positionDataRequestFactory, uint? previousTextFragmentId, uint?
+        /// <returns>A PositionDataRequestHelper along with the ids of the previous and next text fragments</returns>
+        private async Task<(PositionDataRequestHelper positionDataRequestFactory, uint? previousTextFragmentId, uint?
                 nextTextFragmentId)>
             _createTextFragmentPositionRequestFactory(UserInfo editionUser,
                 uint? anchorBefore,
@@ -1297,7 +1582,7 @@ namespace SQE.DatabaseAccess
                 uint? anchorAfter)
         {
             // Prepare the response object
-            PositionDataRequestFactory positionDataRequestFactory;
+            PositionDataRequestHelper positionDataRequestHelper;
             using (var connection = OpenConnection())
             {
                 // Verify that anchorBefore and anchorAfter are valid values if they exist
@@ -1305,7 +1590,7 @@ namespace SQE.DatabaseAccess
                 _verifyTextFragmentsSequence(fragments, anchorBefore, anchorAfter);
 
                 // Set the current text fragment position factory
-                positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
+                positionDataRequestHelper = await PositionDataRequestFactory.CreateInstanceAsync(
                     connection,
                     StreamType.TextFragmentStream,
                     textFragmentIds,
@@ -1341,7 +1626,7 @@ namespace SQE.DatabaseAccess
 
                 // Add the before anchor for the new text fragment
                 if (anchorBefore.HasValue)
-                    positionDataRequestFactory.AddAnchorBefore(anchorBefore.Value);
+                    positionDataRequestHelper.AddAnchorBefore(anchorBefore.Value);
 
                 // If no anchorAfter has been specified, set it to the text fragment following anchorBefore
                 if (!anchorAfter.HasValue)
@@ -1360,14 +1645,14 @@ namespace SQE.DatabaseAccess
 
                 // Add the after anchor for the new text fragment
                 if (anchorAfter.HasValue)
-                    positionDataRequestFactory.AddAnchorAfter(anchorAfter.Value);
+                    positionDataRequestHelper.AddAnchorAfter(anchorAfter.Value);
             }
 
-            return (positionDataRequestFactory, anchorBefore, anchorAfter);
+            return (positionDataRequestHelper, anchorBefore, anchorAfter);
         }
 
         /// <summary>
-        ///     Create a PositionDataRequestFactory from the submitted data. If anchorBefore or anchorAfter are null,
+        ///     Create a PositionDataRequestHelper from the submitted data. If anchorBefore or anchorAfter are null,
         ///     the missing data will be automatically calculated. If both are null, the submitted text fragments
         ///     will be positioned at the end of the list of text fragments for the edition.
         /// </summary>
@@ -1375,8 +1660,8 @@ namespace SQE.DatabaseAccess
         /// <param name="anchorBefore">Id of the text fragment preceding the text fragments being positioned, may be null</param>
         /// <param name="textFragmentId">Text fragment to be positioned</param>
         /// <param name="anchorAfter">Id of the text fragment following the text fragments being positioned, may be null</param>
-        /// <returns>A PositionDataRequestFactory along with the ids of the previous and next text fragments</returns>
-        private async Task<(PositionDataRequestFactory positionDataRequestFactory, uint? previousTextFragmentId, uint?
+        /// <returns>A PositionDataRequestHelper along with the ids of the previous and next text fragments</returns>
+        private async Task<(PositionDataRequestHelper positionDataRequestFactory, uint? previousTextFragmentId, uint?
                 nextTextFragmentId)>
             _createTextFragmentPositionRequestFactory(UserInfo editionUser,
                 uint? anchorBefore,

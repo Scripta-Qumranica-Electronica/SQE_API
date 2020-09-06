@@ -113,6 +113,17 @@ namespace SQE.API.DTO
         [Required] public uint editorId { get; set; }
     }
 
+    public class CommentaryCreateDTO
+    {
+        public string commentary { get; set; }
+    }
+
+    public class CommentaryDTO : CommentaryCreateDTO
+    {
+        [Required] public uint creatorId { get; set; }
+        [Required] public uint editorId { get; set; }
+    }
+
 
     /// <summary>
     ///     This is a list of all entities in an edition, including the edition itself.
@@ -124,6 +135,7 @@ namespace SQE.API.DTO
         edition,
         artefact,
         artefactGroup,
+        attribute,
         textFragment,
         line,
         signInterpretation,

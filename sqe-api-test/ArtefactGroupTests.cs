@@ -25,7 +25,7 @@ namespace SQE.ApiTest
         {
         }
 
-        private int _testCount;
+        private static int _testCount;
 
         /// <summary>
         ///     Get a listing of all the artefact groups in an edition
@@ -44,8 +44,7 @@ namespace SQE.ApiTest
 
             // Act
             var getApiRequest = new Get.V1_Editions_EditionId_ArtefactGroups(editionId);
-            var (httpMessage, httpBody, signalr, _) = await Request.Send(
-                getApiRequest,
+            await getApiRequest.Send(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -54,7 +53,8 @@ namespace SQE.ApiTest
                 listenToEdition: false
             );
 
-            return (httpMessage, httpBody, signalr);
+            return (getApiRequest.HttpResponseMessage, getApiRequest.HttpResponseObject,
+                getApiRequest.SignalrResponseObject);
         }
 
         /// <summary>
@@ -76,8 +76,7 @@ namespace SQE.ApiTest
             // Act
             var getApiRequest =
                 new Get.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
-            var (httpMessage, httpBody, signalr, _) = await Request.Send(
-                getApiRequest,
+            await getApiRequest.Send(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -86,7 +85,8 @@ namespace SQE.ApiTest
                 listenToEdition: false
             );
 
-            return (httpMessage, httpBody, signalr);
+            return (getApiRequest.HttpResponseMessage, getApiRequest.HttpResponseObject,
+                getApiRequest.SignalrResponseObject);
         }
 
         /// <summary>
@@ -115,8 +115,7 @@ namespace SQE.ApiTest
 
             // Act
             var createApiRequest = new Post.V1_Editions_EditionId_ArtefactGroups(editionId, artefactGroup);
-            var (httpMessage, httpBody, signalr, listener) = await Request.Send(
-                createApiRequest,
+            await createApiRequest.Send(
                 _client,
                 null,
                 true,
@@ -126,6 +125,9 @@ namespace SQE.ApiTest
                 false,
                 listenToEdition: user2 != null
             );
+            var (httpMessage, httpBody, signalr, listener) = (createApiRequest.HttpResponseMessage,
+                createApiRequest.HttpResponseObject, createApiRequest.SignalrResponseObject,
+                createApiRequest.CreatedArtefactGroup);
 
             // Assert
             if (shouldSucceed)
@@ -168,8 +170,7 @@ namespace SQE.ApiTest
             // Act
             var updateApiRequest =
                 new Put.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId, artefactGroup);
-            var (httpMessage, httpBody, signalr, listener) = await Request.Send(
-                updateApiRequest,
+            await updateApiRequest.Send(
                 _client,
                 null,
                 true,
@@ -179,6 +180,9 @@ namespace SQE.ApiTest
                 false,
                 listenToEdition: user2 != null
             );
+            var (httpMessage, httpBody, signalr, listener) = (updateApiRequest.HttpResponseMessage,
+                updateApiRequest.HttpResponseObject, updateApiRequest.SignalrResponseObject,
+                updateApiRequest.UpdatedArtefactGroup);
 
             // Assert
             if (shouldSucceed)
@@ -208,29 +212,36 @@ namespace SQE.ApiTest
         {
             // Arrange
             user ??= Request.DefaultUsers.User1;
-            var realtime = user2 != null || _testCount % 1 == 0;
+
+            // Do every other request in realtime
+            var realtime = _testCount % 2 == 1;
             _testCount += 1;
 
             // Act
             var deleteApiRequest =
                 new Delete.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
-            var (httpMessage, httpBody, signalr, listener) = await Request.Send(
-                deleteApiRequest,
+            await deleteApiRequest.Send(
                 realtime ? null : _client,
-                realtime ? StartConnectionAsync : (Func<string, Task<HubConnection>>)null,
+                StartConnectionAsync,
                 true,
                 user,
-                user2,
+                user2 ?? user,
                 shouldSucceed,
                 false,
-                listenToEdition: user2 != null
+                requestRealtime: realtime,
+                listeningFor: deleteApiRequest.AvailableListeners.DeletedArtefactGroup
             );
+            var (httpMessage, httpBody, signalr, listener) = (deleteApiRequest.HttpResponseMessage,
+                deleteApiRequest.HttpResponseObject,
+                deleteApiRequest.SignalrResponseObject, deleteApiRequest.DeletedArtefactGroup);
 
             // Assert
             if (shouldSucceed)
             {
                 Assert.Equal(EditionEntities.artefactGroup, realtime ? signalr.entity : httpBody.entity);
                 Assert.Equal(artefactGroupId, realtime ? signalr.ids.FirstOrDefault() : httpBody.ids.FirstOrDefault());
+                Assert.Equal(EditionEntities.artefactGroup, deleteApiRequest.DeletedArtefactGroup.entity);
+                Assert.Contains(deleteApiRequest.DeletedArtefactGroup.ids, x => x == artefactGroupId);
             }
 
             return (httpMessage, httpBody, signalr, listener);
@@ -265,7 +276,7 @@ namespace SQE.ApiTest
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
@@ -304,7 +315,7 @@ namespace SQE.ApiTest
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
@@ -370,7 +381,7 @@ namespace SQE.ApiTest
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
@@ -393,7 +404,7 @@ namespace SQE.ApiTest
                 Assert.Contains("already in another group", errorMsg);
                 Assert.Equal(HttpStatusCode.BadRequest, secondHttpMsg.StatusCode);
                 Assert.Equal(artefactGroupName, artefactGroupList.artefactGroups.FirstOrDefault().name);
-                Assert.Equal(1, artefactGroupList.artefactGroups.Count());
+                Assert.Single(artefactGroupList.artefactGroups);
                 createdArtefactGroup.artefacts.Sort();
                 artefactGroupList.artefactGroups.FirstOrDefault().artefacts.Sort();
                 Assert.Equal(createdArtefactGroup.artefacts,
@@ -433,7 +444,7 @@ namespace SQE.ApiTest
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
                 artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
@@ -457,7 +468,7 @@ namespace SQE.ApiTest
                 updatedAG.artefacts.Sort();
                 Assert.Equal(updatedArtefacts, updatedAG.artefacts);
                 Assert.Equal(createdArtefactGroup.id, updatedAG.id);
-                Assert.Equal(1, artefactList.artefactGroups.Count());
+                Assert.Single(artefactList.artefactGroups);
 
                 await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
             }

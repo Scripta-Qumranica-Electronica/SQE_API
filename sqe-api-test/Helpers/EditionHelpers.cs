@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using SQE.API.DTO;
@@ -9,7 +11,7 @@ namespace SQE.ApiTest.Helpers
 {
     public static class EditionHelpers
     {
-        private static int editionCount;
+        private static int _editionCount;
 
         // This is a list of editions that have more than one text fragment and more than one artefact shape.
         // If further constraints are necessary for the edition pool, run a query and update the results here.
@@ -20,7 +22,7 @@ namespace SQE.ApiTest.Helpers
 			GROUP BY edition_id
 			HAVING COUNT(DISTINCT manuscript_to_text_fragment_id) > 3 AND COUNT(DISTINCT artefact_shape_id) > 10
 		 */
-        private static readonly uint[] usableEditionIds =
+        private static readonly uint[] UsableEditionIds =
         {
             3, 22, 66, 67, 76, 78, 80, 86, 87, 89, 90, 93, 94, 95, 96, 98, 100, 102, 106, 107, 108, 109, 111, 114, 115,
             116, 117, 121, 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 136, 137, 140, 141, 144, 148, 149, 150,
@@ -39,7 +41,7 @@ namespace SQE.ApiTest.Helpers
             1651, 1653, 1654, 1656, 1657, 1662, 1665, 1667, 1669, 1671, 1672, 1675, 1678, 1680, 1681, 1685, 1686, 1693
         };
 
-        private static readonly int numberOfUsableEditions = usableEditionIds.Length;
+        private static readonly int NumberOfUsableEditions = UsableEditionIds.Length;
 
         /// <summary>
         ///     Get an editionId for an edition with > 2 text fragments and > 2 artefacts.
@@ -49,8 +51,8 @@ namespace SQE.ApiTest.Helpers
         /// <returns></returns>
         public static uint GetEditionId()
         {
-            editionCount = (editionCount + 1) % numberOfUsableEditions; // Increment the counts (loop back at end)
-            return usableEditionIds[editionCount]; // Return the id
+            _editionCount = (_editionCount + 1) % NumberOfUsableEditions; // Increment the counts (loop back at end)
+            return UsableEditionIds[_editionCount]; // Return the id
         }
 
         /// <summary>
@@ -58,7 +60,8 @@ namespace SQE.ApiTest.Helpers
         /// </summary>
         /// <param name="client">The HttpClient used to make the request.</param>
         /// <param name="editionId">Specifies the editionId to be used, or leave black for one to be automatically selected.</param>
-        /// <param name="jwt">A JWT can be added the request to access private editions.</param>
+        /// <param name="user">Details of the user making the request.</param>
+        /// <param name="auth">Boolean whether or not to use authentication for the request</param>
         /// <returns>an EditionDTO for the desired edition</returns>
         public static async Task<EditionDTO> GetEdition(
             HttpClient client,
@@ -71,13 +74,14 @@ namespace SQE.ApiTest.Helpers
             if (auth && user == null)
                 user = Request.DefaultUsers.User1;
             var getEditionObject = new Get.V1_Editions_EditionId(editionId);
-            var (response, editionResponse, _, _) = await Request.Send(
-                getEditionObject,
+            await getEditionObject.Send(
                 client,
                 null,
                 requestUser: user,
                 auth: auth
             );
+            var (response, editionResponse) =
+                (getEditionObject.HttpResponseMessage, getEditionObject.HttpResponseObject);
             response.EnsureSuccessStatusCode();
 
             return editionResponse.primary;
@@ -98,12 +102,10 @@ namespace SQE.ApiTest.Helpers
         {
             if (editionId == 0)
                 editionId = GetEditionId();
-            if (string.IsNullOrEmpty(name)) name = "test-name-" + editionCount;
+            if (string.IsNullOrEmpty(name)) name = "test-name-" + _editionCount;
 
             var newScrollRequest = new Post.V1_Editions_EditionId(editionId, new EditionCopyDTO(name, null, null));
-
-            var (httpMsg, httpResp, _, _) = await Request.Send(
-                newScrollRequest,
+            await newScrollRequest.Send(
                 client,
                 null,
                 requestUser: userAuthDetails ?? Request.DefaultUsers.User1,
@@ -111,6 +113,7 @@ namespace SQE.ApiTest.Helpers
                 deterministic: false,
                 shouldSucceed: false
             );
+            var (httpMsg, httpResp) = (newScrollRequest.HttpResponseMessage, newScrollRequest.HttpResponseObject);
             httpMsg.EnsureSuccessStatusCode();
             return httpResp.id;
         }
@@ -122,8 +125,7 @@ namespace SQE.ApiTest.Helpers
         /// <param name="editionId"></param>
         /// <param name="authenticated">Optional, whether the request should be made by an authenticated user</param>
         /// <param name="shouldSucceed">Optional, whether the delete action is expected to succeed</param>
-        /// <param name="email">Optional, the email of the user who is admin for the edition</param>
-        /// <param name="pwd">Optional, the password of the user who is admin for the edition</param>
+        /// <param name="userAuthDetails">Details of the user making the request</param>
         /// <returns>void</returns>
         public static async Task DeleteEdition(HttpClient client,
             uint editionId,
@@ -157,6 +159,49 @@ namespace SQE.ApiTest.Helpers
             }
         }
 
+        public static async Task<List<TextFragmentDataDTO>> GetEditionTextFragments(uint editionId, HttpClient client,
+            Request.UserAuthDetails user = null)
+        {
+            var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments(editionId);
+            await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+            return textFragmentRequestObject.HttpResponseObject.textFragments;
+        }
+
+        public static async Task<TextEditionDTO> GetEditionTextFragmentWithSigns(uint editionId, HttpClient client,
+            Request.UserAuthDetails user = null, uint? textFragmentId = null)
+        {
+            if (textFragmentId.HasValue)
+            {
+                var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+                    editionId,
+                    textFragmentId.Value
+                );
+                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+                if (!textFragmentRequestObject.HttpResponseObject.textFragments.Any(x =>
+                    x.lines.Any(y =>
+                        y.signs.Count(z =>
+                            z.signInterpretations.Any(a => a.attributes.Any(b => b.attributeValueId == 1))) > 2)))
+                    throw new Exception(
+                        $"The edition {editionId} fragment {textFragmentId.Value} doesn't have any lines with 3 or more signs");
+                return textFragmentRequestObject.HttpResponseObject;
+            }
+
+            var textFragments = await GetEditionTextFragments(editionId, client, user);
+            foreach (var textFragment in textFragments)
+            {
+                var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+                    editionId,
+                    textFragment.id
+                );
+                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+                if (textFragmentRequestObject.HttpResponseObject.textFragments.Any(x =>
+                    x.lines.Any(y => y.signs.Count > 2)))
+                    return textFragmentRequestObject.HttpResponseObject;
+            }
+
+            throw new Exception($"The edition {editionId} doesn't have any fragments with 3 or more signs");
+        }
+
         /// <summary>
         ///     This class can be used in a using block to clone an edition for tests. At the end of the using block,
         ///     it will automatically delete the newly created edition.
@@ -184,10 +229,10 @@ namespace SQE.ApiTest.Helpers
                 _client = client;
                 _name = name;
                 _userAuthDetails = userAuthDetails;
-                _editionId = editionId;
+                EditionId = editionId;
             }
 
-            private uint _editionId { get; set; }
+            private uint EditionId { get; set; }
 
             // This seems to work properly even though it is an antipattern.
             // There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
@@ -196,15 +241,15 @@ namespace SQE.ApiTest.Helpers
             {
                 // shouldSucceed here is false, since we don't really care if it worked.
                 Task.Run(async () =>
-                        await DeleteEdition(_client, _editionId, userAuthDetails: _userAuthDetails,
+                        await DeleteEdition(_client, EditionId, userAuthDetails: _userAuthDetails,
                             shouldSucceed: false))
                     .Wait();
             }
 
             public async Task<uint> CreateEdition()
             {
-                _editionId = await CreateCopyOfEdition(_client, _editionId, _name, _userAuthDetails);
-                return _editionId;
+                EditionId = await CreateCopyOfEdition(_client, EditionId, _name, _userAuthDetails);
+                return EditionId;
             }
         }
     }

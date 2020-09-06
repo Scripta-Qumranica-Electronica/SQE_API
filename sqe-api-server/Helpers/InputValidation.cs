@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NetTopologySuite.IO;
 using NetTopologySuite.Simplify;
-using Newtonsoft.Json;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
@@ -53,7 +53,7 @@ namespace SQE.API.Server.Helpers
             try
             {
                 // Test that the string is valid JSON that can be parsed into a valid instance of the TransformMatrix class.
-                _ = JsonConvert.DeserializeObject<TransformMatrix>(transformMatrix);
+                _ = JsonSerializer.Deserialize<TransformMatrix>(transformMatrix);
                 return true;
             }
             catch
@@ -75,12 +75,12 @@ namespace SQE.API.Server.Helpers
         ///     version of the polygon with that error
         /// </param>
         /// <returns>A WKT string with the cleaned polygon</returns>
-        public static async Task<string> ValidatePolygonAsync(string wktPolygon, string entityName, bool fix = false)
+        public static string ValidatePolygon(string wktPolygon, string entityName, bool fix = false)
         {
-            // Wrap the private validation method in a Task so we can asynchronously call this non-trivial method
+            // Previously we wrapped the private validation method in a Task so we can asynchronously call this non-trivial method
             // But see the docs: https://docs.microsoft.com/en-us/aspnet/core/performance/performance-best-practices?view=aspnetcore-3.1
-            // Those docs explicitly warn against do `await Task.Run`.
-            return await Task.Run(() => _validatePolygon(wktPolygon, entityName, fix));
+            // Those docs explicitly warn against doing `await Task.Run`, so this is now synchronous.
+            return _validatePolygon(wktPolygon, entityName, fix);
         }
 
         /// <summary>

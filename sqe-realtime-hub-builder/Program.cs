@@ -135,11 +135,67 @@ namespace sqe_realtime_hub_builder
             var code = new StreamReader(file.FullName).ReadToEnd();
             var tree = CSharpSyntaxTree.ParseText(code);
             var root = tree.GetCompilationUnitRoot();
-            var members = root.DescendantNodes().OfType<MemberDeclarationSyntax>().ToList();
-            var hubInterfaces = new List<string>();
+            var members = root.DescendantNodes().OfType<MemberDeclarationSyntax>();
 
             // Verify the controller is properly formatted with no disallowed attributes
             VerifyControllerClassName(members);
+
+            var hubInterfaces = WriteHub(hubFolder, controllerName, root, members);
+
+            // return info for any dependency injected fields
+            return (AnalyzeController(members), hubInterfaces);
+        }
+
+        private static void VerifyControllerClassName(IEnumerable<MemberDeclarationSyntax> members)
+        {
+            // Get classes and ensure there is only one in the file
+            var classes = members.OfType<ClassDeclarationSyntax>().ToList();
+            if (classes.Count != 1)
+                throw new Exception(
+                    $"Each Controller file should have only one class, this file has {classes.Count} classes."
+                );
+
+            // Grab the controller class and ensure it only has two attributes
+            var controllerClass = classes.First();
+            var controllerAttrs = controllerClass.AttributeLists.ToList();
+            if (controllerAttrs.Count > 2)
+                throw new Exception(
+                    "The SQE API only supports controller classes with the [Authorize] and [ApiController] attributes."
+                );
+
+            var isControllerClass = false;
+            var isAuthorized = false;
+            var hasPath = false;
+
+            // Loop over attributes to ensure it has one ApiController attribute, one Authorize attribute, and no
+            // route paths.
+            foreach (var attr in controllerAttrs)
+            {
+                if (attr.Attributes.Count(x => x.Name.ToString() == "ApiController") == 1)
+                    isControllerClass = true;
+                if (attr.Attributes.Count(x => x.Name.ToString() == "Authorize") == 1)
+                    isAuthorized = true;
+                if (attr.Attributes.Count(
+                        x =>
+                            x.Name.ToString().IndexOf("Route", StringComparison.CurrentCultureIgnoreCase) >= 0
+                            || x.Name.ToString().IndexOf("Http", StringComparison.CurrentCultureIgnoreCase) >= 0
+                    )
+                    > 0)
+                    hasPath = true;
+            }
+
+            if (!isControllerClass)
+                throw new Exception("This controller class must have the attribute [ApiController].");
+            if (!isAuthorized)
+                throw new Exception("This controller class must have the attribute [Authorize].");
+            if (hasPath)
+                throw new Exception("The SQE API does not support controllers with class level routing attributes.");
+        }
+
+        private static List<string> WriteHub(string hubFolder, string controllerName, CompilationUnitSyntax root,
+            IEnumerable<MemberDeclarationSyntax> members)
+        {
+            var hubInterfaces = new List<string>();
 
             // Begin writing analyzed controller to Hub
             Console.WriteLine($"Writing to {Path.Combine(hubFolder, $"{controllerName}Hub.cs")}");
@@ -220,54 +276,7 @@ namespace sqe_realtime_hub_builder
                 outputFile.WriteLine("\t}\n}");
             }
 
-            // return info for any dependency injected fields
-            return (AnalyzeController(members), hubInterfaces);
-        }
-
-        private static void VerifyControllerClassName(List<MemberDeclarationSyntax> members)
-        {
-            // Get classes and ensure there is only one in the file
-            var classes = members.OfType<ClassDeclarationSyntax>().ToList();
-            if (classes.Count != 1)
-                throw new Exception(
-                    $"Each Controller file should have only one class, this file has {classes.Count} classes."
-                );
-
-            // Grab the controller class and ensure it only has two attributes
-            var controllerClass = classes.First();
-            var controllerAttrs = controllerClass.AttributeLists.ToList();
-            if (controllerAttrs.Count > 2)
-                throw new Exception(
-                    "The SQE API only supports controller classes with the [Authorize] and [ApiController] attributes."
-                );
-
-            var isControllerClass = false;
-            var isAuthorized = false;
-            var hasPath = false;
-
-            // Loop over attributes to ensure it has one ApiController attribute, one Authorize attribute, and no
-            // route paths.
-            foreach (var attr in controllerAttrs)
-            {
-                if (attr.Attributes.Count(x => x.Name.ToString() == "ApiController") == 1)
-                    isControllerClass = true;
-                if (attr.Attributes.Count(x => x.Name.ToString() == "Authorize") == 1)
-                    isAuthorized = true;
-                if (attr.Attributes.Count(
-                        x =>
-                            x.Name.ToString().IndexOf("Route", StringComparison.CurrentCultureIgnoreCase) >= 0
-                            || x.Name.ToString().IndexOf("Http", StringComparison.CurrentCultureIgnoreCase) >= 0
-                    )
-                    > 0)
-                    hasPath = true;
-            }
-
-            if (!isControllerClass)
-                throw new Exception("This controller class must have the attribute [ApiController].");
-            if (!isAuthorized)
-                throw new Exception("This controller class must have the attribute [Authorize].");
-            if (hasPath)
-                throw new Exception("The SQE API does not support controllers with class level routing attributes.");
+            return hubInterfaces;
         }
 
         private static void WriteMethodCommentsToFile(MethodDeclarationSyntax method, StreamWriter outputFile)
@@ -348,7 +357,7 @@ namespace sqe_realtime_hub_builder
             return (anonymousAllowed, $"{httpRequestType}{formattedPath}", httpRequestType, httpPath);
         }
 
-        private static List<ControllerField> AnalyzeController(List<MemberDeclarationSyntax> elements)
+        private static List<ControllerField> AnalyzeController(IEnumerable<MemberDeclarationSyntax> elements)
         {
             var cls = elements.OfType<ClassDeclarationSyntax>().ToList();
             // Check for more than one class (there should only ever be one).
@@ -461,7 +470,8 @@ namespace sqe_realtime_hub_builder
                 : $"\t\tTask {type}{char.ToUpper(item[0]) + item.Substring(1)}({responseType} returnedData);";
         }
 
-        private static void WriteHubController(List<ControllerField> fields, string projectRoot, string hubFolder)
+        private static void WriteHubController(IReadOnlyCollection<ControllerField> fields, string projectRoot,
+            string hubFolder)
         {
             var template = new StreamReader($"{projectRoot}/HubConstructorTemplate.txt").ReadToEnd();
             template = template

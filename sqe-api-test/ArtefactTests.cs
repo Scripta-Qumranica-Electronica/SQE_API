@@ -37,17 +37,20 @@ namespace SQE.ApiTest
         /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
         /// <param name="jwt">A JWT can be added the request to access private editions.</param>
         /// <returns></returns>
-        private async Task<ArtefactListDTO> GetEditionArtefacts(uint? editionId = null)
+        public async Task<ArtefactListDTO> GetEditionArtefacts(uint? editionId = null)
         {
             editionId ??= EditionHelpers.GetEditionId();
 
             var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId.Value, new List<string> { "masks" });
-            var (response, artefactResponse, artefactRtResponse, _) = await Request.Send(artRequest,
+            await artRequest.Send(
                 _client,
                 StartConnectionAsync,
                 true,
                 Request.DefaultUsers.User1,
                 listenToEdition: false);
+            var (response, artefactResponse, artefactRtResponse) = (artRequest.HttpResponseMessage,
+                artRequest.HttpResponseObject,
+                artRequest.SignalrResponseObject);
             response.EnsureSuccessStatusCode();
             artefactResponse.ShouldDeepEqual(artefactRtResponse);
             return artefactResponse;
@@ -87,7 +90,6 @@ namespace SQE.ApiTest
             Assert.True(artefact.editionId > 0);
             Assert.True(artefact.id > 0);
             Assert.NotNull(artefact.imagedObjectId);
-            Assert.NotNull(artefact.side);
             Assert.NotNull(artefact.mask);
         }
 
@@ -477,13 +479,13 @@ namespace SQE.ApiTest
 
                 // Act
                 var newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                var (artefactResponse, artefact, _, _) =
-                    await Request.Send(
-                        newArtefactObject,
-                        _client,
-                        auth: true,
-                        shouldSucceed: false
-                    );
+                await newArtefactObject.Send(
+                    _client,
+                    auth: true,
+                    shouldSucceed: false
+                );
+                var (artefactResponse, artefact) = (newArtefactObject.HttpResponseMessage,
+                    newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -511,13 +513,13 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                (artefactResponse, artefact, _, _) =
-                    await Request.Send(
-                        newArtefactObject,
-                        _client,
-                        auth: true,
-                        shouldSucceed: false
-                    );
+                await newArtefactObject.Send(
+                    _client,
+                    auth: true,
+                    shouldSucceed: false
+                );
+                (artefactResponse, artefact) =
+                    (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -547,13 +549,13 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                (artefactResponse, artefact, _, _) =
-                    await Request.Send(
-                        newArtefactObject,
-                        _client,
-                        auth: true,
-                        shouldSucceed: false
-                    );
+                await newArtefactObject.Send(
+                    _client,
+                    auth: true,
+                    shouldSucceed: false
+                );
+                (artefactResponse, artefact) =
+                    (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -585,13 +587,13 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                (artefactResponse, artefact, _, _) =
-                    await Request.Send(
-                        newArtefactObject,
-                        _client,
-                        auth: true,
-                        shouldSucceed: false
-                    );
+                await newArtefactObject.Send(
+                    _client,
+                    auth: true,
+                    shouldSucceed: false
+                );
+                (artefactResponse, artefact) =
+                    (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -623,13 +625,13 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                (artefactResponse, artefact, _, _) =
-                    await Request.Send(
-                        newArtefactObject,
-                        _client,
-                        auth: true,
-                        shouldSucceed: false
-                    );
+                await newArtefactObject.Send(
+                    _client,
+                    auth: true,
+                    shouldSucceed: false
+                );
+                (artefactResponse, artefact) =
+                    (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
                 // The response should indicate a bad request
@@ -960,6 +962,24 @@ namespace SQE.ApiTest
 
                 // Assert (update name)
                 Assert.Equal(HttpStatusCode.BadRequest, nameResponse.StatusCode);
+            }
+        }
+
+        [Fact]
+        public async Task CanGetEditionAretefactRois()
+        {
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            {
+                // Arrange
+                var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+                var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+
+                // Act
+                var getArtefactRois = new Get.V1_Editions_EditionId_Artefacts_ArtefactId_Rois(newEdition, artefactId);
+                await getArtefactRois.Send(_client, StartConnectionAsync, auth: true);
+
+                getArtefactRois.HttpResponseObject.ShouldDeepEqual(getArtefactRois.SignalrResponseObject);
+                getArtefactRois.HttpResponseObject.rois.ShouldDeepEqual(rois);
             }
         }
     }

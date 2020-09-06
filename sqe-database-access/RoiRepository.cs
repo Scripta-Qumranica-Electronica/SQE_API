@@ -169,7 +169,8 @@ namespace SQE.DatabaseAccess
                                     signInterpretationRoiUpdate.NewId.Value
                                 );
 
-                            updatedRoi.SignInterpretationRoiId = signInterpretationRoiUpdate.OldId;
+                            updatedRoi.SignInterpretationRoiId = signInterpretationRoiUpdate.NewId;
+                            updatedRoi.OldSignInterpretationRoiId = signInterpretationRoiUpdate.OldId.Value;
 
                             return updatedRoi;
                         }

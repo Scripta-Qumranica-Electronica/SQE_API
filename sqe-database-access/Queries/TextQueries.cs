@@ -20,6 +20,7 @@ WITH RECURSIVE sign_interpretation_ids
 				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
 				position_in_stream_owner.edition_id,
+				position_in_stream.creator_id,
 				@X := 0 AS sequence
 		FROM position_in_stream
 			JOIN position_in_stream_owner 
@@ -35,6 +36,7 @@ WITH RECURSIVE sign_interpretation_ids
 				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
 				sign_interpretation_ids.edition_id,
+				position_in_stream.creator_id,
 				@X := @X + 1 AS sequence
 		FROM  sign_interpretation_ids
 			JOIN position_in_stream 
@@ -48,35 +50,37 @@ WITH RECURSIVE sign_interpretation_ids
 
 SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 		manuscript_data.name AS editionName,
-		manuscript_author.user_id AS manuscriptAuthor,
+		manuscript_data_owner.edition_editor_id AS manuscriptAuthor,
 
 		edition.copyright_holder AS copyrightHolder,
 		edition.collaborators,
 
 		text_fragment_data.text_fragment_id AS textFragmentId,
 		text_fragment_data.name AS textFragmentName,
-		text_fragment_author.user_id AS TextFragmentEditorId,
+		text_fragment_data_owner.edition_editor_id AS TextFragmentEditorId,
 
 		line_data.line_id AS lineId,
 		line_data.name AS lineName,
-		line_author.user_id AS lineAuthor,
+		line_data_owner.edition_editor_id AS lineAuthor,
 
 		sign_interpretation.sign_id AS signId,
 		sign_interpretation_ids.next_sign_interpretation_id AS nextSignInterpretationId,
-		sign_sequence_author.user_id AS signSequenceAuthor,
+		sign_interpretation_ids.edition_editor_id AS signSequenceAuthor,
+		sign_interpretation_ids.creator_id AS PositionCreatorId,
 
 		signInterpretationId,
 		sign_interpretation.`character` AS `character`,
 
 		sign_interpretation_attribute.sign_interpretation_attribute_id AS SignInterpretationAttributeId,
 		sign_interpretation_attribute.attribute_value_id AS AttributeValueId,
+		sign_interpretation_attribute.creator_id AS SignInterpretationAttributeCreatorId,
 		sign_interpretation_attribute.sequence AS Sequence,
-		sign_interpretation_attribute_author.user_id AS SignInterpretationAttributeAuthor,
+		sign_interpretation_attribute_owner.edition_editor_id AS SignInterpretationAttributeEditorId,
 		sign_interpretation_attribute.numeric_value AS NumericValue,
 
 		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
 		roi.sign_interpretation_id AS SignInterpretationId,
-		roi.user_id AS SignInterpretationRoiAuthor,
+		roi.edition_editor_id AS SignInterpretationRoiAuthor,
 		roi.values_set AS ValuesSet,
 		roi.exceptional AS Exceptional,
 		ST_ASTEXT(roi.path) AS Shape,
@@ -93,35 +97,27 @@ FROM sign_interpretation_ids
 	JOIN sign_interpretation_attribute_owner 
 		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
 		AND sign_interpretation_attribute_owner.edition_id = sign_interpretation_ids.edition_id
-	JOIN edition_editor AS sign_interpretation_attribute_author 
-		ON sign_interpretation_attribute_author.edition_editor_id = sign_interpretation_attribute_owner.edition_editor_id
 
 	JOIN line_to_sign ON line_to_sign.sign_id = sign_interpretation.sign_id
 	JOIN line_data USING (line_id)
 	JOIN line_data_owner ON line_data_owner.line_data_id = line_data.line_data_id
 	  AND line_data_owner.edition_id = sign_interpretation_ids.edition_id
-	JOIN edition_editor AS line_author ON line_data_owner.edition_editor_id = line_author.edition_editor_id
 
 	JOIN text_fragment_to_line USING (line_id)
 	JOIN text_fragment_data USING (text_fragment_id)
 	JOIN text_fragment_data_owner 
 		ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
 			AND text_fragment_data_owner.edition_id = sign_interpretation_ids.edition_id
-	JOIN edition_editor AS text_fragment_author 
-		ON text_fragment_data_owner.edition_editor_id = text_fragment_author.edition_editor_id
 
 	JOIN manuscript_to_text_fragment USING (text_fragment_id)
 	JOIN manuscript_data USING (manuscript_id)
 	JOIN manuscript_data_owner ON manuscript_data_owner.manuscript_data_id = manuscript_data.manuscript_data_id
 		AND manuscript_data_owner.edition_id = sign_interpretation_ids.edition_id
-	JOIN edition_editor AS manuscript_author ON manuscript_data_owner.edition_editor_id = manuscript_author.edition_editor_id
 	  
-	JOIN edition_editor AS sign_sequence_author ON sign_interpretation_ids.edition_editor_id = sign_sequence_author.edition_editor_id
-
 	LEFT JOIN 
 		(SELECT	sign_interpretation_roi.sign_interpretation_roi_id,
 				sign_interpretation_roi.sign_interpretation_id,
-				sign_interpretation_roi_author.user_id,
+				sign_interpretation_roi_owner.edition_editor_id,
 				sign_interpretation_roi.values_set,
 				sign_interpretation_roi.exceptional,
 				roi_shape.path AS path,
@@ -135,8 +131,7 @@ FROM sign_interpretation_ids
 				ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
 			JOIN roi_shape ON roi_shape.roi_shape_id = sign_interpretation_roi.roi_shape_id
 			JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
-			JOIN edition_editor AS sign_interpretation_roi_author 
-				ON sign_interpretation_roi_author.edition_editor_id = sign_interpretation_roi_owner.edition_editor_id) 
+		)
 		AS roi 
 			ON roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
 				AND roi.edition_id = sign_interpretation_ids.edition_id
@@ -368,7 +363,9 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
     internal static class TextFragmentAttributes
     {
         public const string GetQuery = @"
-SELECT DISTINCT attribute_value.attribute_value_id AS attributeValueId, REGEXP_REPLACE(LOWER(CONCAT(attribute.name, '-', attribute_value.string_value)), '[ _]', '-') AS attributeString
+SELECT DISTINCT attribute_value.attribute_value_id AS attributeValueId, 
+                attribute_value.string_value AS attributeString,
+                attribute_value.attribute_id AS attributeId
 FROM attribute_value
 JOIN attribute_value_owner 
 	ON attribute_value_owner.attribute_value_id = attribute_value.attribute_value_id 

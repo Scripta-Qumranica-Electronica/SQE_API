@@ -64,7 +64,8 @@ SELECT roi_position.artefact_id AS ArtefactId,
        sign_interpretation_roi.values_set AS ValuesSet,
        sign_interpretation_roi.exceptional AS Exceptional,
        sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
-       sign_interpretation_roi_owner.edition_editor_id AS SignInterpretationRoiAuthor,
+       sign_interpretation_roi.creator_id AS SignInterpretationRoiCreatorId,
+       sign_interpretation_roi_owner.edition_editor_id AS SignInterpretationRoiEditorId,
        sign_interpretation_roi.roi_shape_id AS RoiShapeId,
        sign_interpretation_roi.roi_position_id AS RoiPositionId
 FROM sign_interpretation_roi
@@ -93,7 +94,8 @@ SELECT roi_position.artefact_id AS ArtefactId,
        sign_interpretation_roi.values_set AS ValuesSet,
        sign_interpretation_roi.exceptional AS Exceptional,
        sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
-       sign_interpretation_roi_owner.edition_editor_id AS SignInterpretationRoiAuthor,
+       sign_interpretation_roi.creator_id AS SignInterpretationRoiCreatorId,
+       sign_interpretation_roi_owner.edition_editor_id AS SignInterpretationRoiEditorId,
        sign_interpretation_roi.roi_shape_id AS RoiShapeId,
        sign_interpretation_roi.roi_position_id AS RoiPositionId
 FROM sign_interpretation_roi
@@ -102,7 +104,7 @@ JOIN roi_shape USING(roi_shape_id)
 JOIN sign_interpretation_roi_owner 
     ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
 	AND sign_interpretation_roi_owner.edition_id = @EditionId
-WHERE @WhereString
+WHERE @WhereData
 ";
     }
 
@@ -118,7 +120,8 @@ SELECT roi_position.artefact_id AS ArtefactId,
        sign_interpretation_roi.values_set AS ValuesSet,
        sign_interpretation_roi.exceptional AS Exceptional,
        sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
-       sign_interpretation_roi_owner.edition_editor_id AS SignInterpretationRoiAuthor,
+       sign_interpretation_roi.creator_id AS SignInterpretationRoiCreatorId,
+       sign_interpretation_roi_owner.edition_editor_id AS SignInterpretationRoiEditorId,
        sign_interpretation_roi.roi_shape_id AS RoiShapeId,
        sign_interpretation_roi.roi_position_id AS RoiPositionId
 FROM sign_interpretation_roi
@@ -139,13 +142,13 @@ WHERE roi_position.artefact_id = @ArtefactId
     internal static class GetRoiIdByData
     {
         public const string GetQuery = @"
-SELECT sign_interpretation_roi.sign_interpretation_id AS SignInterpretationId
+SELECT sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId
 FROM sign_interpretation_roi
 @JoinString
 JOIN sign_interpretation_roi_owner 
     ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
 	AND sign_interpretation_roi_owner.edition_id = @EditionId
-WHERE @WhereString
+WHERE @WhereData
 ";
     }
 }

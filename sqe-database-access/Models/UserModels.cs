@@ -123,6 +123,7 @@ namespace SQE.DatabaseAccess.Models
     public class EditorInfo
     {
         public uint UserId { get; set; }
+        public uint EditorId { get; set; }
         public string Forename { get; set; }
         public string Surname { get; set; }
         public string Organization { get; set; }
@@ -130,7 +131,6 @@ namespace SQE.DatabaseAccess.Models
 
     public class EditorWithPermissions : EditorInfo
     {
-        public uint EditorId { get; set; }
         public string EditorEmail { get; set; }
         public bool MayRead { get; set; }
 

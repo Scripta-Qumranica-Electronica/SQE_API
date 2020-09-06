@@ -67,13 +67,6 @@ namespace SQE.API.Server.RealtimeHubs
         Task UpdatedEdition(EditionDTO returnedData);
 
         /// <summary>
-        ///     broadcasts a new ROI has been created
-        /// </summary>
-        /// <param name="returnedData">Details of the newly created ROI</param>
-        /// <returns></returns>
-        Task CreatedRoi(InterpretationRoiDTO returnedData);
-
-        /// <summary>
         ///     broadcasts one or more new ROI's have been created
         /// </summary>
         /// <param name="returnedData">Details of the newly created ROI's</param>
@@ -86,13 +79,6 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="returnedData">Details of the updated ROI's</param>
         /// <returns></returns>
         Task EditedRoisBatch(BatchEditRoiResponseDTO returnedData);
-
-        /// <summary>
-        ///     broadcasts a ROI has been updated
-        /// </summary>
-        /// <param name="returnedData">Details of the updated ROI</param>
-        /// <returns></returns>
-        Task UpdatedRoi(UpdatedInterpretationRoiDTO returnedData);
 
         /// <summary>
         ///     broadcasts one or more new ROI's have been updated
@@ -156,5 +142,47 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="returnedData">Details of the updated artefact transforms</param>
         /// <returns></returns>
         Task BatchUpdatedArtefactTransform(BatchUpdatedArtefactTransformDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the create of a sign interpretation
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task CreatedSignInterpretation(SignInterpretationListDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the update of a sign interpretation
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task UpdatedSignInterpretation(SignInterpretationDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the delete of a sign interpretation
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task DeletedSignInterpretation(DeleteDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the creation of an attribute
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task CreatedAttribute(AttributeDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the update of an attribute
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task UpdatedAttribute(AttributeDTO returnedData);
+
+        /// <summary>
+        ///     broadcasts the delete of an attribute
+        /// </summary>
+        /// <param name="returnedData"></param>
+        /// <returns></returns>
+        Task DeletedAttribute(DeleteDTO returnedData);
     }
 }

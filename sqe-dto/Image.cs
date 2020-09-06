@@ -59,6 +59,8 @@ namespace SQE.API.DTO
             this.name = name;
         }
 
+        public ImageInstitutionDTO() : this(null) { }
+
         [Required] public string name { get; set; }
     }
 
@@ -68,6 +70,8 @@ namespace SQE.API.DTO
         {
             this.institutions = institutions;
         }
+
+        public ImageInstitutionListDTO() : this(null) { }
 
         [Required] public List<ImageInstitutionDTO> institutions { get; set; }
     }

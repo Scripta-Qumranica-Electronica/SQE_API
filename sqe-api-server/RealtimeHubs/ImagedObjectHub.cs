@@ -107,12 +107,12 @@ namespace SQE.API.Server.RealtimeHubs
         ///     Provides a list of all institutional image providers.
         /// </summary>
         [AllowAnonymous]
-        public async Task<InstitutionalImageListDTO> GetV1ImagedObjectsInstitutionsInstitution(string institution)
+        public async Task<InstitutionalImageListDTO> GetV1ImagedObjectsInstitutionsInstitutionName(string institutionName)
 
         {
             try
             {
-                return await _imageService.GetInstitutionImagesAsync(institution);
+                return await _imageService.GetInstitutionImagesAsync(institutionName);
             }
             catch (ApiException err)
             {
@@ -127,7 +127,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// <param name="imagedObjectId">Id of the imaged object</param>
         /// <returns></returns>
         [AllowAnonymous]
-        public async Task<List<ImagedObjectTextFragmentMatchDTO>> GetV1ImagedObjectsImagedObjectIdTextFragments(string imagedObjectId)
+        public async Task<ImagedObjectTextFragmentMatchListDTO> GetV1ImagedObjectsImagedObjectIdTextFragments(string imagedObjectId)
 
         {
             try

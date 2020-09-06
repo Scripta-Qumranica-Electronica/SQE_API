@@ -167,7 +167,16 @@ namespace GenerateTypescriptInterfaces
         private static string ParseComments(string comment)
         {
             var xDoc = new XmlDocument();
-            xDoc.LoadXml($"<root>{comment.Replace("///", "")}</root>");
+            try
+            {
+                comment = StripComments(comment);
+                xDoc.LoadXml($"<root>{comment.Replace("///", "")}</root>");
+            }
+            catch (System.Xml.XmlException e)
+            {
+                Console.WriteLine(comment);
+                Console.WriteLine(e);
+            }
 
             // Get the summary text for the method
             var summary = xDoc.GetElementsByTagName("summary");
@@ -331,6 +340,12 @@ namespace GenerateTypescriptInterfaces
 
             [Option('h', "hub-folder", Required = false, HelpText = "Specify signalr hub folder path.")]
             public string HubFolder { get; set; }
+        }
+
+        private static string StripComments(string comment)
+        {
+            const string re = @"(^|\s+)\/\/(?!\/).*\n";
+            return Regex.Replace(comment, re, "");
         }
     }
 

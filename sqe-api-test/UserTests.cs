@@ -49,7 +49,7 @@ namespace SQE.ApiTest
 
         private Request.UserAuthDetails UserUpdateRequestDTOToUserAuthDetails(UserUpdateRequestDTO user)
         {
-            return new Request.UserAuthDetails { email = user.email, password = user.password };
+            return new Request.UserAuthDetails { Email = user.email, Password = user.password };
         }
 
 
@@ -303,8 +303,7 @@ namespace SQE.ApiTest
                 // Act 
                 var updateUserAccountObject = new Put.V1_Users(newDetails);
                 var userAuth = UserUpdateRequestDTOToUserAuthDetails(user);
-                var (response, msg, _, _) = await Request.Send(
-                    updateUserAccountObject,
+                await updateUserAccountObject.Send(
                     _client,
                     auth: true,
                     requestUser: userAuth,
@@ -312,7 +311,7 @@ namespace SQE.ApiTest
                 );
 
                 // Assert
-                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                Assert.Equal(HttpStatusCode.Unauthorized, updateUserAccountObject.HttpResponseMessage.StatusCode);
             }
         }
 
@@ -344,8 +343,7 @@ namespace SQE.ApiTest
 
                 // Act 
                 var passwordUpdateRequest = new Post.V1_Users_ChangePassword(newPwd);
-                var (response, msg, _, _) = await Request.Send(
-                    passwordUpdateRequest,
+                await passwordUpdateRequest.Send(
                     _client,
                     auth: true,
                     shouldSucceed: false,
@@ -353,7 +351,7 @@ namespace SQE.ApiTest
                 );
 
                 // Assert
-                Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+                Assert.Equal(HttpStatusCode.Unauthorized, passwordUpdateRequest.HttpResponseMessage.StatusCode);
             }
         }
 
@@ -390,12 +388,13 @@ namespace SQE.ApiTest
                 var userAuth = UserUpdateRequestDTOToUserAuthDetails(user);
                 var userLoginRequest =
                     new Post.V1_Users_Login(new LoginRequestDTO { email = user.email, password = user.password });
-                var (response, loggedInUser, _, _) = await Request.Send(
-                    userLoginRequest,
+                await userLoginRequest.Send(
                     _client,
                     auth: true,
                     requestUser: userAuth
                 );
+                var (response, loggedInUser) =
+                    (userLoginRequest.HttpResponseMessage, userLoginRequest.HttpResponseObject);
 
                 // Assert (login)
                 response.EnsureSuccessStatusCode();

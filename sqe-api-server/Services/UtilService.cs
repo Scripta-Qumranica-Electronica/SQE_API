@@ -22,7 +22,7 @@ namespace SQE.API.Server.Services
 
         public async Task<WktPolygonDTO> RepairWktPolygonAsync(string wktPolygon, string clientId = null)
         {
-            var repaired = await GeometryValidation.ValidatePolygonAsync(wktPolygon, "polygon", true);
+            var repaired = GeometryValidation.ValidatePolygon(wktPolygon, "polygon", true);
             return new WktPolygonDTO { wktPolygon = repaired };
         }
     }

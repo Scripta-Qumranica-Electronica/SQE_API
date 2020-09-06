@@ -5,7 +5,8 @@ namespace SQE.DatabaseAccess.Models
     public class SignInterpretationRoiData
     {
         public uint? SignInterpretationRoiId { get; set; }
-        public uint? SignInterpretationRoiAuthor { get; set; }
+        public uint? SignInterpretationRoiCreatorId { get; set; }
+        public uint? SignInterpretationRoiEditorId { get; set; }
         public uint? ArtefactId { get; set; }
         public uint? SignInterpretationId { get; set; }
 
@@ -47,8 +48,8 @@ namespace SQE.DatabaseAccess.Models
             if (SignInterpretationId != null) searchParameters.Add($"sign_interpretation_id = {SignInterpretationId}");
             if (SignInterpretationRoiId != null)
                 searchParameters.Add($"sign_interpretation_roi_id = {SignInterpretationRoiId}");
-            if (SignInterpretationRoiAuthor != null)
-                searchParameters.Add($"edition_editor_id= {SignInterpretationRoiAuthor}");
+            if (SignInterpretationRoiEditorId != null)
+                searchParameters.Add($"edition_editor_id= {SignInterpretationRoiEditorId}");
             if (ValuesSet != null) searchParameters.Add($"values_set = {ValuesSet}");
             if (Exceptional != null) searchParameters.Add($"exceptional = {Exceptional}");
             if (ArtefactId != null) searchParameters.Add($"artefact_id = {ArtefactId}");

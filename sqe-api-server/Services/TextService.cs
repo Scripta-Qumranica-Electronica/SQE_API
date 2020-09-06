@@ -166,6 +166,7 @@ namespace SQE.API.Server.Services
             return newTextFragmentData;
         }
 
+        // TODO: rewrite this and the following method to use a ToDTO() serialization method instead.
         /// <summary>
         ///     Serialize a TextEdition and the list of its editors to a TextEditionDTO.
         /// </summary>
@@ -175,7 +176,7 @@ namespace SQE.API.Server.Services
         private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)
         {
             var editorList =
-                editors.ToDictionary(editor => editor.UserId.ToString(),
+                editors.ToDictionary(editor => editor.EditorId.ToString(),
                     editor => new EditorDTO
                     {
                         forename = editor.Forename,
@@ -219,6 +220,7 @@ namespace SQE.API.Server.Services
                                                                 signInterpretationId =
                                                                     a.SignInterpretationId.GetValueOrDefault(),
                                                                 character = a.Character,
+                                                                //editorID = 
 
                                                                 attributes = a.Attributes.Select(
                                                                         b => new InterpretationAttributeDTO
@@ -227,16 +229,20 @@ namespace SQE.API.Server.Services
                                                                                 b.SignInterpretationAttributeId
                                                                                     .GetValueOrDefault(),
                                                                             sequence = b.Sequence.GetValueOrDefault(),
+                                                                            attributeId = b.AttributeId
+                                                                                .GetValueOrDefault(),
                                                                             attributeValueId =
                                                                                 b.AttributeValueId.GetValueOrDefault(),
-                                                                            attributeValueString = b.AttributeString,
+                                                                            attributeValueString = b.AttributeValueString,
                                                                             editorId = b
-                                                                                .SignInterpretationAttributeAuthor
+                                                                                .SignInterpretationAttributeEditorId
+                                                                                .GetValueOrDefault(),
+                                                                            creatorId = b.SignInterpretationAttributeCreatorId
                                                                                 .GetValueOrDefault(),
                                                                             value = b.NumericValue.GetValueOrDefault()
                                                                         }
                                                                     )
-                                                                    .ToList(),
+                                                                    .ToArray(),
 
                                                                 rois = a.SignInterpretationRois.Select(
                                                                         b => new InterpretationRoiDTO
@@ -245,8 +251,10 @@ namespace SQE.API.Server.Services
                                                                                 b.SignInterpretationRoiId
                                                                                     .GetValueOrDefault(),
                                                                             signInterpretationId =
-                                                                                b.SignInterpretationId,
-                                                                            editorId = b.SignInterpretationRoiAuthor
+                                                                                b.SignInterpretationId.GetValueOrDefault(),
+                                                                            editorId = b.SignInterpretationRoiEditorId
+                                                                                .GetValueOrDefault(),
+                                                                            creatorId = b.SignInterpretationRoiCreatorId
                                                                                 .GetValueOrDefault(),
                                                                             artefactId =
                                                                                 b.ArtefactId.GetValueOrDefault(),
@@ -261,7 +269,7 @@ namespace SQE.API.Server.Services
                                                                             valuesSet = b.ValuesSet.GetValueOrDefault()
                                                                         }
                                                                     )
-                                                                    .ToList(),
+                                                                    .ToArray(),
 
                                                                 nextSignInterpretations = a.NextSignInterpretations
                                                                     .Select(
@@ -269,10 +277,11 @@ namespace SQE.API.Server.Services
                                                                         {
                                                                             nextSignInterpretationId =
                                                                                 b.NextSignInterpretationId,
-                                                                            editorId = b.SignSequenceAuthor
+                                                                            editorId = b.SignSequenceAuthor,
+                                                                            creatorId = b.PositionCreatorId
                                                                         }
                                                                     )
-                                                                    .ToList()
+                                                                    .ToArray()
                                                                 //TODO (Ingo) Here we should add the output fot the wordIds.
                                                             }
                                                         )
@@ -293,7 +302,7 @@ namespace SQE.API.Server.Services
         {
             var editorList =
                 editors.ToDictionary(
-                    editor => editor.UserId.ToString(),
+                    editor => editor.EditorId.ToString(),
                     editor => new EditorDTO
                     {
                         forename = editor.Forename,
@@ -331,19 +340,21 @@ namespace SQE.API.Server.Services
                                                         b.SignInterpretationAttributeId.GetValueOrDefault(),
                                                     sequence = b.Sequence.GetValueOrDefault(),
                                                     attributeValueId = b.AttributeValueId.GetValueOrDefault(),
-                                                    attributeValueString = b.AttributeString,
-                                                    editorId = b.SignInterpretationAttributeAuthor.GetValueOrDefault(),
+                                                    attributeValueString = b.AttributeValueString,
+                                                    editorId = b.SignInterpretationAttributeEditorId.GetValueOrDefault(),
                                                     value = b.NumericValue.GetValueOrDefault()
                                                 }
                                             )
-                                            .ToList(),
+                                            .ToArray(),
 
                                         rois = a.SignInterpretationRois.Select(
                                                 b => new InterpretationRoiDTO
                                                 {
                                                     interpretationRoiId = b.SignInterpretationRoiId.GetValueOrDefault(),
                                                     signInterpretationId = b.SignInterpretationId.GetValueOrDefault(),
-                                                    editorId = b.SignInterpretationRoiAuthor.GetValueOrDefault(),
+                                                    editorId = b.SignInterpretationRoiEditorId.GetValueOrDefault(),
+                                                    creatorId = b.SignInterpretationRoiCreatorId
+                                                        .GetValueOrDefault(),
                                                     artefactId = b.ArtefactId.GetValueOrDefault(),
                                                     shape = b.Shape,
                                                     translate = new TranslateDTO
@@ -355,16 +366,17 @@ namespace SQE.API.Server.Services
                                                     valuesSet = b.ValuesSet.GetValueOrDefault()
                                                 }
                                             )
-                                            .ToList(),
+                                            .ToArray(),
 
                                         nextSignInterpretations = a.NextSignInterpretations.Select(
                                                 b => new NextSignInterpretationDTO
                                                 {
                                                     nextSignInterpretationId = b.NextSignInterpretationId,
-                                                    editorId = b.SignSequenceAuthor
+                                                    editorId = b.SignSequenceAuthor,
+                                                    creatorId = b.PositionCreatorId,
                                                 }
                                             )
-                                            .ToList()
+                                            .ToArray()
                                     }
                                 )
                                 .ToList()

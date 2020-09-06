@@ -43,7 +43,7 @@ namespace qwb_to_sqe
         private string _qwbText;
 
         public bool ContainsLineBreak;
-        private int IsVariant = 0;
+        //private int IsVariant = 0;
 
 
         public uint QWBWordId;

@@ -7,7 +7,7 @@ namespace SQE.API.DTO
     {
         [Required] public uint artefactId { get; set; }
 
-        public uint? signInterpretationId { get; set; }
+        [Required] public uint signInterpretationId { get; set; }
 
         [Required] public string shape { get; set; }
 
@@ -23,6 +23,8 @@ namespace SQE.API.DTO
     public class InterpretationRoiDTO : SetInterpretationRoiDTO
     {
         [Required] public uint interpretationRoiId { get; set; }
+
+        [Required] public uint creatorId { get; set; }
 
         [Required] public uint editorId { get; set; }
     }

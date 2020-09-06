@@ -80,11 +80,11 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        ///     Get a listing of all corresponding imaged objects and transcribed text fragment in a specified edition
+        ///     Get a listing of all corresponding imaged objects and transcribed text fragment in a specified manuscript
         /// </summary>
-        /// <param name="manuscriptId">Unique Id of the edition to search for imaged objects to text fragment matches</param>
+        /// <param name="manuscriptId">Unique Id of the manuscript to search for imaged objects to text fragment matches</param>
         [AllowAnonymous]
-        public async Task<CatalogueMatchListDTO> GetV1CatalogueManuscriptManuscriptIdImagedObjectTextFragmentMatches(uint manuscriptId)
+        public async Task<CatalogueMatchListDTO> GetV1CatalogueManuscriptsManuscriptIdImagedObjectTextFragmentMatches(uint manuscriptId)
 
         {
             try

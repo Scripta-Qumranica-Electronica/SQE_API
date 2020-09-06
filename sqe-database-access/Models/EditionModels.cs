@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.DatabaseAccess.Models
@@ -84,8 +84,6 @@ namespace SQE.DatabaseAccess.Models
         public string copyrightHolder { get; set; }
         public string collaborators { get; set; }
         public uint manuscriptAuthor { get; set; }
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string licence { get; set; }
 
 

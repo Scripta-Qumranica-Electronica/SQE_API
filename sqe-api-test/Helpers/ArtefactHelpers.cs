@@ -1,5 +1,8 @@
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DeepEqual.Syntax;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 
@@ -8,22 +11,23 @@ namespace SQE.ApiTest.Helpers
     public static class ArtefactHelpers
     {
         /// <summary>
-        ///     Selects an edition with artefacts in sequence (to avoid locks) and returns its artefacts.
+        ///     Gets the artefacts of the specified edition
         /// </summary>
-        /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
-        /// <param name="jwt">A JWT can be added the request to access private editions.</param>
+        /// <param name="editionId">Id of to search for artefacts.</param>
+        /// <param name="client">The http client.</param>
+        /// <param name="user">The details of the user making the request.</param>
         /// <returns></returns>
         public static async Task<ArtefactListDTO> GetEditionArtefacts(uint editionId, HttpClient client,
             Request.UserAuthDetails user = null)
         {
             var apiRequest = new Get.V1_Editions_EditionId_Artefacts(editionId);
-            var (response, artefactResponse, _, _) = await Request.Send(
-                apiRequest,
+            await apiRequest.Send(
                 client,
                 null,
                 true,
                 user
             );
+            var (response, artefactResponse) = (apiRequest.HttpResponseMessage, apiRequest.HttpResponseObject);
             response.EnsureSuccessStatusCode();
             return artefactResponse;
         }
@@ -40,14 +44,22 @@ namespace SQE.ApiTest.Helpers
             Request.UserAuthDetails user = null)
         {
             var apiRequest = new Delete.V1_Editions_EditionId_Artefacts_ArtefactId(editionId, artefactId);
-            var (response, artefactResponse, _, _) = await Request.Send(
-                apiRequest,
+            await apiRequest.Send(
                 client,
                 null,
                 true,
                 user
             );
-            response.EnsureSuccessStatusCode();
+            apiRequest.HttpResponseMessage.EnsureSuccessStatusCode();
+        }
+
+        public static async Task<InterpretationRoiDTOList> GetArtefactRois(uint editionId, uint artefactId, HttpClient client,
+            Func<string, Task<HubConnection>> signalr, bool auth = false)
+        {
+            var request = new Get.V1_Editions_EditionId_Artefacts_ArtefactId_Rois(editionId, artefactId);
+            await request.Send(client, signalr, auth: auth);
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            return request.HttpResponseObject;
         }
     }
 }
