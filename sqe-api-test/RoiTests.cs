@@ -27,7 +27,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanCreateEditionRoi()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
                 await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
@@ -37,7 +37,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanBatchCreateEditionRoi()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
                 await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition, true);
@@ -47,7 +47,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanGetEditionRoi()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -62,7 +62,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanDeleteEditionRoi()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -107,7 +107,7 @@ namespace SQE.ApiTest
 
         private async Task UpdateEditionRoi(bool batch)
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -171,7 +171,7 @@ namespace SQE.ApiTest
         [InlineData(false)]
         public async Task CanBatchEditRois(bool realtime)
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 // Create two new rois, one will get altered, one will be deleted

@@ -264,7 +264,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanAddTextFragmentAfter()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -321,7 +321,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanAddTextFragmentBefore()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -380,7 +380,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanAddTextFragmentBeforeAndAfter()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -429,7 +429,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanAddTextFragmentToEnd()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -486,7 +486,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanGetAnonymousArtefactsOfTextFragment()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -569,7 +569,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanMoveTextFragmentAfter()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -615,7 +615,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanMoveTextFragmentBefore()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -659,7 +659,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanMoveTextFragmentBeforeAndAfter()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -704,7 +704,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanMoveTextFragmentBetweenNonsequentialTextFragments()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -743,7 +743,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotAddTextFragmentAfterTextFragmentNotInEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -777,7 +777,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotAddTextFragmentBeforeTextFragmentNotInEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -812,7 +812,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotAddTextFragmentBetweenNonSequentialTextFragments()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -848,7 +848,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotAddTextFragmentWithBlankName()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -882,7 +882,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotAddTextFragmentWithNullName()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -916,7 +916,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotAddTextFragmentWithoutPermission()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -938,7 +938,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotMoveTextFragmentAfterTextFragmentNotInEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
@@ -977,7 +977,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotMoveTextFragmentBeforeTextFragmentNotInEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);

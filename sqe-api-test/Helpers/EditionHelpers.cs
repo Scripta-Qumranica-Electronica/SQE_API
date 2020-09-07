@@ -129,7 +129,9 @@ namespace SQE.ApiTest.Helpers
         /// <param name="shouldSucceed">Optional, whether the delete action is expected to succeed</param>
         /// <param name="userAuthDetails">Details of the user making the request</param>
         /// <returns>void</returns>
-        public static async Task DeleteEdition(HttpClient client,
+        public static async Task DeleteEdition(
+            HttpClient client,
+            Func<string, Task<HubConnection>> realtime,
             uint editionId,
             bool authenticated = true,
             bool shouldSucceed = true,
@@ -137,25 +139,34 @@ namespace SQE.ApiTest.Helpers
         {
             if (authenticated && userAuthDetails == null)
                 userAuthDetails = Request.DefaultUsers.User1;
-            var (response, msg) = await Request.SendHttpRequestAsync<string, DeleteTokenDTO>(
+            var deleteResponse1 = new Delete.V1_Editions_EditionId(
+                editionId,
+                new List<string>() { "deleteForAllEditors" });
+            await deleteResponse1.SendAsync(
                 client,
-                HttpMethod.Delete,
-                $"/v1/editions/{editionId}?optional=deleteForAllEditors",
-                null,
-                authenticated ? await Request.GetJwtViaHttpAsync(client, userAuthDetails) : null
-            );
+                realtime,
+                authenticated,
+                userAuthDetails,
+                shouldSucceed: shouldSucceed,
+                requestRealtime: false);
+            var (response, msg) = (deleteResponse1.HttpResponseMessage, deleteResponse1.HttpResponseObject);
             if (shouldSucceed)
             {
                 response.EnsureSuccessStatusCode();
                 Assert.NotNull(msg.token);
                 Assert.Equal(editionId, msg.editionId);
-                var (response2, msg2) = await Request.SendHttpRequestAsync<string, DeleteTokenDTO>(
+                var deleteResponse2 = new Delete.V1_Editions_EditionId(
+                    editionId,
+                    new List<string>() { "deleteForAllEditors" },
+                    msg.token);
+                await deleteResponse2.SendAsync(
                     client,
-                    HttpMethod.Delete,
-                    $"/v1/editions/{msg.editionId}?optional=deleteForAllEditors&token={msg.token}",
-                    null,
-                    authenticated ? await Request.GetJwtViaHttpAsync(client, userAuthDetails) : null
-                );
+                    realtime,
+                    authenticated,
+                    userAuthDetails,
+                    shouldSucceed: true,
+                    requestRealtime: false);
+                var (response2, msg2) = (deleteResponse2.HttpResponseMessage, deleteResponse2.HttpResponseObject);
                 response2.EnsureSuccessStatusCode();
                 Assert.Null(msg2);
             }
@@ -211,6 +222,7 @@ namespace SQE.ApiTest.Helpers
         public class EditionCreator : IDisposable
         {
             private readonly HttpClient _client;
+            private readonly Func<string, Task<HubConnection>> _realtime;
             private readonly string _name;
             private readonly Request.UserAuthDetails _userAuthDetails;
 
@@ -224,11 +236,13 @@ namespace SQE.ApiTest.Helpers
             ///     will be used)
             /// </param>
             public EditionCreator(HttpClient client,
+                Func<string, Task<HubConnection>> realtime,
                 uint editionId = 0,
                 string name = "",
                 Request.UserAuthDetails userAuthDetails = null)
             {
                 _client = client;
+                _realtime = realtime;
                 _name = name;
                 _userAuthDetails = userAuthDetails;
                 EditionId = editionId;
@@ -243,7 +257,7 @@ namespace SQE.ApiTest.Helpers
             {
                 // shouldSucceed here is false, since we don't really care if it worked.
                 Task.Run(async () =>
-                        await DeleteEdition(_client, EditionId, userAuthDetails: _userAuthDetails,
+                        await DeleteEdition(_client, _realtime, EditionId, userAuthDetails: _userAuthDetails,
                             shouldSucceed: false))
                     .Wait();
             }

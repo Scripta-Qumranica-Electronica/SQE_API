@@ -106,7 +106,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanBatchUnplaceArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -230,7 +230,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanCreateArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -333,7 +333,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanDeleteArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -363,7 +363,7 @@ namespace SQE.ApiTest
                 );
                 Assert.Equal(HttpStatusCode.NotFound, delResponse.StatusCode);
 
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -398,7 +398,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotCreateArtefactsOnUnownedEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -451,7 +451,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotCreateMalformedArtefact()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -724,7 +724,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotDeleteUnownedArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -751,7 +751,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotUpdateUnownedArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -784,7 +784,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanUpdateArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -943,7 +943,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task RejectsUpdateToImproperArtefactShape()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -974,7 +974,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanGetEditionAretefactRois()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition

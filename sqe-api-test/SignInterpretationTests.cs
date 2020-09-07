@@ -60,7 +60,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanAddAttributeToEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -121,7 +121,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanCreateNewAttributeForSignInterpretation()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -171,7 +171,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanCreateAndDeleteSignInterpretation()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -296,7 +296,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanLinkSignInterpretations()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -346,7 +346,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanUnlinkSignInterpretations()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -396,7 +396,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanCreateSignInterpretationCommentary()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -473,7 +473,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanDeleteAttributeFromEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -513,7 +513,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanDeleteAttributeFromSignInterpretation()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -625,7 +625,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanGetAttributesOfSpecificSignInterpretation()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -657,7 +657,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanUpdateAttributeInEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();
@@ -776,7 +776,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanUpdateAttributeOfSignInterpretation()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var editionId = await editionCreator.CreateEdition();

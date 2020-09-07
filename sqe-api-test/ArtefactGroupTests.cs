@@ -256,7 +256,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client))
+                new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 /**
                  * Create a new edition and also a new artefact group in it.
@@ -295,7 +295,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client))
+                new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 /**
                  * Create new edition and a new artefact group 
@@ -361,7 +361,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client))
+                new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 /**
                  * Create new edition and a new artefact group 
@@ -424,7 +424,7 @@ namespace SQE.ApiTest
         {
             // Arrange
             using (var editionCreator =
-                new EditionHelpers.EditionCreator(_client))
+                new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 /**
                  * Create a new edition and a new artefact group in it.

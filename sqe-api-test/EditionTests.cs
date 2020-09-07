@@ -193,7 +193,7 @@ namespace SQE.ApiTest
             finally
             {
                 // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -317,7 +317,7 @@ namespace SQE.ApiTest
             finally
             {
                 // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -343,7 +343,7 @@ namespace SQE.ApiTest
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); // Should fail without confirmation
 
             // Delete the edition for real
-            await EditionHelpers.DeleteEdition(_client, editionId);
+            await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId);
             var (editionResponse, editionMsg) = await Request.SendHttpRequestAsync<string, EditionListDTO>(
                 _client,
                 HttpMethod.Get,
@@ -367,8 +367,8 @@ namespace SQE.ApiTest
             // ARRANGE
             var editionId = await EditionHelpers.CreateCopyOfEdition(_client, name: "first edition");
             var editionId2 = await EditionHelpers.CreateCopyOfEdition(_client, editionId, "second edition");
-            await EditionHelpers.DeleteEdition(_client, editionId);
-            await EditionHelpers.DeleteEdition(_client, editionId2);
+            await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId);
+            await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId2);
         }
 
         /// <summary>
@@ -413,7 +413,7 @@ namespace SQE.ApiTest
             finally
             {
                 // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -492,7 +492,7 @@ namespace SQE.ApiTest
             finally
             {
                 // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -525,13 +525,13 @@ namespace SQE.ApiTest
             var editionMatch = editionMsg.editions.SelectMany(x => x).Where(x => x.id == editionId);
             Assert.Single(editionMatch);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+            await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId, shouldSucceed: false);
         }
 
         [Fact]
         public async Task CanNotWriteWithoutReadShareEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -692,6 +692,7 @@ namespace SQE.ApiTest
                 // Kill the edition for real
                 await EditionHelpers.DeleteEdition(
                     _client,
+                    StartConnectionAsync,
                     newEdition,
                     true,
                     true,
@@ -718,7 +719,7 @@ namespace SQE.ApiTest
             {
                 // Cleanup
                 if (notDeleted)
-                    await EditionHelpers.DeleteEdition(_client, newEdition);
+                    await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
 
 
@@ -780,7 +781,7 @@ namespace SQE.ApiTest
             finally
             {
                 // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -846,7 +847,7 @@ namespace SQE.ApiTest
             finally
             {
                 // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -935,7 +936,7 @@ namespace SQE.ApiTest
             finally
             {
                 // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -1095,7 +1096,7 @@ namespace SQE.ApiTest
             Assert.True(msg.editions.Count > 0);
             Assert.DoesNotContain(msg.editions.SelectMany(x => x), x => x.id == editionId);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+            await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId);
         }
 
         // TODO: finish updating test to use new request objects.
@@ -1190,13 +1191,13 @@ namespace SQE.ApiTest
             Assert.Equal(metrics.xOrigin, msg2.metrics.xOrigin);
             Assert.Equal(metrics.yOrigin, msg2.metrics.yOrigin);
 
-            await EditionHelpers.DeleteEdition(_client, editionId);
+            await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId);
         }
 
         [Fact]
         public async Task CanGetEditionScriptChart()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -1234,7 +1235,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanGetEditionLineScriptChart()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
