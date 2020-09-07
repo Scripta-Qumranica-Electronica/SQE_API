@@ -16,7 +16,7 @@ namespace SQE.ApiTest.Helpers
             Func<string, Task<HubConnection>> signalr)
         {
             var apiRequest = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            await apiRequest.Send(client, signalr);
+            await apiRequest.SendAsync(client, signalr);
 
             apiRequest.HttpResponseObject.ShouldDeepEqual(apiRequest.SignalrResponseObject);
             return apiRequest.HttpResponseObject;

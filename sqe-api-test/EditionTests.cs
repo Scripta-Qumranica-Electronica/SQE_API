@@ -59,7 +59,7 @@ namespace SQE.ApiTest
                 throw new Exception("user2 must be the same user as in the permissionRequest");
 
             var add1 = new Post.V1_Editions_EditionId_AddEditorRequest(editionId, permissionRequest);
-            await add1.Send(
+            await add1.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -103,7 +103,7 @@ namespace SQE.ApiTest
             bool shouldSucceed = true)
         {
             var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(token.ToString());
-            await confirmRequest.Send(
+            await confirmRequest.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -163,7 +163,7 @@ namespace SQE.ApiTest
                 // Arrange
                 // User 1 should get the basic info about the shared edition
                 var get1 = new Get.V1_Editions_EditionId(newEdition);
-                await get1.Send(
+                await get1.SendAsync(
                     _client,
                     null,
                     true
@@ -171,7 +171,7 @@ namespace SQE.ApiTest
                 var user1Msg = get1.HttpResponseObject;
 
                 // User 2 should get the basic info about the shared edition
-                await get1.Send(
+                await get1.SendAsync(
                     _client,
                     null,
                     true,
@@ -235,7 +235,7 @@ namespace SQE.ApiTest
                 // Act 
                 // Check permissions for edition info request
                 var get1 = new Get.V1_Editions_EditionId(newEdition);
-                await get1.Send(
+                await get1.SendAsync(
                     _client,
                     null,
                     true,
@@ -264,7 +264,7 @@ namespace SQE.ApiTest
                     newPermissions.email,
                     updatePermissions
                 );
-                await add2.Send(
+                await add2.SendAsync(
                     _client,
                     null,
                     true,
@@ -280,7 +280,7 @@ namespace SQE.ApiTest
 
                 // Act 
                 // Check permissions for edition info request
-                await get1.Send(
+                await get1.SendAsync(
                     _client,
                     null,
                     true,
@@ -300,7 +300,7 @@ namespace SQE.ApiTest
                     newPermissions.email,
                     updatePermissions
                 );
-                await add3.Send(
+                await add3.SendAsync(
                     _client,
                     null,
                     true,
@@ -449,7 +449,7 @@ namespace SQE.ApiTest
                 // Act 
                 // Check permissions for edition info request
                 var get1 = new Get.V1_Editions_EditionId(newEdition);
-                await get1.Send(
+                await get1.SendAsync(
                     _client,
                     null,
                     true,
@@ -478,7 +478,7 @@ namespace SQE.ApiTest
                     newPermissions.email,
                     updatePermissions
                 );
-                await add2.Send(
+                await add2.SendAsync(
                     _client,
                     null,
                     true,
@@ -560,7 +560,7 @@ namespace SQE.ApiTest
                 // Act 
                 // Check permissions for edition info request
                 var get1 = new Get.V1_Editions_EditionId(newEdition);
-                await get1.Send(
+                await get1.SendAsync(
                     _client,
                     null,
                     true,
@@ -589,7 +589,7 @@ namespace SQE.ApiTest
                     newPermissions.email,
                     updatePermissions
                 );
-                await add2.Send(
+                await add2.SendAsync(
                     _client,
                     null,
                     true,
@@ -748,7 +748,7 @@ namespace SQE.ApiTest
                 // Act
                 // Check to see if outstanding request is accessible to user who received the invitation
                 var requestAvailable = new Get.V1_Editions_EditorInvitations();
-                await requestAvailable.Send(
+                await requestAvailable.SendAsync(
                     _client,
                     null,
                     true,
@@ -815,7 +815,7 @@ namespace SQE.ApiTest
                 // Act
                 // Check to see if outstanding request is accessible to admin
                 var requestAvailable = new Get.V1_Editions_AdminShareRequests();
-                await requestAvailable.Send(
+                await requestAvailable.SendAsync(
                     _client,
                     null,
                     true,
@@ -885,7 +885,7 @@ namespace SQE.ApiTest
 
                 // Act
                 var changeNameReq = new Put.V1_Editions_EditionId(newEdition, update);
-                await changeNameReq.Send(
+                await changeNameReq.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -954,7 +954,7 @@ namespace SQE.ApiTest
 
             //Act
             var newEd = new Post.V1_Editions_EditionId(editionId, newScrollRequest);
-            await newEd.Send(
+            await newEd.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -978,7 +978,7 @@ namespace SQE.ApiTest
             newEd = new Post.V1_Editions_EditionId(editionId, newScrollRequest);
 
             //Act
-            await newEd.Send(
+            await newEd.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -1218,11 +1218,11 @@ namespace SQE.ApiTest
                         zIndex = 0
                     }
                 });
-                await artefactPositionRequest.Send(_client, auth: true);
+                await artefactPositionRequest.SendAsync(_client, auth: true);
 
                 // Act
                 var request = new Get.V1_Editions_EditionId_ScriptCollection(newEdition);
-                await request.Send(_client, StartConnectionAsync, auth: true);
+                await request.SendAsync(_client, StartConnectionAsync, auth: true);
 
                 // Assert
                 request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
@@ -1256,11 +1256,11 @@ namespace SQE.ApiTest
                         zIndex = 0
                     }
                 });
-                await artefactPositionRequest.Send(_client, auth: true);
+                await artefactPositionRequest.SendAsync(_client, auth: true);
 
                 // Act
                 var request = new Get.V1_Editions_EditionId_ScriptLines(newEdition);
-                await request.Send(_client, StartConnectionAsync, auth: true);
+                await request.SendAsync(_client, StartConnectionAsync, auth: true);
 
                 // Assert
                 request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);

@@ -24,7 +24,7 @@ namespace SQE.ApiTest
             var usedEditionId = editionId ?? EditionHelpers.GetEditionId();
 
             var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments(usedEditionId);
-            await textFragmentRequestObject.Send(
+            await textFragmentRequestObject.SendAsync(
                 _client,
                 StartConnectionAsync
             );
@@ -54,7 +54,7 @@ namespace SQE.ApiTest
                 user = Request.DefaultUsers.User1;
 
             var newTextFragReqObj = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            await newTextFragReqObj.Send(
+            await newTextFragReqObj.SendAsync(
                 _client,
                 StartConnectionAsync,
                 requestUser: user,
@@ -100,7 +100,7 @@ namespace SQE.ApiTest
             );
             // You can run this realtime or HTTP, both should be tested at least once
             if (realtime)
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     null,
                     StartConnectionAsync,
                     requestUser: user,
@@ -109,7 +109,7 @@ namespace SQE.ApiTest
                     deterministic: false
                 );
             else
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     requestUser: user,
@@ -132,7 +132,7 @@ namespace SQE.ApiTest
                 editionId,
                 textFragmentId
             );
-            await getLineDataRequestObject.Send(
+            await getLineDataRequestObject.SendAsync(
                 _client,
                 StartConnectionAsync
             );
@@ -283,7 +283,7 @@ namespace SQE.ApiTest
                         nextTextFragmentId = null
                     }
                 );
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     true,
@@ -340,7 +340,7 @@ namespace SQE.ApiTest
                         nextTextFragmentId = nextFragmentId
                     }
                 );
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     true,
@@ -471,7 +471,7 @@ namespace SQE.ApiTest
                 editionId,
                 textFragmentId
             );
-            await textFragmentRequestObject.Send(
+            await textFragmentRequestObject.SendAsync(
                 _client,
                 StartConnectionAsync
             );
@@ -492,13 +492,13 @@ namespace SQE.ApiTest
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
                 var (artefactId, _) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
                 var scriptRequest = new Get.V1_Editions_EditionId_ScriptLines(newEdition);
-                await scriptRequest.Send(_client, StartConnectionAsync, auth: true);
+                await scriptRequest.SendAsync(_client, StartConnectionAsync, auth: true);
                 var textFragmentId = scriptRequest.HttpResponseObject.textFragments.First().textFragmentId;
 
                 // Act
                 var request =
                     new Get.V1_Editions_EditionId_TextFragments_TextFragmentId_Artefacts(newEdition, textFragmentId);
-                await request.Send(_client, StartConnectionAsync, auth: true);
+                await request.SendAsync(_client, StartConnectionAsync, auth: true);
 
                 // assert
                 request.HttpResponseObject.ShouldDeepEqual(request.HttpResponseObject);
@@ -515,7 +515,7 @@ namespace SQE.ApiTest
 
             // Act
             var textFragmentDataRequestObject = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            await textFragmentDataRequestObject.Send(
+            await textFragmentDataRequestObject.SendAsync(
                 _client,
                 StartConnectionAsync
             );
@@ -532,7 +532,7 @@ namespace SQE.ApiTest
 
             // Act
             var textLineRequestObject = new Get.V1_Editions_EditionId_Lines_LineId(editionId, lineId);
-            await textLineRequestObject.Send(
+            await textLineRequestObject.SendAsync(
                 _client,
                 StartConnectionAsync
             );
@@ -554,7 +554,7 @@ namespace SQE.ApiTest
                 editionId,
                 textFragmentId
             );
-            await lineDataRequestObject.Send(
+            await lineDataRequestObject.SendAsync(
                 _client,
                 StartConnectionAsync
             );
@@ -585,7 +585,7 @@ namespace SQE.ApiTest
                         nextTextFragmentId = null
                     }
                 );
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     true,
@@ -631,7 +631,7 @@ namespace SQE.ApiTest
                         nextTextFragmentId = textFragments.textFragments.First().id
                     }
                 );
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     true,
@@ -675,7 +675,7 @@ namespace SQE.ApiTest
                         nextTextFragmentId = textFragments.textFragments[2].id
                     }
                 );
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     true,
@@ -720,7 +720,7 @@ namespace SQE.ApiTest
                         nextTextFragmentId = textFragments.textFragments.First().id
                     }
                 );
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     true,
@@ -954,7 +954,7 @@ namespace SQE.ApiTest
                         nextTextFragmentId = null
                     }
                 );
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     true,
@@ -993,7 +993,7 @@ namespace SQE.ApiTest
                         nextTextFragmentId = 0
                     }
                 );
-                await newTextFragmentRequestObject.Send(
+                await newTextFragmentRequestObject.SendAsync(
                     _client,
                     null,
                     true,

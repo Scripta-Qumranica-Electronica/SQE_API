@@ -58,10 +58,10 @@ namespace SQE.ApiTest.Helpers
             {
                 // Act
                 var request1 = new Post.V1_Editions_EditionId_Rois(editionId, newRoi1);
-                await request1.Send(client, signalr, auth: true, deterministic: false, requestRealtime: false, listeningFor: request1.AvailableListeners.CreatedRoisBatch);
+                await request1.SendAsync(client, signalr, auth: true, deterministic: false, requestRealtime: false, listeningFor: request1.AvailableListeners.CreatedRoisBatch);
 
                 var request2 = new Post.V1_Editions_EditionId_Rois(editionId, newRoi2);
-                await request2.Send(null, signalr, auth: true, deterministic: false, listeningFor: request2.AvailableListeners.CreatedRoisBatch);
+                await request2.SendAsync(null, signalr, auth: true, deterministic: false, listeningFor: request2.AvailableListeners.CreatedRoisBatch);
 
                 // Assert
                 request1.HttpResponseObject.ShouldDeepEqual(request1.CreatedRoisBatch.rois.First());
@@ -78,14 +78,14 @@ namespace SQE.ApiTest.Helpers
                 rois = new List<SetInterpretationRoiDTO>() { newRoi1 }
             };
             var batchRequest1 = new Post.V1_Editions_EditionId_Rois_Batch(editionId, batchRois1);
-            await batchRequest1.Send(client, signalr, auth: true, deterministic: false, requestRealtime: false, listeningFor: batchRequest1.AvailableListeners.EditedRoisBatch);
+            await batchRequest1.SendAsync(client, signalr, auth: true, deterministic: false, requestRealtime: false, listeningFor: batchRequest1.AvailableListeners.EditedRoisBatch);
 
             var batchRois2 = new SetInterpretationRoiDTOList()
             {
                 rois = new List<SetInterpretationRoiDTO>() { newRoi2 }
             };
             var batchRequest2 = new Post.V1_Editions_EditionId_Rois_Batch(editionId, batchRois2);
-            await batchRequest2.Send(null, signalr, auth: true, deterministic: false, listeningFor: batchRequest2.AvailableListeners.EditedRoisBatch);
+            await batchRequest2.SendAsync(null, signalr, auth: true, deterministic: false, listeningFor: batchRequest2.AvailableListeners.EditedRoisBatch);
 
             // Assert
             batchRequest1.HttpResponseObject.rois.ShouldDeepEqual(batchRequest1.EditedRoisBatch.createRois);
@@ -104,7 +104,7 @@ namespace SQE.ApiTest.Helpers
             uint roiId)
         {
             var request = new Get.V1_Editions_EditionId_Rois_RoiId(editionId, roiId);
-            await request.Send(client, signalr, auth: true);
+            await request.SendAsync(client, signalr, auth: true);
 
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
             return request.HttpResponseObject;
@@ -117,7 +117,7 @@ namespace SQE.ApiTest.Helpers
             uint roiId)
         {
             var request = new Delete.V1_Editions_EditionId_Rois_RoiId(editionId, roiId);
-            await request.Send(client, signalr, auth: true, requestRealtime: client == null, listeningFor: request.AvailableListeners.DeletedRoi);
+            await request.SendAsync(client, signalr, auth: true, requestRealtime: client == null, listeningFor: request.AvailableListeners.DeletedRoi);
 
 
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
@@ -139,7 +139,7 @@ namespace SQE.ApiTest.Helpers
                     rois = new List<UpdateInterpretationRoiDTO>() { updatedRoi.ToUpdateInterpretationRoiDTO(roiId) }
                 };
                 var batchRequest = new Put.V1_Editions_EditionId_Rois_Batch(editionId, batchUpdateRois);
-                await batchRequest.Send(client, signalr, auth: true, requestRealtime: client == null, deterministic: false, listeningFor: batchRequest.AvailableListeners.UpdatedRoisBatch);
+                await batchRequest.SendAsync(client, signalr, auth: true, requestRealtime: client == null, deterministic: false, listeningFor: batchRequest.AvailableListeners.UpdatedRoisBatch);
 
                 var batchControllerResponse = client == null ? batchRequest.SignalrResponseObject : batchRequest.HttpResponseObject;
                 batchRequest.UpdatedRoisBatch.rois.ShouldDeepEqual(batchControllerResponse.rois);
@@ -149,7 +149,7 @@ namespace SQE.ApiTest.Helpers
             }
 
             var request = new Put.V1_Editions_EditionId_Rois_RoiId(editionId, roiId, updatedRoi);
-            await request.Send(client, signalr, auth: true, requestRealtime: client == null, deterministic: false, listeningFor: request.AvailableListeners.EditedRoisBatch);
+            await request.SendAsync(client, signalr, auth: true, requestRealtime: client == null, deterministic: false, listeningFor: request.AvailableListeners.EditedRoisBatch);
 
             var controllerResponse = client == null ? request.SignalrResponseObject : request.HttpResponseObject;
             request.EditedRoisBatch.updateRois.First().ShouldDeepEqual(controllerResponse);

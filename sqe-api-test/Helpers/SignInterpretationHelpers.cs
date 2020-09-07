@@ -17,12 +17,12 @@ namespace SQE.ApiTest.Helpers
         public static async Task<SignInterpretationDTO> GetEditionSignInterpretation(uint editionId, HttpClient client)
         {
             var textFragmentsRequest = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            await textFragmentsRequest.Send(client, auth: true);
+            await textFragmentsRequest.SendAsync(client, auth: true);
             var textFragments = textFragmentsRequest.HttpResponseObject;
             foreach (var textRequest in textFragments.textFragments.Select(tf =>
                 new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(editionId, tf.id)))
             {
-                await textRequest.Send(client, auth: true);
+                await textRequest.SendAsync(client, auth: true);
                 var text = textRequest.HttpResponseObject;
                 foreach (var si in from ttf
                         in text.textFragments

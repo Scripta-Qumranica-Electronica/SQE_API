@@ -44,7 +44,7 @@ namespace SQE.ApiTest
 
             // Act
             var getApiRequest = new Get.V1_Editions_EditionId_ArtefactGroups(editionId);
-            await getApiRequest.Send(
+            await getApiRequest.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -76,7 +76,7 @@ namespace SQE.ApiTest
             // Act
             var getApiRequest =
                 new Get.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
-            await getApiRequest.Send(
+            await getApiRequest.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -115,7 +115,7 @@ namespace SQE.ApiTest
 
             // Act
             var createApiRequest = new Post.V1_Editions_EditionId_ArtefactGroups(editionId, artefactGroup);
-            await createApiRequest.Send(
+            await createApiRequest.SendAsync(
                 _client,
                 null,
                 true,
@@ -170,7 +170,7 @@ namespace SQE.ApiTest
             // Act
             var updateApiRequest =
                 new Put.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId, artefactGroup);
-            await updateApiRequest.Send(
+            await updateApiRequest.SendAsync(
                 _client,
                 null,
                 true,
@@ -220,7 +220,7 @@ namespace SQE.ApiTest
             // Act
             var deleteApiRequest =
                 new Delete.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId);
-            await deleteApiRequest.Send(
+            await deleteApiRequest.SendAsync(
                 realtime ? null : _client,
                 StartConnectionAsync,
                 true,

@@ -153,7 +153,7 @@ namespace SQE.DatabaseAccess
         public async Task ChangeEditionNameAsync(UserInfo editionUser, string name)
         {
             EditionNameQuery.Result result;
-
+            using (var transaction = new TransactionScope())
             using (var connection = OpenConnection())
             {
                 try
@@ -172,27 +172,25 @@ namespace SQE.DatabaseAccess
                 {
                     throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId.Value);
                 }
+
+                // Now we create the mutation object for the requested action
+                // You will want to check the database to make sure you what you are doing.
+                var nameChangeParams = new DynamicParameters();
+                nameChangeParams.Add("@manuscript_id", result.ManuscriptId);
+                nameChangeParams.Add("@Name", name);
+                var nameChangeRequest = new MutationRequest(
+                    MutateType.Update,
+                    nameChangeParams,
+                    "manuscript_data",
+                    result.ManuscriptDataId
+                );
+
+                // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
+                // care of main_action and single_action.
+                await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
+
+                transaction.Complete();
             }
-
-            // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
-            // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
-            // throws a NoPermissionException immediately.
-
-            // Now we create the mutation object for the requested action
-            // You will want to check the database to make sure you what you are doing.
-            var nameChangeParams = new DynamicParameters();
-            nameChangeParams.Add("@manuscript_id", result.ManuscriptId);
-            nameChangeParams.Add("@Name", name);
-            var nameChangeRequest = new MutationRequest(
-                MutateType.Update,
-                nameChangeParams,
-                "manuscript_data",
-                result.ManuscriptDataId
-            );
-
-            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-            // care of main_action and single_action.
-            await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
         }
 
         /// <summary>
@@ -213,6 +211,7 @@ namespace SQE.DatabaseAccess
         public async Task UpdateEditionMetricsAsync(UserInfo editionUser, uint width, uint height, int xOrigin,
             int yOrigin)
         {
+            using (var transaction = new TransactionScope())
             using (var connection = OpenConnection())
             {
                 var oldRecord = await connection.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
@@ -243,6 +242,8 @@ namespace SQE.DatabaseAccess
 
                 if (results.Count() != 1)
                     throw new StandardExceptions.DataNotWrittenException("update manuscript metrics");
+
+                transaction.Complete();
             }
         }
 
@@ -711,11 +712,13 @@ WHERE edition_id = {editionUser.EditionId}");
         public async Task<List<DetailedEditorInvitationPermissions>> GetOutstandingEditionEditorInvitationsAsync(
             uint userId)
         {
-            using var connection = OpenConnection();
-            return (await connection.QueryAsync<DetailedEditorInvitationPermissions>(
-                    FindEditionEditorRequestByEditorId.GetQuery,
-                    new { EditorUserId = userId })
-                ).ToList();
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<DetailedEditorInvitationPermissions>(
+                        FindEditionEditorRequestByEditorId.GetQuery,
+                        new { EditorUserId = userId })
+                    ).ToList();
+            }
         }
 
         public async Task<Permission> ChangeEditionEditorRightsAsync(UserInfo editionUser,
@@ -841,7 +844,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 
         public async Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser)
         {
-            // Placehoders for query mapping
+            // Placeholders for query mapping
             ScriptTextFragment lastScriptTextFragment = null;
             ScriptLine lastScriptLine = null;
             ScriptArtefactCharacters lastScriptArtefactCharacters = null;
@@ -867,13 +870,13 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                     objects =>
                     {
                         // Collect the mapped objects
-                        var scriptTextFragment = objects[0] as ScriptTextFragment;
-                        var scriptLine = objects[1] as ScriptLine;
-                        var scriptArtefactCharacters = objects[2] as ScriptArtefactCharacters;
-                        var character = objects[3] as Character;
-                        var spatialRoi = objects[4] as SpatialRoi;
-                        var characterAttribute = objects[5] as CharacterAttribute;
-                        var characterStreamPosition = objects[6] as CharacterStreamPosition;
+                        if (!(objects[0] is ScriptTextFragment scriptTextFragment)) return null;
+                        if (!(objects[1] is ScriptLine scriptLine)) return null;
+                        if (!(objects[2] is ScriptArtefactCharacters scriptArtefactCharacters)) return null;
+                        if (!(objects[3] is Character character)) return null;
+                        if (!(objects[4] is SpatialRoi spatialRoi)) return null;
+                        if (!(objects[5] is CharacterAttribute characterAttribute)) return null;
+                        if (!(objects[6] is CharacterStreamPosition characterStreamPosition)) return null;
 
                         // Construct the nestings
                         var newTextFragment =
@@ -921,14 +924,13 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                             lastCharacters.Attributes.Add(lastCharacterAttribute);
                         }
 
-                        if (characterStreamPosition.PositionInStreamId !=
-                            lastCharacterStreamPosition?.PositionInStreamId)
-                        {
-                            lastCharacterStreamPosition = characterStreamPosition;
-                            lastCharacters.NextCharacters.Add(lastCharacterStreamPosition);
-                        }
+                        if (characterStreamPosition.PositionInStreamId == lastCharacterStreamPosition?.PositionInStreamId)
+                            return scriptTextFragment;
 
-                        return newTextFragment ? scriptTextFragment : null;
+                        lastCharacterStreamPosition = characterStreamPosition;
+                        lastCharacters.NextCharacters.Add(lastCharacterStreamPosition);
+
+                        return scriptTextFragment;
                     },
                     new { editionUser.EditionId, UserId = editionUser.userId },
                     splitOn:
@@ -936,46 +938,6 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                 );
                 return scriptLines.Where(x => x != null).ToList();
             }
-        }
-
-        private static Edition CreateEdition(EditionGroupQuery.Result result, uint? currentUserId)
-        {
-            var model = new Edition
-            {
-                EditionId = result.EditionId,
-                Name = result.Name,
-                EditionDataEditorId = result.EditionDataEditorId,
-                ManuscriptId = result.ManuscriptId,
-                Thumbnail = result.Thumbnail,
-                Locked = result.Locked,
-                LastEdit = result.LastEdit,
-                IsPublic = result.IsPublic,
-                Owner = new User
-                {
-                    UserId = result.CurrentUserId,
-                    Email = result.CurrentEmail
-                },
-                Copyright = Licence.printLicence(result.CopyrightHolder, result.Collaborators),
-                CopyrightHolder = result.CopyrightHolder,
-                Collaborators = result.Collaborators
-            };
-
-            if (currentUserId.HasValue)
-                model.Permission = new Permission
-                {
-                    IsAdmin = result.CurrentIsAdmin,
-                    MayWrite = result.CurrentMayWrite,
-                    MayLock = result.CurrentMayLock
-                };
-            else
-                model.Permission = new Permission
-                {
-                    IsAdmin = false,
-                    MayLock = false,
-                    MayWrite = false
-                };
-
-            return model;
         }
 
         private static async Task DeleteDataFromOwnerTable(IDbConnection connection,

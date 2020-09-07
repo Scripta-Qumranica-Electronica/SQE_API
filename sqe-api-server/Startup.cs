@@ -47,16 +47,16 @@ namespace SQE.API.Server
             services.AddCors();
 
             // configure DI for application services
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IEditionService, EditionService>();
-            services.AddScoped<IImagedObjectService, ImagedObjectService>();
-            services.AddScoped<IArtefactService, ArtefactService>();
-            services.AddScoped<IImageService, ImageService>();
-            services.AddScoped<ITextService, TextService>();
-            services.AddScoped<IRoiService, RoiService>();
-            services.AddScoped<IUtilService, UtilService>();
-            services.AddScoped<ICatalogService, CatalogService>();
-            services.AddScoped<ISignInterpretationService, SignInterpretationService>();
+            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IEditionService, EditionService>();
+            services.AddTransient<IImagedObjectService, ImagedObjectService>();
+            services.AddTransient<IArtefactService, ArtefactService>();
+            services.AddTransient<IImageService, ImageService>();
+            services.AddTransient<ITextService, TextService>();
+            services.AddTransient<IRoiService, RoiService>();
+            services.AddTransient<IUtilService, UtilService>();
+            services.AddTransient<ICatalogService, CatalogService>();
+            services.AddTransient<ISignInterpretationService, SignInterpretationService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IEditionRepository, EditionRepository>();

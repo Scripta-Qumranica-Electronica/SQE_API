@@ -29,7 +29,7 @@ namespace SQE.ApiTest
             };
 
             var polygonValidation = new Post.V1_Utils_RepairWktPolygon(goodPolygon);
-            await polygonValidation.Send(
+            await polygonValidation.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true
@@ -57,7 +57,7 @@ namespace SQE.ApiTest
             };
 
             var polygonValidation = new Post.V1_Utils_RepairWktPolygon(badPolygon);
-            await polygonValidation.Send(
+            await polygonValidation.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,

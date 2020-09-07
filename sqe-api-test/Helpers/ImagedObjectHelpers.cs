@@ -23,7 +23,7 @@ namespace SQE.ApiTest.Helpers
             Func<string, Task<HubConnection>> signalr)
         {
             var apiRequest = new Get.V1_ImagedObjects_Institutions_InstitutionName(institution);
-            await apiRequest.Send(client, signalr);
+            await apiRequest.SendAsync(client, signalr);
 
             apiRequest.HttpResponseObject.ShouldDeepEqual(apiRequest.SignalrResponseObject);
             return apiRequest.HttpResponseObject;

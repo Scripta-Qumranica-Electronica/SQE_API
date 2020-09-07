@@ -303,7 +303,7 @@ namespace SQE.ApiTest
                 // Act 
                 var updateUserAccountObject = new Put.V1_Users(newDetails);
                 var userAuth = UserUpdateRequestDTOToUserAuthDetails(user);
-                await updateUserAccountObject.Send(
+                await updateUserAccountObject.SendAsync(
                     _client,
                     auth: true,
                     requestUser: userAuth,
@@ -343,7 +343,7 @@ namespace SQE.ApiTest
 
                 // Act 
                 var passwordUpdateRequest = new Post.V1_Users_ChangePassword(newPwd);
-                await passwordUpdateRequest.Send(
+                await passwordUpdateRequest.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false,
@@ -388,7 +388,7 @@ namespace SQE.ApiTest
                 var userAuth = UserUpdateRequestDTOToUserAuthDetails(user);
                 var userLoginRequest =
                     new Post.V1_Users_Login(new LoginRequestDTO { email = user.email, password = user.password });
-                await userLoginRequest.Send(
+                await userLoginRequest.SendAsync(
                     _client,
                     auth: true,
                     requestUser: userAuth

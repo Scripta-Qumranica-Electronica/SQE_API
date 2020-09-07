@@ -32,12 +32,12 @@ namespace SQE.ApiTest
         private async Task<SignInterpretationDTO> GetEditionSignInterpretation(uint editionId)
         {
             var textFragmentsRequest = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            await textFragmentsRequest.Send(_client, auth: true);
+            await textFragmentsRequest.SendAsync(_client, auth: true);
             var textFragments = textFragmentsRequest.HttpResponseObject;
             foreach (var textRequest in textFragments.textFragments.Select(tf =>
                 new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(editionId, tf.id)))
             {
-                await textRequest.Send(_client, auth: true);
+                await textRequest.SendAsync(_client, auth: true);
                 var text = textRequest.HttpResponseObject;
                 foreach (var si in from ttf
                         in text.textFragments
@@ -66,7 +66,7 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
                 var httpData = request.HttpResponseObject;
                 CreateAttributeValueDTO[] newAttrValues =
                 {
@@ -87,7 +87,7 @@ namespace SQE.ApiTest
                 // Create the new attribute
                 var createRequest =
                     new Post.V1_Editions_EditionId_SignInterpretationsAttributes(editionId, newAttribute);
-                await createRequest.Send(
+                await createRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -102,7 +102,7 @@ namespace SQE.ApiTest
                 // Assert
                 respInfo.EnsureSuccessStatusCode();
                 createdHttpAttribute.ShouldDeepEqual(createdListenerAttribute);
-                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
                 var newAttrs = request.HttpResponseObject;
                 Assert.Single(newAttrs.attributes.Where(x => x.attributeName == newAttribute.attributeName
                                                              && x.description == newAttribute.description));
@@ -136,7 +136,7 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, signInterpretationAddAttribute);
 
                 // Act
-                await request.Send(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1,
+                await request.SendAsync(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1,
                     deterministic: true, requestRealtime: false,
                     listeningFor: request.AvailableListeners.UpdatedSignInterpretation);
                 var (httpResponse, httpData, listenerData) = (request.HttpResponseMessage, request.HttpResponseObject,
@@ -208,7 +208,7 @@ namespace SQE.ApiTest
                 // Act
                 var newSignInterpretationRequest =
                     new Post.V1_Editions_EditionId_SignInterpretations(editionId, newSignInterpretation);
-                await newSignInterpretationRequest.Send(
+                await newSignInterpretationRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -263,7 +263,7 @@ namespace SQE.ApiTest
 
                 // Act Delete new sign interpretation
                 var deleteRequest = new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(editionId, newlyCreatedInterpretation.signInterpretationId);
-                await deleteRequest.Send(
+                await deleteRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
                     auth: true,
@@ -316,7 +316,7 @@ namespace SQE.ApiTest
                     editionId,
                     firstSignInterpretation.signInterpretationId,
                     lastSignInterpretation.signInterpretationId);
-                await linkRequest.Send(
+                await linkRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
                     auth: true,
@@ -366,7 +366,7 @@ namespace SQE.ApiTest
                     editionId,
                     firstSignInterpretation.signInterpretationId,
                     nextSignInterpretation.signInterpretationId);
-                await linkRequest.Send(
+                await linkRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
                     auth: true,
@@ -416,7 +416,7 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, commentary);
 
                 // Act
-                await request.Send(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1,
+                await request.SendAsync(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1,
                     deterministic: true, requestRealtime: false,
                     listeningFor: request.AvailableListeners.UpdatedSignInterpretation);
                 var (httpResponse, httpData, listenerData) = (request.HttpResponseMessage,
@@ -445,7 +445,7 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, commentary);
 
                 // Act
-                await request2.Send(
+                await request2.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -479,7 +479,7 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
                 var httpData = request.HttpResponseObject;
                 var deleteAttribute = httpData.attributes.Last().attributeId;
 
@@ -487,7 +487,7 @@ namespace SQE.ApiTest
                 var deleteRequest =
                     new Delete.V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(editionId,
                         deleteAttribute);
-                await deleteRequest.Send(
+                await deleteRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -503,7 +503,7 @@ namespace SQE.ApiTest
                 respInfo.EnsureSuccessStatusCode();
                 Assert.Equal(deleteAttribute, updatedListenerAttribute.ids.First());
                 Assert.Equal(EditionEntities.attribute, updatedListenerAttribute.entity);
-                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
                 var newAttrs = request.HttpResponseObject;
                 Assert.Empty(newAttrs.attributes.Where(x => x.attributeId == deleteAttribute));
                 Assert.Equal(httpData.attributes.Length - 1, newAttrs.attributes.Length);
@@ -528,7 +528,7 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, signInterpretationAddAttribute);
 
                 // Act
-                await request.Send(
+                await request.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -569,7 +569,7 @@ namespace SQE.ApiTest
                         V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(
                             editionId,
                             signInterpretation.signInterpretationId, 33);
-                await delRequest.Send(
+                await delRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -600,7 +600,7 @@ namespace SQE.ApiTest
             var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(EditionHelpers.GetEditionId());
 
             // Act
-            await request.Send(
+            await request.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true);
@@ -636,7 +636,7 @@ namespace SQE.ApiTest
                         signInterpretation.signInterpretationId);
 
                 // Act
-                await request.Send(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1,
+                await request.SendAsync(_client, StartConnectionAsync, true, listenerUser: Request.DefaultUsers.User1,
                     deterministic: true, requestRealtime: true);
                 var (httpResponse, httpData, signalrData) = (request.HttpResponseMessage, request.HttpResponseObject,
                     request.SignalrResponseObject);
@@ -663,7 +663,7 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
                 var httpData = request.HttpResponseObject;
                 var attributeValueForUpdate = httpData.attributes.FirstOrDefault().values.FirstOrDefault();
                 var attributeValueForDelete = httpData.attributes.FirstOrDefault().values.Last();
@@ -694,7 +694,7 @@ namespace SQE.ApiTest
                 // Act
                 var updateRequest = new Put.V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(editionId,
                     httpData.attributes.First().attributeId, updateAttribute);
-                await updateRequest.Send(
+                await updateRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -721,7 +721,7 @@ namespace SQE.ApiTest
                 Assert.DoesNotContain(updateRequest.HttpResponseObject.values, x => x.id == attributeValueForDelete.id);
 
                 // The update appears when getting all attributes
-                await request.Send(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
                 var newAttrs = request.HttpResponseObject;
                 Assert.Contains(newAttrs.attributes, x => x.attributeId == httpData.attributes.First().attributeId);
                 newAttrs.attributes.First(x => x.attributeId == httpData.attributes.First().attributeId)
@@ -792,7 +792,7 @@ namespace SQE.ApiTest
                     signInterpretation.signInterpretationId, signInterpretationAddAttribute);
 
                 // Act
-                await request.Send(
+                await request.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -842,7 +842,7 @@ namespace SQE.ApiTest
                         editionId,
                         signInterpretation.signInterpretationId, attributeValueId,
                         updateSignInterpretationAddAttribute);
-                await updRequest1.Send(
+                await updRequest1.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,
@@ -883,7 +883,7 @@ namespace SQE.ApiTest
                         editionId,
                         signInterpretation.signInterpretationId, attributeValueId,
                         updateSignInterpretationAddAttribute);
-                await updRequest2.Send(
+                await updRequest2.SendAsync(
                     _client,
                     StartConnectionAsync,
                     true,

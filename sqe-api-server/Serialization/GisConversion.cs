@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using NetTopologySuite.Geometries.Utilities;
 using NetTopologySuite.IO;
@@ -20,7 +21,9 @@ namespace SQE.API.Server.Serialization
             {
                 textFragmentId = stf.TextFragmentId,
                 textFragmentName = stf.TextFragmentName,
-                lines = stf.Lines.Select(x => x.ToDTO()).ToList()
+                lines = stf.Lines != null ?
+                    stf.Lines.Select(x => x.ToDTO()).ToList() :
+                    new List<ScriptLineDTO>()
             };
         }
 

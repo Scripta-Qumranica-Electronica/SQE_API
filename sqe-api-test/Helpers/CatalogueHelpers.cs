@@ -20,7 +20,7 @@ namespace SQE.ApiTest.Helpers
         {
             // Act
             var requestobj = new Get.V1_Catalogue_Editions_EditionId_ImagedObjectTextFragmentMatches(editionId);
-            await requestobj.Send(client, signalr);
+            await requestobj.SendAsync(client, signalr);
 
             // Assert
             requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
@@ -39,7 +39,7 @@ namespace SQE.ApiTest.Helpers
         {
             // Act
             var requestobj = new Get.V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches(manuscriptId);
-            await requestobj.Send(client, signalr);
+            await requestobj.SendAsync(client, signalr);
 
             // Assert
             requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
@@ -103,7 +103,7 @@ namespace SQE.ApiTest.Helpers
 
             // Make one request via HTTP
             var request = new Post.V1_Catalogue(match);
-            await request.Send(client, null, auth: true, requestUser: Request.DefaultUsers.User1);
+            await request.SendAsync(client, null, auth: true, requestUser: Request.DefaultUsers.User1);
             request.HttpResponseMessage.EnsureSuccessStatusCode();
 
             // Make a second request via SignalR to confirm the match
@@ -111,7 +111,7 @@ namespace SQE.ApiTest.Helpers
             match2.catalogSide = match2.catalogSide == SideDesignation.recto ? SideDesignation.verso : SideDesignation.recto;
             match2.editionSide = match2.editionSide == SideDesignation.recto ? SideDesignation.verso : SideDesignation.recto;
             var requestConf = new Post.V1_Catalogue(match2);
-            await requestConf.Send(null, signalr, auth: true, requestUser: Request.DefaultUsers.User1);
+            await requestConf.SendAsync(null, signalr, auth: true, requestUser: Request.DefaultUsers.User1);
 
             var matches = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr);
             Assert.Contains(matches.matches, x =>
@@ -134,7 +134,7 @@ namespace SQE.ApiTest.Helpers
             Request.UserAuthDetails user = null)
         {
             var request = new Post.V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId(matchId);
-            await request.Send(client, signalr, auth: user != null, requestUser: user);
+            await request.SendAsync(client, signalr, auth: user != null, requestUser: user);
 
             var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
             Assert.Contains(matchList.matches, x => x.matchId == matchId && x.confirmed == true);
@@ -148,7 +148,7 @@ namespace SQE.ApiTest.Helpers
             Request.UserAuthDetails user = null)
         {
             var request = new Delete.V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId(matchId);
-            await request.Send(client, signalr, auth: user != null, requestUser: user);
+            await request.SendAsync(client, signalr, auth: user != null, requestUser: user);
 
             var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
             Assert.Contains(matchList.matches, x => x.matchId == matchId && x.confirmed == false);

@@ -48,7 +48,7 @@ namespace SQE.ApiTest
                 _images = !_images;
             }
             var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId.Value, optional);
-            await artRequest.Send(
+            await artRequest.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -485,7 +485,7 @@ namespace SQE.ApiTest
 
                 // Act
                 var newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
@@ -519,7 +519,7 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
@@ -555,7 +555,7 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
@@ -593,7 +593,7 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
@@ -631,7 +631,7 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
@@ -982,7 +982,7 @@ namespace SQE.ApiTest
 
                 // Act
                 var getArtefactRois = new Get.V1_Editions_EditionId_Artefacts_ArtefactId_Rois(newEdition, artefactId);
-                await getArtefactRois.Send(_client, StartConnectionAsync, auth: true);
+                await getArtefactRois.SendAsync(_client, StartConnectionAsync, auth: true);
 
                 getArtefactRois.HttpResponseObject.ShouldDeepEqual(getArtefactRois.SignalrResponseObject);
                 getArtefactRois.HttpResponseObject.rois.ShouldDeepEqual(rois);

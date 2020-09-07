@@ -213,7 +213,7 @@ namespace SQE.ApiTest
 
                 // Act
                 var request = new Post.V1_Editions_EditionId_Rois_BatchEdit(newEdition, batchRoiRequest);
-                await request.Send(
+                await request.SendAsync(
                     realtime ? null : _client,
                     StartConnectionAsync,
                     auth: true,

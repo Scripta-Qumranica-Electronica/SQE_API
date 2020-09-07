@@ -20,7 +20,7 @@ namespace SQE.ApiTest
         public async Task CanGetImagedObjectsForTextFragments()
         {
             var requestObj = new Get.V1_Catalogue_TextFragments_TextFragmentId_ImagedObjects(9977);
-            await requestObj.Send(_client, StartConnectionAsync);
+            await requestObj.SendAsync(_client, StartConnectionAsync);
             var (respCode, response, rtResponse) = (requestObj.HttpResponseMessage,
                 requestObj.HttpResponseObject, requestObj.SignalrResponseObject);
             respCode.EnsureSuccessStatusCode();
@@ -33,7 +33,7 @@ namespace SQE.ApiTest
         public async Task CanGetTextFragmentsForImagedObjects()
         {
             var requestObj = new Get.V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments("IAA-1094-1");
-            await requestObj.Send(_client, StartConnectionAsync);
+            await requestObj.SendAsync(_client, StartConnectionAsync);
             var (respCode, response, rtResponse) = (requestObj.HttpResponseMessage,
                 requestObj.HttpResponseObject, requestObj.SignalrResponseObject);
             respCode.EnsureSuccessStatusCode();

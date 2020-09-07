@@ -59,7 +59,7 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="listenToEdition">Whether a listener should register for messages on the edition id.</param>
         /// <param name="listeningFor">The desired listener methods.</param>
         /// <returns>HubConnection</returns>
-        Task Send(
+        Task SendAsync(
             IEnumerable<ListenerMethods> listeningFor,
             HttpClient http = null,
             Func<string, Task<HubConnection>> realtime = null,
@@ -107,7 +107,7 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="listenToEdition">Whether a listener should register for messages on the edition id.</param>
         /// <param name="listeningFor">The desired listener method.</param>
         /// <returns>HubConnection</returns>
-        Task Send(
+        Task SendAsync(
             HttpClient http = null,
             Func<string, Task<HubConnection>> realtime = null,
             bool auth = false,
@@ -162,7 +162,7 @@ namespace SQE.ApiTest.ApiRequests
         public TOutput HttpResponseObject { get; protected set; }
         public TOutput SignalrResponseObject { get; protected set; }
 
-        public async Task Send(
+        public async Task SendAsync(
             IEnumerable<ListenerMethods> listeningFor,
             HttpClient http = null,
             Func<string, Task<HubConnection>> realtime = null,
@@ -295,7 +295,7 @@ namespace SQE.ApiTest.ApiRequests
                     !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull());
         }
 
-        public async Task Send(
+        public async Task SendAsync(
             HttpClient http = null,
             Func<string, Task<HubConnection>> realtime = null,
             bool auth = false,
@@ -307,7 +307,7 @@ namespace SQE.ApiTest.ApiRequests
             bool listenToEdition = true,
             ListenerMethods? listeningFor = null)
         {
-            await Send(
+            await SendAsync(
                 listeningFor.HasValue
                     ? new List<ListenerMethods> { listeningFor.Value }
                     : new List<ListenerMethods>(),

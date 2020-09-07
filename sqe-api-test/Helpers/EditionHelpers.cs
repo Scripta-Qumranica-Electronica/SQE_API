@@ -76,7 +76,7 @@ namespace SQE.ApiTest.Helpers
             if (auth && user == null)
                 user = Request.DefaultUsers.User1;
             var getEditionObject = new Get.V1_Editions_EditionId(editionId);
-            await getEditionObject.Send(
+            await getEditionObject.SendAsync(
                 client,
                 null,
                 requestUser: user,
@@ -107,7 +107,7 @@ namespace SQE.ApiTest.Helpers
             if (string.IsNullOrEmpty(name)) name = "test-name-" + _editionCount;
 
             var newScrollRequest = new Post.V1_Editions_EditionId(editionId, new EditionCopyDTO(name, null, null));
-            await newScrollRequest.Send(
+            await newScrollRequest.SendAsync(
                 client,
                 null,
                 requestUser: userAuthDetails ?? Request.DefaultUsers.User1,
@@ -165,7 +165,7 @@ namespace SQE.ApiTest.Helpers
             Request.UserAuthDetails user = null)
         {
             var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+            await textFragmentRequestObject.SendAsync(client, requestUser: user, auth: user != null);
             return textFragmentRequestObject.HttpResponseObject.textFragments;
         }
 
@@ -178,7 +178,7 @@ namespace SQE.ApiTest.Helpers
                     editionId,
                     textFragmentId.Value
                 );
-                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+                await textFragmentRequestObject.SendAsync(client, requestUser: user, auth: user != null);
                 if (!textFragmentRequestObject.HttpResponseObject.textFragments.Any(x =>
                     x.lines.Any(y =>
                         y.signs.Count(z =>
@@ -195,7 +195,7 @@ namespace SQE.ApiTest.Helpers
                     editionId,
                     textFragment.id
                 );
-                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+                await textFragmentRequestObject.SendAsync(client, requestUser: user, auth: user != null);
                 if (textFragmentRequestObject.HttpResponseObject.textFragments.Any(x =>
                     x.lines.Any(y => y.signs.Count > 2)))
                     return textFragmentRequestObject.HttpResponseObject;
@@ -258,7 +258,7 @@ namespace SQE.ApiTest.Helpers
         public static async Task<EditionListDTO> GetAllEditions(HttpClient client, Func<string, Task<HubConnection>> signalr, Request.UserAuthDetails user = null)
         {
             var request = new Get.V1_Editions();
-            await request.Send(client, signalr, auth: user != null, requestUser: user);
+            await request.SendAsync(client, signalr, auth: user != null, requestUser: user);
 
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
             return request.HttpResponseObject;

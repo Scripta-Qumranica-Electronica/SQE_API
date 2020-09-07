@@ -42,7 +42,7 @@ namespace SQE.ApiTest
         {
             var editionId = EditionHelpers.GetEditionId();
             var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId);
-            await req.Send(_client, StartConnectionAsync);
+            await req.SendAsync(_client, StartConnectionAsync);
             var (httpResponse, httpData, signalrData) =
                 (req.HttpResponseMessage, req.HttpResponseObject, req.SignalrResponseObject);
             httpResponse.EnsureSuccessStatusCode();
@@ -61,7 +61,7 @@ namespace SQE.ApiTest
             // so we need to encode the URL first (remember this!!!).
             var id = HttpUtility.UrlEncode("IAA-275%2F1-1");
             var textFragRequest = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(id);
-            await textFragRequest.Send(_client);
+            await textFragRequest.SendAsync(_client);
             var (response, msg) = (textFragRequest.HttpResponseMessage, textFragRequest.HttpResponseObject);
 
             response.EnsureSuccessStatusCode();
@@ -157,7 +157,7 @@ namespace SQE.ApiTest
                 editionId,
                 objectId,
                 new List<string>() { "artefacts", "masks" });
-            await request.Send(
+            await request.SendAsync(
                 _client,
                 StartConnectionAsync,
                 auth: true
@@ -309,7 +309,7 @@ namespace SQE.ApiTest
         {
             // Act
             var request = new Get.V1_ImagedObjects_ImagedObjectId(imagedObjectId);
-            await request.Send(client, signalr);
+            await request.SendAsync(client, signalr);
 
             // Assert
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
@@ -321,7 +321,7 @@ namespace SQE.ApiTest
         {
             // Act
             var request = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(imagedObjectId);
-            await request.Send(client, signalr);
+            await request.SendAsync(client, signalr);
 
             // Assert
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
