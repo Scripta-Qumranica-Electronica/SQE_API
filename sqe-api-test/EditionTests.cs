@@ -531,11 +531,11 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanNotWriteWithoutReadShareEdition()
         {
-            // Arrange
-            var newEdition = await EditionHelpers.CreateCopyOfEdition(_client);
-
-            try
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
             {
+                // Arrange
+                var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+
                 // Arrange
                 var newPermissions = new InviteEditorDTO
                 {
@@ -599,11 +599,6 @@ namespace SQE.ApiTest
 
                 // Assert
                 Assert.Equal(HttpStatusCode.BadRequest, add2.HttpResponseMessage.StatusCode);
-            }
-            finally
-            {
-                // Cleanup
-                await EditionHelpers.DeleteEdition(_client, newEdition);
             }
         }
 

@@ -205,9 +205,9 @@ namespace SQE.ApiTest
                 Assert.False(attr.IsValid((decimal)1.1));
                 Assert.False(attr.IsValid((decimal)5.76));
             }
-            catch (ArgumentException e)
+            catch
             {
-                errorThrown = true;
+                errorThrown = true; // We should not expect any error
             }
             Assert.False(errorThrown);
         }

@@ -196,12 +196,13 @@ namespace SQE.ApiTest.ApiRequests
                     ? await Request.GetJwtViaHttpAsync(http, requestUser ?? null)
                     : await Request.GetJwtViaRealtimeAsync(realtime, requestUser ?? null);
 
-            if (auth && listeningFor.Any() && realtime != null)
+            var listenerMethodsList = listeningFor.ToList();
+            if (auth && listenerMethodsList.Any() && realtime != null)
                 jwt2 = await Request.GetJwtViaRealtimeAsync(realtime, listenerUser);
 
             // Set up a SignalR listener if desired (this hub connection must be different than the one used to make
             // the API request.
-            if (listeningFor.Any()
+            if (listenerMethodsList.Any()
                 && realtime != null)
             {
                 signalrListener = await realtime(jwt2);
@@ -210,7 +211,7 @@ namespace SQE.ApiTest.ApiRequests
                 if (listenToEdition)
                     await signalrListener.InvokeAsync("SubscribeToEdition", GetEditionId().Value);
                 // Register listeners for messages returned by this API request
-                foreach (var listener in listeningFor)
+                foreach (var listener in listenerMethodsList)
                     if (_listenerDict.TryGetValue(listener, out var val))
                         val.StartListener(signalrListener);
 
@@ -223,7 +224,7 @@ namespace SQE.ApiTest.ApiRequests
                     if (listenToEdition)
                         await signalrListener.InvokeAsync("SubscribeToEdition", GetEditionId().Value);
                     // Register listeners for messages returned by this API request
-                    foreach (var listener in listeningFor)
+                    foreach (var listener in listenerMethodsList)
                         if (_listenerDict.TryGetValue(listener, out var val))
                             val.StartListener(signalrListener);
                 };
@@ -272,7 +273,7 @@ namespace SQE.ApiTest.ApiRequests
             }
 
             // If no listener is running, return the response from the request
-            if (!listeningFor.Any()
+            if (!listenerMethodsList.Any()
                 || GetRequestVerb() == HttpMethod.Get)
                 return;
 
@@ -280,7 +281,7 @@ namespace SQE.ApiTest.ApiRequests
             var waitTime = 0;
 
             while (
-                listeningFor.Any(x =>
+                listenerMethodsList.Any(x =>
                     !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull())
                 && waitTime < 20)
             {
@@ -290,8 +291,8 @@ namespace SQE.ApiTest.ApiRequests
 
             signalrListener?.DisposeAsync(); // Cleanup
             if (shouldSucceed)
-                Assert.Empty(listeningFor.Where(x =>
-                    !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull()));
+                Assert.DoesNotContain(listenerMethodsList, x =>
+                    !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull());
         }
 
         public async Task Send(
