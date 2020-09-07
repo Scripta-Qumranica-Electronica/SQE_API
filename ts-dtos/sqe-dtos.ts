@@ -169,14 +169,6 @@ export interface InterpretationAttributeDTO extends InterpretationAttributeBaseD
     commentary?: CommentaryDTO;
 }
 
-export interface InterpretationAttributeCreateListDTO {
-    attributes?: Array<InterpretationAttributeCreateDTO>;
-}
-
-export interface InterpretationAttributeListDTO {
-    attributes?: Array<InterpretationAttributeDTO>;
-}
-
 export interface CreateAttributeValueDTO {
     value: string;
     description?: string;
@@ -427,11 +419,6 @@ export interface TextEditionDTO {
 export interface DeleteTokenDTO {
     editionId: number;
     token: string;
-}
-
-export interface DeleteEditionEntityDTO {
-    entityId: number;
-    editorId: number;
 }
 
 export interface CommentaryCreateDTO {

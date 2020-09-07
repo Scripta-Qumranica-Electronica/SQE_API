@@ -1,8 +1,16 @@
 # SQE_API
 
-[master](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/master/): [![Build Status](https://travis-ci.org/Scripta-Qumranica-Electronica/SQE_API.svg?branch=master)](https://travis-ci.org/Scripta-Qumranica-Electronica/SQE_API) [development](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/development/): [![Build Status](https://travis-ci.org/Scripta-Qumranica-Electronica/SQE_API.svg?branch=development)](https://travis-ci.org/Scripta-Qumranica-Electronica/SQE_API) [staging](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/staging/): [![Build Status](https://travis-ci.org/Scripta-Qumranica-Electronica/SQE_API.svg?branch=staging)](https://travis-ci.org/Scripta-Qumranica-Electronica/SQE_API)
+[master](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/master/): 
+![Test .NET API](https://github.com/Scripta-Qumranica-Electronica/SQE_API/workflows/Test%20.NET%20API/badge.svg?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/Scripta-Qumranica-Electronica/SQE_API/badge.svg?branch=master)](https://coveralls.io/github/Scripta-Qumranica-Electronica/SQE_API?branch=master) 
 
-[master](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/master/): [![Coverage Status](https://coveralls.io/repos/github/Scripta-Qumranica-Electronica/SQE_API/badge.svg?branch=master)](https://coveralls.io/github/Scripta-Qumranica-Electronica/SQE_API?branch=master) [development](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/development/): [![Coverage Status](https://coveralls.io/repos/github/Scripta-Qumranica-Electronica/SQE_API/badge.svg?branch=development)](https://coveralls.io/github/Scripta-Qumranica-Electronica/SQE_API?branch=development) [staging](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/staging/): [![Coverage Status](https://coveralls.io/repos/github/Scripta-Qumranica-Electronica/SQE_API/badge.svg?branch=staging)](https://coveralls.io/github/Scripta-Qumranica-Electronica/SQE_API?branch=staging)
+[development](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/development/): 
+![Test .NET API](https://github.com/Scripta-Qumranica-Electronica/SQE_API/workflows/Test%20.NET%20API/badge.svg?branch=development)
+[![Coverage Status](https://coveralls.io/repos/github/Scripta-Qumranica-Electronica/SQE_API/badge.svg?branch=development)](https://coveralls.io/github/Scripta-Qumranica-Electronica/SQE_API?branch=development) 
+
+[staging](https://github.com/Scripta-Qumranica-Electronica/SQE_API/tree/staging/): 
+![Test .NET API](https://github.com/Scripta-Qumranica-Electronica/SQE_API/workflows/Test%20.NET%20API/badge.svg?branch=staging)
+[![Coverage Status](https://coveralls.io/repos/github/Scripta-Qumranica-Electronica/SQE_API/badge.svg?branch=staging)](https://coveralls.io/github/Scripta-Qumranica-Electronica/SQE_API?branch=staging)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Scripta-Qumranica-Electronica/SQE_API/blob/master/LICENSE.txt)
 

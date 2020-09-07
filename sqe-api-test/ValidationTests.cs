@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using SQE.API.DTO.Validators;
 using SQE.API.Server.Helpers;
 using SQE.DatabaseAccess.Helpers;
 using Xunit;
@@ -26,7 +27,6 @@ namespace SQE.ApiTest
             catch (Exception err)
             {
                 Assert.True(err is StandardExceptions.InputDataRuleViolationException);
-                Assert.False(err is StandardExceptions.MalformedDataException);
                 Assert.False(err is IExceptionWithData);
             }
         }
@@ -176,6 +176,59 @@ namespace SQE.ApiTest
             var outputPoly =
                 "POLYGON ((0 0, 4.9999999999999982 4.9999999999999982, 4.9999999999999982 5.0000000000000018, 0 10, 10 10, 5.0000000000000018 5.0000000000000018, 5.0000000000000018 4.9999999999999982, 10 0, 0 0))";
             _testBadPoly(inputPoly, outputPoly);
+        }
+
+        [Fact]
+        public void ValidDecimalAttributeForPrecisionAndScale()
+        {
+            var errorThrown = false;
+            try
+            {
+                // This is invalid because the scale cannot be larger than the precision
+                var attr = new ValidDecimalAttribute(3, 4);
+            }
+            catch (ArgumentException e)
+            {
+                errorThrown = true;
+                Assert.Contains(e.Message, "The scale must be less than or equal to the precision");
+            }
+            Assert.True(errorThrown);
+
+            try
+            {
+                // Test support for only fractional numbers
+                var attr = new ValidDecimalAttribute(3, 3);
+                errorThrown = false;
+                Assert.True(attr.IsValid((decimal)0.001)); // Min
+                Assert.True(attr.IsValid((decimal)0.999)); // Max
+                Assert.False(attr.IsValid((decimal)0.0001));
+                Assert.False(attr.IsValid((decimal)1.1));
+                Assert.False(attr.IsValid((decimal)5.76));
+            }
+            catch (ArgumentException e)
+            {
+                errorThrown = true;
+            }
+            Assert.False(errorThrown);
+        }
+
+        [Fact]
+        public void ValidDecimalAttributeRejectsInvalidDecimal()
+        {
+            // Set decimal precision to 4 places to the left of decimal point and 2 places to its right
+            var attr = new ValidDecimalAttribute(6, 2);
+
+            // Accepts good values
+            Assert.True(attr.IsValid((decimal)0.01)); // Min
+            Assert.True(attr.IsValid((decimal)1));
+            Assert.True(attr.IsValid((decimal)12.2));
+            Assert.True(attr.IsValid((decimal)1234.12));
+            Assert.True(attr.IsValid((decimal)9999.99)); // Max
+
+            // Rejects bad values
+            Assert.False(attr.IsValid(23U)); // Wrong input type (uint)
+            Assert.False(attr.IsValid((decimal)12345.12)); // Left of decimal too great
+            Assert.False(attr.IsValid((decimal)1234.123)); // Right of decimal too great
         }
     }
 }

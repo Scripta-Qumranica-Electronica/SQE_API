@@ -107,12 +107,6 @@ namespace SQE.API.DTO
         [Required] public string token { get; set; }
     }
 
-    public class DeleteEditionEntityDTO
-    {
-        [Required] public uint entityId { get; set; }
-        [Required] public uint editorId { get; set; }
-    }
-
     public class CommentaryCreateDTO
     {
         public string commentary { get; set; }
@@ -195,11 +189,6 @@ namespace SQE.API.DTO
         }
 
         public EditionUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty)
-        {
-        }
-
-        public EditionUpdateRequestDTO(EditionCopyDTO editionCopy) : this(editionCopy.name, editionCopy.copyrightHolder,
-            editionCopy.collaborators)
         {
         }
 
