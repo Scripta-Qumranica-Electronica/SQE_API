@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
+using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
 using SQE.API.Server;
@@ -861,6 +862,25 @@ namespace SQE.ApiTest
 
             // Cleanup (remove user)
             await CleanupUserAccountAsync(npLoggedInUser);
+        }
+
+        [Fact]
+        public async Task CanGetUserDetails()
+        {
+            // Arrange
+            var user = Request.DefaultUsers.User1;
+
+            // Act
+            var request = new Get.V1_Users();
+            await request.SendAsync(
+                _client,
+                StartConnectionAsync,
+                auth: true,
+                requestUser: user);
+
+            // Assert
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            Assert.Equal(user.Email, request.HttpResponseObject.email);
         }
     }
 }
