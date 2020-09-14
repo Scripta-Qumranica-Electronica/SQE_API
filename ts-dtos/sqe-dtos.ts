@@ -162,6 +162,7 @@ export interface InterpretationAttributeCreateDTO extends InterpretationAttribut
 
 export interface InterpretationAttributeDTO extends InterpretationAttributeBaseDTO {
     interpretationAttributeId: number;
+    attributeString: string;
     attributeValueString: string;
     creatorId: number;
     editorId: number;

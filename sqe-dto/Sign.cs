@@ -61,6 +61,7 @@ namespace SQE.API.DTO
     public class InterpretationAttributeDTO : InterpretationAttributeBaseDTO
     {
         [Required] public uint interpretationAttributeId { get; set; }
+        [Required] public string attributeString { get; set; }
         [Required] public string attributeValueString { get; set; }
         [Required] public uint creatorId { get; set; }
         [Required] public uint editorId { get; set; }

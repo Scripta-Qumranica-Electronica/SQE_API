@@ -52,6 +52,7 @@ namespace SQE.API.Server.Serialization
             return new InterpretationAttributeDTO()
             {
                 attributeId = sia.AttributeId ?? 0,
+                attributeString = sia.AttributeString,
                 attributeValueId = sia.AttributeValueId ?? 0,
                 attributeValueString = sia.AttributeValueString,
                 creatorId = sia.SignInterpretationAttributeCreatorId ?? 0,

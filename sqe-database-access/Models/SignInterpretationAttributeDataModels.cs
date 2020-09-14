@@ -35,6 +35,7 @@ namespace SQE.DatabaseAccess.Models
         public uint? SignInterpretationId { get; set; }
         public byte? Sequence { get; set; }
         public uint? AttributeId { get; set; }
+        public string AttributeString { get; set; }
         public uint? AttributeValueId { get; set; }
         public string AttributeValueString { get; set; }
         public uint? SignInterpretationAttributeCreatorId { get; set; }
@@ -73,5 +74,6 @@ namespace SQE.DatabaseAccess.Models
         public uint attributeId { get; set; }
         public uint attributeValueId { get; set; }
         public string attributeString { get; set; }
+        public string attributeValueString { get; set; }
     }
 }

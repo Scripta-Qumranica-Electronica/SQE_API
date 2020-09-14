@@ -10,6 +10,7 @@ namespace SQE.DatabaseAccess.Queries
 				       sequence as Sequence,
 				       sign_interpretation_attribute.creator_id AS SignInterpretationAttributeCreatorId,
 				       sign_interpretation_attribute_owner.edition_editor_id AS SignInterpretationAttributeEditorId,
+				       attribute.name as AttributeString,
 				       string_value as AttributeValueString,
 				       attribute.editable as Editable,
 				       attribute.removable as Removable,

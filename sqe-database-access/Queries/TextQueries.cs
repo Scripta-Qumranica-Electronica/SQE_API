@@ -363,8 +363,9 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
     {
         public const string GetQuery = @"
 SELECT DISTINCT attribute_value.attribute_value_id AS attributeValueId, 
-                attribute_value.string_value AS attributeString,
-                attribute_value.attribute_id AS attributeId
+                attribute_value.string_value AS attributeValueString,
+                attribute_value.attribute_id AS attributeId,
+                attribute.name AS attributeString
 FROM attribute_value
 JOIN attribute_value_owner 
 	ON attribute_value_owner.attribute_value_id = attribute_value.attribute_value_id 
