@@ -1083,12 +1083,12 @@ namespace SQE.DatabaseAccess
                         if (lastSignInterpretation.Attributes.Count == 0 ||
                             lastSignInterpretation.Attributes.Last().AttributeValueId != charAttribute.AttributeValueId)
                         {
-                            (charAttribute.AttributeValueString, charAttribute.AttributeId) = attributeDict.TryGetValue(
+                            (charAttribute.AttributeValueString, charAttribute.AttributeId, charAttribute.AttributeString) = attributeDict.TryGetValue(
                                 charAttribute.AttributeValueId.GetValueOrDefault(),
                                 out var val
                             )
-                                ? (val.attributeString, val.attributeId)
-                                : (null, 0);
+                                ? (val.attributeValueString, val.attributeId, val.attributeString)
+                                : (null, 0, null);
                             lastSignInterpretation.Attributes.Add(charAttribute);
                         }
 

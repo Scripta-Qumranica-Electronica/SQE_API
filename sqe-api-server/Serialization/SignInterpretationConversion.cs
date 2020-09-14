@@ -17,7 +17,11 @@ namespace SQE.API.Server.Serialization
                         attr.AttributeName,
                         attr.AttributeDescription,
                         attr.AttributeCreator,
-                        attr.AttributeEditor),
+                        attr.AttributeEditor,
+                        attr.Editable,
+                        attr.Removable,
+                        attr.Repeatable,
+                        attr.BatchEditable),
                     attr => new AttributeValueDTO()
                     {
                         id = attr.AttributeValueId,
@@ -35,6 +39,10 @@ namespace SQE.API.Server.Serialization
                         creatorId = attrId.AttributeCreator,
                         editorId = attrId.AttributeEditor,
                         values = attrValues.ToArray(),
+                        editable = attrId.Editable,
+                        removable = attrId.Removable,
+                        repeatable = attrId.Repeatable,
+                        batchEditable = attrId.BatchEditable,
                     }).ToArray(),
             };
         }
@@ -44,13 +52,13 @@ namespace SQE.API.Server.Serialization
             return new InterpretationAttributeDTO()
             {
                 attributeId = sia.AttributeId ?? 0,
+                attributeString = sia.AttributeString,
                 attributeValueId = sia.AttributeValueId ?? 0,
                 attributeValueString = sia.AttributeValueString,
                 creatorId = sia.SignInterpretationAttributeCreatorId ?? 0,
                 editorId = sia.SignInterpretationAttributeEditorId ?? 0,
                 interpretationAttributeId = sia.SignInterpretationAttributeId ?? 0,
                 sequence = sia.Sequence ?? 0,
-                value = sia.NumericValue ?? 0,
                 commentary = comms.Where(y =>
                         y.AttributeId.HasValue && y.AttributeId.Value == sia.AttributeId.Value)
                     .Select(y => y.ToDTO())
@@ -150,7 +158,6 @@ namespace SQE.API.Server.Serialization
                 AttributeId = x.attributeId,
                 AttributeValueId = x.attributeValueId,
                 Sequence = x.sequence,
-                NumericValue = x.value
             }).ToList();
         }
 

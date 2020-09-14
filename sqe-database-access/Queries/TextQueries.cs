@@ -76,7 +76,6 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 		sign_interpretation_attribute.creator_id AS SignInterpretationAttributeCreatorId,
 		sign_interpretation_attribute.sequence AS Sequence,
 		sign_interpretation_attribute_owner.edition_editor_id AS SignInterpretationAttributeEditorId,
-		sign_interpretation_attribute.numeric_value AS NumericValue,
 
 		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
 		roi.sign_interpretation_id AS SignInterpretationId,
@@ -364,8 +363,9 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
     {
         public const string GetQuery = @"
 SELECT DISTINCT attribute_value.attribute_value_id AS attributeValueId, 
-                attribute_value.string_value AS attributeString,
-                attribute_value.attribute_id AS attributeId
+                attribute_value.string_value AS attributeValueString,
+                attribute_value.attribute_id AS attributeId,
+                attribute.name AS attributeString
 FROM attribute_value
 JOIN attribute_value_owner 
 	ON attribute_value_owner.attribute_value_id = attribute_value.attribute_value_id 
