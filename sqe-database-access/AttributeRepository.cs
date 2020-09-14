@@ -17,9 +17,24 @@ namespace SQE.DatabaseAccess
 
         Task<IEnumerable<SignInterpretationAttributeEntry>> GetEditionAttributeAsync(UserInfo editionUser,
             uint attributeId);
-        Task<uint> CreateEditionAttribute(UserInfo editionUser, string attributeName, string attributeDescription, IEnumerable<SignInterpretationAttributeValueInput> attributeValues);
-        Task<uint> UpdateEditionAttribute(UserInfo editionUser, uint attributeId, string attributeName,
+        Task<uint> CreateEditionAttribute(
+            UserInfo editionUser,
+            string attributeName,
             string attributeDescription,
+            bool editable,
+            bool removable,
+            bool repeatable,
+            bool batchEditable,
+            IEnumerable<SignInterpretationAttributeValueInput> attributeValues);
+        Task<uint> UpdateEditionAttribute(
+            UserInfo editionUser,
+            uint attributeId,
+            string attributeName,
+            string attributeDescription,
+            bool editable,
+            bool removable,
+            bool repeatable,
+            bool batchEditable,
             IEnumerable<SignInterpretationAttributeValueInput> createAttributeValues,
             IEnumerable<SignInterpretationAttributeValue> updateAttributeValues,
             IEnumerable<uint> deleteAttributeValues);
@@ -45,7 +60,7 @@ namespace SQE.DatabaseAccess
             uint signInterpretationId);
 
         Task UpdateAttributeForSignInterpretationAsync(UserInfo editionUser,
-            uint signInterpretationId, uint attributeValueId, byte? sequence, float? numericValue);
+            uint signInterpretationId, uint attributeValueId, byte? sequence);
 
         // Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(UserInfo editionUser,
         //     uint signInterpretationAttributeId);
@@ -124,7 +139,7 @@ namespace SQE.DatabaseAccess
         /// <param name="attributeValues">A list of 0 or more possible values for the attribute</param>
         /// <returns>The unique id of the newly created attribute</returns>
         public async Task<uint> CreateEditionAttribute(UserInfo editionUser, string attributeName,
-            string attributeDescription, IEnumerable<SignInterpretationAttributeValueInput> attributeValues)
+            string attributeDescription, bool editable, bool removable, bool repeatable, bool batchEditable, IEnumerable<SignInterpretationAttributeValueInput> attributeValues)
         {
             using (var transactionScope = new TransactionScope())
             {
@@ -136,7 +151,14 @@ namespace SQE.DatabaseAccess
                     throw new StandardExceptions.ConflictingDataException("attribute");
 
                 // Write the new attribute
-                var newAttributeId = await _createOrUpdateEditionAttribute(editionUser, attributeName, attributeDescription);
+                var newAttributeId = await _createOrUpdateEditionAttribute(
+                    editionUser,
+                    attributeName,
+                    attributeDescription,
+                    editable,
+                    removable,
+                    repeatable,
+                    batchEditable);
 
                 // Write the new attribute values
                 await Task.WhenAll(attributeValues.Select(x =>
@@ -164,8 +186,15 @@ namespace SQE.DatabaseAccess
         /// <param name="updateAttributeValues">A list of attribute values to be updated</param>
         /// <param name="deleteAttributeValues">A list of attribute value ids to be deleted</param>
         /// <returns></returns>
-        public async Task<uint> UpdateEditionAttribute(UserInfo editionUser, uint attributeId, string attributeName,
+        public async Task<uint> UpdateEditionAttribute(
+            UserInfo editionUser,
+            uint attributeId,
+            string attributeName,
             string attributeDescription,
+            bool editable,
+            bool removable,
+            bool repeatable,
+            bool batchEditable,
             IEnumerable<SignInterpretationAttributeValueInput> createAttributeValues,
             IEnumerable<SignInterpretationAttributeValue> updateAttributeValues,
             IEnumerable<uint> deleteAttributeValues)
@@ -191,7 +220,15 @@ namespace SQE.DatabaseAccess
                 // Write the attribute update if we have a new name or description
                 var updatedAttributeID = string.IsNullOrEmpty(attributeName) && string.IsNullOrEmpty(attributeDescription) ?
                     attributeId
-                    : await _createOrUpdateEditionAttribute(editionUser, attributeName, attributeDescription, attributeId);
+                    : await _createOrUpdateEditionAttribute(
+                        editionUser,
+                        attributeName,
+                        attributeDescription,
+                        editable,
+                        removable,
+                        repeatable,
+                        batchEditable,
+                        attributeId);
 
                 // Merge the existing attribute values with the newly requested ones if a new attribute was created
                 if (updatedAttributeID != attributeId)
@@ -290,11 +327,15 @@ namespace SQE.DatabaseAccess
         // }
 
         private async Task<uint> _createOrUpdateEditionAttribute(UserInfo editionUser, string attributeName,
-            string attributeDescription, uint? attributeId = null)
+            string attributeDescription, bool editable, bool removable, bool repeatable, bool batchEditable, uint? attributeId = null)
         {
             var createParams = new DynamicParameters();
             createParams.Add("@name", attributeName);
             createParams.Add("@description", attributeDescription);
+            createParams.Add("@editable", editable);
+            createParams.Add("@removable", removable);
+            createParams.Add("@repeatable", repeatable);
+            createParams.Add("@batch_editable", batchEditable);
             var mutateRequest = new MutationRequest(
                 attributeId.HasValue ? MutateType.Update : MutateType.Create,
                 createParams,
@@ -602,9 +643,9 @@ namespace SQE.DatabaseAccess
         /// <param name="attributeValueId">Id of attribute value to update</param>
         /// <returns>List of ids of delete attributes</returns>
         public async Task UpdateAttributeForSignInterpretationAsync(UserInfo editionUser,
-            uint signInterpretationId, uint attributeValueId, byte? sequence, float? numericValue)
+            uint signInterpretationId, uint attributeValueId, byte? sequence)
         {
-            if (!sequence.HasValue && !numericValue.HasValue)
+            if (!sequence.HasValue)
                 return;
 
             var searchData = new SignInterpretationAttributeDataSearchData
@@ -619,11 +660,6 @@ namespace SQE.DatabaseAccess
 
             var attributeData =
                 await GetSignInterpretationAttributeByIdAsync(editionUser, signInterpretationAttributeId);
-
-            if (attributeData.NumericValue == numericValue && attributeData.Sequence == sequence)
-                return;
-
-            attributeData.NumericValue ??= numericValue;
             attributeData.Sequence ??= sequence;
 
             await UpdateSignInterpretationAttributesAsync(editionUser, signInterpretationId, new List<SignInterpretationAttributeData>() { attributeData });
@@ -681,7 +717,6 @@ namespace SQE.DatabaseAccess
                 signInterpretationAttributeParameters.Add("@sign_interpretation_id", signInterpretationId);
                 signInterpretationAttributeParameters.Add("@attribute_value_id", attribute.AttributeValueId);
                 signInterpretationAttributeParameters.Add("@sequence", attribute.Sequence);
-                signInterpretationAttributeParameters.Add("@numeric_value", attribute.NumericValue);
                 var signInterpretationAttributeRequest = new MutationRequest(
                     action,
                     signInterpretationAttributeParameters,

@@ -71,8 +71,7 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return new SignInterpretationAttributeData
             {
-                AttributeValueId = attributeValueId,
-                NumericValue = value
+                AttributeValueId = attributeValueId
             };
         }
     }

@@ -231,6 +231,7 @@ namespace SQE.API.Server.Services
                                                                             sequence = b.Sequence.GetValueOrDefault(),
                                                                             attributeId = b.AttributeId
                                                                                 .GetValueOrDefault(),
+                                                                            attributeString = b.AttributeString,
                                                                             attributeValueId =
                                                                                 b.AttributeValueId.GetValueOrDefault(),
                                                                             attributeValueString = b.AttributeValueString,
@@ -239,7 +240,6 @@ namespace SQE.API.Server.Services
                                                                                 .GetValueOrDefault(),
                                                                             creatorId = b.SignInterpretationAttributeCreatorId
                                                                                 .GetValueOrDefault(),
-                                                                            value = b.NumericValue.GetValueOrDefault()
                                                                         }
                                                                     )
                                                                     .ToArray(),
@@ -339,10 +339,10 @@ namespace SQE.API.Server.Services
                                                     interpretationAttributeId =
                                                         b.SignInterpretationAttributeId.GetValueOrDefault(),
                                                     sequence = b.Sequence.GetValueOrDefault(),
+                                                    attributeString = b.AttributeString,
                                                     attributeValueId = b.AttributeValueId.GetValueOrDefault(),
                                                     attributeValueString = b.AttributeValueString,
                                                     editorId = b.SignInterpretationAttributeEditorId.GetValueOrDefault(),
-                                                    value = b.NumericValue.GetValueOrDefault()
                                                 }
                                             )
                                             .ToArray(),

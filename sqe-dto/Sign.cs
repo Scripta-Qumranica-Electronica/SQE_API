@@ -51,7 +51,6 @@ namespace SQE.API.DTO
         public byte? sequence { get; set; }
         [Required] public uint attributeId { get; set; }
         [Required] public uint attributeValueId { get; set; }
-        public float? value { get; set; }
     }
 
     public class InterpretationAttributeCreateDTO : InterpretationAttributeBaseDTO
@@ -62,6 +61,7 @@ namespace SQE.API.DTO
     public class InterpretationAttributeDTO : InterpretationAttributeBaseDTO
     {
         [Required] public uint interpretationAttributeId { get; set; }
+        [Required] public string attributeString { get; set; }
         [Required] public string attributeValueString { get; set; }
         [Required] public uint creatorId { get; set; }
         [Required] public uint editorId { get; set; }
@@ -89,6 +89,10 @@ namespace SQE.API.DTO
     public class AttributeBaseDTO
     {
         public string description { get; set; }
+        public bool editable { get; set; }
+        public bool removable { get; set; }
+        public bool repeatable { get; set; }
+        public bool batchEditable { get; set; }
     }
 
     public class CreateAttributeDTO : AttributeBaseDTO
@@ -102,6 +106,10 @@ namespace SQE.API.DTO
         [Required] public CreateAttributeValueDTO[] createValues { get; set; }
         [Required] public UpdateAttributeValueDTO[] updateValues { get; set; }
         [Required] public uint[] deleteValues { get; set; }
+        public bool editable { get; set; }
+        public bool removable { get; set; }
+        public bool repeatable { get; set; }
+        public bool batchEditable { get; set; }
     }
 
     public class AttributeDTO : AttributeBaseDTO

@@ -70,7 +70,6 @@ namespace qwb_to_sqe
                             break;
                         case '\u05BE': // Single destroyed sign
                             if (_lastAttributeIs(currSign, Destroyed) == false) currSign = _newSign(' ', Destroyed, 0);
-                            _expandLastNumericValue(currSign, Destroyed);
                             break;
                         case '_': // Vacat
                             if (_lastAttributeIs(currSign, Vacat) == false)
@@ -79,7 +78,6 @@ namespace qwb_to_sqe
                                 _handleNewSign(currSign);
                             }
 
-                            _expandLastNumericValue(currSign, Vacat);
                             break;
                         case '-': // Destroyed area
                             if (_lastAttributeIs(currSign, Destroyed) == false)
@@ -88,7 +86,6 @@ namespace qwb_to_sqe
                                 _handleNewSign(currSign);
                             }
 
-                            _expandLastNumericValue(currSign, Destroyed, 3);
                             break;
                         case '^': // Switch for superscript
                             _switchAttribute(SuperScript);
@@ -209,7 +206,6 @@ namespace qwb_to_sqe
             sign?.SignInterpretations.Last().Attributes.Add(new SignInterpretationAttributeData
             {
                 AttributeValueId = attributeId,
-                NumericValue = numericValue
             });
         }
 
@@ -217,12 +213,6 @@ namespace qwb_to_sqe
         {
             return sign?.SignInterpretations.Last().Attributes.Exists(data => data.AttributeValueId == attributeId) ??
                    false;
-        }
-
-        private void _expandLastNumericValue(SignData sign, uint attributeValueId, uint by = 1)
-        {
-            sign.SignInterpretations.Last().Attributes.Find(attr =>
-                attr.AttributeValueId == attributeValueId).NumericValue += by;
         }
     }
 }
