@@ -158,7 +158,6 @@ namespace SQE.ApiTest
                 Assert.Null(responseAttr.commentary);
                 Assert.True(responseAttr.sequence.HasValue);
                 Assert.Equal(0, responseAttr.sequence.Value);
-                Assert.Equal(0, responseAttr.value);
                 Assert.NotEqual<uint>(0, responseAttr.creatorId);
                 Assert.NotEqual<uint>(0, responseAttr.editorId);
                 Assert.NotEqual<uint>(0, responseAttr.attributeId);
@@ -230,6 +229,11 @@ namespace SQE.ApiTest
                     .First(x => x.textFragmentId == textFragment.textFragmentId)
                     .lines.First(x => x.lineId == line.lineId).signs;
 
+                // Sort the lists of sign attributes (otherwise ShouldDeepEqual will possibly fail)
+                signs.First().signInterpretations.First().attributes = signs.First().signInterpretations.First()
+                    .attributes.OrderBy(x => x.attributeValueId).ToArray();
+                newSignInterpretationRequest.HttpResponseObject.signInterpretations.First().attributes = newSignInterpretationRequest.HttpResponseObject.signInterpretations.First().attributes
+                    .OrderBy(x => x.attributeValueId).ToArray();
                 // Make sure the two updated/new sign interpretations are in the stream
                 signs.First().signInterpretations.First()
                     .ShouldDeepEqual(newSignInterpretationRequest.HttpResponseObject.signInterpretations.First());
@@ -257,7 +261,6 @@ namespace SQE.ApiTest
                     Assert.Equal(attrMatch.attributeValueString, attr.attributeValueString);
                     Assert.Equal(attrMatch.interpretationAttributeId, attr.interpretationAttributeId);
                     Assert.Equal(attrMatch.sequence, attr.sequence);
-                    Assert.Equal(attrMatch.value, attr.value);
                     Assert.Equal(attrMatch.attributeId, attr.attributeId);
                 }
 
@@ -555,7 +558,6 @@ namespace SQE.ApiTest
                 Assert.Null(responseAttr.commentary);
                 Assert.True(responseAttr.sequence.HasValue);
                 Assert.Equal(0, responseAttr.sequence.Value);
-                Assert.Equal(0, responseAttr.value);
                 Assert.NotEqual<uint>(0, responseAttr.creatorId);
                 Assert.NotEqual<uint>(0, responseAttr.editorId);
                 Assert.NotEqual<uint>(0, responseAttr.attributeId);
@@ -819,7 +821,6 @@ namespace SQE.ApiTest
                 Assert.Null(responseAttr.commentary);
                 Assert.True(responseAttr.sequence.HasValue);
                 Assert.Equal(0, responseAttr.sequence.Value);
-                Assert.Equal(0, responseAttr.value);
                 Assert.NotEqual<uint>(0, responseAttr.creatorId);
                 Assert.NotEqual<uint>(0, responseAttr.editorId);
                 Assert.NotEqual<uint>(0, responseAttr.attributeId);
@@ -829,13 +830,11 @@ namespace SQE.ApiTest
 
                 // Update sequence and value of the new attribute
                 const byte seq = 1;
-                const float val = (float)1.2;
                 var updateSignInterpretationAddAttribute = new InterpretationAttributeCreateDTO
                 {
                     attributeId = 8,
                     attributeValueId = attributeValueId,
                     sequence = seq,
-                    value = val
                 };
                 var updRequest1 =
                     new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(
@@ -865,7 +864,6 @@ namespace SQE.ApiTest
                 var upd1SignInterpretationAttribute = updData.attributes
                     .First(x => x.attributeValueId == attributeValueId);
                 Assert.Equal(seq, upd1SignInterpretationAttribute.sequence);
-                Assert.Equal(val, upd1SignInterpretationAttribute.value);
                 Assert.Null(upd1SignInterpretationAttribute.commentary);
 
                 // Update sequence and value of the new attribute
@@ -875,7 +873,6 @@ namespace SQE.ApiTest
                     attributeId = 8,
                     attributeValueId = attributeValueId,
                     sequence = seq,
-                    value = val,
                     commentary = commentary
                 };
                 var updRequest2 =
@@ -907,7 +904,6 @@ namespace SQE.ApiTest
                 var upd2SignInterpretationAttribute = updData.attributes
                     .First(x => x.attributeValueId == attributeValueId);
                 Assert.Equal(seq, upd2SignInterpretationAttribute.sequence);
-                Assert.Equal(val, upd2SignInterpretationAttribute.value);
                 Assert.NotNull(upd2SignInterpretationAttribute.commentary);
                 Assert.Equal(commentary, upd2SignInterpretationAttribute.commentary.commentary);
             }

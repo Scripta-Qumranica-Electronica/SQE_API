@@ -23,6 +23,10 @@ namespace SQE.DatabaseAccess.Models
         public uint AttributeEditor { get; set; }
         public uint AttributeValueCreator { get; set; }
         public uint AttributeValueEditor { get; set; }
+        public bool Editable { get; set; }
+        public bool Removable { get; set; }
+        public bool Repeatable { get; set; }
+        public bool BatchEditable { get; set; }
     }
 
     public class SignInterpretationAttributeData
@@ -35,13 +39,14 @@ namespace SQE.DatabaseAccess.Models
         public string AttributeValueString { get; set; }
         public uint? SignInterpretationAttributeCreatorId { get; set; }
         public uint? SignInterpretationAttributeEditorId { get; set; }
-        public float? NumericValue { get; set; }
+        public bool Editable { get; set; }
+        public bool Removable { get; set; }
+        public bool Repeatable { get; set; }
+        public bool BatchEditable { get; set; }
     }
 
     public class SignInterpretationAttributeDataSearchData : SignInterpretationAttributeData, ISearchData
     {
-        public float? NumericValueMoreThan { get; set; }
-        public float? NumericValueLessThan { get; set; }
 
         public string getSearchParameterString()
         {
@@ -53,9 +58,6 @@ namespace SQE.DatabaseAccess.Models
             if (AttributeValueId != null) searchParameters.Add($"attribute_value_id = {AttributeValueId}");
             if (SignInterpretationAttributeEditorId != null)
                 searchParameters.Add($"edition_editor_id = {SignInterpretationAttributeEditorId}");
-            if (NumericValue != null) searchParameters.Add($"numeric_value = {NumericValue}");
-            if (NumericValueMoreThan != null) searchParameters.Add($"numeric_value > {NumericValueMoreThan}");
-            if (NumericValueLessThan != null) searchParameters.Add($"numeric_value < {NumericValueLessThan}");
 
             return string.Join(" AND ", searchParameters);
         }

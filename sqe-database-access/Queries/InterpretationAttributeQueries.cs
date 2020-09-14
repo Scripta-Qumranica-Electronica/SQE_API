@@ -11,12 +11,18 @@ namespace SQE.DatabaseAccess.Queries
 				       sign_interpretation_attribute.creator_id AS SignInterpretationAttributeCreatorId,
 				       sign_interpretation_attribute_owner.edition_editor_id AS SignInterpretationAttributeEditorId,
 				       string_value as AttributeValueString,
-				       numeric_value as NumericValue
+				       attribute.editable as Editable,
+				       attribute.removable as Removable,
+				       attribute.repeatable as Repeatable,
+				       attribute.batch_editable as BatchEditable
 				FROM sign_interpretation_attribute
 				JOIN sign_interpretation_attribute_owner USING (sign_interpretation_attribute_id)
 				JOIN attribute_value USING (attribute_value_id)
+				JOIN attribute USING(attribute_id)
+				JOIN attribute_owner ON attribute_owner.attribute_id = attribute.attribute_id
+					AND attribute_owner.edition_id = sign_interpretation_attribute_owner.edition_id
 				WHERE @WhereData
-					AND edition_id=@EditionId
+					AND sign_interpretation_attribute_owner.edition_id=@EditionId
 				";
     }
 
@@ -44,7 +50,11 @@ SELECT attribute.attribute_id AS AttributeId,
        attribute_value.description AS AttributeStringValueDescription,
        attribute_value.creator_id AS AttributeValueCreator,
        attribute_value_owner.edition_editor_id AS AttributeValueEditor,
-       attr_css.css AS Css
+       attr_css.css AS Css,
+       attribute.editable as Editable,
+       attribute.removable as Removable,
+       attribute.repeatable as Repeatable,
+       attribute.batch_editable as BatchEditable
 FROM attribute 
 JOIN attribute_owner USING(attribute_id)
 JOIN attribute_value USING(attribute_id)

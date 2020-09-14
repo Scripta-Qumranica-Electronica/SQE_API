@@ -107,12 +107,16 @@ namespace SQE.API.Server.Services
                 user,
                 newAttribute.attributeName,
                 newAttribute.description,
-                newAttribute.values.Select(x => new SignInterpretationAttributeValueInput()
-                {
-                    AttributeStringValue = x.value,
-                    AttributeStringValueDescription = x.description,
-                    Css = x.cssDirectives,
-                }));
+                newAttribute.editable,
+                newAttribute.removable,
+                newAttribute.repeatable,
+                newAttribute.batchEditable,
+            newAttribute.values.Select(x => new SignInterpretationAttributeValueInput()
+            {
+                AttributeStringValue = x.value,
+                AttributeStringValueDescription = x.description,
+                Css = x.cssDirectives,
+            }));
 
             var createdAttribute = (await _attributeRepository.GetEditionAttributeAsync(user, newAttributeId)).ToDTO().attributes.FirstOrDefault();
 
@@ -131,6 +135,10 @@ namespace SQE.API.Server.Services
                 attributeId,
                 null,
                 null,
+                updatedAttribute.editable,
+                updatedAttribute.removable,
+                updatedAttribute.repeatable,
+                updatedAttribute.batchEditable,
                 updatedAttribute.createValues.Select(x => x.FromDTO()),
                 updatedAttribute.updateValues.Select(x => x.FromDTO()),
                 updatedAttribute.deleteValues);
@@ -275,7 +283,6 @@ namespace SQE.API.Server.Services
             var createAttribute = new SignInterpretationAttributeData()
             {
                 AttributeValueId = attribute.attributeValueId,
-                NumericValue = attribute.value,
                 Sequence = attribute.sequence,
             };
             await _attributeRepository.CreateSignInterpretationAttributesAsync(user, signInterpretationId, createAttribute);
@@ -304,9 +311,9 @@ namespace SQE.API.Server.Services
             uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO attribute,
             string clientId = null)
         {
-            if (attribute.sequence.HasValue || attribute.value.HasValue)
+            if (attribute.sequence.HasValue)
                 await _attributeRepository.UpdateAttributeForSignInterpretationAsync(user, signInterpretationId,
-                    attributeValueId, attribute.sequence, attribute.value);
+                    attributeValueId, attribute.sequence);
 
             if (!string.IsNullOrEmpty(attribute.commentary))
                 await _commentaryRepository.CreateOrUpdateCommentaryAsync(user, signInterpretationId, attributeValueId,

@@ -239,7 +239,6 @@ namespace SQE.API.Server.Services
                                                                                 .GetValueOrDefault(),
                                                                             creatorId = b.SignInterpretationAttributeCreatorId
                                                                                 .GetValueOrDefault(),
-                                                                            value = b.NumericValue.GetValueOrDefault()
                                                                         }
                                                                     )
                                                                     .ToArray(),
@@ -342,7 +341,6 @@ namespace SQE.API.Server.Services
                                                     attributeValueId = b.AttributeValueId.GetValueOrDefault(),
                                                     attributeValueString = b.AttributeValueString,
                                                     editorId = b.SignInterpretationAttributeEditorId.GetValueOrDefault(),
-                                                    value = b.NumericValue.GetValueOrDefault()
                                                 }
                                             )
                                             .ToArray(),
