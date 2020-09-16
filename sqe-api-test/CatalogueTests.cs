@@ -55,8 +55,10 @@ namespace SQE.ApiTest
             await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfManuscript(894, _client, StartConnectionAsync);
         }
 
-        [Fact]
-        public async Task CanCreateNewImagedObjectTextFragmentMatch()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CanCreateNewImagedObjectTextFragmentMatch(bool realtime)
         {
             // Arrange
             var availableImagedObjects = await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
@@ -78,14 +80,17 @@ namespace SQE.ApiTest
                 textFragmentId,
                 1,
                 _client,
-                StartConnectionAsync);
+                StartConnectionAsync,
+                realtime);
         }
 
-        [Fact]
-        public async Task CanConfirmAndUnconfirmImagedObjectTextFragmentMatch()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CanConfirmAndUnconfirmImagedObjectTextFragmentMatch(bool realtime)
         {
             // Arrange
-            var editionId = 894U;
+            const uint editionId = 894U;
             var matches = await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfEdition(editionId, _client, StartConnectionAsync);
             var firstUnconfirmedMatch = matches.matches.First(x => x.confirmed == null);
 
@@ -95,12 +100,17 @@ namespace SQE.ApiTest
                 firstUnconfirmedMatch.matchId,
                 _client,
                 StartConnectionAsync,
+                realtime,
                 Request.DefaultUsers.User1);
+
+            await Task.Delay(150); // Wait a tiny amount of time so we don't go faster than MySQL Data resolution
+
             await CatalogueHelpers.UnconfirmTextFragmentImagedObjectMatch(
                 editionId,
                 firstUnconfirmedMatch.matchId,
                 _client,
                 StartConnectionAsync,
+                realtime,
                 Request.DefaultUsers.User1);
         }
     }

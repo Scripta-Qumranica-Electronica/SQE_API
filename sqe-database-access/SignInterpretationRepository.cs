@@ -39,7 +39,7 @@ namespace SQE.DatabaseAccess
         {
             // We use several existing quick functions to get the specifics of a sign interpretation,
             // so wrap it in a transaction to make sure the result is consistent.
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var conn = OpenConnection())
             {
                 var attributes =

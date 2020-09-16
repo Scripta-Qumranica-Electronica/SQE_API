@@ -104,7 +104,7 @@ namespace SQE.DatabaseAccess
                 List<SignInterpretationRoiData> updateRois,
                 List<uint> deleteRois)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 var createdRois = CreateRoisAsync(editionUser, newRois);

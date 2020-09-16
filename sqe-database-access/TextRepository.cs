@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using MySqlX.XDevAPI;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -186,7 +184,7 @@ namespace SQE.DatabaseAccess
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
-                    using (var transactionScope = new TransactionScope())
+                    using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
                         // Create the new text fragment abstract id
                         var newLineId = await _simpleInsertAsync(
@@ -326,7 +324,7 @@ namespace SQE.DatabaseAccess
             // // Stores for each sign the actual anchors after which it should be injected
             // // into th reading stream
             // var internalAnchorsBefore = anchorsBefore;
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 foreach (var sign in signs)
                 {
@@ -416,7 +414,7 @@ namespace SQE.DatabaseAccess
             IEnumerable<uint> firstSignInterpretations,
             IEnumerable<uint> secondSignInterpretations)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 // Get a new PositionDataRequestFactory
@@ -517,7 +515,7 @@ namespace SQE.DatabaseAccess
                 throw new StandardExceptions.InputDataRuleViolationException(
                     "cannot unlink control sign interpretations");
 
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 // Get a new PositionDataRequestFactory
@@ -720,7 +718,7 @@ namespace SQE.DatabaseAccess
         public async Task RemoveSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // Remove all attributes
                 await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(editionUser, signInterpretationId);
@@ -798,7 +796,7 @@ namespace SQE.DatabaseAccess
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
-                    using (var transactionScope = new TransactionScope())
+                    using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
                         // Create the new text fragment abstract id
                         var newTextFragmentId = await _simpleInsertAsync(
@@ -935,7 +933,7 @@ namespace SQE.DatabaseAccess
             uint? previousFragmentId,
             uint? nextFragmentId)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // Write the new name if it exists
                 if (!string.IsNullOrEmpty(fragmentName))
@@ -1398,7 +1396,7 @@ namespace SQE.DatabaseAccess
             // return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
             //     async () =>
             //     {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // Create the new sign abstract id
                 var newSignId = await _simpleInsertAsync(

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -89,7 +88,7 @@ namespace SQE.DatabaseAccess
             string canonicalEditionName, string canonicalEditionVolume, string canonicalEditionLoc1,
             string canonicalEditionLoc2, byte canonicalEditionSide, string comment)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 var existingEditionCats = (await connection.QueryAsync<EditionCatalogueEntry>(
@@ -187,9 +186,16 @@ WHERE text_fragment_id = @TextFragmentId
         public async Task ConfirmImagedObjectTextFragmentMatchAsync(uint userId, uint editionCatalogToTextFragmentId,
             bool confirm)
         {
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
-                try
+                // Check if match exists
+                var existingMatches = await GetImagedObjectTextFragmentMatchById(editionCatalogToTextFragmentId);
+                if (!existingMatches.Any())
+                    throw new StandardExceptions.DataNotFoundException("match id", editionCatalogToTextFragmentId,
+                        "imaged object text fragment matches");
+
+                if (existingMatches.OrderBy(x => x.MatchConfirmationDate).Last().Confirmed != confirm)
                 {
                     await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery, new
                     {
@@ -198,11 +204,8 @@ WHERE text_fragment_id = @TextFragmentId
                         Confirmed = confirm
                     });
                 }
-                catch (MySqlException e)
-                {
-                    if (e.Number == 1062)
-                        await ChangeImagedObjectTextFragmentMatchConfirmationAsync(userId, editionCatalogToTextFragmentId, (bool?)null);
-                }
+
+                transactionScope.Complete();
             }
         }
 
@@ -213,7 +216,7 @@ WHERE text_fragment_id = @TextFragmentId
         /// <param name="editionCatalogToTextFragmentId">Unique id of the record to confirm or reject</param>
         /// <param name="confirm">Boolean whether the match is confirmed (true) or rejected (false)</param>
         /// <returns></returns>
-        public async Task ChangeImagedObjectTextFragmentMatchConfirmationAsync(uint userId, uint editionCatalogToTextFragmentId,
+        private async Task ChangeImagedObjectTextFragmentMatchConfirmationAsync(uint userId, uint editionCatalogToTextFragmentId,
             bool? confirm)
         {
             using (var connection = OpenConnection())
@@ -224,6 +227,19 @@ WHERE text_fragment_id = @TextFragmentId
                     UserId = userId,
                     Confirmed = confirm
                 });
+            }
+        }
+
+        private async Task<IEnumerable<CatalogueMatch>> GetImagedObjectTextFragmentMatchById(
+            uint imagedObjectTextFragmentMatchId)
+        {
+            using (var connection = OpenConnection())
+            {
+                return await connection.QueryAsync<CatalogueMatch>(
+                    CatalogueQuery.GetQuery(CatalogueQueryFilterType.Match), new
+                    {
+                        MatchId = imagedObjectTextFragmentMatchId
+                    });
             }
         }
     }

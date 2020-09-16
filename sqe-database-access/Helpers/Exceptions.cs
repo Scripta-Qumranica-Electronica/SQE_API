@@ -280,7 +280,7 @@ namespace SQE.DatabaseAccess.Helpers
         // This exception should be used sparingly. It is usually better to throw the actual database error.
         public class DataNotWrittenException : ServerErrorException
         {
-            private const string customMsg = "System failed while trying to $Operation.";
+            private const string customMsg = "System failed while trying to $Operation. $Reason";
 
             public DataNotWrittenException(string operation, string reason = null)
             {

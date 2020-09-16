@@ -79,12 +79,12 @@ namespace SQE.DatabaseAccess
 
         private static readonly Random _random = new Random();
 
-        private static readonly List<uint> _retrySqlExceptions = new List<uint> { 1205, 1213, 1412 };
+        private static readonly List<int> _retrySqlExceptions = new List<int> { 1205, 1213, 1412 };
 
         private static readonly AsyncPolicy _retryPolicyAsync = Policy
             .Handle<MySqlException>(
                 exception =>
-                    _retrySqlExceptions.Contains(exception.Code)
+                    _retrySqlExceptions.Contains(exception.Number)
             )
             .WaitAndRetryAsync(
                 RetryCount,
@@ -102,7 +102,7 @@ namespace SQE.DatabaseAccess
             );
 
         private static readonly Policy _retryPolicy = Policy
-            .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
+            .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Number))
             .WaitAndRetry(
                 RetryCount,
                 attempt => TimeSpan.FromMilliseconds(_waitTime()),
@@ -167,7 +167,7 @@ namespace SQE.DatabaseAccess
         private const int WaitBetweenRetriesInMilliseconds = 500;
         private const int CircuitBreakerPause = 5;
 
-        private static readonly List<uint> _pauseExceptions = new List<uint> { 1040, 1203 };
+        private static readonly List<int> _pauseExceptions = new List<int> { 1040, 1203 };
         private readonly Policy _circuitBreakerRetryPolicy;
         private readonly AsyncPolicy _circuitBreakerRetryPolicyAsync;
         private readonly Policy _circuitBreakPolicy;
@@ -177,7 +177,7 @@ namespace SQE.DatabaseAccess
         public DatabaseCommunicationCircuitBreakPolicy()
         {
             _circuitBreakerRetryPolicyAsync = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
                 .WaitAndRetryAsync(
                     RetryCount,
                     attempt => TimeSpan.FromMilliseconds(_waitTime()),
@@ -194,7 +194,7 @@ namespace SQE.DatabaseAccess
                 );
 
             _circuitBreakerRetryPolicy = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
                 .WaitAndRetry(
                     RetryCount,
                     attempt => TimeSpan.FromMilliseconds(_waitTime()),
@@ -211,14 +211,14 @@ namespace SQE.DatabaseAccess
                 );
 
             _circuitBreakPolicyAsync = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
                 .CircuitBreakerAsync(
                     RetryCount,
                     TimeSpan.FromSeconds(CircuitBreakerPause)
                 );
 
             _circuitBreakPolicy = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
                 .CircuitBreaker(
                     RetryCount,
                     TimeSpan.FromSeconds(CircuitBreakerPause)
@@ -433,6 +433,7 @@ namespace SQE.DatabaseAccess
 
             GC.SuppressFinalize(this);
         }
+
 
         // Wrap ExecuteReader in the retry policy.
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)

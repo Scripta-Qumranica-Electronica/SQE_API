@@ -141,7 +141,7 @@ namespace SQE.DatabaseAccess
         public async Task<uint> CreateEditionAttribute(UserInfo editionUser, string attributeName,
             string attributeDescription, bool editable, bool removable, bool repeatable, bool batchEditable, IEnumerable<SignInterpretationAttributeValueInput> attributeValues)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // First check for attribute name collisions
                 var existingAttribute = await GetAllEditionAttributesAsync(editionUser);
@@ -199,7 +199,7 @@ namespace SQE.DatabaseAccess
             IEnumerable<SignInterpretationAttributeValue> updateAttributeValues,
             IEnumerable<uint> deleteAttributeValues)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // First get the actual details of the attribute
                 var existingAttribute = (await GetEditionAttributeAsync(editionUser, attributeId)).AsList();
@@ -285,7 +285,7 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         public async Task DeleteEditionAttributeAsync(UserInfo editionUser, uint attributeId)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // First get the actual details of the attribute
                 var existingAttribute = await GetEditionAttributeAsync(editionUser, attributeId);

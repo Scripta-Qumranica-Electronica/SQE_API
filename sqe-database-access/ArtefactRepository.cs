@@ -211,7 +211,7 @@ namespace SQE.DatabaseAccess
             List<UpdateArtefactPlacementDTO> transforms)
         {
             List<AlteredRecord> updates;
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 var updateMutationTasks = transforms.Select(async x =>
                     await FormatArtefactPositionUpdateRequestAsync(editionUser,
@@ -269,7 +269,7 @@ namespace SQE.DatabaseAccess
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
-                    using (var transactionScope = new TransactionScope())
+                    using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     using (var connection = OpenConnection())
                     {
                         // Create a new edition
@@ -428,7 +428,7 @@ namespace SQE.DatabaseAccess
             List<uint> artefactIds)
         {
             uint artefactGroupId;
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 // Check if the requested artefact IDs are already part of a group.
@@ -483,7 +483,7 @@ namespace SQE.DatabaseAccess
         public async Task<ArtefactGroup> UpdateArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId,
             string artefactGroupName, List<uint> artefactIds)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 // Get group members and name (if any)
@@ -570,7 +570,7 @@ namespace SQE.DatabaseAccess
 
         public async Task DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 // Get group members and name (if any)

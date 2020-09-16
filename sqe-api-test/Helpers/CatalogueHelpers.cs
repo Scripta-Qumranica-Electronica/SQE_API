@@ -83,6 +83,7 @@ namespace SQE.ApiTest.Helpers
             uint editionId,
             HttpClient client,
             Func<string, Task<HubConnection>> signalr,
+            bool realtime = false,
             bool? confirmed = false)
         {
             var match = new CatalogueMatchInputDTO()
@@ -101,17 +102,26 @@ namespace SQE.ApiTest.Helpers
                 confirmed = confirmed
             };
 
-            // Make one request via HTTP
             var request = new Post.V1_Catalogue(match);
-            await request.SendAsync(client, null, auth: true, requestUser: Request.DefaultUsers.User1);
-            request.HttpResponseMessage.EnsureSuccessStatusCode();
+            await request.SendAsync(
+                realtime ? null : client,
+                signalr,
+                auth: true,
+                requestRealtime: realtime,
+                requestUser: Request.DefaultUsers.User1);
+            if (!realtime)
+                request.HttpResponseMessage.EnsureSuccessStatusCode();
 
-            // Make a second request via SignalR to confirm the match
             var match2 = match;
             match2.catalogSide = match2.catalogSide == SideDesignation.recto ? SideDesignation.verso : SideDesignation.recto;
             match2.editionSide = match2.editionSide == SideDesignation.recto ? SideDesignation.verso : SideDesignation.recto;
             var requestConf = new Post.V1_Catalogue(match2);
-            await requestConf.SendAsync(null, signalr, auth: true, requestUser: Request.DefaultUsers.User1);
+            await requestConf.SendAsync(
+                realtime ? null : client,
+                signalr,
+                auth: true,
+                requestRealtime: realtime,
+                requestUser: Request.DefaultUsers.User1);
 
             var matches = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr);
             Assert.Contains(matches.matches, x =>
@@ -131,10 +141,16 @@ namespace SQE.ApiTest.Helpers
             uint matchId,
             HttpClient client,
             Func<string, Task<HubConnection>> signalr,
+            bool realtime = false,
             Request.UserAuthDetails user = null)
         {
             var request = new Post.V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId(matchId);
-            await request.SendAsync(client, signalr, auth: user != null, requestUser: user);
+            await request.SendAsync(
+                realtime ? null : client,
+                realtime ? signalr : null,
+                auth: user != null,
+                requestUser: user,
+                requestRealtime: realtime);
 
             var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
             Assert.Contains(matchList.matches, x => x.matchId == matchId && x.confirmed == true);
@@ -145,10 +161,16 @@ namespace SQE.ApiTest.Helpers
             uint matchId,
             HttpClient client,
             Func<string, Task<HubConnection>> signalr,
+            bool realtime = false,
             Request.UserAuthDetails user = null)
         {
             var request = new Delete.V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId(matchId);
-            await request.SendAsync(client, signalr, auth: user != null, requestUser: user);
+            await request.SendAsync(
+                realtime ? null : client,
+                realtime ? signalr : null,
+                auth: user != null,
+                requestUser: user,
+                requestRealtime: realtime);
 
             var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
             Assert.Contains(matchList.matches, x => x.matchId == matchId && x.confirmed == false);

@@ -153,7 +153,7 @@ namespace SQE.DatabaseAccess
         public async Task ChangeEditionNameAsync(UserInfo editionUser, string name)
         {
             EditionNameQuery.Result result;
-            using (var transaction = new TransactionScope())
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 try
@@ -211,7 +211,7 @@ namespace SQE.DatabaseAccess
         public async Task UpdateEditionMetricsAsync(UserInfo editionUser, uint width, uint height, int xOrigin,
             int yOrigin)
         {
-            using (var transaction = new TransactionScope())
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 var oldRecord = await connection.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
@@ -514,7 +514,7 @@ WHERE edition_id = {editionUser.EditionId}");
             // Instantiate the return object
             var editorInfo = new DetailedUserWithToken();
 
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // Check if the editor already exists, don't attempt to re-add
                 if ((await _getEditionEditors(editionUser.EditionId.Value)).Any(x => x.Email == editorEmail))
@@ -631,7 +631,7 @@ WHERE edition_id = {editionUser.EditionId}");
         public async Task<DetailedEditionPermission> AddEditionEditorAsync(string token, uint userId)
         {
             var editorEditionPermission = new DetailedEditionPermission();
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 var editorEditionPermissions = await connection.QueryAsync<DetailedEditionPermission>(
