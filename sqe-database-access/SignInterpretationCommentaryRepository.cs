@@ -141,11 +141,20 @@ namespace SQE.DatabaseAccess
                 Commentary = commentary,
                 SignInterpretationId = signInterpretationId,
             };
+            var action = MutateType.Create;
+
+            // Check if we are replacing an existing comment
+            var replacedCommentary = existingCommentaries.FirstOrDefault(x => x.AttributeId == attributeId);
+            if (replacedCommentary != null)
+            {
+                action = MutateType.Update;
+                preparedCommentary.SignInterpretationCommentaryId = replacedCommentary.SignInterpretationCommentaryId;
+            }
 
             var result = await _createOrUpdateCommentariesAsync(editionUser,
                 signInterpretationId,
                 new List<SignInterpretationCommentaryData> { preparedCommentary },
-                existingCommentaries.Any(x => x.AttributeId == attributeId) ? MutateType.Update : MutateType.Create);
+                action);
             return result.Count > 0 ? result.First() : new SignInterpretationCommentaryData();
         }
 
