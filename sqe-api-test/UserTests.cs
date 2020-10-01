@@ -260,7 +260,6 @@ namespace SQE.ApiTest
             deleteEmailTokenParams.Add("@Email", user.email);
             await _db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
             await _db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
-            var x = 30;
         }
 
         private class UserObj
