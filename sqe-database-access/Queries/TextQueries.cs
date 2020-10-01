@@ -151,10 +151,11 @@ FROM sign_interpretation_ids
 				AND interpretation_commentary.edition_id = sign_interpretation_ids.edition_id
 
 	LEFT JOIN
-		(SELECT attribute_id, commentary, creator_id, edition_id, edition_editor_id
+		(SELECT sign_interpretation_id, attribute_id, commentary, creator_id, edition_id, edition_editor_id
 		FROM sign_interpretation_commentary
 		JOIN sign_interpretation_commentary_owner USING(sign_interpretation_commentary_id)
-		) AS attribute_commentary ON attribute_commentary.attribute_id = attribute_value.attribute_id
+		) AS attribute_commentary ON attribute_commentary.sign_interpretation_id = sign_interpretation.sign_interpretation_id
+				AND attribute_commentary.attribute_id = attribute_value.attribute_id
 				AND attribute_commentary.edition_id = sign_interpretation_ids.edition_id
 
 	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
