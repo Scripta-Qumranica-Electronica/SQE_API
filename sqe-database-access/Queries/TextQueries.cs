@@ -70,12 +70,18 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 
 		signInterpretationId,
 		sign_interpretation.`character` AS `character`,
+		interpretation_commentary.commentary AS InterpretationCommentary,
+		interpretation_commentary.creator_id AS InterpretationCommentaryCreator,
+		interpretation_commentary.edition_editor_id AS InterpretationCommentaryEditor,
 
 		sign_interpretation_attribute.sign_interpretation_attribute_id AS SignInterpretationAttributeId,
 		sign_interpretation_attribute.attribute_value_id AS AttributeValueId,
 		sign_interpretation_attribute.creator_id AS SignInterpretationAttributeCreatorId,
 		sign_interpretation_attribute.sequence AS Sequence,
 		sign_interpretation_attribute_owner.edition_editor_id AS SignInterpretationAttributeEditorId,
+		attribute_commentary.commentary AS AttributeCommentary,
+		attribute_commentary.creator_id AS AttributeCommentaryCreator,
+		attribute_commentary.edition_editor_id AS AttributeCommentaryEditor,
 
 		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
 		roi.sign_interpretation_id AS SignInterpretationId,
@@ -96,6 +102,7 @@ FROM sign_interpretation_ids
 	JOIN sign_interpretation_attribute_owner 
 		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
 		AND sign_interpretation_attribute_owner.edition_id = sign_interpretation_ids.edition_id
+	JOIN attribute_value USING(attribute_value_id)
 
 	JOIN line_to_sign ON line_to_sign.sign_id = sign_interpretation.sign_id
 	JOIN line_data USING (line_id)
@@ -134,6 +141,21 @@ FROM sign_interpretation_ids
 		AS roi 
 			ON roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
 				AND roi.edition_id = sign_interpretation_ids.edition_id
+
+	LEFT JOIN
+		(SELECT sign_interpretation_id, commentary, creator_id, edition_id, edition_editor_id
+		FROM sign_interpretation_commentary
+		JOIN sign_interpretation_commentary_owner USING(sign_interpretation_commentary_id)
+		WHERE attribute_id IS NULL
+		) AS interpretation_commentary ON interpretation_commentary.sign_interpretation_id = sign_interpretation.sign_interpretation_id
+				AND interpretation_commentary.edition_id = sign_interpretation_ids.edition_id
+
+	LEFT JOIN
+		(SELECT attribute_id, commentary, creator_id, edition_id, edition_editor_id
+		FROM sign_interpretation_commentary
+		JOIN sign_interpretation_commentary_owner USING(sign_interpretation_commentary_id)
+		) AS attribute_commentary ON attribute_commentary.attribute_id = attribute_value.attribute_id
+				AND attribute_commentary.edition_id = sign_interpretation_ids.edition_id
 
 	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
 

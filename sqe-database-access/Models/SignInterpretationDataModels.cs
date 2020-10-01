@@ -22,6 +22,9 @@ namespace SQE.DatabaseAccess.Models
 
         public string Character { get; set; }
         public bool IsVariant { get; set; }
+        public string InterpretationCommentary { get; set; }
+        public uint? InterpretationCommentaryCreator { get; set; }
+        public uint? InterpretationCommentaryEditor { get; set; }
     }
 
     public class NextSignInterpretation
