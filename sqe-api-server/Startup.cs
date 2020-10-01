@@ -47,29 +47,29 @@ namespace SQE.API.Server
             services.AddCors();
 
             // configure DI for application services
-            services.AddTransient<IUserService, UserService>();
-            services.AddTransient<IEditionService, EditionService>();
-            services.AddTransient<IImagedObjectService, ImagedObjectService>();
-            services.AddTransient<IArtefactService, ArtefactService>();
-            services.AddTransient<IImageService, ImageService>();
-            services.AddTransient<ITextService, TextService>();
-            services.AddTransient<IRoiService, RoiService>();
-            services.AddTransient<IUtilService, UtilService>();
-            services.AddTransient<ICatalogService, CatalogService>();
-            services.AddTransient<ISignInterpretationService, SignInterpretationService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IEditionService, EditionService>();
+            services.AddScoped<IImagedObjectService, ImagedObjectService>();
+            services.AddScoped<IArtefactService, ArtefactService>();
+            services.AddScoped<IImageService, ImageService>();
+            services.AddScoped<ITextService, TextService>();
+            services.AddScoped<IRoiService, RoiService>();
+            services.AddScoped<IUtilService, UtilService>();
+            services.AddScoped<ICatalogService, CatalogService>();
+            services.AddScoped<ISignInterpretationService, SignInterpretationService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddTransient<IUserRepository, UserRepository>();
-            services.AddTransient<IEditionRepository, EditionRepository>();
-            services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();
-            services.AddTransient<IImageRepository, ImageRepository>();
-            services.AddTransient<IArtefactRepository, ArtefactRepository>();
-            services.AddTransient<IDatabaseWriter, DatabaseWriter>();
-            services.AddTransient<ITextRepository, TextRepository>();
-            services.AddTransient<IRoiRepository, RoiRepository>();
-            services.AddTransient<ISignInterpretationRepository, SignInterpretationRepository>();
-            services.AddTransient<ISignInterpretationCommentaryRepository, SignInterpretationCommentaryRepository>();
-            services.AddTransient<IAttributeRepository, AttributeRepository>();
-            services.AddTransient<ICatalogueRepository, CatalogueRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IEditionRepository, EditionRepository>();
+            services.AddScoped<IImagedObjectRepository, ImagedObjectRepository>();
+            services.AddScoped<IImageRepository, ImageRepository>();
+            services.AddScoped<IArtefactRepository, ArtefactRepository>();
+            services.AddScoped<IDatabaseWriter, DatabaseWriter>();
+            services.AddScoped<ITextRepository, TextRepository>();
+            services.AddScoped<IRoiRepository, RoiRepository>();
+            services.AddScoped<ISignInterpretationRepository, SignInterpretationRepository>();
+            services.AddScoped<ISignInterpretationCommentaryRepository, SignInterpretationCommentaryRepository>();
+            services.AddScoped<IAttributeRepository, AttributeRepository>();
+            services.AddScoped<ICatalogueRepository, CatalogueRepository>();
 
             services.AddResponseCompression();
             services.Configure<BrotliCompressionProviderOptions>(

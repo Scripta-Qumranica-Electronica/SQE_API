@@ -246,7 +246,8 @@ namespace SQE.API.Server.Services
                                                                                 .GetValueOrDefault(),
                                                                             creatorId = b.SignInterpretationAttributeCreatorId
                                                                                 .GetValueOrDefault(),
-                                                                            commentary = string.IsNullOrEmpty(b.AttributeCommentary) ? null : new CommentaryDTO(){
+                                                                            commentary = string.IsNullOrEmpty(b.AttributeCommentary) ? null : new CommentaryDTO()
+                                                                            {
                                                                                 commentary = b.AttributeCommentary,
                                                                                 creatorId = b.AttributeCommentaryCreatorId.GetValueOrDefault(),
                                                                                 editorId = b.AttributeCommentaryEditorId.GetValueOrDefault(),
@@ -360,7 +361,8 @@ namespace SQE.API.Server.Services
                                                     attributeValueId = b.AttributeValueId.GetValueOrDefault(),
                                                     attributeValueString = b.AttributeValueString,
                                                     editorId = b.SignInterpretationAttributeEditorId.GetValueOrDefault(),
-                                                    commentary = string.IsNullOrEmpty(b.AttributeCommentary) ? null : new CommentaryDTO(){
+                                                    commentary = string.IsNullOrEmpty(b.AttributeCommentary) ? null : new CommentaryDTO()
+                                                    {
                                                         commentary = b.AttributeCommentary,
                                                         creatorId = b.AttributeCommentaryCreatorId.GetValueOrDefault(),
                                                         editorId = b.AttributeCommentaryEditorId.GetValueOrDefault(),
