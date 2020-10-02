@@ -29,7 +29,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="payload">JSON object with the WKT polygon to validate</param>
         [Authorize]
-        public async Task<WktPolygonDTO> PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
+        public ActionResult<WktPolygonDTO> PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
 
         {
             try

@@ -404,10 +404,16 @@ namespace SQE.DatabaseAccess
             uint signInterpretationId,
             List<SignInterpretationAttributeData> newAttributes)
         {
-            return await _createOrUpdateAttributesAsync(editionUser,
-                signInterpretationId,
-                newAttributes,
-                MutateType.Create);
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                var response = await _createOrUpdateAttributesAsync(editionUser,
+                    signInterpretationId,
+                    newAttributes,
+                    MutateType.Create);
+                transactionScope.Complete();
+                return response;
+            }
+
         }
 
         public async Task<List<SignInterpretationAttributeData>> CreateSignInterpretationAttributesAsync(UserInfo editionUser,
@@ -531,34 +537,6 @@ namespace SQE.DatabaseAccess
                 editionUser,
                 searchData);
         }
-
-        // /// <summary>
-        // ///     Gets the attribute with the given id
-        // /// </summary>
-        // /// <param name="editionUser">Edition user object</param>
-        // /// <param name="signInterpretationAttributeId">Id of the attribute to be retrieved</param>
-        // /// <returns>Sign interpretation attribute with the given id</returns>
-        // /// <exception cref="DataNotFoundException"></exception>
-        // public async Task<uint> GetSignInterpretationAttributeIdByIdAsync(
-        //     UserInfo editionUser,
-        //     uint signInterpretationAttributeId)
-        // {
-        //     var searchData = new SignInterpretationAttributeDataSearchData
-        //     {
-        //         SignInterpretationAttributeId = signInterpretationAttributeId
-        //     };
-        //
-        //     var result = await GetSignInterpretationAttributeIdsByDataAsync(
-        //         editionUser,
-        //         searchData);
-        //
-        //     if (result.Count != 1)
-        //         throw new StandardExceptions.DataNotFoundException(
-        //             "sign interpretation attribute",
-        //             signInterpretationAttributeId
-        //         );
-        //     return result.First();
-        // }
 
         /// <summary>
         ///     Retrieves all sign interpretation attribute ids which match the data provided by searchData

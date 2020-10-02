@@ -220,7 +220,7 @@ export class SignalRUtilities {
 	 * @param payload - JSON object with the WKT polygon to validate
 	 *
 	 */
-    public async postV1UtilsRepairWktPolygon(payload: WktPolygonDTO): Promise<WktPolygonDTO> {
+    public async postV1UtilsRepairWktPolygon(payload: WktPolygonDTO): Promise<ActionResult<WktPolygonDTO>> {
         return await this._connection.invoke('PostV1UtilsRepairWktPolygon', payload);
     }
 
