@@ -288,11 +288,16 @@ namespace sqe_realtime_hub_builder
 
         private static string ProcessReturnType(MethodDeclarationSyntax method)
         {
-            const string actionResultString = "<ActionResult";
+            const string actionResultString = "ActionResult";
             return method.ReturnType.ToString().Contains(actionResultString)
                 ? Regex.Replace(
-                    method.ReturnType.ToString().Replace(actionResultString, ""),
-                    ">$",
+                    Regex.Replace(
+                        method.ReturnType.ToString()
+                            .Replace("<" + actionResultString, "")
+                            .Replace(actionResultString, ""),
+                        ">$",
+                        ""),
+                    "^<",
                     ""
                 )
                 : method.ReturnType.ToString();
@@ -450,8 +455,7 @@ namespace sqe_realtime_hub_builder
                 // For a delete (item =, e.g., .../rois/{roiId} -> roi)
                 case "Delete":
                     type = "Delete";
-                    responseType =
-                        responseType ?? "uint"; // Assume a delete just returns the uint id of the deleted item
+                    responseType ??= "uint"; // Assume a delete just returns the uint id of the deleted item
                     item = httpPath.Split("{").LastOrDefault()?.Split("Id}").FirstOrDefault();
                     break;
             }
