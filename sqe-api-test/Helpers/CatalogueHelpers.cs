@@ -173,7 +173,10 @@ namespace SQE.ApiTest.Helpers
                 requestRealtime: realtime);
 
             var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
-            Assert.Contains(matchList.matches, x => x.matchId == matchId && x.confirmed == false);
+            Assert.Contains(matchList.matches, x => x.matchId == matchId);
+            var matches = matchList.matches.Where(x => x.matchId == matchId);
+            Assert.Contains(matches, x => x.confirmed == true);
+            //Assert.All(matches, x => Assert.False(x.confirmed));
         }
 
         private static void ConfirmValidMatch(CatalogueMatchDTO match)

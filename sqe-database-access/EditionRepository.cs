@@ -286,8 +286,7 @@ namespace SQE.DatabaseAccess
                     // It made no appreciable difference:
                     // await connection.ExecuteAsync("SET @@session.foreign_key_checks=0;");
                     // await connection.ExecuteAsync("SET @@session.unique_checks=0;");
-                    using (var transactionScope = new TransactionScope(TransactionScopeOption.Required,
-                        new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }))
+                    using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     using (var connection = OpenConnection())
                     {
                         // Create a new edition
@@ -422,11 +421,16 @@ WHERE edition_id = {editionUser.EditionId}");
 
             // Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
             var editors = await _getEditionEditors(editionUser.EditionId.Value);
-            await Task.WhenAll(
-                editors.Select(
-                    x => ChangeEditionEditorRightsAsync(editionUser, x.Email, x.MayRead, false, x.MayLock, x.IsAdmin)
-                )
-            );
+            foreach (var editor in editors)
+            {
+                await ChangeEditionEditorRightsAsync(
+                    editionUser,
+                    editor.Email,
+                    editor.MayRead,
+                    false,
+                    editor.MayLock,
+                    editor.IsAdmin);
+            }
 
             // Note: I had wrapped the following in a transaction, but this has the problem that it can lockup every
             // *_owner table in the entire database for a significant amount of time (sometimes 1000's of rows will be
@@ -454,12 +458,10 @@ WHERE edition_id = {editionUser.EditionId}");
 
                 // Loop over every table and remove every entry with the requested editionId
                 // Each individual delete can be async and happen concurrently
-                await Task.WhenAll(
-                    dataTables.Select(
-                            dataTable => DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser)
-                        )
-                        .ToArray()
-                );
+                foreach (var dataTable in dataTables)
+                {
+                    await DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser);
+                }
 
                 return null;
             }

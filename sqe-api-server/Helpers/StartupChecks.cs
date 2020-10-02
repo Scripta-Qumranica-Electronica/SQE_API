@@ -6,7 +6,7 @@ using MailKit.Security;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Polly;
 using Serilog;
 using SQE.DatabaseAccess;

@@ -18,7 +18,7 @@ namespace SQE.DatabaseAccess
         Task<List<SignInterpretationRoiData>> UpdateRoisAsync(UserInfo editionUser,
             List<SignInterpretationRoiData> updateRois);
 
-        (Task<List<SignInterpretationRoiData>>, Task<List<SignInterpretationRoiData>>, Task<List<uint>>)
+        Task<(List<SignInterpretationRoiData>, List<SignInterpretationRoiData>, List<uint>)>
             BatchEditRoisAsync(UserInfo editionUser,
                 List<SignInterpretationRoiData> newRois,
                 List<SignInterpretationRoiData> updateRois,
@@ -68,48 +68,45 @@ namespace SQE.DatabaseAccess
         public async Task<List<SignInterpretationRoiData>> CreateRoisAsync(UserInfo editionUser,
             List<SignInterpretationRoiData> newRois)
         {
-            return newRois != null && newRois.Any()
-                ? (await Task.WhenAll(
-                    newRois.Select(
-                        async x =>
-                        {
-                            var roiShapeId = CreateRoiShapeAsync(x.Shape);
-                            var roiPositionId = CreateRoiPositionAsync(
-                                x.ArtefactId.GetValueOrDefault(),
-                                x.TranslateX.GetValueOrDefault(),
-                                x.TranslateY.GetValueOrDefault(),
-                                x.StanceRotation.GetValueOrDefault()
-                            );
-                            var signInterpretationRoiId = await CreateSignInterpretationRoiAsync(
-                                editionUser,
-                                x.SignInterpretationId,
-                                await roiShapeId,
-                                await roiPositionId,
-                                x.ValuesSet.GetValueOrDefault(),
-                                x.Exceptional.GetValueOrDefault()
-                            );
-                            return await GetSignInterpretationRoiByIdAsync(
-                                editionUser,
-                                signInterpretationRoiId
-                            );
-                        }
-                    )
-                )).ToList()
-                : new List<SignInterpretationRoiData>();
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                var response = new SignInterpretationRoiData[newRois.Count];
+                foreach (var (newRoi, index) in newRois.Select((x, idx) => (x, idx)))
+                {
+                    var roiShapeId = await CreateRoiShapeAsync(newRoi.Shape);
+                    var roiPositionId = await CreateRoiPositionAsync(
+                        newRoi.ArtefactId.GetValueOrDefault(),
+                        newRoi.TranslateX.GetValueOrDefault(),
+                        newRoi.TranslateY.GetValueOrDefault(),
+                        newRoi.StanceRotation.GetValueOrDefault()
+                    );
+                    var signInterpretationRoiId = await CreateSignInterpretationRoiAsync(
+                        editionUser,
+                        newRoi.SignInterpretationId,
+                        roiShapeId,
+                        roiPositionId,
+                        newRoi.ValuesSet.GetValueOrDefault(),
+                        newRoi.Exceptional.GetValueOrDefault()
+                    );
+                    response[index] = await GetSignInterpretationRoiByIdAsync(editionUser, signInterpretationRoiId);
+                }
+
+                transactionScope.Complete();
+                return response.AsList();
+            }
         }
 
-        public (Task<List<SignInterpretationRoiData>>, Task<List<SignInterpretationRoiData>>, Task<List<uint>>)
+        public async Task<(List<SignInterpretationRoiData>, List<SignInterpretationRoiData>, List<uint>)>
             BatchEditRoisAsync(UserInfo editionUser,
                 List<SignInterpretationRoiData> newRois,
                 List<SignInterpretationRoiData> updateRois,
                 List<uint> deleteRois)
         {
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = OpenConnection())
             {
-                var createdRois = CreateRoisAsync(editionUser, newRois);
-                var updatedRois = UpdateRoisAsync(editionUser, updateRois);
-                var deletedRois = DeleteRoisAsync(editionUser, deleteRois);
+                var createdRois = await CreateRoisAsync(editionUser, newRois);
+                var updatedRois = await UpdateRoisAsync(editionUser, updateRois);
+                var deletedRois = await DeleteRoisAsync(editionUser, deleteRois);
                 transactionScope.Complete();
                 return (createdRois, updatedRois, deletedRois);
             }
@@ -124,59 +121,59 @@ namespace SQE.DatabaseAccess
         public async Task<List<SignInterpretationRoiData>> UpdateRoisAsync(UserInfo editionUser,
             List<SignInterpretationRoiData> updateRois)
         {
-            return updateRois != null && updateRois.Any()
-                ? (await Task.WhenAll(
-                    updateRois.Select(
-                        async x =>
-                        {
-                            var originalSignRoiInterpretation =
-                                await GetSignInterpretationRoiByIdAsync(editionUser,
-                                    x.SignInterpretationRoiId.GetValueOrDefault());
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                var response = new SignInterpretationRoiData[updateRois.Count];
+                foreach (var (updateRoi, index) in updateRois.Select((x, idx) => (x, idx)))
+                {
+                    var originalSignRoiInterpretation = await GetSignInterpretationRoiByIdAsync(
+                        editionUser,
+                        updateRoi.SignInterpretationRoiId.GetValueOrDefault());
 
-                            // TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
-                            var roiShapeId = originalSignRoiInterpretation.Shape == x.Shape
-                                ? originalSignRoiInterpretation.RoiShapeId
-                                : await CreateRoiShapeAsync(x.Shape);
+                    // TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
+                    var roiShapeId = originalSignRoiInterpretation.Shape == updateRoi.Shape
+                        ? originalSignRoiInterpretation.RoiShapeId
+                        : await CreateRoiShapeAsync(updateRoi.Shape);
 
-                            var roiPositionId = originalSignRoiInterpretation.TranslateX == x.TranslateX
-                                                && originalSignRoiInterpretation.TranslateY == x.TranslateY
-                                                && originalSignRoiInterpretation.StanceRotation == x.StanceRotation
-                                                && originalSignRoiInterpretation.ArtefactId == x.ArtefactId
-                                ? originalSignRoiInterpretation.RoiPositionId
-                                : await CreateRoiPositionAsync(
-                                    x.ArtefactId.GetValueOrDefault(),
-                                    x.TranslateX.GetValueOrDefault(),
-                                    x.TranslateY.GetValueOrDefault(),
-                                    x.StanceRotation.GetValueOrDefault()
-                                );
+                    var roiPositionId = originalSignRoiInterpretation.TranslateX == updateRoi.TranslateX
+                                            && originalSignRoiInterpretation.TranslateY == updateRoi.TranslateY
+                                            && originalSignRoiInterpretation.StanceRotation == updateRoi.StanceRotation
+                                            && originalSignRoiInterpretation.ArtefactId == updateRoi.ArtefactId
+                        ? originalSignRoiInterpretation.RoiPositionId
+                        : await CreateRoiPositionAsync(
+                            updateRoi.ArtefactId.GetValueOrDefault(),
+                            updateRoi.TranslateX.GetValueOrDefault(),
+                            updateRoi.TranslateY.GetValueOrDefault(),
+                            updateRoi.StanceRotation.GetValueOrDefault()
+                        );
 
-                            var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
-                                editionUser,
-                                x.SignInterpretationId,
-                                roiShapeId.GetValueOrDefault(),
-                                roiPositionId.GetValueOrDefault(),
-                                x.ValuesSet.GetValueOrDefault(),
-                                x.Exceptional.GetValueOrDefault(),
-                                x.SignInterpretationRoiId.GetValueOrDefault()
-                            );
-                            if (!signInterpretationRoiUpdate.NewId.HasValue
-                                || !signInterpretationRoiUpdate.OldId.HasValue)
-                                throw new StandardExceptions.DataNotWrittenException("update sign interpretation");
+                    var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
+                        editionUser,
+                        updateRoi.SignInterpretationId,
+                        roiShapeId.GetValueOrDefault(),
+                        roiPositionId.GetValueOrDefault(),
+                        updateRoi.ValuesSet.GetValueOrDefault(),
+                        updateRoi.Exceptional.GetValueOrDefault(),
+                        updateRoi.SignInterpretationRoiId.GetValueOrDefault()
+                    );
+                    if (!signInterpretationRoiUpdate.NewId.HasValue
+                        || !signInterpretationRoiUpdate.OldId.HasValue)
+                        throw new StandardExceptions.DataNotWrittenException("update sign interpretation");
 
-                            var updatedRoi =
-                                await GetSignInterpretationRoiByIdAsync(
-                                    editionUser,
-                                    signInterpretationRoiUpdate.NewId.Value
-                                );
+                    var updatedRoi = await GetSignInterpretationRoiByIdAsync(
+                        editionUser,
+                        signInterpretationRoiUpdate.NewId.Value
+                    );
 
-                            updatedRoi.SignInterpretationRoiId = signInterpretationRoiUpdate.NewId;
-                            updatedRoi.OldSignInterpretationRoiId = signInterpretationRoiUpdate.OldId.Value;
+                    updatedRoi.SignInterpretationRoiId = signInterpretationRoiUpdate.NewId;
+                    updatedRoi.OldSignInterpretationRoiId = signInterpretationRoiUpdate.OldId.Value;
 
-                            return updatedRoi;
-                        }
-                    )
-                )).ToList()
-                : new List<SignInterpretationRoiData>();
+                    response[index] = updatedRoi;
+                }
+
+                transactionScope.Complete();
+                return response.AsList();
+            }
         }
 
         /// <summary>

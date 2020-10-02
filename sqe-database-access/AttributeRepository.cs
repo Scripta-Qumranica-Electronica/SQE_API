@@ -161,13 +161,15 @@ namespace SQE.DatabaseAccess
                     batchEditable);
 
                 // Write the new attribute values
-                await Task.WhenAll(attributeValues.Select(x =>
-                    _createOrUpdateEditionAttributeValue(
-                        editionUser,
-                        newAttributeId,
-                        x.AttributeStringValue,
-                        x.AttributeStringValueDescription,
-                        x.Css)));
+                foreach (var attributeValue in attributeValues)
+                {
+                    await _createOrUpdateEditionAttributeValue(
+                         editionUser,
+                         newAttributeId,
+                         attributeValue.AttributeStringValue,
+                         attributeValue.AttributeStringValueDescription,
+                         attributeValue.Css);
+                }
 
                 // Complete transaction and return the id of the new attribute
                 transactionScope.Complete();
@@ -242,33 +244,39 @@ namespace SQE.DatabaseAccess
                             }));
 
                 // Write the new attribute values
-                await Task.WhenAll(createAttributeValues.Select(x =>
-                    _createOrUpdateEditionAttributeValue(
+                foreach (var createAttributeValue in createAttributeValues)
+                {
+                    await _createOrUpdateEditionAttributeValue(
                         editionUser,
                         updatedAttributeID,
-                        x.AttributeStringValue,
-                        x.AttributeStringValueDescription,
-                        x.Css)));
+                        createAttributeValue.AttributeStringValue,
+                        createAttributeValue.AttributeStringValueDescription,
+                        createAttributeValue.Css);
+                }
 
                 // Write the attribute value updates
-                await Task.WhenAll(updateAttributeValues.Select(x =>
-                    _createOrUpdateEditionAttributeValue(
+                foreach (var updateAttributeValue in updateAttributeValues)
+                {
+                    await _createOrUpdateEditionAttributeValue(
                         editionUser,
                         updatedAttributeID,
-                        x.AttributeStringValue,
-                        x.AttributeStringValueDescription,
-                        x.Css,
-                        x.AttributeValueId)));
+                        updateAttributeValue.AttributeStringValue,
+                        updateAttributeValue.AttributeStringValueDescription,
+                        updateAttributeValue.Css,
+                        updateAttributeValue.AttributeValueId);
+                }
 
                 // Write the attribute value deletes
-                await Task.WhenAll(deleteAttributeValues.Select(x =>
-                    _databaseWriter.WriteToDatabaseAsync(
+                foreach (var deleteAttributeValue in deleteAttributeValues)
+                {
+                    await _databaseWriter.WriteToDatabaseAsync(
                         editionUser,
                         new MutationRequest(
                             MutateType.Delete,
                             new DynamicParameters(),
                             "attribute_value",
-                            x))));
+                            deleteAttributeValue));
+                }
 
                 // Complete transaction
                 transactionScope.Complete();
@@ -288,19 +296,19 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // First get the actual details of the attribute
-                var existingAttribute = await GetEditionAttributeAsync(editionUser, attributeId);
+                var existingAttributes = await GetEditionAttributeAsync(editionUser, attributeId);
 
                 // Throw an error if the attribute id is not found
-                if (!existingAttribute.Any())
+                if (!existingAttributes.Any())
                     throw new StandardExceptions.DataNotFoundException("attribute", attributeId);
 
                 // Delete the attribute values
-                var attributeValueDeleteRequests = existingAttribute.Select(x => x.AttributeValueId)
-                    .Distinct()
-                    .Select(x => _databaseWriter.WriteToDatabaseAsync(
+                foreach (var attributeValueId in existingAttributes.Select(x => x.AttributeValueId).Distinct())
+                {
+                    await _databaseWriter.WriteToDatabaseAsync(
                         editionUser,
-                        new MutationRequest(MutateType.Delete, new DynamicParameters(), "attribute_value", x)));
-                await Task.WhenAll(attributeValueDeleteRequests);
+                        new MutationRequest(MutateType.Delete, new DynamicParameters(), "attribute_value", attributeValueId));
+                }
 
                 // Delete the attribute
                 var deleteAttributeRequest = new MutationRequest(

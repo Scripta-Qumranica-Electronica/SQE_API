@@ -5,7 +5,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace SQE.ApiTest.Helpers
 {

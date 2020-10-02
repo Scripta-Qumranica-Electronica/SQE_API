@@ -48,7 +48,11 @@ namespace SQE.DatabaseAccess
                     _interpretationCommentaryRepository.GetSignInterpretationCommentariesByInterpretationId(user,
                         signInterpretationId);
                 var roiIds = await _roiRepository.GetSignInterpretationRoisIdsByInterpretationId(user, signInterpretationId);
-                var rois = roiIds.Select(x => _roiRepository.GetSignInterpretationRoiByIdAsync(user, x));
+                var rois = new SignInterpretationRoiData[roiIds.Count];
+                foreach (var (roiId, index) in roiIds.Select((x, idx) => (x, idx)))
+                {
+                    rois[index] = await _roiRepository.GetSignInterpretationRoiByIdAsync(user, roiId);
+                }
 
                 SignInterpretationData returnSignInterpretation = null;
                 var _ = await conn.QueryAsync(SignInterpretationQuery.GetQuery,
@@ -83,7 +87,7 @@ namespace SQE.DatabaseAccess
 
                 returnSignInterpretation.Attributes = await attributes;
                 returnSignInterpretation.Commentaries = (await commentaries).AsList();
-                returnSignInterpretation.SignInterpretationRois = (await Task.WhenAll(rois)).AsList();
+                returnSignInterpretation.SignInterpretationRois = rois.AsList();
 
                 return returnSignInterpretation;
             }

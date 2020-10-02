@@ -138,19 +138,18 @@ namespace SQE.API.Server.Services
             BatchEditRoiDTO rois,
             string clientId = null)
         {
-            var (createRois, updateRois, deleteRois) = _roiRepository.BatchEditRoisAsync(
+            var (createRois, updateRois, deleteRois) = await _roiRepository.BatchEditRoisAsync(
                 editionUser,
                 rois.createRois.ToSignInterpretationRoiData().ToList(),
                 rois.updateRois.ToSignInterpretationRoiData().ToList(),
                 rois.deleteRois
             );
-            await Task.WhenAll(createRois, updateRois, deleteRois);
 
             var batchEditRoisDTO = new BatchEditRoiResponseDTO
             {
-                createRois = (await createRois).ToDTO().ToList(),
-                updateRois = (await updateRois).ToUpdateDTO().ToList(),
-                deleteRois = await deleteRois
+                createRois = createRois.ToDTO().ToList(),
+                updateRois = updateRois.ToUpdateDTO().ToList(),
+                deleteRois = deleteRois
             };
 
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which

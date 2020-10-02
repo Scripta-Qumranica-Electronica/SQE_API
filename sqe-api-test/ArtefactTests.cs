@@ -972,7 +972,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
-        public async Task CanGetEditionAretefactRois()
+        public async Task CanGetEditionArtefactRois()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {

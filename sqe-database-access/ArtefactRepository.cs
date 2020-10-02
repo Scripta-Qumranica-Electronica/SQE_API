@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using SQE.API.DTO;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -281,9 +281,9 @@ namespace SQE.DatabaseAccess
 
                         // If no shape is input, we use a tiny "dummy" shape as a placeholder
                         shape = string.IsNullOrEmpty(shape) ? "POLYGON((0 0,1 1,1 0,0 0))" : shape;
-                        var newShape = InsertArtefactShapeAsync(editionUser, artefactId, masterImageId, shape);
-                        var newArtefact = InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
-                        var newName = InsertArtefactNameAsync(editionUser, artefactId, artefactName ?? "");
+                        await InsertArtefactShapeAsync(editionUser, artefactId, masterImageId, shape);
+                        await InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
+                        await InsertArtefactNameAsync(editionUser, artefactId, artefactName ?? "");
                         if (scale.HasValue
                             || rotate.HasValue
                             || translateX.HasValue
@@ -298,10 +298,6 @@ namespace SQE.DatabaseAccess
                                 translateY,
                                 zIndex
                             );
-
-                        await newShape;
-                        await newArtefact;
-                        await newName;
                         //Cleanup
                         transactionScope.Complete();
 
@@ -484,7 +480,6 @@ namespace SQE.DatabaseAccess
             string artefactGroupName, List<uint> artefactIds)
         {
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = OpenConnection())
             {
                 // Get group members and name (if any)
                 var (members, groupData) = await _getArtefactGroupInternalInfo(editionUser, artefactGroupId);
@@ -571,7 +566,6 @@ namespace SQE.DatabaseAccess
         public async Task DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId)
         {
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            using (var connection = OpenConnection())
             {
                 // Get group members and name (if any)
                 var (members, groupData) = await _getArtefactGroupInternalInfo(editionUser, artefactGroupId);

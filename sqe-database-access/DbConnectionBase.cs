@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Polly;
 using Serilog;
 
@@ -42,6 +42,7 @@ namespace SQE.DatabaseAccess
         protected IDbConnection OpenConnection()
         {
             return new ReliableMySqlConnection(ConnectionString, _circuitBreakPolicy);
+            //return new MySqlConnection(ConnectionString);
         }
     }
 
@@ -446,7 +447,9 @@ namespace SQE.DatabaseAccess
             CancellationToken token)
         {
             return DatabaseCommunicationRetryPolicy.ExecuteRetry(
-                () => _underlyingSqlCommand.ExecuteReaderAsync(behavior, token),
+                () => _underlyingSqlCommand.ExecuteReaderAsync(behavior, token)
+                    .ContinueWith(x => (DbDataReader)x.Result, token),
+                //() => DbReaderExecuteReaderAsync(behavior, token),
                 token
             );
         }

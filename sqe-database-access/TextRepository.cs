@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -504,8 +505,12 @@ namespace SQE.DatabaseAccess
             IEnumerable<uint> firstSignInterpretations,
             IEnumerable<uint> secondSignInterpretations)
         {
-            var secondSignInterpretationsData = await Task.WhenAll(secondSignInterpretations
-                .Select(async x => await _signInterpretationRepository.GetSignInterpretationById(editionUser, x)));
+            var secondSignInterpretationsData = new SignInterpretationData[secondSignInterpretations.Count()];
+            foreach (var (secondSignInterpretation, index) in secondSignInterpretations.Select((x, idx) => (x, idx)))
+            {
+                secondSignInterpretationsData[index] = await _signInterpretationRepository
+                    .GetSignInterpretationById(editionUser, secondSignInterpretation);
+            }
 
             // Do not process request if there is an attempt to unlink a control character
             if (secondSignInterpretationsData.Any(
@@ -1464,34 +1469,40 @@ namespace SQE.DatabaseAccess
         {
             // Prepare the response object
             PositionDataRequestHelper positionDataRequestHelper;
-            (positionDataRequestHelper, anchorBefore, anchorAfter) = await _createTextFragmentPositionRequestFactory(
-                editionUser,
-                anchorBefore,
-                textFragmentId,
-                anchorAfter
-            );
 
-            positionDataRequestHelper.AddAction(PositionAction.DisconnectNeighbouringAnchors);
-            positionDataRequestHelper.AddAction(PositionAction.CreatePathFromItems);
-            var requests = await positionDataRequestHelper.CreateRequestsAsync();
+            using (var connection = OpenConnection())
+            {
+                (positionDataRequestHelper, anchorBefore, anchorAfter) =
+                    await _createTextFragmentPositionRequestFactory(
+                        editionUser,
+                        anchorBefore,
+                        textFragmentId,
+                        anchorAfter,
+                        connection
+                    );
 
-            // Commit the mutation
-            var textFragmentMutationResults =
-                await _databaseWriter.WriteToDatabaseAsync(
-                    editionUser,
-                    requests
-                );
+                positionDataRequestHelper.AddAction(PositionAction.DisconnectNeighbouringAnchors);
+                positionDataRequestHelper.AddAction(PositionAction.CreatePathFromItems);
+                var requests = await positionDataRequestHelper.CreateRequestsAsync();
 
-            // Ensure that the entry was created
-            // Ingo: I changed First to Last, since now the first one normally is a delete-request
-            // deleting the connection between the anchors.
-            if (textFragmentMutationResults.Count != requests.Count
-                || !textFragmentMutationResults.Last().NewId.HasValue)
-                throw new StandardExceptions.DataNotWrittenException(
-                    "create text fragment position"
-                );
+                // Commit the mutation
+                var textFragmentMutationResults =
+                    await _databaseWriter.WriteToDatabaseAsync(
+                        editionUser,
+                        requests
+                    );
 
-            return (anchorBefore, anchorAfter);
+                // Ensure that the entry was created
+                // Ingo: I changed First to Last, since now the first one normally is a delete-request
+                // deleting the connection between the anchors.
+                if (textFragmentMutationResults.Count != requests.Count
+                    || !textFragmentMutationResults.Last().NewId.HasValue)
+                    throw new StandardExceptions.DataNotWrittenException(
+                        "create text fragment position"
+                    );
+
+                return (anchorBefore, anchorAfter);
+            }
         }
 
         /// <summary>
@@ -1517,24 +1528,29 @@ namespace SQE.DatabaseAccess
                 );
 
             PositionDataRequestHelper positionDataRequestHelper;
-            (positionDataRequestHelper, newAnchorBefore, newAnchorAfter) =
-                await _createTextFragmentPositionRequestFactory(
-                    editionUser,
-                    newAnchorBefore,
-                    textFragmentIds,
-                    newAnchorAfter
-                );
-            positionDataRequestHelper.AddAction(PositionAction.MoveInBetween);
-            var requests = await positionDataRequestHelper.CreateRequestsAsync();
-            var shiftTextFragmentMutationResults =
-                await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
-            // Ensure that the entry was created
-            if (shiftTextFragmentMutationResults.Count != requests.Count)
-                throw new StandardExceptions.DataNotWrittenException(
-                    "shift text fragment positions"
-                );
-            return (newAnchorBefore, newAnchorAfter);
+            using (var connection = OpenConnection())
+            {
+                (positionDataRequestHelper, newAnchorBefore, newAnchorAfter) =
+                    await _createTextFragmentPositionRequestFactory(
+                        editionUser,
+                        newAnchorBefore,
+                        textFragmentIds,
+                        newAnchorAfter,
+                        connection
+                    );
+                positionDataRequestHelper.AddAction(PositionAction.MoveInBetween);
+                var requests = await positionDataRequestHelper.CreateRequestsAsync();
+                var shiftTextFragmentMutationResults =
+                    await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+
+                // Ensure that the entry was created
+                if (shiftTextFragmentMutationResults.Count != requests.Count)
+                    throw new StandardExceptions.DataNotWrittenException(
+                        "shift text fragment positions"
+                    );
+                return (newAnchorBefore, newAnchorAfter);
+            }
         }
 
 
@@ -1577,74 +1593,72 @@ namespace SQE.DatabaseAccess
             _createTextFragmentPositionRequestFactory(UserInfo editionUser,
                 uint? anchorBefore,
                 List<uint> textFragmentIds,
-                uint? anchorAfter)
+                uint? anchorAfter,
+                IDbConnection connection)
         {
             // Prepare the response object
             PositionDataRequestHelper positionDataRequestHelper;
-            using (var connection = OpenConnection())
+            // Verify that anchorBefore and anchorAfter are valid values if they exist
+            var fragments = await GetFragmentDataAsync(editionUser);
+            _verifyTextFragmentsSequence(fragments, anchorBefore, anchorAfter);
+
+            // Set the current text fragment position factory
+            positionDataRequestHelper = await PositionDataRequestFactory.CreateInstanceAsync(
+                connection,
+                StreamType.TextFragmentStream,
+                textFragmentIds,
+                editionUser.EditionId.Value
+            );
+
+            // Determine the anchorBefore if none was provided
+            if (!anchorBefore.HasValue)
             {
-                // Verify that anchorBefore and anchorAfter are valid values if they exist
-                var fragments = await GetFragmentDataAsync(editionUser);
-                _verifyTextFragmentsSequence(fragments, anchorBefore, anchorAfter);
-
-                // Set the current text fragment position factory
-                positionDataRequestHelper = await PositionDataRequestFactory.CreateInstanceAsync(
-                    connection,
-                    StreamType.TextFragmentStream,
-                    textFragmentIds,
-                    editionUser.EditionId.Value
-                );
-
-                // Determine the anchorBefore if none was provided
-                if (!anchorBefore.HasValue)
-                {
-                    // If no before or after text fragment id were provided, add the new text fragment after the last
-                    // text fragment in the edition (append it).
-                    if (!anchorAfter.HasValue)
-                    {
-                        if (fragments.Any())
-                            anchorBefore = fragments.Last().TextFragmentId;
-                    }
-                    // Otherwise, find the text fragment before anchorAfter, since the new text fragment will be
-                    // inserted between these two
-                    else
-                    {
-                        // Use the position data factory with the anchorAfter text fragment
-                        var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
-                            connection,
-                            StreamType.TextFragmentStream,
-                            anchorAfter.Value,
-                            editionUser.EditionId.Value,
-                            true);
-                        var before = tempFac.AnchorsBefore; // Get the text fragment(s) directly before it
-                        if (before.Any())
-                            anchorBefore = before.First(); // We will work with a non-branching stream for now
-                    }
-                }
-
-                // Add the before anchor for the new text fragment
-                if (anchorBefore.HasValue)
-                    positionDataRequestHelper.AddAnchorBefore(anchorBefore.Value);
-
-                // If no anchorAfter has been specified, set it to the text fragment following anchorBefore
+                // If no before or after text fragment id were provided, add the new text fragment after the last
+                // text fragment in the edition (append it).
                 if (!anchorAfter.HasValue)
                 {
-                    // Use the position data factory with the anchorBefore text fragment
+                    if (fragments.Any())
+                        anchorBefore = fragments.Last().TextFragmentId;
+                }
+                // Otherwise, find the text fragment before anchorAfter, since the new text fragment will be
+                // inserted between these two
+                else
+                {
+                    // Use the position data factory with the anchorAfter text fragment
                     var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
                         connection,
                         StreamType.TextFragmentStream,
-                        anchorBefore.Value,
+                        anchorAfter.Value,
                         editionUser.EditionId.Value,
                         true);
-                    var after = tempFac.AnchorsAfter; // Get the text fragment(s) directly after it
-                    if (after.Any())
-                        anchorAfter = after.First(); // We will work with a non-branching stream for now
+                    var before = tempFac.AnchorsBefore; // Get the text fragment(s) directly before it
+                    if (before.Any())
+                        anchorBefore = before.First(); // We will work with a non-branching stream for now
                 }
-
-                // Add the after anchor for the new text fragment
-                if (anchorAfter.HasValue)
-                    positionDataRequestHelper.AddAnchorAfter(anchorAfter.Value);
             }
+
+            // Add the before anchor for the new text fragment
+            if (anchorBefore.HasValue)
+                positionDataRequestHelper.AddAnchorBefore(anchorBefore.Value);
+
+            // If no anchorAfter has been specified, set it to the text fragment following anchorBefore
+            if (!anchorAfter.HasValue)
+            {
+                // Use the position data factory with the anchorBefore text fragment
+                var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
+                    connection,
+                    StreamType.TextFragmentStream,
+                    anchorBefore.Value,
+                    editionUser.EditionId.Value,
+                    true);
+                var after = tempFac.AnchorsAfter; // Get the text fragment(s) directly after it
+                if (after.Any())
+                    anchorAfter = after.First(); // We will work with a non-branching stream for now
+            }
+
+            // Add the after anchor for the new text fragment
+            if (anchorAfter.HasValue)
+                positionDataRequestHelper.AddAnchorAfter(anchorAfter.Value);
 
             return (positionDataRequestHelper, anchorBefore, anchorAfter);
         }
@@ -1664,13 +1678,15 @@ namespace SQE.DatabaseAccess
             _createTextFragmentPositionRequestFactory(UserInfo editionUser,
                 uint? anchorBefore,
                 uint textFragmentId,
-                uint? anchorAfter)
+                uint? anchorAfter,
+                IDbConnection connection)
         {
             return await _createTextFragmentPositionRequestFactory(
                 editionUser,
                 anchorBefore,
                 new List<uint> { textFragmentId },
-                anchorAfter
+                anchorAfter,
+                connection
             );
         }
 
