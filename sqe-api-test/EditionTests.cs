@@ -40,14 +40,13 @@ namespace SQE.ApiTest
             Request.UserAuthDetails user1, Request.UserAuthDetails user2, InviteEditorDTO permissionRequest = null,
             bool shouldSucceed = true)
         {
-            if (permissionRequest == null)
-                permissionRequest = new InviteEditorDTO
-                {
-                    email = user2.Email,
-                    mayLock = true,
-                    mayWrite = true,
-                    isAdmin = true
-                };
+            permissionRequest ??= new InviteEditorDTO
+            {
+                email = user2.Email,
+                mayLock = true,
+                mayWrite = true,
+                isAdmin = true
+            };
 
             if (user2.Email != permissionRequest.email)
                 throw new Exception("user2 must be the same user as in the permissionRequest");

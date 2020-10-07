@@ -470,7 +470,6 @@ namespace SQE.DatabaseAccess
                         )
                     );
                 }
-
                 var responses =
                     await _databaseWriter.WriteToDatabaseAsync(editionUser, createArtefactGroupInserts);
                 if (responses.Count != createArtefactGroupInserts.Count())
