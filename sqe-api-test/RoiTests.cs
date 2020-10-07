@@ -1,11 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
-using NetTopologySuite.IO;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
@@ -54,8 +51,10 @@ namespace SQE.ApiTest
                 var (_, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
 
                 // Act
-                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, rois.First().interpretationRoiId);
-                rois.First().ShouldDeepEqual(getRoi);
+                var roi = rois.First();
+                Assert.NotNull(roi);
+                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, roi.interpretationRoiId);
+                roi.ShouldDeepEqual(getRoi);
             }
         }
 
@@ -66,30 +65,33 @@ namespace SQE.ApiTest
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
-                var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var (artefactId, roisResponse) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var rois = roisResponse.ToList();
                 // Check that the roi exists
-                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, rois.First().interpretationRoiId);
-                rois.First().ShouldDeepEqual(getRoi);
+                var firstRoi = rois.First();
+                var lastRoi = rois.Last();
+                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, firstRoi.interpretationRoiId);
+                firstRoi.ShouldDeepEqual(getRoi);
 
                 // Act
                 var deleteRoi1 = await RoiHelpers.DeleteEditionRoi(_client, StartConnectionAsync, newEdition,
-                    rois.First().interpretationRoiId);
+                    firstRoi.interpretationRoiId);
                 var deleteRoi2 = await RoiHelpers.DeleteEditionRoi(null, StartConnectionAsync, newEdition,
-                    rois.Last().interpretationRoiId);
+                    lastRoi.interpretationRoiId);
 
                 // Assert
                 Assert.Equal(EditionEntities.roi, deleteRoi1.entity);
                 Assert.Single(deleteRoi1.ids);
                 Assert.Equal(EditionEntities.roi, deleteRoi2.entity);
                 Assert.Single(deleteRoi2.ids);
-                Assert.Equal(rois.First().interpretationRoiId, deleteRoi1.ids.First());
-                Assert.Equal(rois.Last().interpretationRoiId, deleteRoi2.ids.First());
+                Assert.Equal(firstRoi.interpretationRoiId, deleteRoi1.ids.First());
+                Assert.Equal(lastRoi.interpretationRoiId, deleteRoi2.ids.First());
 
                 // Check that it is not returned with a get
                 var updatedRoiList =
                     await ArtefactHelpers.GetArtefactRois(newEdition, artefactId, _client, StartConnectionAsync, true);
-                Assert.DoesNotContain(updatedRoiList.rois, (x => x.interpretationRoiId == rois.First().interpretationRoiId));
-                Assert.DoesNotContain(updatedRoiList.rois, (x => x.interpretationRoiId == rois.Last().interpretationRoiId));
+                Assert.DoesNotContain(updatedRoiList.rois, (x => x.interpretationRoiId == firstRoi.interpretationRoiId));
+                Assert.DoesNotContain(updatedRoiList.rois, (x => x.interpretationRoiId == lastRoi.interpretationRoiId));
             }
         }
 
@@ -111,10 +113,13 @@ namespace SQE.ApiTest
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
-                var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var (artefactId, roiResponse) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var rois = roiResponse.ToList();
                 // Check that the roi exists
-                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, rois.First().interpretationRoiId);
-                rois.First().ShouldDeepEqual(getRoi);
+                var firstRoi = rois.First();
+                var lastRoi = rois.Last();
+                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, firstRoi.interpretationRoiId);
+                firstRoi.ShouldDeepEqual(getRoi);
 
                 var updateRoi1 = new SetInterpretationRoiDTO()
                 {
@@ -147,9 +152,9 @@ namespace SQE.ApiTest
 
                 // Act
                 var updatedRoi1 = await RoiHelpers.UpdateEditionRoi(_client, StartConnectionAsync, newEdition,
-                    rois.First().interpretationRoiId, updateRoi1, batch);
+                    firstRoi.interpretationRoiId, updateRoi1, batch);
                 var updatedRoi2 = await RoiHelpers.UpdateEditionRoi(null, StartConnectionAsync, newEdition,
-                    rois.Last().interpretationRoiId, updateRoi2, batch);
+                    lastRoi.interpretationRoiId, updateRoi2, batch);
 
                 // Assert
                 // Check that it is not returned with a get
@@ -176,8 +181,12 @@ namespace SQE.ApiTest
                 // Arrange
                 // Create two new rois, one will get altered, one will be deleted
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
-                var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
-                var roiForUpdate = rois.First();
+                var (artefactId, roiResponse) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var rois = roiResponse.ToList();
+                // Check that the roi exists
+                var firstRoi = rois.First();
+                var lastRoi = rois.Last();
+                var roiForUpdate = firstRoi;
                 var updatedRoi = new UpdateInterpretationRoiDTO
                 {
                     artefactId = roiForUpdate.artefactId,
@@ -189,7 +198,7 @@ namespace SQE.ApiTest
                     translate = roiForUpdate.translate,
                     valuesSet = true
                 };
-                var roiForDelete = rois.Last();
+                var roiForDelete = lastRoi;
                 var newRoi = new SetInterpretationRoiDTO()
                 {
                     artefactId = artefactId,

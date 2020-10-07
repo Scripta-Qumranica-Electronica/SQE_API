@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -112,7 +111,7 @@ namespace SQE.DatabaseAccess
                     : (uint?)null;
                 if (!editionCatalogueId.HasValue)
                 {
-                    var writeEC = await connection.ExecuteAsync(EditionCatalogueInsertQuery.GetQuery, new
+                    var writeEc = await connection.ExecuteAsync(EditionCatalogueInsertQuery.GetQuery, new
                     {
                         EditionName = canonicalEditionName,
                         EditionVolume = canonicalEditionVolume,
@@ -123,16 +122,16 @@ namespace SQE.DatabaseAccess
                         EditionId = editionId,
                         UserId = userId
                     });
-                    if (writeEC != 1)
+                    if (writeEc != 1)
                         throw new StandardExceptions.DataNotWrittenException("Create Edition Catalogue Entry");
                     editionCatalogueId = await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
 
-                    writeEC = await connection.ExecuteAsync(EditionCatalogueAuthorInsertQuery.GetQuery, new
+                    writeEc = await connection.ExecuteAsync(EditionCatalogueAuthorInsertQuery.GetQuery, new
                     {
                         IaaEditionCatalogId = editionCatalogueId,
                         UserId = userId
                     });
-                    if (writeEC != 1)
+                    if (writeEc != 1)
                         throw new StandardExceptions.DataNotWrittenException("Create Edition Catalogue Author Entry");
                 }
 
@@ -190,7 +189,7 @@ WHERE text_fragment_id = @TextFragmentId
             using (var connection = OpenConnection())
             {
                 // Check if match exists
-                var existingMatches = await GetImagedObjectTextFragmentMatchById(editionCatalogToTextFragmentId);
+                var existingMatches = (await GetImagedObjectTextFragmentMatchById(editionCatalogToTextFragmentId)).ToList();
                 if (!existingMatches.Any())
                     throw new StandardExceptions.DataNotFoundException("match id", editionCatalogToTextFragmentId,
                         "imaged object text fragment matches");
@@ -209,26 +208,26 @@ WHERE text_fragment_id = @TextFragmentId
             }
         }
 
-        /// <summary>
-        ///     Confirm or reject a edition catalog to text fragment match.
-        /// </summary>
-        /// <param name="userId">User's unique id</param>
-        /// <param name="editionCatalogToTextFragmentId">Unique id of the record to confirm or reject</param>
-        /// <param name="confirm">Boolean whether the match is confirmed (true) or rejected (false)</param>
-        /// <returns></returns>
-        private async Task ChangeImagedObjectTextFragmentMatchConfirmationAsync(uint userId, uint editionCatalogToTextFragmentId,
-            bool? confirm)
-        {
-            using (var connection = OpenConnection())
-            {
-                await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationUpdateQuery.GetQuery, new
-                {
-                    IaaEditionCatalogToTextFragmentId = editionCatalogToTextFragmentId,
-                    UserId = userId,
-                    Confirmed = confirm
-                });
-            }
-        }
+        // /// <summary>
+        // ///     Confirm or reject a edition catalog to text fragment match.
+        // /// </summary>
+        // /// <param name="userId">User's unique id</param>
+        // /// <param name="editionCatalogToTextFragmentId">Unique id of the record to confirm or reject</param>
+        // /// <param name="confirm">Boolean whether the match is confirmed (true) or rejected (false)</param>
+        // /// <returns></returns>
+        // private async Task ChangeImagedObjectTextFragmentMatchConfirmationAsync(uint userId, uint editionCatalogToTextFragmentId,
+        //     bool? confirm)
+        // {
+        //     using (var connection = OpenConnection())
+        //     {
+        //         await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationUpdateQuery.GetQuery, new
+        //         {
+        //             IaaEditionCatalogToTextFragmentId = editionCatalogToTextFragmentId,
+        //             UserId = userId,
+        //             Confirmed = confirm
+        //         });
+        //     }
+        // }
 
         private async Task<IEnumerable<CatalogueMatch>> GetImagedObjectTextFragmentMatchById(
             uint imagedObjectTextFragmentMatchId)

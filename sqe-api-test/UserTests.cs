@@ -23,30 +23,9 @@ namespace SQE.ApiTest
         public UserTest(WebApplicationFactory<Startup> factory) : base(factory)
         {
             _db = new DatabaseQuery();
-            // Routes
-            baseUrl = $"/{version}/{controller}";
-            login = $"{baseUrl}/login";
-            changePassword = $"{baseUrl}/change-password";
-            resendActivationEmail = $"{baseUrl}/resend-activation-email";
-            changeUnactivatedEmail = $"{baseUrl}/change-unactivated-email";
-            forgotPassword = $"{baseUrl}/forgot-password";
-            changeForgottenPassword = $"{baseUrl}/change-forgotten-password";
-            confirmRegistration = $"{baseUrl}/confirm-registration";
         }
 
         private readonly DatabaseQuery _db;
-
-        // Routes
-        private const string version = "v1";
-        private const string controller = "users";
-        private readonly string baseUrl;
-        private readonly string login;
-        private readonly string changePassword;
-        private readonly string resendActivationEmail;
-        private readonly string changeUnactivatedEmail;
-        private readonly string forgotPassword;
-        private readonly string changeForgottenPassword;
-        private readonly string confirmRegistration;
 
         private Request.UserAuthDetails UserUpdateRequestDTOToUserAuthDetails(UserUpdateRequestDTO user)
         {
@@ -159,7 +138,7 @@ namespace SQE.ApiTest
             if (shouldSucceed)
             {
                 var activateTokens =
-                    await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams); // Get  token from DB
+                    (await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams)).AsList(); // Get  token from DB
                 Assert.NotEmpty(activateTokens);
                 return activateTokens.First();
             }
@@ -298,7 +277,7 @@ namespace SQE.ApiTest
             {
                 // Arrange
                 await userCreator.CreateUser();
-                var loginDetails = await Login(user);
+                await Login(user);
                 var newDetails = new UserUpdateRequestDTO(
                     "fake1@fake2-email.com",
                     "WrongPassword",
@@ -340,7 +319,7 @@ namespace SQE.ApiTest
             {
                 // Arrange
                 await userCreator.CreateUser();
-                var loginDetails = await Login(user);
+                await Login(user);
                 var authUser = UserUpdateRequestDTOToUserAuthDetails(user);
                 var newPwd = new ResetLoggedInUserPasswordRequestDTO
                 {
@@ -756,7 +735,7 @@ namespace SQE.ApiTest
 
 
             // Act
-            var (response, msg) = await CreateUserAccountAsync(newUser, false); // Assert already in method;
+            await CreateUserAccountAsync(newUser, false); // Assert already in method;
 
             // Cleanup
             await CleanupUserAccountAsync(loggedInUser);
@@ -777,7 +756,7 @@ namespace SQE.ApiTest
                 "Jane",
                 "Doe"
             );
-            var newUser = await CreateUserAccountAsync(user);
+            await CreateUserAccountAsync(user);
 
             // Act
             var loginResponse = await Login(user);
@@ -806,7 +785,7 @@ namespace SQE.ApiTest
             );
 
             // Act
-            var loggedInUser = await Login(user, false); // Asserts already in method.
+            await Login(user, false); // Asserts already in method.
         }
 
         /// <summary>

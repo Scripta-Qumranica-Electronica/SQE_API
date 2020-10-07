@@ -1,8 +1,5 @@
 using System;
 using System.Linq;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Unicode;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -11,18 +8,13 @@ using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace SQE.ApiTest
 {
     public class SignInterpretationTests : WebControllerTest
     {
-        public SignInterpretationTests(WebApplicationFactory<Startup> factory, ITestOutputHelper output) : base(factory)
-        {
-            _output = output;
-        }
-
-        private readonly ITestOutputHelper _output;
+        public SignInterpretationTests(WebApplicationFactory<Startup> factory) : base(factory)
+        { }
 
         /// <summary>
         ///     Find a sign interpretation id in the edition
@@ -155,6 +147,7 @@ namespace SQE.ApiTest
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
+                Assert.NotNull(responseAttr);
                 Assert.Null(responseAttr.commentary);
                 Assert.True(responseAttr.sequence.HasValue);
                 Assert.Equal(0, responseAttr.sequence.Value);
@@ -246,7 +239,8 @@ namespace SQE.ApiTest
                     .Last();
                 var interpretationMatchingCreate = signs.FirstOrDefault(x => x.signInterpretations.Any(y =>
                     y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId))
-                    .signInterpretations.First(y => y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId);
+                    ?.signInterpretations.First(y => y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId);
+                Assert.NotNull(interpretationMatchingCreate);
                 Assert.Equal(newlyCreatedInterpretation.character, interpretationMatchingCreate.character);
                 newlyCreatedInterpretation.nextSignInterpretations.ShouldDeepEqual(interpretationMatchingCreate.nextSignInterpretations);
                 newlyCreatedInterpretation.rois.ShouldDeepEqual(interpretationMatchingCreate.rois);
@@ -286,7 +280,7 @@ namespace SQE.ApiTest
                     .lines.First(x => x.lineId == line.lineId).signs;
                 // Make sure the deleted sign is really gone
                 Assert.Empty(signs.Where(x => x.signInterpretations.Any(y => y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId)));
-                var flattenedSigns = signs.SelectMany(x => x.signInterpretations);
+                var flattenedSigns = signs.SelectMany(x => x.signInterpretations).ToList();
 
                 // Make sure that the sign stream is not broken; the first sign interpretation should
                 // still connect to something.
@@ -309,7 +303,7 @@ namespace SQE.ApiTest
                     .Where(x => x.lines.Any(y => y.signs.Count > 2))
                     .SelectMany(x => x.lines)
                     .SelectMany(x => x.signs)
-                    .SelectMany(x => x.signInterpretations);
+                    .SelectMany(x => x.signInterpretations).ToList();
                 var firstSignInterpretation = signStream.First();
                 var lastSignInterpretation = signStream.Last();
                 Assert.Empty(firstSignInterpretation.nextSignInterpretations.Where(x => x.nextSignInterpretationId == lastSignInterpretation.signInterpretationId));
@@ -359,7 +353,7 @@ namespace SQE.ApiTest
                     .Where(x => x.lines.Any(y => y.signs.Count > 2))
                     .SelectMany(x => x.lines)
                     .SelectMany(x => x.signs)
-                    .SelectMany(x => x.signInterpretations);
+                    .SelectMany(x => x.signInterpretations).ToList();
                 var firstSignInterpretation = signStream.First();
                 var nextSignInterpretation = signStream
                     .First(x => firstSignInterpretation.nextSignInterpretations
@@ -555,6 +549,7 @@ namespace SQE.ApiTest
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
+                Assert.NotNull(responseAttr);
                 Assert.Null(responseAttr.commentary);
                 Assert.True(responseAttr.sequence.HasValue);
                 Assert.Equal(0, responseAttr.sequence.Value);
@@ -613,15 +608,15 @@ namespace SQE.ApiTest
             httpResponse.EnsureSuccessStatusCode();
             httpData.ShouldDeepEqual(signalRData);
             Assert.NotEmpty(httpData.attributes);
-            Assert.NotEmpty(httpData.attributes.FirstOrDefault().values);
-            Assert.NotNull(httpData.attributes.FirstOrDefault().attributeName);
-            Assert.True(httpData.attributes.FirstOrDefault().attributeId > 0);
-            Assert.True(httpData.attributes.FirstOrDefault().creatorId > 0);
-            Assert.True(httpData.attributes.FirstOrDefault().editorId > 0);
-            Assert.NotNull(httpData.attributes.FirstOrDefault().values.FirstOrDefault().value);
-            Assert.True(httpData.attributes.FirstOrDefault().values.FirstOrDefault().id > 0);
-            Assert.True(httpData.attributes.FirstOrDefault().values.FirstOrDefault().editorId > 0);
-            Assert.True(httpData.attributes.FirstOrDefault().values.FirstOrDefault().creatorId > 0);
+            Assert.NotEmpty(httpData.attributes.First().values);
+            Assert.NotNull(httpData.attributes.First().attributeName);
+            Assert.True(httpData.attributes.First().attributeId > 0);
+            Assert.True(httpData.attributes.First().creatorId > 0);
+            Assert.True(httpData.attributes.First().editorId > 0);
+            Assert.NotNull(httpData.attributes.First().values.First().value);
+            Assert.True(httpData.attributes.First().values.First().id > 0);
+            Assert.True(httpData.attributes.First().values.First().editorId > 0);
+            Assert.True(httpData.attributes.First().values.First().creatorId > 0);
         }
 
         [Fact]
@@ -667,11 +662,11 @@ namespace SQE.ApiTest
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
                 await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
                 var httpData = request.HttpResponseObject;
-                var attributeValueForUpdate = httpData.attributes.FirstOrDefault().values.FirstOrDefault();
-                var attributeValueForDelete = httpData.attributes.FirstOrDefault().values.Last();
+                var attributeValueForUpdate = httpData.attributes.First().values.First();
+                var attributeValueForDelete = httpData.attributes.First().values.Last();
                 var updateAttribute = new UpdateAttributeDTO
                 {
-                    createValues = new CreateAttributeValueDTO[1]
+                    createValues = new[]
                     {
                         new CreateAttributeValueDTO
                         {
@@ -680,7 +675,7 @@ namespace SQE.ApiTest
                             value = "TINY_UPPER"
                         }
                     },
-                    updateValues = new UpdateAttributeValueDTO[1]
+                    updateValues = new[]
                     {
                         new UpdateAttributeValueDTO
                         {
@@ -690,7 +685,7 @@ namespace SQE.ApiTest
                             value = "AMAZING_NEW_VALUE"
                         }
                     },
-                    deleteValues = new uint[1] { attributeValueForDelete.id }
+                    deleteValues = new[] { attributeValueForDelete.id }
                 };
 
                 // Act
@@ -712,14 +707,14 @@ namespace SQE.ApiTest
                 updateRequest.HttpResponseObject.ShouldDeepEqual(updateRequest.UpdatedAttribute);
                 // The update contains the expected data
                 Assert.Contains(updateRequest.HttpResponseObject.values, x =>
-                    x.description == updateAttribute.createValues.FirstOrDefault().description
-                    && x.cssDirectives == updateAttribute.createValues.FirstOrDefault().cssDirectives
-                    && x.value == updateAttribute.createValues.FirstOrDefault().value);
+                    x.description == updateAttribute.createValues.First().description
+                    && x.cssDirectives == updateAttribute.createValues.First().cssDirectives
+                    && x.value == updateAttribute.createValues.First().value);
                 Assert.Contains(updateRequest.HttpResponseObject.values, x =>
                     x.id != attributeValueForUpdate.id
-                    && x.description == updateAttribute.updateValues.FirstOrDefault().description
-                    && x.cssDirectives == updateAttribute.updateValues.FirstOrDefault().cssDirectives
-                    && x.value == updateAttribute.updateValues.FirstOrDefault().value);
+                    && x.description == updateAttribute.updateValues.First().description
+                    && x.cssDirectives == updateAttribute.updateValues.First().cssDirectives
+                    && x.value == updateAttribute.updateValues.First().value);
                 Assert.DoesNotContain(updateRequest.HttpResponseObject.values, x => x.id == attributeValueForDelete.id);
 
                 // The update appears when getting all attributes
@@ -818,6 +813,7 @@ namespace SQE.ApiTest
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
+                Assert.NotNull(responseAttr);
                 Assert.Null(responseAttr.commentary);
                 Assert.True(responseAttr.sequence.HasValue);
                 Assert.Equal(0, responseAttr.sequence.Value);

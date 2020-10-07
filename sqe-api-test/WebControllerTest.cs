@@ -15,10 +15,10 @@ namespace SQE.ApiTest
     /// </summary>
     public class WebControllerTest : IClassFixture<WebApplicationFactory<Startup>>
     {
-        public readonly HttpClient _client;
-        public readonly WebApplicationFactory<Startup> _factory;
+        protected readonly HttpClient _client;
+        private readonly WebApplicationFactory<Startup> _factory;
 
-        public WebControllerTest(WebApplicationFactory<Startup> factory)
+        protected WebControllerTest(WebApplicationFactory<Startup> factory)
         {
             var projectDir = Directory.GetCurrentDirectory();
             var configPath = Path.Combine(projectDir, "../../../../sqe-api-server/appsettings.json");

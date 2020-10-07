@@ -279,10 +279,7 @@ namespace SQE.ApiTest.ApiRequests
             // Otherwise, wait up to 20 seconds for the listener to receive the message before giving up
             var waitTime = 0;
 
-            while (
-                listenerMethodsList.Any(x =>
-                    !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull())
-                && waitTime < 20)
+            while (!NoOutstandingListeners(listenerMethodsList) && waitTime < 20)
             {
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 waitTime += 1;
@@ -297,6 +294,13 @@ namespace SQE.ApiTest.ApiRequests
                     Assert.False(listener.IsNull());
                 }
             }
+        }
+
+        private bool NoOutstandingListeners(List<ListenerMethods> listenerMethodsList)
+        {
+            return listenerMethodsList.TrueForAll(
+                x => _listenerDict.TryGetValue(x, out var listener)
+                && !listener.IsNull());
         }
 
         public async Task SendAsync(

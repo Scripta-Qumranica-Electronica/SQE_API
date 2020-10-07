@@ -1,10 +1,8 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
@@ -17,19 +15,16 @@ namespace SQE.DatabaseAccess
 
     public class SignInterpretationRepository : DbConnectionBase, ISignInterpretationRepository
     {
-        private readonly IDatabaseWriter _databaseWriter;
         private readonly IAttributeRepository _attributeRepository;
         private readonly ISignInterpretationCommentaryRepository _interpretationCommentaryRepository;
         private readonly IRoiRepository _roiRepository;
 
         public SignInterpretationRepository(
             IConfiguration config,
-            IDatabaseWriter databaseWriter,
             IAttributeRepository attributeRepository,
             ISignInterpretationCommentaryRepository interpretationCommentaryRepository,
             IRoiRepository roiRepository) : base(config)
         {
-            _databaseWriter = databaseWriter;
             _attributeRepository = attributeRepository;
             _interpretationCommentaryRepository = interpretationCommentaryRepository;
             _roiRepository = roiRepository;
@@ -69,10 +64,10 @@ namespace SQE.DatabaseAccess
                         // Since the Query searches for a single sign interpretation id, we only ever create a single object
                         returnSignInterpretation ??= signInterpretationData;
 
-                        if (!returnSignInterpretation.NextSignInterpretations.Contains(nextSignInterpretation))
+                        if (returnSignInterpretation != null && !returnSignInterpretation.NextSignInterpretations.Contains(nextSignInterpretation))
                             returnSignInterpretation.NextSignInterpretations.Add(nextSignInterpretation);
 
-                        if (signStreamSelectionId.HasValue && !returnSignInterpretation.SignStreamSectionIds.Contains(signStreamSelectionId.Value))
+                        if (returnSignInterpretation != null && signStreamSelectionId.HasValue && !returnSignInterpretation.SignStreamSectionIds.Contains(signStreamSelectionId.Value))
                             returnSignInterpretation.SignStreamSectionIds.Add(signStreamSelectionId.Value);
 
                         return returnSignInterpretation;
@@ -89,6 +84,7 @@ namespace SQE.DatabaseAccess
                 returnSignInterpretation.Commentaries = (await commentaries).AsList();
                 returnSignInterpretation.SignInterpretationRois = rois.AsList();
 
+                transactionScope.Complete();
                 return returnSignInterpretation;
             }
         }

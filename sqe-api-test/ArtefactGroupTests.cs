@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -6,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
@@ -24,8 +22,6 @@ namespace SQE.ApiTest
         public ArtefactGroupTests(WebApplicationFactory<Startup> factory) : base(factory)
         {
         }
-
-        private static int _testCount;
 
         /// <summary>
         ///     Get a listing of all the artefact groups in an edition
@@ -98,12 +94,13 @@ namespace SQE.ApiTest
         /// <param name="shouldSucceed">Flag whether the operation is expected to succeed</param>
         /// <param name="user">Credentials for the user making the request</param>
         /// <param name="user2">Credentials for a user who should be notified of the request</param>
+        /// <param name="realtime">Whether or not to use SignalR to make the request</param>
         /// <returns></returns>
         private async
             Task<(HttpResponseMessage httpResponseMessage, ArtefactGroupDTO httpResponseBody, ArtefactGroupDTO
                 signalrResponse, ArtefactGroupDTO listenerResponse)> _createArtefactGroupAsync(uint editionId,
                 string artefactGroupName, List<uint> artefacts, bool shouldSucceed = true,
-                Request.UserAuthDetails user = null, Request.UserAuthDetails user2 = null)
+                Request.UserAuthDetails user = null, Request.UserAuthDetails user2 = null, bool realtime = false)
         {
             // Arrange
             user ??= Request.DefaultUsers.User1;
@@ -113,17 +110,21 @@ namespace SQE.ApiTest
                 artefacts = artefacts
             };
 
+            var listenerUser = user2 ?? user;
+
             // Act
             var createApiRequest = new Post.V1_Editions_EditionId_ArtefactGroups(editionId, artefactGroup);
             await createApiRequest.SendAsync(
-                _client,
-                null,
+                realtime ? null : _client,
+                StartConnectionAsync,
                 true,
                 user,
-                user2,
+                listenerUser,
                 shouldSucceed,
                 false,
-                listenToEdition: user2 != null
+                requestRealtime: realtime,
+                listenToEdition: true,
+                listeningFor: createApiRequest.AvailableListeners.CreatedArtefactGroup
             );
             var (httpMessage, httpBody, signalr, listener) = (createApiRequest.HttpResponseMessage,
                 createApiRequest.HttpResponseObject, createApiRequest.SignalrResponseObject,
@@ -132,10 +133,13 @@ namespace SQE.ApiTest
             // Assert
             if (shouldSucceed)
             {
-                Assert.Equal(artefactGroupName, httpBody.name);
+                var response = realtime ? signalr : httpBody;
+                Assert.Equal(artefactGroupName, response.name);
                 artefactGroup.artefacts.Sort();
-                httpBody.artefacts.Sort();
-                Assert.Equal(artefactGroup.artefacts, httpBody.artefacts);
+                response.artefacts.Sort();
+                listener.artefacts.Sort();
+                Assert.Equal(artefactGroup.artefacts, response.artefacts);
+                response.ShouldDeepEqual(listener);
             }
 
             return (httpMessage, httpBody, signalr, listener);
@@ -151,13 +155,15 @@ namespace SQE.ApiTest
         /// <param name="shouldSucceed">Flag whether the operation is expected to succeed</param>
         /// <param name="user">Credentials for the user making the request</param>
         /// <param name="user2">Credentials for a user who should be notified of the request</param>
+        /// <param name="realtime">Whether or not to use SignalR to make the request</param>
         /// <returns></returns>
         private async
             Task<(HttpResponseMessage httpResponseMessage, ArtefactGroupDTO httpResponseBody, ArtefactGroupDTO
                 signalrResponse, ArtefactGroupDTO listenerResponse)> _updateArtefactGroupAsync(uint editionId,
                 uint artefactGroupId,
                 string artefactGroupName, List<uint> artefacts, bool shouldSucceed = true,
-                Request.UserAuthDetails user = null, Request.UserAuthDetails user2 = null)
+                Request.UserAuthDetails user = null, Request.UserAuthDetails user2 = null,
+                bool realtime = false)
         {
             // Arrange
             user ??= Request.DefaultUsers.User1;
@@ -167,18 +173,22 @@ namespace SQE.ApiTest
                 artefacts = artefacts
             };
 
+            var listenerUser = user2 ?? user;
+
             // Act
             var updateApiRequest =
                 new Put.V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(editionId, artefactGroupId, artefactGroup);
             await updateApiRequest.SendAsync(
-                _client,
-                null,
+                realtime ? null : _client,
+                StartConnectionAsync,
                 true,
                 user,
-                user2,
+                listenerUser,
                 shouldSucceed,
                 false,
-                listenToEdition: user2 != null
+                requestRealtime: realtime,
+                listenToEdition: true,
+                listeningFor: updateApiRequest.AvailableListeners.UpdatedArtefactGroup
             );
             var (httpMessage, httpBody, signalr, listener) = (updateApiRequest.HttpResponseMessage,
                 updateApiRequest.HttpResponseObject, updateApiRequest.SignalrResponseObject,
@@ -187,10 +197,13 @@ namespace SQE.ApiTest
             // Assert
             if (shouldSucceed)
             {
-                Assert.Equal(artefactGroupName, httpBody.name);
+                var response = realtime ? signalr : httpBody;
+                Assert.Equal(artefactGroupName, response.name);
                 artefactGroup.artefacts.Sort();
-                httpBody.artefacts.Sort();
-                Assert.Equal(artefactGroup.artefacts, httpBody.artefacts);
+                response.artefacts.Sort();
+                listener.artefacts.Sort();
+                Assert.Equal(artefactGroup.artefacts, response.artefacts);
+                response.ShouldDeepEqual(listener);
             }
 
             return (httpMessage, httpBody, signalr, listener);
@@ -204,18 +217,17 @@ namespace SQE.ApiTest
         /// <param name="shouldSucceed">Flag whether the operation is expected to succeed</param>
         /// <param name="user">Credentials for the user making the request</param>
         /// <param name="user2">Credentials for a user who should be notified of the request</param>
+        /// <param name="realtime">Whether or not to use SignalR to make the request</param>
         /// <returns></returns>
         private async
             Task<(HttpResponseMessage httpResponseMessage, DeleteDTO httpResponseBody, DeleteDTO signalrResponse,
                 DeleteDTO listenerResponse)> _deleteArtefactGroupAsync(uint editionId, uint artefactGroupId,
-                bool shouldSucceed = true, Request.UserAuthDetails user = null, Request.UserAuthDetails user2 = null)
+                bool shouldSucceed = true, Request.UserAuthDetails user = null, Request.UserAuthDetails user2 = null,
+                bool realtime = false)
         {
             // Arrange
             user ??= Request.DefaultUsers.User1;
-
-            // Do every other request in realtime
-            var realtime = _testCount % 2 == 1;
-            _testCount += 1;
+            var listenerUser = user2 ?? user;
 
             // Act
             var deleteApiRequest =
@@ -225,10 +237,11 @@ namespace SQE.ApiTest
                 StartConnectionAsync,
                 true,
                 user,
-                user2 ?? user,
+                listenerUser,
                 shouldSucceed,
                 false,
                 requestRealtime: realtime,
+                listenToEdition: true,
                 listeningFor: deleteApiRequest.AvailableListeners.DeletedArtefactGroup
             );
             var (httpMessage, httpBody, signalr, listener) = (deleteApiRequest.HttpResponseMessage,
@@ -238,8 +251,9 @@ namespace SQE.ApiTest
             // Assert
             if (shouldSucceed)
             {
-                Assert.Equal(EditionEntities.artefactGroup, realtime ? signalr.entity : httpBody.entity);
-                Assert.Equal(artefactGroupId, realtime ? signalr.ids.FirstOrDefault() : httpBody.ids.FirstOrDefault());
+                var response = realtime ? signalr : httpBody;
+                Assert.Equal(EditionEntities.artefactGroup, response.entity);
+                Assert.Equal(artefactGroupId, response.ids.First());
                 Assert.Equal(EditionEntities.artefactGroup, deleteApiRequest.DeletedArtefactGroup.entity);
                 Assert.Contains(deleteApiRequest.DeletedArtefactGroup.ids, x => x == artefactGroupId);
             }
@@ -251,8 +265,10 @@ namespace SQE.ApiTest
         ///     Check that an artefact group can be created and deleted.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task CanCreateAndDeleteArtefactGroups()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CanCreateAndDeleteArtefactGroups(bool realtime)
         {
             // Arrange
             using (var editionCreator =
@@ -264,15 +280,21 @@ namespace SQE.ApiTest
 
                 var editionId = await editionCreator.CreateEdition();
                 var artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
-                var artefactGroupName = "artefact group 1";
+                var firstArtefact = artefacts.First();
+                var lastArtefact = artefacts.Last();
+                const string artefactGroupName = "artefact group 1";
 
                 // Act
-                var (_, createdArtefactGroup, _, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
+                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(
+                    editionId,
+                    artefactGroupName,
                     new List<uint>
                     {
-                        artefacts.FirstOrDefault().id,
-                        artefacts.LastOrDefault().id
-                    });
+                        firstArtefact.id,
+                        lastArtefact.id
+                    },
+                    realtime: realtime);
+                var createdArtefactGroup = realtime ? createdArtefactGroupRt : createdArtefactGroupHttp;
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
@@ -282,7 +304,7 @@ namespace SQE.ApiTest
                 /**
                  * Delete the new artefact group.
                  */
-                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id, realtime: realtime);
             }
         }
 
@@ -290,8 +312,10 @@ namespace SQE.ApiTest
         ///     Check that an artefact group can be updated.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task CannotPerformBadUpdateToArtefactGroup()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CannotPerformBadUpdateToArtefactGroup(bool realtime)
         {
             // Arrange
             using (var editionCreator =
@@ -303,15 +327,19 @@ namespace SQE.ApiTest
 
                 var editionId = await editionCreator.CreateEdition();
                 var artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
+                var firstArtefact = artefacts.First();
+                var lastArtefact = artefacts.Last();
                 const string artefactGroupName = "artefact group 1";
 
                 // Act
-                var (_, createdArtefactGroup, _, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
+                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
                     new List<uint>
                     {
-                        artefacts.FirstOrDefault().id,
-                        artefacts.LastOrDefault().id
-                    });
+                        firstArtefact.id,
+                        lastArtefact.id
+                    },
+                    realtime: realtime);
+                var createdArtefactGroup = realtime ? createdArtefactGroupRt : createdArtefactGroupHttp;
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
@@ -329,26 +357,30 @@ namespace SQE.ApiTest
                     .FirstOrDefault(num => !validArtefacIds.Contains((uint)num));
                 const string updatedArtefactGroupName = "artefact group 2";
                 var updatedArtefacts = new List<uint>
-                    {badArtefactId, artefacts.FirstOrDefault().id, artefacts.LastOrDefault().id};
+                    {badArtefactId, firstArtefact.id, lastArtefact.id};
 
                 // Act
-                var (updateHttpMsg, updatedAG, _, _) = await _updateArtefactGroupAsync(editionId,
+                var (updateHttpMsg, _, _, _) = await _updateArtefactGroupAsync(editionId,
                     createdArtefactGroup.id,
-                    updatedArtefactGroupName, updatedArtefacts, false);
-                var errorMsg = await updateHttpMsg.Content.ReadAsStringAsync();
-                var (_, artefactGroup, _) = await _getArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                    updatedArtefactGroupName, updatedArtefacts, false, realtime: realtime);
 
                 // Assert
-                Assert.Contains(badArtefactId.ToString(), errorMsg);
-                Assert.Contains("not part of this edition", errorMsg);
-                Assert.Equal(HttpStatusCode.BadRequest, updateHttpMsg.StatusCode);
+                if (!realtime)
+                {
+                    var errorMsg = await updateHttpMsg.Content.ReadAsStringAsync();
+                    Assert.Contains(badArtefactId.ToString(), errorMsg);
+                    Assert.Contains("not part of this edition", errorMsg);
+                    Assert.Equal(HttpStatusCode.BadRequest, updateHttpMsg.StatusCode);
+                }
+
+                var (_, artefactGroup, _) = await _getArtefactGroupAsync(editionId, createdArtefactGroup.id);
                 Assert.Equal(artefactGroupName, artefactGroup.name);
                 createdArtefactGroup.artefacts.Sort();
                 artefactGroup.artefacts.Sort();
                 Assert.Equal(createdArtefactGroup.artefacts, artefactGroup.artefacts);
                 Assert.Equal(createdArtefactGroup.id, artefactGroup.id);
 
-                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id, realtime: realtime);
             }
         }
 
@@ -356,8 +388,10 @@ namespace SQE.ApiTest
         ///     Check that an artefact group can be updated.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task CannotReuseArtefactsInArtefactGroup()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CannotReuseArtefactsInArtefactGroup(bool realtime)
         {
             // Arrange
             using (var editionCreator =
@@ -369,20 +403,24 @@ namespace SQE.ApiTest
 
                 var editionId = await editionCreator.CreateEdition();
                 var artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
+                var firstArtefact = artefacts.First();
+                var lastArtefact = artefacts.Last();
                 const string artefactGroupName = "artefact group 1";
 
                 // Act
-                var (_, createdArtefactGroup, _, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
+                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
                     new List<uint>
                     {
-                        artefacts.FirstOrDefault().id,
-                        artefacts.LastOrDefault().id
-                    });
+                        firstArtefact.id,
+                        lastArtefact.id
+                    },
+                    realtime: realtime);
+                var createdArtefactGroup = realtime ? createdArtefactGroupRt : createdArtefactGroupHttp;
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
                 Assert.Single(artefactList.artefactGroups);
-                artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
+                artefactList.artefactGroups.First().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
                  * Create a second artefact group with an artefact ID from the previous artefact group.
@@ -391,27 +429,31 @@ namespace SQE.ApiTest
 
                 // Arrange
                 const string secondArtefactGroupName = "invalid artefact group";
-                var secondGroupArtefacts = new List<uint> { artefacts.FirstOrDefault().id, artefacts[1].id };
+                var secondGroupArtefacts = new List<uint> { firstArtefact.id, artefacts[1].id };
 
                 // Act
                 var (secondHttpMsg, _, _, _) = await _createArtefactGroupAsync(editionId, secondArtefactGroupName,
-                    secondGroupArtefacts, false);
-                var errorMsg = await secondHttpMsg.Content.ReadAsStringAsync();
-                var (_, artefactGroupList, _) = await _getArtefactGroupsAsync(editionId);
+                    secondGroupArtefacts, false, realtime: realtime);
 
                 // Assert
-                Assert.Contains(artefacts.FirstOrDefault().id.ToString(), errorMsg);
-                Assert.Contains("already in another group", errorMsg);
-                Assert.Equal(HttpStatusCode.BadRequest, secondHttpMsg.StatusCode);
-                Assert.Equal(artefactGroupName, artefactGroupList.artefactGroups.FirstOrDefault().name);
+                if (!realtime)
+                {
+                    Assert.Equal(HttpStatusCode.BadRequest, secondHttpMsg.StatusCode);
+                    var errorMsg = await secondHttpMsg.Content.ReadAsStringAsync();
+                    Assert.Contains(firstArtefact.id.ToString(), errorMsg);
+                    Assert.Contains("already in another group", errorMsg);
+                }
+
+                var (_, artefactGroupList, _) = await _getArtefactGroupsAsync(editionId);
+                Assert.Equal(artefactGroupName, artefactGroupList.artefactGroups.First().name);
                 Assert.Single(artefactGroupList.artefactGroups);
                 createdArtefactGroup.artefacts.Sort();
-                artefactGroupList.artefactGroups.FirstOrDefault().artefacts.Sort();
+                artefactGroupList.artefactGroups.First().artefacts.Sort();
                 Assert.Equal(createdArtefactGroup.artefacts,
-                    artefactGroupList.artefactGroups.FirstOrDefault().artefacts);
-                Assert.Equal(createdArtefactGroup.id, artefactGroupList.artefactGroups.FirstOrDefault().id);
+                    artefactGroupList.artefactGroups.First().artefacts);
+                Assert.Equal(createdArtefactGroup.id, artefactGroupList.artefactGroups.First().id);
 
-                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id, realtime: realtime);
             }
         }
 
@@ -419,8 +461,10 @@ namespace SQE.ApiTest
         ///     Check that an artefact group can be updated.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task CanUpdateArtefactGroups()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CanUpdateArtefactGroups(bool realtime)
         {
             // Arrange
             using (var editionCreator =
@@ -432,20 +476,29 @@ namespace SQE.ApiTest
 
                 var editionId = await editionCreator.CreateEdition();
                 var artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
+                while (artefacts.Count < 5) // Make sure we have enough artefacts for the test
+                {
+                    editionId = await editionCreator.CreateEdition();
+                    artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
+                }
+                var firstArtefact = artefacts.First();
+                var lastArtefact = artefacts.Last();
                 var artefactGroupName = "artefact group 1";
 
                 // Act
-                var (_, createdArtefactGroup, _, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
+                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
                     new List<uint>
                     {
-                        artefacts.FirstOrDefault().id,
-                        artefacts.LastOrDefault().id
-                    });
+                        firstArtefact.id,
+                        lastArtefact.id
+                    },
+                    realtime: realtime);
+                var createdArtefactGroup = realtime ? createdArtefactGroupRt : createdArtefactGroupHttp;
                 var (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
 
                 // Assert
                 Assert.Single(artefactList.artefactGroups);
-                artefactList.artefactGroups.FirstOrDefault().ShouldDeepEqual(createdArtefactGroup);
+                artefactList.artefactGroups.First().ShouldDeepEqual(createdArtefactGroup);
 
                 /**
                  * Prepare updates to the new artefact group by changing its name and
@@ -455,22 +508,23 @@ namespace SQE.ApiTest
 
                 // Arrange
                 var updatedArtefactGroupName = "artefact group 2";
-                var updatedArtefacts = new List<uint> { artefacts.FirstOrDefault().id, artefacts[2].id, artefacts[4].id };
+                var updatedArtefacts = new List<uint> { firstArtefact.id, artefacts[2].id, artefacts[4].id };
 
                 // Act
-                var (_, updatedAG, _, _) = await _updateArtefactGroupAsync(editionId, createdArtefactGroup.id,
-                    updatedArtefactGroupName, updatedArtefacts);
+                var (_, updatedAgHttp, updatedAgRt, _) = await _updateArtefactGroupAsync(editionId, createdArtefactGroup.id,
+                    updatedArtefactGroupName, updatedArtefacts, realtime: realtime);
                 (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
+                var updatedAg = realtime ? updatedAgRt : updatedAgHttp;
 
                 // Assert
-                Assert.Equal(updatedArtefactGroupName, updatedAG.name);
+                Assert.Equal(updatedArtefactGroupName, updatedAg.name);
                 updatedArtefacts.Sort();
-                updatedAG.artefacts.Sort();
-                Assert.Equal(updatedArtefacts, updatedAG.artefacts);
-                Assert.Equal(createdArtefactGroup.id, updatedAG.id);
+                updatedAg.artefacts.Sort();
+                Assert.Equal(updatedArtefacts, updatedAg.artefacts);
+                Assert.Equal(createdArtefactGroup.id, updatedAg.id);
                 Assert.Single(artefactList.artefactGroups);
 
-                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id);
+                await _deleteArtefactGroupAsync(editionId, createdArtefactGroup.id, realtime: realtime);
             }
         }
     }

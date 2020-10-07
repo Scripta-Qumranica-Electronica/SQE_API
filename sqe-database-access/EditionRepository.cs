@@ -9,7 +9,6 @@ using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
-using IsolationLevel = System.Transactions.IsolationLevel;
 
 namespace SQE.DatabaseAccess
 {
@@ -57,12 +56,10 @@ namespace SQE.DatabaseAccess
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
     {
-        private readonly IConfiguration _config;
         private readonly IDatabaseWriter _databaseWriter;
 
         public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
-            _config = config;
             _databaseWriter = databaseWriter;
         }
 
@@ -74,7 +71,7 @@ namespace SQE.DatabaseAccess
                 // and in the calling function.  Maybe it doesn't matter much though.
                 var editionDictionary = new Dictionary<uint, Edition>();
                 Edition lastEdition;
-                var result = (await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
+                await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
                     EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue),
                     (editionGroup, editor) =>
                     {
@@ -144,7 +141,7 @@ namespace SQE.DatabaseAccess
                         EditionId = editionId
                     },
                     splitOn: "EditorId"
-                )).ToList();
+                );
 
                 return editionDictionary.Values;
             }
@@ -170,7 +167,7 @@ namespace SQE.DatabaseAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId.Value);
+                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId ?? 0);
                 }
 
                 // Now we create the mutation object for the requested action
@@ -214,15 +211,15 @@ namespace SQE.DatabaseAccess
             using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
-                var oldRecord = await connection.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
+                var oldRecord = (await connection.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
                     GetEditionManuscriptMetricsDetails.GetQuery,
                     new
                     {
                         editionUser.EditionId
-                    });
-                if (oldRecord.Count() != 1)
+                    })).ToList();
+                if (oldRecord.Count != 1)
                     throw new StandardExceptions.DataNotFoundException("manuscript metrics",
-                        editionUser.EditionId.Value,
+                        editionUser.EditionId ?? 0,
                         "edition");
 
                 var parameters = new DynamicParameters();
@@ -230,13 +227,13 @@ namespace SQE.DatabaseAccess
                 parameters.Add("height", height);
                 parameters.Add("x_origin", xOrigin);
                 parameters.Add("y_origin", yOrigin);
-                parameters.Add("manuscript_id", oldRecord.FirstOrDefault().ManuscriptId);
+                parameters.Add("manuscript_id", oldRecord.First().ManuscriptId);
 
                 var mutation = new MutationRequest(
                     MutateType.Update,
                     parameters,
                     "manuscript_metrics",
-                    oldRecord.FirstOrDefault().ManuscriptMetricsId);
+                    oldRecord.First().ManuscriptMetricsId);
 
                 var results = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutation);
 
@@ -255,6 +252,9 @@ namespace SQE.DatabaseAccess
         ///     User info object contains the editionId that the user wishes to copy and
         ///     all user permissions related to it.
         /// </param>
+        /// <param name="name">
+        ///     New name for the edition.
+        /// </param>
         /// <param name="copyrightHolder">
         ///     Name of the person/institution that holds the copyright
         ///     (automatically created from user when null)
@@ -264,7 +264,8 @@ namespace SQE.DatabaseAccess
         ///     (automatically created from user and all editors when null)
         /// </param>
         /// <returns>The editionId of the newly created edition.</returns>
-        public async Task<uint> CopyEditionAsync(UserInfo editionUser,
+        public async Task<uint> CopyEditionAsync(
+            UserInfo editionUser,
             string name = null,
             string copyrightHolder = null,
             string collaborators = null)
@@ -514,7 +515,7 @@ WHERE edition_id = {editionUser.EditionId}");
                 throw new StandardExceptions.NoAdminPermissionsException(editionUser);
 
             // Instantiate the return object
-            var editorInfo = new DetailedUserWithToken();
+            DetailedUserWithToken editorInfo;
 
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -546,13 +547,13 @@ WHERE edition_id = {editionUser.EditionId}");
                 using (var connection = OpenConnection())
                 {
                     // Find the editor
-                    var editorInfoSearch = await connection.QueryAsync<DetailedUserWithToken>(
+                    var editorInfoSearch = (await connection.QueryAsync<DetailedUserWithToken>(
                         UserDetails.GetQuery(
                             new List<string> { "user_id", "forename", "surname", "organization" },
                             new List<string> { "email" }
                         ),
                         new { Email = editorEmail }
-                    );
+                    )).ToList();
 
                     // Throw a meaningful error if the user's email was not found in the system.
                     if (!editorInfoSearch.Any())
@@ -561,14 +562,14 @@ WHERE edition_id = {editionUser.EditionId}");
                     editorInfo = editorInfoSearch.FirstOrDefault();
 
                     // Check for existing request
-                    var existingRequestToken = await connection.QueryAsync<Guid>(
+                    var existingRequestToken = (await connection.QueryAsync<Guid>(
                         FindEditionEditorRequestByEditorEdition.GetQuery,
                         new
                         {
                             editionUser.EditionId,
                             AdminUserId = editionUser.userId,
                             EditorUserId = editorInfo.UserId
-                        });
+                        })).ToList();
 
                     // Add a GUID for this transaction (Reuse any pre-existing ones)
                     if (existingRequestToken.Any())
@@ -598,7 +599,7 @@ WHERE edition_id = {editionUser.EditionId}");
                     }
 
                     // Record the editor request in database
-                    var recordedRequest = await connection.ExecuteAsync(RecordEditionEditorRequest.GetQuery,
+                    await connection.ExecuteAsync(RecordEditionEditorRequest.GetQuery,
                         new
                         {
                             editorInfo.Token,
@@ -618,10 +619,10 @@ WHERE edition_id = {editionUser.EditionId}");
             // Get datetime of request
             using (var connection = OpenConnection())
             {
-                var date = await connection.QueryAsync<DateTime>(
+                var date = (await connection.QueryAsync<DateTime>(
                     GetEditionEditorRequestDate.GetQuery,
-                    new { editorInfo.Token });
-                if (date.Count() != 1)
+                    new { editorInfo.Token })).AsList();
+                if (date.Count != 1)
                     throw new StandardExceptions.DataNotWrittenException("generate edition share request");
                 editorInfo.Date = date.FirstOrDefault();
             }
@@ -632,22 +633,22 @@ WHERE edition_id = {editionUser.EditionId}");
 
         public async Task<DetailedEditionPermission> AddEditionEditorAsync(string token, uint userId)
         {
-            var editorEditionPermission = new DetailedEditionPermission();
+            DetailedEditionPermission editorEditionPermission;
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
-                var editorEditionPermissions = await connection.QueryAsync<DetailedEditionPermission>(
+                var editorEditionPermissions = (await connection.QueryAsync<DetailedEditionPermission>(
                     FindEditionEditorRequestByToken.GetQuery,
                     new
                     {
                         Token = token,
                         EditorUserId = userId
-                    });
+                    })).AsList();
                 // Make sure the token exists
                 if (!editorEditionPermissions.Any())
                     throw new StandardExceptions.DataNotFoundException("token", token);
 
-                editorEditionPermission = editorEditionPermissions.FirstOrDefault();
+                editorEditionPermission = editorEditionPermissions.First();
                 editorEditionPermission.MayRead = true; // Invited editors always have read access
 
                 // Check if the editor already exists, don't attempt to re-add

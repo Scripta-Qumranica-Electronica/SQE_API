@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using MySqlConnector;
+using MySql.Data.MySqlClient;
 using Polly;
 using Serilog;
 
@@ -80,12 +80,10 @@ namespace SQE.DatabaseAccess
 
         private static readonly Random _random = new Random();
 
-        private static readonly List<int> _retrySqlExceptions = new List<int> { 1205, 1213, 1412 };
+        private static readonly List<uint> _retrySqlExceptions = new List<uint> { 1205, 1213, 1412 };
 
         private static readonly AsyncPolicy _retryPolicyAsync = Policy
-            .Handle<MySqlException>(
-                exception =>
-                    _retrySqlExceptions.Contains(exception.Number)
+            .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code)
             )
             .WaitAndRetryAsync(
                 RetryCount,
@@ -103,7 +101,7 @@ namespace SQE.DatabaseAccess
             );
 
         private static readonly Policy _retryPolicy = Policy
-            .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Number))
+            .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
             .WaitAndRetry(
                 RetryCount,
                 attempt => TimeSpan.FromMilliseconds(_waitTime()),
@@ -168,7 +166,7 @@ namespace SQE.DatabaseAccess
         private const int WaitBetweenRetriesInMilliseconds = 500;
         private const int CircuitBreakerPause = 5;
 
-        private static readonly List<int> _pauseExceptions = new List<int> { 1040, 1203 };
+        private static readonly List<uint> _pauseExceptions = new List<uint> { 1040, 1203 };
         private readonly Policy _circuitBreakerRetryPolicy;
         private readonly AsyncPolicy _circuitBreakerRetryPolicyAsync;
         private readonly Policy _circuitBreakPolicy;
@@ -178,7 +176,7 @@ namespace SQE.DatabaseAccess
         public DatabaseCommunicationCircuitBreakPolicy()
         {
             _circuitBreakerRetryPolicyAsync = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .WaitAndRetryAsync(
                     RetryCount,
                     attempt => TimeSpan.FromMilliseconds(_waitTime()),
@@ -195,7 +193,7 @@ namespace SQE.DatabaseAccess
                 );
 
             _circuitBreakerRetryPolicy = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .WaitAndRetry(
                     RetryCount,
                     attempt => TimeSpan.FromMilliseconds(_waitTime()),
@@ -212,14 +210,14 @@ namespace SQE.DatabaseAccess
                 );
 
             _circuitBreakPolicyAsync = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .CircuitBreakerAsync(
                     RetryCount,
                     TimeSpan.FromSeconds(CircuitBreakerPause)
                 );
 
             _circuitBreakPolicy = Policy
-                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Number))
+                .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .CircuitBreaker(
                     RetryCount,
                     TimeSpan.FromSeconds(CircuitBreakerPause)
@@ -447,8 +445,7 @@ namespace SQE.DatabaseAccess
             CancellationToken token)
         {
             return DatabaseCommunicationRetryPolicy.ExecuteRetry(
-                () => _underlyingSqlCommand.ExecuteReaderAsync(behavior, token)
-                    .ContinueWith(x => (DbDataReader)x.Result, token),
+                () => _underlyingSqlCommand.ExecuteReaderAsync(behavior, token),
                 //() => DbReaderExecuteReaderAsync(behavior, token),
                 token
             );

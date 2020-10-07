@@ -17,30 +17,13 @@ namespace SQE.ApiTest
     public class ImagedObjectTest : WebControllerTest
     {
         public ImagedObjectTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-            _db = new DatabaseQuery();
+        { }
 
-            imagedObjectBarePath = $"/{version}/{controller}";
-            singleImagedObject = $"{imagedObjectBarePath}/$id";
-            imagedObjectInstitutions = $"{imagedObjectBarePath}/institutions";
-            editionImagedObjects = $"/{version}/editions/$EditionId/{controller}";
-            editionImagedObjectbyId = $"{editionImagedObjects}/$ImageObjectId";
-        }
 
-        private readonly DatabaseQuery _db;
-        private const string version = "v1";
-        private const string controller = "imaged-objects";
-
-        private readonly string imagedObjectBarePath;
-        private readonly string singleImagedObject;
-        private readonly string imagedObjectInstitutions;
-        private readonly string editionImagedObjects;
-        private readonly string editionImagedObjectbyId;
-
-        private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact(uint user = 1)
+        private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact()
         {
             var editionId = EditionHelpers.GetEditionId();
-            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId, new List<string>() {"masks"});
+            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId, new List<string>() { "masks" });
             await req.SendAsync(_client, StartConnectionAsync);
             var (httpResponse, httpData, signalrData) =
                 (req.HttpResponseMessage, req.HttpResponseObject, req.SignalrResponseObject);

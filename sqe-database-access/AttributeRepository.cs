@@ -137,6 +137,10 @@ namespace SQE.DatabaseAccess
         /// <param name="attributeName">Name of the new attribute</param>
         /// <param name="attributeDescription">Description of the attribute</param>
         /// <param name="attributeValues">A list of 0 or more possible values for the attribute</param>
+        /// <param name="batchEditable">Whether the attribute can be edited in batches</param>
+        /// <param name="editable">Whether the attribute is editable</param>
+        /// <param name="removable">Whether the attribute is removable</param>
+        /// <param name="repeatable">Whether the attribute can be set more than one time for the same sign interpretation</param>
         /// <returns>The unique id of the newly created attribute</returns>
         public async Task<uint> CreateEditionAttribute(UserInfo editionUser, string attributeName,
             string attributeDescription, bool editable, bool removable, bool repeatable, bool batchEditable, IEnumerable<SignInterpretationAttributeValueInput> attributeValues)
@@ -187,6 +191,10 @@ namespace SQE.DatabaseAccess
         /// <param name="createAttributeValues">A list of attribute values to be created</param>
         /// <param name="updateAttributeValues">A list of attribute values to be updated</param>
         /// <param name="deleteAttributeValues">A list of attribute value ids to be deleted</param>
+        /// <param name="batchEditable">Whether the attribute can be edited in batches</param>
+        /// <param name="editable">Whether the attribute is editable</param>
+        /// <param name="removable">Whether the attribute is removable</param>
+        /// <param name="repeatable">Whether the attribute can be set more than one time for the same sign interpretation</param>
         /// <returns></returns>
         public async Task<uint> UpdateEditionAttribute(
             UserInfo editionUser,
@@ -220,7 +228,7 @@ namespace SQE.DatabaseAccess
                 }
 
                 // Write the attribute update if we have a new name or description
-                var updatedAttributeID = string.IsNullOrEmpty(attributeName) && string.IsNullOrEmpty(attributeDescription) ?
+                var updatedAttributeId = string.IsNullOrEmpty(attributeName) && string.IsNullOrEmpty(attributeDescription) ?
                     attributeId
                     : await _createOrUpdateEditionAttribute(
                         editionUser,
@@ -233,7 +241,7 @@ namespace SQE.DatabaseAccess
                         attributeId);
 
                 // Merge the existing attribute values with the newly requested ones if a new attribute was created
-                if (updatedAttributeID != attributeId)
+                if (updatedAttributeId != attributeId)
                     createAttributeValues = createAttributeValues.ToList().Concat(existingAttribute
                         .Select(x =>
                             new SignInterpretationAttributeValueInput()
@@ -248,7 +256,7 @@ namespace SQE.DatabaseAccess
                 {
                     await _createOrUpdateEditionAttributeValue(
                         editionUser,
-                        updatedAttributeID,
+                        updatedAttributeId,
                         createAttributeValue.AttributeStringValue,
                         createAttributeValue.AttributeStringValueDescription,
                         createAttributeValue.Css);
@@ -259,7 +267,7 @@ namespace SQE.DatabaseAccess
                 {
                     await _createOrUpdateEditionAttributeValue(
                         editionUser,
-                        updatedAttributeID,
+                        updatedAttributeId,
                         updateAttributeValue.AttributeStringValue,
                         updateAttributeValue.AttributeStringValueDescription,
                         updateAttributeValue.Css,
@@ -281,7 +289,7 @@ namespace SQE.DatabaseAccess
                 // Complete transaction
                 transactionScope.Complete();
 
-                return updatedAttributeID;
+                return updatedAttributeId;
             }
         }
 
@@ -296,7 +304,7 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // First get the actual details of the attribute
-                var existingAttributes = await GetEditionAttributeAsync(editionUser, attributeId);
+                var existingAttributes = (await GetEditionAttributeAsync(editionUser, attributeId)).ToList();
 
                 // Throw an error if the attribute id is not found
                 if (!existingAttributes.Any())
@@ -351,13 +359,15 @@ namespace SQE.DatabaseAccess
                 attributeId);
             var writeRequest = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateRequest);
 
-            if (!writeRequest.FirstOrDefault().NewId.HasValue)
+            var writtenRequest = writeRequest.First();
+            if (writtenRequest?.NewId == null)
                 throw new StandardExceptions.DataNotWrittenException($"{(attributeId.HasValue ? "update" : "create")} new attribute");
 
-            return writeRequest.FirstOrDefault().NewId.Value;
+            return writtenRequest.NewId.Value;
         }
 
-        private async Task<uint> _createOrUpdateEditionAttributeValue(UserInfo editionUser, uint attributeId, string attributeStringValue,
+        private async Task _createOrUpdateEditionAttributeValue(UserInfo editionUser, uint attributeId,
+            string attributeStringValue,
             string attributeValueDescription, string attributeValueCss, uint? attributeValueId = null)
         {
             var createParams = new DynamicParameters();
@@ -371,26 +381,22 @@ namespace SQE.DatabaseAccess
                 attributeValueId);
             var writeRequest = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateRequest);
 
-            if (!writeRequest.FirstOrDefault().NewId.HasValue)
+            var writtenRequest = writeRequest.First();
+            if (writtenRequest?.NewId == null)
                 throw new StandardExceptions.DataNotWrittenException(
                     $"{(attributeValueId.HasValue ? "update" : "create")} new attribute value");
 
-            attributeValueId ??= writeRequest.FirstOrDefault().NewId.Value;
-
             // Check to see if a CSS value should be written, early return for no CSS string
-            if (string.IsNullOrEmpty(attributeValueCss))
-                return attributeValueId.Value;
+            if (string.IsNullOrEmpty(attributeValueCss)) return;
 
             var createCssParams = new DynamicParameters();
-            createCssParams.Add("@attribute_value_id", writeRequest.FirstOrDefault().NewId);
+            createCssParams.Add("@attribute_value_id", writtenRequest.NewId.Value);
             createCssParams.Add("@css", attributeValueCss);
             var mutateCssRequest = new MutationRequest(
                 MutateType.Create,
                 createCssParams,
                 "attribute_value_css");
             await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateCssRequest);
-
-            return attributeValueId.Value;
         }
 
         /// <summary>
@@ -428,7 +434,7 @@ namespace SQE.DatabaseAccess
         ///     Update the given attributes
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
-        /// <param name="signInterpretaionId">Id of sign interpretation</param>
+        /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <param name="updateAttributes">List of Attributes with the new values</param>
         /// <returns>Returns the list of Attributes which contain the new ids</returns>
         public async Task<List<SignInterpretationAttributeData>> UpdateSignInterpretationAttributesAsync(
@@ -449,7 +455,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="deleteAttributeIds">List of ids of the attributes to be deleted</param>
         /// <returns>The list of the ids of deleted Attributes or empty list if the given list was null.</returns>
-        /// <exception cref="DataNotWrittenException"></exception>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         public async Task<List<uint>> DeleteSignInterpretationAttributesAsync(UserInfo editionUser,
             List<uint> deleteAttributeIds)
         {
@@ -627,6 +633,7 @@ namespace SQE.DatabaseAccess
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation to be altered</param>
         /// <param name="attributeValueId">Id of attribute value to update</param>
+        /// <param name="sequence">Position of the attribute in the sequential hierarchy</param>
         /// <returns>List of ids of delete attributes</returns>
         public async Task UpdateAttributeForSignInterpretationAsync(UserInfo editionUser,
             uint signInterpretationId, uint attributeValueId, byte? sequence)
@@ -685,7 +692,7 @@ namespace SQE.DatabaseAccess
         ///     List of set attributes with the new sign interpretation attribute id set or empty list
         ///     if the list of attributes had been null.
         /// </returns>
-        /// <exception cref="DataNotWrittenException"></exception>
+        /// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
         private async Task<List<SignInterpretationAttributeData>> _createOrUpdateAttributesAsync(
             UserInfo editionUser,
             uint signInterpretationId,
@@ -723,7 +730,11 @@ namespace SQE.DatabaseAccess
 
             // Now set the new Ids
             for (var i = 0; i < attributes.Count; i++)
-                attributes[i].SignInterpretationAttributeId = (uint)writeResults[i].NewId;
+            {
+                var newId = writeResults[i].NewId;
+                if (newId.HasValue)
+                    attributes[i].SignInterpretationAttributeId = newId.Value;
+            }
 
             // Now return the list of new attributes which now also contains the the new ids.
             return attributes;

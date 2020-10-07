@@ -321,7 +321,7 @@ namespace SQE.DatabaseAccess
         {
             using (var connection = OpenConnection())
             {
-                var insertedShape = await connection.ExecuteAsync(
+                await connection.ExecuteAsync(
                     CreateRoiShapeQuery.GetQuery,
                     new
                     {
@@ -346,7 +346,7 @@ namespace SQE.DatabaseAccess
         {
             using (var connection = OpenConnection())
             {
-                var insertedShape = await connection.ExecuteAsync(
+                await connection.ExecuteAsync(
                     CreateRoiPositionQuery.GetQuery,
                     new
                     {
@@ -395,10 +395,11 @@ namespace SQE.DatabaseAccess
                 new List<MutationRequest> { signInterpretationRoiRequest }
             );
 
-            if (writeResults.Count != 1
-                || !writeResults.First().NewId.HasValue)
+            var writtenResult = writeResults.First();
+
+            if (writtenResult?.NewId == null)
                 throw new StandardExceptions.DataNotWrittenException("create sign interpretation roi");
-            return writeResults.First().NewId.Value;
+            return writtenResult.NewId.Value;
         }
 
         private async Task<AlteredRecord> UpdateSignInterpretationRoiAsync(

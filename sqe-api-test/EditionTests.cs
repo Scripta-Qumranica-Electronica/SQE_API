@@ -22,13 +22,7 @@ namespace SQE.ApiTest
     public class EditionTests : WebControllerTest
     {
         public EditionTests(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-            _addEditionEditor = $"/{version}/{controller}/$EditionId/editors";
-        }
-
-        private const string version = "v1";
-        private const string controller = "editions";
-        private readonly string _addEditionEditor;
+        { }
 
         /// <summary>
         ///     This creates a share edition request. It uses a realtime listener to check that
@@ -41,7 +35,7 @@ namespace SQE.ApiTest
         /// <param name="shouldSucceed">Whether or not the request should succeed</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private async Task<(HttpResponseMessage requesterResponse, EditorInvitationDTO listenerResponse)> shareEdition(
+        private async Task<(HttpResponseMessage requesterResponse, EditorInvitationDTO listenerResponse)> ShareEdition(
             uint editionId,
             Request.UserAuthDetails user1, Request.UserAuthDetails user2, InviteEditorDTO permissionRequest = null,
             bool shouldSucceed = true)
@@ -88,18 +82,16 @@ namespace SQE.ApiTest
         ///     A convenience method to confirm an editor invitation, this uses a realtime listener
         ///     to confirm that the admin who made the request is notified of the acceptance.
         /// </summary>
-        /// <param name="editionId">
-        ///     <The edition being shared/ param>
-        ///         <param name="token">The token for the share invitation</param>
-        ///         <param name="editor">The user object of the editor who accepts the invitation</param>
-        ///         <param name="admin">The user object of the admin who made the share request</param>
-        ///         <param name="shouldSucceed">Whether or not the operation is expected to succeed</param>
-        ///         <returns></returns>
+        /// <param name="token">The token for the share invitation</param>
+        /// <param name="editor">The user object of the editor who accepts the invitation</param>
+        /// <param name="admin">The user object of the admin who made the share request</param>
+        /// <param name="shouldSucceed">Whether or not the operation is expected to succeed</param>
+        /// <returns></returns>
         private async Task<(
             HttpResponseMessage httpResponse,
             DetailedEditorRightsDTO httpMessage,
             DetailedEditorRightsDTO listenerMessage
-            )> confirmEditor(uint editionId, Guid token, Request.UserAuthDetails editor, Request.UserAuthDetails admin,
+            )> ConfirmEditor(Guid token, Request.UserAuthDetails editor, Request.UserAuthDetails admin,
             bool shouldSucceed = true)
         {
             var confirmRequest = new Post.V1_Editions_ConfirmEditorship_Token(token.ToString());
@@ -139,17 +131,15 @@ namespace SQE.ApiTest
             {
                 // Act
                 // Send in the editor request 
-                var (_, listenerResponse) = await shareEdition(
+                var (_, listenerResponse) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2);
 
                 // Act
                 // User 2 will confirm the request using the token it received
-                var (httpConfirmResponse, shareConfirmMsg, listenerConfirmResponse) =
-                    await confirmEditor(
-                        newEdition,
-                        listenerResponse.token,
+                var (_, shareConfirmMsg, listenerConfirmResponse) =
+                    await ConfirmEditor(listenerResponse.token,
                         Request.DefaultUsers.User2,
                         Request.DefaultUsers.User1);
 
@@ -221,14 +211,12 @@ namespace SQE.ApiTest
                 };
 
                 // Share the edition
-                var (_, listenerResponse) = await shareEdition(
+                var (_, listenerResponse) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2,
                     newPermissions);
-                await confirmEditor(
-                    newEdition,
-                    listenerResponse.token,
+                await ConfirmEditor(listenerResponse.token,
                     Request.DefaultUsers.User2,
                     Request.DefaultUsers.User1);
 
@@ -331,7 +319,7 @@ namespace SQE.ApiTest
             const string url = "/v1/editions";
 
             // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, string>(
+            var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 url + "/" + editionId,
@@ -393,14 +381,12 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                var (shareResponse, shareMsg) = await shareEdition(
+                var (_, shareMsg) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2,
                     newPermissions);
-                await confirmEditor(
-                    newEdition,
-                    shareMsg.token,
+                await ConfirmEditor(shareMsg.token,
                     Request.DefaultUsers.User2,
                     Request.DefaultUsers.User1);
 
@@ -435,14 +421,12 @@ namespace SQE.ApiTest
                 };
 
                 // Share the edition
-                var (_, listenerResponse) = await shareEdition(
+                var (_, listenerResponse) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2,
                     newPermissions);
-                await confirmEditor(
-                    newEdition,
-                    listenerResponse.token,
+                await ConfirmEditor(listenerResponse.token,
                     Request.DefaultUsers.User2,
                     Request.DefaultUsers.User1);
 
@@ -505,7 +489,7 @@ namespace SQE.ApiTest
             const string url = "/v1/editions";
 
             // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, string>(
+            var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
                 url + "/" + editionId,
@@ -546,14 +530,12 @@ namespace SQE.ApiTest
                 };
 
                 // Share the edition
-                var (_, listenerResponse) = await shareEdition(
+                var (_, listenerResponse) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2,
                     newPermissions);
-                await confirmEditor(
-                    newEdition,
-                    listenerResponse.token,
+                await ConfirmEditor(listenerResponse.token,
                     Request.DefaultUsers.User2,
                     Request.DefaultUsers.User1);
 
@@ -621,18 +603,16 @@ namespace SQE.ApiTest
                 };
 
                 // Share the edition
-                var (_, listenerResponse) = await shareEdition(
+                var (_, listenerResponse) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2,
                     newPermissions);
-                await confirmEditor(
-                    newEdition,
-                    listenerResponse.token,
+                await ConfirmEditor(listenerResponse.token,
                     Request.DefaultUsers.User2,
                     Request.DefaultUsers.User1);
 
-                var (deleteResponse, deleteMsg) = await Request.SendHttpRequestAsync<string, string>(
+                var (deleteResponse, _) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
                     HttpMethod.Delete,
                     "/v1/editions/" + newEdition,
@@ -660,7 +640,7 @@ namespace SQE.ApiTest
                 );
                 user1Resp.EnsureSuccessStatusCode();
 
-                var (user2Resp, user2Msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
+                var (user2Resp, _) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
                     _client,
                     HttpMethod.Get,
                     $"/v1/editions/{newEdition}",
@@ -675,7 +655,7 @@ namespace SQE.ApiTest
                 Assert.NotNull(user1Msg);
 
                 // Act (final delete)
-                var (delete2Response, delete2Msg) = await Request.SendHttpRequestAsync<string, string>(
+                var (delete2Response, _) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
                     HttpMethod.Delete,
                     "/v1/editions/" + newEdition,
@@ -741,7 +721,7 @@ namespace SQE.ApiTest
             {
                 // Act
                 // Send in the editor request 
-                var (_, listenerResponse) = await shareEdition(
+                var (_, listenerResponse) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2);
@@ -800,7 +780,7 @@ namespace SQE.ApiTest
             {
                 // Act
                 // Send in the editor request 
-                var (httpResponse, listenerResponse) = await shareEdition(
+                var (httpResponse, listenerResponse) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2);
@@ -866,14 +846,12 @@ namespace SQE.ApiTest
             try
             {
                 // Arrange
-                var (_, listenerResponse) = await shareEdition(
+                var (_, listenerResponse) = await ShareEdition(
                     newEdition,
                     Request.DefaultUsers.User1,
                     Request.DefaultUsers.User2,
                     newPermissions);
-                await confirmEditor(
-                    newEdition,
-                    listenerResponse.token,
+                await ConfirmEditor(listenerResponse.token,
                     Request.DefaultUsers.User2,
                     Request.DefaultUsers.User1);
                 const string newName = "My cool new name";
@@ -961,7 +939,7 @@ namespace SQE.ApiTest
                 true,
                 deterministic: false
             );
-            var (response, msg, rt, lt) = (newEd.HttpResponseMessage, newEd.HttpResponseObject,
+            var (response, msg, _, _) = (newEd.HttpResponseMessage, newEd.HttpResponseObject,
                 newEd.SignalrResponseObject, newEd.CreatedEdition);
             response.EnsureSuccessStatusCode();
 
@@ -985,7 +963,7 @@ namespace SQE.ApiTest
                 true,
                 deterministic: false
             );
-            (response, msg, rt, lt) = (newEd.HttpResponseMessage, newEd.HttpResponseObject, newEd.SignalrResponseObject,
+            (response, msg, _, _) = (newEd.HttpResponseMessage, newEd.HttpResponseObject, newEd.SignalrResponseObject,
                 newEd.CreatedEdition);
             response.EnsureSuccessStatusCode();
 
@@ -1273,7 +1251,7 @@ namespace SQE.ApiTest
                                 z => z.characters.Any(
                                     a => a.rois.Any(
                                         b => b.interpretationRoiId ==
-                                             rois.Select(x => x.interpretationRoiId).First())))));
+                                             rois.Select(c => c.interpretationRoiId).First())))));
             }
         }
     }

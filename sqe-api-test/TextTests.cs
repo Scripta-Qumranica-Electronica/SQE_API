@@ -537,7 +537,7 @@ namespace SQE.ApiTest
         public async Task CanGetAnonymousEditionTextLine()
         {
             // Arrange
-            var (editionId, textFragmentId, lineId) = await _getLine();
+            var (editionId, _, lineId) = await _getLine();
 
             // Act
             var textLineRequestObject = new Get.V1_Editions_EditionId_Lines_LineId(editionId, lineId);
@@ -600,7 +600,7 @@ namespace SQE.ApiTest
                     true,
                     deterministic: false
                 );
-                var (response, msg) = (newTextFragmentRequestObject.HttpResponseMessage,
+                var (response, _) = (newTextFragmentRequestObject.HttpResponseMessage,
                     newTextFragmentRequestObject.HttpResponseObject);
 
                 // Assert
@@ -761,7 +761,7 @@ namespace SQE.ApiTest
                 var numberOfTextFragments = textFragments.textFragments.Count;
 
                 // Act
-                var (response, msg) = await _createTextFragment(
+                var (response, _) = await _createTextFragment(
                     editionId,
                     textFragmentName,
                     previousTextFragmentId: previousFragmentId,
@@ -795,7 +795,7 @@ namespace SQE.ApiTest
                 var numberOfTextFragments = textFragments.textFragments.Count;
 
                 // Act
-                var (response, msg) = await _createTextFragment(
+                var (response, _) = await _createTextFragment(
                     editionId,
                     textFragmentName,
                     nextTextFragmentId: nextFragmentId,
@@ -831,7 +831,7 @@ namespace SQE.ApiTest
                 var numberOfTextFragments = textFragments.textFragments.Count;
 
                 // Act
-                var (response, msg) = await _createTextFragment(
+                var (response, _) = await _createTextFragment(
                     editionId,
                     textFragmentName,
                     nextTextFragmentId: nextFragmentId,
@@ -866,7 +866,7 @@ namespace SQE.ApiTest
                 var numberOfTextFragments = textFragments.textFragments.Count;
 
                 // Act
-                var (response, msg) = await _createTextFragment(
+                var (response, _) = await _createTextFragment(
                     editionId,
                     textFragmentName,
                     previousTextFragmentId: previousFragmentId,
@@ -900,7 +900,7 @@ namespace SQE.ApiTest
                 var numberOfTextFragments = textFragments.textFragments.Count;
 
                 // Act
-                var (response, msg) = await _createTextFragment(
+                var (response, _) = await _createTextFragment(
                     editionId,
                     textFragmentName,
                     previousTextFragmentId: previousFragmentId,
@@ -928,11 +928,11 @@ namespace SQE.ApiTest
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
-                var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);
+                var (editionId, _) = await _createEditionWithTextFragments(editionCreator);
                 const string textFragmentName = "my new can add to end col";
 
                 // Act
-                var (response, msg) = await _createTextFragment(
+                var (response, _) = await _createTextFragment(
                     editionId,
                     textFragmentName,
                     authenticated: false,
