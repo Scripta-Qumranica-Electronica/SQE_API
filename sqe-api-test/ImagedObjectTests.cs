@@ -40,13 +40,22 @@ namespace SQE.ApiTest
         private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact(uint user = 1)
         {
             var editionId = EditionHelpers.GetEditionId();
-            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId);
+            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId, new List<string>() {"masks"});
             await req.SendAsync(_client, StartConnectionAsync);
             var (httpResponse, httpData, signalrData) =
                 (req.HttpResponseMessage, req.HttpResponseObject, req.SignalrResponseObject);
             httpResponse.EnsureSuccessStatusCode();
             httpData.ShouldDeepEqual(signalrData);
-            return (editionId, httpData.imagedObjects.FirstOrDefault().id);
+            var imageWithMaskId = 0;
+            foreach (var (io, index) in httpData.imagedObjects.Select((x, idx) => (x, idx)))
+            {
+                if (io.artefacts.Any())
+                {
+                    imageWithMaskId = index;
+                    break;
+                }
+            }
+            return (editionId, httpData.imagedObjects[imageWithMaskId].id);
         }
 
         /// <summary>

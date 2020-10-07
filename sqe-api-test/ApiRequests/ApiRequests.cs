@@ -218,7 +218,6 @@ namespace SQE.ApiTest.ApiRequests
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
                 {
-                    await Task.Delay(new Random().Next(0, 5) * 1000);
                     await signalrListener.StartAsync();
                     // Subscribe to messages on the edition
                     if (listenToEdition)
@@ -291,8 +290,13 @@ namespace SQE.ApiTest.ApiRequests
 
             signalrListener?.DisposeAsync(); // Cleanup
             if (shouldSucceed)
-                Assert.DoesNotContain(listenerMethodsList, x =>
-                    !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull());
+            {
+                foreach (var listenerMethod in listenerMethodsList)
+                {
+                    Assert.True(_listenerDict.TryGetValue(listenerMethod, out var listener));
+                    Assert.False(listener.IsNull());
+                }
+            }
         }
 
         public async Task SendAsync(

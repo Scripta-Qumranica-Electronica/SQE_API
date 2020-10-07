@@ -137,12 +137,12 @@ namespace SQE.DatabaseAccess
             var artefactShapeId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
             if (artefactShapeId == 0)
                 throw new StandardExceptions.DataNotFoundException("artefact mask", artefactId, "artefact_id");
-            var sqeImageId = GetArtefactShapeSqeImageIdAsync(editionUser, artefactId);
+            var sqeImageId = await GetArtefactShapeSqeImageIdAsync(editionUser, artefactId);
 
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
             artefactChangeParams.Add("@artefact_id", artefactId);
-            artefactChangeParams.Add("@sqe_image_id", await sqeImageId);
+            artefactChangeParams.Add("@sqe_image_id", sqeImageId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
@@ -213,16 +213,22 @@ namespace SQE.DatabaseAccess
             List<AlteredRecord> updates;
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
-                var updateMutationTasks = transforms.Select(async x =>
-                    await FormatArtefactPositionUpdateRequestAsync(editionUser,
-                        x.artefactId,
-                        x.placement?.scale,
-                        x.placement?.rotate,
-                        x.isPlaced ? x.placement?.translate?.x : null, // set to null if explicitly not placed
-                        x.isPlaced ? x.placement?.translate?.y : null, // set to null if explicitly not placed
-                        x.placement?.zIndex));
-                var updateMutations = (await Task.WhenAll(updateMutationTasks)).ToList();
-                updates = await _databaseWriter.WriteToDatabaseAsync(editionUser, updateMutations);
+                var updateMutations = new MutationRequest[transforms.Count];
+                foreach (var (transform, index) in transforms.Select((x, idx) => (x, idx)))
+                {
+                    updateMutations[index] = await FormatArtefactPositionUpdateRequestAsync(editionUser,
+                        transform.artefactId,
+                        transform.placement?.scale,
+                        transform.placement?.rotate,
+                        transform.isPlaced
+                            ? transform.placement?.translate?.x
+                            : null, // set to null if explicitly not placed
+                        transform.isPlaced
+                            ? transform.placement?.translate?.y
+                            : null, // set to null if explicitly not placed
+                        transform.placement?.zIndex);
+                }
+                updates = await _databaseWriter.WriteToDatabaseAsync(editionUser, updateMutations.AsList());
                 transactionScope.Complete();
             }
 
