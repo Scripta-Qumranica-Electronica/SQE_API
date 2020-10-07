@@ -11,11 +11,8 @@ using Xunit;
 
 namespace SQE.ApiTest
 {
-    public class SignInterpretationTests : WebControllerTest
+    public partial class WebControllerTest
     {
-        public SignInterpretationTests(WebApplicationFactory<Startup> factory) : base(factory)
-        { }
-
         /// <summary>
         ///     Find a sign interpretation id in the edition
         /// </summary>

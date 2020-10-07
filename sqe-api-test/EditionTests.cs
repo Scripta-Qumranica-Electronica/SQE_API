@@ -19,11 +19,8 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This test suite tests all the current endpoints in the EditionController
     /// </summary>
-    public class EditionTests : WebControllerTest
+    public partial class WebControllerTest
     {
-        public EditionTests(WebApplicationFactory<Startup> factory) : base(factory)
-        { }
-
         /// <summary>
         ///     This creates a share edition request. It uses a realtime listener to check that
         ///     the user who was requested as an editor receives realtime notification of the request.

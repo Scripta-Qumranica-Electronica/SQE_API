@@ -14,12 +14,8 @@ using Xunit;
 
 namespace SQE.ApiTest
 {
-    public class ImagedObjectTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public ImagedObjectTest(WebApplicationFactory<Startup> factory) : base(factory)
-        { }
-
-
         private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact()
         {
             var editionId = EditionHelpers.GetEditionId();

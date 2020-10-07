@@ -18,20 +18,8 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This test suite tests all the current endpoints in the ArtefactController
     /// </summary>
-    public class ArtefactTests : WebControllerTest
+    public partial class WebControllerTest
     {
-        public ArtefactTests(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-            _db = new DatabaseQuery();
-        }
-
-        private readonly DatabaseQuery _db;
-        private readonly WKTReader _wkr = new WKTReader();
-        private static bool _images = true;
-
-        private const string version = "v1";
-        private const string controller = "artefacts";
-
         /// <summary>
         ///     Selects an edition with artefacts in sequence (to avoid locks) and returns its artefacts.
         /// </summary>
@@ -66,7 +54,7 @@ namespace SQE.ApiTest
             var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
-                $"/{version}/editions/{editionId}/{controller}/{artefactId}",
+                $"/v1/editions/{editionId}/artefacts/{artefactId}",
                 null,
                 await Request.GetJwtViaHttpAsync(_client)
             );
@@ -127,7 +115,7 @@ namespace SQE.ApiTest
                         .SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
                             _client,
                             HttpMethod.Post,
-                            $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                            $"/v1/editions/{newEdition}/artefacts/batch-transformation",
                             new BatchUpdateArtefactPlacementDTO
                             {
                                 artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO
@@ -165,7 +153,7 @@ namespace SQE.ApiTest
                         .SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
                             _client,
                             HttpMethod.Post,
-                            $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                            $"/v1/editions/{newEdition}/artefacts/batch-transformation",
                             new BatchUpdateArtefactPlacementDTO
                             {
                                 artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO
@@ -195,7 +183,7 @@ namespace SQE.ApiTest
                         .SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
                             _client,
                             HttpMethod.Post,
-                            $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                            $"/v1/editions/{newEdition}/artefacts/batch-transformation",
                             new BatchUpdateArtefactPlacementDTO
                             {
                                 artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO
@@ -264,7 +252,7 @@ namespace SQE.ApiTest
                 var (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -305,7 +293,7 @@ namespace SQE.ApiTest
                 (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -340,7 +328,7 @@ namespace SQE.ApiTest
                 var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
                     HttpMethod.Delete,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     null,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -353,7 +341,7 @@ namespace SQE.ApiTest
                 var (delResponse, _) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
                     HttpMethod.Get,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     null,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -369,7 +357,7 @@ namespace SQE.ApiTest
             // Arrange
             const uint editionId = 894;
             const uint artefactId = 10058;
-            var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/text-fragments?optional=suggested";
+            var path = $"/v1/editions/{editionId}/artefacts/{artefactId}/text-fragments?optional=suggested";
 
             // Act
             var (tfResponse, tfData) = await Request.SendHttpRequestAsync<string, ArtefactTextFragmentMatchListDTO>(
@@ -428,7 +416,7 @@ namespace SQE.ApiTest
                 var (response, _) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact
                 );
 
@@ -663,7 +651,7 @@ namespace SQE.ApiTest
                 (artefactResponse, _) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -698,7 +686,7 @@ namespace SQE.ApiTest
                 (artefactResponse, _) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -728,7 +716,7 @@ namespace SQE.ApiTest
                 var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
                     HttpMethod.Delete,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     null
                 );
 
@@ -756,7 +744,7 @@ namespace SQE.ApiTest
                 var (nameResponse, _) = await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Put,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     new UpdateArtefactDTO
                     {
                         mask = null,
@@ -794,7 +782,7 @@ namespace SQE.ApiTest
                     await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                         _client,
                         HttpMethod.Put,
-                        $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                        $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                         new UpdateArtefactDTO
                         {
                             mask = null,
@@ -824,7 +812,7 @@ namespace SQE.ApiTest
                     await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                         _client,
                         HttpMethod.Put,
-                        $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                        $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                         new UpdateArtefactDTO
                         {
                             mask = null,
@@ -861,7 +849,7 @@ namespace SQE.ApiTest
                     await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                         _client,
                         HttpMethod.Put,
-                        $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                        $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                         new UpdateArtefactDTO
                         {
                             mask = newArtefactShape,
@@ -897,7 +885,7 @@ namespace SQE.ApiTest
                     await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                         _client,
                         HttpMethod.Put,
-                        $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                        $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                         new UpdateArtefactDTO
                         {
                             mask = artefact.mask,
@@ -949,7 +937,7 @@ namespace SQE.ApiTest
                 var (nameResponse, _) = await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Put,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     new UpdateArtefactDTO
                     {
                         mask = newArtefactShape,

@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
+using NetTopologySuite.IO;
 using SQE.API.Server;
+using SQE.ApiTest.Helpers;
 using Xunit;
 
 namespace SQE.ApiTest
@@ -13,12 +15,15 @@ namespace SQE.ApiTest
     /// <summary>
     ///     Fires up the application and provides an HTTP Client to access its controller endpoints.
     /// </summary>
-    public class WebControllerTest : IClassFixture<WebApplicationFactory<Startup>>
+    public partial class WebControllerTest : IClassFixture<WebApplicationFactory<Startup>>
     {
         protected readonly HttpClient _client;
         private readonly WebApplicationFactory<Startup> _factory;
+        private readonly DatabaseQuery _db;
+        private readonly WKTReader _wkr = new WKTReader();
+        private static bool _images = true;
 
-        protected WebControllerTest(WebApplicationFactory<Startup> factory)
+        public WebControllerTest(WebApplicationFactory<Startup> factory)
         {
             var projectDir = Directory.GetCurrentDirectory();
             var configPath = Path.Combine(projectDir, "../../../../sqe-api-server/appsettings.json");
@@ -32,6 +37,7 @@ namespace SQE.ApiTest
                 }
             );
             _client = _factory.CreateClient();
+            _db = new DatabaseQuery();
         }
 
         /// <summary>

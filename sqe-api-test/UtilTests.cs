@@ -12,11 +12,8 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This a suite of integration tests for the utils controller.
     /// </summary>
-    public class UtilTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public UtilTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-        }
         // There are more extensive tests of the polygon validation method in ValidationTests.cs
         // The tests here are geared towards checking the API endpoints
 

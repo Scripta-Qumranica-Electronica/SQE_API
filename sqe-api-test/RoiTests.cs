@@ -15,12 +15,8 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This test suite tests all the current endpoints in the RoiController
     /// </summary>
-    public class RoiTests : WebControllerTest
+    public partial class WebControllerTest
     {
-        public RoiTests(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanCreateEditionRoi()
         {

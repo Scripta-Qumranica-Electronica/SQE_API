@@ -13,12 +13,8 @@ using Xunit;
 
 namespace SQE.ApiTest
 {
-    public class TextTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public TextTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-        }
-
         private async Task<(uint editionId, uint textFragmentId)> _getRandomTextFragmentId(uint? editionId = null)
         {
             var usedEditionId = editionId ?? EditionHelpers.GetEditionId();

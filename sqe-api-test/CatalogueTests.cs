@@ -10,12 +10,8 @@ using Xunit;
 
 namespace SQE.ApiTest
 {
-    public class CatalogueTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public CatalogueTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanGetImagedObjectsForTextFragments()
         {

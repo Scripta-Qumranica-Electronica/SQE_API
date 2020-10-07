@@ -18,15 +18,8 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This a suite of integration tests for the users controller.
     /// </summary>
-    public class UserTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public UserTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-            _db = new DatabaseQuery();
-        }
-
-        private readonly DatabaseQuery _db;
-
         private Request.UserAuthDetails UserUpdateRequestDTOToUserAuthDetails(UserUpdateRequestDTO user)
         {
             return new Request.UserAuthDetails { Email = user.email, Password = user.password };

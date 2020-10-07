@@ -17,12 +17,8 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This test suite tests all the current endpoints in the ArtefactController
     /// </summary>
-    public class ArtefactGroupTests : WebControllerTest
+    public partial class WebControllerTest
     {
-        public ArtefactGroupTests(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-        }
-
         /// <summary>
         ///     Get a listing of all the artefact groups in an edition
         /// </summary>
