@@ -70,6 +70,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CanAccessArtefacts()
         {
             // Act
@@ -89,6 +90,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CanBatchUnplaceArtefacts()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -212,6 +214,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CanCreateArtefacts()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -313,6 +316,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CanDeleteArtefacts()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -350,6 +354,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CanGetSuggestedTextFragmentForArtefact()
         {
             // Arrange
@@ -378,6 +383,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CannotCreateArtefactsOnUnownedEdition()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -428,6 +434,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CannotCreateMalformedArtefact()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -701,6 +708,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CannotDeleteUnownedArtefacts()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -728,6 +736,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CannotUpdateUnownedArtefacts()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -761,6 +770,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CanUpdateArtefacts()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -920,6 +930,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task RejectsUpdateToImproperArtefactShape()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -951,6 +962,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Artefact")]
         public async Task CanGetEditionArtefactRois()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))

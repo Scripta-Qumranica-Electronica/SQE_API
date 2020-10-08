@@ -11,6 +11,7 @@ namespace SQE.ApiTest
     public partial class WebControllerTest
     {
         [Fact]
+        [Trait("Category", "Catalogue")]
         public async Task CanGetImagedObjectsForTextFragments()
         {
             var requestObj = new Get.V1_Catalogue_TextFragments_TextFragmentId_ImagedObjects(9977);
@@ -24,6 +25,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Catalogue")]
         public async Task CanGetTextFragmentsForImagedObjects()
         {
             var requestObj = new Get.V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments("IAA-1094-1");
@@ -36,6 +38,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Catalogue")]
         public async Task CanGetImagedObjectsAndTextFragmentsOfEdition()
         {
             // Act
@@ -43,6 +46,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Catalogue")]
         public async Task CanGetImagedObjectsAndTextFragmentsOfManuscript()
         {
             // Act
@@ -50,6 +54,7 @@ namespace SQE.ApiTest
         }
 
         [Theory]
+        [Trait("Category", "Catalogue")]
         [InlineData(true)]
         [InlineData(false)]
         public async Task CanCreateNewImagedObjectTextFragmentMatch(bool realtime)

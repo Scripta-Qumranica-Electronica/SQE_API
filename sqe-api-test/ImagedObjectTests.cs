@@ -40,6 +40,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Imaged Object")]
         public async Task CanDecodeImagedObjectIdWithUrlEncodedValue()
         {
             // Note: the dotnet HTTP Request system automatically escapes the URL's we submit,
@@ -61,6 +62,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Imaged Object")]
         public async Task CanGetImagedObjectInstitutions()
         {
             // Act
@@ -77,6 +79,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "Imaged Object")]
         [InlineData(true, false)]
         [InlineData(true, true)]
         [InlineData(false, false)]
@@ -120,6 +123,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "Imaged Object")]
         [InlineData(true, false)]
         [InlineData(true, true)]
         [InlineData(false, false)]
@@ -170,12 +174,14 @@ namespace SQE.ApiTest
 
 
         [Fact]
+        [Trait("Category", "Imaged Object")]
         public async Task CanGetInstitutionalImages()
         {
             await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
         }
 
         [Fact]
+        [Trait("Category", "Imaged Object")]
         public async Task CanGetSpecifiedImagedObject()
         {
             // Arrange
@@ -191,6 +197,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Imaged Object")]
         public async Task CanGetImagedObjectTextFragment()
         {
             // Note that "IAA-1039-1" had text fragment matches at the time this test was written.
