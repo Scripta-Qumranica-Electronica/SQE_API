@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DeepEqual.Syntax;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using Xunit;
@@ -74,7 +76,7 @@ namespace SQE.ApiTest.Helpers
             if (auth && user == null)
                 user = Request.DefaultUsers.User1;
             var getEditionObject = new Get.V1_Editions_EditionId(editionId);
-            await getEditionObject.Send(
+            await getEditionObject.SendAsync(
                 client,
                 null,
                 requestUser: user,
@@ -105,7 +107,7 @@ namespace SQE.ApiTest.Helpers
             if (string.IsNullOrEmpty(name)) name = "test-name-" + _editionCount;
 
             var newScrollRequest = new Post.V1_Editions_EditionId(editionId, new EditionCopyDTO(name, null, null));
-            await newScrollRequest.Send(
+            await newScrollRequest.SendAsync(
                 client,
                 null,
                 requestUser: userAuthDetails ?? Request.DefaultUsers.User1,
@@ -127,7 +129,9 @@ namespace SQE.ApiTest.Helpers
         /// <param name="shouldSucceed">Optional, whether the delete action is expected to succeed</param>
         /// <param name="userAuthDetails">Details of the user making the request</param>
         /// <returns>void</returns>
-        public static async Task DeleteEdition(HttpClient client,
+        public static async Task DeleteEdition(
+            HttpClient client,
+            Func<string, Task<HubConnection>> realtime,
             uint editionId,
             bool authenticated = true,
             bool shouldSucceed = true,
@@ -135,25 +139,34 @@ namespace SQE.ApiTest.Helpers
         {
             if (authenticated && userAuthDetails == null)
                 userAuthDetails = Request.DefaultUsers.User1;
-            var (response, msg) = await Request.SendHttpRequestAsync<string, DeleteTokenDTO>(
+            var deleteResponse1 = new Delete.V1_Editions_EditionId(
+                editionId,
+                new List<string> { "deleteForAllEditors" });
+            await deleteResponse1.SendAsync(
                 client,
-                HttpMethod.Delete,
-                $"/v1/editions/{editionId}?optional=deleteForAllEditors",
-                null,
-                authenticated ? await Request.GetJwtViaHttpAsync(client, userAuthDetails) : null
-            );
+                realtime,
+                authenticated,
+                userAuthDetails,
+                shouldSucceed: shouldSucceed,
+                requestRealtime: false);
+            var (response, msg) = (deleteResponse1.HttpResponseMessage, deleteResponse1.HttpResponseObject);
             if (shouldSucceed)
             {
                 response.EnsureSuccessStatusCode();
                 Assert.NotNull(msg.token);
                 Assert.Equal(editionId, msg.editionId);
-                var (response2, msg2) = await Request.SendHttpRequestAsync<string, DeleteTokenDTO>(
+                var deleteResponse2 = new Delete.V1_Editions_EditionId(
+                    editionId,
+                    new List<string> { "deleteForAllEditors" },
+                    msg.token);
+                await deleteResponse2.SendAsync(
                     client,
-                    HttpMethod.Delete,
-                    $"/v1/editions/{msg.editionId}?optional=deleteForAllEditors&token={msg.token}",
-                    null,
-                    authenticated ? await Request.GetJwtViaHttpAsync(client, userAuthDetails) : null
-                );
+                    realtime,
+                    authenticated,
+                    userAuthDetails,
+                    shouldSucceed: true,
+                    requestRealtime: false);
+                var (response2, msg2) = (deleteResponse2.HttpResponseMessage, deleteResponse2.HttpResponseObject);
                 response2.EnsureSuccessStatusCode();
                 Assert.Null(msg2);
             }
@@ -163,7 +176,7 @@ namespace SQE.ApiTest.Helpers
             Request.UserAuthDetails user = null)
         {
             var textFragmentRequestObject = new Get.V1_Editions_EditionId_TextFragments(editionId);
-            await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+            await textFragmentRequestObject.SendAsync(client, requestUser: user, auth: user != null);
             return textFragmentRequestObject.HttpResponseObject.textFragments;
         }
 
@@ -176,7 +189,7 @@ namespace SQE.ApiTest.Helpers
                     editionId,
                     textFragmentId.Value
                 );
-                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+                await textFragmentRequestObject.SendAsync(client, requestUser: user, auth: user != null);
                 if (!textFragmentRequestObject.HttpResponseObject.textFragments.Any(x =>
                     x.lines.Any(y =>
                         y.signs.Count(z =>
@@ -193,13 +206,23 @@ namespace SQE.ApiTest.Helpers
                     editionId,
                     textFragment.id
                 );
-                await textFragmentRequestObject.Send(client, requestUser: user, auth: user != null);
+                await textFragmentRequestObject.SendAsync(client, requestUser: user, auth: user != null);
                 if (textFragmentRequestObject.HttpResponseObject.textFragments.Any(x =>
                     x.lines.Any(y => y.signs.Count > 2)))
                     return textFragmentRequestObject.HttpResponseObject;
             }
 
             throw new Exception($"The edition {editionId} doesn't have any fragments with 3 or more signs");
+        }
+
+        public static async Task<EditionListDTO> GetAllEditions(HttpClient client,
+            Func<string, Task<HubConnection>> signalr, Request.UserAuthDetails user = null)
+        {
+            var request = new Get.V1_Editions();
+            await request.SendAsync(client, signalr, user != null, user);
+
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            return request.HttpResponseObject;
         }
 
         /// <summary>
@@ -210,6 +233,7 @@ namespace SQE.ApiTest.Helpers
         {
             private readonly HttpClient _client;
             private readonly string _name;
+            private readonly Func<string, Task<HubConnection>> _realtime;
             private readonly Request.UserAuthDetails _userAuthDetails;
 
             /// <summary>
@@ -222,11 +246,13 @@ namespace SQE.ApiTest.Helpers
             ///     will be used)
             /// </param>
             public EditionCreator(HttpClient client,
+                Func<string, Task<HubConnection>> realtime,
                 uint editionId = 0,
                 string name = "",
                 Request.UserAuthDetails userAuthDetails = null)
             {
                 _client = client;
+                _realtime = realtime;
                 _name = name;
                 _userAuthDetails = userAuthDetails;
                 EditionId = editionId;
@@ -241,7 +267,7 @@ namespace SQE.ApiTest.Helpers
             {
                 // shouldSucceed here is false, since we don't really care if it worked.
                 Task.Run(async () =>
-                        await DeleteEdition(_client, EditionId, userAuthDetails: _userAuthDetails,
+                        await DeleteEdition(_client, _realtime, EditionId, userAuthDetails: _userAuthDetails,
                             shouldSucceed: false))
                     .Wait();
             }

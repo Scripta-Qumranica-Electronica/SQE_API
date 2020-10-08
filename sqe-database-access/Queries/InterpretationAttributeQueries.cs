@@ -69,7 +69,8 @@ LEFT JOIN (
 		AND attr_css.edition_id = attribute_owner.edition_id
 WHERE attribute_owner.edition_id = @EditionId
 ";
-        const string _whereClause = "\n    AND attribute.attribute_id = @AttributeId";
+
+        private const string _whereClause = "\n    AND attribute.attribute_id = @AttributeId";
 
         public static string GetQuery(uint? attributeId = null)
         {

@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.API.DTO;
@@ -24,9 +23,9 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         /// <param name="payload">JSON object with the WKT polygon to validate</param>
         [HttpPost("v1/[controller]s/repair-wkt-polygon")]
-        public async Task<ActionResult<WktPolygonDTO>> RepairWktPolygon([FromBody] WktPolygonDTO payload)
+        public ActionResult<WktPolygonDTO> RepairWktPolygon([FromBody] WktPolygonDTO payload)
         {
-            return await _utilService.RepairWktPolygonAsync(payload.wktPolygon);
+            return _utilService.RepairWktPolygonAsync(payload.wktPolygon);
         }
     }
 }

@@ -50,10 +50,11 @@ namespace SQE.DatabaseAccess
 
     public class SignInterpretationCommentaryRepository : DbConnectionBase, ISignInterpretationCommentaryRepository
     {
-        private readonly IDatabaseWriter _databaseWriter;
         private readonly IAttributeRepository _attributeRepository;
+        private readonly IDatabaseWriter _databaseWriter;
 
-        public SignInterpretationCommentaryRepository(IConfiguration config, IDatabaseWriter databaseWriter, IAttributeRepository attributeRepository) :
+        public SignInterpretationCommentaryRepository(IConfiguration config, IDatabaseWriter databaseWriter,
+            IAttributeRepository attributeRepository) :
             base(config)
         {
             _databaseWriter = databaseWriter;
@@ -111,16 +112,16 @@ namespace SQE.DatabaseAccess
                 };
 
                 var signInterpretationAttributes =
-                    (await _attributeRepository.GetSignInterpretationAttributesByDataAsync(
+                    await _attributeRepository.GetSignInterpretationAttributesByDataAsync(
                         editionUser,
-                        searchData));
+                        searchData);
 
-                if (attributeValueId.HasValue && signInterpretationAttributes.Count != 1)
+                if (signInterpretationAttributes.Count != 1)
                     throw new StandardExceptions.DataNotFoundException("sign interpretation attribute",
                         attributeValueId.Value,
                         "attribute value id");
 
-                attributeId = signInterpretationAttributes.FirstOrDefault().AttributeId;
+                attributeId = signInterpretationAttributes.First().AttributeId;
             }
 
             var existingCommentaries = (await GetSignInterpretationCommentariesByInterpretationId(editionUser,
@@ -129,23 +130,33 @@ namespace SQE.DatabaseAccess
             // Check if this is actually a request to set the commentary to null (i.e., delete)
             if (string.IsNullOrEmpty(commentary))
             {
-                var signInterpretationCommentaryId = existingCommentaries.Where(x => x.AttributeId == attributeId)
+                var signInterpretationCommentaryId = existingCommentaries.Where(x =>
+                        x.AttributeId == attributeId && x.SignInterpretationCommentaryId.HasValue)
                     .Select(x => x.SignInterpretationCommentaryId.Value);
                 await DeleteCommentariesAsync(editionUser, signInterpretationCommentaryId.AsList());
                 return null; // Early return, nothing more to do
             }
 
-            var preparedCommentary = new SignInterpretationCommentaryData()
+            var preparedCommentary = new SignInterpretationCommentaryData
             {
                 AttributeId = attributeId,
                 Commentary = commentary,
-                SignInterpretationId = signInterpretationId,
+                SignInterpretationId = signInterpretationId
             };
+            var action = MutateType.Create;
+
+            // Check if we are replacing an existing comment
+            var replacedCommentary = existingCommentaries.FirstOrDefault(x => x.AttributeId == attributeId);
+            if (replacedCommentary != null)
+            {
+                action = MutateType.Update;
+                preparedCommentary.SignInterpretationCommentaryId = replacedCommentary.SignInterpretationCommentaryId;
+            }
 
             var result = await _createOrUpdateCommentariesAsync(editionUser,
                 signInterpretationId,
                 new List<SignInterpretationCommentaryData> { preparedCommentary },
-                existingCommentaries.Any(x => x.AttributeId == attributeId) ? MutateType.Update : MutateType.Create);
+                action);
             return result.Count > 0 ? result.First() : new SignInterpretationCommentaryData();
         }
 
@@ -189,7 +200,8 @@ namespace SQE.DatabaseAccess
                 signInterpretationId);
             return await DeleteCommentariesAsync(
                 editionUser,
-                commentaries.Select(commentary => (uint)commentary.SignInterpretationCommentaryId).ToList());
+                commentaries.Where(commentary => commentary.SignInterpretationCommentaryId.HasValue)
+                    .Select(commentary => commentary.SignInterpretationCommentaryId.Value).ToList());
         }
 
         /// <summary>
@@ -208,11 +220,11 @@ namespace SQE.DatabaseAccess
                 SignInterpretationCommentaryId = signInterpretationCommentaryId
             };
 
-            var result = await GetSignInterpretationCommentariesByDataAsync(
+            var result = (await GetSignInterpretationCommentariesByDataAsync(
                 editionUser,
-                searchData);
+                searchData)).ToList();
 
-            if (result.Count() != 1)
+            if (result.Count != 1)
                 throw new StandardExceptions.DataNotFoundException(
                     "sign interpretation commentary",
                     signInterpretationCommentaryId
@@ -271,7 +283,6 @@ namespace SQE.DatabaseAccess
         /// <param name="signInterpretationId">Id of sign interpretation</param>
         /// <param name="newCommentaryData">New sign interpretation commentaries</param>
         /// <returns>New sign interpretation commentary with the new id</returns>
-        /// <exception cref="NotImplementedException"></exception>
         public async Task<SignInterpretationCommentaryData> ReplaceSignInterpretationCommentary(
             UserInfo editionUser,
             uint signInterpretationId,
@@ -290,7 +301,7 @@ namespace SQE.DatabaseAccess
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
         /// <param name="signInterpretationId">Id of sign interpretation</param>
-        /// <param name="newCommentary">List of new sign interpretation commentaries</param>
+        /// <param name="newCommentaries">List of new sign interpretation commentaries</param>
         /// <returns>List of the new sign interpretation commentaries with the new ids</returns>
         public async Task<List<SignInterpretationCommentaryData>> ReplaceSignInterpretationCommentaries(
             UserInfo editionUser,
@@ -311,7 +322,8 @@ namespace SQE.DatabaseAccess
         ///     signInterpretationId properly.
         /// </summary>
         /// <param name="editionUser">Edition user object</param>
-        /// <param name="commentary">Sign interpretation commentary object</param>
+        /// <param name="signInterpretationId">Id of the sign interpretation</param>
+        /// <param name="commentaries">List of sign interpretation commentary object</param>
         /// <param name="action">Mutate type create or update</param>
         /// <returns>
         ///     Commentary with the new sign interpretation commentary id set. If the commentary had been null
@@ -325,9 +337,8 @@ namespace SQE.DatabaseAccess
             MutateType action
         )
         {
-            // Let's test whether a list of new attributes is provided.
-            // It doesn't matter if this list is empty
-            if (!(commentaries?.Count > 0)) return new List<SignInterpretationCommentaryData>();
+            var response = commentaries;
+
             // Create requests for the commentary
             var requests = new List<MutationRequest>();
             foreach (var commentary in commentaries)
@@ -355,15 +366,16 @@ namespace SQE.DatabaseAccess
                 throw new StandardExceptions.DataNotWrittenException($"{actionName} sign interpretation commentary");
             }
 
-            // Now set the new Ids
-
+            // Now set the new Ids in the response
             for (var i = 0; i < commentaries.Count; i++)
-                commentaries[i].SignInterpretationCommentaryId = (uint)writeResults[i].NewId;
-
+            {
+                var newId = writeResults[i].NewId;
+                if (newId.HasValue)
+                    response[i].SignInterpretationCommentaryId = newId.Value;
+            }
 
             // Now return the list of new attributes which now also contains the the new ids.
-            return commentaries;
-            //If no list of new attributes had been provided return an empty list.
+            return response;
         }
 
         #endregion

@@ -90,11 +90,6 @@ namespace SQE.ApiTest
             throw exception;
         }
 
-        private class Counter
-        {
-            public int Count { get; set; }
-        }
-
         [Fact]
         public void RetryPoliciesShouldNotRepeat()
         {
@@ -293,6 +288,11 @@ namespace SQE.ApiTest
             Assert.NotNull(ex);
             Assert.Equal(code, ex.Code);
             Assert.Equal(repeatCount, counter.Count);
+        }
+
+        private class Counter
+        {
+            public int Count { get; set; }
         }
     }
 }

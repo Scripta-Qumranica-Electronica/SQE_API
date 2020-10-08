@@ -5,9 +5,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.AspNetCore.Mvc.Testing;
+using DeepEqual.Syntax;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -17,132 +16,106 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This a suite of integration tests for the users controller.
     /// </summary>
-    public class UserTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public UserTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-            _db = new DatabaseQuery();
-            // Routes
-            baseUrl = $"/{version}/{controller}";
-            login = $"{baseUrl}/login";
-            changePassword = $"{baseUrl}/change-password";
-            resendActivationEmail = $"{baseUrl}/resend-activation-email";
-            changeUnactivatedEmail = $"{baseUrl}/change-unactivated-email";
-            forgotPassword = $"{baseUrl}/forgot-password";
-            changeForgottenPassword = $"{baseUrl}/change-forgotten-password";
-            confirmRegistration = $"{baseUrl}/confirm-registration";
-        }
-
-        private readonly DatabaseQuery _db;
-
-        // Routes
-        private const string version = "v1";
-        private const string controller = "users";
-        private readonly string baseUrl;
-        private readonly string login;
-        private readonly string changePassword;
-        private readonly string resendActivationEmail;
-        private readonly string changeUnactivatedEmail;
-        private readonly string forgotPassword;
-        private readonly string changeForgottenPassword;
-        private readonly string confirmRegistration;
-
         private Request.UserAuthDetails UserUpdateRequestDTOToUserAuthDetails(UserUpdateRequestDTO user)
         {
             return new Request.UserAuthDetails { Email = user.email, Password = user.password };
         }
 
 
-        [Theory]
-        [InlineData("/v1/users")]
-        public async Task RejectUnauthenticatedGetRequest(string url)
+        [Fact]
+        public async Task RejectUnauthenticatedGetRequest()
         {
             // Act
-            var (response, msg) =
-                await Request.SendHttpRequestAsync<string, DetailedUserDTO>(_client, HttpMethod.Get, url, null);
+            var request = new Get.V1_Users();
+            await request.SendAsync(_client, StartConnectionAsync, requestRealtime: true, shouldSucceed: false);
 
             // Assert
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, request.HttpResponseMessage.StatusCode);
         }
 
-        [Theory]
-        [InlineData("/v1/users/change-password")]
-        public async Task RejectUnauthenticatedPostRequests(string url)
+        [Fact]
+        public async Task RejectUnauthenticatedPostRequests()
         {
             // Act
-            var (response, msg) =
-                await Request.SendHttpRequestAsync<string, DetailedUserDTO>(_client, HttpMethod.Post, url, null);
+            var request = new Post.V1_Users_ChangePassword(null);
+            await request.SendAsync(_client, StartConnectionAsync, requestRealtime: true, shouldSucceed: false);
 
             // Assert
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, request.HttpResponseMessage.StatusCode);
         }
 
-        [Theory]
-        [InlineData("/v1/users")]
-        public async Task RejectUnauthenticatedPutRequests(string url)
+        [Fact]
+        public async Task RejectUnauthenticatedPutRequests()
         {
             // Act
-            var (response, msg) =
-                await Request.SendHttpRequestAsync<string, DetailedUserDTO>(_client, HttpMethod.Put, url, null);
+            var request = new Put.V1_Users(null);
+            await request.SendAsync(_client, StartConnectionAsync, requestRealtime: true, shouldSucceed: false);
 
             // Assert
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, request.HttpResponseMessage.StatusCode);
         }
 
-        private async Task<(HttpResponseMessage response, DetailedUserDTO msg)> CreateUserAccountAsync(
+        private async Task<(HttpResponseMessage response, UserDTO msg)> CreateUserAccountAsync(
             NewUserRequestDTO user,
-            bool shouldSucceed = true)
+            bool shouldSucceed = true,
+            bool realtime = false)
         {
-            const string url = "/v1/users";
-            var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
-                _client,
-                HttpMethod.Post,
-                url,
-                user
-            );
+            var request = new Post.V1_Users(user);
+            await request.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                requestRealtime: realtime,
+                shouldSucceed: shouldSucceed);
 
             // Assert
+            var msg = realtime ? request.SignalrResponseObject : request.HttpResponseObject;
             if (shouldSucceed)
             {
-                response.EnsureSuccessStatusCode();
+                if (!realtime)
+                    request.HttpResponseMessage.EnsureSuccessStatusCode();
                 Assert.Equal(user.email, msg.email);
-                Assert.Equal(user.forename, msg.forename);
-                Assert.Equal(user.surname, msg.surname);
-                Assert.Equal(user.organization, msg.organization);
             }
             else
             {
-                Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+                Assert.Equal(HttpStatusCode.Conflict, request.HttpResponseMessage.StatusCode);
             }
 
-            return (response, msg);
+            return (request.HttpResponseMessage, msg);
         }
 
-        private async Task ActivatUserAccountAsync(DetailedUserDTO user, bool shouldSucceed = true)
+        private async Task ActivatUserAccountAsync(
+            UserDTO user,
+            bool shouldSucceed = true,
+            bool realtime = false)
         {
             var userToken = await GetToken(user.email); // Get  token from DB
             var payload = new AccountActivationRequestDTO { token = userToken.token.ToString() };
 
-            var (response, msg) =
-                await Request.SendHttpRequestAsync<AccountActivationRequestDTO, UserDTO>(
-                    _client,
-                    HttpMethod.Post,
-                    confirmRegistration,
-                    payload
-                );
+            var request = new Post.V1_Users_ConfirmRegistration(payload);
+            await request.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                requestRealtime: realtime,
+                shouldSucceed: shouldSucceed);
 
             // Assert
             if (shouldSucceed)
             {
-                response.EnsureSuccessStatusCode();
-                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+                if (!realtime)
+                {
+                    request.HttpResponseMessage.EnsureSuccessStatusCode();
+                    Assert.Equal(HttpStatusCode.NoContent, request.HttpResponseMessage.StatusCode);
+                }
+
                 var confirmedUser = await GetUserByEmail(user.email);
                 Assert.Equal(user.email, confirmedUser.email);
                 Assert.True(confirmedUser.activated);
             }
-            else
+            else if (!realtime)
             {
-                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+                Assert.Equal(HttpStatusCode.NotFound, request.HttpResponseMessage.StatusCode);
             }
         }
 
@@ -157,7 +130,8 @@ namespace SQE.ApiTest
             if (shouldSucceed)
             {
                 var activateTokens =
-                    await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams); // Get  token from DB
+                    (await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams))
+                    .AsList(); // Get  token from DB
                 Assert.NotEmpty(activateTokens);
                 return activateTokens.First();
             }
@@ -191,21 +165,26 @@ namespace SQE.ApiTest
             return new UserObj();
         }
 
-        private async Task<DetailedUserTokenDTO> Login(NewUserRequestDTO user, bool shouldSucceed = true)
+        private async Task<DetailedUserTokenDTO> Login(
+            NewUserRequestDTO user,
+            bool shouldSucceed = true,
+            bool realtime = false)
         {
-            var (response, userLogin) = await Request.SendHttpRequestAsync<LoginRequestDTO, DetailedUserTokenDTO>(
-                _client,
-                HttpMethod.Post,
-                login,
-                new LoginRequestDTO { email = user.email, password = user.password }
-            );
+            var request = new Post.V1_Users_Login(new LoginRequestDTO { email = user.email, password = user.password });
+            await request.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                requestRealtime: realtime,
+                shouldSucceed: shouldSucceed);
             if (shouldSucceed)
             {
-                response.EnsureSuccessStatusCode();
-                return userLogin;
+                if (!realtime)
+                    request.HttpResponseMessage.EnsureSuccessStatusCode();
+                return realtime ? request.SignalrResponseObject : request.HttpResponseObject;
             }
 
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            if (!realtime)
+                Assert.Equal(HttpStatusCode.Unauthorized, request.HttpResponseMessage.StatusCode);
             return new DetailedUserTokenDTO();
         }
 
@@ -244,7 +223,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        private async Task CleanupUserAccountAsync(DetailedUserDTO user)
+        private async Task CleanupUserAccountAsync(UserDTO user)
         {
             const string deleteNewUserSQL = "DELETE FROM user WHERE email = @Email";
             const string deleteEmailTokenSQL = "DELETE FROM user_email_token WHERE user_id = @UserId";
@@ -253,24 +232,6 @@ namespace SQE.ApiTest
             deleteEmailTokenParams.Add("@Email", user.email);
             await _db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
             await _db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
-        }
-
-        private class UserObj
-        {
-            public string email { get; set; }
-            public string password { get; set; }
-            public string forename { get; set; }
-            public string surname { get; set; }
-            public string organization { get; set; }
-            public bool activated { get; set; }
-            public uint user_id { get; set; }
-        }
-
-        private class Token
-        {
-            public Guid token { get; set; }
-            public string type { get; set; }
-            public DateTime date_created { get; set; }
         }
 
         /// <summary>
@@ -291,7 +252,7 @@ namespace SQE.ApiTest
             {
                 // Arrange
                 await userCreator.CreateUser();
-                var loginDetails = await Login(user);
+                await Login(user);
                 var newDetails = new UserUpdateRequestDTO(
                     "fake1@fake2-email.com",
                     "WrongPassword",
@@ -303,7 +264,7 @@ namespace SQE.ApiTest
                 // Act 
                 var updateUserAccountObject = new Put.V1_Users(newDetails);
                 var userAuth = UserUpdateRequestDTOToUserAuthDetails(user);
-                await updateUserAccountObject.Send(
+                await updateUserAccountObject.SendAsync(
                     _client,
                     auth: true,
                     requestUser: userAuth,
@@ -333,7 +294,7 @@ namespace SQE.ApiTest
             {
                 // Arrange
                 await userCreator.CreateUser();
-                var loginDetails = await Login(user);
+                await Login(user);
                 var authUser = UserUpdateRequestDTOToUserAuthDetails(user);
                 var newPwd = new ResetLoggedInUserPasswordRequestDTO
                 {
@@ -343,7 +304,7 @@ namespace SQE.ApiTest
 
                 // Act 
                 var passwordUpdateRequest = new Post.V1_Users_ChangePassword(newPwd);
-                await passwordUpdateRequest.Send(
+                await passwordUpdateRequest.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false,
@@ -382,13 +343,13 @@ namespace SQE.ApiTest
                 Assert.False(createdUser.activated);
 
                 // Act (activate user)
-                await ActivatUserAccountAsync(userDetails); // Asserts already in this function
+                await ActivatUserAccountAsync(userDetails, realtime: true); // Asserts already in this function
 
                 // Act (login)
                 var userAuth = UserUpdateRequestDTOToUserAuthDetails(user);
                 var userLoginRequest =
                     new Post.V1_Users_Login(new LoginRequestDTO { email = user.email, password = user.password });
-                await userLoginRequest.Send(
+                await userLoginRequest.SendAsync(
                     _client,
                     auth: true,
                     requestUser: userAuth
@@ -432,17 +393,12 @@ namespace SQE.ApiTest
 
                 // Act (resend activation)
                 Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
-                var (response, msg) =
-                    await Request.SendHttpRequestAsync<ResendUserAccountActivationRequestDTO, string>(
-                        _client,
-                        HttpMethod.Post,
-                        resendActivationEmail,
-                        payload
-                    );
+                var request = new Post.V1_Users_ResendActivationEmail(payload);
+                await request.SendAsync(_client, StartConnectionAsync);
 
                 // Assert (resend activation)
-                response.EnsureSuccessStatusCode();
-                Assert.Null(msg);
+                request.HttpResponseMessage.EnsureSuccessStatusCode();
+                Assert.Null(request.HttpResponseObject);
                 var newTokenCreationTime = await GetToken(user.email);
                 Assert.True(
                     newTokenCreationTime.date_created >= tokenCreationTime.date_created
@@ -465,7 +421,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanUpdateDetailsBeforeActivation()
         {
-            DetailedUserDTO updatedUser = null;
+            UserDTO updatedUser = null;
 
             // Arrange
             var user = new NewUserRequestDTO(
@@ -478,7 +434,7 @@ namespace SQE.ApiTest
 
             try
             {
-                var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
+                await CreateUserAccountAsync(user, realtime: true); // Asserts already in this function
                 var tokenCreationTime = await GetToken(user.email);
                 // Update user details
                 var updateUser = new NewUserRequestDTO(user.email, user.password, "ACME", "Joe", "Nobody");
@@ -493,9 +449,6 @@ namespace SQE.ApiTest
                 var newTokenCreationTime = await GetToken(user.email);
                 Assert.True(newTokenCreationTime.date_created > tokenCreationTime.date_created);
                 Assert.NotEqual(tokenCreationTime.token, newTokenCreationTime.token);
-                Assert.NotEqual(user.forename, updatedUser.forename);
-                Assert.NotEqual(user.surname, updatedUser.surname);
-                Assert.NotEqual(user.organization, updatedUser.organization);
                 Assert.Equal(user.email, updatedUser.email);
             }
             finally
@@ -510,8 +463,10 @@ namespace SQE.ApiTest
         ///     Make sure that authenticated users can change their password when logged in.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task ChangeActivatedAccountPassword()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task ChangeActivatedAccountPassword(bool realtime)
         {
             // ARRANGE
             var user = new NewUserRequestDTO(
@@ -524,23 +479,26 @@ namespace SQE.ApiTest
             var (_, newUser) = await CreateUserAccountAsync(user); // Asserts already in this function
             await ActivatUserAccountAsync(newUser); // Asserts already in this function
 
-            var loggedInUser = await Login(user);
+            var loggedInUser = await Login(user, realtime: realtime);
             Assert.NotNull(loggedInUser.token);
 
             const string newPassword = "more secure pa$$w0rd";
 
             // Act (change password)
-            var (cpResponse, cpMsg) = await Request.SendHttpRequestAsync<ResetLoggedInUserPasswordRequestDTO, string>(
-                _client,
-                HttpMethod.Post,
-                changePassword,
-                new ResetLoggedInUserPasswordRequestDTO { oldPassword = user.password, newPassword = newPassword },
-                loggedInUser.token
-            );
+            var request = new Post.V1_Users_ChangePassword(new ResetLoggedInUserPasswordRequestDTO
+            { oldPassword = user.password, newPassword = newPassword });
+            await request.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                requestUser: new Request.UserAuthDetails { Email = user.email, Password = user.password },
+                auth: true,
+                requestRealtime: realtime);
 
             // Assert (change password)
-            cpResponse.EnsureSuccessStatusCode();
-            Assert.Null(cpMsg);
+            var msg = realtime ? request.SignalrResponseObject : request.HttpResponseObject;
+            if (!realtime)
+                request.HttpResponseMessage.EnsureSuccessStatusCode();
+            Assert.Null(msg);
             await Login(user, false); // Old credentials should now fail
 
             // Act (attempt login with new password)
@@ -562,8 +520,10 @@ namespace SQE.ApiTest
         ///     Make sure that authenticated users can change their account details,including changing the email.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task ChangeActivatedAccountUserDetails()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task ChangeActivatedAccountUserDetails(bool realtime)
         {
             // ARRANGE
             var user = new NewUserRequestDTO(
@@ -588,20 +548,19 @@ namespace SQE.ApiTest
             );
 
             // Act (change user details)
-            var (cdResponse, cdMsg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
-                _client,
-                HttpMethod.Put,
-                baseUrl,
-                updatedUser,
-                loggedInUser.token
-            );
+            var request = new Put.V1_Users(updatedUser);
+            await request.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                true,
+                new Request.UserAuthDetails { Email = user.email, Password = user.password },
+                requestRealtime: realtime);
 
             // Assert (change user details)
-            cdResponse.EnsureSuccessStatusCode();
+            if (!realtime)
+                request.HttpResponseMessage.EnsureSuccessStatusCode();
+            var cdMsg = realtime ? request.SignalrResponseObject : request.HttpResponseObject;
             Assert.Equal(updatedUser.email, cdMsg.email);
-            Assert.Equal(updatedUser.forename, cdMsg.forename);
-            Assert.Equal(updatedUser.surname, cdMsg.surname);
-            Assert.Equal(updatedUser.organization, cdMsg.organization);
 
             // Act (attempt login for new details)
             var upMsg = await Login(updatedUser);
@@ -628,8 +587,10 @@ namespace SQE.ApiTest
         ///     Make sure that authenticated users can change their account details, without changing the email.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task ChangeActivatedAccountUserDetailsWithoutEmail()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ChangeActivatedAccountUserDetailsWithoutEmail(bool realtime)
         {
             // ARRANGE
             var user = new NewUserRequestDTO(
@@ -654,16 +615,18 @@ namespace SQE.ApiTest
             );
 
             // Act (change user details)
-            var (cdResponse, cdMsg) = await Request.SendHttpRequestAsync<UserUpdateRequestDTO, DetailedUserDTO>(
-                _client,
-                HttpMethod.Put,
-                baseUrl,
-                updatedUser,
-                loggedInUser.token
-            );
+            var request = new Put.V1_Users(updatedUser);
+            await request.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                true,
+                new Request.UserAuthDetails { Email = user.email, Password = user.password },
+                requestRealtime: realtime);
 
             // Assert (change user details)
-            cdResponse.EnsureSuccessStatusCode();
+            if (!realtime)
+                request.HttpResponseMessage.EnsureSuccessStatusCode();
+            var cdMsg = realtime ? request.SignalrResponseObject : request.HttpResponseObject;
             Assert.Equal(updatedUser.forename, cdMsg.forename);
             Assert.Equal(updatedUser.surname, cdMsg.surname);
             Assert.Equal(updatedUser.organization, cdMsg.organization);
@@ -687,8 +650,10 @@ namespace SQE.ApiTest
         ///     Email should be updated, the token should remain the same but with updated creation time.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task ChangeUnactivatedAccountEmail()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ChangeUnactivatedAccountEmail(bool realtime)
         {
             // Arrange
             var user = new NewUserRequestDTO(
@@ -703,16 +668,18 @@ namespace SQE.ApiTest
 
             // Act
             Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
-            var (response, updatedUser) = await Request.SendHttpRequestAsync<UnactivatedEmailUpdateRequestDTO, string>(
-                _client,
-                HttpMethod.Post,
-                changeUnactivatedEmail,
-                new UnactivatedEmailUpdateRequestDTO { email = user.email, newEmail = newEmail }
-            );
+            var request = new Post.V1_Users_ChangeUnactivatedEmail(new UnactivatedEmailUpdateRequestDTO
+            { email = user.email, newEmail = newEmail });
+            await request.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                requestRealtime: realtime);
 
             // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.Null(updatedUser);
+            if (!realtime)
+                request.HttpResponseMessage.EnsureSuccessStatusCode();
+            Assert.Null(request.HttpResponseObject);
+            Assert.Null(request.SignalrResponseObject);
 
             // Verify the new email is in the DB
             var lgMsg = await Login(new NewUserRequestDTO(newEmail, user.password, null, null, null));
@@ -745,7 +712,7 @@ namespace SQE.ApiTest
 
 
             // Act
-            var (response, msg) = await CreateUserAccountAsync(newUser, false); // Assert already in method;
+            await CreateUserAccountAsync(newUser, false); // Assert already in method;
 
             // Cleanup
             await CleanupUserAccountAsync(loggedInUser);
@@ -766,7 +733,7 @@ namespace SQE.ApiTest
                 "Jane",
                 "Doe"
             );
-            var newUser = await CreateUserAccountAsync(user);
+            await CreateUserAccountAsync(user);
 
             // Act
             var loginResponse = await Login(user);
@@ -795,15 +762,17 @@ namespace SQE.ApiTest
             );
 
             // Act
-            var loggedInUser = await Login(user, false); // Asserts already in method.
+            await Login(user, false); // Asserts already in method.
         }
 
         /// <summary>
         ///     Make sure that activated accounts can request a password reset.
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task ResetActivatedAccountPassword()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ResetActivatedAccountPassword(bool realtime)
         {
             // ARRANGE
             var user = new NewUserRequestDTO(
@@ -820,31 +789,34 @@ namespace SQE.ApiTest
             Assert.NotNull(loggedInUser.token);
 
             // Act (request password reset)
-            var (rpResponse, rpMsg) = await Request.SendHttpRequestAsync<ResetUserPasswordRequestDTO, string>(
-                _client,
-                HttpMethod.Post,
-                forgotPassword,
-                new ResetUserPasswordRequestDTO { email = user.email }
-            );
+            var request = new Post.V1_Users_ForgotPassword(new ResetUserPasswordRequestDTO { email = user.email });
+            await request.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                requestRealtime: realtime);
 
             // Assert (request password reset)
-            rpResponse.EnsureSuccessStatusCode();
-            Assert.Null(rpMsg);
+            if (!realtime)
+                request.HttpResponseMessage.EnsureSuccessStatusCode();
+            Assert.Null(request.HttpResponseObject);
+            Assert.Null(request.SignalrResponseObject);
             var userToken = await GetToken(user.email);
             Assert.NotNull(userToken);
 
             // Act (attempt to reset password with token)
             const string newPassword = "unu$u^l..pw@wierdpr0vider.org";
-            var (cpResponse, cpMsg) = await Request.SendHttpRequestAsync<ResetForgottenUserPasswordRequestDTO, string>(
-                _client,
-                HttpMethod.Post,
-                changeForgottenPassword,
-                new ResetForgottenUserPasswordRequestDTO { token = userToken.token.ToString(), password = newPassword }
-            );
+            var tokenRequest = new Post.V1_Users_ChangeForgottenPassword(new ResetForgottenUserPasswordRequestDTO
+            { token = userToken.token.ToString(), password = newPassword });
+            await tokenRequest.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                requestRealtime: realtime);
 
             // Assert (attempt to reset password with token)
-            cpResponse.EnsureSuccessStatusCode();
-            Assert.Null(cpMsg);
+            if (!realtime)
+                tokenRequest.HttpResponseMessage.EnsureSuccessStatusCode();
+            Assert.Null(tokenRequest.HttpResponseObject);
+            Assert.Null(tokenRequest.SignalrResponseObject);
 
             // Act (attempt login with new password)
             user.password = newPassword;
@@ -861,6 +833,43 @@ namespace SQE.ApiTest
 
             // Cleanup (remove user)
             await CleanupUserAccountAsync(npLoggedInUser);
+        }
+
+        [Fact]
+        public async Task CanGetUserDetails()
+        {
+            // Arrange
+            var user = Request.DefaultUsers.User1;
+
+            // Act
+            var request = new Get.V1_Users();
+            await request.SendAsync(
+                _client,
+                StartConnectionAsync,
+                true,
+                user);
+
+            // Assert
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            Assert.Equal(user.Email, request.HttpResponseObject.email);
+        }
+
+        private class UserObj
+        {
+            public string email { get; set; }
+            public string password { get; set; }
+            public string forename { get; set; }
+            public string surname { get; set; }
+            public string organization { get; set; }
+            public bool activated { get; set; }
+            public uint user_id { get; set; }
+        }
+
+        private class Token
+        {
+            public Guid token { get; set; }
+            public string type { get; set; }
+            public DateTime date_created { get; set; }
         }
     }
 }

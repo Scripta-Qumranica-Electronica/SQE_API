@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SQE.DatabaseAccess.Queries
 {
@@ -183,50 +181,50 @@ WHERE edition_id = @EditionId";
         }
     }
 
-    internal static class EditionLockQuery
-    {
-        public const string GetQuery = @"
-SELECT locked AS Locked
-FROM edition_editor
-JOIN edition USING(edition_id)
-WHERE edition_id = @EditionId";
-
-        internal class Result
-        {
-            public bool Locked { get; set; } // locked is TINYINT, which is 8-bit unsigned like C# bool.  Is it ok/safe?
-        }
-    }
-
-    // TODO: probably delete this.
-    internal static class ScrollVersionGroupLimitQuery
-    {
-        private const string DefaultLimit = " sv1.user_id = 1 ";
-
-        private const string UserLimit = " sv1.user_id = @UserId ";
-
-        private const string CoalesceScrollVersions = @"scroll_version_id IN 
-            (SELECT sv2.scroll_version_id
-            FROM scroll_version sv1
-            JOIN scroll_version_group USING(edition_id)
-            JOIN scroll_version sv2 ON sv2.edition_id = scroll_version_group.edition_id
-            WHERE sv1.scroll_version_id = @ScrollVersionId";
-
-        // You must add a parameter `@ScrollVersionId` to any query using this.
-        public const string LimitToScrollVersionGroup = CoalesceScrollVersions + ")";
-
-        // You must add a parameter `@ScrollVersionId` to any query using this.
-        public const string LimitToScrollVersionGroupNoAuth = CoalesceScrollVersions + " AND " + DefaultLimit + ")";
-
-        // You must add the parameters `@ScrollVersionId` and `@UserId` to any query using this.
-        public const string LimitToScrollVersionGroupAndUser =
-            CoalesceScrollVersions + " AND (" + DefaultLimit + " OR " + UserLimit + "))";
-
-        public const string LimitScrollVersionGroupToDefaultUser = @"
-            scroll_version.user_id = 1 ";
-
-        public const string LimitScrollVersionGroupToUser =
-            LimitScrollVersionGroupToDefaultUser + " OR scroll_version.user_id = @UserId ";
-    }
+    //     internal static class EditionLockQuery
+    //     {
+    //         public const string GetQuery = @"
+    // SELECT locked AS Locked
+    // FROM edition_editor
+    // JOIN edition USING(edition_id)
+    // WHERE edition_id = @EditionId";
+    //
+    //         internal class Result
+    //         {
+    //             public bool Locked { get; set; } // locked is TINYINT, which is 8-bit unsigned like C# bool.  Is it ok/safe?
+    //         }
+    //     }
+    //
+    //     // TODO: probably delete this.
+    //     internal static class ScrollVersionGroupLimitQuery
+    //     {
+    //         private const string DefaultLimit = " sv1.user_id = 1 ";
+    //
+    //         private const string UserLimit = " sv1.user_id = @UserId ";
+    //
+    //         private const string CoalesceScrollVersions = @"scroll_version_id IN 
+    //             (SELECT sv2.scroll_version_id
+    //             FROM scroll_version sv1
+    //             JOIN scroll_version_group USING(edition_id)
+    //             JOIN scroll_version sv2 ON sv2.edition_id = scroll_version_group.edition_id
+    //             WHERE sv1.scroll_version_id = @ScrollVersionId";
+    //
+    //         // You must add a parameter `@ScrollVersionId` to any query using this.
+    //         public const string LimitToScrollVersionGroup = CoalesceScrollVersions + ")";
+    //
+    //         // You must add a parameter `@ScrollVersionId` to any query using this.
+    //         public const string LimitToScrollVersionGroupNoAuth = CoalesceScrollVersions + " AND " + DefaultLimit + ")";
+    //
+    //         // You must add the parameters `@ScrollVersionId` and `@UserId` to any query using this.
+    //         public const string LimitToScrollVersionGroupAndUser =
+    //             CoalesceScrollVersions + " AND (" + DefaultLimit + " OR " + UserLimit + "))";
+    //
+    //         public const string LimitScrollVersionGroupToDefaultUser = @"
+    //             scroll_version.user_id = 1 ";
+    //
+    //         public const string LimitScrollVersionGroupToUser =
+    //             LimitScrollVersionGroupToDefaultUser + " OR scroll_version.user_id = @UserId ";
+    //     }
 
     #region editor queries
 
@@ -290,44 +288,44 @@ WHERE edition_editor.edition_id = @EditionId
             WHERE edition_id = @EditionId)";
     }
 
-    internal static class CopyEditionDataForTableQuery
-    {
-        // You must add a parameter `@ScrollVersionId` and `@CopyToScrollVersionId` to use this.
-        public static string GetQuery(string tableName, string tableIdColumn)
-        {
-            return $@"INSERT IGNORE INTO {tableName} ({tableIdColumn}, edition_editor_id, edition_id) 
-            SELECT {tableIdColumn}, @EditionEditorId, @CopyToEditionId 
-            FROM {tableName} 
-            WHERE edition_id = @EditionId";
-        }
-    }
-
-    internal static class GetOwnerTableDataForQuery
-    {
-        // You must add a parameter `@EditionId`.
-        public static string GetQuery(string tableName, string tableIdColumn)
-        {
-            return $@"SELECT {tableIdColumn} 
-            FROM {tableName} 
-            WHERE edition_id = @EditionId";
-        }
-    }
-
-    internal static class WriteOwnerTableData
-    {
-        public static string GetQuery(string tableName,
-            string tableIdColumn,
-            uint editionId,
-            uint editionEditorId,
-            List<uint> dataIds)
-        {
-            return $@"INSERT INTO {tableName} (edition_id, edition_editor_id, {tableIdColumn})
-            VALUES {string.Join(
-                    ",",
-                    dataIds.Select(x => $"({editionId},{editionEditorId},{x.ToString()})"))
-                }";
-        }
-    }
+    // internal static class CopyEditionDataForTableQuery
+    // {
+    //     // You must add a parameter `@ScrollVersionId` and `@CopyToScrollVersionId` to use this.
+    //     public static string GetQuery(string tableName, string tableIdColumn)
+    //     {
+    //         return $@"INSERT IGNORE INTO {tableName} ({tableIdColumn}, edition_editor_id, edition_id) 
+    //         SELECT {tableIdColumn}, @EditionEditorId, @CopyToEditionId 
+    //         FROM {tableName} 
+    //         WHERE edition_id = @EditionId";
+    //     }
+    // }
+    //
+    // internal static class GetOwnerTableDataForQuery
+    // {
+    //     // You must add a parameter `@EditionId`.
+    //     public static string GetQuery(string tableName, string tableIdColumn)
+    //     {
+    //         return $@"SELECT {tableIdColumn} 
+    //         FROM {tableName} 
+    //         WHERE edition_id = @EditionId";
+    //     }
+    // }
+    //
+    // internal static class WriteOwnerTableData
+    // {
+    //     public static string GetQuery(string tableName,
+    //         string tableIdColumn,
+    //         uint editionId,
+    //         uint editionEditorId,
+    //         List<uint> dataIds)
+    //     {
+    //         return $@"INSERT INTO {tableName} (edition_id, edition_editor_id, {tableIdColumn})
+    //         VALUES {string.Join(
+    //                 ",",
+    //                 dataIds.Select(x => $"({editionId},{editionEditorId},{x.ToString()})"))
+    //             }";
+    //     }
+    // }
 
     internal static class UpdateEditionLegalDetailsQuery
     {
@@ -360,62 +358,65 @@ WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
         }
     }
 
-    internal static class LockEditionQuery
-    {
-        internal const string GetQuery = @"
-UPDATE edition
-SET locked = 1
-WHERE edition_id = @EditionId
-";
-    }
-
-    internal static class UnlockEditionQuery
-    {
-        internal const string GetQuery = @"
-UPDATE edition
-SET locked = 0
-WHERE edition_id = @EditionId
-";
-    }
+    //     internal static class LockEditionQuery
+    //     {
+    //         internal const string GetQuery = @"
+    // UPDATE edition
+    // SET locked = 1
+    // WHERE edition_id = @EditionId
+    // ";
+    //     }
+    //
+    //     internal static class UnlockEditionQuery
+    //     {
+    //         internal const string GetQuery = @"
+    // UPDATE edition
+    // SET locked = 0
+    // WHERE edition_id = @EditionId
+    // ";
+    //     }
 
     internal static class EditionScriptQuery
     {
         internal const string GetQuery = @"
 SELECT sign_interpretation_roi.sign_interpretation_id AS Id,
-    sign_interpretation.character AS Letter,
-    GROUP_CONCAT(DISTINCT CONCAT(attr.name, '_', attr.string_value)) AS Attributes,
-    AsWKB(roi_shape.path) AS Polygon,
-    roi_position.translate_x AS TranslateX,
-    roi_position.translate_y AS TranslateY,
-    roi_position.stance_rotation AS LetterRotation,
-    artefact_position.rotate AS ImageRotation,
-    CONCAT(image_urls.proxy, image_urls.url, SQE_image.filename) AS ImageURL,
-    image_urls.suffix AS ImageSuffix
+       sign_interpretation.character AS Letter,
+       GROUP_CONCAT(DISTINCT CONCAT(attr.name, '_', attr.string_value)) AS Attributes,
+       AsWKB(roi_shape.path) AS Polygon,
+       roi_position.translate_x AS TranslateX,
+       roi_position.translate_y AS TranslateY,
+       roi_position.stance_rotation AS LetterRotation,
+       COALESCE(art_pos.rotate, 0) AS ImageRotation,
+       CONCAT(image_urls.proxy, image_urls.url, SQE_image.filename) AS ImageURL,
+       image_urls.suffix AS ImageSuffix
 FROM sign_interpretation_roi_owner
-JOIN sign_interpretation_roi USING(sign_interpretation_roi_id)
-JOIN roi_position USING(roi_position_id)
-JOIN roi_shape USING(roi_shape_id)
-JOIN artefact_position USING(artefact_id)
-JOIN artefact_position_owner ON artefact_position_owner.artefact_position_id = artefact_position.artefact_position_id
-    AND artefact_position_owner.edition_id = sign_interpretation_roi_owner.edition_id
-JOIN artefact_shape USING(artefact_id)
-JOIN artefact_shape_owner ON artefact_shape_owner.artefact_shape_id = artefact_shape.artefact_shape_id
-    AND artefact_shape_owner.edition_id = sign_interpretation_roi_owner.edition_id
-JOIN SQE_image USING(sqe_image_id)
-JOIN image_urls USING(image_urls_id)
-JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
-JOIN position_in_stream ON position_in_stream.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
-JOIN position_in_stream_owner ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
-    AND position_in_stream_owner.edition_id = sign_interpretation_roi_owner.edition_id
-LEFT JOIN (
-    SELECT sign_interpretation_id, string_value, name, edition_id
-    FROM sign_interpretation_attribute_owner
-    JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_attribute_id = sign_interpretation_attribute_owner.sign_interpretation_attribute_id
-    JOIN attribute_value USING(attribute_value_id)
-    JOIN attribute USING(attribute_id) 
+    JOIN sign_interpretation_roi USING(sign_interpretation_roi_id)
+    JOIN roi_position USING(roi_position_id)
+    JOIN roi_shape USING(roi_shape_id)
+    LEFT JOIN (
+        SELECT artefact_position.rotate,
+            artefact_position_owner.edition_id
+        FROM artefact_position
+        JOIN artefact_position_owner USING(artefact_position_id)
+    ) AS art_pos ON art_pos.edition_id = sign_interpretation_roi_owner.edition_id
+    JOIN artefact_shape USING(artefact_id)
+    JOIN artefact_shape_owner ON artefact_shape_owner.artefact_shape_id = artefact_shape.artefact_shape_id
+        AND artefact_shape_owner.edition_id = sign_interpretation_roi_owner.edition_id
+    JOIN SQE_image USING(sqe_image_id)
+    JOIN image_urls USING(image_urls_id)
+    JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
+    JOIN position_in_stream ON position_in_stream.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
+    JOIN position_in_stream_owner ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
+        AND position_in_stream_owner.edition_id = sign_interpretation_roi_owner.edition_id
+    LEFT JOIN (
+        SELECT sign_interpretation_id, string_value, name, edition_id
+        FROM sign_interpretation_attribute_owner
+                 JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_attribute_id = sign_interpretation_attribute_owner.sign_interpretation_attribute_id
+                 JOIN attribute_value USING(attribute_value_id)
+                 JOIN attribute USING(attribute_id)
     ) AS attr ON attr.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id AND attr.edition_id = sign_interpretation_roi_owner.edition_id
-JOIN edition ON edition.edition_id = sign_interpretation_roi_owner.edition_id
-JOIN edition_editor ON edition_editor.edition_id = sign_interpretation_roi_owner.edition_id
+    JOIN edition ON edition.edition_id = sign_interpretation_roi_owner.edition_id
+    JOIN edition_editor ON edition_editor.edition_id = sign_interpretation_roi_owner.edition_id
 
 WHERE sign_interpretation_roi_owner.edition_id = @EditionId
         AND (edition.public OR edition_editor.user_id = @UserId)

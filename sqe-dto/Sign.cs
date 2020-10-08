@@ -68,16 +68,6 @@ namespace SQE.API.DTO
         public CommentaryDTO commentary { get; set; }
     }
 
-    public class InterpretationAttributeCreateListDTO
-    {
-        public List<InterpretationAttributeCreateDTO> attributes { get; set; }
-    }
-
-    public class InterpretationAttributeListDTO
-    {
-        public List<InterpretationAttributeDTO> attributes { get; set; }
-    }
-
     public class CreateAttributeValueDTO
     {
         [Required] public string value { get; set; }

@@ -48,18 +48,6 @@ namespace SQE.DatabaseAccess
     // https://sergeyakopov.com/reliable-database-connections-and-commands-with-polly/ provided many tips
     // for implementing this Polly retry and circuit breaker system.
 
-    public interface ICircuitBreakPolicy
-    {
-        void ExecuteRetryWithCircuitBreaker(Action operation);
-
-        TResult ExecuteRetryWithCircuitBreaker<TResult>(Func<TResult> operation);
-
-        Task ExecuteRetryWithCircuitBreaker(Func<Task> operation, CancellationToken cancellationToken);
-
-        Task<TResult> ExecuteRetryWithCircuitBreaker<TResult>(Func<Task<TResult>> operation,
-            CancellationToken cancellationToken);
-    }
-
     /// <summary>
     ///     These are the policies for retrying db executions on transient errors from database interactions and for
     ///     pausing all attempts to get a connection when none are available from the database.
@@ -71,20 +59,16 @@ namespace SQE.DatabaseAccess
     /// </summary>
     public static class DatabaseCommunicationRetryPolicy
     {
-        // The retries will take about 10 seconds max.
+        // The retries will take about 5 seconds max.
         // This usually would only occur with an edition copy,
         // which should take about 2 seconds for a very large edition.
         private const int RetryCount = 20;
-        private const int WaitBetweenRetriesInMilliseconds = 500;
-
-        private static readonly Random _random = new Random();
+        private const int WaitBetweenRetriesInMilliseconds = 1000;
 
         private static readonly List<uint> _retrySqlExceptions = new List<uint> { 1205, 1213, 1412 };
 
         private static readonly AsyncPolicy _retryPolicyAsync = Policy
-            .Handle<MySqlException>(
-                exception =>
-                    _retrySqlExceptions.Contains(exception.Code)
+            .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code)
             )
             .WaitAndRetryAsync(
                 RetryCount,
@@ -105,7 +89,7 @@ namespace SQE.DatabaseAccess
             .Handle<MySqlException>(exception => _retrySqlExceptions.Contains(exception.Code))
             .WaitAndRetry(
                 RetryCount,
-                attempt => TimeSpan.FromMilliseconds(_waitTime()),
+                attempt => TimeSpan.FromMilliseconds(WaitBetweenRetriesInMilliseconds),
                 (exception, delay, retryCount, _) =>
                 {
                     Log.ForContext<DbConnectionBase>()
@@ -117,18 +101,6 @@ namespace SQE.DatabaseAccess
                         );
                 }
             );
-
-        /// <summary>
-        ///     Each retry waits a bit longer (retryCount * WaitBetweenRetriesInMilliseconds), and a small amount of randomness
-        ///     is added to that wait time (somewhere between -100 and 100ms) so that competing commands (deadlock) are less
-        ///     likely to keep colliding with each other.
-        /// </summary>
-        /// <param name="retryCount">The current count of retries</param>
-        /// <returns></returns>
-        private static int _waitTime()
-        {
-            return WaitBetweenRetriesInMilliseconds + _random.Next(-100, 100);
-        }
 
         public static void ExecuteRetry(Action operation)
         {
@@ -153,13 +125,9 @@ namespace SQE.DatabaseAccess
     }
 
     /// <summary>
-    ///     In both sync and async any command run with ExecuteRetry will be retried a maximum of 5 times when the
-    ///     exception MariaDb errors 1205, 1213, or 1412 are received (all other exceptions bubble up immediately).
-    ///     After max-retries the exception is allowed to bubble up.
     ///     In both sync and async any command run with ExecuteRetryWithCircuitBreaker will be retried a maximum of
-    ///     5 times when the exception MariaDb errors 1040 or 1203 are received, after which any attempt to run that
+    ///     20 times when the exception MariaDb errors 1040 or 1203 are received, after which any attempt to run that
     ///     command will immediately error without even attempting to run it for CircuitBreakerPause seconds.
-    ///     TODO: log this activity when the system logger is set up.
     /// </summary>
     public class DatabaseCommunicationCircuitBreakPolicy
     {
@@ -172,7 +140,6 @@ namespace SQE.DatabaseAccess
         private readonly AsyncPolicy _circuitBreakerRetryPolicyAsync;
         private readonly Policy _circuitBreakPolicy;
         private readonly AsyncPolicy _circuitBreakPolicyAsync;
-        private readonly Random _random = new Random();
 
         public DatabaseCommunicationCircuitBreakPolicy()
         {
@@ -180,7 +147,7 @@ namespace SQE.DatabaseAccess
                 .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .WaitAndRetryAsync(
                     RetryCount,
-                    attempt => TimeSpan.FromMilliseconds(_waitTime()),
+                    attempt => TimeSpan.FromMilliseconds(WaitBetweenRetriesInMilliseconds),
                     (exception, delay, retryCount, _) =>
                     {
                         Log.ForContext<DbConnectionBase>()
@@ -197,7 +164,7 @@ namespace SQE.DatabaseAccess
                 .Handle<MySqlException>(exception => _pauseExceptions.Contains(exception.Code))
                 .WaitAndRetry(
                     RetryCount,
-                    attempt => TimeSpan.FromMilliseconds(_waitTime()),
+                    attempt => TimeSpan.FromMilliseconds(WaitBetweenRetriesInMilliseconds),
                     (exception, delay, retryCount, _) =>
                     {
                         Log.ForContext<DbConnectionBase>()
@@ -223,18 +190,6 @@ namespace SQE.DatabaseAccess
                     RetryCount,
                     TimeSpan.FromSeconds(CircuitBreakerPause)
                 );
-        }
-
-        /// <summary>
-        ///     Each retry waits a bit longer (retryCount * WaitBetweenRetriesInMilliseconds), and a small amount of randomness
-        ///     is added to that wait time (somewhere between -100 and 100ms) so that competing commands (deadlock) are less
-        ///     likely to keep colliding with each other.
-        /// </summary>
-        /// <param name="retryCount">The current count of retries</param>
-        /// <returns></returns>
-        private int _waitTime()
-        {
-            return WaitBetweenRetriesInMilliseconds + _random.Next(-100, 100);
         }
 
         public void ExecuteRetryWithCircuitBreaker(Action operation)
@@ -390,7 +345,7 @@ namespace SQE.DatabaseAccess
             set => _underlyingSqlCommand.CommandType = value;
         }
 
-        protected override DbConnection DbConnection
+        protected sealed override DbConnection DbConnection
         {
             get => _underlyingSqlCommand.Connection;
             set => _underlyingSqlCommand.Connection = (MySqlConnection)value; // Cast to a MySqlConnection for safety
@@ -398,7 +353,7 @@ namespace SQE.DatabaseAccess
 
         protected override DbParameterCollection DbParameterCollection => _underlyingSqlCommand.Parameters;
 
-        protected override DbTransaction DbTransaction
+        protected sealed override DbTransaction DbTransaction
         {
             get => _underlyingSqlCommand.Transaction;
             set => _underlyingSqlCommand.Transaction =
@@ -434,6 +389,7 @@ namespace SQE.DatabaseAccess
             GC.SuppressFinalize(this);
         }
 
+
         // Wrap ExecuteReader in the retry policy.
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
         {
@@ -446,6 +402,7 @@ namespace SQE.DatabaseAccess
         {
             return DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 () => _underlyingSqlCommand.ExecuteReaderAsync(behavior, token),
+                //() => DbReaderExecuteReaderAsync(behavior, token),
                 token
             );
         }

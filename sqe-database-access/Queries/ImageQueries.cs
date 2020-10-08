@@ -101,38 +101,38 @@ WHERE image_catalog.object_id = @ImagedObjectId
 ";
     }
 
-    internal class ImageGroupQuery
-    {
-        private const string _baseQuery = @"
-SELECT  image_catalog.image_catalog_id, 
-        image_catalog.Institution, 
-        image_catalog.catalog_number_1, 
-        image_catalog.catalog_number_2, 
-        image_catalog.catalog_side
-FROM image_catalog
-";
-
-        private const string _scrollLimit = @"
-JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
-JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
-JOIN edition USING(manuscript_id)
-WHERE edition.edition_id = @EditionId
-";
-
-        public static string GetQuery(bool limitScrolls)
-        {
-            return limitScrolls ? _baseQuery + _scrollLimit : _baseQuery;
-        }
-
-        internal class Result
-        {
-            public uint image_catalog_id { get; set; }
-            public string institution { get; set; }
-            public string catalog_number_1 { get; set; }
-            public string catalog_number_2 { get; set; }
-            public byte catalog_side { get; set; }
-        }
-    }
+    //     internal class ImageGroupQuery
+    //     {
+    //         private const string _baseQuery = @"
+    // SELECT  image_catalog.image_catalog_id, 
+    //         image_catalog.Institution, 
+    //         image_catalog.catalog_number_1, 
+    //         image_catalog.catalog_number_2, 
+    //         image_catalog.catalog_side
+    // FROM image_catalog
+    // ";
+    //
+    //         private const string _scrollLimit = @"
+    // JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
+    // JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
+    // JOIN edition USING(manuscript_id)
+    // WHERE edition.edition_id = @EditionId
+    // ";
+    //
+    //         public static string GetQuery(bool limitScrolls)
+    //         {
+    //             return limitScrolls ? _baseQuery + _scrollLimit : _baseQuery;
+    //         }
+    //
+    //         internal class Result
+    //         {
+    //             public uint image_catalog_id { get; set; }
+    //             public string institution { get; set; }
+    //             public string catalog_number_1 { get; set; }
+    //             public string catalog_number_2 { get; set; }
+    //             public byte catalog_side { get; set; }
+    //         }
+    //     }
 
     internal static class ImageInstitutionQuery
     {

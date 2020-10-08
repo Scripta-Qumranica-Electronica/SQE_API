@@ -20,10 +20,14 @@ namespace SQE.API.DTO
         [Required] public bool valuesSet { get; set; }
     }
 
-    public class InterpretationRoiDTO : SetInterpretationRoiDTO
+
+    public class UpdateInterpretationRoiDTO : SetInterpretationRoiDTO
     {
         [Required] public uint interpretationRoiId { get; set; }
+    }
 
+    public class InterpretationRoiDTO : UpdateInterpretationRoiDTO
+    {
         [Required] public uint creatorId { get; set; }
 
         [Required] public uint editorId { get; set; }
@@ -44,6 +48,11 @@ namespace SQE.API.DTO
         [Required] public List<InterpretationRoiDTO> rois { get; set; }
     }
 
+    public class UpdateInterpretationRoiDTOList
+    {
+        [Required] public List<UpdateInterpretationRoiDTO> rois { get; set; }
+    }
+
     public class UpdatedInterpretationRoiDTOList
     {
         [Required] public List<UpdatedInterpretationRoiDTO> rois { get; set; }
@@ -51,8 +60,8 @@ namespace SQE.API.DTO
 
     public class BatchEditRoiDTO
     {
-        public List<InterpretationRoiDTO> createRois { get; set; }
-        public List<UpdatedInterpretationRoiDTO> updateRois { get; set; }
+        public List<SetInterpretationRoiDTO> createRois { get; set; }
+        public List<UpdateInterpretationRoiDTO> updateRois { get; set; }
         public List<uint> deleteRois { get; set; }
     }
 

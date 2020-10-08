@@ -256,7 +256,7 @@ namespace SQE.DatabaseAccess
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
-                    using (var transactionScope = new TransactionScope())
+                    using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     using (var connection = OpenConnection())
                     {
                         // Find any users with either the same  email address.
@@ -425,7 +425,7 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         public async Task ConfirmAccountCreationAsync(string token)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 var confirmRegistration = await connection.ExecuteAsync(
@@ -516,7 +516,7 @@ namespace SQE.DatabaseAccess
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
-                    using (var transactionScope = new TransactionScope())
+                    using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     using (var connection = OpenConnection())
                     {
                         try
@@ -572,7 +572,7 @@ namespace SQE.DatabaseAccess
         /// <returns></returns>
         public async Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password)
         {
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 var detailedUserInfo = await GetDetailedUserByTokenAsync(token);

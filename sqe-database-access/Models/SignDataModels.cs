@@ -6,10 +6,5 @@ namespace SQE.DatabaseAccess.Models
     {
         public List<SignInterpretationData> SignInterpretations { get; set; } = new List<SignInterpretationData>();
         public uint? SignId { get; set; }
-
-        public void AddSignInterpretation(SignInterpretationData signInterpretationData)
-        {
-            SignInterpretations.Add(signInterpretationData);
-        }
     }
 }

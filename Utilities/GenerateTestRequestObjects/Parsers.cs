@@ -96,7 +96,8 @@ namespace GenerateTestRequestObjects
         /// <param name="serviceMethods"></param>
         /// <param name="project"></param>
         /// <returns></returns>
-        public static async Task<List<ParameterDescription>> ParseAndWriteClassesAsync(string testFolder, ClassDeclarationSyntax node,
+        public static async Task<List<ParameterDescription>> ParseAndWriteClassesAsync(string testFolder,
+            ClassDeclarationSyntax node,
             IEnumerable<SemanticModel> semModels,
             IEnumerable<MethodDescription<MethodDeclarationSyntax>> serviceMethods,
             IEnumerable<MethodDeclarationSyntax> broadcastMethods, Project project)
@@ -271,13 +272,13 @@ namespace SQE.ApiTest.ApiRequests
                             if (!methodDescription.listeners.Any(x =>
                                 x.ParamName == listenDescription.ParamName
                                 && x.ParamType == x.ParamType))
-                                methodDescription.listeners.Add(new ParameterDescription(broadcastMethodDescription.ParameterList.Parameters.First()
+                                methodDescription.listeners.Add(new ParameterDescription(broadcastMethodDescription
+                                    .ParameterList.Parameters.First()
                                     .Type.ToString(), listenerName));
                         }
+
                         match = match.NextMatch();
                     }
-
-
                 }
                 catch
                 {

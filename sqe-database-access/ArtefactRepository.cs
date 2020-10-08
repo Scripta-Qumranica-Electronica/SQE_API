@@ -85,7 +85,7 @@ namespace SQE.DatabaseAccess
         {
             using (var connection = OpenConnection())
             {
-                var artefacts = await connection.QueryAsync<ArtefactModel>(
+                var artefacts = (await connection.QueryAsync<ArtefactModel>(
                     ArtefactOfEditionQuery.GetQuery(editionUser.userId, withMask),
                     new
                     {
@@ -93,8 +93,8 @@ namespace SQE.DatabaseAccess
                         UserId = editionUser.userId,
                         ArtefactId = artefactId
                     }
-                );
-                if (artefacts.Count() != 1)
+                )).ToList();
+                if (!artefacts.Any())
                     throw new StandardExceptions.DataNotFoundException("artefact", artefactId, "artefact_id");
                 return artefacts.First();
             }
@@ -137,12 +137,12 @@ namespace SQE.DatabaseAccess
             var artefactShapeId = await GetArtefactPkAsync(editionUser, artefactId, tableName);
             if (artefactShapeId == 0)
                 throw new StandardExceptions.DataNotFoundException("artefact mask", artefactId, "artefact_id");
-            var sqeImageId = GetArtefactShapeSqeImageIdAsync(editionUser, artefactId);
+            var sqeImageId = await GetArtefactShapeSqeImageIdAsync(editionUser, artefactId);
 
             var artefactChangeParams = new DynamicParameters();
             artefactChangeParams.Add("@region_in_sqe_image", shape);
             artefactChangeParams.Add("@artefact_id", artefactId);
-            artefactChangeParams.Add("@sqe_image_id", await sqeImageId);
+            artefactChangeParams.Add("@sqe_image_id", sqeImageId);
             var artefactChangeRequest = new MutationRequest(
                 MutateType.Update,
                 artefactChangeParams,
@@ -211,18 +211,22 @@ namespace SQE.DatabaseAccess
             List<UpdateArtefactPlacementDTO> transforms)
         {
             List<AlteredRecord> updates;
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
-                var updateMutationTasks = transforms.Select(async x =>
-                    await FormatArtefactPositionUpdateRequestAsync(editionUser,
-                        x.artefactId,
-                        x.placement?.scale,
-                        x.placement?.rotate,
-                        x.isPlaced ? x.placement?.translate?.x : null, // set to null if explicitly not placed
-                        x.isPlaced ? x.placement?.translate?.y : null, // set to null if explicitly not placed
-                        x.placement?.zIndex));
-                var updateMutations = (await Task.WhenAll(updateMutationTasks)).ToList();
-                updates = await _databaseWriter.WriteToDatabaseAsync(editionUser, updateMutations);
+                var updateMutations = new MutationRequest[transforms.Count];
+                foreach (var (transform, index) in transforms.Select((x, idx) => (x, idx)))
+                    updateMutations[index] = await FormatArtefactPositionUpdateRequestAsync(editionUser,
+                        transform.artefactId,
+                        transform.placement?.scale,
+                        transform.placement?.rotate,
+                        transform.isPlaced
+                            ? transform.placement?.translate?.x
+                            : null, // set to null if explicitly not placed
+                        transform.isPlaced
+                            ? transform.placement?.translate?.y
+                            : null, // set to null if explicitly not placed
+                        transform.placement?.zIndex);
+                updates = await _databaseWriter.WriteToDatabaseAsync(editionUser, updateMutations.AsList());
                 transactionScope.Complete();
             }
 
@@ -269,7 +273,7 @@ namespace SQE.DatabaseAccess
             return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
                 async () =>
                 {
-                    using (var transactionScope = new TransactionScope())
+                    using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     using (var connection = OpenConnection())
                     {
                         // Create a new edition
@@ -281,9 +285,9 @@ namespace SQE.DatabaseAccess
 
                         // If no shape is input, we use a tiny "dummy" shape as a placeholder
                         shape = string.IsNullOrEmpty(shape) ? "POLYGON((0 0,1 1,1 0,0 0))" : shape;
-                        var newShape = InsertArtefactShapeAsync(editionUser, artefactId, masterImageId, shape);
-                        var newArtefact = InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
-                        var newName = InsertArtefactNameAsync(editionUser, artefactId, artefactName ?? "");
+                        await InsertArtefactShapeAsync(editionUser, artefactId, masterImageId, shape);
+                        await InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
+                        await InsertArtefactNameAsync(editionUser, artefactId, artefactName ?? "");
                         if (scale.HasValue
                             || rotate.HasValue
                             || translateX.HasValue
@@ -298,10 +302,6 @@ namespace SQE.DatabaseAccess
                                 translateY,
                                 zIndex
                             );
-
-                        await newShape;
-                        await newArtefact;
-                        await newName;
                         //Cleanup
                         transactionScope.Complete();
 
@@ -314,8 +314,8 @@ namespace SQE.DatabaseAccess
         public async Task DeleteArtefactAsync(UserInfo editionUser, uint artefactId)
         {
             var mutations = new List<MutationRequest>();
-            foreach (var table in artefactTableNames.All())
-                if (table != artefactTableNames.stack)
+            foreach (var table in ArtefactTableNames.All())
+                if (table != ArtefactTableNames.Stack)
                 {
                     var pk = await GetArtefactPkAsync(editionUser, artefactId, table);
                     if (pk != 0)
@@ -428,14 +428,17 @@ namespace SQE.DatabaseAccess
             List<uint> artefactIds)
         {
             uint artefactGroupId;
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 // Check if the requested artefact IDs are already part of a group.
                 await _verifyArtefactsFreeForGroup(editionUser, artefactIds.ToList());
 
                 // Create a new artefact group
-                await connection.ExecuteAsync("INSERT INTO artefact_group (artefact_group_id) VALUES(NULL)");
+                var insertedArtefactGroup =
+                    await connection.ExecuteAsync("INSERT INTO artefact_group (artefact_group_id) VALUES(NULL)");
+                if (insertedArtefactGroup != 1)
+                    throw new StandardExceptions.DataNotWrittenException("create artefact group");
 
                 artefactGroupId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
                 if (artefactGroupId == 0)
@@ -483,8 +486,7 @@ namespace SQE.DatabaseAccess
         public async Task<ArtefactGroup> UpdateArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId,
             string artefactGroupName, List<uint> artefactIds)
         {
-            using (var transactionScope = new TransactionScope())
-            using (var connection = OpenConnection())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // Get group members and name (if any)
                 var (members, groupData) = await _getArtefactGroupInternalInfo(editionUser, artefactGroupId);
@@ -494,7 +496,7 @@ namespace SQE.DatabaseAccess
 
                 var hashedUpdateArtefactIds = new HashSet<uint>(artefactIds);
                 var deletes = members.Where(x => !hashedUpdateArtefactIds.Contains(x.ArtefactId));
-                var adds = artefactIds.Except(members.Select(x => x.ArtefactId));
+                var adds = artefactIds.Except(members.Select(x => x.ArtefactId)).ToList();
 
                 // Check if the requested artefact IDs to be added are already part of a group.
                 if (adds.Any())
@@ -570,8 +572,7 @@ namespace SQE.DatabaseAccess
 
         public async Task DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId)
         {
-            using (var transactionScope = new TransactionScope())
-            using (var connection = OpenConnection())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // Get group members and name (if any)
                 var (members, groupData) = await _getArtefactGroupInternalInfo(editionUser, artefactGroupId);
@@ -636,9 +637,7 @@ namespace SQE.DatabaseAccess
             // It is not necessary for every artefact to have a position (they may get positioning via artefact stack).
             // If no artefact_position already exists we need to create a new entry here.
             if (artefactPositionId == 0 && !notPositioned)
-                return FormatArtefactPositionInsertion(
-                    editionUser,
-                    artefactId,
+                return FormatArtefactPositionInsertion(artefactId,
                     scale,
                     rotate,
                     translateX,
@@ -652,7 +651,7 @@ namespace SQE.DatabaseAccess
             if (rotate.HasValue)
                 artefactChangeParams.Add("@rotate", rotate);
             if (zIndex.HasValue)
-                artefactChangeParams.Add("@z_index", zIndex ?? 0);
+                artefactChangeParams.Add("@z_index", zIndex);
             artefactChangeParams.Add("@translate_x", translateX);
             artefactChangeParams.Add("@translate_y", translateY);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -735,9 +734,7 @@ namespace SQE.DatabaseAccess
             int? translateY,
             int? zIndex)
         {
-            return await WriteArtefactAsync(editionUser, FormatArtefactPositionInsertion(
-                editionUser,
-                artefactId,
+            return await WriteArtefactAsync(editionUser, FormatArtefactPositionInsertion(artefactId,
                 scale,
                 rotate,
                 translateX,
@@ -746,8 +743,7 @@ namespace SQE.DatabaseAccess
             );
         }
 
-        private MutationRequest FormatArtefactPositionInsertion(UserInfo editionUser,
-            uint artefactId,
+        private static MutationRequest FormatArtefactPositionInsertion(uint artefactId,
             decimal? scale,
             decimal? rotate,
             int? translateX,
@@ -760,7 +756,7 @@ namespace SQE.DatabaseAccess
             if (rotate.HasValue)
                 artefactChangeParams.Add("@rotate", rotate);
             if (zIndex.HasValue)
-                artefactChangeParams.Add("@z_index", zIndex ?? 0);
+                artefactChangeParams.Add("@z_index", zIndex);
             artefactChangeParams.Add("@translate_x", translateX);
             artefactChangeParams.Add("@translate_y", translateY);
             artefactChangeParams.Add("@artefact_id", artefactId);
@@ -891,50 +887,50 @@ namespace SQE.DatabaseAccess
             using (var connection = OpenConnection())
             {
                 // Check if the desired artefacts are already used in another artefact group
-                var alreadyUsedArtefacts = await connection.QueryAsync<uint>(ArtefactsAlreadyInGroups.GetQuery,
+                var alreadyUsedArtefacts = (await connection.QueryAsync<uint>(ArtefactsAlreadyInGroups.GetQuery,
                     new
                     {
                         editionUser.EditionId,
                         ArtefactIds = artefactIds.ToArray()
-                    });
+                    })).ToList();
                 if (alreadyUsedArtefacts.Any())
                     throw new StandardExceptions.InputDataRuleViolationException(
-                        $"The artefact {(alreadyUsedArtefacts.Count() > 1 ? "ids" : "id")} " +
+                        $"The artefact {(alreadyUsedArtefacts.Count > 1 ? "ids" : "id")} " +
                         $"{string.Join(", ", alreadyUsedArtefacts)} " +
-                        $"{(alreadyUsedArtefacts.Count() > 1 ? "are" : "is")} already in another group"
+                        $"{(alreadyUsedArtefacts.Count > 1 ? "are" : "is")} already in another group"
                     );
 
                 // Check to see if the artefact are in fact part of this edition
-                var artefactsInEdition = await connection.QueryAsync<uint>(
+                var artefactsInEdition = (await connection.QueryAsync<uint>(
                     ArtefactsFromListInEdition.GetQuery,
                     new
                     {
                         editionUser.EditionId,
                         ArtefactIds = artefactIds
-                    });
-                if (artefactsInEdition.Count() != artefactIds.Count())
+                    })).ToList();
+                if (artefactsInEdition.Count != artefactIds.Count())
                 {
-                    var artefactsNotInEdition = artefactIds.Except(artefactsInEdition);
+                    var artefactsNotInEdition = artefactIds.Except(artefactsInEdition).ToList();
                     throw new StandardExceptions.InputDataRuleViolationException(
-                        $"The artefact {(artefactsNotInEdition.Count() > 1 ? "ids" : "id")} " +
+                        $"The artefact {(artefactsNotInEdition.Count > 1 ? "ids" : "id")} " +
                         $"{string.Join(", ", artefactsNotInEdition)} " +
-                        $"{(artefactsNotInEdition.Count() > 1 ? "are" : "is")} not part of this edition"
+                        $"{(artefactsNotInEdition.Count > 1 ? "are" : "is")} not part of this edition"
                     );
                 }
             }
         }
 
-        private static class artefactTableNames
+        private static class ArtefactTableNames
         {
-            public const string data = "artefact_data";
-            public const string shape = "artefact_shape";
-            public const string position = "artefact_position";
-            public const string stack = "artefact_stack";
-            public const string status = "artefact_status";
+            private const string Data = "artefact_data";
+            private const string Shape = "artefact_shape";
+            private const string Position = "artefact_position";
+            public const string Stack = "artefact_stack";
+            private const string Status = "artefact_status";
 
-            public static List<string> All()
+            public static IEnumerable<string> All()
             {
-                return new List<string> { data, shape, position, stack, status };
+                return new List<string> { Data, Shape, Position, Stack, Status };
             }
         }
     }

@@ -38,6 +38,9 @@ namespace SQE.DatabaseAccess.Models
         public string AttributeString { get; set; }
         public uint? AttributeValueId { get; set; }
         public string AttributeValueString { get; set; }
+        public string AttributeCommentary { get; set; }
+        public uint? AttributeCommentaryCreatorId { get; set; }
+        public uint? AttributeCommentaryEditorId { get; set; }
         public uint? SignInterpretationAttributeCreatorId { get; set; }
         public uint? SignInterpretationAttributeEditorId { get; set; }
         public bool Editable { get; set; }
@@ -48,7 +51,6 @@ namespace SQE.DatabaseAccess.Models
 
     public class SignInterpretationAttributeDataSearchData : SignInterpretationAttributeData, ISearchData
     {
-
         public string getSearchParameterString()
         {
             var searchParameters = new List<string>();

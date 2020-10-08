@@ -10,11 +10,6 @@ namespace SQE.DatabaseAccess.Models
         public uint UserId { get; set; }
     }
 
-    public class UserToken : User
-    {
-        public Guid Token { get; set; }
-    }
-
     public class DetailedUser : User
     {
         public string Forename { get; set; }

@@ -1,26 +1,20 @@
 using System.Linq;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
 
 namespace SQE.ApiTest
 {
-    public class CatalogueTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public CatalogueTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanGetImagedObjectsForTextFragments()
         {
             var requestObj = new Get.V1_Catalogue_TextFragments_TextFragmentId_ImagedObjects(9977);
-            await requestObj.Send(_client, StartConnectionAsync);
+            await requestObj.SendAsync(_client, StartConnectionAsync);
             var (respCode, response, rtResponse) = (requestObj.HttpResponseMessage,
                 requestObj.HttpResponseObject, requestObj.SignalrResponseObject);
             respCode.EnsureSuccessStatusCode();
@@ -33,7 +27,7 @@ namespace SQE.ApiTest
         public async Task CanGetTextFragmentsForImagedObjects()
         {
             var requestObj = new Get.V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments("IAA-1094-1");
-            await requestObj.Send(_client, StartConnectionAsync);
+            await requestObj.SendAsync(_client, StartConnectionAsync);
             var (respCode, response, rtResponse) = (requestObj.HttpResponseMessage,
                 requestObj.HttpResponseObject, requestObj.SignalrResponseObject);
             respCode.EnsureSuccessStatusCode();
@@ -45,53 +39,75 @@ namespace SQE.ApiTest
         public async Task CanGetImagedObjectsAndTextFragmentsOfEdition()
         {
             // Act
-            var requestobj = new Get.V1_Catalogue_Editions_EditionId_ImagedObjectTextFragmentMatches(894);
-            await requestobj.Send(_client, StartConnectionAsync);
-
-            // Assert
-            requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
-            Assert.NotEmpty(requestobj.HttpResponseObject.matches);
-            var firstMatch = requestobj.HttpResponseObject.matches.First();
-            ConfirmValidMatch(firstMatch);
+            await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfEdition(894, _client, StartConnectionAsync);
         }
 
         [Fact]
         public async Task CanGetImagedObjectsAndTextFragmentsOfManuscript()
         {
             // Act
-            var requestobj = new Get.V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches(894);
-            await requestobj.Send(_client, StartConnectionAsync);
-
-            // Assert
-            requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
-            Assert.NotEmpty(requestobj.HttpResponseObject.matches);
-            var firstMatch = requestobj.HttpResponseObject.matches.First();
-            ConfirmValidMatch(firstMatch);
+            await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfManuscript(894, _client, StartConnectionAsync);
         }
 
-        private void ConfirmValidMatch(CatalogueMatchDTO match)
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CanCreateNewImagedObjectTextFragmentMatch(bool realtime)
         {
-            Assert.NotNull(match.matchAuthor);
-            if (match.confirmed.HasValue)
-            {
-                Assert.NotNull(match.matchConfirmationAuthor);
-                Assert.NotNull(match.dateOfConfirmation);
-            }
-            if (!match.confirmed.HasValue)
-            {
-                Assert.Null(match.matchConfirmationAuthor);
-                Assert.Null(match.dateOfConfirmation);
-            }
-            Assert.Null(match.matchConfirmationAuthor);
-            Assert.NotNull(match.manuscriptName);
-            Assert.NotNull(match.name);
-            Assert.NotNull(match.imagedObjectId);
-            Assert.NotNull(match.institution);
-            Assert.NotNull(match.editionName);
-            Assert.NotNull(match.filename);
-            Assert.NotNull(match.thumbnail);
-            Assert.NotNull(match.url);
-            Assert.NotNull(match.dateOfMatch);
+            // Arrange
+            var availableImagedObjects =
+                await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
+            var textFragments = await TextHelpers.GetEditionTextFragments(1, _client, StartConnectionAsync);
+            var imagedObjectId = availableImagedObjects.institutionalImages.First().id;
+            var textFragmentId = textFragments.textFragments.First().id;
+
+            // Act
+            await CatalogueHelpers.CreateImagedObjectTextFragmentMatch(
+                SideDesignation.recto,
+                imagedObjectId,
+                1,
+                "DJD",
+                "Some Volume",
+                "Some text number designation",
+                "Some fragment designation",
+                SideDesignation.recto,
+                "This is test of the system",
+                textFragmentId,
+                1,
+                _client,
+                StartConnectionAsync,
+                realtime);
         }
+
+        // TODO: the following test is correct, but the code in the API still needs to be fixed
+        // [Theory]
+        // [InlineData(true)]
+        // [InlineData(false)]
+        // public async Task CanConfirmAndUnconfirmImagedObjectTextFragmentMatch(bool realtime)
+        // {
+        //     // Arrange
+        //     const uint editionId = 894U;
+        //     var matches = await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfEdition(editionId, _client, StartConnectionAsync);
+        //     var firstUnconfirmedMatch = matches.matches.First(x => x.confirmed == null);
+        //
+        //     // Act
+        //     await CatalogueHelpers.ConfirmTextFragmentImagedObjectMatch(
+        //         editionId,
+        //         firstUnconfirmedMatch.matchId,
+        //         _client,
+        //         StartConnectionAsync,
+        //         realtime,
+        //         Request.DefaultUsers.User1);
+        //
+        //     await Task.Delay(150); // Wait a tiny amount of time so we don't go faster than MySQL Data resolution
+        //
+        //     await CatalogueHelpers.UnconfirmTextFragmentImagedObjectMatch(
+        //         editionId,
+        //         firstUnconfirmedMatch.matchId,
+        //         _client,
+        //         StartConnectionAsync,
+        //         realtime,
+        //         Request.DefaultUsers.User1);
+        // }
     }
 }

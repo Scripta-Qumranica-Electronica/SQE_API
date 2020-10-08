@@ -4,10 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
-using NetTopologySuite.IO;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -18,31 +15,25 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This test suite tests all the current endpoints in the ArtefactController
     /// </summary>
-    public class ArtefactTests : WebControllerTest
+    public partial class WebControllerTest
     {
-        public ArtefactTests(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-            _db = new DatabaseQuery();
-        }
-
-        private readonly DatabaseQuery _db;
-        private readonly WKTReader _wkr = new WKTReader();
-
-        private const string version = "v1";
-        private const string controller = "artefacts";
-
         /// <summary>
         ///     Selects an edition with artefacts in sequence (to avoid locks) and returns its artefacts.
         /// </summary>
-        /// <param name="userId">Id of the user whose editions should be randomly selected.</param>
-        /// <param name="jwt">A JWT can be added the request to access private editions.</param>
+        /// <param name="editionId">Optional Id of the edition to acquire.</param>
         /// <returns></returns>
         public async Task<ArtefactListDTO> GetEditionArtefacts(uint? editionId = null)
         {
             editionId ??= EditionHelpers.GetEditionId();
+            var optional = new List<string> { "masks" };
+            if (_images)
+            {
+                optional.Add("images");
+                _images = !_images;
+            }
 
-            var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId.Value, new List<string> { "masks" });
-            await artRequest.Send(
+            var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId.Value, optional);
+            await artRequest.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,
@@ -56,12 +47,12 @@ namespace SQE.ApiTest
             return artefactResponse;
         }
 
-        private async Task DeleteArtefact(uint editionId, uint ArtefactId)
+        private async Task DeleteArtefact(uint editionId, uint artefactId)
         {
             var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                 _client,
                 HttpMethod.Delete,
-                $"/{version}/editions/{editionId}/{controller}/{ArtefactId}",
+                $"/v1/editions/{editionId}/artefacts/{artefactId}",
                 null,
                 await Request.GetJwtViaHttpAsync(_client)
             );
@@ -100,12 +91,11 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanBatchUnplaceArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
                 var allArtefacts = (await GetEditionArtefacts(newEdition)).artefacts;
-                var artefact = allArtefacts.First();
                 var placement = new PlacementDTO
                 {
                     scale = (decimal)1.0,
@@ -123,7 +113,7 @@ namespace SQE.ApiTest
                         .SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
                             _client,
                             HttpMethod.Post,
-                            $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                            $"/v1/editions/{newEdition}/artefacts/batch-transformation",
                             new BatchUpdateArtefactPlacementDTO
                             {
                                 artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO
@@ -161,7 +151,7 @@ namespace SQE.ApiTest
                         .SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
                             _client,
                             HttpMethod.Post,
-                            $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                            $"/v1/editions/{newEdition}/artefacts/batch-transformation",
                             new BatchUpdateArtefactPlacementDTO
                             {
                                 artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO
@@ -191,7 +181,7 @@ namespace SQE.ApiTest
                         .SendHttpRequestAsync<BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>(
                             _client,
                             HttpMethod.Post,
-                            $"/{version}/editions/{newEdition}/{controller}/batch-transformation",
+                            $"/v1/editions/{newEdition}/artefacts/batch-transformation",
                             new BatchUpdateArtefactPlacementDTO
                             {
                                 artefactPlacements = allArtefacts.Select(x => new UpdateArtefactPlacementDTO
@@ -224,7 +214,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanCreateArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -260,7 +250,7 @@ namespace SQE.ApiTest
                 var (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -280,8 +270,6 @@ namespace SQE.ApiTest
                 await DeleteArtefact(newEdition, writtenArtefact.id);
 
                 // Arrange
-                newName = null;
-
                 newArtefact = new CreateArtefactDTO
                 {
                     mask = newArtefactShape,
@@ -295,7 +283,7 @@ namespace SQE.ApiTest
                             y = newTranslateY
                         }
                     },
-                    name = newName,
+                    name = null,
                     masterImageId = masterImageId
                 };
 
@@ -303,7 +291,7 @@ namespace SQE.ApiTest
                 (response, writtenArtefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -327,7 +315,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanDeleteArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -335,10 +323,10 @@ namespace SQE.ApiTest
                 var artefact = allArtefacts.First();
 
                 // Act
-                var (response, writtenArtefact) = await Request.SendHttpRequestAsync<string, string>(
+                var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
                     HttpMethod.Delete,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     null,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -351,13 +339,13 @@ namespace SQE.ApiTest
                 var (delResponse, _) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
                     HttpMethod.Get,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     null,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
                 Assert.Equal(HttpStatusCode.NotFound, delResponse.StatusCode);
 
-                await EditionHelpers.DeleteEdition(_client, newEdition);
+                await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
             }
         }
 
@@ -367,7 +355,7 @@ namespace SQE.ApiTest
             // Arrange
             const uint editionId = 894;
             const uint artefactId = 10058;
-            var path = $"/{version}/editions/{editionId}/{controller}/{artefactId}/text-fragments?optional=suggested";
+            var path = $"/v1/editions/{editionId}/artefacts/{artefactId}/text-fragments?optional=suggested";
 
             // Act
             var (tfResponse, tfData) = await Request.SendHttpRequestAsync<string, ArtefactTextFragmentMatchListDTO>(
@@ -392,12 +380,10 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotCreateArtefactsOnUnownedEdition()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
-                var allArtefacts = (await GetEditionArtefacts(newEdition)).artefacts;
-                var artefact = allArtefacts.First();
 
                 const string masterImageSQL =
                     "SELECT sqe_image_id FROM SQE_image WHERE type = 0 ORDER BY RAND() LIMIT 1";
@@ -406,7 +392,6 @@ namespace SQE.ApiTest
                     "POLYGON((0 0,0 200,200 200,0 200,0 0),(5 5,5 25,25 25,25 5,5 5),(77 80,77 92,102 92,102 80,77 80))";
                 var (newScale, newRotate, newTranslateX, newTranslateY, newZIdx) = ArtefactPosition();
                 const string newName = "CanCreateArtefacts.artefact α";
-                ;
                 var newArtefact = new CreateArtefactDTO
                 {
                     mask = newArtefactShape,
@@ -429,7 +414,7 @@ namespace SQE.ApiTest
                 var (response, _) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact
                 );
 
@@ -445,7 +430,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotCreateMalformedArtefact()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -479,12 +464,12 @@ namespace SQE.ApiTest
 
                 // Act
                 var newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
                 );
-                var (artefactResponse, artefact) = (newArtefactObject.HttpResponseMessage,
+                var (artefactResponse, _) = (newArtefactObject.HttpResponseMessage,
                     newArtefactObject.HttpResponseObject);
 
                 // Assert
@@ -513,12 +498,12 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
                 );
-                (artefactResponse, artefact) =
+                (artefactResponse, _) =
                     (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
@@ -549,12 +534,12 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
                 );
-                (artefactResponse, artefact) =
+                (artefactResponse, _) =
                     (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
@@ -587,12 +572,12 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
                 );
-                (artefactResponse, artefact) =
+                (artefactResponse, _) =
                     (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
@@ -625,12 +610,12 @@ namespace SQE.ApiTest
 
                 // Act
                 newArtefactObject = new Post.V1_Editions_EditionId_Artefacts(newEdition, newArtefact);
-                await newArtefactObject.Send(
+                await newArtefactObject.SendAsync(
                     _client,
                     auth: true,
                     shouldSucceed: false
                 );
-                (artefactResponse, artefact) =
+                (artefactResponse, _) =
                     (newArtefactObject.HttpResponseMessage, newArtefactObject.HttpResponseObject);
 
                 // Assert
@@ -661,10 +646,10 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                (artefactResponse, artefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
+                (artefactResponse, _) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -696,10 +681,10 @@ namespace SQE.ApiTest
                 };
 
                 // Act
-                (artefactResponse, artefact) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
+                (artefactResponse, _) = await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Post,
-                    $"/{version}/editions/{newEdition}/{controller}",
+                    $"/v1/editions/{newEdition}/artefacts",
                     newArtefact,
                     await Request.GetJwtViaHttpAsync(_client)
                 );
@@ -718,7 +703,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotDeleteUnownedArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -729,7 +714,7 @@ namespace SQE.ApiTest
                 var (response, _) = await Request.SendHttpRequestAsync<string, string>(
                     _client,
                     HttpMethod.Delete,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     null
                 );
 
@@ -745,7 +730,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CannotUpdateUnownedArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -757,7 +742,7 @@ namespace SQE.ApiTest
                 var (nameResponse, _) = await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Put,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     new UpdateArtefactDTO
                     {
                         mask = null,
@@ -778,7 +763,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task CanUpdateArtefacts()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -795,7 +780,7 @@ namespace SQE.ApiTest
                     await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                         _client,
                         HttpMethod.Put,
-                        $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                        $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                         new UpdateArtefactDTO
                         {
                             mask = null,
@@ -825,7 +810,7 @@ namespace SQE.ApiTest
                     await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                         _client,
                         HttpMethod.Put,
-                        $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                        $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                         new UpdateArtefactDTO
                         {
                             mask = null,
@@ -862,7 +847,7 @@ namespace SQE.ApiTest
                     await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                         _client,
                         HttpMethod.Put,
-                        $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                        $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                         new UpdateArtefactDTO
                         {
                             mask = newArtefactShape,
@@ -898,7 +883,7 @@ namespace SQE.ApiTest
                     await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                         _client,
                         HttpMethod.Put,
-                        $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                        $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                         new UpdateArtefactDTO
                         {
                             mask = artefact.mask,
@@ -937,7 +922,7 @@ namespace SQE.ApiTest
         [Fact]
         public async Task RejectsUpdateToImproperArtefactShape()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -950,7 +935,7 @@ namespace SQE.ApiTest
                 var (nameResponse, _) = await Request.SendHttpRequestAsync<UpdateArtefactDTO, ArtefactDTO>(
                     _client,
                     HttpMethod.Put,
-                    $"/{version}/editions/{newEdition}/{controller}/{artefact.id}",
+                    $"/v1/editions/{newEdition}/artefacts/{artefact.id}",
                     new UpdateArtefactDTO
                     {
                         mask = newArtefactShape,
@@ -966,9 +951,9 @@ namespace SQE.ApiTest
         }
 
         [Fact]
-        public async Task CanGetEditionAretefactRois()
+        public async Task CanGetEditionArtefactRois()
         {
-            using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+            using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -976,7 +961,7 @@ namespace SQE.ApiTest
 
                 // Act
                 var getArtefactRois = new Get.V1_Editions_EditionId_Artefacts_ArtefactId_Rois(newEdition, artefactId);
-                await getArtefactRois.Send(_client, StartConnectionAsync, auth: true);
+                await getArtefactRois.SendAsync(_client, StartConnectionAsync, true);
 
                 getArtefactRois.HttpResponseObject.ShouldDeepEqual(getArtefactRois.SignalrResponseObject);
                 getArtefactRois.HttpResponseObject.rois.ShouldDeepEqual(rois);

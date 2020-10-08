@@ -1,52 +1,38 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
-using Dapper;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
 
 namespace SQE.ApiTest
 {
-    public class ImagedObjectTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public ImagedObjectTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-            _db = new DatabaseQuery();
-
-            imagedObjectBarePath = $"/{version}/{controller}";
-            singleImagedObject = $"{imagedObjectBarePath}/$id";
-            imagedObjectInstitutions = $"{imagedObjectBarePath}/institutions";
-            editionImagedObjects = $"/{version}/editions/$EditionId/{controller}";
-            editionImagedObjectbyId = $"{editionImagedObjects}/$ImageObjectId";
-        }
-
-        private readonly DatabaseQuery _db;
-        private const string version = "v1";
-        private const string controller = "imaged-objects";
-
-        private readonly string imagedObjectBarePath;
-        private readonly string singleImagedObject;
-        private readonly string imagedObjectInstitutions;
-        private readonly string editionImagedObjects;
-        private readonly string editionImagedObjectbyId;
-
-        private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact(uint user = 1)
+        private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact()
         {
             var editionId = EditionHelpers.GetEditionId();
-            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId);
-            await req.Send(_client, StartConnectionAsync);
+            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId, new List<string> { "masks" });
+            await req.SendAsync(_client, StartConnectionAsync);
             var (httpResponse, httpData, signalrData) =
                 (req.HttpResponseMessage, req.HttpResponseObject, req.SignalrResponseObject);
             httpResponse.EnsureSuccessStatusCode();
             httpData.ShouldDeepEqual(signalrData);
-            return (editionId, httpData.imagedObjects.FirstOrDefault().id);
+            var imageWithMaskId = 0;
+            foreach (var (io, index) in httpData.imagedObjects.Select((x, idx) => (x, idx)))
+                if (io.artefacts.Any())
+                {
+                    imageWithMaskId = index;
+                    break;
+                }
+
+            return (editionId, httpData.imagedObjects[imageWithMaskId].id);
         }
 
         /// <summary>
@@ -60,7 +46,7 @@ namespace SQE.ApiTest
             // so we need to encode the URL first (remember this!!!).
             var id = HttpUtility.UrlEncode("IAA-275%2F1-1");
             var textFragRequest = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(id);
-            await textFragRequest.Send(_client);
+            await textFragRequest.SendAsync(_client);
             var (response, msg) = (textFragRequest.HttpResponseMessage, textFragRequest.HttpResponseObject);
 
             response.EnsureSuccessStatusCode();
@@ -78,200 +64,130 @@ namespace SQE.ApiTest
         public async Task CanGetImagedObjectInstitutions()
         {
             // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, ImageInstitutionListDTO>(
-                _client,
-                HttpMethod.Get,
-                imagedObjectInstitutions,
-                null
-            );
+            var request = new Get.V1_ImagedObjects_Institutions();
+            await request.SendAsync(_client, StartConnectionAsync, requestRealtime: true);
 
             // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.NotEmpty(msg.institutions);
+            request.HttpResponseMessage.EnsureSuccessStatusCode();
+            Assert.NotEmpty(request.HttpResponseObject.institutions);
         }
 
         /// <summary>
         ///     This tests if an anonymous user can retrieve an imaged object belonging to an edition
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task CanGetImagedObjectOfEdition()
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        [InlineData(false, false)]
+        public async Task CanGetImagedObjectOfEdition(bool optionalArtefacts, bool optionalMasks)
         {
             // Arrange
             var (editionId, objectId) = await GetEditionImagesWithArtefact();
-            var path = editionImagedObjectbyId.Replace("$EditionId", editionId.ToString())
-                .Replace("$ImageObjectId", objectId);
+            var optional = new List<string>();
+            if (optionalArtefacts)
+                optional.Add("artefacts");
+            if (optionalMasks && optionalArtefacts)
+                optional.Add("masks");
 
             // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectDTO>(
-                _client,
-                HttpMethod.Get,
-                path,
-                null
-            );
+            var request = new Get.V1_Editions_EditionId_ImagedObjects_ImagedObjectId(editionId, objectId, optional);
+            await request.SendAsync(_client, StartConnectionAsync, requestRealtime: true);
 
             // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.Null(msg.artefacts);
-        }
+            request.HttpResponseMessage.EnsureSuccessStatusCode();
+            if (!optionalArtefacts)
+                Assert.Null(request.HttpResponseObject.artefacts);
+            if (optionalArtefacts)
+                Assert.NotNull(request.HttpResponseObject.artefacts);
+            if (optionalMasks)
+            {
+                Assert.NotNull(request.HttpResponseObject.artefacts);
+                var foundArtefactWithMask = false;
+                foreach (var art in request.HttpResponseObject.artefacts)
+                    if (!string.IsNullOrEmpty(art.mask))
+                    {
+                        foundArtefactWithMask = true;
+                        break;
+                    }
 
-        /// <summary>
-        ///     This tests if an anonymous user can retrieve an imaged object of an edition with artefacts
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task CanGetImagedObjectOfEditionWithArtefacts()
-        {
-            // Arrange
-            var (editionId, objectId) = await GetEditionImagesWithArtefact();
-            var path = editionImagedObjectbyId.Replace("$EditionId", editionId.ToString())
-                           .Replace("$ImageObjectId", objectId)
-                       + "?optional=artefacts";
-
-            // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectDTO>(
-                _client,
-                HttpMethod.Get,
-                path,
-                null
-            );
-
-            // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.NotNull(msg.artefacts);
-        }
-
-        /// <summary>
-        ///     This tests if an anonymous user can retrieve an imaged object of an edition with artefacts and masks
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task CanGetImagedObjectOfEditionWithArtefactsAndMasks()
-        {
-            // Arrange
-            var (editionId, objectId) = await GetEditionImagesWithArtefact();
-            var path = editionImagedObjectbyId.Replace("$EditionId", editionId.ToString())
-                           .Replace("$ImageObjectId", objectId)
-                       + "?optional=artefacts&optional=masks";
-
-            // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectDTO>(
-                _client,
-                HttpMethod.Get,
-                path,
-                null
-            );
-
-            // Assert
-            response.EnsureSuccessStatusCode();
-            var foundArtefactWithMask = false;
-            foreach (var art in msg.artefacts)
-                if (!string.IsNullOrEmpty(art.mask))
-                {
-                    foundArtefactWithMask = true;
-                    break;
-                }
-
-            Assert.True(foundArtefactWithMask);
+                Assert.True(foundArtefactWithMask);
+            }
         }
 
         /// <summary>
         ///     This tests if an anonymous user can retrieve imaged objects
         /// </summary>
         /// <returns></returns>
-        [Fact]
-        public async Task CanGetImagedObjectsOfEdition()
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        [InlineData(false, false)]
+        public async Task CanGetImagedObjectsOfEdition(bool optionalArtefacts, bool optionalMasks)
         {
             // Arrange
             var editionId = EditionHelpers.GetEditionId();
-            var path = editionImagedObjects.Replace("$EditionId", editionId.ToString());
+            var optional = new List<string>();
+            if (optionalArtefacts)
+                optional.Add("artefacts");
+            if (optionalMasks && optionalArtefacts)
+                optional.Add("masks");
 
             // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectListDTO>(
-                _client,
-                HttpMethod.Get,
-                path,
-                null
-            );
+            var request = new Get.V1_Editions_EditionId_ImagedObjects(editionId, optional);
+            await request.SendAsync(_client, StartConnectionAsync, requestRealtime: true);
 
             // Assert
-            response.EnsureSuccessStatusCode();
-            Assert.NotEmpty(msg.imagedObjects);
-            foreach (var io in msg.imagedObjects) Assert.Null(io.artefacts);
-        }
-
-        /// <summary>
-        ///     This tests if an anonymous user can retrieve imaged objects with artefacts
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task CanGetImagedObjectsOfEditionWithArtefacts()
-        {
-            // Arrange
-            var editionId = EditionHelpers.GetEditionId();
-            var path = editionImagedObjects.Replace("$EditionId", editionId.ToString()) + "?optional=artefacts";
-
-            // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectListDTO>(
-                _client,
-                HttpMethod.Get,
-                path,
-                null
-            );
-
-            // Assert
-            response.EnsureSuccessStatusCode();
-            var foundArtefact = false;
-            foreach (var io in msg.imagedObjects)
-                if (io.artefacts != null
-                    && string.IsNullOrEmpty(io.artefacts.First().mask))
+            request.HttpResponseMessage.EnsureSuccessStatusCode();
+            Assert.NotEmpty(request.HttpResponseObject.imagedObjects);
+            if (!optionalArtefacts)
+                foreach (var io in request.HttpResponseObject.imagedObjects)
+                    Assert.Null(io.artefacts);
+            if (optionalArtefacts)
+            {
+                var foundArtefact = false;
+                var foundArtefactWithMask = false;
+                foreach (var io in request.HttpResponseObject.imagedObjects.Where(io => io.artefacts.Any()))
                 {
                     foundArtefact = true;
-                    break;
-                }
-
-            Assert.True(foundArtefact);
-        }
-
-        /// <summary>
-        ///     This tests if an anonymous user can retrieve imaged objects with artefacts and masks
-        /// </summary>
-        /// <returns></returns>
-        [Fact]
-        public async Task CanGetImagedObjectsOfEditionWithArtefactsAndMasks()
-        {
-            // Arrange
-            var editionId = EditionHelpers.GetEditionId();
-            var path = editionImagedObjects.Replace("$EditionId", editionId.ToString())
-                       + "?optional=artefacts&optional=masks";
-
-            // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, ImagedObjectListDTO>(
-                _client,
-                HttpMethod.Get,
-                path,
-                null
-            );
-
-            // Assert
-            response.EnsureSuccessStatusCode();
-            var foundArtefactWithMask = false;
-            foreach (var io in msg.imagedObjects)
-                if (io.artefacts != null)
+                    if (!optionalMasks)
+                        break;
                     foreach (var art in io.artefacts)
                         if (!string.IsNullOrEmpty(art.mask))
                         {
                             foundArtefactWithMask = true;
                             break;
                         }
+                }
 
-            Assert.True(foundArtefactWithMask);
+                Assert.True(foundArtefact);
+                if (optionalMasks)
+                    Assert.True(foundArtefactWithMask);
+                else
+                    Assert.False(foundArtefactWithMask);
+            }
         }
+
 
         [Fact]
         public async Task CanGetInstitutionalImages()
         {
-            await GetInstitutionImagedObjectsAsync("IAA", _client, StartConnectionAsync);
+            await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
+        }
+
+        [Fact]
+        public async Task CanGetSpecifiedImagedObject()
+        {
+            // Arrange
+            var availableImagedObjects =
+                await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
+
+            // Act
+            var imagedObject = await GetSpecificImagedObjectAsync(availableImagedObjects.institutionalImages.First().id,
+                _client, StartConnectionAsync);
+
+            // Assert
+            Assert.NotEmpty(imagedObject.images);
         }
 
         [Fact]
@@ -280,7 +196,7 @@ namespace SQE.ApiTest
             // Note that "IAA-1039-1" had text fragment matches at the time this test was written.
             // Make sure to check the database for errors if this test fails.
             var textFragmentMatches =
-                    await GetImagedObjectTextFragmentMatchesAsync("IAA-1039-1", _client, StartConnectionAsync);
+                await GetImagedObjectTextFragmentMatchesAsync("IAA-1039-1", _client, StartConnectionAsync);
 
             Assert.NotNull(textFragmentMatches);
             Assert.NotEmpty(textFragmentMatches.matches);
@@ -290,23 +206,25 @@ namespace SQE.ApiTest
             Assert.NotEqual<uint>(0, textFragmentMatches.matches.First().textFragmentId);
         }
 
-        public async static Task<InstitutionalImageListDTO> GetInstitutionImagedObjectsAsync(string institution, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
+        public static async Task<SimpleImageListDTO> GetSpecificImagedObjectAsync(string imagedObjectId,
+            HttpClient client, Func<string, Task<HubConnection>> signalr)
         {
             // Act
-            var request = new Get.V1_ImagedObjects_Institutions_InstitutionName(institution);
-            await request.Send(client, signalr);
+            var request = new Get.V1_ImagedObjects_ImagedObjectId(imagedObjectId);
+            await request.SendAsync(client, signalr);
 
             // Assert
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
-            Assert.NotEmpty(request.HttpResponseObject.institutionalImages);
+            Assert.NotEmpty(request.HttpResponseObject.images);
             return request.HttpResponseObject;
         }
 
-        public async static Task<ImagedObjectTextFragmentMatchListDTO> GetImagedObjectTextFragmentMatchesAsync(string imagedObjectId, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
+        public static async Task<ImagedObjectTextFragmentMatchListDTO> GetImagedObjectTextFragmentMatchesAsync(
+            string imagedObjectId, HttpClient client, Func<string, Task<HubConnection>> signalr)
         {
             // Act
             var request = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(imagedObjectId);
-            await request.Send(client, signalr);
+            await request.SendAsync(client, signalr);
 
             // Assert
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);

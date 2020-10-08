@@ -1,9 +1,7 @@
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Testing;
 using NetTopologySuite.IO;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using Xunit;
 
@@ -12,11 +10,8 @@ namespace SQE.ApiTest
     /// <summary>
     ///     This a suite of integration tests for the utils controller.
     /// </summary>
-    public class UtilTest : WebControllerTest
+    public partial class WebControllerTest
     {
-        public UtilTest(WebApplicationFactory<Startup> factory) : base(factory)
-        {
-        }
         // There are more extensive tests of the polygon validation method in ValidationTests.cs
         // The tests here are geared towards checking the API endpoints
 
@@ -29,7 +24,7 @@ namespace SQE.ApiTest
             };
 
             var polygonValidation = new Post.V1_Utils_RepairWktPolygon(goodPolygon);
-            await polygonValidation.Send(
+            await polygonValidation.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true
@@ -57,7 +52,7 @@ namespace SQE.ApiTest
             };
 
             var polygonValidation = new Post.V1_Utils_RepairWktPolygon(badPolygon);
-            await polygonValidation.Send(
+            await polygonValidation.SendAsync(
                 _client,
                 StartConnectionAsync,
                 true,

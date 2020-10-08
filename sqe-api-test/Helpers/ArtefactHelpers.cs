@@ -21,7 +21,7 @@ namespace SQE.ApiTest.Helpers
             Request.UserAuthDetails user = null)
         {
             var apiRequest = new Get.V1_Editions_EditionId_Artefacts(editionId);
-            await apiRequest.Send(
+            await apiRequest.SendAsync(
                 client,
                 null,
                 true,
@@ -44,7 +44,7 @@ namespace SQE.ApiTest.Helpers
             Request.UserAuthDetails user = null)
         {
             var apiRequest = new Delete.V1_Editions_EditionId_Artefacts_ArtefactId(editionId, artefactId);
-            await apiRequest.Send(
+            await apiRequest.SendAsync(
                 client,
                 null,
                 true,
@@ -53,11 +53,12 @@ namespace SQE.ApiTest.Helpers
             apiRequest.HttpResponseMessage.EnsureSuccessStatusCode();
         }
 
-        public static async Task<InterpretationRoiDTOList> GetArtefactRois(uint editionId, uint artefactId, HttpClient client,
+        public static async Task<InterpretationRoiDTOList> GetArtefactRois(uint editionId, uint artefactId,
+            HttpClient client,
             Func<string, Task<HubConnection>> signalr, bool auth = false)
         {
             var request = new Get.V1_Editions_EditionId_Artefacts_ArtefactId_Rois(editionId, artefactId);
-            await request.Send(client, signalr, auth: auth);
+            await request.SendAsync(client, signalr, auth);
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
             return request.HttpResponseObject;
         }

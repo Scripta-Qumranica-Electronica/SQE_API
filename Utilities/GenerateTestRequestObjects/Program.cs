@@ -13,7 +13,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Buildalyzer;
 using Buildalyzer.Workspaces;
-using CaseExtensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -85,9 +84,9 @@ namespace GenerateTestRequestObjects
                     if (!Helpers.SyntaxNodeHelper.TryGetParentSyntax(node, out namespaceDeclarationSyntax)) continue;
                     if (namespaceDeclarationSyntax.Name.ToString() != "SQE.API.Server.HttpControllers") continue;
 
-                    completeListenerList = completeListenerList.Concat((await Parsers.ParseAndWriteClassesAsync(testFolder, node, semModels, serviceMethods,
-                        broadcastMethods, project))).ToList();
-
+                    completeListenerList = completeListenerList.Concat(await Parsers.ParseAndWriteClassesAsync(
+                        testFolder, node, semModels, serviceMethods,
+                        broadcastMethods, project)).ToList();
                 }
             }
 

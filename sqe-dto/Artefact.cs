@@ -32,7 +32,8 @@ namespace SQE.API.DTO
         public uint? artefactPlacementEditorId { get; set; }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        [Required] public SideDesignation side { get; set; }
+        [Required]
+        public SideDesignation side { get; set; }
 
         public string statusMessage { get; set; }
     }
@@ -73,9 +74,9 @@ namespace SQE.API.DTO
     }
 
     /// <summary>
-    /// A DTO for updating an artefact's placement. The placement may be changed or
-    /// removed completely. The PlacementDTO is not required because this update request
-    /// may be setting isPlaced to false.
+    ///     A DTO for updating an artefact's placement. The placement may be changed or
+    ///     removed completely. The PlacementDTO is not required because this update request
+    ///     may be setting isPlaced to false.
     /// </summary>
     public class UpdateArtefactPlacementDTO
     {

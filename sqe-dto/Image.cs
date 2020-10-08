@@ -32,8 +32,11 @@ namespace SQE.API.DTO
 
         [Required] public string[] waveLength { get; set; }
         [Required] public string type { get; set; }
+
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        [Required] public SideDesignation side { get; set; }
+        [Required]
+        public SideDesignation side { get; set; }
+
         [Required] public uint ppi { get; set; }
         [Required] public bool master { get; set; }
         [Required] public uint catalogNumber { get; set; }
@@ -59,7 +62,9 @@ namespace SQE.API.DTO
             this.name = name;
         }
 
-        public ImageInstitutionDTO() : this(null) { }
+        public ImageInstitutionDTO() : this(null)
+        {
+        }
 
         [Required] public string name { get; set; }
     }
@@ -71,7 +76,9 @@ namespace SQE.API.DTO
             this.institutions = institutions;
         }
 
-        public ImageInstitutionListDTO() : this(null) { }
+        public ImageInstitutionListDTO() : this(null)
+        {
+        }
 
         [Required] public List<ImageInstitutionDTO> institutions { get; set; }
     }

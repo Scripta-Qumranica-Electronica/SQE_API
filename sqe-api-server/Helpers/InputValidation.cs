@@ -1,13 +1,10 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using NetTopologySuite.IO;
 using NetTopologySuite.Simplify;
 using SQE.DatabaseAccess.Helpers;
-using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Helpers
 {
@@ -41,26 +38,6 @@ namespace SQE.API.Server.Helpers
             CallingConvention = CallingConvention.Cdecl
         )]
         private static extern void c_char_free(IntPtr ptr);
-
-        /// <summary>
-        ///     The validator checks that the transformMatrix is indeed valid JSON that can be successfully
-        ///     parsed into the SQE.SqeHttpApi.DataAccess.Models.TransformMatrix class.
-        /// </summary>
-        /// <param name="transformMatrix">A JSON string with a transform matrix object.</param>
-        /// <returns></returns>
-        public static bool ValidateTransformMatrix(string transformMatrix)
-        {
-            try
-            {
-                // Test that the string is valid JSON that can be parsed into a valid instance of the TransformMatrix class.
-                _ = JsonSerializer.Deserialize<TransformMatrix>(transformMatrix);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
 
         /// <summary>
         ///     Validate that the wkt polygon is indeed correct. If it is not, the method will

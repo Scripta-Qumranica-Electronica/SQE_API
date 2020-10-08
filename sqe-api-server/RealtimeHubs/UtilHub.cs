@@ -6,7 +6,6 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
 using SQE.API.Server.Services;
@@ -29,12 +28,12 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="payload">JSON object with the WKT polygon to validate</param>
         [Authorize]
-        public async Task<WktPolygonDTO> PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
+        public WktPolygonDTO PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
 
         {
             try
             {
-                return await _utilService.RepairWktPolygonAsync(payload.wktPolygon, clientId: Context.ConnectionId);
+                return _utilService.RepairWktPolygonAsync(payload.wktPolygon, clientId: Context.ConnectionId);
             }
             catch (ApiException err)
             {

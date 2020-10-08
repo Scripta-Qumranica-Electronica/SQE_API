@@ -59,7 +59,7 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="listenToEdition">Whether a listener should register for messages on the edition id.</param>
         /// <param name="listeningFor">The desired listener methods.</param>
         /// <returns>HubConnection</returns>
-        Task Send(
+        Task SendAsync(
             IEnumerable<ListenerMethods> listeningFor,
             HttpClient http = null,
             Func<string, Task<HubConnection>> realtime = null,
@@ -107,7 +107,7 @@ namespace SQE.ApiTest.ApiRequests
         /// <param name="listenToEdition">Whether a listener should register for messages on the edition id.</param>
         /// <param name="listeningFor">The desired listener method.</param>
         /// <returns>HubConnection</returns>
-        Task Send(
+        Task SendAsync(
             HttpClient http = null,
             Func<string, Task<HubConnection>> realtime = null,
             bool auth = false,
@@ -162,7 +162,7 @@ namespace SQE.ApiTest.ApiRequests
         public TOutput HttpResponseObject { get; protected set; }
         public TOutput SignalrResponseObject { get; protected set; }
 
-        public async Task Send(
+        public async Task SendAsync(
             IEnumerable<ListenerMethods> listeningFor,
             HttpClient http = null,
             Func<string, Task<HubConnection>> realtime = null,
@@ -196,12 +196,13 @@ namespace SQE.ApiTest.ApiRequests
                     ? await Request.GetJwtViaHttpAsync(http, requestUser ?? null)
                     : await Request.GetJwtViaRealtimeAsync(realtime, requestUser ?? null);
 
-            if (auth && listeningFor.Any() && realtime != null)
+            var listenerMethodsList = listeningFor.ToList();
+            if (auth && listenerMethodsList.Any() && realtime != null)
                 jwt2 = await Request.GetJwtViaRealtimeAsync(realtime, listenerUser);
 
             // Set up a SignalR listener if desired (this hub connection must be different than the one used to make
             // the API request.
-            if (listeningFor.Any()
+            if (listenerMethodsList.Any()
                 && realtime != null)
             {
                 signalrListener = await realtime(jwt2);
@@ -210,20 +211,19 @@ namespace SQE.ApiTest.ApiRequests
                 if (listenToEdition)
                     await signalrListener.InvokeAsync("SubscribeToEdition", GetEditionId().Value);
                 // Register listeners for messages returned by this API request
-                foreach (var listener in listeningFor)
+                foreach (var listener in listenerMethodsList)
                     if (_listenerDict.TryGetValue(listener, out var val))
                         val.StartListener(signalrListener);
 
                 // Reload the listener if connection is lost
                 signalrListener.Closed += async error =>
                 {
-                    await Task.Delay(new Random().Next(0, 5) * 1000);
                     await signalrListener.StartAsync();
                     // Subscribe to messages on the edition
                     if (listenToEdition)
                         await signalrListener.InvokeAsync("SubscribeToEdition", GetEditionId().Value);
                     // Register listeners for messages returned by this API request
-                    foreach (var listener in listeningFor)
+                    foreach (var listener in listenerMethodsList)
                         if (_listenerDict.TryGetValue(listener, out var val))
                             val.StartListener(signalrListener);
                 };
@@ -272,29 +272,29 @@ namespace SQE.ApiTest.ApiRequests
             }
 
             // If no listener is running, return the response from the request
-            if (!listeningFor.Any()
+            if (!listenerMethodsList.Any()
                 || GetRequestVerb() == HttpMethod.Get)
                 return;
 
             // Otherwise, wait up to 20 seconds for the listener to receive the message before giving up
             var waitTime = 0;
-
-            while (
-                listeningFor.Any(x =>
-                    !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull())
-                && waitTime < 20)
+            while (shouldSucceed && OutstandingListeners(listenerMethodsList) && waitTime < 20)
             {
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 waitTime += 1;
             }
 
+            // Dispose of the listener and check to see that all expected responses have been received
             signalrListener?.DisposeAsync(); // Cleanup
             if (shouldSucceed)
-                Assert.Empty(listeningFor.Where(x =>
-                    !_listenerDict.TryGetValue(x, out var listeners) || listeners.IsNull()));
+                foreach (var listenerMethod in listenerMethodsList)
+                {
+                    Assert.True(_listenerDict.TryGetValue(listenerMethod, out var listener));
+                    Assert.False(listener.IsNull());
+                }
         }
 
-        public async Task Send(
+        public async Task SendAsync(
             HttpClient http = null,
             Func<string, Task<HubConnection>> realtime = null,
             bool auth = false,
@@ -306,7 +306,7 @@ namespace SQE.ApiTest.ApiRequests
             bool listenToEdition = true,
             ListenerMethods? listeningFor = null)
         {
-            await Send(
+            await SendAsync(
                 listeningFor.HasValue
                     ? new List<ListenerMethods> { listeningFor.Value }
                     : new List<ListenerMethods>(),
@@ -319,6 +319,17 @@ namespace SQE.ApiTest.ApiRequests
                 deterministic,
                 requestRealtime,
                 listenToEdition);
+        }
+
+        private bool OutstandingListeners(List<ListenerMethods> listenerMethodsList)
+        {
+            foreach (var listenerMethod in listenerMethodsList)
+            {
+                _listenerDict.TryGetValue(listenerMethod, out var listener);
+                if (listener.IsNull()) return true;
+            }
+
+            return false;
         }
 
         public virtual HttpRequestObject<TInput> GetHttpRequestObject()

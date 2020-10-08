@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Dapper;
 using SQE.API.DTO;
+using SQE.ApiTest.ApiRequests;
 using Xunit;
 
 namespace SQE.ApiTest.Helpers
@@ -19,7 +20,7 @@ namespace SQE.ApiTest.Helpers
         /// <param name="client">The HttpClient</param>
         /// <param name="password">The password for the newly created user.</param>
         /// <returns>Returns a DetailedUserDTO object describing the new user.</returns>
-        public static async Task<DetailedUserDTO> CreateRandomUserAsync(HttpClient client, string password)
+        public static async Task<UserDTO> CreateRandomUserAsync(HttpClient client, string password)
         {
             var user = new NewUserRequestDTO(
                 $"sequential.user{_userCount}@fakeEmail.edu",
@@ -43,25 +44,22 @@ namespace SQE.ApiTest.Helpers
         /// <param name="user">A NewUserRequestDTO object with the details of the new user to be created</param>
         /// <param name="shouldSucceed">Optional, whether the action should succeed</param>
         /// <returns>Returns a DetailedUserDTO for the newly created user.</returns>
-        private static async Task<DetailedUserDTO> CreateUserAccountAsync(HttpClient client,
+        private static async Task<UserDTO> CreateUserAccountAsync(HttpClient client,
             NewUserRequestDTO user,
             bool shouldSucceed = true)
         {
-            var (response, msg) = await Request.SendHttpRequestAsync<NewUserRequestDTO, DetailedUserDTO>(
-                client,
-                HttpMethod.Post,
-                "/v1/users",
-                user
-            );
+            var userRequest = new Post.V1_Users(user);
+            await userRequest.SendAsync(client);
+            var (response, msg) = (userRequest.HttpResponseMessage, userRequest.HttpResponseObject);
 
             // Assert
             if (shouldSucceed)
             {
                 response.EnsureSuccessStatusCode();
                 Assert.Equal(user.email, msg.email);
-                Assert.Equal(user.forename, msg.forename);
-                Assert.Equal(user.surname, msg.surname);
-                Assert.Equal(user.organization, msg.organization);
+                // Assert.Equal(user.forename, msg.forename);
+                // Assert.Equal(user.surname, msg.surname);
+                // Assert.Equal(user.organization, msg.organization);
             }
             else
             {
@@ -85,13 +83,9 @@ namespace SQE.ApiTest.Helpers
             var userToken = await GetToken(user.email, "ACTIVATE_ACCOUNT"); // Get  token from DB
             var payload = new AccountActivationRequestDTO { token = userToken.token.ToString() };
 
-            var (response, msg) =
-                await Request.SendHttpRequestAsync<AccountActivationRequestDTO, UserDTO>(
-                    client,
-                    HttpMethod.Post,
-                    "/v1/users/confirm-registration",
-                    payload
-                );
+            var activationRequest = new Post.V1_Users_ConfirmRegistration(payload);
+            await activationRequest.SendAsync(client);
+            var response = activationRequest.HttpResponseMessage;
 
             // Assert
             if (shouldSucceed)
@@ -192,7 +186,7 @@ WHERE email = @Email AND type = @Type";
                 Activate = activate;
             }
 
-            private DetailedUserDTO User { get; set; }
+            private UserDTO User { get; set; }
             private NewUserRequestDTO NewUser { get; }
             private HttpClient Client { get; }
             private DatabaseQuery Db { get; }
@@ -206,7 +200,7 @@ WHERE email = @Email AND type = @Type";
                 Task.Run<Task>(async () => await CleanupUserAccountAsync(User, Db)).Wait();
             }
 
-            public async Task<DetailedUserDTO> CreateUser()
+            public async Task<UserDTO> CreateUser()
             {
                 User = await CreateUserAccountAsync(Client, NewUser);
                 if (Activate)

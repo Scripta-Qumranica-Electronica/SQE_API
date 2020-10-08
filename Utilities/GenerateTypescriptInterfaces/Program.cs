@@ -172,7 +172,7 @@ namespace GenerateTypescriptInterfaces
                 comment = StripComments(comment);
                 xDoc.LoadXml($"<root>{comment.Replace("///", "")}</root>");
             }
-            catch (System.Xml.XmlException e)
+            catch (XmlException e)
             {
                 Console.WriteLine(comment);
                 Console.WriteLine(e);
@@ -324,6 +324,12 @@ namespace GenerateTypescriptInterfaces
             }
         }
 
+        private static string StripComments(string comment)
+        {
+            const string re = @"(^|\s+)\/\/(?!\/).*\n";
+            return Regex.Replace(comment, re, "");
+        }
+
         /// <summary>
         ///     Optional command line arguments (see https://github.com/commandlineparser/commandline)
         /// </summary>
@@ -340,12 +346,6 @@ namespace GenerateTypescriptInterfaces
 
             [Option('h', "hub-folder", Required = false, HelpText = "Specify signalr hub folder path.")]
             public string HubFolder { get; set; }
-        }
-
-        private static string StripComments(string comment)
-        {
-            const string re = @"(^|\s+)\/\/(?!\/).*\n";
-            return Regex.Replace(comment, re, "");
         }
     }
 

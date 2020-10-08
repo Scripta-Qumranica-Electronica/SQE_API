@@ -9,7 +9,6 @@ using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
-using IsolationLevel = System.Transactions.IsolationLevel;
 
 namespace SQE.DatabaseAccess
 {
@@ -57,12 +56,10 @@ namespace SQE.DatabaseAccess
 
     public class EditionRepository : DbConnectionBase, IEditionRepository
     {
-        private readonly IConfiguration _config;
         private readonly IDatabaseWriter _databaseWriter;
 
         public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
         {
-            _config = config;
             _databaseWriter = databaseWriter;
         }
 
@@ -74,7 +71,7 @@ namespace SQE.DatabaseAccess
                 // and in the calling function.  Maybe it doesn't matter much though.
                 var editionDictionary = new Dictionary<uint, Edition>();
                 Edition lastEdition;
-                var result = (await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
+                await connection.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
                     EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue),
                     (editionGroup, editor) =>
                     {
@@ -144,7 +141,7 @@ namespace SQE.DatabaseAccess
                         EditionId = editionId
                     },
                     splitOn: "EditorId"
-                )).ToList();
+                );
 
                 return editionDictionary.Values;
             }
@@ -153,7 +150,7 @@ namespace SQE.DatabaseAccess
         public async Task ChangeEditionNameAsync(UserInfo editionUser, string name)
         {
             EditionNameQuery.Result result;
-
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
                 try
@@ -170,29 +167,27 @@ namespace SQE.DatabaseAccess
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId.Value);
+                    throw new StandardExceptions.DataNotFoundException("edition", editionUser.EditionId ?? 0);
                 }
+
+                // Now we create the mutation object for the requested action
+                // You will want to check the database to make sure you what you are doing.
+                var nameChangeParams = new DynamicParameters();
+                nameChangeParams.Add("@manuscript_id", result.ManuscriptId);
+                nameChangeParams.Add("@Name", name);
+                var nameChangeRequest = new MutationRequest(
+                    MutateType.Update,
+                    nameChangeParams,
+                    "manuscript_data",
+                    result.ManuscriptDataId
+                );
+
+                // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
+                // care of main_action and single_action.
+                await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
+
+                transaction.Complete();
             }
-
-            // Bronson - what happens if the scroll doesn't belong to the user? You should return some indication 
-            // As the code stands now, you return "".  Itay - the function TrackMutation always checks this and
-            // throws a NoPermissionException immediately.
-
-            // Now we create the mutation object for the requested action
-            // You will want to check the database to make sure you what you are doing.
-            var nameChangeParams = new DynamicParameters();
-            nameChangeParams.Add("@manuscript_id", result.ManuscriptId);
-            nameChangeParams.Add("@Name", name);
-            var nameChangeRequest = new MutationRequest(
-                MutateType.Update,
-                nameChangeParams,
-                "manuscript_data",
-                result.ManuscriptDataId
-            );
-
-            // Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-            // care of main_action and single_action.
-            await _databaseWriter.WriteToDatabaseAsync(editionUser, new List<MutationRequest> { nameChangeRequest });
         }
 
         /// <summary>
@@ -213,17 +208,18 @@ namespace SQE.DatabaseAccess
         public async Task UpdateEditionMetricsAsync(UserInfo editionUser, uint width, uint height, int xOrigin,
             int yOrigin)
         {
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
-                var oldRecord = await connection.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
+                var oldRecord = (await connection.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
                     GetEditionManuscriptMetricsDetails.GetQuery,
                     new
                     {
                         editionUser.EditionId
-                    });
-                if (oldRecord.Count() != 1)
+                    })).ToList();
+                if (oldRecord.Count != 1)
                     throw new StandardExceptions.DataNotFoundException("manuscript metrics",
-                        editionUser.EditionId.Value,
+                        editionUser.EditionId ?? 0,
                         "edition");
 
                 var parameters = new DynamicParameters();
@@ -231,18 +227,20 @@ namespace SQE.DatabaseAccess
                 parameters.Add("height", height);
                 parameters.Add("x_origin", xOrigin);
                 parameters.Add("y_origin", yOrigin);
-                parameters.Add("manuscript_id", oldRecord.FirstOrDefault().ManuscriptId);
+                parameters.Add("manuscript_id", oldRecord.First().ManuscriptId);
 
                 var mutation = new MutationRequest(
                     MutateType.Update,
                     parameters,
                     "manuscript_metrics",
-                    oldRecord.FirstOrDefault().ManuscriptMetricsId);
+                    oldRecord.First().ManuscriptMetricsId);
 
                 var results = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutation);
 
                 if (results.Count() != 1)
                     throw new StandardExceptions.DataNotWrittenException("update manuscript metrics");
+
+                transaction.Complete();
             }
         }
 
@@ -254,6 +252,9 @@ namespace SQE.DatabaseAccess
         ///     User info object contains the editionId that the user wishes to copy and
         ///     all user permissions related to it.
         /// </param>
+        /// <param name="name">
+        ///     New name for the edition.
+        /// </param>
         /// <param name="copyrightHolder">
         ///     Name of the person/institution that holds the copyright
         ///     (automatically created from user when null)
@@ -263,7 +264,8 @@ namespace SQE.DatabaseAccess
         ///     (automatically created from user and all editors when null)
         /// </param>
         /// <returns>The editionId of the newly created edition.</returns>
-        public async Task<uint> CopyEditionAsync(UserInfo editionUser,
+        public async Task<uint> CopyEditionAsync(
+            UserInfo editionUser,
             string name = null,
             string copyrightHolder = null,
             string collaborators = null)
@@ -285,8 +287,7 @@ namespace SQE.DatabaseAccess
                     // It made no appreciable difference:
                     // await connection.ExecuteAsync("SET @@session.foreign_key_checks=0;");
                     // await connection.ExecuteAsync("SET @@session.unique_checks=0;");
-                    using (var transactionScope = new TransactionScope(TransactionScopeOption.Required,
-                        new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }))
+                    using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     using (var connection = OpenConnection())
                     {
                         // Create a new edition
@@ -421,11 +422,14 @@ WHERE edition_id = {editionUser.EditionId}");
 
             // Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
             var editors = await _getEditionEditors(editionUser.EditionId.Value);
-            await Task.WhenAll(
-                editors.Select(
-                    x => ChangeEditionEditorRightsAsync(editionUser, x.Email, x.MayRead, false, x.MayLock, x.IsAdmin)
-                )
-            );
+            foreach (var editor in editors)
+                await ChangeEditionEditorRightsAsync(
+                    editionUser,
+                    editor.Email,
+                    editor.MayRead,
+                    false,
+                    editor.MayLock,
+                    editor.IsAdmin);
 
             // Note: I had wrapped the following in a transaction, but this has the problem that it can lockup every
             // *_owner table in the entire database for a significant amount of time (sometimes 1000's of rows will be
@@ -453,12 +457,8 @@ WHERE edition_id = {editionUser.EditionId}");
 
                 // Loop over every table and remove every entry with the requested editionId
                 // Each individual delete can be async and happen concurrently
-                await Task.WhenAll(
-                    dataTables.Select(
-                            dataTable => DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser)
-                        )
-                        .ToArray()
-                );
+                foreach (var dataTable in dataTables)
+                    await DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser);
 
                 return null;
             }
@@ -511,9 +511,9 @@ WHERE edition_id = {editionUser.EditionId}");
                 throw new StandardExceptions.NoAdminPermissionsException(editionUser);
 
             // Instantiate the return object
-            var editorInfo = new DetailedUserWithToken();
+            DetailedUserWithToken editorInfo;
 
-            using (var transactionScope = new TransactionScope())
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // Check if the editor already exists, don't attempt to re-add
                 if ((await _getEditionEditors(editionUser.EditionId.Value)).Any(x => x.Email == editorEmail))
@@ -543,13 +543,13 @@ WHERE edition_id = {editionUser.EditionId}");
                 using (var connection = OpenConnection())
                 {
                     // Find the editor
-                    var editorInfoSearch = await connection.QueryAsync<DetailedUserWithToken>(
+                    var editorInfoSearch = (await connection.QueryAsync<DetailedUserWithToken>(
                         UserDetails.GetQuery(
                             new List<string> { "user_id", "forename", "surname", "organization" },
                             new List<string> { "email" }
                         ),
                         new { Email = editorEmail }
-                    );
+                    )).ToList();
 
                     // Throw a meaningful error if the user's email was not found in the system.
                     if (!editorInfoSearch.Any())
@@ -558,14 +558,14 @@ WHERE edition_id = {editionUser.EditionId}");
                     editorInfo = editorInfoSearch.FirstOrDefault();
 
                     // Check for existing request
-                    var existingRequestToken = await connection.QueryAsync<Guid>(
+                    var existingRequestToken = (await connection.QueryAsync<Guid>(
                         FindEditionEditorRequestByEditorEdition.GetQuery,
                         new
                         {
                             editionUser.EditionId,
                             AdminUserId = editionUser.userId,
                             EditorUserId = editorInfo.UserId
-                        });
+                        })).ToList();
 
                     // Add a GUID for this transaction (Reuse any pre-existing ones)
                     if (existingRequestToken.Any())
@@ -595,7 +595,7 @@ WHERE edition_id = {editionUser.EditionId}");
                     }
 
                     // Record the editor request in database
-                    var recordedRequest = await connection.ExecuteAsync(RecordEditionEditorRequest.GetQuery,
+                    await connection.ExecuteAsync(RecordEditionEditorRequest.GetQuery,
                         new
                         {
                             editorInfo.Token,
@@ -615,10 +615,10 @@ WHERE edition_id = {editionUser.EditionId}");
             // Get datetime of request
             using (var connection = OpenConnection())
             {
-                var date = await connection.QueryAsync<DateTime>(
+                var date = (await connection.QueryAsync<DateTime>(
                     GetEditionEditorRequestDate.GetQuery,
-                    new { editorInfo.Token });
-                if (date.Count() != 1)
+                    new { editorInfo.Token })).AsList();
+                if (date.Count != 1)
                     throw new StandardExceptions.DataNotWrittenException("generate edition share request");
                 editorInfo.Date = date.FirstOrDefault();
             }
@@ -629,22 +629,22 @@ WHERE edition_id = {editionUser.EditionId}");
 
         public async Task<DetailedEditionPermission> AddEditionEditorAsync(string token, uint userId)
         {
-            var editorEditionPermission = new DetailedEditionPermission();
-            using (var transactionScope = new TransactionScope())
+            DetailedEditionPermission editorEditionPermission;
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             using (var connection = OpenConnection())
             {
-                var editorEditionPermissions = await connection.QueryAsync<DetailedEditionPermission>(
+                var editorEditionPermissions = (await connection.QueryAsync<DetailedEditionPermission>(
                     FindEditionEditorRequestByToken.GetQuery,
                     new
                     {
                         Token = token,
                         EditorUserId = userId
-                    });
+                    })).AsList();
                 // Make sure the token exists
                 if (!editorEditionPermissions.Any())
                     throw new StandardExceptions.DataNotFoundException("token", token);
 
-                editorEditionPermission = editorEditionPermissions.FirstOrDefault();
+                editorEditionPermission = editorEditionPermissions.First();
                 editorEditionPermission.MayRead = true; // Invited editors always have read access
 
                 // Check if the editor already exists, don't attempt to re-add
@@ -711,11 +711,13 @@ WHERE edition_id = {editionUser.EditionId}");
         public async Task<List<DetailedEditorInvitationPermissions>> GetOutstandingEditionEditorInvitationsAsync(
             uint userId)
         {
-            using var connection = OpenConnection();
-            return (await connection.QueryAsync<DetailedEditorInvitationPermissions>(
-                    FindEditionEditorRequestByEditorId.GetQuery,
-                    new { EditorUserId = userId })
-                ).ToList();
+            using (var connection = OpenConnection())
+            {
+                return (await connection.QueryAsync<DetailedEditorInvitationPermissions>(
+                        FindEditionEditorRequestByEditorId.GetQuery,
+                        new { EditorUserId = userId })
+                    ).ToList();
+            }
         }
 
         public async Task<Permission> ChangeEditionEditorRightsAsync(UserInfo editionUser,
@@ -841,7 +843,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 
         public async Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser)
         {
-            // Placehoders for query mapping
+            // Placeholders for query mapping
             ScriptTextFragment lastScriptTextFragment = null;
             ScriptLine lastScriptLine = null;
             ScriptArtefactCharacters lastScriptArtefactCharacters = null;
@@ -867,13 +869,13 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                     objects =>
                     {
                         // Collect the mapped objects
-                        var scriptTextFragment = objects[0] as ScriptTextFragment;
-                        var scriptLine = objects[1] as ScriptLine;
-                        var scriptArtefactCharacters = objects[2] as ScriptArtefactCharacters;
-                        var character = objects[3] as Character;
-                        var spatialRoi = objects[4] as SpatialRoi;
-                        var characterAttribute = objects[5] as CharacterAttribute;
-                        var characterStreamPosition = objects[6] as CharacterStreamPosition;
+                        if (!(objects[0] is ScriptTextFragment scriptTextFragment)) return null;
+                        if (!(objects[1] is ScriptLine scriptLine)) return null;
+                        if (!(objects[2] is ScriptArtefactCharacters scriptArtefactCharacters)) return null;
+                        if (!(objects[3] is Character character)) return null;
+                        if (!(objects[4] is SpatialRoi spatialRoi)) return null;
+                        if (!(objects[5] is CharacterAttribute characterAttribute)) return null;
+                        if (!(objects[6] is CharacterStreamPosition characterStreamPosition)) return null;
 
                         // Construct the nestings
                         var newTextFragment =
@@ -921,14 +923,14 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                             lastCharacters.Attributes.Add(lastCharacterAttribute);
                         }
 
-                        if (characterStreamPosition.PositionInStreamId !=
+                        if (characterStreamPosition.PositionInStreamId ==
                             lastCharacterStreamPosition?.PositionInStreamId)
-                        {
-                            lastCharacterStreamPosition = characterStreamPosition;
-                            lastCharacters.NextCharacters.Add(lastCharacterStreamPosition);
-                        }
+                            return scriptTextFragment;
 
-                        return newTextFragment ? scriptTextFragment : null;
+                        lastCharacterStreamPosition = characterStreamPosition;
+                        lastCharacters.NextCharacters.Add(lastCharacterStreamPosition);
+
+                        return scriptTextFragment;
                     },
                     new { editionUser.EditionId, UserId = editionUser.userId },
                     splitOn:
@@ -936,46 +938,6 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                 );
                 return scriptLines.Where(x => x != null).ToList();
             }
-        }
-
-        private static Edition CreateEdition(EditionGroupQuery.Result result, uint? currentUserId)
-        {
-            var model = new Edition
-            {
-                EditionId = result.EditionId,
-                Name = result.Name,
-                EditionDataEditorId = result.EditionDataEditorId,
-                ManuscriptId = result.ManuscriptId,
-                Thumbnail = result.Thumbnail,
-                Locked = result.Locked,
-                LastEdit = result.LastEdit,
-                IsPublic = result.IsPublic,
-                Owner = new User
-                {
-                    UserId = result.CurrentUserId,
-                    Email = result.CurrentEmail
-                },
-                Copyright = Licence.printLicence(result.CopyrightHolder, result.Collaborators),
-                CopyrightHolder = result.CopyrightHolder,
-                Collaborators = result.Collaborators
-            };
-
-            if (currentUserId.HasValue)
-                model.Permission = new Permission
-                {
-                    IsAdmin = result.CurrentIsAdmin,
-                    MayWrite = result.CurrentMayWrite,
-                    MayLock = result.CurrentMayLock
-                };
-            else
-                model.Permission = new Permission
-                {
-                    IsAdmin = false,
-                    MayLock = false,
-                    MayWrite = false
-                };
-
-            return model;
         }
 
         private static async Task DeleteDataFromOwnerTable(IDbConnection connection,

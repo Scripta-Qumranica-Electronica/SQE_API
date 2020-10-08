@@ -165,7 +165,7 @@ namespace SQE.DatabaseAccess.Helpers
                         // Grab a transaction scope, we roll back all changes if any transactions fail
                         // I could limit the transaction scope to each individual mutation request,
                         // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
-                        using (var transactionScope = new TransactionScope())
+                        using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                         {
                             var results = await _writeToDatabaseAsync(editionUser, mutationRequests);
                             transactionScope.Complete();
@@ -203,21 +203,22 @@ namespace SQE.DatabaseAccess.Helpers
                     {
                         case MutateType.Create:
                             // Insert the record and add its response to the alteredRecords response.
-                            alteredRecords.Add(await InsertAsync(connection, mutationRequest,
-                                editionUser.userId.Value));
+                            var createdRecord =
+                                await InsertAsync(connection, mutationRequest, editionUser.userId.Value);
+                            alteredRecords.Add(createdRecord);
                             break;
 
-                        case MutateType.Update
-                            : // Update in our system is really Delete + Insert, the old record remains.
+                        case MutateType.Update:
+                            // Update in our system is really Delete + Insert, the old record remains.
                             // Delete the old record
-                            var deletedRecord = await DeleteAsync(connection, mutationRequest);
+                            var priorDeletedRecord = await DeleteAsync(connection, mutationRequest);
 
                             // Insert the new record
                             var insertedRecord =
                                 await InsertAsync(connection, mutationRequest, editionUser.userId.Value);
 
                             // Merge the request responses by copying the deleted Id to the insertRecord object
-                            insertedRecord.OldId = deletedRecord.OldId;
+                            insertedRecord.OldId = priorDeletedRecord.OldId;
 
                             // Add info to the return object
                             alteredRecords.Add(insertedRecord);
@@ -225,7 +226,8 @@ namespace SQE.DatabaseAccess.Helpers
 
                         case MutateType.Delete:
                             // Delete the record and add its response to the alteredRecords response.
-                            alteredRecords.Add(await DeleteAsync(connection, mutationRequest));
+                            var deletedRecord = await DeleteAsync(connection, mutationRequest);
+                            alteredRecords.Add(deletedRecord);
                             break;
 
                         default:

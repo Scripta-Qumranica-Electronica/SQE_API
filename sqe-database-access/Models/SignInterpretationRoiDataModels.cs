@@ -24,22 +24,6 @@ namespace SQE.DatabaseAccess.Models
         public uint OldSignInterpretationRoiId { get; set; }
     }
 
-    public class SetSignInterpretationROIX
-    {
-        public uint ArtefactId { get; set; }
-        public uint? SignInterpretationId { get; set; }
-
-        public string Shape { get; set; }
-
-        //TODO I've no idea to what position refers in our database (Ingo)
-        public string Position { get; set; }
-        public uint TranslateX { get; set; }
-        public uint TranslateY { get; set; }
-        public ushort StanceRotation { get; set; }
-        public bool ValuesSet { get; set; }
-        public bool Exceptional { get; set; }
-    }
-
     public class SignInterpretationROISearchData : SignInterpretationRoiData, ISearchData
     {
         public string getSearchParameterString()

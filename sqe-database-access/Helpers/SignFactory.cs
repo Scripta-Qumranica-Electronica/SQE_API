@@ -24,7 +24,8 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData> { SignInterpretationFactory.CreateSpaceInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData>
+                    {SignInterpretationFactory.CreateSpaceInterpretation(width, probability)}
             };
         }
 
@@ -32,7 +33,8 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData> { SignInterpretationFactory.CreateVacatInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData>
+                    {SignInterpretationFactory.CreateVacatInterpretation(width, probability)}
             };
         }
 
@@ -40,7 +42,8 @@ namespace SQE.DatabaseAccess.Helpers
         {
             return new SignData
             {
-                SignInterpretations = new List<SignInterpretationData> { SignInterpretationFactory.CreateDamagedInterpretation(width, probability) }
+                SignInterpretations = new List<SignInterpretationData>
+                    {SignInterpretationFactory.CreateDamagedInterpretation(width, probability)}
             };
         }
 

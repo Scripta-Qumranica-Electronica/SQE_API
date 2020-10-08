@@ -11,33 +11,22 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
-
-
     public static partial class Delete
     {
-
-
         public class V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId
-        : RequestObject<EmptyInput, EmptyOutput>
+            : RequestObject<EmptyInput, EmptyOutput>
         {
-            private readonly uint _editionId;
             private readonly uint _attributeId;
-
-            public class Listeners
-            {
-                public ListenerMethods DeletedAttribute = ListenerMethods.DeletedAttribute;
-            };
-            public Listeners AvailableListeners { get; }
+            private readonly uint _editionId;
 
             /// <summary>
-            /// Delete an attribute from an edition
+            ///     Delete an attribute from an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being edited</param>
             /// <param name="attributeId">The ID of the attribute to delete</param>
@@ -52,13 +41,24 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.DeletedAttribute, (DeletedAttributeIsNull, DeletedAttributeListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public DeleteDTO DeletedAttribute { get; private set; }
-            private void DeletedAttributeListener(HubConnection signalrListener) => signalrListener.On<DeleteDTO>("DeletedAttribute", receivedData => DeletedAttribute = receivedData);
-            private bool DeletedAttributeIsNull() => DeletedAttribute == null;
+
+            private void DeletedAttributeListener(HubConnection signalrListener)
+            {
+                signalrListener.On<DeleteDTO>("DeletedAttribute", receivedData => DeletedAttribute = receivedData);
+            }
+
+            private bool DeletedAttributeIsNull()
+            {
+                return DeletedAttribute == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/attribute-id", $"/{_attributeId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/attribute-id", $"/{_attributeId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -72,43 +72,56 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
+
+            public class Listeners
+            {
+                public ListenerMethods DeletedAttribute = ListenerMethods.DeletedAttribute;
+            }
         }
 
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId
-        : RequestObject<EmptyInput, EmptyOutput>
+            : RequestObject<EmptyInput, EmptyOutput>
         {
             private readonly uint _editionId;
             private readonly uint _signInterpretationId;
 
-            public class Listeners
-            {
-                public ListenerMethods DeletedSignInterpretation = ListenerMethods.DeletedSignInterpretation;
-            };
-            public Listeners AvailableListeners { get; }
-
             /// <summary>
-            /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-            /// by connecting all the deleted sign's next and previous nodes.
+            ///     Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
+            ///     by connecting all the deleted sign's next and previous nodes.
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
             /// <returns>Ok or Error</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(uint editionId, uint signInterpretationId)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(uint editionId,
+                uint signInterpretationId)
 
             {
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.DeletedSignInterpretation, (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
+                _listenerDict.Add(ListenerMethods.DeletedSignInterpretation,
+                    (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public DeleteDTO DeletedSignInterpretation { get; private set; }
-            private void DeletedSignInterpretationListener(HubConnection signalrListener) => signalrListener.On<DeleteDTO>("DeletedSignInterpretation", receivedData => DeletedSignInterpretation = receivedData);
-            private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
+
+            private void DeletedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<DeleteDTO>("DeletedSignInterpretation",
+                    receivedData => DeletedSignInterpretation = receivedData);
+            }
+
+            private bool DeletedSignInterpretationIsNull()
+            {
+                return DeletedSignInterpretation == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -122,50 +135,65 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-        }
-
-        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId
-        : RequestObject<EmptyInput, EmptyOutput>
-        {
-            private readonly uint _editionId;
-            private readonly uint _signInterpretationId;
-            private readonly uint _attributeValueId;
 
             public class Listeners
             {
-                public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
-            };
-            public Listeners AvailableListeners { get; }
+                public ListenerMethods DeletedSignInterpretation = ListenerMethods.DeletedSignInterpretation;
+            }
+        }
+
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId
+            : RequestObject<EmptyInput, EmptyOutput>
+        {
+            private readonly uint _attributeValueId;
+            private readonly uint _editionId;
+            private readonly uint _signInterpretationId;
 
             /// <summary>
-            /// This deletes the specified attribute value from the specified sign interpretation.
+            ///     This deletes the specified attribute value from the specified sign interpretation.
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
             /// <param name="attributeValueId">Id of the attribute being removed</param>
             /// <returns>Ok or Error</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(
+                uint editionId, uint signInterpretationId, uint attributeValueId)
 
             {
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 _attributeValueId = attributeValueId;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation, (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
+                    (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
-            private void UpdatedSignInterpretationListener(HubConnection signalrListener) => signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation", receivedData => UpdatedSignInterpretation = receivedData);
-            private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
+
+            private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation",
+                    receivedData => UpdatedSignInterpretation = receivedData);
+            }
+
+            private bool UpdatedSignInterpretationIsNull()
+            {
+                return UpdatedSignInterpretation == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}").Replace("/attribute-value-id", $"/{_attributeValueId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}")
+                    .Replace("/attribute-value-id", $"/{_attributeValueId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _attributeValueId);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId,
+                    _attributeValueId);
             }
 
             public override uint? GetEditionId()
@@ -174,22 +202,24 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
+            }
         }
     }
 
     public static partial class Get
     {
-
-
         public class V1_Editions_EditionId_SignInterpretationsAttributes
-        : RequestObject<EmptyInput, AttributeListDTO>
+            : RequestObject<EmptyInput, AttributeListDTO>
         {
             private readonly uint _editionId;
 
 
-
             /// <summary>
-            /// Retrieve a list of all possible attributes for an edition
+            ///     Retrieve a list of all possible attributes for an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being searched</param>
             /// <returns>A list of and edition's attributes and their details</returns>
@@ -197,9 +227,7 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _editionId = editionId;
-
             }
-
 
 
             protected override string HttpPath()
@@ -221,32 +249,31 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId
-        : RequestObject<EmptyInput, SignInterpretationDTO>
+            : RequestObject<EmptyInput, SignInterpretationDTO>
         {
             private readonly uint _editionId;
             private readonly uint _signInterpretationId;
 
 
-
             /// <summary>
-            /// Retrieve the details of a sign interpretation in an edition
+            ///     Retrieve the details of a sign interpretation in an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being searched</param>
             /// <param name="signInterpretationId">The desired sign interpretation id</param>
             /// <returns>The details of the desired sign interpretation</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(uint editionId, uint signInterpretationId)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(uint editionId,
+                uint signInterpretationId)
 
             {
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
-
             }
-
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -265,22 +292,14 @@ namespace SQE.ApiTest.ApiRequests
 
     public static partial class Post
     {
-
-
         public class V1_Editions_EditionId_SignInterpretationsAttributes
-        : RequestObject<CreateAttributeDTO, AttributeDTO>
+            : RequestObject<CreateAttributeDTO, AttributeDTO>
         {
             private readonly uint _editionId;
             private readonly CreateAttributeDTO _payload;
 
-            public class Listeners
-            {
-                public ListenerMethods CreatedAttribute = ListenerMethods.CreatedAttribute;
-            };
-            public Listeners AvailableListeners { get; }
-
             /// <summary>
-            /// Create a new attribute for an edition
+            ///     Create a new attribute for an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being edited</param>
             /// <param name="newAttribute">The details of the new attribute</param>
@@ -294,9 +313,19 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.CreatedAttribute, (CreatedAttributeIsNull, CreatedAttributeListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public AttributeDTO CreatedAttribute { get; private set; }
-            private void CreatedAttributeListener(HubConnection signalrListener) => signalrListener.On<AttributeDTO>("CreatedAttribute", receivedData => CreatedAttribute = receivedData);
-            private bool CreatedAttributeIsNull() => CreatedAttribute == null;
+
+            private void CreatedAttributeListener(HubConnection signalrListener)
+            {
+                signalrListener.On<AttributeDTO>("CreatedAttribute", receivedData => CreatedAttribute = receivedData);
+            }
+
+            private bool CreatedAttributeIsNull()
+            {
+                return CreatedAttribute == null;
+            }
 
             protected override string HttpPath()
             {
@@ -314,22 +343,21 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
+
+            public class Listeners
+            {
+                public ListenerMethods CreatedAttribute = ListenerMethods.CreatedAttribute;
+            }
         }
 
         public class V1_Editions_EditionId_SignInterpretations
-        : RequestObject<SignInterpretationCreateDTO, SignInterpretationListDTO>
+            : RequestObject<SignInterpretationCreateDTO, SignInterpretationListDTO>
         {
             private readonly uint _editionId;
             private readonly SignInterpretationCreateDTO _payload;
 
-            public class Listeners
-            {
-                public ListenerMethods CreatedSignInterpretation = ListenerMethods.CreatedSignInterpretation;
-            };
-            public Listeners AvailableListeners { get; }
-
             /// <summary>
-            /// Creates a new sign interpretation 
+            ///     Creates a new sign interpretation
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
@@ -340,12 +368,24 @@ namespace SQE.ApiTest.ApiRequests
                 _editionId = editionId;
                 _payload = payload;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.CreatedSignInterpretation, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
+                _listenerDict.Add(ListenerMethods.CreatedSignInterpretation,
+                    (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public SignInterpretationListDTO CreatedSignInterpretation { get; private set; }
-            private void CreatedSignInterpretationListener(HubConnection signalrListener) => signalrListener.On<SignInterpretationListDTO>("CreatedSignInterpretation", receivedData => CreatedSignInterpretation = receivedData);
-            private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+
+            private void CreatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationListDTO>("CreatedSignInterpretation",
+                    receivedData => CreatedSignInterpretation = receivedData);
+            }
+
+            private bool CreatedSignInterpretationIsNull()
+            {
+                return CreatedSignInterpretation == null;
+            }
 
             protected override string HttpPath()
             {
@@ -363,50 +403,65 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-        }
-
-        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId
-        : RequestObject<EmptyInput, SignInterpretationDTO>
-        {
-            private readonly uint _editionId;
-            private readonly uint _signInterpretationId;
-            private readonly uint _nextSignInterpretationId;
 
             public class Listeners
             {
-                public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
-            };
-            public Listeners AvailableListeners { get; }
+                public ListenerMethods CreatedSignInterpretation = ListenerMethods.CreatedSignInterpretation;
+            }
+        }
+
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId
+            : RequestObject<EmptyInput, SignInterpretationDTO>
+        {
+            private readonly uint _editionId;
+            private readonly uint _nextSignInterpretationId;
+            private readonly uint _signInterpretationId;
 
             /// <summary>
-            /// Links two sign interpretations in the edition's sign stream 
+            ///     Links two sign interpretations in the edition's sign stream
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">The sign interpretation to be linked to the nextSignInterpretationId</param>
             /// <param name="nextSignInterpretationId">The sign interpretation to become the new next sign interpretation</param>
             /// <returns>The updated sign interpretation</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId(uint editionId, uint signInterpretationId, uint nextSignInterpretationId)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId(
+                uint editionId, uint signInterpretationId, uint nextSignInterpretationId)
 
             {
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 _nextSignInterpretationId = nextSignInterpretationId;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation, (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
+                    (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
-            private void UpdatedSignInterpretationListener(HubConnection signalrListener) => signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation", receivedData => UpdatedSignInterpretation = receivedData);
-            private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
+
+            private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation",
+                    receivedData => UpdatedSignInterpretation = receivedData);
+            }
+
+            private bool UpdatedSignInterpretationIsNull()
+            {
+                return UpdatedSignInterpretation == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}").Replace("/next-sign-interpretation-id", $"/{_nextSignInterpretationId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}")
+                    .Replace("/next-sign-interpretation-id", $"/{_nextSignInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _nextSignInterpretationId);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId,
+                    _nextSignInterpretationId);
             }
 
             public override uint? GetEditionId()
@@ -415,50 +470,65 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-        }
-
-        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId
-        : RequestObject<EmptyInput, SignInterpretationDTO>
-        {
-            private readonly uint _editionId;
-            private readonly uint _signInterpretationId;
-            private readonly uint _nextSignInterpretationId;
 
             public class Listeners
             {
                 public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
-            };
-            public Listeners AvailableListeners { get; }
+            }
+        }
+
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId
+            : RequestObject<EmptyInput, SignInterpretationDTO>
+        {
+            private readonly uint _editionId;
+            private readonly uint _nextSignInterpretationId;
+            private readonly uint _signInterpretationId;
 
             /// <summary>
-            /// Links two sign interpretations in the edition's sign stream 
+            ///     Links two sign interpretations in the edition's sign stream
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">The sign interpretation to be unlinked from the nextSignInterpretationId</param>
             /// <param name="nextSignInterpretationId">The sign interpretation to removed as next sign interpretation</param>
             /// <returns>The updated sign interpretation</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId(uint editionId, uint signInterpretationId, uint nextSignInterpretationId)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId(
+                uint editionId, uint signInterpretationId, uint nextSignInterpretationId)
 
             {
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 _nextSignInterpretationId = nextSignInterpretationId;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation, (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
+                    (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
-            private void UpdatedSignInterpretationListener(HubConnection signalrListener) => signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation", receivedData => UpdatedSignInterpretation = receivedData);
-            private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
+
+            private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation",
+                    receivedData => UpdatedSignInterpretation = receivedData);
+            }
+
+            private bool UpdatedSignInterpretationIsNull()
+            {
+                return UpdatedSignInterpretation == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}").Replace("/next-sign-interpretation-id", $"/{_nextSignInterpretationId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}")
+                    .Replace("/next-sign-interpretation-id", $"/{_nextSignInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _nextSignInterpretationId);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId,
+                    _nextSignInterpretationId);
             }
 
             public override uint? GetEditionId()
@@ -467,50 +537,64 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-        }
-
-        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes
-        : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO>
-        {
-            private readonly uint _editionId;
-            private readonly uint _signInterpretationId;
-            private readonly InterpretationAttributeCreateDTO _payload;
 
             public class Listeners
             {
                 public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
-            };
-            public Listeners AvailableListeners { get; }
+            }
+        }
+
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes
+            : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO>
+        {
+            private readonly uint _editionId;
+            private readonly InterpretationAttributeCreateDTO _payload;
+            private readonly uint _signInterpretationId;
 
             /// <summary>
-            /// This adds a new attribute to the specified sign interpretation.
+            ///     This adds a new attribute to the specified sign interpretation.
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation for adding a new attribute</param>
             /// <param name="newSignInterpretationAttributes">Details of the attribute to be added</param>
             /// <returns>The updated sign interpretation</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes(uint editionId, uint signInterpretationId, InterpretationAttributeCreateDTO payload)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes(uint editionId,
+                uint signInterpretationId, InterpretationAttributeCreateDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 _payload = payload;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation, (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
+                    (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
-            private void UpdatedSignInterpretationListener(HubConnection signalrListener) => signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation", receivedData => UpdatedSignInterpretation = receivedData);
-            private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
+
+            private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation",
+                    receivedData => UpdatedSignInterpretation = receivedData);
+            }
+
+            private bool UpdatedSignInterpretationIsNull()
+            {
+                return UpdatedSignInterpretation == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _payload);
+                return signalR =>
+                    signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _payload);
             }
 
             public override uint? GetEditionId()
@@ -519,37 +603,33 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
+            }
         }
     }
 
     public static partial class Put
     {
-
-
         public class V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId
-        : RequestObject<UpdateAttributeDTO, AttributeDTO>
+            : RequestObject<UpdateAttributeDTO, AttributeDTO>
         {
-            private readonly uint _editionId;
             private readonly uint _attributeId;
+            private readonly uint _editionId;
             private readonly UpdateAttributeDTO _payload;
 
-            public class Listeners
-            {
-                public ListenerMethods CreatedAttribute = ListenerMethods.CreatedAttribute;
-                public ListenerMethods DeletedAttribute = ListenerMethods.DeletedAttribute;
-                public ListenerMethods UpdatedAttribute = ListenerMethods.UpdatedAttribute;
-            };
-            public Listeners AvailableListeners { get; }
-
             /// <summary>
-            /// Change the details of an attribute in an edition
+            ///     Change the details of an attribute in an edition
             /// </summary>
             /// <param name="editionId">The ID of the edition being edited</param>
             /// <param name="attributeId">The ID of the attribute to update</param>
             /// <param name="updatedAttribute">The details of the updated attribute</param>
             /// <returns></returns>
             /// <exception cref="NotImplementedException"></exception>
-            public V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(uint editionId, uint attributeId, UpdateAttributeDTO payload)
+            public V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(uint editionId, uint attributeId,
+                UpdateAttributeDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
@@ -561,19 +641,46 @@ namespace SQE.ApiTest.ApiRequests
                 _listenerDict.Add(ListenerMethods.UpdatedAttribute, (UpdatedAttributeIsNull, UpdatedAttributeListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public AttributeDTO CreatedAttribute { get; private set; }
-            private void CreatedAttributeListener(HubConnection signalrListener) => signalrListener.On<AttributeDTO>("CreatedAttribute", receivedData => CreatedAttribute = receivedData);
-            private bool CreatedAttributeIsNull() => CreatedAttribute == null;
             public DeleteDTO DeletedAttribute { get; private set; }
-            private void DeletedAttributeListener(HubConnection signalrListener) => signalrListener.On<DeleteDTO>("DeletedAttribute", receivedData => DeletedAttribute = receivedData);
-            private bool DeletedAttributeIsNull() => DeletedAttribute == null;
             public AttributeDTO UpdatedAttribute { get; private set; }
-            private void UpdatedAttributeListener(HubConnection signalrListener) => signalrListener.On<AttributeDTO>("UpdatedAttribute", receivedData => UpdatedAttribute = receivedData);
-            private bool UpdatedAttributeIsNull() => UpdatedAttribute == null;
+
+            private void CreatedAttributeListener(HubConnection signalrListener)
+            {
+                signalrListener.On<AttributeDTO>("CreatedAttribute", receivedData => CreatedAttribute = receivedData);
+            }
+
+            private bool CreatedAttributeIsNull()
+            {
+                return CreatedAttribute == null;
+            }
+
+            private void DeletedAttributeListener(HubConnection signalrListener)
+            {
+                signalrListener.On<DeleteDTO>("DeletedAttribute", receivedData => DeletedAttribute = receivedData);
+            }
+
+            private bool DeletedAttributeIsNull()
+            {
+                return DeletedAttribute == null;
+            }
+
+            private void UpdatedAttributeListener(HubConnection signalrListener)
+            {
+                signalrListener.On<AttributeDTO>("UpdatedAttribute", receivedData => UpdatedAttribute = receivedData);
+            }
+
+            private bool UpdatedAttributeIsNull()
+            {
+                return UpdatedAttribute == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/attribute-id", $"/{_attributeId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/attribute-id", $"/{_attributeId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -587,50 +694,66 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-        }
-
-        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary
-        : RequestObject<CommentaryCreateDTO, SignInterpretationDTO>
-        {
-            private readonly uint _editionId;
-            private readonly uint _signInterpretationId;
-            private readonly CommentaryCreateDTO _payload;
 
             public class Listeners
             {
-                public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
-            };
-            public Listeners AvailableListeners { get; }
+                public ListenerMethods CreatedAttribute = ListenerMethods.CreatedAttribute;
+                public ListenerMethods DeletedAttribute = ListenerMethods.DeletedAttribute;
+                public ListenerMethods UpdatedAttribute = ListenerMethods.UpdatedAttribute;
+            }
+        }
+
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary
+            : RequestObject<CommentaryCreateDTO, SignInterpretationDTO>
+        {
+            private readonly uint _editionId;
+            private readonly CommentaryCreateDTO _payload;
+            private readonly uint _signInterpretationId;
 
             /// <summary>
-            /// Updates the commentary of a sign interpretation
+            ///     Updates the commentary of a sign interpretation
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
             /// <param name="commentary">The new commentary for the sign interpretation</param>
             /// <returns>Ok or Error</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary(uint editionId, uint signInterpretationId, CommentaryCreateDTO payload)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Commentary(uint editionId,
+                uint signInterpretationId, CommentaryCreateDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
                 _signInterpretationId = signInterpretationId;
                 _payload = payload;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation, (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
+                    (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
-            private void UpdatedSignInterpretationListener(HubConnection signalrListener) => signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation", receivedData => UpdatedSignInterpretation = receivedData);
-            private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
+
+            private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation",
+                    receivedData => UpdatedSignInterpretation = receivedData);
+            }
+
+            private bool UpdatedSignInterpretationIsNull()
+            {
+                return UpdatedSignInterpretation == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _payload);
+                return signalR =>
+                    signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _payload);
             }
 
             public override uint? GetEditionId()
@@ -639,32 +762,33 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
-        }
-
-        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId
-        : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO>
-        {
-            private readonly uint _editionId;
-            private readonly uint _signInterpretationId;
-            private readonly uint _attributeValueId;
-            private readonly InterpretationAttributeCreateDTO _payload;
 
             public class Listeners
             {
                 public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
-            };
-            public Listeners AvailableListeners { get; }
+            }
+        }
+
+        public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId
+            : RequestObject<InterpretationAttributeCreateDTO, SignInterpretationDTO>
+        {
+            private readonly uint _attributeValueId;
+            private readonly uint _editionId;
+            private readonly InterpretationAttributeCreateDTO _payload;
+            private readonly uint _signInterpretationId;
 
             /// <summary>
-            /// This changes the values of the specified sign interpretation attribute,
-            /// mainly used to change commentary.
+            ///     This changes the values of the specified sign interpretation attribute,
+            ///     mainly used to change commentary.
             /// </summary>
             /// <param name="editionId">ID of the edition being changed</param>
             /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
             /// <param name="attributeValueId">Id of the attribute value to be altered</param>
             /// <param name="alteredSignInterpretationAttribute">New details of the attribute</param>
             /// <returns>The updated sign interpretation</returns>
-            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(uint editionId, uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO payload)
+            public V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(
+                uint editionId, uint signInterpretationId, uint attributeValueId,
+                InterpretationAttributeCreateDTO payload)
                 : base(payload)
             {
                 _editionId = editionId;
@@ -672,21 +796,36 @@ namespace SQE.ApiTest.ApiRequests
                 _attributeValueId = attributeValueId;
                 _payload = payload;
                 AvailableListeners = new Listeners();
-                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation, (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+                _listenerDict.Add(ListenerMethods.UpdatedSignInterpretation,
+                    (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
             }
 
+            public Listeners AvailableListeners { get; }
+
             public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
-            private void UpdatedSignInterpretationListener(HubConnection signalrListener) => signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation", receivedData => UpdatedSignInterpretation = receivedData);
-            private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
+
+            private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+            {
+                signalrListener.On<SignInterpretationDTO>("UpdatedSignInterpretation",
+                    receivedData => UpdatedSignInterpretation = receivedData);
+            }
+
+            private bool UpdatedSignInterpretationIsNull()
+            {
+                return UpdatedSignInterpretation == null;
+            }
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}").Replace("/attribute-value-id", $"/{_attributeValueId.ToString()}");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+                    .Replace("/sign-interpretation-id", $"/{_signInterpretationId.ToString()}")
+                    .Replace("/attribute-value-id", $"/{_attributeValueId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId, _attributeValueId, _payload);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _signInterpretationId,
+                    _attributeValueId, _payload);
             }
 
             public override uint? GetEditionId()
@@ -695,7 +834,11 @@ namespace SQE.ApiTest.ApiRequests
                     return _editionId;
                 }
             }
+
+            public class Listeners
+            {
+                public ListenerMethods UpdatedSignInterpretation = ListenerMethods.UpdatedSignInterpretation;
+            }
         }
     }
-
 }

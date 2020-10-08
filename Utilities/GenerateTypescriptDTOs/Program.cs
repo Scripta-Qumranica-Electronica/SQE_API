@@ -83,7 +83,9 @@ export type $Enum =
                 {
                     var intf = Interface.Replace("$Class", classDescription.typescriptType)
                         .Replace("$Fields",
-                            string.Join("\n    ", classDescription.fields.Select(x => $"{x.name}{(x.nullable ? "?" : "")}: {x.typescriptType};")));
+                            string.Join("\n    ",
+                                classDescription.fields.Select(x =>
+                                    $"{x.name}{(x.nullable ? "?" : "")}: {x.typescriptType};")));
                     if (!string.IsNullOrEmpty(classDescription.comments))
                         outputFile.Write(classDescription.comments);
                     outputFile.Write(intf);
@@ -102,7 +104,7 @@ export type $Enum =
         }
 
         /// <summary>
-        /// Read a file and parse all the enums found in it
+        ///     Read a file and parse all the enums found in it
         /// </summary>
         /// <param name="file">The cs file to read</param>
         /// <returns>A list containing descriptions for all the enums</returns>
@@ -119,16 +121,14 @@ export type $Enum =
 
             // Get the name and values for each enum
             foreach (var enumDeclaration in declaredEnums)
-            {
                 enums.Add(new EnumDescription(enumDeclaration.Identifier.ToString().ToPascalCase(),
                     enumDeclaration.Members.Select(x => x.Identifier.ToString().ToCamelCase()).ToList()));
-            }
 
             return enums;
         }
 
         /// <summary>
-        /// Read a file and parse all the classes in it
+        ///     Read a file and parse all the classes in it
         /// </summary>
         /// <param name="file">The cs file to read</param>
         /// <returns>A list containing descriptions for all the classes</returns>
@@ -137,9 +137,9 @@ export type $Enum =
             // Parse the code to the relevant members
             var code = new StreamReader(file.FullName).ReadToEnd();
             var tree = CSharpSyntaxTree.ParseText(code);
-            var Mscorlib = PortableExecutableReference.CreateFromFile(typeof(object).Assembly.Location);
+            var Mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
             var compilation = CSharpCompilation.Create("SQEDTO",
-                syntaxTrees: new[] { tree }, references: new[] { Mscorlib });
+                new[] { tree }, new[] { Mscorlib });
             var model = compilation.GetSemanticModel(tree);
             var root = tree.GetCompilationUnitRoot();
 
@@ -159,7 +159,8 @@ export type $Enum =
                 foreach (var field in dtoClass.DescendantNodes().OfType<PropertyDeclarationSyntax>())
                 {
                     var (type, nullable) = ConvertToTypescriptType(field.Type, field.AttributeLists);
-                    var fieldDescription = new FieldDescription(field.Identifier.ToString().ToCamelCase(), type, nullable);
+                    var fieldDescription =
+                        new FieldDescription(field.Identifier.ToString().ToCamelCase(), type, nullable);
                     classDetails.fields.Add(fieldDescription);
                 }
 
@@ -175,8 +176,8 @@ export type $Enum =
         }
 
         /// <summary>
-        /// Parse the comments into JsDOC
-        /// TODO: we have no comments to test with yet
+        ///     Parse the comments into JsDOC
+        ///     TODO: we have no comments to test with yet
         /// </summary>
         /// <param name="comment"></param>
         /// <returns></returns>
@@ -210,20 +211,20 @@ export type $Enum =
         }
 
         /// <summary>
-        /// Get a Typescript type and determine the nullability from a submitted c# type
+        ///     Get a Typescript type and determine the nullability from a submitted c# type
         /// </summary>
         /// <param name="type">The c# type of a property</param>
         /// <param name="attrs">The attributes of the property</param>
         /// <returns>A string representation of the Typescript type and a bool for the property's nullability</returns>
         /// <exception cref="Exception"></exception>
-        private static (string typeName, bool nullable) ConvertToTypescriptType(TypeSyntax type, SyntaxList<AttributeListSyntax> attrs = default)
+        private static (string typeName, bool nullable) ConvertToTypescriptType(TypeSyntax type,
+            SyntaxList<AttributeListSyntax> attrs = default)
         {
             // Check the attributes for "required" properties
             var required = attrs.Any(x => x.ToString().Contains("Required"));
 
             // Check for a generic type
             if (type is GenericNameSyntax genType)
-            {
                 switch (genType.Identifier.ToString())
                 {
                     // Treat the List and IEnumerable like a Typescript array
@@ -241,10 +242,11 @@ export type $Enum =
                             var args = genType.TypeArgumentList.Arguments;
                             if (args.Count != 2)
                                 throw new Exception($"Dictionary type has {args.Count} arguments");
-                            return ($"{{ [key: {SimpleTypeToTypescript(args[0].ToString()).typeName}] : {SimpleTypeToTypescript(args[1].ToString()).typeName} }}", !required);
+                            return (
+                                $"{{ [key: {SimpleTypeToTypescript(args[0].ToString()).typeName}] : {SimpleTypeToTypescript(args[1].ToString()).typeName} }}",
+                                !required);
                         }
                 }
-            }
 
             if (type.ToString().Contains("[]"))
                 return ($"Array<{SimpleTypeToTypescript(type.ToString().Replace("[]", "")).typeName}>", !required);
@@ -256,7 +258,7 @@ export type $Enum =
         }
 
         /// <summary>
-        /// Get the corresponding Typescript type for a non-generic c# type
+        ///     Get the corresponding Typescript type for a non-generic c# type
         /// </summary>
         /// <param name="type">A string representation of the c# type</param>
         /// <returns>A Typescript string representation and a bool describing the nullability</returns>
@@ -316,9 +318,9 @@ export type $Enum =
     {
         public ClassDescription(string typescriptType)
         {
-            this.fields = new List<FieldDescription>();
+            fields = new List<FieldDescription>();
             this.typescriptType = typescriptType;
-            this.comments = null;
+            comments = null;
         }
 
         public List<FieldDescription> fields { get; set; }
