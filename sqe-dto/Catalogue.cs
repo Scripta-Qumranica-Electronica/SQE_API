@@ -9,6 +9,7 @@ namespace SQE.API.DTO
         recto,
         verso
     }
+
     public class CatalogueMatchInputDTO
     {
         [JsonConverter(typeof(JsonStringEnumConverter))]

@@ -2,15 +2,16 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
 
 namespace SQE.ApiTest
 {
+    // TODO: These tests only confirm operations that should succeed.  We also need to test the failures.
+    // Itay ran into a case where inputting an incorrect Id resulted in a 500 error (not a 404).
+    // That problem in the API still remains, and we still need to write tests for it.
     public partial class WebControllerTest
     {
         /// <summary>
@@ -55,7 +56,8 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true,
+                    requestRealtime: true);
                 var httpData = request.HttpResponseObject;
                 CreateAttributeValueDTO[] newAttrValues =
                 {
@@ -91,7 +93,8 @@ namespace SQE.ApiTest
                 // Assert
                 respInfo.EnsureSuccessStatusCode();
                 createdHttpAttribute.ShouldDeepEqual(createdListenerAttribute);
-                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true,
+                    requestRealtime: true);
                 var newAttrs = request.HttpResponseObject;
                 Assert.Single(newAttrs.attributes.Where(x => x.attributeName == newAttribute.attributeName
                                                              && x.description == newAttribute.description));
@@ -140,8 +143,8 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.commentary, httpData.commentary);
                 Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
                 signInterpretation.rois.ShouldDeepEqual(httpData.rois);
-                Assert.Contains(httpData.attributes, (x =>
-                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
+                Assert.Contains(httpData.attributes, x =>
+                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
                 Assert.NotNull(responseAttr);
@@ -222,8 +225,9 @@ namespace SQE.ApiTest
                 // Sort the lists of sign attributes (otherwise ShouldDeepEqual will possibly fail)
                 signs.First().signInterpretations.First().attributes = signs.First().signInterpretations.First()
                     .attributes.OrderBy(x => x.attributeValueId).ToArray();
-                newSignInterpretationRequest.HttpResponseObject.signInterpretations.First().attributes = newSignInterpretationRequest.HttpResponseObject.signInterpretations.First().attributes
-                    .OrderBy(x => x.attributeValueId).ToArray();
+                newSignInterpretationRequest.HttpResponseObject.signInterpretations.First().attributes =
+                    newSignInterpretationRequest.HttpResponseObject.signInterpretations.First().attributes
+                        .OrderBy(x => x.attributeValueId).ToArray();
                 // Make sure the two updated/new sign interpretations are in the stream
                 signs.First().signInterpretations.First()
                     .ShouldDeepEqual(newSignInterpretationRequest.HttpResponseObject.signInterpretations.First());
@@ -235,14 +239,17 @@ namespace SQE.ApiTest
                 var newlyCreatedInterpretation = newSignInterpretationRequest.HttpResponseObject.signInterpretations
                     .Last();
                 var interpretationMatchingCreate = signs.FirstOrDefault(x => x.signInterpretations.Any(y =>
-                    y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId))
-                    ?.signInterpretations.First(y => y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId);
+                        y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId))
+                    ?.signInterpretations.First(y =>
+                        y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId);
                 Assert.NotNull(interpretationMatchingCreate);
                 Assert.Equal(newlyCreatedInterpretation.character, interpretationMatchingCreate.character);
-                newlyCreatedInterpretation.nextSignInterpretations.ShouldDeepEqual(interpretationMatchingCreate.nextSignInterpretations);
+                newlyCreatedInterpretation.nextSignInterpretations.ShouldDeepEqual(interpretationMatchingCreate
+                    .nextSignInterpretations);
                 newlyCreatedInterpretation.rois.ShouldDeepEqual(interpretationMatchingCreate.rois);
                 Assert.Equal(newlyCreatedInterpretation.isVariant, interpretationMatchingCreate.isVariant);
-                Assert.Equal(newlyCreatedInterpretation.attributes.Length, interpretationMatchingCreate.attributes.Length);
+                Assert.Equal(newlyCreatedInterpretation.attributes.Length,
+                    interpretationMatchingCreate.attributes.Length);
                 foreach (var attr in newlyCreatedInterpretation.attributes)
                 {
                     var attrMatch =
@@ -256,17 +263,20 @@ namespace SQE.ApiTest
                 }
 
                 // Act Delete new sign interpretation
-                var deleteRequest = new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(editionId, newlyCreatedInterpretation.signInterpretationId);
+                var deleteRequest =
+                    new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(editionId,
+                        newlyCreatedInterpretation.signInterpretationId);
                 await deleteRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
-                    auth: true,
+                    true,
                     listenToEdition: true,
                     listeningFor: deleteRequest.AvailableListeners.DeletedSignInterpretation);
 
                 // Assert
                 Assert.Equal(EditionEntities.signInterpretation, deleteRequest.DeletedSignInterpretation.entity);
-                Assert.Equal(newlyCreatedInterpretation.signInterpretationId, deleteRequest.DeletedSignInterpretation.ids.First());
+                Assert.Equal(newlyCreatedInterpretation.signInterpretationId,
+                    deleteRequest.DeletedSignInterpretation.ids.First());
 
                 // Get the sign stream again
                 alteredTextFragment =
@@ -276,7 +286,9 @@ namespace SQE.ApiTest
                     .First(x => x.textFragmentId == textFragment.textFragmentId)
                     .lines.First(x => x.lineId == line.lineId).signs;
                 // Make sure the deleted sign is really gone
-                Assert.Empty(signs.Where(x => x.signInterpretations.Any(y => y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId)));
+                Assert.Empty(signs.Where(x =>
+                    x.signInterpretations.Any(y =>
+                        y.signInterpretationId == newlyCreatedInterpretation.signInterpretationId)));
                 var flattenedSigns = signs.SelectMany(x => x.signInterpretations).ToList();
 
                 // Make sure that the sign stream is not broken; the first sign interpretation should
@@ -303,17 +315,20 @@ namespace SQE.ApiTest
                     .SelectMany(x => x.signInterpretations).ToList();
                 var firstSignInterpretation = signStream.First();
                 var lastSignInterpretation = signStream.Last();
-                Assert.Empty(firstSignInterpretation.nextSignInterpretations.Where(x => x.nextSignInterpretationId == lastSignInterpretation.signInterpretationId));
+                Assert.Empty(firstSignInterpretation.nextSignInterpretations.Where(x =>
+                    x.nextSignInterpretationId == lastSignInterpretation.signInterpretationId));
 
                 // Act
-                var linkRequest = new Post.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId(
-                    editionId,
-                    firstSignInterpretation.signInterpretationId,
-                    lastSignInterpretation.signInterpretationId);
+                var linkRequest =
+                    new Post.
+                        V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId(
+                            editionId,
+                            firstSignInterpretation.signInterpretationId,
+                            lastSignInterpretation.signInterpretationId);
                 await linkRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
-                    auth: true,
+                    true,
                     requestRealtime: true,
                     listeningFor: linkRequest.AvailableListeners.UpdatedSignInterpretation
                 );
@@ -356,14 +371,16 @@ namespace SQE.ApiTest
                     .First(x => firstSignInterpretation.nextSignInterpretations
                         .Any(y => y.nextSignInterpretationId == x.signInterpretationId));
                 // Act
-                var linkRequest = new Post.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId(
-                    editionId,
-                    firstSignInterpretation.signInterpretationId,
-                    nextSignInterpretation.signInterpretationId);
+                var linkRequest =
+                    new Post.
+                        V1_Editions_EditionId_SignInterpretations_SignInterpretationId_UnlinkFrom_NextSignInterpretationId(
+                            editionId,
+                            firstSignInterpretation.signInterpretationId,
+                            nextSignInterpretation.signInterpretationId);
                 await linkRequest.SendAsync(
                     _client,
                     StartConnectionAsync,
-                    auth: true,
+                    true,
                     requestRealtime: true,
                     listeningFor: linkRequest.AvailableListeners.UpdatedSignInterpretation
                 );
@@ -473,7 +490,8 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true,
+                    requestRealtime: true);
                 var httpData = request.HttpResponseObject;
                 var deleteAttribute = httpData.attributes.Last().attributeId;
 
@@ -497,7 +515,8 @@ namespace SQE.ApiTest
                 respInfo.EnsureSuccessStatusCode();
                 Assert.Equal(deleteAttribute, updatedListenerAttribute.ids.First());
                 Assert.Equal(EditionEntities.attribute, updatedListenerAttribute.entity);
-                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true,
+                    requestRealtime: true);
                 var newAttrs = request.HttpResponseObject;
                 Assert.Empty(newAttrs.attributes.Where(x => x.attributeId == deleteAttribute));
                 Assert.Equal(httpData.attributes.Length - 1, newAttrs.attributes.Length);
@@ -542,8 +561,8 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.commentary, httpData.commentary);
                 Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
                 signInterpretation.rois.ShouldDeepEqual(httpData.rois);
-                Assert.Contains(httpData.attributes, (x =>
-                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
+                Assert.Contains(httpData.attributes, x =>
+                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
                 Assert.NotNull(responseAttr);
@@ -582,8 +601,8 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.commentary, delListenerData.commentary);
                 Assert.Equal(signInterpretation.isVariant, delListenerData.isVariant);
                 signInterpretation.rois.ShouldDeepEqual(delListenerData.rois);
-                Assert.DoesNotContain(delListenerData.attributes, (x =>
-                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
+                Assert.DoesNotContain(delListenerData.attributes, x =>
+                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
             }
         }
 
@@ -657,7 +676,8 @@ namespace SQE.ApiTest
                 var editionId = await editionCreator.CreateEdition();
 
                 var request = new Get.V1_Editions_EditionId_SignInterpretationsAttributes(editionId);
-                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true,
+                    requestRealtime: true);
                 var httpData = request.HttpResponseObject;
                 var attributeValueForUpdate = httpData.attributes.First().values.First();
                 var attributeValueForDelete = httpData.attributes.First().values.Last();
@@ -715,7 +735,8 @@ namespace SQE.ApiTest
                 Assert.DoesNotContain(updateRequest.HttpResponseObject.values, x => x.id == attributeValueForDelete.id);
 
                 // The update appears when getting all attributes
-                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true, requestRealtime: true);
+                await request.SendAsync(_client, StartConnectionAsync, true, deterministic: true,
+                    requestRealtime: true);
                 var newAttrs = request.HttpResponseObject;
                 Assert.Contains(newAttrs.attributes, x => x.attributeId == httpData.attributes.First().attributeId);
                 newAttrs.attributes.First(x => x.attributeId == httpData.attributes.First().attributeId)
@@ -806,8 +827,8 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.commentary, httpData.commentary);
                 Assert.Equal(signInterpretation.isVariant, httpData.isVariant);
                 signInterpretation.rois.ShouldDeepEqual(httpData.rois);
-                Assert.Contains(httpData.attributes, (x =>
-                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId));
+                Assert.Contains(httpData.attributes, x =>
+                    x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
                 var responseAttr = httpData.attributes.FirstOrDefault(x =>
                     x.attributeValueId == signInterpretationAddAttribute.attributeValueId);
                 Assert.NotNull(responseAttr);
@@ -827,7 +848,7 @@ namespace SQE.ApiTest
                 {
                     attributeId = 8,
                     attributeValueId = attributeValueId,
-                    sequence = seq,
+                    sequence = seq
                 };
                 var updRequest1 =
                     new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId_Attributes_AttributeValueId(
@@ -853,7 +874,7 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.character, updData.character);
                 Assert.Equal(signInterpretation.commentary, updData.commentary);
                 Assert.Equal(signInterpretation.isVariant, updData.isVariant);
-                Assert.Contains(updData.attributes, (x => x.attributeValueId == attributeValueId));
+                Assert.Contains(updData.attributes, x => x.attributeValueId == attributeValueId);
                 var upd1SignInterpretationAttribute = updData.attributes
                     .First(x => x.attributeValueId == attributeValueId);
                 Assert.Equal(seq, upd1SignInterpretationAttribute.sequence);
@@ -893,7 +914,7 @@ namespace SQE.ApiTest
                 Assert.Equal(signInterpretation.character, updData.character);
                 Assert.Equal(signInterpretation.commentary, updData.commentary);
                 Assert.Equal(signInterpretation.isVariant, updData.isVariant);
-                Assert.Contains(updData.attributes, (x => x.attributeValueId == attributeValueId));
+                Assert.Contains(updData.attributes, x => x.attributeValueId == attributeValueId);
                 var upd2SignInterpretationAttribute = updData.attributes
                     .First(x => x.attributeValueId == attributeValueId);
                 Assert.Equal(seq, upd2SignInterpretationAttribute.sequence);

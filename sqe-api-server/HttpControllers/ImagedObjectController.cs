@@ -87,7 +87,8 @@ namespace SQE.API.Server.HttpControllers
         /// </summary>
         [AllowAnonymous]
         [HttpGet("v1/imaged-objects/institutions/{institutionName}")]
-        public async Task<ActionResult<InstitutionalImageListDTO>> ListInstitutionImages([FromRoute] string institutionName)
+        public async Task<ActionResult<InstitutionalImageListDTO>> ListInstitutionImages(
+            [FromRoute] string institutionName)
         {
             return await _imageService.GetInstitutionImagesAsync(institutionName);
         }

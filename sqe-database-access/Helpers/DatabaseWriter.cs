@@ -203,7 +203,8 @@ namespace SQE.DatabaseAccess.Helpers
                     {
                         case MutateType.Create:
                             // Insert the record and add its response to the alteredRecords response.
-                            var createdRecord = await InsertAsync(connection, mutationRequest, editionUser.userId.Value);
+                            var createdRecord =
+                                await InsertAsync(connection, mutationRequest, editionUser.userId.Value);
                             alteredRecords.Add(createdRecord);
                             break;
 

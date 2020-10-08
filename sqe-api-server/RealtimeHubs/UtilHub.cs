@@ -6,7 +6,6 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using SQE.API.DTO;
 using SQE.API.Server.Services;

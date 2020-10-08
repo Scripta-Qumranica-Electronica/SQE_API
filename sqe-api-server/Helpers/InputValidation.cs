@@ -1,13 +1,10 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using NetTopologySuite.IO;
 using NetTopologySuite.Simplify;
 using SQE.DatabaseAccess.Helpers;
-using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Helpers
 {

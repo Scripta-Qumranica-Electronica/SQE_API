@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -14,15 +13,18 @@ namespace SQE.API.Server.Services
     public interface ISignInterpretationService
     {
         Task<AttributeListDTO> GetEditionSignInterpretationAttributesAsync(UserInfo user);
+
         Task<AttributeDTO> CreateEditionAttributeAsync(
             UserInfo user,
             CreateAttributeDTO newAttribute,
             string clientId = null);
+
         Task<AttributeDTO> UpdateEditionAttributeAsync(
             UserInfo user,
             uint attributeId,
             UpdateAttributeDTO updatedAttribute,
             string clientId = null);
+
         Task<NoContentResult> DeleteEditionAttributeAsync(
             UserInfo user,
             uint attributeId,
@@ -32,39 +34,47 @@ namespace SQE.API.Server.Services
             UserInfo user,
             SignInterpretationCreateDTO signInterpretation,
             string clientId = null);
+
         Task<NoContentResult> DeleteSignInterpretationAsync(
             UserInfo user,
             uint signInterpretationId,
             string clientId = null);
+
         Task<SignInterpretationDTO> LinkSignInterpretationsAsync(
             UserInfo user,
             uint firstSignInterpretationId,
             uint secondSignInterpretationId,
             string clientId = null);
+
         Task<SignInterpretationDTO> UnlinkSignInterpretationsAsync(
             UserInfo user,
             uint firstSignInterpretationId,
             uint secondSignInterpretationId,
             string clientId = null);
+
         Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(
             UserInfo user,
             uint signInterpretationId);
+
         Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(
             UserInfo user,
             uint signInterpretationId,
             CommentaryCreateDTO commentary,
             string clientId = null);
+
         Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(
             UserInfo user,
             uint signInterpretationId,
             InterpretationAttributeCreateDTO attribute,
             string clientId = null);
+
         Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(
             UserInfo user,
             uint signInterpretationId,
             uint attributeValueId,
             InterpretationAttributeCreateDTO attribute,
             string clientId = null);
+
         Task<NoContentResult> DeleteSignInterpretationAttributeAsync(
             UserInfo user,
             uint signInterpretationAttributeId,
@@ -74,10 +84,10 @@ namespace SQE.API.Server.Services
 
     public class SignInterpretationService : ISignInterpretationService
     {
-        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
         private readonly IAttributeRepository _attributeRepository;
-        private readonly ISignInterpretationRepository _signInterpretationRepository;
         private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
+        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+        private readonly ISignInterpretationRepository _signInterpretationRepository;
         private readonly ITextRepository _textRepository;
 
 
@@ -111,14 +121,15 @@ namespace SQE.API.Server.Services
                 newAttribute.removable,
                 newAttribute.repeatable,
                 newAttribute.batchEditable,
-            newAttribute.values.Select(x => new SignInterpretationAttributeValueInput()
-            {
-                AttributeStringValue = x.value,
-                AttributeStringValueDescription = x.description,
-                Css = x.cssDirectives,
-            }));
+                newAttribute.values.Select(x => new SignInterpretationAttributeValueInput
+                {
+                    AttributeStringValue = x.value,
+                    AttributeStringValueDescription = x.description,
+                    Css = x.cssDirectives
+                }));
 
-            var createdAttribute = (await _attributeRepository.GetEditionAttributeAsync(user, newAttributeId)).ToDTO().attributes.FirstOrDefault();
+            var createdAttribute = (await _attributeRepository.GetEditionAttributeAsync(user, newAttributeId)).ToDTO()
+                .attributes.FirstOrDefault();
 
             // Broadcast the changes
             await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
@@ -143,7 +154,9 @@ namespace SQE.API.Server.Services
                 updatedAttribute.updateValues.Select(x => x.FromDTO()),
                 updatedAttribute.deleteValues);
 
-            var updatedAttributeDetails = (await _attributeRepository.GetEditionAttributeAsync(user, updatedAttributeId)).ToDTO().attributes.FirstOrDefault();
+            var updatedAttributeDetails =
+                (await _attributeRepository.GetEditionAttributeAsync(user, updatedAttributeId)).ToDTO().attributes
+                .FirstOrDefault();
 
             if (updatedAttributeId != attributeId) // Broadcast the changes as a create and a delete
             {
@@ -151,16 +164,18 @@ namespace SQE.API.Server.Services
                     .CreatedAttribute(updatedAttributeDetails);
                 await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
                     .DeletedAttribute(new DeleteDTO(EditionEntities.attribute, attributeId));
-
             }
             else // Broadcast the changes as an update
+            {
                 await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
                     .UpdatedAttribute(updatedAttributeDetails);
+            }
 
             return updatedAttributeDetails;
         }
 
-        public async Task<NoContentResult> DeleteEditionAttributeAsync(UserInfo user, uint attributeId, string clientId = null)
+        public async Task<NoContentResult> DeleteEditionAttributeAsync(UserInfo user, uint attributeId,
+            string clientId = null)
         {
             await _attributeRepository.DeleteEditionAttributeAsync(user, attributeId);
 
@@ -186,13 +201,17 @@ namespace SQE.API.Server.Services
 
             // Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
             var alteredSignInterpretations = await Task.WhenAll( // Await all async operations
-                signInterpretation.previousSignInterpretationIds.ToList() // Take list of previous sign interpretation ids
-                .Concat(createdSignInterpretation.SelectMany(x => // Concat all sign interpretation ids from createdSignInterpretation
-                    x.SignInterpretations
-                        .Where(y => y.SignInterpretationId.HasValue)
-                        .Select(y => y.SignInterpretationId.Value)))
-                .Select(async x => await GetEditionSignInterpretationAsync(user, x))); // Get the SignInterpretationDTO fpr each sign interpretation
-            var response = new SignInterpretationListDTO() { signInterpretations = alteredSignInterpretations.ToArray() };
+                signInterpretation.previousSignInterpretationIds
+                    .ToList() // Take list of previous sign interpretation ids
+                    .Concat(createdSignInterpretation.SelectMany(
+                        x => // Concat all sign interpretation ids from createdSignInterpretation
+                            x.SignInterpretations
+                                .Where(y => y.SignInterpretationId.HasValue)
+                                .Select(y => y.SignInterpretationId.Value)))
+                    .Select(async x =>
+                        await GetEditionSignInterpretationAsync(user,
+                            x))); // Get the SignInterpretationDTO fpr each sign interpretation
+            var response = new SignInterpretationListDTO { signInterpretations = alteredSignInterpretations.ToArray() };
 
             // Broadcast the changes
             await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
@@ -250,10 +269,10 @@ namespace SQE.API.Server.Services
                 .UpdatedSignInterpretation(changedSignInterpretation);
 
             return changedSignInterpretation;
-
         }
 
-        public async Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user, uint signInterpretationId)
+        public async Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user,
+            uint signInterpretationId)
         {
             var signInterpretation = await
                 _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId);
@@ -280,19 +299,20 @@ namespace SQE.API.Server.Services
         public async Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(UserInfo user,
             uint signInterpretationId, InterpretationAttributeCreateDTO attribute, string clientId = null)
         {
-            var createAttribute = new SignInterpretationAttributeData()
+            var createAttribute = new SignInterpretationAttributeData
             {
                 AttributeValueId = attribute.attributeValueId,
-                Sequence = attribute.sequence,
+                Sequence = attribute.sequence
             };
-            await _attributeRepository.CreateSignInterpretationAttributesAsync(user, signInterpretationId, createAttribute);
+            await _attributeRepository.CreateSignInterpretationAttributesAsync(user, signInterpretationId,
+                createAttribute);
 
             if (!string.IsNullOrEmpty(attribute.commentary))
             {
-                var commentary = new SignInterpretationCommentaryData()
+                var commentary = new SignInterpretationCommentaryData
                 {
                     AttributeId = attribute.attributeId,
-                    Commentary = attribute.commentary,
+                    Commentary = attribute.commentary
                 };
                 await _commentaryRepository.CreateCommentaryAsync(user, signInterpretationId, commentary);
             }
@@ -329,7 +349,8 @@ namespace SQE.API.Server.Services
             return updatedSignInterpretation;
         }
 
-        public async Task<NoContentResult> DeleteSignInterpretationAttributeAsync(UserInfo user, uint signInterpretationId, uint attributeValueId, string clientId = null)
+        public async Task<NoContentResult> DeleteSignInterpretationAttributeAsync(UserInfo user,
+            uint signInterpretationId, uint attributeValueId, string clientId = null)
         {
             await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(user, signInterpretationId,
                 attributeValueId);

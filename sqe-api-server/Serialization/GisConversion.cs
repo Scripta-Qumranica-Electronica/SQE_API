@@ -21,9 +21,7 @@ namespace SQE.API.Server.Serialization
             {
                 textFragmentId = stf.TextFragmentId,
                 textFragmentName = stf.TextFragmentName,
-                lines = stf.Lines != null ?
-                    stf.Lines.Select(x => x.ToDTO()).ToList() :
-                    new List<ScriptLineDTO>()
+                lines = stf.Lines != null ? stf.Lines.Select(x => x.ToDTO()).ToList() : new List<ScriptLineDTO>()
             };
         }
 

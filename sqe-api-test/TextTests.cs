@@ -4,9 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -497,13 +495,13 @@ namespace SQE.ApiTest
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
                 var (artefactId, _) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
                 var scriptRequest = new Get.V1_Editions_EditionId_ScriptLines(newEdition);
-                await scriptRequest.SendAsync(_client, StartConnectionAsync, auth: true);
+                await scriptRequest.SendAsync(_client, StartConnectionAsync, true);
                 var textFragmentId = scriptRequest.HttpResponseObject.textFragments.First().textFragmentId;
 
                 // Act
                 var request =
                     new Get.V1_Editions_EditionId_TextFragments_TextFragmentId_Artefacts(newEdition, textFragmentId);
-                await request.SendAsync(_client, StartConnectionAsync, auth: true);
+                await request.SendAsync(_client, StartConnectionAsync, true);
 
                 // assert
                 request.HttpResponseObject.ShouldDeepEqual(request.HttpResponseObject);

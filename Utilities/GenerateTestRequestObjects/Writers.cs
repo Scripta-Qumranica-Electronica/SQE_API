@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,6 +14,7 @@ namespace GenerateTestRequestObjects
  * its contents may be overwritten at any point.
  */
 ";
+
         public static async Task WriteEndpointsAsync(ApiRequestsDescription parsedControllerMethods,
             StreamWriter outputFile)
         {
@@ -44,7 +44,8 @@ namespace GenerateTestRequestObjects
                             $"_listenerDict.Add(ListenerMethods.{x.ParamName}, ({x.ParamName}IsNull, {x.ParamName}Listener));"))}";
                     var listenerMethods = endpoint.listeners.Count == 0
                         ? ""
-                        : string.Join("\n", endpoint.listeners.Select(x => $@"public {x.ParamType} {x.ParamName} {{ get; private set; }}
+                        : string.Join("\n", endpoint.listeners.Select(x =>
+                            $@"public {x.ParamType} {x.ParamName} {{ get; private set; }}
             private void {x.ParamName}Listener(HubConnection signalrListener) => signalrListener.On<{x.ParamType}>(""{x.ParamName}"", receivedData => {x.ParamName} = receivedData);
         private bool {x.ParamName}IsNull() => {x.ParamName} == null;"));
 

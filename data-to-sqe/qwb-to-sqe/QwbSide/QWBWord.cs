@@ -205,7 +205,7 @@ namespace qwb_to_sqe
         {
             sign?.SignInterpretations.Last().Attributes.Add(new SignInterpretationAttributeData
             {
-                AttributeValueId = attributeId,
+                AttributeValueId = attributeId
             });
         }
 

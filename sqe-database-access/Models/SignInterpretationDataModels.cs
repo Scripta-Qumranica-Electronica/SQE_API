@@ -29,12 +29,6 @@ namespace SQE.DatabaseAccess.Models
 
     public class NextSignInterpretation
     {
-        public uint NextSignInterpretationId { get; set; }
-        public uint SignSequenceAuthor { get; set; }
-        public bool IsMain { get; set; }
-        public uint PositionCreatorId { get; set; }
-        public uint PositionEditorId { get; set; }
-
         public NextSignInterpretation(uint nextSignInterpretationId, uint signSequenceAuthor)
         {
             NextSignInterpretationId = nextSignInterpretationId;
@@ -44,6 +38,12 @@ namespace SQE.DatabaseAccess.Models
         public NextSignInterpretation()
         {
         }
+
+        public uint NextSignInterpretationId { get; set; }
+        public uint SignSequenceAuthor { get; set; }
+        public bool IsMain { get; set; }
+        public uint PositionCreatorId { get; set; }
+        public uint PositionEditorId { get; set; }
 
         // The override for Equals and GetHashCode methods here enable the
         // HashSet nextSignInterpretations of the SignInterpretation object

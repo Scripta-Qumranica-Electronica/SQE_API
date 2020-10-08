@@ -136,9 +136,9 @@ namespace SQE.DatabaseAccess
                         : await CreateRoiShapeAsync(updateRoi.Shape);
 
                     var roiPositionId = originalSignRoiInterpretation.TranslateX == updateRoi.TranslateX
-                                            && originalSignRoiInterpretation.TranslateY == updateRoi.TranslateY
-                                            && originalSignRoiInterpretation.StanceRotation == updateRoi.StanceRotation
-                                            && originalSignRoiInterpretation.ArtefactId == updateRoi.ArtefactId
+                                        && originalSignRoiInterpretation.TranslateY == updateRoi.TranslateY
+                                        && originalSignRoiInterpretation.StanceRotation == updateRoi.StanceRotation
+                                        && originalSignRoiInterpretation.ArtefactId == updateRoi.ArtefactId
                         ? originalSignRoiInterpretation.RoiPositionId
                         : await CreateRoiPositionAsync(
                             updateRoi.ArtefactId.GetValueOrDefault(),

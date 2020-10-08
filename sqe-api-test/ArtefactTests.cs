@@ -4,10 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
-using NetTopologySuite.IO;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -34,6 +31,7 @@ namespace SQE.ApiTest
                 optional.Add("images");
                 _images = !_images;
             }
+
             var artRequest = new Get.V1_Editions_EditionId_Artefacts(editionId.Value, optional);
             await artRequest.SendAsync(
                 _client,
@@ -963,7 +961,7 @@ namespace SQE.ApiTest
 
                 // Act
                 var getArtefactRois = new Get.V1_Editions_EditionId_Artefacts_ArtefactId_Rois(newEdition, artefactId);
-                await getArtefactRois.SendAsync(_client, StartConnectionAsync, auth: true);
+                await getArtefactRois.SendAsync(_client, StartConnectionAsync, true);
 
                 getArtefactRois.HttpResponseObject.ShouldDeepEqual(getArtefactRois.SignalrResponseObject);
                 getArtefactRois.HttpResponseObject.rois.ShouldDeepEqual(rois);

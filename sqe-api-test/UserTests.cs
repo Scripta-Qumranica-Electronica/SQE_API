@@ -6,9 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -110,6 +108,7 @@ namespace SQE.ApiTest
                     request.HttpResponseMessage.EnsureSuccessStatusCode();
                     Assert.Equal(HttpStatusCode.NoContent, request.HttpResponseMessage.StatusCode);
                 }
+
                 var confirmedUser = await GetUserByEmail(user.email);
                 Assert.Equal(user.email, confirmedUser.email);
                 Assert.True(confirmedUser.activated);
@@ -131,7 +130,8 @@ namespace SQE.ApiTest
             if (shouldSucceed)
             {
                 var activateTokens =
-                    (await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams)).AsList(); // Get  token from DB
+                    (await _db.RunQueryAsync<Token>(getNewUserTokenSQL, checkForUserSQLParams))
+                    .AsList(); // Get  token from DB
                 Assert.NotEmpty(activateTokens);
                 return activateTokens.First();
             }
@@ -232,24 +232,6 @@ namespace SQE.ApiTest
             deleteEmailTokenParams.Add("@Email", user.email);
             await _db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
             await _db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
-        }
-
-        private class UserObj
-        {
-            public string email { get; set; }
-            public string password { get; set; }
-            public string forename { get; set; }
-            public string surname { get; set; }
-            public string organization { get; set; }
-            public bool activated { get; set; }
-            public uint user_id { get; set; }
-        }
-
-        private class Token
-        {
-            public Guid token { get; set; }
-            public string type { get; set; }
-            public DateTime date_created { get; set; }
         }
 
         /// <summary>
@@ -503,11 +485,12 @@ namespace SQE.ApiTest
             const string newPassword = "more secure pa$$w0rd";
 
             // Act (change password)
-            var request = new Post.V1_Users_ChangePassword(new ResetLoggedInUserPasswordRequestDTO { oldPassword = user.password, newPassword = newPassword });
+            var request = new Post.V1_Users_ChangePassword(new ResetLoggedInUserPasswordRequestDTO
+            { oldPassword = user.password, newPassword = newPassword });
             await request.SendAsync(
                 realtime ? null : _client,
                 StartConnectionAsync,
-                requestUser: new Request.UserAuthDetails() { Email = user.email, Password = user.password },
+                requestUser: new Request.UserAuthDetails { Email = user.email, Password = user.password },
                 auth: true,
                 requestRealtime: realtime);
 
@@ -569,8 +552,8 @@ namespace SQE.ApiTest
             await request.SendAsync(
                 realtime ? null : _client,
                 StartConnectionAsync,
-                auth: true,
-                requestUser: new Request.UserAuthDetails() { Email = user.email, Password = user.password },
+                true,
+                new Request.UserAuthDetails { Email = user.email, Password = user.password },
                 requestRealtime: realtime);
 
             // Assert (change user details)
@@ -636,8 +619,8 @@ namespace SQE.ApiTest
             await request.SendAsync(
                 realtime ? null : _client,
                 StartConnectionAsync,
-                auth: true,
-                requestUser: new Request.UserAuthDetails() { Email = user.email, Password = user.password },
+                true,
+                new Request.UserAuthDetails { Email = user.email, Password = user.password },
                 requestRealtime: realtime);
 
             // Assert (change user details)
@@ -685,7 +668,8 @@ namespace SQE.ApiTest
 
             // Act
             Thread.Sleep(2000); // The time resolution of the database date_created field is 1 second.
-            var request = new Post.V1_Users_ChangeUnactivatedEmail(new UnactivatedEmailUpdateRequestDTO { email = user.email, newEmail = newEmail });
+            var request = new Post.V1_Users_ChangeUnactivatedEmail(new UnactivatedEmailUpdateRequestDTO
+            { email = user.email, newEmail = newEmail });
             await request.SendAsync(
                 realtime ? null : _client,
                 StartConnectionAsync,
@@ -821,7 +805,8 @@ namespace SQE.ApiTest
 
             // Act (attempt to reset password with token)
             const string newPassword = "unu$u^l..pw@wierdpr0vider.org";
-            var tokenRequest = new Post.V1_Users_ChangeForgottenPassword(new ResetForgottenUserPasswordRequestDTO { token = userToken.token.ToString(), password = newPassword });
+            var tokenRequest = new Post.V1_Users_ChangeForgottenPassword(new ResetForgottenUserPasswordRequestDTO
+            { token = userToken.token.ToString(), password = newPassword });
             await tokenRequest.SendAsync(
                 realtime ? null : _client,
                 StartConnectionAsync,
@@ -861,12 +846,30 @@ namespace SQE.ApiTest
             await request.SendAsync(
                 _client,
                 StartConnectionAsync,
-                auth: true,
-                requestUser: user);
+                true,
+                user);
 
             // Assert
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
             Assert.Equal(user.Email, request.HttpResponseObject.email);
+        }
+
+        private class UserObj
+        {
+            public string email { get; set; }
+            public string password { get; set; }
+            public string forename { get; set; }
+            public string surname { get; set; }
+            public string organization { get; set; }
+            public bool activated { get; set; }
+            public uint user_id { get; set; }
+        }
+
+        private class Token
+        {
+            public Guid token { get; set; }
+            public string type { get; set; }
+            public DateTime date_created { get; set; }
         }
     }
 }

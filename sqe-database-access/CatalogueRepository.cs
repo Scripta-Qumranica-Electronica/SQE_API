@@ -146,14 +146,15 @@ namespace SQE.DatabaseAccess
 
                 // If no record was inserted, then it already exists.  So collect it from the DB
                 if (textFragmentImagedObjectMatchId == 0)
-                    textFragmentImagedObjectMatchId = await connection.QuerySingleAsync<uint>(@"SELECT iaa_edition_catalog_to_text_fragment_id
+                    textFragmentImagedObjectMatchId = await connection.QuerySingleAsync<uint>(
+                        @"SELECT iaa_edition_catalog_to_text_fragment_id
 FROM iaa_edition_catalog_to_text_fragment
 WHERE text_fragment_id = @TextFragmentId
     AND iaa_edition_catalog_id = @IaaEditionCatalogId", new
-                    {
-                        IaaEditionCatalogId = editionCatalogueId,
-                        TextFragmentId = textFragmentId
-                    });
+                        {
+                            IaaEditionCatalogId = editionCatalogueId,
+                            TextFragmentId = textFragmentId
+                        });
 
 
                 await connection.ExecuteAsync(EditionCatalogImageCatalogMatchInsertQuery.GetQuery, new
@@ -189,20 +190,19 @@ WHERE text_fragment_id = @TextFragmentId
             using (var connection = OpenConnection())
             {
                 // Check if match exists
-                var existingMatches = (await GetImagedObjectTextFragmentMatchById(editionCatalogToTextFragmentId)).ToList();
+                var existingMatches =
+                    (await GetImagedObjectTextFragmentMatchById(editionCatalogToTextFragmentId)).ToList();
                 if (!existingMatches.Any())
                     throw new StandardExceptions.DataNotFoundException("match id", editionCatalogToTextFragmentId,
                         "imaged object text fragment matches");
 
                 if (existingMatches.OrderBy(x => x.MatchConfirmationDate).Last().Confirmed != confirm)
-                {
                     await connection.ExecuteAsync(EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery, new
                     {
                         IaaEditionCatalogToTextFragmentId = editionCatalogToTextFragmentId,
                         UserId = userId,
                         Confirmed = confirm
                     });
-                }
 
                 transactionScope.Complete();
             }

@@ -51,7 +51,6 @@ namespace SQE.DatabaseAccess.Models
 
     public class SignInterpretationAttributeDataSearchData : SignInterpretationAttributeData, ISearchData
     {
-
         public string getSearchParameterString()
         {
             var searchParameters = new List<string>();

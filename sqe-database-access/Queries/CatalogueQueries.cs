@@ -87,6 +87,7 @@ JOIN (
 
         private const string manuscriptFilter =
             "WHERE image_text_fragment_match_catalogue.manuscript_id = @ManuscriptId";
+
         private const string matchFilter =
             "WHERE image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id = @MatchId";
 

@@ -215,7 +215,6 @@ namespace SQE.DatabaseAccess
             {
                 var updateMutations = new MutationRequest[transforms.Count];
                 foreach (var (transform, index) in transforms.Select((x, idx) => (x, idx)))
-                {
                     updateMutations[index] = await FormatArtefactPositionUpdateRequestAsync(editionUser,
                         transform.artefactId,
                         transform.placement?.scale,
@@ -227,7 +226,6 @@ namespace SQE.DatabaseAccess
                             ? transform.placement?.translate?.y
                             : null, // set to null if explicitly not placed
                         transform.placement?.zIndex);
-                }
                 updates = await _databaseWriter.WriteToDatabaseAsync(editionUser, updateMutations.AsList());
                 transactionScope.Complete();
             }
@@ -437,7 +435,8 @@ namespace SQE.DatabaseAccess
                 await _verifyArtefactsFreeForGroup(editionUser, artefactIds.ToList());
 
                 // Create a new artefact group
-                var insertedArtefactGroup = await connection.ExecuteAsync("INSERT INTO artefact_group (artefact_group_id) VALUES(NULL)");
+                var insertedArtefactGroup =
+                    await connection.ExecuteAsync("INSERT INTO artefact_group (artefact_group_id) VALUES(NULL)");
                 if (insertedArtefactGroup != 1)
                     throw new StandardExceptions.DataNotWrittenException("create artefact group");
 
@@ -470,6 +469,7 @@ namespace SQE.DatabaseAccess
                         )
                     );
                 }
+
                 var responses =
                     await _databaseWriter.WriteToDatabaseAsync(editionUser, createArtefactGroupInserts);
                 if (responses.Count != createArtefactGroupInserts.Count())

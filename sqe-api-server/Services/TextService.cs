@@ -220,12 +220,18 @@ namespace SQE.API.Server.Services
                                                                 signInterpretationId =
                                                                     a.SignInterpretationId.GetValueOrDefault(),
                                                                 character = a.Character,
-                                                                commentary = string.IsNullOrEmpty(a.InterpretationCommentary) ? null : new CommentaryDTO()
-                                                                {
-                                                                    commentary = a.InterpretationCommentary,
-                                                                    creatorId = a.InterpretationCommentaryCreator.GetValueOrDefault(),
-                                                                    editorId = a.InterpretationCommentaryEditor.GetValueOrDefault(),
-                                                                },
+                                                                commentary =
+                                                                    string.IsNullOrEmpty(a.InterpretationCommentary)
+                                                                        ? null
+                                                                        : new CommentaryDTO
+                                                                        {
+                                                                            commentary = a.InterpretationCommentary,
+                                                                            creatorId = a
+                                                                                .InterpretationCommentaryCreator
+                                                                                .GetValueOrDefault(),
+                                                                            editorId = a.InterpretationCommentaryEditor
+                                                                                .GetValueOrDefault()
+                                                                        },
                                                                 //editorID = 
 
                                                                 attributes = a.Attributes.Select(
@@ -240,18 +246,29 @@ namespace SQE.API.Server.Services
                                                                             attributeString = b.AttributeString,
                                                                             attributeValueId =
                                                                                 b.AttributeValueId.GetValueOrDefault(),
-                                                                            attributeValueString = b.AttributeValueString,
+                                                                            attributeValueString =
+                                                                                b.AttributeValueString,
                                                                             editorId = b
                                                                                 .SignInterpretationAttributeEditorId
                                                                                 .GetValueOrDefault(),
-                                                                            creatorId = b.SignInterpretationAttributeCreatorId
+                                                                            creatorId = b
+                                                                                .SignInterpretationAttributeCreatorId
                                                                                 .GetValueOrDefault(),
-                                                                            commentary = string.IsNullOrEmpty(b.AttributeCommentary) ? null : new CommentaryDTO()
-                                                                            {
-                                                                                commentary = b.AttributeCommentary,
-                                                                                creatorId = b.AttributeCommentaryCreatorId.GetValueOrDefault(),
-                                                                                editorId = b.AttributeCommentaryEditorId.GetValueOrDefault(),
-                                                                            },
+                                                                            commentary =
+                                                                                string.IsNullOrEmpty(
+                                                                                    b.AttributeCommentary)
+                                                                                    ? null
+                                                                                    : new CommentaryDTO
+                                                                                    {
+                                                                                        commentary =
+                                                                                            b.AttributeCommentary,
+                                                                                        creatorId = b
+                                                                                            .AttributeCommentaryCreatorId
+                                                                                            .GetValueOrDefault(),
+                                                                                        editorId = b
+                                                                                            .AttributeCommentaryEditorId
+                                                                                            .GetValueOrDefault()
+                                                                                    }
                                                                         }
                                                                     )
                                                                     .ToArray(),
@@ -263,7 +280,8 @@ namespace SQE.API.Server.Services
                                                                                 b.SignInterpretationRoiId
                                                                                     .GetValueOrDefault(),
                                                                             signInterpretationId =
-                                                                                b.SignInterpretationId.GetValueOrDefault(),
+                                                                                b.SignInterpretationId
+                                                                                    .GetValueOrDefault(),
                                                                             editorId = b.SignInterpretationRoiEditorId
                                                                                 .GetValueOrDefault(),
                                                                             creatorId = b.SignInterpretationRoiCreatorId
@@ -344,12 +362,14 @@ namespace SQE.API.Server.Services
                                     {
                                         signInterpretationId = a.SignInterpretationId.GetValueOrDefault(),
                                         character = a.Character,
-                                        commentary = string.IsNullOrEmpty(a.InterpretationCommentary) ? null : new CommentaryDTO()
-                                        {
-                                            commentary = a.InterpretationCommentary,
-                                            creatorId = a.InterpretationCommentaryCreator.GetValueOrDefault(),
-                                            editorId = a.InterpretationCommentaryEditor.GetValueOrDefault(),
-                                        },
+                                        commentary = string.IsNullOrEmpty(a.InterpretationCommentary)
+                                            ? null
+                                            : new CommentaryDTO
+                                            {
+                                                commentary = a.InterpretationCommentary,
+                                                creatorId = a.InterpretationCommentaryCreator.GetValueOrDefault(),
+                                                editorId = a.InterpretationCommentaryEditor.GetValueOrDefault()
+                                            },
 
                                         attributes = a.Attributes.Select(
                                                 b => new InterpretationAttributeDTO
@@ -360,13 +380,17 @@ namespace SQE.API.Server.Services
                                                     attributeString = b.AttributeString,
                                                     attributeValueId = b.AttributeValueId.GetValueOrDefault(),
                                                     attributeValueString = b.AttributeValueString,
-                                                    editorId = b.SignInterpretationAttributeEditorId.GetValueOrDefault(),
-                                                    commentary = string.IsNullOrEmpty(b.AttributeCommentary) ? null : new CommentaryDTO()
-                                                    {
-                                                        commentary = b.AttributeCommentary,
-                                                        creatorId = b.AttributeCommentaryCreatorId.GetValueOrDefault(),
-                                                        editorId = b.AttributeCommentaryEditorId.GetValueOrDefault(),
-                                                    },
+                                                    editorId =
+                                                        b.SignInterpretationAttributeEditorId.GetValueOrDefault(),
+                                                    commentary = string.IsNullOrEmpty(b.AttributeCommentary)
+                                                        ? null
+                                                        : new CommentaryDTO
+                                                        {
+                                                            commentary = b.AttributeCommentary,
+                                                            creatorId =
+                                                                b.AttributeCommentaryCreatorId.GetValueOrDefault(),
+                                                            editorId = b.AttributeCommentaryEditorId.GetValueOrDefault()
+                                                        }
                                                 }
                                             )
                                             .ToArray(),
@@ -397,7 +421,7 @@ namespace SQE.API.Server.Services
                                                 {
                                                     nextSignInterpretationId = b.NextSignInterpretationId,
                                                     editorId = b.SignSequenceAuthor,
-                                                    creatorId = b.PositionCreatorId,
+                                                    creatorId = b.PositionCreatorId
                                                 }
                                             )
                                             .ToArray()

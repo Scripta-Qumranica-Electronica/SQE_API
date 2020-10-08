@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using SQE.DatabaseAccess.Helpers;
-
 namespace SQE.DatabaseAccess.Models
 {
     // public class TransformMatrix

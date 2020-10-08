@@ -66,13 +66,13 @@ namespace SQE.API.Server.Services
         {
             imagedObjectId = imagedObjectId.Replace("%2F", "/").Replace("%20", " ");
             var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
-            return new ImagedObjectTextFragmentMatchListDTO()
+            return new ImagedObjectTextFragmentMatchListDTO
             {
                 matches = textFragments.Select(x => new ImagedObjectTextFragmentMatchDTO(
-                    x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName, x.Side == 0 ? SideDesignation.recto : SideDesignation.verso)
+                    x.EditionId, x.ManuscriptName, x.TextFragmentId, x.TextFragmentName,
+                    x.Side == 0 ? SideDesignation.recto : SideDesignation.verso)
                 ).ToList()
             };
-
         }
 
         private static string GetType(byte type)

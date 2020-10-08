@@ -38,7 +38,8 @@ namespace SQE.ApiTest.Helpers
             Request.UserAuthDetails user = null)
         {
             // Act
-            var requestobj = new Get.V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches(manuscriptId);
+            var requestobj =
+                new Get.V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches(manuscriptId);
             await requestobj.SendAsync(client, signalr);
 
             // Assert
@@ -51,9 +52,9 @@ namespace SQE.ApiTest.Helpers
         }
 
         /// <summary>
-        /// Create a new text fragment to imaged object match.
-        /// This will make the initial request via HTTP.
-        /// Then it will make a second request via Signal to match the opposite side.
+        ///     Create a new text fragment to imaged object match.
+        ///     This will make the initial request via HTTP.
+        ///     Then it will make a second request via Signal to match the opposite side.
         /// </summary>
         /// <param name="catalogSide"></param>
         /// <param name="imagedObjectId"></param>
@@ -86,7 +87,7 @@ namespace SQE.ApiTest.Helpers
             bool realtime = false,
             bool? confirmed = false)
         {
-            var match = new CatalogueMatchInputDTO()
+            var match = new CatalogueMatchInputDTO
             {
                 catalogSide = catalogSide,
                 imagedObjectId = imagedObjectId,
@@ -106,20 +107,24 @@ namespace SQE.ApiTest.Helpers
             await request.SendAsync(
                 realtime ? null : client,
                 signalr,
-                auth: true,
+                true,
                 requestRealtime: realtime,
                 requestUser: Request.DefaultUsers.User1);
             if (!realtime)
                 request.HttpResponseMessage.EnsureSuccessStatusCode();
 
             var match2 = match;
-            match2.catalogSide = match2.catalogSide == SideDesignation.recto ? SideDesignation.verso : SideDesignation.recto;
-            match2.editionSide = match2.editionSide == SideDesignation.recto ? SideDesignation.verso : SideDesignation.recto;
+            match2.catalogSide = match2.catalogSide == SideDesignation.recto
+                ? SideDesignation.verso
+                : SideDesignation.recto;
+            match2.editionSide = match2.editionSide == SideDesignation.recto
+                ? SideDesignation.verso
+                : SideDesignation.recto;
             var requestConf = new Post.V1_Catalogue(match2);
             await requestConf.SendAsync(
                 realtime ? null : client,
                 signalr,
-                auth: true,
+                true,
                 requestRealtime: realtime,
                 requestUser: Request.DefaultUsers.User1);
 
@@ -148,8 +153,8 @@ namespace SQE.ApiTest.Helpers
             await request.SendAsync(
                 realtime ? null : client,
                 realtime ? signalr : null,
-                auth: user != null,
-                requestUser: user,
+                user != null,
+                user,
                 requestRealtime: realtime);
 
             var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
@@ -168,8 +173,8 @@ namespace SQE.ApiTest.Helpers
             await request.SendAsync(
                 realtime ? null : client,
                 realtime ? signalr : null,
-                auth: user != null,
-                requestUser: user,
+                user != null,
+                user,
                 requestRealtime: realtime);
 
             var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
@@ -187,11 +192,13 @@ namespace SQE.ApiTest.Helpers
                 Assert.NotNull(match.matchConfirmationAuthor);
                 Assert.NotNull(match.dateOfConfirmation);
             }
+
             if (!match.confirmed.HasValue)
             {
                 Assert.Null(match.matchConfirmationAuthor);
                 Assert.Null(match.dateOfConfirmation);
             }
+
             Assert.NotNull(match.manuscriptName);
             Assert.NotNull(match.name);
             Assert.NotNull(match.imagedObjectId);

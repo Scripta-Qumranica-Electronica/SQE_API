@@ -24,7 +24,7 @@ namespace SQE.API.Server.RealtimeHubs
     public partial class MainHub
     {
         /// <summary>
-        /// Retrieve a list of all possible attributes for an edition
+        ///     Retrieve a list of all possible attributes for an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being searched</param>
         /// <returns>A list of and edition's attributes and their details</returns>
@@ -34,7 +34,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(await _userService.GetCurrentUserObjectAsync(editionId, false));
+                return await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(await _userService.GetCurrentUserObjectAsync(editionId));
             }
             catch (ApiException err)
             {
@@ -44,7 +44,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Retrieve the details of a sign interpretation in an edition
+        ///     Retrieve the details of a sign interpretation in an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being searched</param>
         /// <param name="signInterpretationId">The desired sign interpretation id</param>
@@ -55,7 +55,7 @@ namespace SQE.API.Server.RealtimeHubs
         {
             try
             {
-                return await _signInterpretationService.GetEditionSignInterpretationAsync(await _userService.GetCurrentUserObjectAsync(editionId, false), signInterpretationId);
+                return await _signInterpretationService.GetEditionSignInterpretationAsync(await _userService.GetCurrentUserObjectAsync(editionId), signInterpretationId);
             }
             catch (ApiException err)
             {
@@ -65,7 +65,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Create a new attribute for an edition
+        ///     Create a new attribute for an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being edited</param>
         /// <param name="newAttribute">The details of the new attribute</param>
@@ -86,7 +86,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Delete an attribute from an edition
+        ///     Delete an attribute from an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being edited</param>
         /// <param name="attributeId">The ID of the attribute to delete</param>
@@ -108,7 +108,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Change the details of an attribute in an edition
+        ///     Change the details of an attribute in an edition
         /// </summary>
         /// <param name="editionId">The ID of the edition being edited</param>
         /// <param name="attributeId">The ID of the attribute to update</param>
@@ -131,7 +131,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Creates a new sign interpretation 
+        ///     Creates a new sign interpretation
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="newSignInterpretation">New sign interpretation data to be added</param>
@@ -152,8 +152,8 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-        /// by connecting all the deleted sign's next and previous nodes.
+        ///     Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
+        ///     by connecting all the deleted sign's next and previous nodes.
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
@@ -174,7 +174,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Links two sign interpretations in the edition's sign stream 
+        ///     Links two sign interpretations in the edition's sign stream
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">The sign interpretation to be linked to the nextSignInterpretationId</param>
@@ -196,7 +196,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Links two sign interpretations in the edition's sign stream 
+        ///     Links two sign interpretations in the edition's sign stream
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">The sign interpretation to be unlinked from the nextSignInterpretationId</param>
@@ -218,7 +218,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// Updates the commentary of a sign interpretation
+        ///     Updates the commentary of a sign interpretation
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation whose commentary is being changed</param>
@@ -240,7 +240,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// This adds a new attribute to the specified sign interpretation.
+        ///     This adds a new attribute to the specified sign interpretation.
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation for adding a new attribute</param>
@@ -262,8 +262,8 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// This changes the values of the specified sign interpretation attribute,
-        /// mainly used to change commentary.
+        ///     This changes the values of the specified sign interpretation attribute,
+        ///     mainly used to change commentary.
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>
@@ -286,7 +286,7 @@ namespace SQE.API.Server.RealtimeHubs
 
 
         /// <summary>
-        /// This deletes the specified attribute value from the specified sign interpretation.
+        ///     This deletes the specified attribute value from the specified sign interpretation.
         /// </summary>
         /// <param name="editionId">ID of the edition being changed</param>
         /// <param name="signInterpretationId">ID of the sign interpretation being altered</param>

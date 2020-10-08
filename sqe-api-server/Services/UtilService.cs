@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;

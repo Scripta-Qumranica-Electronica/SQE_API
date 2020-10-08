@@ -287,24 +287,11 @@ namespace SQE.ApiTest.ApiRequests
             // Dispose of the listener and check to see that all expected responses have been received
             signalrListener?.DisposeAsync(); // Cleanup
             if (shouldSucceed)
-            {
                 foreach (var listenerMethod in listenerMethodsList)
                 {
                     Assert.True(_listenerDict.TryGetValue(listenerMethod, out var listener));
                     Assert.False(listener.IsNull());
                 }
-            }
-        }
-
-        private bool OutstandingListeners(List<ListenerMethods> listenerMethodsList)
-        {
-            foreach (var listenerMethod in listenerMethodsList)
-            {
-                _listenerDict.TryGetValue(listenerMethod, out var listener);
-                if (listener.IsNull()) return true;
-            }
-
-            return false;
         }
 
         public async Task SendAsync(
@@ -332,6 +319,17 @@ namespace SQE.ApiTest.ApiRequests
                 deterministic,
                 requestRealtime,
                 listenToEdition);
+        }
+
+        private bool OutstandingListeners(List<ListenerMethods> listenerMethodsList)
+        {
+            foreach (var listenerMethod in listenerMethodsList)
+            {
+                _listenerDict.TryGetValue(listenerMethod, out var listener);
+                if (listener.IsNull()) return true;
+            }
+
+            return false;
         }
 
         public virtual HttpRequestObject<TInput> GetHttpRequestObject()

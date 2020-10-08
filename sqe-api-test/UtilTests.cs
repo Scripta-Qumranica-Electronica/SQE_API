@@ -1,9 +1,7 @@
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Testing;
 using NetTopologySuite.IO;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using Xunit;
 

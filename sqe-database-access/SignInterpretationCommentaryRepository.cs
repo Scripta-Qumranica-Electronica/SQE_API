@@ -50,10 +50,11 @@ namespace SQE.DatabaseAccess
 
     public class SignInterpretationCommentaryRepository : DbConnectionBase, ISignInterpretationCommentaryRepository
     {
-        private readonly IDatabaseWriter _databaseWriter;
         private readonly IAttributeRepository _attributeRepository;
+        private readonly IDatabaseWriter _databaseWriter;
 
-        public SignInterpretationCommentaryRepository(IConfiguration config, IDatabaseWriter databaseWriter, IAttributeRepository attributeRepository) :
+        public SignInterpretationCommentaryRepository(IConfiguration config, IDatabaseWriter databaseWriter,
+            IAttributeRepository attributeRepository) :
             base(config)
         {
             _databaseWriter = databaseWriter;
@@ -111,9 +112,9 @@ namespace SQE.DatabaseAccess
                 };
 
                 var signInterpretationAttributes =
-                    (await _attributeRepository.GetSignInterpretationAttributesByDataAsync(
+                    await _attributeRepository.GetSignInterpretationAttributesByDataAsync(
                         editionUser,
-                        searchData));
+                        searchData);
 
                 if (signInterpretationAttributes.Count != 1)
                     throw new StandardExceptions.DataNotFoundException("sign interpretation attribute",
@@ -129,17 +130,18 @@ namespace SQE.DatabaseAccess
             // Check if this is actually a request to set the commentary to null (i.e., delete)
             if (string.IsNullOrEmpty(commentary))
             {
-                var signInterpretationCommentaryId = existingCommentaries.Where(x => x.AttributeId == attributeId && x.SignInterpretationCommentaryId.HasValue)
+                var signInterpretationCommentaryId = existingCommentaries.Where(x =>
+                        x.AttributeId == attributeId && x.SignInterpretationCommentaryId.HasValue)
                     .Select(x => x.SignInterpretationCommentaryId.Value);
                 await DeleteCommentariesAsync(editionUser, signInterpretationCommentaryId.AsList());
                 return null; // Early return, nothing more to do
             }
 
-            var preparedCommentary = new SignInterpretationCommentaryData()
+            var preparedCommentary = new SignInterpretationCommentaryData
             {
                 AttributeId = attributeId,
                 Commentary = commentary,
-                SignInterpretationId = signInterpretationId,
+                SignInterpretationId = signInterpretationId
             };
             var action = MutateType.Create;
 

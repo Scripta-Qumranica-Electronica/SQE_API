@@ -8,7 +8,8 @@ namespace SQE.DatabaseAccess.Helpers
         public static SignInterpretationData CreateTerminatorInterpretation(TableData.Table table,
             TableData.TerminatorType terminatorType)
         {
-            return _createSimpleInterpretation("", SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(table, terminatorType));
+            return _createSimpleInterpretation("",
+                SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(table, terminatorType));
         }
 
         public static SignInterpretationData CreateCharacterInterpretation(
@@ -18,25 +19,29 @@ namespace SQE.DatabaseAccess.Helpers
             float? probability = null
         )
         {
-            return _createSimpleInterpretation(character, SignInterpretationAttributeFactory.CreateCharacterAttribute(width), readability, probability);
+            return _createSimpleInterpretation(character,
+                SignInterpretationAttributeFactory.CreateCharacterAttribute(width), readability, probability);
         }
 
         public static SignInterpretationData CreateSpaceInterpretation(float width = 1,
             float? probability = null)
         {
-            return _createSimpleInterpretation(" ", SignInterpretationAttributeFactory.CreateSpaceAttribute(width), null, probability);
+            return _createSimpleInterpretation(" ", SignInterpretationAttributeFactory.CreateSpaceAttribute(width),
+                null, probability);
         }
 
         public static SignInterpretationData CreateVacatInterpretation(float width = 5,
             float? probability = null)
         {
-            return _createSimpleInterpretation(" ", SignInterpretationAttributeFactory.CreateVacatAttribute(width), null, probability);
+            return _createSimpleInterpretation(" ", SignInterpretationAttributeFactory.CreateVacatAttribute(width),
+                null, probability);
         }
 
         public static SignInterpretationData CreateDamagedInterpretation(float width = 1,
             float? probability = null)
         {
-            return _createSimpleInterpretation(" ", SignInterpretationAttributeFactory.CreateDamageAttribute(width), null, probability);
+            return _createSimpleInterpretation(" ", SignInterpretationAttributeFactory.CreateDamageAttribute(width),
+                null, probability);
         }
 
 

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -7,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using NetTopologySuite.IO;
 using SQE.API.DTO;
-using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
@@ -94,7 +92,7 @@ namespace SQE.API.Server.Services
             // made the request, that client directly received the response.
             await _hubContext.Clients
                 .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreatedRoisBatch(new InterpretationRoiDTOList() { rois = response });
+                .CreatedRoisBatch(new InterpretationRoiDTOList { rois = response });
 
             return response.First();
         }
@@ -110,28 +108,9 @@ namespace SQE.API.Server.Services
             // TODO: make a DTO for the delete object.
             await _hubContext.Clients
                 .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .EditedRoisBatch(new BatchEditRoiResponseDTO() { createRois = response.rois });
+                .EditedRoisBatch(new BatchEditRoiResponseDTO { createRois = response.rois });
 
             return response;
-        }
-
-        private async Task<InterpretationRoiDTOList> CreateRoisInternalAsync(UserInfo editionUser,
-            SetInterpretationRoiDTOList newRois)
-        {
-            var newRoisDTO = new InterpretationRoiDTOList
-            {
-                rois = (
-                        await _roiRepository.CreateRoisAsync( // Write new rois
-                            editionUser,
-                            // Serialize the SetInterpretationRoiDTOList to a List of SetSignInterpretationROI
-                            newRois.rois.ToSignInterpretationRoiData().ToList()
-                        )
-                    )
-                    .ToDTO()
-                    .ToList()
-            };
-
-            return newRoisDTO;
         }
 
         public async Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(UserInfo editionUser,
@@ -168,7 +147,8 @@ namespace SQE.API.Server.Services
         {
             var fullUpdatedRoi = updatedRoi.ToUpdateInterpretationRoiDTO(roiId);
 
-            var updateRoisDTO = (await UpdateRoisInternalAsync(editionUser, new List<UpdateInterpretationRoiDTO> { fullUpdatedRoi }))
+            var updateRoisDTO =
+                (await UpdateRoisInternalAsync(editionUser, new List<UpdateInterpretationRoiDTO> { fullUpdatedRoi }))
                 .rois;
 
             // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
@@ -176,7 +156,7 @@ namespace SQE.API.Server.Services
             // TODO: make a DTO for the delete object.
             await _hubContext.Clients
                 .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .EditedRoisBatch(new BatchEditRoiResponseDTO() { updateRois = updateRoisDTO });
+                .EditedRoisBatch(new BatchEditRoiResponseDTO { updateRois = updateRoisDTO });
 
             return updateRoisDTO.First();
         }
@@ -197,6 +177,40 @@ namespace SQE.API.Server.Services
             return updateRoisDTO;
         }
 
+        public async Task<NoContentResult> DeleteRoiAsync(UserInfo editionUser,
+            uint deleteRoi,
+            string clientId = null)
+        {
+            await DeleteRoisInternalAsync(editionUser, new List<uint> { deleteRoi });
+
+            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+            // made the request, that client directly received the response.
+            await _hubContext.Clients
+                .GroupExcept(editionUser.EditionId.ToString(), clientId)
+                .DeletedRoi(new DeleteDTO(EditionEntities.roi, deleteRoi));
+
+            return new NoContentResult();
+        }
+
+        private async Task<InterpretationRoiDTOList> CreateRoisInternalAsync(UserInfo editionUser,
+            SetInterpretationRoiDTOList newRois)
+        {
+            var newRoisDTO = new InterpretationRoiDTOList
+            {
+                rois = (
+                        await _roiRepository.CreateRoisAsync( // Write new rois
+                            editionUser,
+                            // Serialize the SetInterpretationRoiDTOList to a List of SetSignInterpretationROI
+                            newRois.rois.ToSignInterpretationRoiData().ToList()
+                        )
+                    )
+                    .ToDTO()
+                    .ToList()
+            };
+
+            return newRoisDTO;
+        }
+
         private async Task<UpdatedInterpretationRoiDTOList> UpdateRoisInternalAsync(UserInfo editionUser,
             IEnumerable<UpdateInterpretationRoiDTO> updatedRois)
         {
@@ -211,21 +225,6 @@ namespace SQE.API.Server.Services
                     .ToUpdateDTO()
                     .ToList()
             };
-        }
-
-        public async Task<NoContentResult> DeleteRoiAsync(UserInfo editionUser,
-            uint deleteRoi,
-            string clientId = null)
-        {
-            await DeleteRoisInternalAsync(editionUser, new List<uint> { deleteRoi });
-
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            await _hubContext.Clients
-                .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .DeletedRoi(new DeleteDTO(EditionEntities.roi, deleteRoi));
-
-            return new NoContentResult();
         }
 
         // public async Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,

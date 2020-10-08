@@ -11,7 +11,7 @@ namespace SQE.ApiTest.Helpers
     public static class ImagedObjectHelpers
     {
         /// <summary>
-        /// Return all imaged objects belonging to an Institution
+        ///     Return all imaged objects belonging to an Institution
         /// </summary>
         /// <param name="institution"></param>
         /// <param name="client"></param>

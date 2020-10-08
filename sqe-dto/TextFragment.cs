@@ -46,7 +46,9 @@ namespace SQE.API.DTO
             this.suggested = suggested;
         }
 
-        public ArtefactTextFragmentMatchDTO() : this(uint.MinValue, string.Empty, uint.MinValue, false) { }
+        public ArtefactTextFragmentMatchDTO() : this(uint.MinValue, string.Empty, uint.MinValue, false)
+        {
+        }
 
         [Required] public bool suggested { get; set; }
     }
@@ -64,7 +66,9 @@ namespace SQE.API.DTO
         }
 
         public ImagedObjectTextFragmentMatchDTO()
-            : this(uint.MinValue, null, uint.MinValue, null, default(SideDesignation)) { }
+            : this(uint.MinValue, null, uint.MinValue, null, default)
+        {
+        }
 
         [Required] public uint editionId { get; set; }
         [Required] public string manuscriptName { get; set; }
@@ -99,7 +103,9 @@ namespace SQE.API.DTO
             this.textFragments = textFragments;
         }
 
-        public ArtefactTextFragmentMatchListDTO() : this(null) { }
+        public ArtefactTextFragmentMatchListDTO() : this(null)
+        {
+        }
 
         [Required] public List<ArtefactTextFragmentMatchDTO> textFragments { get; set; }
     }

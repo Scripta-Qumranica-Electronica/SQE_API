@@ -42,12 +42,11 @@ namespace SQE.DatabaseAccess
                 var commentaries =
                     _interpretationCommentaryRepository.GetSignInterpretationCommentariesByInterpretationId(user,
                         signInterpretationId);
-                var roiIds = await _roiRepository.GetSignInterpretationRoisIdsByInterpretationId(user, signInterpretationId);
+                var roiIds =
+                    await _roiRepository.GetSignInterpretationRoisIdsByInterpretationId(user, signInterpretationId);
                 var rois = new SignInterpretationRoiData[roiIds.Count];
                 foreach (var (roiId, index) in roiIds.Select((x, idx) => (x, idx)))
-                {
                     rois[index] = await _roiRepository.GetSignInterpretationRoiByIdAsync(user, roiId);
-                }
 
                 SignInterpretationData returnSignInterpretation = null;
                 var _ = await conn.QueryAsync(SignInterpretationQuery.GetQuery,
@@ -64,17 +63,19 @@ namespace SQE.DatabaseAccess
                         // Since the Query searches for a single sign interpretation id, we only ever create a single object
                         returnSignInterpretation ??= signInterpretationData;
 
-                        if (returnSignInterpretation != null && !returnSignInterpretation.NextSignInterpretations.Contains(nextSignInterpretation))
+                        if (returnSignInterpretation != null &&
+                            !returnSignInterpretation.NextSignInterpretations.Contains(nextSignInterpretation))
                             returnSignInterpretation.NextSignInterpretations.Add(nextSignInterpretation);
 
-                        if (returnSignInterpretation != null && signStreamSelectionId.HasValue && !returnSignInterpretation.SignStreamSectionIds.Contains(signStreamSelectionId.Value))
+                        if (returnSignInterpretation != null && signStreamSelectionId.HasValue &&
+                            !returnSignInterpretation.SignStreamSectionIds.Contains(signStreamSelectionId.Value))
                             returnSignInterpretation.SignStreamSectionIds.Add(signStreamSelectionId.Value);
 
                         return returnSignInterpretation;
                     },
                     new
                     {
-                        EditionId = user.EditionId,
+                        user.EditionId,
                         SignInterpretationId = signInterpretationId
                     },
                     splitOn:

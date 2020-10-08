@@ -4,9 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -118,9 +116,9 @@ namespace SQE.ApiTest
                 listenerUser,
                 shouldSucceed,
                 false,
-                requestRealtime: realtime,
-                listenToEdition: true,
-                listeningFor: createApiRequest.AvailableListeners.CreatedArtefactGroup
+                realtime,
+                true,
+                createApiRequest.AvailableListeners.CreatedArtefactGroup
             );
             var (httpMessage, httpBody, signalr, listener) = (createApiRequest.HttpResponseMessage,
                 createApiRequest.HttpResponseObject, createApiRequest.SignalrResponseObject,
@@ -182,9 +180,9 @@ namespace SQE.ApiTest
                 listenerUser,
                 shouldSucceed,
                 false,
-                requestRealtime: realtime,
-                listenToEdition: true,
-                listeningFor: updateApiRequest.AvailableListeners.UpdatedArtefactGroup
+                realtime,
+                true,
+                updateApiRequest.AvailableListeners.UpdatedArtefactGroup
             );
             var (httpMessage, httpBody, signalr, listener) = (updateApiRequest.HttpResponseMessage,
                 updateApiRequest.HttpResponseObject, updateApiRequest.SignalrResponseObject,
@@ -236,9 +234,9 @@ namespace SQE.ApiTest
                 listenerUser,
                 shouldSucceed,
                 false,
-                requestRealtime: realtime,
-                listenToEdition: true,
-                listeningFor: deleteApiRequest.AvailableListeners.DeletedArtefactGroup
+                realtime,
+                true,
+                deleteApiRequest.AvailableListeners.DeletedArtefactGroup
             );
             var (httpMessage, httpBody, signalr, listener) = (deleteApiRequest.HttpResponseMessage,
                 deleteApiRequest.HttpResponseObject,
@@ -328,7 +326,8 @@ namespace SQE.ApiTest
                 const string artefactGroupName = "artefact group 1";
 
                 // Act
-                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
+                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(
+                    editionId, artefactGroupName,
                     new List<uint>
                     {
                         firstArtefact.id,
@@ -404,7 +403,8 @@ namespace SQE.ApiTest
                 const string artefactGroupName = "artefact group 1";
 
                 // Act
-                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
+                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(
+                    editionId, artefactGroupName,
                     new List<uint>
                     {
                         firstArtefact.id,
@@ -477,12 +477,14 @@ namespace SQE.ApiTest
                     editionId = await editionCreator.CreateEdition();
                     artefacts = (await ArtefactHelpers.GetEditionArtefacts(editionId, _client)).artefacts;
                 }
+
                 var firstArtefact = artefacts.First();
                 var lastArtefact = artefacts.Last();
                 var artefactGroupName = "artefact group 1";
 
                 // Act
-                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(editionId, artefactGroupName,
+                var (_, createdArtefactGroupHttp, createdArtefactGroupRt, _) = await _createArtefactGroupAsync(
+                    editionId, artefactGroupName,
                     new List<uint>
                     {
                         firstArtefact.id,
@@ -507,7 +509,8 @@ namespace SQE.ApiTest
                 var updatedArtefacts = new List<uint> { firstArtefact.id, artefacts[2].id, artefacts[4].id };
 
                 // Act
-                var (_, updatedAgHttp, updatedAgRt, _) = await _updateArtefactGroupAsync(editionId, createdArtefactGroup.id,
+                var (_, updatedAgHttp, updatedAgRt, _) = await _updateArtefactGroupAsync(editionId,
+                    createdArtefactGroup.id,
                     updatedArtefactGroupName, updatedArtefacts, realtime: realtime);
                 (_, artefactList, _) = await _getArtefactGroupsAsync(editionId);
                 var updatedAg = realtime ? updatedAgRt : updatedAgHttp;

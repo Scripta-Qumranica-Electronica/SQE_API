@@ -191,6 +191,7 @@ namespace SQE.ApiTest
                 errorThrown = true;
                 Assert.Contains(e.Message, "The scale must be less than or equal to the precision");
             }
+
             Assert.True(errorThrown);
 
             try
@@ -208,6 +209,7 @@ namespace SQE.ApiTest
             {
                 errorThrown = true; // We should not expect any error
             }
+
             Assert.False(errorThrown);
         }
 

@@ -141,7 +141,7 @@ namespace SQE.ApiTest.Helpers
                 userAuthDetails = Request.DefaultUsers.User1;
             var deleteResponse1 = new Delete.V1_Editions_EditionId(
                 editionId,
-                new List<string>() { "deleteForAllEditors" });
+                new List<string> { "deleteForAllEditors" });
             await deleteResponse1.SendAsync(
                 client,
                 realtime,
@@ -157,7 +157,7 @@ namespace SQE.ApiTest.Helpers
                 Assert.Equal(editionId, msg.editionId);
                 var deleteResponse2 = new Delete.V1_Editions_EditionId(
                     editionId,
-                    new List<string>() { "deleteForAllEditors" },
+                    new List<string> { "deleteForAllEditors" },
                     msg.token);
                 await deleteResponse2.SendAsync(
                     client,
@@ -215,6 +215,16 @@ namespace SQE.ApiTest.Helpers
             throw new Exception($"The edition {editionId} doesn't have any fragments with 3 or more signs");
         }
 
+        public static async Task<EditionListDTO> GetAllEditions(HttpClient client,
+            Func<string, Task<HubConnection>> signalr, Request.UserAuthDetails user = null)
+        {
+            var request = new Get.V1_Editions();
+            await request.SendAsync(client, signalr, user != null, user);
+
+            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
+            return request.HttpResponseObject;
+        }
+
         /// <summary>
         ///     This class can be used in a using block to clone an edition for tests. At the end of the using block,
         ///     it will automatically delete the newly created edition.
@@ -222,8 +232,8 @@ namespace SQE.ApiTest.Helpers
         public class EditionCreator : IDisposable
         {
             private readonly HttpClient _client;
-            private readonly Func<string, Task<HubConnection>> _realtime;
             private readonly string _name;
+            private readonly Func<string, Task<HubConnection>> _realtime;
             private readonly Request.UserAuthDetails _userAuthDetails;
 
             /// <summary>
@@ -267,15 +277,6 @@ namespace SQE.ApiTest.Helpers
                 EditionId = await CreateCopyOfEdition(_client, EditionId, _name, _userAuthDetails);
                 return EditionId;
             }
-        }
-
-        public static async Task<EditionListDTO> GetAllEditions(HttpClient client, Func<string, Task<HubConnection>> signalr, Request.UserAuthDetails user = null)
-        {
-            var request = new Get.V1_Editions();
-            await request.SendAsync(client, signalr, auth: user != null, requestUser: user);
-
-            request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
-            return request.HttpResponseObject;
         }
     }
 }

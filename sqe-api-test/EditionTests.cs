@@ -4,9 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -1177,32 +1175,34 @@ namespace SQE.ApiTest
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
                 var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
                 // Position the artefact so its ROIs have a global coordinate.
-                var artefactPositionRequest = new Put.V1_Editions_EditionId_Artefacts_ArtefactId(newEdition, artefactId, new UpdateArtefactDTO()
-                {
-                    mask = null,
-                    name = null,
-                    placement = new PlacementDTO()
+                var artefactPositionRequest = new Put.V1_Editions_EditionId_Artefacts_ArtefactId(newEdition, artefactId,
+                    new UpdateArtefactDTO
                     {
-                        rotate = 0,
-                        scale = (decimal)1.0,
-                        translate = new TranslateDTO()
+                        mask = null,
+                        name = null,
+                        placement = new PlacementDTO
                         {
-                            x = 0,
-                            y = 0
-                        },
-                        zIndex = 0
-                    }
-                });
+                            rotate = 0,
+                            scale = (decimal)1.0,
+                            translate = new TranslateDTO
+                            {
+                                x = 0,
+                                y = 0
+                            },
+                            zIndex = 0
+                        }
+                    });
                 await artefactPositionRequest.SendAsync(_client, auth: true);
 
                 // Act
                 var request = new Get.V1_Editions_EditionId_ScriptCollection(newEdition);
-                await request.SendAsync(_client, StartConnectionAsync, auth: true);
+                await request.SendAsync(_client, StartConnectionAsync, true);
 
                 // Assert
                 request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
                 // TODO: perhaps verify that the shape is correct
-                request.HttpResponseObject.letters.Select(x => x.id).ShouldDeepEqual(rois.Select(x => x.interpretationRoiId).First());
+                request.HttpResponseObject.letters.Select(x => x.id)
+                    .ShouldDeepEqual(rois.Select(x => x.interpretationRoiId).First());
             }
         }
 
@@ -1215,27 +1215,28 @@ namespace SQE.ApiTest
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
                 var (artefactId, rois) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
                 // Position the artefact so its ROIs have a global coordinate.
-                var artefactPositionRequest = new Put.V1_Editions_EditionId_Artefacts_ArtefactId(newEdition, artefactId, new UpdateArtefactDTO()
-                {
-                    mask = null,
-                    name = null,
-                    placement = new PlacementDTO()
+                var artefactPositionRequest = new Put.V1_Editions_EditionId_Artefacts_ArtefactId(newEdition, artefactId,
+                    new UpdateArtefactDTO
                     {
-                        rotate = 0,
-                        scale = (decimal)1.0,
-                        translate = new TranslateDTO()
+                        mask = null,
+                        name = null,
+                        placement = new PlacementDTO
                         {
-                            x = 0,
-                            y = 0
-                        },
-                        zIndex = 0
-                    }
-                });
+                            rotate = 0,
+                            scale = (decimal)1.0,
+                            translate = new TranslateDTO
+                            {
+                                x = 0,
+                                y = 0
+                            },
+                            zIndex = 0
+                        }
+                    });
                 await artefactPositionRequest.SendAsync(_client, auth: true);
 
                 // Act
                 var request = new Get.V1_Editions_EditionId_ScriptLines(newEdition);
-                await request.SendAsync(_client, StartConnectionAsync, auth: true);
+                await request.SendAsync(_client, StartConnectionAsync, true);
 
                 // Assert
                 request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);

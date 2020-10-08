@@ -17,11 +17,11 @@ namespace SQE.ApiTest
     /// </summary>
     public partial class WebControllerTest : IClassFixture<WebApplicationFactory<Startup>>
     {
-        protected readonly HttpClient _client;
-        private readonly WebApplicationFactory<Startup> _factory;
-        private readonly DatabaseQuery _db;
-        private readonly WKTReader _wkr = new WKTReader();
         private static bool _images = true;
+        protected readonly HttpClient _client;
+        private readonly DatabaseQuery _db;
+        private readonly WebApplicationFactory<Startup> _factory;
+        private readonly WKTReader _wkr = new WKTReader();
 
         public WebControllerTest(WebApplicationFactory<Startup> factory)
         {

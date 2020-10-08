@@ -1,9 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -57,7 +55,8 @@ namespace SQE.ApiTest
         public async Task CanCreateNewImagedObjectTextFragmentMatch(bool realtime)
         {
             // Arrange
-            var availableImagedObjects = await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
+            var availableImagedObjects =
+                await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
             var textFragments = await TextHelpers.GetEditionTextFragments(1, _client, StartConnectionAsync);
             var imagedObjectId = availableImagedObjects.institutionalImages.First().id;
             var textFragmentId = textFragments.textFragments.First().id;
@@ -80,7 +79,7 @@ namespace SQE.ApiTest
                 realtime);
         }
 
-        // TODO: the following test is correct, but the code in the API needs to be fixed
+        // TODO: the following test is correct, but the code in the API still needs to be fixed
         // [Theory]
         // [InlineData(true)]
         // [InlineData(false)]

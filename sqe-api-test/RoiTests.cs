@@ -2,9 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -49,7 +47,8 @@ namespace SQE.ApiTest
                 // Act
                 var roi = rois.First();
                 Assert.NotNull(roi);
-                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, roi.interpretationRoiId);
+                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition,
+                    roi.interpretationRoiId);
                 roi.ShouldDeepEqual(getRoi);
             }
         }
@@ -61,12 +60,14 @@ namespace SQE.ApiTest
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
-                var (artefactId, roisResponse) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var (artefactId, roisResponse) =
+                    await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
                 var rois = roisResponse.ToList();
                 // Check that the roi exists
                 var firstRoi = rois.First();
                 var lastRoi = rois.Last();
-                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, firstRoi.interpretationRoiId);
+                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition,
+                    firstRoi.interpretationRoiId);
                 firstRoi.ShouldDeepEqual(getRoi);
 
                 // Act
@@ -86,8 +87,8 @@ namespace SQE.ApiTest
                 // Check that it is not returned with a get
                 var updatedRoiList =
                     await ArtefactHelpers.GetArtefactRois(newEdition, artefactId, _client, StartConnectionAsync, true);
-                Assert.DoesNotContain(updatedRoiList.rois, (x => x.interpretationRoiId == firstRoi.interpretationRoiId));
-                Assert.DoesNotContain(updatedRoiList.rois, (x => x.interpretationRoiId == lastRoi.interpretationRoiId));
+                Assert.DoesNotContain(updatedRoiList.rois, x => x.interpretationRoiId == firstRoi.interpretationRoiId);
+                Assert.DoesNotContain(updatedRoiList.rois, x => x.interpretationRoiId == lastRoi.interpretationRoiId);
             }
         }
 
@@ -109,36 +110,38 @@ namespace SQE.ApiTest
             {
                 // Arrange
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
-                var (artefactId, roiResponse) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var (artefactId, roiResponse) =
+                    await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
                 var rois = roiResponse.ToList();
                 // Check that the roi exists
                 var firstRoi = rois.First();
                 var lastRoi = rois.Last();
-                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition, firstRoi.interpretationRoiId);
+                var getRoi = await RoiHelpers.GetEditionRoiInfo(_client, StartConnectionAsync, newEdition,
+                    firstRoi.interpretationRoiId);
                 firstRoi.ShouldDeepEqual(getRoi);
 
-                var updateRoi1 = new SetInterpretationRoiDTO()
+                var updateRoi1 = new SetInterpretationRoiDTO
                 {
                     artefactId = artefactId,
                     exceptional = true,
                     shape = "POLYGON((100 200,100 250,200 250,200 200,100 200))",
                     signInterpretationId = getRoi.signInterpretationId,
                     stanceRotation = 180,
-                    translate = new TranslateDTO()
+                    translate = new TranslateDTO
                     {
                         x = 3000,
                         y = 4079
                     },
                     valuesSet = true
                 };
-                var updateRoi2 = new SetInterpretationRoiDTO()
+                var updateRoi2 = new SetInterpretationRoiDTO
                 {
                     artefactId = artefactId,
                     exceptional = true,
                     shape = "POLYGON((100 199,100 250,200 250,200 200,100 199))",
                     signInterpretationId = getRoi.signInterpretationId,
                     stanceRotation = 12,
-                    translate = new TranslateDTO()
+                    translate = new TranslateDTO
                     {
                         x = 3030,
                         y = 4029
@@ -156,8 +159,8 @@ namespace SQE.ApiTest
                 // Check that it is not returned with a get
                 var updatedRoiList =
                     await ArtefactHelpers.GetArtefactRois(newEdition, artefactId, _client, StartConnectionAsync, true);
-                Assert.Contains(updatedRoiList.rois, (x => x.interpretationRoiId == updatedRoi1.interpretationRoiId));
-                Assert.Contains(updatedRoiList.rois, (x => x.interpretationRoiId == updatedRoi2.interpretationRoiId));
+                Assert.Contains(updatedRoiList.rois, x => x.interpretationRoiId == updatedRoi1.interpretationRoiId);
+                Assert.Contains(updatedRoiList.rois, x => x.interpretationRoiId == updatedRoi2.interpretationRoiId);
                 var retrievedUpdatedRoi1 =
                     updatedRoiList.rois.First(x => x.interpretationRoiId == updatedRoi1.interpretationRoiId);
                 retrievedUpdatedRoi1.Matches(updatedRoi1);
@@ -177,7 +180,8 @@ namespace SQE.ApiTest
                 // Arrange
                 // Create two new rois, one will get altered, one will be deleted
                 var newEdition = await editionCreator.CreateEdition(); // Clone new edition
-                var (artefactId, roiResponse) = await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
+                var (artefactId, roiResponse) =
+                    await RoiHelpers.CreateRoiInEdition(_client, StartConnectionAsync, newEdition);
                 var rois = roiResponse.ToList();
                 // Check that the roi exists
                 var firstRoi = rois.First();
@@ -195,7 +199,7 @@ namespace SQE.ApiTest
                     valuesSet = true
                 };
                 var roiForDelete = lastRoi;
-                var newRoi = new SetInterpretationRoiDTO()
+                var newRoi = new SetInterpretationRoiDTO
                 {
                     artefactId = artefactId,
                     exceptional = false,
@@ -203,17 +207,17 @@ namespace SQE.ApiTest
                     signInterpretationId = updatedRoi.signInterpretationId,
                     stanceRotation = 77,
                     valuesSet = true,
-                    translate = new TranslateDTO()
+                    translate = new TranslateDTO
                     {
                         x = 100,
                         y = 100
                     }
                 };
-                var batchRoiRequest = new BatchEditRoiDTO()
+                var batchRoiRequest = new BatchEditRoiDTO
                 {
-                    createRois = new List<SetInterpretationRoiDTO>() { newRoi },
-                    deleteRois = new List<uint>() { roiForDelete.interpretationRoiId },
-                    updateRois = new List<UpdateInterpretationRoiDTO>() { updatedRoi }
+                    createRois = new List<SetInterpretationRoiDTO> { newRoi },
+                    deleteRois = new List<uint> { roiForDelete.interpretationRoiId },
+                    updateRois = new List<UpdateInterpretationRoiDTO> { updatedRoi }
                 };
 
                 // Act
@@ -221,7 +225,7 @@ namespace SQE.ApiTest
                 await request.SendAsync(
                     realtime ? null : _client,
                     StartConnectionAsync,
-                    auth: true,
+                    true,
                     requestRealtime: realtime,
                     listeningFor: request.AvailableListeners.EditedRoisBatch);
 

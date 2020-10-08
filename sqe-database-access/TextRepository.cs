@@ -137,11 +137,13 @@ namespace SQE.DatabaseAccess
         private readonly ISignInterpretationRepository _signInterpretationRepository;
         private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
         private readonly IRoiRepository _roiRepository;
-        private readonly List<uint> _signAttributeControlCharacters = new List<uint>() { 10, 11, 12, 13, 14, 15 };
+        private readonly List<uint> _signAttributeControlCharacters = new List<uint> { 10, 11, 12, 13, 14, 15 };
 
 
-        public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter, IAttributeRepository attributeRepository,
-            ISignInterpretationRepository signInterpretationRepository, ISignInterpretationCommentaryRepository commentaryRepository,
+        public TextRepository(IConfiguration config, IDatabaseWriter databaseWriter,
+            IAttributeRepository attributeRepository,
+            ISignInterpretationRepository signInterpretationRepository,
+            ISignInterpretationCommentaryRepository commentaryRepository,
             IRoiRepository roiRepository) : base(config)
         {
             _databaseWriter = databaseWriter;
@@ -331,7 +333,7 @@ namespace SQE.DatabaseAccess
                 {
                     // First, create a simple entry in the sign table
                     var newSignId = await _createSignAsync(editionUser, lineId);
-                    var newSignData = new SignData()
+                    var newSignData = new SignData
                     {
                         SignId = newSignId,
                         // Add the given sign interpretations which also inject the sign in the reading stream
@@ -372,6 +374,7 @@ namespace SQE.DatabaseAccess
                     // previousSignData = newSignData;
                     newSigns.Add(newSignData);
                 }
+
                 transactionScope.Complete();
             }
 
@@ -399,17 +402,23 @@ namespace SQE.DatabaseAccess
             bool breakNeighboringAnchors = false
         )
         {
-            return await CreateSignsAsync(editionUser, lineId, new List<SignData>() { sign }, anchorsBefore, anchorsAfter, breakNeighboringAnchors);
+            return await CreateSignsAsync(editionUser, lineId, new List<SignData> { sign }, anchorsBefore, anchorsAfter,
+                breakNeighboringAnchors);
         }
 
         /// <summary>
-        /// Join each member of firstSignInterpretations with each member of secondSignInterpretations
-        /// in the edition sign stream.
+        ///     Join each member of firstSignInterpretations with each member of secondSignInterpretations
+        ///     in the edition sign stream.
         /// </summary>
         /// <param name="editionUser">The details of the edition and user</param>
-        /// <param name="firstSignInterpretations">A list of sign interpretations to link to each member of secondSignInterpretations</param>
-        /// <param name="secondSignInterpretations">A list of sign interpretations to be set as next sign interpretation for
-        /// each member of firstSignInterpretations</param>
+        /// <param name="firstSignInterpretations">
+        ///     A list of sign interpretations to link to each member of
+        ///     secondSignInterpretations
+        /// </param>
+        /// <param name="secondSignInterpretations">
+        ///     A list of sign interpretations to be set as next sign interpretation for
+        ///     each member of firstSignInterpretations
+        /// </param>
         /// <returns></returns>
         public async Task LinkSignInterpretationsAsync(
             UserInfo editionUser,
@@ -439,13 +448,15 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Join each member of firstSignInterpretations with secondSignInterpretation
-        /// in the edition sign stream.
+        ///     Join each member of firstSignInterpretations with secondSignInterpretation
+        ///     in the edition sign stream.
         /// </summary>
         /// <param name="editionUser">The details of the edition and user</param>
         /// <param name="firstSignInterpretations">A list of sign interpretations to link to the secondSignInterpretation</param>
-        /// <param name="secondSignInterpretation">The sign interpretation to be set as next sign interpretation for
-        /// each member of firstSignInterpretations</param>
+        /// <param name="secondSignInterpretation">
+        ///     The sign interpretation to be set as next sign interpretation for
+        ///     each member of firstSignInterpretations
+        /// </param>
         /// <returns></returns>
         public async Task LinkSignInterpretationsAsync(
             UserInfo editionUser,
@@ -453,53 +464,62 @@ namespace SQE.DatabaseAccess
             uint secondSignInterpretation)
         {
             await LinkSignInterpretationsAsync(editionUser, firstSignInterpretations,
-                new List<uint>() { secondSignInterpretation });
+                new List<uint> { secondSignInterpretation });
         }
 
         /// <summary>
-        /// Join firstSignInterpretation with each member of secondSignInterpretations
-        /// in the edition sign stream.
+        ///     Join firstSignInterpretation with each member of secondSignInterpretations
+        ///     in the edition sign stream.
         /// </summary>
         /// <param name="editionUser">The details of the edition and user</param>
         /// <param name="firstSignInterpretation">The sign interpretation to link to each member of secondSignInterpretations</param>
-        /// <param name="secondSignInterpretations">A list of sign interpretations to be set as next sign interpretation for
-        /// each member of firstSignInterpretations</param>
+        /// <param name="secondSignInterpretations">
+        ///     A list of sign interpretations to be set as next sign interpretation for
+        ///     each member of firstSignInterpretations
+        /// </param>
         /// <returns></returns>
         public async Task LinkSignInterpretationsAsync(
             UserInfo editionUser,
             uint firstSignInterpretation,
             IEnumerable<uint> secondSignInterpretations)
         {
-            await LinkSignInterpretationsAsync(editionUser, new List<uint>() { firstSignInterpretation },
+            await LinkSignInterpretationsAsync(editionUser, new List<uint> { firstSignInterpretation },
                 secondSignInterpretations);
         }
 
         /// <summary>
-        /// Join firstSignInterpretation to secondSignInterpretation
-        /// in the edition sign stream.
+        ///     Join firstSignInterpretation to secondSignInterpretation
+        ///     in the edition sign stream.
         /// </summary>
         /// <param name="editionUser">The details of the edition and user</param>
         /// <param name="firstSignInterpretation">The sign interpretations to link to secondSignInterpretation</param>
-        /// <param name="secondSignInterpretation">The sign interpretations to be set as next sign interpretation for
-        /// firstSignInterpretation</param>
+        /// <param name="secondSignInterpretation">
+        ///     The sign interpretations to be set as next sign interpretation for
+        ///     firstSignInterpretation
+        /// </param>
         /// <returns></returns>
         public async Task LinkSignInterpretationsAsync(
             UserInfo editionUser,
             uint firstSignInterpretation,
             uint secondSignInterpretation)
         {
-            await LinkSignInterpretationsAsync(editionUser, new List<uint>() { firstSignInterpretation },
-                new List<uint>() { secondSignInterpretation });
+            await LinkSignInterpretationsAsync(editionUser, new List<uint> { firstSignInterpretation },
+                new List<uint> { secondSignInterpretation });
         }
 
         /// <summary>
-        /// Join each member of firstSignInterpretations with each member of secondSignInterpretations
-        /// in the edition sign stream.
+        ///     Join each member of firstSignInterpretations with each member of secondSignInterpretations
+        ///     in the edition sign stream.
         /// </summary>
         /// <param name="editionUser">The details of the edition and user</param>
-        /// <param name="firstSignInterpretations">A list of sign interpretations to link to each member of secondSignInterpretations</param>
-        /// <param name="secondSignInterpretations">A list of sign interpretations to be set as next sign interpretation for
-        /// each member of firstSignInterpretations</param>
+        /// <param name="firstSignInterpretations">
+        ///     A list of sign interpretations to link to each member of
+        ///     secondSignInterpretations
+        /// </param>
+        /// <param name="secondSignInterpretations">
+        ///     A list of sign interpretations to be set as next sign interpretation for
+        ///     each member of firstSignInterpretations
+        /// </param>
         /// <returns></returns>
         public async Task UnlinkSignInterpretationsAsync(
             UserInfo editionUser,
@@ -507,17 +527,18 @@ namespace SQE.DatabaseAccess
             IEnumerable<uint> secondSignInterpretations)
         {
             var secondSignInterpretationsList = secondSignInterpretations.ToList();
-            var secondSignInterpretationsData = (new SignInterpretationData[secondSignInterpretationsList.Count]).ToList();
-            foreach (var (secondSignInterpretation, index) in secondSignInterpretationsList.Select((x, idx) => (x, idx)))
-            {
+            var secondSignInterpretationsData =
+                new SignInterpretationData[secondSignInterpretationsList.Count].ToList();
+            foreach (var (secondSignInterpretation, index) in secondSignInterpretationsList.Select((x, idx) => (x, idx))
+            )
                 secondSignInterpretationsData[index] = await _signInterpretationRepository
                     .GetSignInterpretationById(editionUser, secondSignInterpretation);
-            }
 
             // Do not process request if there is an attempt to unlink a control character
             if (secondSignInterpretationsData.Any(
                 x => x.Attributes.Any(
-                    y => y.AttributeValueId.HasValue && _signAttributeControlCharacters.Contains(y.AttributeValueId.Value)
+                    y => y.AttributeValueId.HasValue &&
+                         _signAttributeControlCharacters.Contains(y.AttributeValueId.Value)
                 )))
                 throw new StandardExceptions.InputDataRuleViolationException(
                     "cannot unlink control sign interpretations");
@@ -545,13 +566,15 @@ namespace SQE.DatabaseAccess
         }
 
         /// <summary>
-        /// Join each member of firstSignInterpretations with secondSignInterpretation
-        /// in the edition sign stream.
+        ///     Join each member of firstSignInterpretations with secondSignInterpretation
+        ///     in the edition sign stream.
         /// </summary>
         /// <param name="editionUser">The details of the edition and user</param>
         /// <param name="firstSignInterpretations">A list of sign interpretations to link to the secondSignInterpretation</param>
-        /// <param name="secondSignInterpretation">The sign interpretation to be set as next sign interpretation for
-        /// each member of firstSignInterpretations</param>
+        /// <param name="secondSignInterpretation">
+        ///     The sign interpretation to be set as next sign interpretation for
+        ///     each member of firstSignInterpretations
+        /// </param>
         /// <returns></returns>
         public async Task UnlinkSignInterpretationsAsync(
             UserInfo editionUser,
@@ -559,43 +582,47 @@ namespace SQE.DatabaseAccess
             uint secondSignInterpretation)
         {
             await UnlinkSignInterpretationsAsync(editionUser, firstSignInterpretations,
-                new List<uint>() { secondSignInterpretation });
+                new List<uint> { secondSignInterpretation });
         }
 
         /// <summary>
-        /// Join firstSignInterpretation with each member of secondSignInterpretations
-        /// in the edition sign stream.
+        ///     Join firstSignInterpretation with each member of secondSignInterpretations
+        ///     in the edition sign stream.
         /// </summary>
         /// <param name="editionUser">The details of the edition and user</param>
         /// <param name="firstSignInterpretation">The sign interpretation to link to each member of secondSignInterpretations</param>
-        /// <param name="secondSignInterpretations">A list of sign interpretations to be set as next sign interpretation for
-        /// each member of firstSignInterpretations</param>
+        /// <param name="secondSignInterpretations">
+        ///     A list of sign interpretations to be set as next sign interpretation for
+        ///     each member of firstSignInterpretations
+        /// </param>
         /// <returns></returns>
         public async Task UnlinkSignInterpretationsAsync(
             UserInfo editionUser,
             uint firstSignInterpretation,
             IEnumerable<uint> secondSignInterpretations)
         {
-            await UnlinkSignInterpretationsAsync(editionUser, new List<uint>() { firstSignInterpretation },
+            await UnlinkSignInterpretationsAsync(editionUser, new List<uint> { firstSignInterpretation },
                 secondSignInterpretations);
         }
 
         /// <summary>
-        /// Join firstSignInterpretation to secondSignInterpretation
-        /// in the edition sign stream.
+        ///     Join firstSignInterpretation to secondSignInterpretation
+        ///     in the edition sign stream.
         /// </summary>
         /// <param name="editionUser">The details of the edition and user</param>
         /// <param name="firstSignInterpretation">The sign interpretations to link to secondSignInterpretation</param>
-        /// <param name="secondSignInterpretation">The sign interpretations to be set as next sign interpretation for
-        /// firstSignInterpretation</param>
+        /// <param name="secondSignInterpretation">
+        ///     The sign interpretations to be set as next sign interpretation for
+        ///     firstSignInterpretation
+        /// </param>
         /// <returns></returns>
         public async Task UnlinkSignInterpretationsAsync(
             UserInfo editionUser,
             uint firstSignInterpretation,
             uint secondSignInterpretation)
         {
-            await UnlinkSignInterpretationsAsync(editionUser, new List<uint>() { firstSignInterpretation },
-                new List<uint>() { secondSignInterpretation });
+            await UnlinkSignInterpretationsAsync(editionUser, new List<uint> { firstSignInterpretation },
+                new List<uint> { secondSignInterpretation });
         }
 
         /// <summary>
@@ -730,7 +757,8 @@ namespace SQE.DatabaseAccess
             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // Remove all attributes
-                await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(editionUser, signInterpretationId);
+                await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(editionUser,
+                    signInterpretationId);
                 // Remove all commentaries
                 await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(editionUser,
                     signInterpretationId);
@@ -1086,7 +1114,8 @@ namespace SQE.DatabaseAccess
                         if (lastSignInterpretation.Attributes.Count == 0 ||
                             lastSignInterpretation.Attributes.Last().AttributeValueId != charAttribute.AttributeValueId)
                         {
-                            (charAttribute.AttributeValueString, charAttribute.AttributeId, charAttribute.AttributeString) = attributeDict.TryGetValue(
+                            (charAttribute.AttributeValueString, charAttribute.AttributeId,
+                                charAttribute.AttributeString) = attributeDict.TryGetValue(
                                 charAttribute.AttributeValueId.GetValueOrDefault(),
                                 out var val
                             )
@@ -1415,6 +1444,7 @@ namespace SQE.DatabaseAccess
                 // Package the new sign to return to user
                 return newSignId;
             }
+
             //     }
             // );
         }

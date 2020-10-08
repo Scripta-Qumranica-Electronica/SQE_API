@@ -5,9 +5,8 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
-using SQE.API.Server;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
@@ -19,7 +18,7 @@ namespace SQE.ApiTest
         private async Task<(uint editionId, string objectId)> GetEditionImagesWithArtefact()
         {
             var editionId = EditionHelpers.GetEditionId();
-            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId, new List<string>() { "masks" });
+            var req = new Get.V1_Editions_EditionId_ImagedObjects(editionId, new List<string> { "masks" });
             await req.SendAsync(_client, StartConnectionAsync);
             var (httpResponse, httpData, signalrData) =
                 (req.HttpResponseMessage, req.HttpResponseObject, req.SignalrResponseObject);
@@ -27,13 +26,12 @@ namespace SQE.ApiTest
             httpData.ShouldDeepEqual(signalrData);
             var imageWithMaskId = 0;
             foreach (var (io, index) in httpData.imagedObjects.Select((x, idx) => (x, idx)))
-            {
                 if (io.artefacts.Any())
                 {
                     imageWithMaskId = index;
                     break;
                 }
-            }
+
             return (editionId, httpData.imagedObjects[imageWithMaskId].id);
         }
 
@@ -143,7 +141,8 @@ namespace SQE.ApiTest
             request.HttpResponseMessage.EnsureSuccessStatusCode();
             Assert.NotEmpty(request.HttpResponseObject.imagedObjects);
             if (!optionalArtefacts)
-                foreach (var io in request.HttpResponseObject.imagedObjects) Assert.Null(io.artefacts);
+                foreach (var io in request.HttpResponseObject.imagedObjects)
+                    Assert.Null(io.artefacts);
             if (optionalArtefacts)
             {
                 var foundArtefact = false;
@@ -180,7 +179,8 @@ namespace SQE.ApiTest
         public async Task CanGetSpecifiedImagedObject()
         {
             // Arrange
-            var availableImagedObjects = await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
+            var availableImagedObjects =
+                await ImagedObjectHelpers.GetInstitutionImagedObjects("IAA", _client, StartConnectionAsync);
 
             // Act
             var imagedObject = await GetSpecificImagedObjectAsync(availableImagedObjects.institutionalImages.First().id,
@@ -196,7 +196,7 @@ namespace SQE.ApiTest
             // Note that "IAA-1039-1" had text fragment matches at the time this test was written.
             // Make sure to check the database for errors if this test fails.
             var textFragmentMatches =
-                    await GetImagedObjectTextFragmentMatchesAsync("IAA-1039-1", _client, StartConnectionAsync);
+                await GetImagedObjectTextFragmentMatchesAsync("IAA-1039-1", _client, StartConnectionAsync);
 
             Assert.NotNull(textFragmentMatches);
             Assert.NotEmpty(textFragmentMatches.matches);
@@ -206,7 +206,8 @@ namespace SQE.ApiTest
             Assert.NotEqual<uint>(0, textFragmentMatches.matches.First().textFragmentId);
         }
 
-        public async static Task<SimpleImageListDTO> GetSpecificImagedObjectAsync(string imagedObjectId, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
+        public static async Task<SimpleImageListDTO> GetSpecificImagedObjectAsync(string imagedObjectId,
+            HttpClient client, Func<string, Task<HubConnection>> signalr)
         {
             // Act
             var request = new Get.V1_ImagedObjects_ImagedObjectId(imagedObjectId);
@@ -218,7 +219,8 @@ namespace SQE.ApiTest
             return request.HttpResponseObject;
         }
 
-        public async static Task<ImagedObjectTextFragmentMatchListDTO> GetImagedObjectTextFragmentMatchesAsync(string imagedObjectId, HttpClient client, Func<string, Task<Microsoft.AspNetCore.SignalR.Client.HubConnection>> signalr)
+        public static async Task<ImagedObjectTextFragmentMatchListDTO> GetImagedObjectTextFragmentMatchesAsync(
+            string imagedObjectId, HttpClient client, Func<string, Task<HubConnection>> signalr)
         {
             // Act
             var request = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(imagedObjectId);

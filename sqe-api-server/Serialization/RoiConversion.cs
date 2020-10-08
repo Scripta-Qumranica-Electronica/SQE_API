@@ -19,7 +19,7 @@ namespace SQE.API.Server.Serialization
                 TranslateY = x.translate.y,
                 Shape = GeometryValidation.ValidatePolygon(x.shape, "roi"),
                 ValuesSet = x.valuesSet,
-                StanceRotation = x.stanceRotation,
+                StanceRotation = x.stanceRotation
             };
         }
 
@@ -35,7 +35,7 @@ namespace SQE.API.Server.Serialization
                 TranslateY = x.translate.y,
                 Shape = GeometryValidation.ValidatePolygon(x.shape, "roi"),
                 ValuesSet = x.valuesSet,
-                StanceRotation = x.stanceRotation,
+                StanceRotation = x.stanceRotation
             };
         }
 
@@ -55,12 +55,14 @@ namespace SQE.API.Server.Serialization
         //     };
         // }
 
-        public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(this IEnumerable<SetInterpretationRoiDTO> x)
+        public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(
+            this IEnumerable<SetInterpretationRoiDTO> x)
         {
             return x.Select(x => x.ToSignInterpretationRoiData());
         }
 
-        public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(this IEnumerable<UpdateInterpretationRoiDTO> x)
+        public static IEnumerable<SignInterpretationRoiData> ToSignInterpretationRoiData(
+            this IEnumerable<UpdateInterpretationRoiDTO> x)
         {
             return x.Select(x => x.ToSignInterpretationRoiData());
         }
@@ -87,7 +89,8 @@ namespace SQE.API.Server.Serialization
             };
         }
 
-        public static IEnumerable<UpdatedInterpretationRoiDTO> ToUpdateDTO(this IEnumerable<SignInterpretationRoiData> x)
+        public static IEnumerable<UpdatedInterpretationRoiDTO> ToUpdateDTO(
+            this IEnumerable<SignInterpretationRoiData> x)
         {
             return x.Select(x => x.ToUpdateDTO());
         }
@@ -113,7 +116,8 @@ namespace SQE.API.Server.Serialization
         //     return x.Select(x => x.ToSignInterpRoiData());
         // }
 
-        public static UpdateInterpretationRoiDTO ToUpdateInterpretationRoiDTO(this SetInterpretationRoiDTO x, uint roiId)
+        public static UpdateInterpretationRoiDTO ToUpdateInterpretationRoiDTO(this SetInterpretationRoiDTO x,
+            uint roiId)
         {
             return new UpdateInterpretationRoiDTO
             {

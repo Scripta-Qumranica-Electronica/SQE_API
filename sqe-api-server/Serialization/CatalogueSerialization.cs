@@ -55,6 +55,7 @@ namespace SQE.API.Server.Serialization
                 matches = catList.Select(x => x.ToDTO()).ToArray()
             };
         }
+
         //
         // public static InstitutionalImageDTO ToInstitutionalImageDTO(this CatalogueMatch cat)
         // {

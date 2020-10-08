@@ -423,7 +423,6 @@ WHERE edition_id = {editionUser.EditionId}");
             // Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
             var editors = await _getEditionEditors(editionUser.EditionId.Value);
             foreach (var editor in editors)
-            {
                 await ChangeEditionEditorRightsAsync(
                     editionUser,
                     editor.Email,
@@ -431,7 +430,6 @@ WHERE edition_id = {editionUser.EditionId}");
                     false,
                     editor.MayLock,
                     editor.IsAdmin);
-            }
 
             // Note: I had wrapped the following in a transaction, but this has the problem that it can lockup every
             // *_owner table in the entire database for a significant amount of time (sometimes 1000's of rows will be
@@ -460,9 +458,7 @@ WHERE edition_id = {editionUser.EditionId}");
                 // Loop over every table and remove every entry with the requested editionId
                 // Each individual delete can be async and happen concurrently
                 foreach (var dataTable in dataTables)
-                {
                     await DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser);
-                }
 
                 return null;
             }
@@ -927,7 +923,8 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
                             lastCharacters.Attributes.Add(lastCharacterAttribute);
                         }
 
-                        if (characterStreamPosition.PositionInStreamId == lastCharacterStreamPosition?.PositionInStreamId)
+                        if (characterStreamPosition.PositionInStreamId ==
+                            lastCharacterStreamPosition?.PositionInStreamId)
                             return scriptTextFragment;
 
                         lastCharacterStreamPosition = characterStreamPosition;

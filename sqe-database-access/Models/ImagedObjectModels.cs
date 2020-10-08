@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace SQE.DatabaseAccess.Models
+﻿namespace SQE.DatabaseAccess.Models
 {
     public class ImagedObject
     {
