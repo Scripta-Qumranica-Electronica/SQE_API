@@ -8,7 +8,6 @@ using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Polly;
 using Serilog;
-using IsolationLevel = System.Data.IsolationLevel;
 
 namespace SQE.DatabaseAccess
 {
