@@ -225,7 +225,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>
-        [Authorize]
+        [AllowAnonymous]
         public async Task<EditionScriptCollectionDTO> GetV1EditionsEditionIdScriptCollection(uint editionId)
 
         {
@@ -246,7 +246,7 @@ namespace SQE.API.Server.RealtimeHubs
         /// </summary>
         /// <param name="editionId">Unique Id of the desired edition</param>
         /// <returns></returns>
-        [Authorize]
+        [AllowAnonymous]
         public async Task<EditionScriptLinesDTO> GetV1EditionsEditionIdScriptLines(uint editionId)
 
         {
