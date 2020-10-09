@@ -25,6 +25,7 @@ namespace SQE.ApiTest
 
 
         [Fact]
+        [Trait("Category", "Authentication")]
         public async Task RejectUnauthenticatedGetRequest()
         {
             // Act
@@ -36,6 +37,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Authentication")]
         public async Task RejectUnauthenticatedPostRequests()
         {
             // Act
@@ -47,6 +49,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Authentication")]
         public async Task RejectUnauthenticatedPutRequests()
         {
             // Act
@@ -226,11 +229,13 @@ namespace SQE.ApiTest
         private async Task CleanupUserAccountAsync(UserDTO user)
         {
             const string deleteNewUserSQL = "DELETE FROM user WHERE email = @Email";
+            const string deleteUserRoleSQL = "DELETE FROM users_system_roles WHERE user_id = @UserID";
             const string deleteEmailTokenSQL = "DELETE FROM user_email_token WHERE user_id = @UserId";
             var deleteEmailTokenParams = new DynamicParameters();
             deleteEmailTokenParams.Add("@UserId", user.userId);
             deleteEmailTokenParams.Add("@Email", user.email);
             await _db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
+            await _db.RunExecuteAsync(deleteUserRoleSQL, deleteEmailTokenParams);
             await _db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
         }
 
@@ -239,6 +244,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "User Account")]
         public async Task AccountDetailsUpdateFailsWithWrongPassword()
         {
             var user = new NewUserRequestDTO(
@@ -281,6 +287,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "User Account")]
         public async Task AccountPasswordUpdateFailsWithWrongEnteredPassword()
         {
             var user = new NewUserRequestDTO(
@@ -322,6 +329,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "User Account")]
         public async Task CanRegisterUserAccount()
         {
             // ARRANGE
@@ -373,6 +381,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "User Account")]
         public async Task CanResendAccountActivation()
         {
             // ARRANGE
@@ -419,6 +428,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "User Account")]
         public async Task CanUpdateDetailsBeforeActivation()
         {
             UserDTO updatedUser = null;
@@ -464,6 +474,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "User Account")]
         [InlineData(true)]
         [InlineData(false)]
         public async Task ChangeActivatedAccountPassword(bool realtime)
@@ -521,6 +532,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "User Account")]
         [InlineData(true)]
         [InlineData(false)]
         public async Task ChangeActivatedAccountUserDetails(bool realtime)
@@ -588,6 +600,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "User Account")]
         [InlineData(false)]
         [InlineData(true)]
         public async Task ChangeActivatedAccountUserDetailsWithoutEmail(bool realtime)
@@ -651,6 +664,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "User Account")]
         [InlineData(false)]
         [InlineData(true)]
         public async Task ChangeUnactivatedAccountEmail(bool realtime)
@@ -704,6 +718,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "User Account")]
         public async Task DontAllowDuplicateAccounts()
         {
             // Arrange
@@ -723,6 +738,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Authentication")]
         public async Task DontAllowUnauthenticatedUsersToHaveJwt()
         {
             // Arrange
@@ -750,6 +766,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Authentication")]
         public async Task NonexistentAccountsShouldNotLogin()
         {
             // Arrange
@@ -770,6 +787,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "User Account")]
         [InlineData(false)]
         [InlineData(true)]
         public async Task ResetActivatedAccountPassword(bool realtime)
@@ -836,6 +854,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "User Account")]
         public async Task CanGetUserDetails()
         {
             // Arrange

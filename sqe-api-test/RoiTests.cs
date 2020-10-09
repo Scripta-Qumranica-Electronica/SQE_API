@@ -16,6 +16,7 @@ namespace SQE.ApiTest
     public partial class WebControllerTest
     {
         [Fact]
+        [Trait("Category", "Roi")]
         public async Task CanCreateEditionRoi()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -26,6 +27,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Roi")]
         public async Task CanBatchCreateEditionRoi()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -36,6 +38,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Roi")]
         public async Task CanGetEditionRoi()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -54,6 +57,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Roi")]
         public async Task CanDeleteEditionRoi()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -93,12 +97,14 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Roi")]
         public async Task CanUpdateEditionRoi()
         {
             await UpdateEditionRoi(false);
         }
 
         [Fact]
+        [Trait("Category", "Roi")]
         public async Task CanBatchUpdateEditionRoi()
         {
             await UpdateEditionRoi(true);
@@ -171,6 +177,7 @@ namespace SQE.ApiTest
         }
 
         [Theory]
+        [Trait("Category", "Roi")]
         [InlineData(true)]
         [InlineData(false)]
         public async Task CanBatchEditRois(bool realtime)

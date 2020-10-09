@@ -260,6 +260,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "ArtefactGroup")]
         [InlineData(true)]
         [InlineData(false)]
         public async Task CanCreateAndDeleteArtefactGroups(bool realtime)
@@ -307,6 +308,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "ArtefactGroup")]
         [InlineData(true)]
         [InlineData(false)]
         public async Task CannotPerformBadUpdateToArtefactGroup(bool realtime)
@@ -384,6 +386,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "ArtefactGroup")]
         [InlineData(true)]
         [InlineData(false)]
         public async Task CannotReuseArtefactsInArtefactGroup(bool realtime)
@@ -458,6 +461,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Theory]
+        [Trait("Category", "ArtefactGroup")]
         [InlineData(true)]
         [InlineData(false)]
         public async Task CanUpdateArtefactGroups(bool realtime)

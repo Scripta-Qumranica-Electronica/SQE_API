@@ -105,7 +105,7 @@ namespace SQE.DatabaseAccess
                         Comment = comment,
                         EditionId = editionId,
                         UserId = userId
-                    })).ToList();
+                    })).AsList();
                 var editionCatalogueId = existingEditionCats.Any()
                     ? existingEditionCats.First().IaaEditionCatalogId
                     : (uint?)null;

@@ -242,7 +242,7 @@ namespace SQE.DatabaseAccess
         }
 
         // Set the _connectionString for this class and the ConnectionString of the underlying MySqlConnection.
-        public sealed override string ConnectionString
+        public override string ConnectionString
         {
             get => _connectionString;
 
@@ -345,7 +345,7 @@ namespace SQE.DatabaseAccess
             set => _underlyingSqlCommand.CommandType = value;
         }
 
-        protected sealed override DbConnection DbConnection
+        protected override DbConnection DbConnection
         {
             get => _underlyingSqlCommand.Connection;
             set => _underlyingSqlCommand.Connection = (MySqlConnection)value; // Cast to a MySqlConnection for safety
@@ -353,7 +353,7 @@ namespace SQE.DatabaseAccess
 
         protected override DbParameterCollection DbParameterCollection => _underlyingSqlCommand.Parameters;
 
-        protected sealed override DbTransaction DbTransaction
+        protected override DbTransaction DbTransaction
         {
             get => _underlyingSqlCommand.Transaction;
             set => _underlyingSqlCommand.Transaction =

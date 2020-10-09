@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
@@ -34,7 +35,7 @@ namespace SQE.DatabaseAccess
         {
             // We use several existing quick functions to get the specifics of a sign interpretation,
             // so wrap it in a transaction to make sure the result is consistent.
-            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            using (var transactionScope = AsyncFlowTransaction.GetScope())
             using (var conn = OpenConnection())
             {
                 var attributes =
@@ -44,6 +45,8 @@ namespace SQE.DatabaseAccess
                         signInterpretationId);
                 var roiIds =
                     await _roiRepository.GetSignInterpretationRoisIdsByInterpretationId(user, signInterpretationId);
+
+                // TODO: perhaps create method that does can get all the ROIs with one query
                 var rois = new SignInterpretationRoiData[roiIds.Count];
                 foreach (var (roiId, index) in roiIds.Select((x, idx) => (x, idx)))
                     rois[index] = await _roiRepository.GetSignInterpretationRoiByIdAsync(user, roiId);

@@ -246,4 +246,15 @@ FROM edition_editor
 JOIN user USING(user_id)
 WHERE edition_editor.edition_id = @EditionId";
     }
+
+    internal static class SetUserSystemRole
+    {
+        public const string GetQuery = @"
+INSERT INTO users_system_roles (user_id, system_roles_id)
+SELECT user_id, system_roles_id
+FROM system_roles
+JOIN user_email_token ON user_email_token.token = @Token
+WHERE system_roles.role_title = @SystemRole
+ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)";
+    }
 }

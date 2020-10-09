@@ -36,6 +36,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void AutoFixesBadInnerOuterPolys()
         {
             const string inputPoly =
@@ -46,6 +47,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void DoesNotSimplifyMinuteFeatures()
         {
             var inputPoly = "POLYGON ((0 0,0.000000000001 5,0 10,10 10,9.99999999999 5,10 0,0 0))";
@@ -53,6 +55,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesAdjacentInnerRingsPolys()
         {
             const string inputPoly = "POLYGON((0 0,10 0,10 10,0 10,0 0),(1 1,1 8,3 8,3 1,1 1),(3 1,3 8,5 8,5 1,3 1))";
@@ -62,6 +65,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesDanglingEdgeErrorPoly()
         {
             const string inputPoly = "POLYGON((0 0, 10 0, 10 10, 15 5, 10 10, 0 10, 0 0))";
@@ -70,6 +74,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesInnerOuterEdgeErrorPoly()
         {
             const string inputPoly = "POLYGON((0 0, 10 0, 10 10, 0 10, 0 0),(5 2,5 7,10 7, 10 2, 5 2))";
@@ -79,6 +84,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesNestedInnerPolys()
         {
             const string inputPoly =
@@ -88,6 +94,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesOpenPoly()
         {
             const string inputPoly = "POLYGON((0 0, 10 0, 10 10, 0 10))";
@@ -96,6 +103,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesSelfIntersectingErrorPoly1()
         {
             var inputPoly =
@@ -106,6 +114,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesSelfIntersectingErrorPoly2()
         {
             var inputPoly = "POLYGON ((0 0, 15 20, 20 30, 25 45, 30 100, 45 40, 47 0, 50 1, 55 5, 50 10, 45 5, 0 0))";
@@ -115,6 +124,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesSelfIntersectingErrorPoly3()
         {
             var inputPoly =
@@ -125,6 +135,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesUnclosedPolys()
         {
             const string inputPoly = "POLYGON ((0 0, 0 200, 200 200, 200 0), (50 150, 150 150, 150 50, 50 50))";
@@ -134,6 +145,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesVeryComplexBadPolys()
         {
             var inputPoly =
@@ -144,6 +156,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void FixesWrongOrientationPolys()
         {
             const string inputPoly = "POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0))";
@@ -152,6 +165,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void MergesVeryClosePolys()
         {
             const string inputPoly = "POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0),(11 11, 11 20, 20 20, 20 11, 11 11))";
@@ -161,6 +175,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void RemovesUnneededPoints()
         {
             var inputPoly = "POLYGON ((0 0,5 0,10 0,10 10,0 10,0 0))";
@@ -169,6 +184,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void RemovesUnneededPointsFromFixedPoly()
         {
             var inputPoly = "POLYGON ((0 0,5 0,10 0,0 10,5 10,10 10,0 0))";
@@ -178,6 +194,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void ValidDecimalAttributeForPrecisionAndScale()
         {
             var errorThrown = false;
@@ -214,6 +231,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Polygon Validation")]
         public void ValidDecimalAttributeRejectsInvalidDecimal()
         {
             // Set decimal precision to 4 places to the left of decimal point and 2 places to its right

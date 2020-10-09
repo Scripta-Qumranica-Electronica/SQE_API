@@ -16,6 +16,7 @@ namespace SQE.ApiTest
         // The tests here are geared towards checking the API endpoints
 
         [Fact]
+        [Trait("Category", "Utilities")]
         public async Task CanRecognizeValidWktPolygons()
         {
             var goodPolygon = new WktPolygonDTO
@@ -40,6 +41,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Utilities")]
         public async Task RepairsInvalidWktPolygons()
         {
             var badPolygon = new WktPolygonDTO

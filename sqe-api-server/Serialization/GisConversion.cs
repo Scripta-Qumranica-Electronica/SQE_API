@@ -4,6 +4,7 @@ using NetTopologySuite.Geometries.Utilities;
 using NetTopologySuite.IO;
 using NetTopologySuite.Operation.Union;
 using SQE.API.DTO;
+using SQE.API.Server.Helpers;
 using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Serialization
@@ -47,9 +48,6 @@ namespace SQE.API.Server.Serialization
         /// <returns></returns>
         public static ScriptArtefactCharactersDTO ToDTO(this ScriptArtefactCharacters sac)
         {
-            // TODO: Check on the thread safety of WKTWriter and WKBReader (maybe we can make this more efficient).
-            var wkw = new WKTWriter();
-            var wbr = new WKBReader();
             return new ScriptArtefactCharactersDTO
             {
                 artefactId = sac.ArtefactId,
@@ -61,7 +59,7 @@ namespace SQE.API.Server.Serialization
                     character = x.SignInterpretationCharacter.ToString(),
                     attributes = x.Attributes.Select(y => y.ToDTO()).ToArray(),
                     nextSignInterpretations = x.NextCharacters.Select(z => z.ToDTO()).ToArray(),
-                    rois = x.Rois.Take(1).Select(a => new InterpretationRoiDTO
+                    rois = x.Rois.Select(a => new InterpretationRoiDTO
                     {
                         artefactId = sac.ArtefactId,
                         interpretationRoiId = a.SignInterpretationRoiId,
@@ -69,24 +67,46 @@ namespace SQE.API.Server.Serialization
                         stanceRotation = a.RoiRotate,
                         translate = null,
                         // Gather all the ROI shapes into a single (multi)polygon
-                        shape = wkw.Write(
-                            new CascadedPolygonUnion(x.Rois
-                                .Select(h =>
-                                {
-                                    var poly = wbr.Read(h.RoiShape);
-                                    // Each individual ROI should have its translate applied
-                                    var tr = new AffineTransformation();
-                                    tr.Translate(h.RoiTranslateX, h.RoiTranslateY);
-                                    return tr.Transform(poly);
-                                })
-                                // TODO: make sure all values are valid in the database, then probably remove this check
-                                .Where(i => i.IsValid && !i.IsEmpty)
-                                .ToList()).Union()) // Union applies the CascadedPolygonUnion
+                        shape = MergeSignInterpretationRois(x.Rois) // Union applies the CascadedPolygonUnion
                     }).ToArray() // The rois attribute must be a list
                 }).ToList() // The characters attribute is a list
             };
         }
 
+        private static string MergeSignInterpretationRois(IEnumerable<SpatialRoi> rois)
+        {
+            if (!rois.Any())
+                return null;
+
+            // TODO: Check on the thread safety of WKTWriter and WKBReader (maybe we can make this more efficient).
+            var wkw = new WKTWriter();
+            var wbr = new WKBReader();
+            var positionedRois = rois
+                .Select(h =>
+                {
+                    var poly = wbr.Read(h.RoiShape);
+                    // Each individual ROI should have its translate applied
+                    var tr = new AffineTransformation();
+                    tr.Translate(h.RoiTranslateX, h.RoiTranslateY);
+
+                    // It can happen that a polygon can be valid, but after being translated it becomes
+                    // invalid.  This is an error in NetTopology Suite and should be reported.
+                    // Check here and repair if necessary.
+                    var movedPoly = tr.Transform(poly);
+                    if (movedPoly.IsValid) return movedPoly;
+
+                    var wkr = new WKTReader();
+                    movedPoly = wkr.Read(GeometryValidation.ValidatePolygon(movedPoly.ToString(), "roi", true));
+                    return movedPoly;
+                })
+                // TODO: make sure all values are valid in the database, then probably remove this check
+                .Where(i => !i.IsEmpty);
+            var mergePolys = new CascadedPolygonUnion(positionedRois.ToList());
+            var mergedPolys = mergePolys.Union();
+
+            var wktString = wkw.Write(mergedPolys);
+            return wktString;
+        }
         /// <summary>
         ///     Outputs a TransformationDTO
         /// </summary>

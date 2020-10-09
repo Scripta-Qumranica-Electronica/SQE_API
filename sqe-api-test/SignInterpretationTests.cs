@@ -48,6 +48,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanAddAttributeToEdition()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -111,6 +112,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanCreateNewAttributeForSignInterpretation()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -161,6 +163,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanCreateAndDeleteSignInterpretation()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -300,6 +303,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanLinkSignInterpretations()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -353,6 +357,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanUnlinkSignInterpretations()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -405,6 +410,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanCreateSignInterpretationCommentary()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -482,6 +488,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanDeleteAttributeFromEdition()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -524,6 +531,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanDeleteAttributeFromSignInterpretation()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -607,6 +615,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanGetAllEditionSignInterpretationAttributes()
         {
             // Arrange
@@ -636,6 +645,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanGetAttributesOfSpecificSignInterpretation()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -668,6 +678,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanUpdateAttributeInEdition()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -789,6 +800,7 @@ namespace SQE.ApiTest
         // }
 
         [Fact]
+        [Trait("Category", "Sign Interpretation")]
         public async Task CanUpdateAttributeOfSignInterpretation()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))

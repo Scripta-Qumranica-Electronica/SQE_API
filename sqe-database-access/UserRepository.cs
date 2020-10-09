@@ -436,6 +436,9 @@ namespace SQE.DatabaseAccess
                 if (confirmRegistration != 1)
                     throw new StandardExceptions.ImproperInputDataException("user account activation token");
 
+                // Set the user's system role
+                await SetNewUserRole(token);
+
                 // Get all Activate tokens for this user
                 var tokens = await connection.QueryAsync<Guid>(
                     GetTokensQuery.GetQuery,
@@ -453,6 +456,30 @@ namespace SQE.DatabaseAccess
                     { Tokens = tokens, Type = CreateUserEmailTokenQuery.Activate }
                 );
                 transactionScope.Complete();
+            }
+        }
+
+        /// <summary>
+        /// When a new user confirms registration, they must be assigned the default user role
+        /// for a registered user.  This function receives the registration token and sets
+        /// the necessary system role for the new user.
+        /// </summary>
+        /// <param name="token">Registration token from the new user who is confirming registration</param>
+        /// <returns></returns>
+        /// <exception cref="StandardExceptions.DataNotWrittenException">The role could not be added for the new user</exception>
+        private async Task SetNewUserRole(string token)
+        {
+            using (var connection = OpenConnection())
+            {
+                var setUserRole = await connection.ExecuteAsync(SetUserSystemRole.GetQuery, new
+                {
+                    Token = token,
+                    SystemRole = "REGISTERED_USER",
+                });
+
+                // Confirm the entry was written
+                if (setUserRole != 1)
+                    throw new StandardExceptions.DataNotWrittenException("set user role");
             }
         }
 

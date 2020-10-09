@@ -116,6 +116,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanAdminShareEdition()
         {
             // Arrange
@@ -188,6 +189,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanChangeEditionSharePermissions()
         {
             // Arrange
@@ -306,6 +308,7 @@ namespace SQE.ApiTest
         // TODO: write the rest of the tests.
         // TODO: finish updating tests to use new request objects.
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task CanDeleteEditionAsAdmin()
         {
             // Arrange
@@ -344,6 +347,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task CanDuplicateCopiedEdition()
         {
             // ARRANGE
@@ -358,6 +362,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanLockableShareEdition()
         {
             // Arrange
@@ -398,6 +403,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanNotAdminWithoutReadShareEdition()
         {
             // Arrange
@@ -476,6 +482,7 @@ namespace SQE.ApiTest
 
         // TODO: finish updating test to use new request objects.
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task CanNotDeleteEditionWhenAnonymous()
         {
             // Arrange
@@ -507,6 +514,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanNotWriteWithoutReadShareEdition()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -579,6 +587,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanProperlyDeleteSharedEdition()
         {
             // Arrange
@@ -706,6 +715,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanViewOutstandingShareInvitations()
         {
             // Arrange
@@ -765,6 +775,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanViewOutstandingShareRequests()
         {
             // Arrange
@@ -826,6 +837,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Edition Sharing")]
         public async Task CanWriteShareEdition()
         {
             // Arrange
@@ -918,6 +930,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task CreateEdition()
         {
             // ARRANGE (with name)
@@ -976,6 +989,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task GetAllEditionsUnauthenticated()
         {
             // ARRANGE
@@ -998,6 +1012,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task GetOneEditionUnauthenticated()
         {
             // ARRANGE
@@ -1024,6 +1039,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task GetPrivateEditions()
         {
             // ARRANGE
@@ -1077,6 +1093,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task RefuseUnauthenticatedEditionWrite()
         {
             // ARRANGE
@@ -1112,6 +1129,7 @@ namespace SQE.ApiTest
         /// </summary>
         /// <returns></returns>
         [Fact]
+        [Trait("Category", "Edition")]
         public async Task UpdateEdition()
         {
             // ARRANGE
@@ -1167,6 +1185,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Edition Script")]
         public async Task CanGetEditionScriptChart()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -1207,6 +1226,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Edition Script")]
         public async Task CanGetEditionLineScriptChart()
         {
             using (var editionCreator = new EditionHelpers.EditionCreator(_client, StartConnectionAsync))

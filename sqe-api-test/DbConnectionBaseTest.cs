@@ -91,6 +91,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Database Retries")]
         public void RetryPoliciesShouldNotRepeat()
         {
             // Arrange
@@ -110,6 +111,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Database Retries")]
         public async Task RetryPoliciesShouldRepeat()
         {
             // Arrange
@@ -187,6 +189,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Database Retries")]
         public async Task ShortCircuitShouldEngage()
         {
             // Arrange
@@ -269,6 +272,7 @@ namespace SQE.ApiTest
         }
 
         [Fact]
+        [Trait("Category", "Database Retries")]
         public void ShortCircuitShouldNotEngage()
         {
             // Arrange
