@@ -1006,7 +1006,6 @@ namespace SQE.ApiTest
             Assert.True(msg.editions.Count > 0);
         }
 
-        // TODO: finish updating test to use new request objects.
         /// <summary>
         ///     Check if we can get editions when unauthenticated
         /// </summary>
@@ -1016,21 +1015,23 @@ namespace SQE.ApiTest
         public async Task GetOneEditionUnauthenticated()
         {
             // ARRANGE
-            const string url = "/v1/editions/1";
+            const uint editionId = 1;
+            const string necessaryCCLicenseText =
+            @"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. 
+To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/4.0/legalcode 
+or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.";
 
             // Act
-            var (response, msg) = await Request.SendHttpRequestAsync<string, EditionGroupDTO>(
-                _client,
-                HttpMethod.Get,
-                url,
-                null
-            );
-            response.EnsureSuccessStatusCode();
+            var editionRequest = new Get.V1_Editions_EditionId(editionId);
+            await editionRequest.SendAsync(_client, StartConnectionAsync);
+            editionRequest.HttpResponseMessage.EnsureSuccessStatusCode();
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("application/json; charset=utf-8", response.Content.Headers.ContentType.ToString());
-            Assert.NotNull(msg.primary.name);
+            Assert.Equal("application/json; charset=utf-8", editionRequest.HttpResponseMessage.Content.Headers.ContentType.ToString());
+            Assert.NotNull(editionRequest.HttpResponseObject.primary.name);
+            Assert.NotNull(editionRequest.HttpResponseObject.primary.copyright);
+            // Confirm we are transmitting the necessary CC-BY-SA license
+            Assert.Contains(necessaryCCLicenseText, editionRequest.HttpResponseObject.primary.copyright);
         }
 
         // TODO: finish updating test to use new request objects.
