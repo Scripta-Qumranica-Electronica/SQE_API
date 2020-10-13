@@ -917,7 +917,7 @@ namespace SQE.ApiTest
         {
             var longString = new string('a', 10000010);
             var data = $"{{\"data\":\"{longString}\"}}";
-            await WriteToUserDataStore(realtime, longString, false, HttpStatusCode.BadRequest);
+            await WriteToUserDataStore(realtime, data, false, HttpStatusCode.BadRequest);
         }
 
         private async Task WriteToUserDataStore(bool realtime, string dataString, bool shouldSucceed, HttpStatusCode? expectedError)

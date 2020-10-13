@@ -159,6 +159,8 @@ namespace SQE.API.DTO
     public class UserDataStoreDTO
     {
         [Required]
+        [StringLength(1000000, MinimumLength = 2,
+            ErrorMessage = "The submitted data may not be larger than 1000000 character")]
         public string data { get; set; }
     }
 

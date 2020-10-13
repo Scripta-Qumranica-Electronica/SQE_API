@@ -444,11 +444,6 @@ The Scripta Qumranica Electronica team</body></html>";
             if (!userId.HasValue)
                 throw new StandardExceptions.NoAuthorizationException();
 
-            // Make sure the string is not too long (we'll cap it at a million characters for now)
-            if (data.data.Length > 1000000)
-                throw new StandardExceptions.InputDataRuleViolationException(
-                    "data may not exceed 1,000,000 characters in the user personal data store");
-
             // Make sure the string is valid JSON (we don't use a guard in the database)
             try
             {
