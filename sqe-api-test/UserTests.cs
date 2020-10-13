@@ -896,7 +896,7 @@ namespace SQE.ApiTest
         public async Task CanWriteToUserDataStore(bool realtime)
         {
             const string data = "{\"data\":\"good stuff\"}";
-            WriteToUserDataStore(realtime, data, true, null);
+            await WriteToUserDataStore(realtime, data, true, null);
         }
 
         [Theory]
@@ -906,7 +906,7 @@ namespace SQE.ApiTest
         public async Task CanNotWriteInvalidJsonToUserDataStore(bool realtime)
         {
             const string data = "{\"data\":bad stuff\"}";
-            WriteToUserDataStore(realtime, data, false, HttpStatusCode.BadRequest);
+            await WriteToUserDataStore(realtime, data, false, HttpStatusCode.BadRequest);
         }
 
         [Theory]
@@ -917,10 +917,10 @@ namespace SQE.ApiTest
         {
             var longString = new string('a', 10000010);
             var data = $"{{\"data\":\"{longString}\"}}";
-            WriteToUserDataStore(realtime, longString, false, HttpStatusCode.BadRequest);
+            await WriteToUserDataStore(realtime, longString, false, HttpStatusCode.BadRequest);
         }
 
-        public async Task WriteToUserDataStore(bool realtime, string dataString, bool shouldSucceed, HttpStatusCode? expectedError)
+        private async Task WriteToUserDataStore(bool realtime, string dataString, bool shouldSucceed, HttpStatusCode? expectedError)
         {
             // Arrange
             var dataObj = new UserDataStoreDTO()

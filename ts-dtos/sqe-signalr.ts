@@ -591,7 +591,7 @@ export class SignalRUtilities {
     /**
 	 * Retrieve the information in the user's personal data store
 	 *
-	 * @param data - A JSON object with the data to store for the user
+	 *
 	 *
 	 */
     public async getV1UsersDataStore(): Promise<UserDataStoreDTO> {

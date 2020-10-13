@@ -420,7 +420,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// <summary>
         /// Retrieve the information from the user's data store
         /// </summary>
-        /// <param name="userID">Id of the user requesting the store</param>
+        /// <param name="userId">Id of the user requesting the store</param>
         /// <returns></returns>
         public async Task<UserDataStoreDTO> GetUserDataStoreAsync(uint? userId)
         {
@@ -437,6 +437,7 @@ The Scripta Qumranica Electronica team</body></html>";
         /// </summary>
         /// <param name="userId">Id of the user requesting an update to the store</param>
         /// <param name="data">The data in JSON format to be stored in the database</param>
+        /// <param name="clientId">Id of the calling signalr client</param>
         /// <returns></returns>
         public async Task<NoContentResult> SetUserDataStoreAsync(uint? userId, UserDataStoreDTO data, string clientId = null)
         {

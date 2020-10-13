@@ -228,7 +228,6 @@ namespace SQE.API.Server.RealtimeHubs
         /// <summary>
         /// Retrieve the information in the user's personal data store
         /// </summary>
-        /// <param name="data">A JSON object with the data to store for the user</param>
         /// <returns></returns>
         [Authorize]
         public async Task<UserDataStoreDTO> GetV1UsersDataStore()

@@ -150,7 +150,6 @@ namespace SQE.API.Server.HttpControllers
         /// <summary>
         /// Retrieve the information in the user's personal data store
         /// </summary>
-        /// <param name="data">A JSON object with the data to store for the user</param>
         /// <returns></returns>
         [HttpGet("v1/[controller]s/data-store")]
         public async Task<ActionResult<UserDataStoreDTO>> GetUserDataStore()
