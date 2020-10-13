@@ -225,5 +225,45 @@ namespace SQE.API.Server.RealtimeHubs
         }
 
 
+        /// <summary>
+        /// Retrieve the information in the user's personal data store
+        /// </summary>
+        /// <param name="data">A JSON object with the data to store for the user</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task<UserDataStoreDTO> GetV1UsersDataStore()
+
+        {
+            try
+            {
+                return await _userService.GetUserDataStoreAsync(_userService.GetCurrentUserId());
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
+        /// <summary>
+        /// Update the information in the user's personal data store
+        /// </summary>
+        /// <param name="data">A JSON object with the data to store for the user</param>
+        /// <returns></returns>
+        [Authorize]
+        public async Task PutV1UsersDataStore(UserDataStoreDTO data)
+
+        {
+            try
+            {
+                await _userService.SetUserDataStoreAsync(_userService.GetCurrentUserId(), data, clientId: Context.ConnectionId);
+            }
+            catch (ApiException err)
+            {
+                throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+            }
+        }
+
+
     }
 }

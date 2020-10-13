@@ -178,6 +178,7 @@ namespace SQE.API.Server
                                 Type = SecuritySchemeType.ApiKey
                             }
                         );
+
                         c.AddSecurityRequirement(
                             new OpenApiSecurityRequirement
                             {
@@ -260,7 +261,10 @@ namespace SQE.API.Server
 
                 // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
                 // specifying the Swagger JSON endpoint.
-                app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "SQE API v1"); });
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SQE API v1");
+                });
             }
 
             app.UseRouting();

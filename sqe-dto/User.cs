@@ -156,5 +156,11 @@ namespace SQE.API.DTO
         public string organization { get; set; }
     }
 
+    public class UserDataStoreDTO
+    {
+        [Required]
+        public string data { get; set; }
+    }
+
     #endregion Response DTO's
 }

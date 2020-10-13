@@ -228,15 +228,17 @@ namespace SQE.ApiTest
         /// <returns></returns>
         private async Task CleanupUserAccountAsync(UserDTO user)
         {
-            const string deleteNewUserSQL = "DELETE FROM user WHERE email = @Email";
-            const string deleteUserRoleSQL = "DELETE FROM users_system_roles WHERE user_id = @UserID";
-            const string deleteEmailTokenSQL = "DELETE FROM user_email_token WHERE user_id = @UserId";
+            const string deleteNewUserSql = "DELETE FROM user WHERE email = @Email";
+            const string deleteUserRoleSql = "DELETE FROM users_system_roles WHERE user_id = @UserID";
+            const string deleteUserDataSql = "DELETE FROM SQE.user_data_store WHERE user_id = @UserID";
+            const string deleteEmailTokenSql = "DELETE FROM user_email_token WHERE user_id = @UserId";
             var deleteEmailTokenParams = new DynamicParameters();
             deleteEmailTokenParams.Add("@UserId", user.userId);
             deleteEmailTokenParams.Add("@Email", user.email);
-            await _db.RunExecuteAsync(deleteEmailTokenSQL, deleteEmailTokenParams);
-            await _db.RunExecuteAsync(deleteUserRoleSQL, deleteEmailTokenParams);
-            await _db.RunExecuteAsync(deleteNewUserSQL, deleteEmailTokenParams);
+            await _db.RunExecuteAsync(deleteEmailTokenSql, deleteEmailTokenParams);
+            await _db.RunExecuteAsync(deleteUserRoleSql, deleteEmailTokenParams);
+            await _db.RunExecuteAsync(deleteUserDataSql, deleteEmailTokenParams);
+            await _db.RunExecuteAsync(deleteNewUserSql, deleteEmailTokenParams);
         }
 
         /// <summary>
@@ -871,6 +873,98 @@ namespace SQE.ApiTest
             // Assert
             request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
             Assert.Equal(user.Email, request.HttpResponseObject.email);
+        }
+
+        [Fact]
+        [Trait("Category", "User Account")]
+        public async Task CanGetUserStoreData()
+        {
+            // Act
+            var userDataRequest = new Get.V1_Users_DataStore();
+            await userDataRequest.SendAsync(_client, StartConnectionAsync, true);
+
+            // Assert
+            userDataRequest.HttpResponseMessage.EnsureSuccessStatusCode();
+            userDataRequest.HttpResponseObject.ShouldDeepEqual(userDataRequest.SignalrResponseObject);
+            Assert.Equal("{}", userDataRequest.HttpResponseObject.data);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        [Trait("Category", "User Account")]
+        public async Task CanWriteToUserDataStore(bool realtime)
+        {
+            const string data = "{\"data\":\"good stuff\"}";
+            WriteToUserDataStore(realtime, data, true, null);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        [Trait("Category", "User Account")]
+        public async Task CanNotWriteInvalidJsonToUserDataStore(bool realtime)
+        {
+            const string data = "{\"data\":bad stuff\"}";
+            WriteToUserDataStore(realtime, data, false, HttpStatusCode.BadRequest);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        [Trait("Category", "User Account")]
+        public async Task CanNotWriteTooLongJsonToUserDataStore(bool realtime)
+        {
+            var longString = new string('a', 10000010);
+            var data = $"{{\"data\":\"{longString}\"}}";
+            WriteToUserDataStore(realtime, longString, false, HttpStatusCode.BadRequest);
+        }
+
+        public async Task WriteToUserDataStore(bool realtime, string dataString, bool shouldSucceed, HttpStatusCode? expectedError)
+        {
+            // Arrange
+            var dataObj = new UserDataStoreDTO()
+            {
+                data = dataString,
+            };
+
+            // Act
+            var userDataPutRequest = new Put.V1_Users_DataStore(dataObj);
+            await userDataPutRequest.SendAsync(
+                realtime ? null : _client,
+                StartConnectionAsync,
+                true,
+                requestRealtime: realtime,
+                shouldSucceed: shouldSucceed);
+
+            // Assert
+            if (!realtime)
+            {
+                if (shouldSucceed)
+                    userDataPutRequest.HttpResponseMessage.EnsureSuccessStatusCode();
+                else
+                    Assert.Equal(expectedError, userDataPutRequest.HttpResponseMessage.StatusCode);
+            }
+
+            if (!shouldSucceed)
+                await CanGetUserStoreData();
+            else
+            {
+                var userDataRequest = new Get.V1_Users_DataStore();
+                await userDataRequest.SendAsync(_client, StartConnectionAsync, true);
+                userDataRequest.HttpResponseMessage.EnsureSuccessStatusCode();
+                userDataRequest.HttpResponseObject.ShouldDeepEqual(userDataRequest.SignalrResponseObject);
+                dataObj.ShouldDeepEqual(userDataRequest.HttpResponseObject);
+
+                // Cleanup
+                dataObj.data = "{}";
+                var cleanupRequest = new Put.V1_Users_DataStore(dataObj);
+                await cleanupRequest.SendAsync(
+                    realtime ? null : _client,
+                    StartConnectionAsync,
+                    true,
+                    requestRealtime: realtime);
+            }
         }
 
         private class UserObj

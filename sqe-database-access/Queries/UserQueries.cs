@@ -257,4 +257,30 @@ JOIN user_email_token ON user_email_token.token = @Token
 WHERE system_roles.role_title = @SystemRole
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)";
     }
+
+    internal static class CreateUserDataStoreEntry
+    {
+        public const string GetQuery = @"
+INSERT INTO user_data_store (user_id, data)
+SELECT user_id, @Data
+FROM user_email_token
+WHERE user_email_token.token = @Token
+ON DUPLICATE KEY UPDATE data=@Data";
+    }
+
+    internal static class GetInformationFromUserDataStore
+    {
+        public const string GetQuery = @"
+SELECT data
+FROM user_data_store
+WHERE user_id = @UserId";
+    }
+
+    internal static class SetInformationInUserDataStore
+    {
+        public const string GetQuery = @"
+UPDATE user_data_store
+SET data = @Data
+WHERE user_id = @UserId";
+    }
 }

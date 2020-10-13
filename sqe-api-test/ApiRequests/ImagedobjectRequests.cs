@@ -18,12 +18,17 @@ using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+
+
     public static partial class Get
     {
+
+
         public class V1_ImagedObjects_ImagedObjectId
-            : RequestObject<EmptyInput, SimpleImageListDTO>
+        : RequestObject<EmptyInput, SimpleImageListDTO>
         {
             private readonly string _imagedObjectId;
+
 
 
             /// <summary>
@@ -34,26 +39,31 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _imagedObjectId = imagedObjectId;
+
             }
+
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/imaged-object-id", $"/{_imagedObjectId}");
+                return RequestPath.Replace("/imaged-object-id", $"/{_imagedObjectId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _imagedObjectId);
             }
+
+
         }
 
         public class V1_Editions_EditionId_ImagedObjects_ImagedObjectId
-            : RequestObject<EmptyInput, ImagedObjectDTO>
+        : RequestObject<EmptyInput, ImagedObjectDTO>
         {
             private readonly uint _editionId;
             private readonly string _imagedObjectId;
             private readonly List<string> _optional;
+
 
 
             /// <summary>
@@ -63,27 +73,26 @@ namespace SQE.ApiTest.ApiRequests
             /// <param name="editionId">Unique Id of the desired edition</param>
             /// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
             /// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
-            public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(uint editionId, string imagedObjectId,
-                List<string> optional = null)
+            public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(uint editionId, string imagedObjectId, List<string> optional = null)
 
             {
                 _editionId = editionId;
                 _imagedObjectId = imagedObjectId;
                 _optional = optional;
+
             }
+
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                           .Replace("/imaged-object-id", $"/{_imagedObjectId}")
-                       + (_optional != null ? $"?optional={string.Join("&optional=", _optional)}" : "");
+                return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}").Replace("/imaged-object-id", $"/{_imagedObjectId.ToString()}")
+                    + (_optional != null ? $"?optional={string.Join("&optional=", _optional)}" : "");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
-                return signalR =>
-                    signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _imagedObjectId, _optional);
+                return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _imagedObjectId, _optional);
             }
 
             public override uint? GetEditionId()
@@ -95,10 +104,11 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_Editions_EditionId_ImagedObjects
-            : RequestObject<EmptyInput, ImagedObjectListDTO>
+        : RequestObject<EmptyInput, ImagedObjectListDTO>
         {
             private readonly uint _editionId;
             private readonly List<string> _optional;
+
 
 
             /// <summary>
@@ -112,13 +122,15 @@ namespace SQE.ApiTest.ApiRequests
             {
                 _editionId = editionId;
                 _optional = optional;
+
             }
+
 
 
             protected override string HttpPath()
             {
                 return RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-                       + (_optional != null ? $"?optional={string.Join("&optional=", _optional)}" : "");
+                    + (_optional != null ? $"?optional={string.Join("&optional=", _optional)}" : "");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
@@ -135,8 +147,24 @@ namespace SQE.ApiTest.ApiRequests
         }
 
         public class V1_ImagedObjects_Institutions
-            : RequestObject<EmptyInput, ImageInstitutionListDTO>
+        : RequestObject<EmptyInput, ImageInstitutionListDTO>
         {
+
+
+
+
+            /// <summary>
+            ///     Provides a list of all institutional image providers.
+            /// </summary>
+            public V1_ImagedObjects_Institutions()
+
+            {
+
+
+            }
+
+
+
             protected override string HttpPath()
             {
                 return RequestPath;
@@ -146,12 +174,15 @@ namespace SQE.ApiTest.ApiRequests
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
             }
+
+
         }
 
         public class V1_ImagedObjects_Institutions_InstitutionName
-            : RequestObject<EmptyInput, InstitutionalImageListDTO>
+        : RequestObject<EmptyInput, InstitutionalImageListDTO>
         {
             private readonly string _institutionName;
+
 
 
             /// <summary>
@@ -161,24 +192,29 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _institutionName = institutionName;
+
             }
+
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/institution-name", $"/{_institutionName}");
+                return RequestPath.Replace("/institution-name", $"/{_institutionName.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _institutionName);
             }
+
+
         }
 
         public class V1_ImagedObjects_ImagedObjectId_TextFragments
-            : RequestObject<EmptyInput, ImagedObjectTextFragmentMatchListDTO>
+        : RequestObject<EmptyInput, ImagedObjectTextFragmentMatchListDTO>
         {
             private readonly string _imagedObjectId;
+
 
 
             /// <summary>
@@ -190,18 +226,23 @@ namespace SQE.ApiTest.ApiRequests
 
             {
                 _imagedObjectId = imagedObjectId;
+
             }
+
 
 
             protected override string HttpPath()
             {
-                return RequestPath.Replace("/imaged-object-id", $"/{_imagedObjectId}");
+                return RequestPath.Replace("/imaged-object-id", $"/{_imagedObjectId.ToString()}");
             }
 
             public override Func<HubConnection, Task<T>> SignalrRequest<T>()
             {
                 return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _imagedObjectId);
             }
+
+
         }
     }
+
 }
