@@ -179,6 +179,7 @@ namespace SQE.API.Server.Services
                 editors.ToDictionary(editor => editor.EditorId.ToString(),
                     editor => new EditorDTO
                     {
+                        email = "", // For now we will hide the email address for privacy
                         forename = editor.Forename,
                         surname = editor.Surname,
                         organization = editor.Organization
@@ -335,6 +336,7 @@ namespace SQE.API.Server.Services
                     editor => editor.EditorId.ToString(),
                     editor => new EditorDTO
                     {
+                        email = "", // For now we will hide the email address for privacy
                         forename = editor.Forename,
                         surname = editor.Surname,
                         organization = editor.Organization
