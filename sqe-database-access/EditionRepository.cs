@@ -104,7 +104,7 @@ namespace SQE.DatabaseAccess
                                 ManuscriptMetricsEditor = editionGroup.ManuscriptMetricsEditor,
                                 Collaborators = editionGroup.Collaborators,
                                 Copyright =
-                                    null, //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+                                    null,//Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
                                 CopyrightHolder = editionGroup.CopyrightHolder,
                                 EditionDataEditorId = editionGroup.EditionDataEditorId,
                                 EditionId = editionGroup.EditionId,

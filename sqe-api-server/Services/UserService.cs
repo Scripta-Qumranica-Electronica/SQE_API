@@ -2,6 +2,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -56,6 +57,8 @@ namespace SQE.API.Server.Services
 
         Task<NoContentResult> RequestResetLostPasswordAsync(string email, string clientId = null);
         Task<NoContentResult> ResetLostPasswordAsync(string token, string password, string clientId = null);
+        Task<UserDataStoreDTO> GetUserDataStoreAsync(uint? userId);
+        Task<NoContentResult> SetUserDataStoreAsync(uint? userId, UserDataStoreDTO data, string clientId = null);
     }
 
     public class UserService : IUserService
@@ -411,6 +414,48 @@ The Scripta Qumranica Electronica team</body></html>";
                 emailBody.Replace("$User", name)
             );
 
+            return new NoContentResult();
+        }
+
+        /// <summary>
+        /// Retrieve the information from the user's data store
+        /// </summary>
+        /// <param name="userId">Id of the user requesting the store</param>
+        /// <returns></returns>
+        public async Task<UserDataStoreDTO> GetUserDataStoreAsync(uint? userId)
+        {
+            if (!userId.HasValue)
+                throw new StandardExceptions.NoAuthorizationException();
+            return new UserDataStoreDTO()
+            {
+                data = await _userRepository.GetUserDataStoreAsync(userId.Value)
+            };
+        }
+
+        /// <summary>
+        /// Set the information in the user's data store
+        /// </summary>
+        /// <param name="userId">Id of the user requesting an update to the store</param>
+        /// <param name="data">The data in JSON format to be stored in the database</param>
+        /// <param name="clientId">Id of the calling signalr client</param>
+        /// <returns></returns>
+        public async Task<NoContentResult> SetUserDataStoreAsync(uint? userId, UserDataStoreDTO data, string clientId = null)
+        {
+            if (!userId.HasValue)
+                throw new StandardExceptions.NoAuthorizationException();
+
+            // Make sure the string is valid JSON (we don't use a guard in the database)
+            try
+            {
+                var _ = JsonSerializer.Deserialize<object>(data.data);
+            }
+            catch (JsonException ex)
+            {
+                throw new StandardExceptions.InputDataRuleViolationException(
+                    $"data must be a valid JSON entity ({ex})");
+            }
+
+            await _userRepository.SetUserDataStoreAsync(userId.Value, data.data);
             return new NoContentResult();
         }
 

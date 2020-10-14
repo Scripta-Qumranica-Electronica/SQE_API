@@ -45,6 +45,8 @@ namespace SQE.DatabaseAccess
         Task ChangePasswordAsync(uint userId, string oldPassword, string newPassword);
         Task<DetailedUserWithToken> RequestResetForgottenPasswordAsync(string email);
         Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password);
+        Task<string> GetUserDataStoreAsync(uint userId);
+        Task SetUserDataStoreAsync(uint userId, string data);
     }
 
     public class UserRepository : DbConnectionBase, IUserRepository
@@ -439,6 +441,13 @@ namespace SQE.DatabaseAccess
                 // Set the user's system role
                 await SetNewUserRole(token);
 
+                // Create the user's data store
+                await connection.ExecuteAsync(CreateUserDataStoreEntry.GetQuery, new
+                {
+                    Token = token,
+                    Data = "{}",
+                });
+
                 // Get all Activate tokens for this user
                 var tokens = await connection.QueryAsync<Guid>(
                     GetTokensQuery.GetQuery,
@@ -637,6 +646,32 @@ namespace SQE.DatabaseAccess
 
                 transactionScope.Complete(); // Close the transaction
                 return detailedUserInfo;
+            }
+        }
+
+        public async Task<string> GetUserDataStoreAsync(uint userId)
+        {
+            using (var conn = OpenConnection())
+            {
+                return await conn.QuerySingleAsync<string>(GetInformationFromUserDataStore.GetQuery, new
+                {
+                    UserId = userId,
+                });
+            }
+        }
+
+        public async Task SetUserDataStoreAsync(uint userId, string data)
+        {
+            using (var conn = OpenConnection())
+            {
+                var insertData = await conn.ExecuteAsync(SetInformationInUserDataStore.GetQuery, new
+                {
+                    UserId = userId,
+                    Data = data,
+                });
+
+                if (insertData != 1)
+                    throw new StandardExceptions.DataNotWrittenException("insert into user data store");
             }
         }
 

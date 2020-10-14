@@ -110,13 +110,15 @@ namespace SQE.ApiTest.Helpers
         private static async Task CleanupUserAccountAsync(UserDTO user, DatabaseQuery db)
         {
             const string deleteNewUserSql = "DELETE FROM user WHERE email = @Email";
-            const string deleteUserRoleSQL = "DELETE FROM users_system_roles WHERE user_id = @UserID";
+            const string deleteUserRoleSql = "DELETE FROM users_system_roles WHERE user_id = @UserID";
+            const string deleteUserDataSql = "DELETE FROM SQE.user_data_store WHERE user_id = @UserID";
             const string deleteEmailTokenSql = "DELETE FROM user_email_token WHERE user_id = @UserId";
             var deleteEmailTokenParams = new DynamicParameters();
             deleteEmailTokenParams.Add("@UserId", user.userId);
             deleteEmailTokenParams.Add("@Email", user.email);
             await db.RunExecuteAsync(deleteEmailTokenSql, deleteEmailTokenParams);
-            await db.RunExecuteAsync(deleteUserRoleSQL, deleteEmailTokenParams);
+            await db.RunExecuteAsync(deleteUserRoleSql, deleteEmailTokenParams);
+            await db.RunExecuteAsync(deleteUserDataSql, deleteEmailTokenParams);
             await db.RunExecuteAsync(deleteNewUserSql, deleteEmailTokenParams);
         }
 

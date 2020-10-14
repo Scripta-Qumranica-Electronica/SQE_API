@@ -564,7 +564,10 @@ The Scripta Qumranica Electronica team</body></html>";
                 locked = model.Locked,
                 isPublic = model.IsPublic,
                 lastEdit = model.LastEdit,
-                copyright = model.Copyright,
+                copyright = model.Copyright ?? Licence.printLicence(
+                    model.CopyrightHolder,
+                    model.Collaborators,
+                    model.Editors),
                 shares = model.Editors.Select(x => new DetailedEditorRightsDTO
                 {
                     email = x.EditorEmail,

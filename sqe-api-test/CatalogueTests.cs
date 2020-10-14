@@ -85,34 +85,34 @@ namespace SQE.ApiTest
         }
 
         // TODO: the following test is correct, but the code in the API still needs to be fixed
-        // [Theory]
-        // [InlineData(true)]
-        // [InlineData(false)]
-        // public async Task CanConfirmAndUnconfirmImagedObjectTextFragmentMatch(bool realtime)
-        // {
-        //     // Arrange
-        //     const uint editionId = 894U;
-        //     var matches = await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfEdition(editionId, _client, StartConnectionAsync);
-        //     var firstUnconfirmedMatch = matches.matches.First(x => x.confirmed == null);
-        //
-        //     // Act
-        //     await CatalogueHelpers.ConfirmTextFragmentImagedObjectMatch(
-        //         editionId,
-        //         firstUnconfirmedMatch.matchId,
-        //         _client,
-        //         StartConnectionAsync,
-        //         realtime,
-        //         Request.DefaultUsers.User1);
-        //
-        //     await Task.Delay(150); // Wait a tiny amount of time so we don't go faster than MySQL Data resolution
-        //
-        //     await CatalogueHelpers.UnconfirmTextFragmentImagedObjectMatch(
-        //         editionId,
-        //         firstUnconfirmedMatch.matchId,
-        //         _client,
-        //         StartConnectionAsync,
-        //         realtime,
-        //         Request.DefaultUsers.User1);
-        // }
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task CanConfirmAndUnconfirmImagedObjectTextFragmentMatch(bool realtime)
+        {
+            // Arrange
+            const uint editionId = 894U;
+            var matches = await CatalogueHelpers.GetImagedObjectsAndTextFragmentsOfEdition(editionId, _client, StartConnectionAsync);
+            var firstUnconfirmedMatch = matches.matches.First(x => x.confirmed == null);
+
+            // Act
+            await CatalogueHelpers.ConfirmTextFragmentImagedObjectMatch(
+                editionId,
+                firstUnconfirmedMatch.matchId,
+                _client,
+                StartConnectionAsync,
+                realtime,
+                Request.DefaultUsers.User1);
+
+            await Task.Delay(150); // Wait a tiny amount of time so we don't go faster than MySQL Data resolution
+
+            await CatalogueHelpers.UnconfirmTextFragmentImagedObjectMatch(
+                editionId,
+                firstUnconfirmedMatch.matchId,
+                _client,
+                StartConnectionAsync,
+                realtime,
+                Request.DefaultUsers.User1);
+        }
     }
 }

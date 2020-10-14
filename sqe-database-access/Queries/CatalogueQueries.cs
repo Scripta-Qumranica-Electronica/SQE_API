@@ -75,7 +75,8 @@ JOIN (
 ) AS iecc2 ON iecc2.iaa_edition_catalog_to_text_fragment_id = image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id";
 
         private const string allFilter =
-            @"JOIN SQE.iaa_edition_catalog_to_text_fragment_confirmation AS iecc USING(iaa_edition_catalog_to_text_fragment_id)";
+            @"JOIN SQE.iaa_edition_catalog_to_text_fragment_confirmation AS iecc1 USING(iaa_edition_catalog_to_text_fragment_id)
+JOIN SQE.iaa_edition_catalog_to_text_fragment_confirmation AS iecc2 USING(iaa_edition_catalog_to_text_fragment_id)";
 
         private const string editionFilter = "WHERE image_text_fragment_match_catalogue.edition_id = @EditionId";
 
