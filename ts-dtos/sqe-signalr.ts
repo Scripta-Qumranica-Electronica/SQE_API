@@ -215,8 +215,8 @@ export class SignalRUtilities {
 
     /**
 	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	 * it attempts to construct a valid polygon that matches the original
-	 * as closely as possible.
+	 *		 it attempts to construct a valid polygon that matches the original
+	 *		 as closely as possible.
 	 *
 	 * @param payload - JSON object with the WKT polygon to validate
 	 *
@@ -227,8 +227,8 @@ export class SignalRUtilities {
 
     /**
 	 * Override the default OnConnectedAsync to add the connection to the user's user_id
-	 * group if the user is authenticated. The user_id group is used for messages that
-	 * are above the level of a single edition.
+	 *		 group if the user is authenticated. The user_id group is used for messages that
+	 *		 are above the level of a single edition.
 	 *
 	 *
 	 *
@@ -280,7 +280,7 @@ export class SignalRUtilities {
 
     /**
 	 * Get a list of requests issued by the current user for other users
-	 * to become editors of a shared edition
+	 *		 to become editors of a shared edition
 	 *
 	 *
 	 *
@@ -387,7 +387,7 @@ export class SignalRUtilities {
 
     /**
 	 * Provides spatial data for all letters in the edition organized and oriented
-	 * by lines.
+	 *		 by lines.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 *
@@ -457,9 +457,9 @@ export class SignalRUtilities {
 	 * @param editionId - Id of the edition
 	 * @param textFragmentId - Id of the text fragment
 	 * @returns - 
-	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *             sequence
-	 *         
+	 *		  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *		  sequence
+	 *		 
 	 */
     public async getV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number): Promise<TextEditionDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
@@ -471,9 +471,9 @@ export class SignalRUtilities {
 	 * @param editionId - Id of the edition
 	 * @param lineId - Id of the line
 	 * @returns - 
-	 *             A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *             sequence
-	 *         
+	 *		  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *		  sequence
+	 *		 
 	 */
     public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
@@ -484,9 +484,9 @@ export class SignalRUtilities {
 	 *
 	 * @param payload - JSON object with an email and password parameter
 	 * @returns - 
-	 *             A DetailedUserTokenDTO with a JWT for activated user accounts, or the email address of an unactivated user
-	 *             account
-	 *         
+	 *		  A DetailedUserTokenDTO with a JWT for activated user accounts, or the email address of an unactivated user
+	 *		  account
+	 *		 
 	 */
     public async postV1UsersLogin(payload: LoginRequestDTO): Promise<DetailedUserTokenDTO> {
         return await this._connection.invoke('PostV1UsersLogin', payload);
@@ -494,7 +494,7 @@ export class SignalRUtilities {
 
     /**
 	 * Allows a user who has not yet activated their account to change their email address. This will not work if the user
-	 * account associated with the email address has already been activated
+	 *		 account associated with the email address has already been activated
 	 *
 	 * @param payload - JSON object with the current email address and the new desired email address
 	 *
@@ -525,12 +525,12 @@ export class SignalRUtilities {
 
     /**
 	 * Updates a user's registration details. Note that the if the email address has changed, the account will be set to
-	 * inactive until the account is activated with the secret token.
+	 *		 inactive until the account is activated with the secret token.
 	 *
 	 * @param payload - 
-	 *             A JSON object with all data necessary to update a user account.  Null fields (but not empty
-	 *             strings!) will be populated with existing user data
-	 *         
+	 *		  A JSON object with all data necessary to update a user account.  Null fields (but not empty
+	 *		  strings!) will be populated with existing user data
+	 *		 
 	 * @returns - Returns a DetailedUserDTO with the updated user account details
 	 */
     public async putV1Users(payload: UserUpdateRequestDTO): Promise<DetailedUserDTO> {
@@ -579,7 +579,7 @@ export class SignalRUtilities {
 
     /**
 	 * Sends a new activation email for the user's account. This will not work if the user account associated with the
-	 * email address has already been activated.
+	 *		 email address has already been activated.
 	 *
 	 * @param payload - JSON object with the current email address and the new desired email address
 	 *
@@ -620,7 +620,7 @@ export class SignalRUtilities {
 
     /**
 	 * Provides information for the specified imaged object related to the specified edition, can include images and also
-	 * their masks with optional.
+	 *		 their masks with optional.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param imagedObjectId - Unique Id of the desired object from the imaging Institution
@@ -633,7 +633,7 @@ export class SignalRUtilities {
 
     /**
 	 * Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
-	 * optional.
+	 *		 optional.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param optional - Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks
@@ -811,7 +811,7 @@ export class SignalRUtilities {
 
     /**
 	 * Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-	 * by connecting all the deleted sign's next and previous nodes.
+	 *		 by connecting all the deleted sign's next and previous nodes.
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param signInterpretationId - ID of the sign interpretation being deleted
@@ -871,7 +871,7 @@ export class SignalRUtilities {
 
     /**
 	 * This changes the values of the specified sign interpretation attribute,
-	 * mainly used to change commentary.
+	 *		 mainly used to change commentary.
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param signInterpretationId - ID of the sign interpretation being altered
@@ -897,11 +897,11 @@ export class SignalRUtilities {
 
     /**
 	 * Creates a new artefact with the provided data.
-	 * If no mask is provided, a placeholder mask will be created with the values:
-	 * "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
-	 * every artefact). It is not recommended to leave the mask, name, or work status
-	 * blank or null. It will often be advantageous to leave the transformation null
-	 * when first creating a new artefact.
+	 *		 If no mask is provided, a placeholder mask will be created with the values:
+	 *		 "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
+	 *		 every artefact). It is not recommended to leave the mask, name, or work status
+	 *		 blank or null. It will often be advantageous to leave the transformation null
+	 *		 when first creating a new artefact.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param payload - A CreateArtefactDTO with the data for the new artefact
@@ -958,8 +958,8 @@ export class SignalRUtilities {
 
     /**
 	 * Provides a listing of text fragments that have text in the specified artefact.
-	 * With the optional query parameter "suggested", this endpoint will also return
-	 * any text fragment that the system suggests might have text in the artefact.
+	 *		 With the optional query parameter "suggested", this endpoint will also return
+	 *		 any text fragment that the system suggests might have text in the artefact.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param artefactId - Unique Id of the desired artefact
@@ -972,15 +972,15 @@ export class SignalRUtilities {
 
     /**
 	 * Updates the specified artefact.
-	 * There are many possible attributes that can be changed for
-	 * an artefact. The caller should only input only those that
-	 * should be changed. Attributes with a null value will be ignored.
-	 * For instance, setting the mask to null or "" will result in
-	 * no changes to the current mask, and no value for the mask will
-	 * be returned (or broadcast). Likewise, the transformation, name,
-	 * or status message may be set to null and no change will be made
-	 * to those entities (though any unchanged values will be returned
-	 * along with the changed values and also broadcast to co-editors).
+	 *		 There are many possible attributes that can be changed for
+	 *		 an artefact. The caller should only input only those that
+	 *		 should be changed. Attributes with a null value will be ignored.
+	 *		 For instance, setting the mask to null or "" will result in
+	 *		 no changes to the current mask, and no value for the mask will
+	 *		 be returned (or broadcast). Likewise, the transformation, name,
+	 *		 or status message may be set to null and no change will be made
+	 *		 to those entities (though any unchanged values will be returned
+	 *		 along with the changed values and also broadcast to co-editors).
 	 *
 	 * @param artefactId - Unique Id of the desired artefact
 	 * @param editionId - Unique Id of the desired edition
@@ -1025,8 +1025,8 @@ export class SignalRUtilities {
 
     /**
 	 * Creates a new artefact group with the submitted data.
-	 * The new artefact must have a list of artefacts that belong to the group.
-	 * It is not necessary to give the group a name.
+	 *		 The new artefact must have a list of artefacts that belong to the group.
+	 *		 It is not necessary to give the group a name.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param payload - Parameters of the new artefact group
@@ -1038,8 +1038,8 @@ export class SignalRUtilities {
 
     /**
 	 * Updates the details of an artefact group.
-	 * The artefact group will now only contain the artefacts listed in the JSON payload.
-	 * If the name is null, no change will be made, otherwise the name will also be updated.
+	 *		 The artefact group will now only contain the artefacts listed in the JSON payload.
+	 *		 If the name is null, no change will be made, otherwise the name will also be updated.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param artefactGroupId - Id of the artefact group to be updated

@@ -1,8 +1,8 @@
 namespace SQE.DatabaseAccess.Queries
 {
-    internal static class SignInterpretationQuery
-    {
-        public const string GetQuery = @"
+	internal static class SignInterpretationQuery
+	{
+		public const string GetQuery = @"
 SELECT DISTINCT sign_interpretation.sign_interpretation_id AS SignInterpretationId,
                 sign_interpretation.`character` AS `Character`,
                 sign_interpretation.is_variant AS IsVariant,
@@ -39,5 +39,5 @@ WHERE sign_interpretation.sign_interpretation_id = @SignInterpretationId
     AND sign_interpretation_attribute_owner.edition_id = @EditionId
 ORDER BY pos.next_sign_interpretation_id, pos.sign_stream_section_id
 ";
-    }
+	}
 }

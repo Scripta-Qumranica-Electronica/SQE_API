@@ -1,8 +1,8 @@
 namespace SQE.DatabaseAccess.Queries
 {
-    internal static class GetSignInterpretationAttributesByDataQuery
-    {
-        public const string GetQuery = @"
+	internal static class GetSignInterpretationAttributesByDataQuery
+	{
+		public const string GetQuery = @"
 				SELECT sign_interpretation_attribute_id AS SignInterpretationAttributeId,
 				       sign_interpretation_id as SignInterpretationId,
 				       attribute_value.attribute_id AS AttributeId,
@@ -25,22 +25,22 @@ namespace SQE.DatabaseAccess.Queries
 				WHERE @WhereData
 					AND sign_interpretation_attribute_owner.edition_id=@EditionId
 				";
-    }
+	}
 
-    internal static class GetSignInterpretationAttributeIdsByDataQuery
-    {
-        public const string GetQuery = @"
+	internal static class GetSignInterpretationAttributeIdsByDataQuery
+	{
+		public const string GetQuery = @"
 				SELECT sign_interpretation_attribute_id AS SignInterpretationAttributeId
 				FROM sign_interpretation_attribute
 				JOIN sign_interpretation_attribute_owner USING (sign_interpretation_attribute_id)
 				WHERE @WhereData
 					AND edition_id=@EditionId
 				";
-    }
+	}
 
-    internal static class GetAllEditionSignInterpretationAttributesQuery
-    {
-        public const string _getQuery = @"
+	internal static class GetAllEditionSignInterpretationAttributesQuery
+	{
+		public const string _getQuery = @"
 SELECT attribute.attribute_id AS AttributeId,
        attribute.name AS AttributeName,
        attribute.description AS AttributeDescription,
@@ -70,14 +70,14 @@ LEFT JOIN (
 WHERE attribute_owner.edition_id = @EditionId
 ";
 
-        private const string _whereClause = "\n    AND attribute.attribute_id = @AttributeId";
+		private const string _whereClause = "\n    AND attribute.attribute_id = @AttributeId";
 
-        public static string GetQuery(uint? attributeId = null)
-        {
-            if (attributeId.HasValue)
-                return _getQuery + _whereClause;
+		public static string GetQuery(uint? attributeId = null)
+		{
+			if (attributeId.HasValue)
+				return _getQuery + _whereClause;
 
-            return _getQuery;
-        }
-    }
+			return _getQuery;
+		}
+	}
 }

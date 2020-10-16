@@ -2,8 +2,9 @@
 
 namespace SQE.API.DTO
 {
-    public class WktPolygonDTO
-    {
-        [Required] public string wktPolygon { get; set; }
-    }
+	public class WktPolygonDTO
+	{
+		[Required]
+		public string wktPolygon { get; set; }
+	}
 }

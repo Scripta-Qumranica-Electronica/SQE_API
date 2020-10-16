@@ -12,80 +12,104 @@ using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Services
 {
-    public interface ICatalogService
-    {
-        Task<CatalogueMatchListDTO> GetImagedObjectsOfTextFragment(uint textFragmentId);
-        Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId);
-        Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId);
-        Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId);
+	public interface ICatalogService
+	{
+		Task<CatalogueMatchListDTO> GetImagedObjectsOfTextFragment(uint textFragmentId);
 
-        Task<NoContentResult> CreateTextFragmentImagedObjectMatch(UserInfo user,
-            CatalogueMatchInputDTO match, string clientId = null);
+		Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId);
 
-        Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(UserInfo user, uint textFragmentImagedObjectMatchId,
-            bool confirm, string clientId = null);
-    }
+		Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId);
 
-    public class CatalogService : ICatalogService
-    {
-        private readonly ICatalogueRepository _catalogueRepo;
-        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+		Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId);
 
-        public CatalogService(ICatalogueRepository catalogueRepository, IHubContext<MainHub, ISQEClient> hubContext)
-        {
-            _catalogueRepo = catalogueRepository;
-            _hubContext = hubContext;
-        }
+		Task<NoContentResult> CreateTextFragmentImagedObjectMatch(
+				UserInfo                 user
+				, CatalogueMatchInputDTO match
+				, string                 clientId = null);
 
-        public async Task<CatalogueMatchListDTO> GetImagedObjectsOfTextFragment(uint textFragmentId)
-        {
-            return (await _catalogueRepo.GetImagedObjectMatchesForTextFragmentAsync(textFragmentId)).ToDTO();
-        }
+		Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(
+				UserInfo user
+				, uint   textFragmentImagedObjectMatchId
+				, bool   confirm
+				, string clientId = null);
+	}
 
-        public async Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId)
-        {
-            return (await _catalogueRepo.GetTextFragmentMatchesForImagedObjectAsync(
-                HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
-        }
+	public class CatalogService : ICatalogService
+	{
+		private readonly ICatalogueRepository             _catalogueRepo;
+		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 
-        public async Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfEdition(uint editionId)
-        {
-            return (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForEditionAsync(editionId)).ToDTO();
-        }
+		public CatalogService(
+				ICatalogueRepository               catalogueRepository
+				, IHubContext<MainHub, ISQEClient> hubContext)
+		{
+			_catalogueRepo = catalogueRepository;
+			_hubContext = hubContext;
+		}
 
-        public async Task<CatalogueMatchListDTO> GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId)
-        {
-            return (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForManuscriptAsync(manuscriptId)).ToDTO();
-        }
+		public async Task<CatalogueMatchListDTO> GetImagedObjectsOfTextFragment(uint textFragmentId)
+			=> (await _catalogueRepo.GetImagedObjectMatchesForTextFragmentAsync(textFragmentId))
+					.ToDTO();
 
-        public async Task<NoContentResult> CreateTextFragmentImagedObjectMatch(UserInfo user,
-            CatalogueMatchInputDTO match,
-            string clientId = null)
-        {
-            CheckCatalogueEditRights(user);
+		public async Task<CatalogueMatchListDTO>
+				GetTextFragmentsOfImagedObject(string imagedObjectId)
+			=> (await _catalogueRepo.GetTextFragmentMatchesForImagedObjectAsync(
+					HttpUtility.UrlDecode(imagedObjectId))).ToDTO();
 
-            await _catalogueRepo.CreateNewImagedObjectTextFragmentMatchAsync(user.userId.Value, match.imagedObjectId,
-                (byte)match.catalogSide, match.textFragmentId, match.editionId, match.editionName,
-                match.editionVolume, match.editionLocation1, match.editionLocation2, (byte)match.editionSide,
-                match.comment);
-            return new NoContentResult();
-        }
+		public async Task<CatalogueMatchListDTO>
+				GetTextFragmentsAndImagedObjectsOfEdition(uint editionId)
+			=> (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForEditionAsync(editionId)
+					).ToDTO();
 
-        public async Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(UserInfo user,
-            uint textFragmentImagedObjectMatchId,
-            bool confirm,
-            string clientId = null)
-        {
-            CheckCatalogueEditRights(user);
-            await _catalogueRepo.ConfirmImagedObjectTextFragmentMatchAsync(user.userId.Value,
-                textFragmentImagedObjectMatchId, confirm);
-            return new NoContentResult();
-        }
+		public async Task<CatalogueMatchListDTO>
+				GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId)
+			=> (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForManuscriptAsync(
+					manuscriptId)).ToDTO();
 
-        private static void CheckCatalogueEditRights(UserInfo user)
-        {
-            if (!user.userId.HasValue || user.SystemRoles.All(x => x != UserSystemRoles.CATALOGUE_CURATOR))
-                throw new StandardExceptions.NoSystemPermissionsException(user);
-        }
-    }
+		public async Task<NoContentResult> CreateTextFragmentImagedObjectMatch(
+				UserInfo                 user
+				, CatalogueMatchInputDTO match
+				, string                 clientId = null)
+		{
+			CheckCatalogueEditRights(user);
+
+			await _catalogueRepo.CreateNewImagedObjectTextFragmentMatchAsync(
+					user.userId.Value
+					, match.imagedObjectId
+					, (byte) match.catalogSide
+					, match.textFragmentId
+					, match.editionId
+					, match.editionName
+					, match.editionVolume
+					, match.editionLocation1
+					, match.editionLocation2
+					, (byte) match.editionSide
+					, match.comment);
+
+			return new NoContentResult();
+		}
+
+		public async Task<NoContentResult> ConfirmTextFragmentImagedObjectMatch(
+				UserInfo user
+				, uint   textFragmentImagedObjectMatchId
+				, bool   confirm
+				, string clientId = null)
+		{
+			CheckCatalogueEditRights(user);
+
+			await _catalogueRepo.ConfirmImagedObjectTextFragmentMatchAsync(
+					user.userId.Value
+					, textFragmentImagedObjectMatchId
+					, confirm);
+
+			return new NoContentResult();
+		}
+
+		private static void CheckCatalogueEditRights(UserInfo user)
+		{
+			if (!user.userId.HasValue
+				|| user.SystemRoles.All(x => x != UserSystemRoles.CATALOGUE_CURATOR))
+				throw new StandardExceptions.NoSystemPermissionsException(user);
+		}
+	}
 }

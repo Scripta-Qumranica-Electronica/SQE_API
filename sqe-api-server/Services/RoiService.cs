@@ -13,239 +13,246 @@ using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Services
 {
-    public interface IRoiService
-    {
-        Task<InterpretationRoiDTO> GetRoiAsync(UserInfo editionUser, uint roiId);
+	public interface IRoiService
+	{
+		Task<InterpretationRoiDTO> GetRoiAsync(UserInfo editionUser, uint roiId);
 
-        Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(UserInfo editionUser, uint artefactId);
+		Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(
+				UserInfo editionUser
+				, uint   artefactId);
 
-        Task<InterpretationRoiDTO> CreateRoiAsync(UserInfo editionUser,
-            SetInterpretationRoiDTO newRois,
-            string clientId = null);
+		Task<InterpretationRoiDTO> CreateRoiAsync(
+				UserInfo                  editionUser
+				, SetInterpretationRoiDTO newRois
+				, string                  clientId = null);
 
-        Task<InterpretationRoiDTOList> CreateRoisAsync(UserInfo editionUser,
-            SetInterpretationRoiDTOList newRois,
-            string clientId = null);
+		Task<InterpretationRoiDTOList> CreateRoisAsync(
+				UserInfo                      editionUser
+				, SetInterpretationRoiDTOList newRois
+				, string                      clientId = null);
 
-        Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(UserInfo editionUser,
-            BatchEditRoiDTO rois,
-            string clientId = null);
+		Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(
+				UserInfo          editionUser
+				, BatchEditRoiDTO rois
+				, string          clientId = null);
 
-        Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(UserInfo editionUser,
-            uint roiId,
-            SetInterpretationRoiDTO updatedRoi,
-            string clientId = null);
+		Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(
+				UserInfo                  editionUser
+				, uint                    roiId
+				, SetInterpretationRoiDTO updatedRoi
+				, string                  clientId = null);
 
-        Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(UserInfo editionUser,
-            UpdateInterpretationRoiDTOList updatedRois,
-            string clientId = null);
+		Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(
+				UserInfo                         editionUser
+				, UpdateInterpretationRoiDTOList updatedRois
+				, string                         clientId = null);
 
-        // Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
-        //     List<uint> deleteRois,
-        //     string clientId = null);
+		// Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
+		//     List<uint> deleteRois,
+		//     string clientId = null);
 
-        Task<NoContentResult> DeleteRoiAsync(UserInfo editionUser,
-            uint deleteRoi,
-            string clientId = null);
-    }
+		Task<NoContentResult> DeleteRoiAsync(
+				UserInfo editionUser
+				, uint   deleteRoi
+				, string clientId = null);
+	}
 
-    public class RoiService : IRoiService
-    {
-        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
-        private readonly Regex _removeDecimals = new Regex(@"\.\d+");
-        private readonly IRoiRepository _roiRepository;
-        private readonly WKTReader _wkr = new WKTReader();
-        private readonly WKTWriter _wkw = new WKTWriter();
+	public class RoiService : IRoiService
+	{
+		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+		private readonly Regex                            _removeDecimals = new Regex(@"\.\d+");
+		private readonly IRoiRepository                   _roiRepository;
+		private readonly WKTReader                        _wkr = new WKTReader();
+		private readonly WKTWriter                        _wkw = new WKTWriter();
 
-        public RoiService(IRoiRepository roiRepository, IHubContext<MainHub, ISQEClient> hubContext)
-        {
-            _roiRepository = roiRepository;
-            _hubContext = hubContext;
-        }
+		public RoiService(IRoiRepository roiRepository, IHubContext<MainHub, ISQEClient> hubContext)
+		{
+			_roiRepository = roiRepository;
+			_hubContext = hubContext;
+		}
 
-        public async Task<InterpretationRoiDTO> GetRoiAsync(UserInfo editionUser, uint roiId)
-        {
-            return (await _roiRepository.GetSignInterpretationRoiByIdAsync(editionUser, roiId)).ToDTO();
-        }
+		public async Task<InterpretationRoiDTO> GetRoiAsync(UserInfo editionUser, uint roiId)
+			=> (await _roiRepository.GetSignInterpretationRoiByIdAsync(editionUser, roiId)).ToDTO();
 
-        public async Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(UserInfo editionUser,
-            uint artefactId)
-        {
-            return new InterpretationRoiDTOList
-            {
-                rois = (await _roiRepository.GetSignInterpretationRoisByArtefactIdAsync(editionUser, artefactId))
-                    .ToDTO()
-                    .ToList()
-            };
-        }
+		public async Task<InterpretationRoiDTOList> GetRoisByArtefactIdAsync(
+				UserInfo editionUser
+				, uint   artefactId) => new InterpretationRoiDTOList
+		{
+				rois = (await _roiRepository.GetSignInterpretationRoisByArtefactIdAsync(
+								editionUser
+								, artefactId)).ToDTO()
+											  .ToList()
+				,
+		};
 
-        public async Task<InterpretationRoiDTO> CreateRoiAsync(UserInfo editionUser,
-            SetInterpretationRoiDTO newRoi,
-            string clientId = null)
-        {
-            var response = (await CreateRoisInternalAsync(
-                editionUser,
-                new SetInterpretationRoiDTOList { rois = new List<SetInterpretationRoiDTO> { newRoi } }
-            )).rois;
+		public async Task<InterpretationRoiDTO> CreateRoiAsync(
+				UserInfo                  editionUser
+				, SetInterpretationRoiDTO newRoi
+				, string                  clientId = null)
+		{
+			var response = (await CreateRoisInternalAsync(
+					editionUser
+					, new SetInterpretationRoiDTOList
+					{
+							rois = new List<SetInterpretationRoiDTO> { newRoi },
+					})).rois;
 
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            await _hubContext.Clients
-                .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .CreatedRoisBatch(new InterpretationRoiDTOList { rois = response });
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .CreatedRoisBatch(new InterpretationRoiDTOList { rois = response });
 
-            return response.First();
-        }
+			return response.First();
+		}
 
-        public async Task<InterpretationRoiDTOList> CreateRoisAsync(UserInfo editionUser,
-            SetInterpretationRoiDTOList newRois,
-            string clientId = null)
-        {
-            var response = await CreateRoisInternalAsync(editionUser, newRois);
+		public async Task<InterpretationRoiDTOList> CreateRoisAsync(
+				UserInfo                      editionUser
+				, SetInterpretationRoiDTOList newRois
+				, string                      clientId = null)
+		{
+			var response = await CreateRoisInternalAsync(editionUser, newRois);
 
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
-            await _hubContext.Clients
-                .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .EditedRoisBatch(new BatchEditRoiResponseDTO { createRois = response.rois });
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			// TODO: make a DTO for the delete object.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .EditedRoisBatch(
+									 new BatchEditRoiResponseDTO { createRois = response.rois });
 
-            return response;
-        }
+			return response;
+		}
 
-        public async Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(UserInfo editionUser,
-            BatchEditRoiDTO rois,
-            string clientId = null)
-        {
-            var (createRois, updateRois, deleteRois) = await _roiRepository.BatchEditRoisAsync(
-                editionUser,
-                rois.createRois.ToSignInterpretationRoiData().ToList(),
-                rois.updateRois.ToSignInterpretationRoiData().ToList(),
-                rois.deleteRois
-            );
+		public async Task<BatchEditRoiResponseDTO> BatchEditRoisAsync(
+				UserInfo          editionUser
+				, BatchEditRoiDTO rois
+				, string          clientId = null)
+		{
+			var (createRois, updateRois, deleteRois) = await _roiRepository.BatchEditRoisAsync(
+					editionUser
+					, rois.createRois.ToSignInterpretationRoiData().ToList()
+					, rois.updateRois.ToSignInterpretationRoiData().ToList()
+					, rois.deleteRois);
 
-            var batchEditRoisDTO = new BatchEditRoiResponseDTO
-            {
-                createRois = createRois.ToDTO().ToList(),
-                updateRois = updateRois.ToUpdateDTO().ToList(),
-                deleteRois = deleteRois
-            };
+			var batchEditRoisDTO = new BatchEditRoiResponseDTO
+			{
+					createRois = createRois.ToDTO().ToList()
+					, updateRois = updateRois.ToUpdateDTO().ToList()
+					, deleteRois = deleteRois
+					,
+			};
 
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .EditedRoisBatch(batchEditRoisDTO);
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			// TODO: make a DTO for the delete object.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .EditedRoisBatch(batchEditRoisDTO);
 
-            return batchEditRoisDTO;
-        }
+			return batchEditRoisDTO;
+		}
 
-        public async Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(UserInfo editionUser,
-            uint roiId,
-            SetInterpretationRoiDTO updatedRoi,
-            string clientId = null)
-        {
-            var fullUpdatedRoi = updatedRoi.ToUpdateInterpretationRoiDTO(roiId);
+		public async Task<UpdatedInterpretationRoiDTO> UpdateRoiAsync(
+				UserInfo                  editionUser
+				, uint                    roiId
+				, SetInterpretationRoiDTO updatedRoi
+				, string                  clientId = null)
+		{
+			var fullUpdatedRoi = updatedRoi.ToUpdateInterpretationRoiDTO(roiId);
 
-            var updateRoisDTO =
-                (await UpdateRoisInternalAsync(editionUser, new List<UpdateInterpretationRoiDTO> { fullUpdatedRoi }))
-                .rois;
+			var updateRoisDTO = (await UpdateRoisInternalAsync(
+					editionUser
+					, new List<UpdateInterpretationRoiDTO> { fullUpdatedRoi })).rois;
 
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
-            await _hubContext.Clients
-                .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .EditedRoisBatch(new BatchEditRoiResponseDTO { updateRois = updateRoisDTO });
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			// TODO: make a DTO for the delete object.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .EditedRoisBatch(
+									 new BatchEditRoiResponseDTO { updateRois = updateRoisDTO });
 
-            return updateRoisDTO.First();
-        }
+			return updateRoisDTO.First();
+		}
 
-        public async Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(UserInfo editionUser,
-            UpdateInterpretationRoiDTOList updatedRois,
-            string clientId = null)
-        {
-            var updateRoisDTO = await UpdateRoisInternalAsync(editionUser, updatedRois.rois);
+		public async Task<UpdatedInterpretationRoiDTOList> UpdateRoisAsync(
+				UserInfo                         editionUser
+				, UpdateInterpretationRoiDTOList updatedRois
+				, string                         clientId = null)
+		{
+			var updateRoisDTO = await UpdateRoisInternalAsync(editionUser, updatedRois.rois);
 
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            // TODO: make a DTO for the delete object.
-            await _hubContext.Clients
-                .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .UpdatedRoisBatch(updateRoisDTO);
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			// TODO: make a DTO for the delete object.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .UpdatedRoisBatch(updateRoisDTO);
 
-            return updateRoisDTO;
-        }
+			return updateRoisDTO;
+		}
 
-        public async Task<NoContentResult> DeleteRoiAsync(UserInfo editionUser,
-            uint deleteRoi,
-            string clientId = null)
-        {
-            await DeleteRoisInternalAsync(editionUser, new List<uint> { deleteRoi });
+		public async Task<NoContentResult> DeleteRoiAsync(
+				UserInfo editionUser
+				, uint   deleteRoi
+				, string clientId = null)
+		{
+			await DeleteRoisInternalAsync(editionUser, new List<uint> { deleteRoi });
 
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            await _hubContext.Clients
-                .GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .DeletedRoi(new DeleteDTO(EditionEntities.roi, deleteRoi));
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .DeletedRoi(new DeleteDTO(EditionEntities.roi, deleteRoi));
 
-            return new NoContentResult();
-        }
+			return new NoContentResult();
+		}
 
-        private async Task<InterpretationRoiDTOList> CreateRoisInternalAsync(UserInfo editionUser,
-            SetInterpretationRoiDTOList newRois)
-        {
-            var newRoisDTO = new InterpretationRoiDTOList
-            {
-                rois = (
-                        await _roiRepository.CreateRoisAsync( // Write new rois
-                            editionUser,
-                            // Serialize the SetInterpretationRoiDTOList to a List of SetSignInterpretationROI
-                            newRois.rois.ToSignInterpretationRoiData().ToList()
-                        )
-                    )
-                    .ToDTO()
-                    .ToList()
-            };
+		private async Task<InterpretationRoiDTOList> CreateRoisInternalAsync(
+				UserInfo                      editionUser
+				, SetInterpretationRoiDTOList newRois)
+		{
+			var newRoisDTO = new InterpretationRoiDTOList
+			{
+					rois = (await _roiRepository.CreateRoisAsync( // Write new rois
+									editionUser
+									,
 
-            return newRoisDTO;
-        }
+									// Serialize the SetInterpretationRoiDTOList to a List of SetSignInterpretationROI
+									newRois.rois.ToSignInterpretationRoiData().ToList())).ToDTO()
+																						 .ToList()
+					,
+			};
 
-        private async Task<UpdatedInterpretationRoiDTOList> UpdateRoisInternalAsync(UserInfo editionUser,
-            IEnumerable<UpdateInterpretationRoiDTO> updatedRois)
-        {
-            return new UpdatedInterpretationRoiDTOList
-            {
-                rois = (
-                        await _roiRepository.UpdateRoisAsync( // Write new rois
-                            editionUser,
-                            updatedRois.ToSignInterpretationRoiData().ToList()
-                        )
-                    )
-                    .ToUpdateDTO()
-                    .ToList()
-            };
-        }
+			return newRoisDTO;
+		}
 
-        // public async Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
-        //     List<uint> deleteRois,
-        //     string clientId = null)
-        // {
-        //     var response = await DeleteRoisInternalAsync(editionUser, deleteRois);
-        //
-        //     // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-        //     // made the request, that client directly received the response.
-        //     await _hubContext.Clients
-        //         .GroupExcept(editionUser.EditionId.ToString(), clientId)
-        //         .DeletedRoi(new DeleteDTO(EditionEntities.roi, response));
-        //
-        //     return response;
-        // }
+		private async Task<UpdatedInterpretationRoiDTOList> UpdateRoisInternalAsync(
+				UserInfo                                  editionUser
+				, IEnumerable<UpdateInterpretationRoiDTO> updatedRois)
+			=> new UpdatedInterpretationRoiDTOList
+			{
+					rois = (await _roiRepository.UpdateRoisAsync( // Write new rois
+									editionUser
+									, updatedRois.ToSignInterpretationRoiData().ToList()))
+							.ToUpdateDTO()
+							.ToList()
+					,
+			};
 
-        private async Task<List<uint>> DeleteRoisInternalAsync(UserInfo editionUser,
-            List<uint> deleteRois)
-        {
-            return await _roiRepository.DeleteRoisAsync(editionUser, deleteRois);
-        }
-    }
+		// public async Task<List<uint>> DeleteRoisAsync(UserInfo editionUser,
+		//     List<uint> deleteRois,
+		//     string clientId = null)
+		// {
+		//     var response = await DeleteRoisInternalAsync(editionUser, deleteRois);
+		//
+		//     // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+		//     // made the request, that client directly received the response.
+		//     await _hubContext.Clients
+		//         .GroupExcept(editionUser.EditionId.ToString(), clientId)
+		//         .DeletedRoi(new DeleteDTO(EditionEntities.roi, response));
+		//
+		//     return response;
+		// }
+
+		private async Task<List<uint>> DeleteRoisInternalAsync(
+				UserInfo     editionUser
+				, List<uint> deleteRois)
+			=> await _roiRepository.DeleteRoisAsync(editionUser, deleteRois);
+	}
 }

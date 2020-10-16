@@ -2,9 +2,9 @@
 
 namespace SQE.DatabaseAccess.Queries
 {
-    internal class EditionGroupQuery
-    {
-        private const string _baseQuery = @"
+	internal class EditionGroupQuery
+	{
+		private const string _baseQuery = @"
 SELECT DISTINCTROW ed2.edition_id AS EditionId,
         ed2.copyright_holder AS CopyrightHolder,
         ed2.collaborators AS Collaborators,
@@ -18,7 +18,7 @@ SELECT DISTINCTROW ed2.edition_id AS EditionId,
 
         manuscript_data.name AS Name,
         manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
-                   
+
         manuscript_metrics.width AS Width,
         manuscript_metrics.height AS Height,
         manuscript_metrics.x_origin AS XOrigin,
@@ -68,7 +68,7 @@ FROM edition AS ed1
              JOIN user USING(user_id)
 ) AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
              AND (ed2.public = 1 $UserFilter)
-    
+
 
     # Get the current user details
          LEFT JOIN (
@@ -90,7 +90,7 @@ FROM edition AS ed1
     # Get the edition manuscript information
          JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
          JOIN manuscript_data USING(manuscript_data_id)
-             
+
     # Get the edition manuscript metrics
         JOIN manuscript_metrics_owner ON manuscript_metrics_owner.edition_id = ed2.edition_id
         JOIN manuscript_metrics USING(manuscript_metrics_id)
@@ -121,264 +121,260 @@ $Where
 ORDER BY manuscript_data.manuscript_id, ed2.edition_id
 ";
 
-        public static string GetQuery(bool limitUser, bool limitScrolls)
-        {
-            // Build the WHERE clauses
-            var where = limitScrolls ? "WHERE ed1.edition_id = @EditionId" : "";
-            var userFilter = limitUser ? "OR (ed2.user_id = @UserId AND ed2.may_read = 1)" : "";
+		public static string GetQuery(bool limitUser, bool limitScrolls)
+		{
+			// Build the WHERE clauses
+			var where = limitScrolls
+					? "WHERE ed1.edition_id = @EditionId"
+					: "";
 
+			var userFilter = limitUser
+					? "OR (ed2.user_id = @UserId AND ed2.may_read = 1)"
+					: "";
 
-            return _baseQuery.Replace("$Where", where)
-                .Replace("$UserFilter", userFilter);
-        }
+			return _baseQuery.Replace("$Where", where).Replace("$UserFilter", userFilter);
+		}
 
+		internal class Result
+		{
+			public uint      EditionId               { get; set; }
+			public bool      CurrentIsAdmin          { get; set; }
+			public string    Name                    { get; set; }
+			public uint      EditionDataEditorId     { get; set; }
+			public uint      Width                   { get; set; }
+			public uint      Height                  { get; set; }
+			public int       XOrigin                 { get; set; }
+			public int       YOrigin                 { get; set; }
+			public uint      PPI                     { get; set; }
+			public uint      ManuscriptMetricsEditor { get; set; }
+			public string    ManuscriptId            { get; set; }
+			public string    Thumbnail               { get; set; }
+			public bool      Locked                  { get; set; }
+			public bool      CurrentMayLock          { get; set; }
+			public bool      CurrentMayWrite         { get; set; }
+			public bool      CurrentMayRead          { get; set; }
+			public DateTime? LastEdit                { get; set; }
+			public uint      CurrentUserId           { get; set; }
+			public string    CurrentEmail            { get; set; }
+			public string    Collaborators           { get; set; }
+			public string    CopyrightHolder         { get; set; }
+			public bool      IsPublic                { get; set; }
+		}
+	}
 
-        internal class Result
-        {
-            public uint EditionId { get; set; }
-            public bool CurrentIsAdmin { get; set; }
-            public string Name { get; set; }
-            public uint EditionDataEditorId { get; set; }
-            public uint Width { get; set; }
-            public uint Height { get; set; }
-            public int XOrigin { get; set; }
-            public int YOrigin { get; set; }
-            public uint PPI { get; set; }
-            public uint ManuscriptMetricsEditor { get; set; }
-            public string ManuscriptId { get; set; }
-            public string Thumbnail { get; set; }
-            public bool Locked { get; set; }
-            public bool CurrentMayLock { get; set; }
-            public bool CurrentMayWrite { get; set; }
-            public bool CurrentMayRead { get; set; }
-            public DateTime? LastEdit { get; set; }
-            public uint CurrentUserId { get; set; }
-            public string CurrentEmail { get; set; }
-            public string Collaborators { get; set; }
-            public string CopyrightHolder { get; set; }
-            public bool IsPublic { get; set; }
-        }
-    }
-
-    internal class EditionNameQuery
-    {
-        private const string _baseQuery = @"
+	internal class EditionNameQuery
+	{
+		private const string _baseQuery = @"
 SELECT manuscript_data_id AS ManuscriptDataId, manuscript_id AS ManuscriptId, name AS Name
 FROM manuscript_data_owner
 JOIN manuscript_data USING(manuscript_data_id)
 WHERE edition_id = @EditionId";
 
-        public static string GetQuery()
-        {
-            return _baseQuery;
-        }
+		public static string GetQuery() => _baseQuery;
 
-        internal class Result
-        {
-            public uint ManuscriptDataId { get; set; }
-            public uint ManuscriptId { get; set; }
-            public string Name { get; set; }
-        }
-    }
+		internal class Result
+		{
+			public uint   ManuscriptDataId { get; set; }
+			public uint   ManuscriptId     { get; set; }
+			public string Name             { get; set; }
+		}
+	}
 
-    //     internal static class EditionLockQuery
-    //     {
-    //         public const string GetQuery = @"
-    // SELECT locked AS Locked
-    // FROM edition_editor
-    // JOIN edition USING(edition_id)
-    // WHERE edition_id = @EditionId";
-    //
-    //         internal class Result
-    //         {
-    //             public bool Locked { get; set; } // locked is TINYINT, which is 8-bit unsigned like C# bool.  Is it ok/safe?
-    //         }
-    //     }
-    //
-    //     // TODO: probably delete this.
-    //     internal static class ScrollVersionGroupLimitQuery
-    //     {
-    //         private const string DefaultLimit = " sv1.user_id = 1 ";
-    //
-    //         private const string UserLimit = " sv1.user_id = @UserId ";
-    //
-    //         private const string CoalesceScrollVersions = @"scroll_version_id IN 
-    //             (SELECT sv2.scroll_version_id
-    //             FROM scroll_version sv1
-    //             JOIN scroll_version_group USING(edition_id)
-    //             JOIN scroll_version sv2 ON sv2.edition_id = scroll_version_group.edition_id
-    //             WHERE sv1.scroll_version_id = @ScrollVersionId";
-    //
-    //         // You must add a parameter `@ScrollVersionId` to any query using this.
-    //         public const string LimitToScrollVersionGroup = CoalesceScrollVersions + ")";
-    //
-    //         // You must add a parameter `@ScrollVersionId` to any query using this.
-    //         public const string LimitToScrollVersionGroupNoAuth = CoalesceScrollVersions + " AND " + DefaultLimit + ")";
-    //
-    //         // You must add the parameters `@ScrollVersionId` and `@UserId` to any query using this.
-    //         public const string LimitToScrollVersionGroupAndUser =
-    //             CoalesceScrollVersions + " AND (" + DefaultLimit + " OR " + UserLimit + "))";
-    //
-    //         public const string LimitScrollVersionGroupToDefaultUser = @"
-    //             scroll_version.user_id = 1 ";
-    //
-    //         public const string LimitScrollVersionGroupToUser =
-    //             LimitScrollVersionGroupToDefaultUser + " OR scroll_version.user_id = @UserId ";
-    //     }
+	//     internal static class EditionLockQuery
+	//     {
+	//         public const string GetQuery = @"
+	// SELECT locked AS Locked
+	// FROM edition_editor
+	// JOIN edition USING(edition_id)
+	// WHERE edition_id = @EditionId";
+	//
+	//         internal class Result
+	//         {
+	//             public bool Locked { get; set; } // locked is TINYINT, which is 8-bit unsigned like C# bool.  Is it ok/safe?
+	//         }
+	//     }
+	//
+	//     // TODO: probably delete this.
+	//     internal static class ScrollVersionGroupLimitQuery
+	//     {
+	//         private const string DefaultLimit = " sv1.user_id = 1 ";
+	//
+	//         private const string UserLimit = " sv1.user_id = @UserId ";
+	//
+	//         private const string CoalesceScrollVersions = @"scroll_version_id IN
+	//             (SELECT sv2.scroll_version_id
+	//             FROM scroll_version sv1
+	//             JOIN scroll_version_group USING(edition_id)
+	//             JOIN scroll_version sv2 ON sv2.edition_id = scroll_version_group.edition_id
+	//             WHERE sv1.scroll_version_id = @ScrollVersionId";
+	//
+	//         // You must add a parameter `@ScrollVersionId` to any query using this.
+	//         public const string LimitToScrollVersionGroup = CoalesceScrollVersions + ")";
+	//
+	//         // You must add a parameter `@ScrollVersionId` to any query using this.
+	//         public const string LimitToScrollVersionGroupNoAuth = CoalesceScrollVersions + " AND " + DefaultLimit + ")";
+	//
+	//         // You must add the parameters `@ScrollVersionId` and `@UserId` to any query using this.
+	//         public const string LimitToScrollVersionGroupAndUser =
+	//             CoalesceScrollVersions + " AND (" + DefaultLimit + " OR " + UserLimit + "))";
+	//
+	//         public const string LimitScrollVersionGroupToDefaultUser = @"
+	//             scroll_version.user_id = 1 ";
+	//
+	//         public const string LimitScrollVersionGroupToUser =
+	//             LimitScrollVersionGroupToDefaultUser + " OR scroll_version.user_id = @UserId ";
+	//     }
 
-    #region editor queries
+	#region editor queries
 
-    internal static class GetEditionEditorsWithPermissionsQuery
-    {
-        public const string GetQuery = @"
-SELECT SQE.user.email AS Email, edition_editor.may_read AS MayRead, edition_editor.may_write AS MayLock, 
+	internal static class GetEditionEditorsWithPermissionsQuery
+	{
+		public const string GetQuery = @"
+SELECT SQE.user.email AS Email, edition_editor.may_read AS MayRead, edition_editor.may_write AS MayLock,
        edition_editor.may_lock AS MayLock, edition_editor.is_admin AS IsAdmin
 FROM SQE.edition_editor
 JOIN SQE.user USING(user_id)
 WHERE edition_editor.edition_id = @EditionId
 ";
-    }
+	}
 
-    internal static class CreateEditionEditorQuery
-    {
-        // You must add a parameter `@UserId`, `@EditionId`, `@MayLock` (0 = false, 1 = true),
-        // and `@Admin` (0 = false, 1 = true) to use this.
-        public const string GetQuery = @"
-INSERT INTO edition_editor (user_id, edition_id, may_write, may_lock, is_admin) 
+	internal static class CreateEditionEditorQuery
+	{
+		// You must add a parameter `@UserId`, `@EditionId`, `@MayLock` (0 = false, 1 = true),
+		// and `@Admin` (0 = false, 1 = true) to use this.
+		public const string GetQuery = @"
+INSERT INTO edition_editor (user_id, edition_id, may_write, may_lock, is_admin)
 VALUES (@UserId, @EditionId, 1, @MayLock, @IsAdmin)";
-    }
+	}
 
-    internal static class CreateDetailedEditionEditorQuery
-    {
-        // You must add a parameter `@UserId`, `@EditionId`, `@MayRead` (0 = false, 1 = true), `@MayWrite` (0 = false, 1 = true),
-        // `@MayLock` (0 = false, 1 = true), and `@Admin` (0 = false, 1 = true) to use this.
-        public const string GetQuery = @"
-INSERT INTO edition_editor (user_id, edition_id, may_read, may_write, may_lock, is_admin) 
+	internal static class CreateDetailedEditionEditorQuery
+	{
+		// You must add a parameter `@UserId`, `@EditionId`, `@MayRead` (0 = false, 1 = true), `@MayWrite` (0 = false, 1 = true),
+		// `@MayLock` (0 = false, 1 = true), and `@Admin` (0 = false, 1 = true) to use this.
+		public const string GetQuery = @"
+INSERT INTO edition_editor (user_id, edition_id, may_read, may_write, may_lock, is_admin)
 SELECT user_id, @EditionId, @MayRead, @MayWrite, @MayLock, @IsAdmin
 FROM SQE.user
 WHERE SQE.user.email = @Email
 ";
-    }
+	}
 
-    internal static class UpdateEditionEditorPermissionsQuery
-    {
-        // You must add a parameter `@UserId`, `@EditionId`, `@MayRead` (0 = false, 1 = true), `@MayWrite` (0 = false, 1 = true),
-        // `@MayLock` (0 = false, 1 = true), and `@Admin` (0 = false, 1 = true) to use this.
-        public const string GetQuery = @"
+	internal static class UpdateEditionEditorPermissionsQuery
+	{
+		// You must add a parameter `@UserId`, `@EditionId`, `@MayRead` (0 = false, 1 = true), `@MayWrite` (0 = false, 1 = true),
+		// `@MayLock` (0 = false, 1 = true), and `@Admin` (0 = false, 1 = true) to use this.
+		public const string GetQuery = @"
 UPDATE edition_editor
-JOIN user ON user.user_id = edition_editor.user_id 
-    AND user.email = @Email 
+JOIN user ON user.user_id = edition_editor.user_id
+    AND user.email = @Email
 SET may_read = @MayRead,
     may_write = @MayWrite,
     may_lock = @MayLock,
-    is_admin = @IsAdmin 
+    is_admin = @IsAdmin
 WHERE edition_editor.edition_id = @EditionId
 ";
-    }
+	}
 
-    #endregion editor queries
+	#endregion editor queries
 
-    internal static class CopyEditionQuery
-    {
-        // You must add the parameter `@EditionId` to use this, the parameters `@CopyrightHolder`, `@Collaborators` are optional.
-        public const string GetQuery =
-            @"INSERT INTO edition (manuscript_id, locked, copyright_holder, collaborators)  
+	internal static class CopyEditionQuery
+	{
+		// You must add the parameter `@EditionId` to use this, the parameters `@CopyrightHolder`, `@Collaborators` are optional.
+		public const string GetQuery =
+				@"INSERT INTO edition (manuscript_id, locked, copyright_holder, collaborators)
             (SELECT manuscript_id, 0, COALESCE(@CopyrightHolder, copyright_holder), @Collaborators
             FROM edition
             WHERE edition_id = @EditionId)";
-    }
+	}
 
-    // internal static class CopyEditionDataForTableQuery
-    // {
-    //     // You must add a parameter `@ScrollVersionId` and `@CopyToScrollVersionId` to use this.
-    //     public static string GetQuery(string tableName, string tableIdColumn)
-    //     {
-    //         return $@"INSERT IGNORE INTO {tableName} ({tableIdColumn}, edition_editor_id, edition_id) 
-    //         SELECT {tableIdColumn}, @EditionEditorId, @CopyToEditionId 
-    //         FROM {tableName} 
-    //         WHERE edition_id = @EditionId";
-    //     }
-    // }
-    //
-    // internal static class GetOwnerTableDataForQuery
-    // {
-    //     // You must add a parameter `@EditionId`.
-    //     public static string GetQuery(string tableName, string tableIdColumn)
-    //     {
-    //         return $@"SELECT {tableIdColumn} 
-    //         FROM {tableName} 
-    //         WHERE edition_id = @EditionId";
-    //     }
-    // }
-    //
-    // internal static class WriteOwnerTableData
-    // {
-    //     public static string GetQuery(string tableName,
-    //         string tableIdColumn,
-    //         uint editionId,
-    //         uint editionEditorId,
-    //         List<uint> dataIds)
-    //     {
-    //         return $@"INSERT INTO {tableName} (edition_id, edition_editor_id, {tableIdColumn})
-    //         VALUES {string.Join(
-    //                 ",",
-    //                 dataIds.Select(x => $"({editionId},{editionEditorId},{x.ToString()})"))
-    //             }";
-    //     }
-    // }
+	// internal static class CopyEditionDataForTableQuery
+	// {
+	//     // You must add a parameter `@ScrollVersionId` and `@CopyToScrollVersionId` to use this.
+	//     public static string GetQuery(string tableName, string tableIdColumn)
+	//     {
+	//         return $@"INSERT IGNORE INTO {tableName} ({tableIdColumn}, edition_editor_id, edition_id)
+	//         SELECT {tableIdColumn}, @EditionEditorId, @CopyToEditionId
+	//         FROM {tableName}
+	//         WHERE edition_id = @EditionId";
+	//     }
+	// }
+	//
+	// internal static class GetOwnerTableDataForQuery
+	// {
+	//     // You must add a parameter `@EditionId`.
+	//     public static string GetQuery(string tableName, string tableIdColumn)
+	//     {
+	//         return $@"SELECT {tableIdColumn}
+	//         FROM {tableName}
+	//         WHERE edition_id = @EditionId";
+	//     }
+	// }
+	//
+	// internal static class WriteOwnerTableData
+	// {
+	//     public static string GetQuery(string tableName,
+	//         string tableIdColumn,
+	//         uint editionId,
+	//         uint editionEditorId,
+	//         List<uint> dataIds)
+	//     {
+	//         return $@"INSERT INTO {tableName} (edition_id, edition_editor_id, {tableIdColumn})
+	//         VALUES {string.Join(
+	//                 ",",
+	//                 dataIds.Select(x => $"({editionId},{editionEditorId},{x.ToString()})"))
+	//             }";
+	//     }
+	// }
 
-    internal static class UpdateEditionLegalDetailsQuery
-    {
-        // You must add the parameter `@EditionId` and `@Collaborators` to use this, the parameter `@CopyrightHolder` is optional.
-        public const string GetQuery = @"
-UPDATE edition 
-SET copyright_holder = COALESCE(@CopyrightHolder, copyright_holder), 
-    collaborators = @Collaborators 
+	internal static class UpdateEditionLegalDetailsQuery
+	{
+		// You must add the parameter `@EditionId` and `@Collaborators` to use this, the parameter `@CopyrightHolder` is optional.
+		public const string GetQuery = @"
+UPDATE edition
+SET copyright_holder = COALESCE(@CopyrightHolder, copyright_holder),
+    collaborators = @Collaborators
 WHERE edition_id = @EditionId";
-    }
+	}
 
-    /// <summary>
-    ///     Delete all entries for a specific edition from the specified table.
-    ///     We ensure here that the user requesting this is indeed an admin (even though that should also have been
-    ///     done in API logic elsewhere).
-    /// </summary>
-    internal static class DeleteEditionFromTable
-    {
-        private const string _sql = @"
+	/// <summary>
+	///  Delete all entries for a specific edition from the specified table.
+	///  We ensure here that the user requesting this is indeed an admin (even though that should also have been
+	///  done in API logic elsewhere).
+	/// </summary>
+	internal static class DeleteEditionFromTable
+	{
+		private const string _sql = @"
 DELETE $Table
 FROM $Table
-JOIN edition_editor ON edition_editor.edition_id = @EditionId 
+JOIN edition_editor ON edition_editor.edition_id = @EditionId
   AND edition_editor.user_id = @UserId
 WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
 ";
 
-        public static string GetQuery(string table)
-        {
-            return _sql.Replace("$Table", table);
-        }
-    }
+		public static string GetQuery(string table) => _sql.Replace("$Table", table);
+	}
 
-    //     internal static class LockEditionQuery
-    //     {
-    //         internal const string GetQuery = @"
-    // UPDATE edition
-    // SET locked = 1
-    // WHERE edition_id = @EditionId
-    // ";
-    //     }
-    //
-    //     internal static class UnlockEditionQuery
-    //     {
-    //         internal const string GetQuery = @"
-    // UPDATE edition
-    // SET locked = 0
-    // WHERE edition_id = @EditionId
-    // ";
-    //     }
+	//     internal static class LockEditionQuery
+	//     {
+	//         internal const string GetQuery = @"
+	// UPDATE edition
+	// SET locked = 1
+	// WHERE edition_id = @EditionId
+	// ";
+	//     }
+	//
+	//     internal static class UnlockEditionQuery
+	//     {
+	//         internal const string GetQuery = @"
+	// UPDATE edition
+	// SET locked = 0
+	// WHERE edition_id = @EditionId
+	// ";
+	//     }
 
-    internal static class EditionScriptQuery
-    {
-        internal const string GetQuery = @"
+	internal static class EditionScriptQuery
+	{
+		internal const string GetQuery = @"
 SELECT sign_interpretation_roi.sign_interpretation_id AS Id,
        sign_interpretation.character AS Letter,
        GROUP_CONCAT(DISTINCT CONCAT(attr.name, '_', attr.string_value)) AS Attributes,
@@ -421,59 +417,59 @@ FROM sign_interpretation_roi_owner
 WHERE sign_interpretation_roi_owner.edition_id = @EditionId
         AND (edition.public OR edition_editor.user_id = @UserId)
 GROUP BY sign_interpretation_roi.sign_interpretation_roi_id
-ORDER BY sign_interpretation_roi.sign_interpretation_id 
+ORDER BY sign_interpretation_roi.sign_interpretation_id
 ";
-    }
+	}
 
-    internal static class EditionEditorUserIds
-    {
-        internal const string GetQuery = @"
+	internal static class EditionEditorUserIds
+	{
+		internal const string GetQuery = @"
 SELECT user_id
-FROM (  SELECT edition_id 
+FROM (  SELECT edition_id
         FROM SQE.edition_editor
         WHERE edition_id = @EditionId AND user_id = @UserId
     ) as valid_user
 JOIN SQE.edition_editor USING(edition_id)
 ";
-    }
+	}
 
-    internal static class RecordEditionEditorRequest
-    {
-        internal const string GetQuery = @"
+	internal static class RecordEditionEditorRequest
+	{
+		internal const string GetQuery = @"
 INSERT INTO edition_editor_request (
-                                        token, 
-                                        admin_user_id, 
-                                        editor_user_id, 
-                                        edition_id, 
-                                        is_admin, 
-                                        may_lock, 
+                                        token,
+                                        admin_user_id,
+                                        editor_user_id,
+                                        edition_id,
+                                        is_admin,
+                                        may_lock,
                                         may_write
                                     )
-               
+
 VALUES (
-            @Token, 
-            @AdminUserId, 
-            @EditorUserId, 
-            @EditionId, 
-            @IsAdmin, 
-            @MayLock, 
+            @Token,
+            @AdminUserId,
+            @EditorUserId,
+            @EditionId,
+            @IsAdmin,
+            @MayLock,
             @MayWrite
         )
 
-ON DUPLICATE KEY 
-    UPDATE     is_admin = @IsAdmin, 
-               may_lock = @MayLock, 
-               may_write = @MayWrite, 
+ON DUPLICATE KEY
+    UPDATE     is_admin = @IsAdmin,
+               may_lock = @MayLock,
+               may_write = @MayWrite,
                date = CURRENT_DATE()
 ";
-    }
+	}
 
-    internal static class FindEditionEditorRequestByToken
-    {
-        internal const string GetQuery = @"
-SELECT  edition_editor_request.edition_id AS EditionId, 
-        edition_editor_request.is_admin AS IsAdmin, 
-        edition_editor_request.may_lock AS MayLock, 
+	internal static class FindEditionEditorRequestByToken
+	{
+		internal const string GetQuery = @"
+SELECT  edition_editor_request.edition_id AS EditionId,
+        edition_editor_request.is_admin AS IsAdmin,
+        edition_editor_request.may_lock AS MayLock,
         edition_editor_request.may_write AS MayWrite,
         user.email AS Email
 FROM edition_editor_request
@@ -481,22 +477,22 @@ FROM edition_editor_request
 WHERE token = @Token
     AND editor_user_id = @EditorUserId
 ";
-    }
+	}
 
-    internal static class FindEditionEditorRequestByEditorEdition
-    {
-        internal const string GetQuery = @"
+	internal static class FindEditionEditorRequestByEditorEdition
+	{
+		internal const string GetQuery = @"
 SELECT  edition_editor_request.token AS Token
 FROM edition_editor_request
 WHERE editor_user_id = @EditorUserId
     AND edition_id = @EditionId
     AND admin_user_id = @AdminUserId
 ";
-    }
+	}
 
-    internal static class FindEditionEditorRequestByAdminId
-    {
-        internal const string GetQuery = @"
+	internal static class FindEditionEditorRequestByAdminId
+	{
+		internal const string GetQuery = @"
 SELECT  edition_editor_request.edition_id AS EditionId,
         manuscript_data.name AS EditionName,
         user.email AS Email,
@@ -514,11 +510,11 @@ FROM edition_editor_request
     JOIN manuscript_data USING(manuscript_data_id)
 WHERE edition_editor_request.admin_user_id = @AdminUserId
 ";
-    }
+	}
 
-    internal static class FindEditionEditorRequestByEditorId
-    {
-        internal const string GetQuery = @"
+	internal static class FindEditionEditorRequestByEditorId
+	{
+		internal const string GetQuery = @"
 SELECT  edition_editor_request.edition_id AS EditionId,
         manuscript_data.name AS EditionName,
         user.email AS Email,
@@ -537,28 +533,28 @@ FROM edition_editor_request
     JOIN manuscript_data USING(manuscript_data_id)
 WHERE edition_editor_request.editor_user_id = @EditorUserId
 ";
-    }
+	}
 
-    internal static class GetEditionEditorRequestDate
-    {
-        internal const string GetQuery = @"
+	internal static class GetEditionEditorRequestDate
+	{
+		internal const string GetQuery = @"
 SELECT date
 FROM edition_editor_request
 WHERE token = @Token
 ";
-    }
+	}
 
-    internal static class DeleteEditionEditorRequest
-    {
-        internal const string GetQuery = @"
+	internal static class DeleteEditionEditorRequest
+	{
+		internal const string GetQuery = @"
 DELETE FROM edition_editor_request
 WHERE token = @Token AND editor_user_id = @EditorUserId
 ";
-    }
+	}
 
-    internal static class GetEditionManuscriptMetricsDetails
-    {
-        internal const string GetQuery = @"
+	internal static class GetEditionManuscriptMetricsDetails
+	{
+		internal const string GetQuery = @"
 SELECT manuscript_metrics_id AS ManuscriptMetricsId,
        manuscript_id AS ManuscriptId,
        width AS Width,
@@ -571,15 +567,40 @@ JOIN manuscript_metrics USING(manuscript_metrics_id)
 WHERE manuscript_metrics_owner.edition_id = @EditionId
 ";
 
-        internal class Result
-        {
-            public uint ManuscriptMetricsId { get; set; }
-            public uint ManuscriptId { get; set; }
-            public uint Width { get; set; }
-            public uint Height { get; set; }
-            public int XOrigin { get; set; }
-            public int YOrigin { get; set; }
-            public int PPI { get; set; }
-        }
-    }
+		internal class Result
+		{
+			public uint ManuscriptMetricsId { get; set; }
+			public uint ManuscriptId        { get; set; }
+			public uint Width               { get; set; }
+			public uint Height              { get; set; }
+			public int  XOrigin             { get; set; }
+			public int  YOrigin             { get; set; }
+			public int  PPI                 { get; set; }
+		}
+	}
+
+	internal static class CopyTableQuery
+	{
+		/// <summary>
+		///  We use string interpolation to build the query here, since we want
+		///  to dynamically generate the query on various tables. The calling code
+		///  seems locked down, so it should not be a problem.
+		/// </summary>
+		/// <param name="tableName">Name of the table to be copied</param>
+		/// <param name="tableIdColumn">Name of the table's PK Id column</param>
+		/// <param name="toEditionId">Id of the destination edition</param>
+		/// <param name="toEditionEditorId">Id of the editor performing the request</param>
+		/// <param name="editionId">Id of the source edition</param>
+		/// <returns></returns>
+		internal static string GetQuery(
+				string   tableName
+				, string tableIdColumn
+				, uint   toEditionId
+				, uint   toEditionEditorId
+				, uint   editionId)
+			=> $"INSERT INTO {tableName} ({tableIdColumn}, edition_id, edition_editor_id)\n"
+			   + $"SELECT {tableIdColumn}, {toEditionId}, {toEditionEditorId}\n"
+			   + $"FROM {tableName}\n"
+			   + $"WHERE edition_id = {editionId}";
+	}
 }

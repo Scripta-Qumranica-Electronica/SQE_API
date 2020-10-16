@@ -1,17 +1,17 @@
 namespace SQE.DatabaseAccess.Queries
 {
-    public static class GetTextChunk
-    {
-        // NOTE I (Ingo) change the query to reflect the integration of the numeric value into the attribute table
-        // which became necessary by deleting the table attribute_numeric
+	public static class GetTextChunk
+	{
+		// NOTE I (Ingo) change the query to reflect the integration of the numeric value into the attribute table
+		// which became necessary by deleting the table attribute_numeric
 
-        /// <summary>
-        ///     Retrieves all textual data for a chunk of text
-        ///     @startId is the Id of the first sign
-        ///     @endId is the Id of the last sign
-        ///     @editionId is the Id of the edition the text is to be taken from
-        /// </summary>
-        public const string GetQuery = @"
+		/// <summary>
+		///  Retrieves all textual data for a chunk of text
+		///  @startId is the Id of the first sign
+		///  @endId is the Id of the last sign
+		///  @editionId is the Id of the edition the text is to be taken from
+		/// </summary>
+		public const string GetQuery = @"
 WITH RECURSIVE sign_interpretation_ids
 	AS (
 		SELECT 	position_in_stream.position_in_stream_id,
@@ -173,17 +173,16 @@ ORDER BY sign_interpretation_ids.sequence,
 	SignInterpretationAttributeId, 
 	SignInterpretationRoiId
 ";
-    }
+	}
 
-
-    internal static class GetLineTerminators
-    {
-        /// <summary>
-        ///     Retrieves the first and last sign of a line
-        ///     @entityId is the Id of line
-        ///     @editionId is the Id of the edition the line is to be searched
-        /// </summary>
-        public const string GetQuery = @"
+	internal static class GetLineTerminators
+	{
+		/// <summary>
+		///  Retrieves the first and last sign of a line
+		///  @entityId is the Id of line
+		///  @editionId is the Id of the edition the line is to be searched
+		/// </summary>
+		public const string GetQuery = @"
 SELECT sign_interpretation.sign_interpretation_id
 FROM line_to_sign
 	JOIN edition ON edition.edition_id = @EditionId
@@ -201,12 +200,11 @@ WHERE line_id = @EntityId
 	AND (edition_editor.user_id = @UserId OR edition.public = 1)
 ORDER BY attribute_value_id
 ";
-    }
+	}
 
-
-    internal static class GetLineData
-    {
-        public const string Query = @"
+	internal static class GetLineData
+	{
+		public const string Query = @"
       WITH RECURSIVE lineIds
       AS (
         SELECT text_fragment_to_line.text_fragment_id AS fragmentId, text_fragment_to_line.line_id AS lineId, line_data.name AS lineName, sign_interpretation_attribute_owner.edition_id AS editionId
@@ -251,11 +249,11 @@ ORDER BY attribute_value_id
       FROM lineIds
     
     ";
-    }
+	}
 
-    internal static class GetFragmentData
-    {
-        public const string GetQuery = @"
+	internal static class GetFragmentData
+	{
+		public const string GetQuery = @"
 WITH RECURSIVE cte_fragment AS (
     SELECT pitfs_1.text_fragment_id, 0 AS sequence
     FROM position_in_text_fragment_stream AS pitfs_1
@@ -290,11 +288,11 @@ FROM cte_fragment
 WHERE edition_id=@EditionId
 ORDER BY cte_fragment.sequence
 ";
-    }
+	}
 
-    internal static class GetFragmentDataOld
-    {
-        public const string GetQuery = @"
+	internal static class GetFragmentDataOld
+	{
+		public const string GetQuery = @"
 WITH RECURSIVE text_fragment_ids
 	AS (
 	    SELECT 	position_in_text_fragment_stream.text_fragment_id AS textFragmentId, 
@@ -338,11 +336,11 @@ FROM text_fragment_ids
 WHERE edition_editor.user_id = @UserId OR edition.public = 1
 ORDER BY text_fragment_ids.sequence
       ";
-    }
+	}
 
-    internal static class GetFragmentNameById
-    {
-        public const string GetQuery = @"
+	internal static class GetFragmentNameById
+	{
+		public const string GetQuery = @"
 SELECT text_fragment_data.name
 FROM text_fragment_data
 JOIN text_fragment_data_owner USING(text_fragment_data_id)
@@ -352,11 +350,11 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
   AND edition_id = @EditionId 
   AND (edition_editor.user_id = @UserId OR edition.public = 1)
 ";
-    }
+	}
 
-    internal static class GetTextFragmentArtefacts
-    {
-        public const string Query = @"
+	internal static class GetTextFragmentArtefacts
+	{
+		public const string Query = @"
 SELECT DISTINCT artefact_id AS ArtefactId, 
        artefact_data.name AS Name
 FROM text_fragment_data
@@ -380,11 +378,11 @@ JOIN edition ON edition.edition_id = @EditionId
 JOIN edition_editor ON edition_editor.edition_id = @EditionId
 WHERE text_fragment_data.text_fragment_id = @TextFragmentId
    AND (edition.public = 1 OR edition_editor.user_id = @UserId)";
-    }
+	}
 
-    internal static class TextFragmentAttributes
-    {
-        public const string GetQuery = @"
+	internal static class TextFragmentAttributes
+	{
+		public const string GetQuery = @"
 SELECT DISTINCT attribute_value.attribute_value_id AS attributeValueId, 
                 attribute_value.string_value AS attributeValueString,
                 attribute_value.attribute_id AS attributeId,
@@ -398,60 +396,58 @@ JOIN attribute_owner
 	ON attribute_owner.attribute_id = attribute.attribute_id 
 	AND attribute_owner.edition_id = @EditionId
 ";
-    }
+	}
 
-    //TODO Can be deleted, use DatabaseWriter.SimpleInsertAsync (Ingo)
-    /*internal static class CreateManuscript
-    {
-	    public const string GetQuery = @"
+	//TODO Can be deleted, use DatabaseWriter.SimpleInsertAsync (Ingo)
+	/*internal static class CreateManuscript
+	{
+		public const string GetQuery = @"
 INSERT INTO manuscript () VALUES()
 ";
-    }*/
+	}*/
 
-    //TODO Can be deleted (Ingo
-    /*internal static class CreateTextFragment
-    {
-        public const string GetQuery = @"
+	//TODO Can be deleted (Ingo
+	/*internal static class CreateTextFragment
+	{
+	    public const string GetQuery = @"
 INSERT INTO text_fragment () VALUES()
 ";
-    }*/
+	}*/
 
-    internal static class GetTextFragmentByName
-    {
-        public const string GetQuery = @"
+	internal static class GetTextFragmentByName
+	{
+		public const string GetQuery = @"
 SELECT text_fragment_id AS TextFragmentId,
        name AS TextFragmentName
 FROM text_fragment_data
 JOIN text_fragment_data_owner tfdo USING (text_fragment_data_id)
 WHERE name LIKE @Name and edition_id=@EditionId
 ";
-    }
+	}
 
-    internal static class GetTextFragmentDataId
-    {
-        public const string GetQuery = @"
+	internal static class GetTextFragmentDataId
+	{
+		public const string GetQuery = @"
 SELECT text_fragment_data_id
 FROM text_fragment_data
 JOIN text_fragment_data_owner USING (text_fragment_data_id)
 WHERE text_fragment_data.text_fragment_id = @TextFragmentId 
   AND text_fragment_data_owner.edition_id=@EditionId
 ";
-    }
+	}
 
-
-    internal static class ManuscriptOfEdition
-    {
-        public const string GetQuery = @"
+	internal static class ManuscriptOfEdition
+	{
+		public const string GetQuery = @"
 SELECT manuscript_id
 FROM edition
 WHERE edition_id = @EditionId
 ";
-    }
+	}
 
-
-    internal static class GetSignInterpretationIdsForSignIdQuery
-    {
-        public const string GetQuery = @"
+	internal static class GetSignInterpretationIdsForSignIdQuery
+	{
+		public const string GetQuery = @"
 			SELECT DISTINCT sign_interpretation_id
 			FROM sign_interpretation
 			JOIN sign_interpretation_attribute USING (sign_interpretation_id)
@@ -459,24 +455,24 @@ WHERE edition_id = @EditionId
 			WHERE sign_id = @SignId
 			AND edition_id= @EditionId
 		";
-    }
+	}
 
-    internal static class GetSignInterpretationIdQuery
-    {
-        public const string GetQuery = @"
+	internal static class GetSignInterpretationIdQuery
+	{
+		public const string GetQuery = @"
 			SELECT sign_interpretation_id
 			FROM sign_interpretation
 			WHERE sign_id = @SignId
 				AND `character`= @Character
 		";
-    }
+	}
 
-    internal static class AddSignInterpretationQuery
-    {
-        public const string GetQuery = @"
+	internal static class AddSignInterpretationQuery
+	{
+		public const string GetQuery = @"
 			INSERT INTO sign_interpretation
 				(sign_id,  `character`) 
 				VALUES (@SignId,  @Character)
 		";
-    }
+	}
 }

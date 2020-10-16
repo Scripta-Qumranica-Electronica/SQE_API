@@ -4,9 +4,9 @@ using qwb_to_sqe.Common;
 
 namespace qwb_to_sqe
 {
-    public class QWBDatabase : SshDatabase
-    {
-        private const string getScrollDataQuery = @"
+	public class QWBDatabase : SshDatabase
+	{
+		private const string getScrollDataQuery = @"
                           SELECT Id, Buch as Name
                           FROM buch
                           WHERE (Art LIKE 'qb' 
@@ -14,7 +14,7 @@ namespace qwb_to_sqe
                              AND Haupt=0
                          ORDER BY Reihe";
 
-        private const string getScrollTextQuery = @"
+		private const string getScrollTextQuery = @"
                         SELECT kol as Name, zeile, wort.Id AS QWBWordId, wort AS QWBText
                         FROM wort
                             LEFt JOIN stellen on StelleId = stellen.Id
@@ -23,63 +23,57 @@ namespace qwb_to_sqe
                             AND owner=0
                         ORDER BY Buchwortnr";
 
-        public QWBDatabase() : base("QWBlocal")
-        {
-        }
+		public QWBDatabase() : base("QWBlocal") { }
 
+		public IEnumerable<QWBScroll> GetScrollIds()
+			=> connection.Query<QWBScroll>(getScrollDataQuery);
 
-        public IEnumerable<QWBScroll> GetScrollIds()
-        {
-            return connection.Query<QWBScroll>(getScrollDataQuery);
-        }
-
-        public IEnumerable<string> GetFragments(uint scrollId)
-        {
-            return connection.Query<string>(
-                @"SELECT DISTINCT kol
+		public IEnumerable<string> GetFragments(uint scrollId) => connection.Query<string>(
+				@"SELECT DISTINCT kol
                             FROM stellen
                              WHERE Buchnr = @scrollId
-                             ORDER BY Buchwortnr",
-                new { scrollId }
-            );
-        }
+                             ORDER BY Buchwortnr"
+				, new { scrollId });
 
+		public void readInScrollText(QWBScroll qwbScroll)
+		{
+			var currentLine = new QWBLine();
+			var currentFrag = new QWBFragment();
 
-        public void readInScrollText(QWBScroll qwbScroll)
-        {
-            var currentLine = new QWBLine();
-            var currentFrag = new QWBFragment();
-            connection.Query<QWBFragment, string, QWBWord, QWBFragment>(
-                getScrollTextQuery,
-                (kol, zeile, word) =>
-                {
-                    if (kol.Name != currentFrag.Name)
-                    {
-                        qwbScroll.fragments.Add(kol);
-                        currentFrag = kol;
-                    }
+			connection.Query<QWBFragment, string, QWBWord, QWBFragment>(
+					getScrollTextQuery
+					, (kol, zeile, word) =>
+					  {
+						  if (kol.Name != currentFrag.Name)
+						  {
+							  qwbScroll.fragments.Add(kol);
 
-                    if (zeile != currentLine.Name)
-                    {
-                        currentLine = new QWBLine { Name = zeile };
-                        currentFrag.Lines.Add(currentLine);
-                    }
+							  currentFrag = kol;
+						  }
 
-                    currentLine.words.Add(word);
-                    return null;
-                },
-                splitOn: "zeile, QWBWordId",
-                param: new { scrollId = qwbScroll.Id }
-            );
-        }
+						  if (zeile != currentLine.Name)
+						  {
+							  currentLine = new QWBLine { Name = zeile };
 
-        public IEnumerable<QWBScroll> GetScrolls()
-        {
-            var currentFrag = new QWBFragment();
-            var currentScroll = new QWBScroll();
-            var currentLine = new QWBLine();
-            return connection.Query<QWBScroll, string, string, QWBWord, QWBScroll>(
-                @"SELECT Buchnr AS Id, Buch AS Name, kol, zeile, wort.Id AS QWBWordId, wort AS QWBText
+							  currentFrag.Lines.Add(currentLine);
+						  }
+
+						  currentLine.words.Add(word);
+
+						  return null;
+					  }
+					, splitOn: "zeile, QWBWordId"
+					, param: new { scrollId = qwbScroll.Id });
+		}
+
+		public IEnumerable<QWBScroll> GetScrolls()
+		{
+			var currentFrag = new QWBFragment();
+			var currentScroll = new QWBScroll();
+			var currentLine = new QWBLine();
+
+			return connection.Query<QWBScroll, string, string, QWBWord, QWBScroll>(
+					@"SELECT Buchnr AS Id, Buch AS Name, kol, zeile, wort.Id AS QWBWordId, wort AS QWBText
                         FROM wort
                             LEFt JOIN stellen on StelleId = stellen.Id
                             LEFT JOIN buch on buch.Id =Buchnr
@@ -88,30 +82,41 @@ namespace qwb_to_sqe
                             AND wort.pos=0
                             AND owner=0
                         ORDER BY Reihe, Buchwortnr
-",
-                (scroll, kol, line, word) =>
-                {
-                    var newScroll = currentScroll.Id != scroll.Id;
-                    if (newScroll) currentScroll = scroll;
-                    if (kol != currentFrag.Name)
-                    {
-                        currentFrag = new QWBFragment { Name = kol };
-                        currentScroll.fragments.Add(currentFrag);
-                        currentLine = new QWBLine();
-                    }
+"
+					, (
+							  scroll
+							  , kol
+							  , line
+							  , word) =>
+					  {
+						  var newScroll = currentScroll.Id != scroll.Id;
 
-                    if (line != currentLine.Name)
-                    {
-                        currentLine = new QWBLine { Name = line };
-                        currentFrag.Lines.Add(currentLine);
-                    }
+						  if (newScroll)
+							  currentScroll = scroll;
 
-                    currentLine.words.Add(word);
+						  if (kol != currentFrag.Name)
+						  {
+							  currentFrag = new QWBFragment { Name = kol };
 
-                    return newScroll ? currentScroll : null;
-                },
-                splitOn: "kol, zeile, QWBWordId"
-            );
-        }
-    }
+							  currentScroll.fragments.Add(currentFrag);
+
+							  currentLine = new QWBLine();
+						  }
+
+						  if (line != currentLine.Name)
+						  {
+							  currentLine = new QWBLine { Name = line };
+
+							  currentFrag.Lines.Add(currentLine);
+						  }
+
+						  currentLine.words.Add(word);
+
+						  return newScroll
+								  ? currentScroll
+								  : null;
+					  }
+					, splitOn: "kol, zeile, QWBWordId");
+		}
+	}
 }

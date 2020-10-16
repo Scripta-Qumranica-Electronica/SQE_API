@@ -7,9 +7,9 @@ using SQE.DatabaseAccess.Models;
 
 namespace qwb_to_sqe.Repositories
 {
-    public class TextRepositoryExpanded : TextRepository
-    {
-        private static readonly string _terminatorsQuery = @"
+	public class TextRepositoryExpanded : TextRepository
+	{
+		private static readonly string _terminatorsQuery = @"
             SELECT pis1.sign_interpretation_id
             FROM word as w1
                 JOIN position_in_stream_to_word_rel pistwr1 on w1.word_id = pistwr1.word_id
@@ -31,32 +31,35 @@ namespace qwb_to_sqe.Repositories
                 AND pistwr2.position_in_stream_id is null
 ";
 
-        public TextRepositoryExpanded(IConfiguration config, IDatabaseWriter databaseWriter,
-            IAttributeRepository attributeRepository, ISignInterpretationRepository signInterpretationRepository,
-            ISignInterpretationCommentaryRepository commentaryRepository, IRoiRepository roiRepository) : base(config,
-            databaseWriter, attributeRepository, signInterpretationRepository, commentaryRepository, roiRepository)
-        {
-        }
+		public TextRepositoryExpanded(
+				IConfiguration                            config
+				, IDatabaseWriter                         databaseWriter
+				, IAttributeRepository                    attributeRepository
+				, ISignInterpretationRepository           signInterpretationRepository
+				, ISignInterpretationCommentaryRepository commentaryRepository
+				, IRoiRepository                          roiRepository) : base(
+				config
+				, databaseWriter
+				, attributeRepository
+				, signInterpretationRepository
+				, commentaryRepository
+				, roiRepository) { }
 
-        public TextEdition GetSQEWord(UserInfo editionUser, uint qwbWordId)
-        {
-            var terminators = _getWordTerminators(qwbWordId);
-            return null; // _getEntityById(editionUser, terminators).Result;
-        }
+		public TextEdition GetSQEWord(UserInfo editionUser, uint qwbWordId)
+		{
+			var terminators = _getWordTerminators(qwbWordId);
 
-        private Terminators _getWordTerminators(uint qwbWordId)
-        {
-            using (var connection = OpenConnection())
-            {
-                return new Terminators(connection.Query<uint>(
-                        _terminatorsQuery,
-                        new
-                        {
-                            QWBWorId = qwbWordId
-                        }
-                    )
-                    .ToArray());
-            }
-        }
-    }
+			return null; // _getEntityById(editionUser, terminators).Result;
+		}
+
+		private Terminators _getWordTerminators(uint qwbWordId)
+		{
+			using (var connection = OpenConnection())
+			{
+				return new Terminators(
+						connection.Query<uint>(_terminatorsQuery, new { QWBWorId = qwbWordId })
+								  .ToArray());
+			}
+		}
+	}
 }

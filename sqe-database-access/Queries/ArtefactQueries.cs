@@ -1,18 +1,17 @@
 ﻿namespace SQE.DatabaseAccess.Queries
 {
-    public static class ArtefactOfEditionQuery
-    {
-        private const string _artefactIdRestriction = " AND artefact_shape.artefact_id = @ArtefactId";
+	public static class ArtefactOfEditionQuery
+	{
+		private const string _artefactIdRestriction =
+				" AND artefact_shape.artefact_id = @ArtefactId";
 
-        public static string GetQuery(uint? userId, bool mask = false)
-        {
-            return ArtefactsOfEditionQuery.GetQuery(userId, mask, false) + _artefactIdRestriction;
-        }
-    }
+		public static string GetQuery(uint? userId, bool mask = false)
+			=> ArtefactsOfEditionQuery.GetQuery(userId, mask, false) + _artefactIdRestriction;
+	}
 
-    public static class ArtefactsOfEditionQuery
-    {
-        private const string _getArtefact = @"
+	public static class ArtefactsOfEditionQuery
+	{
+		private const string _getArtefact = @"
 SELECT artefact_data.name AS Name, 
        artefact_data_owner.edition_editor_id AS ArtefactDataEditorId,
        $Mask as Mask,
@@ -58,25 +57,37 @@ WHERE artefact_shape_owner.edition_id = @EditionId
     AND $Restriction
 $Order";
 
-        private const string _userRestriction = "(edition_editor.user_id = @UserID OR edition.public = 1)";
-        private const string _publicRestriction = "edition.public = 1";
-        private const string _mask = "ASTEXT(artefact_shape.region_in_sqe_image)";
+		private const string _userRestriction =
+				"(edition_editor.user_id = @UserID OR edition.public = 1)";
 
-        private const string _order =
-            "ORDER BY image_catalog.catalog_number_1, image_catalog.catalog_number_2, image_catalog.catalog_side";
+		private const string _publicRestriction = "edition.public = 1";
 
-        public static string GetQuery(uint? userId, bool mask = false, bool ordered = true)
-        {
-            return _getArtefact
-                .Replace("$Restriction", userId.HasValue ? _userRestriction : _publicRestriction)
-                .Replace("$Mask", mask ? _mask : "\"\"")
-                .Replace("$Order", ordered ? _order : "");
-        }
-    }
+		private const string _mask = "ASTEXT(artefact_shape.region_in_sqe_image)";
 
-    public static class FindArtefactComponentId
-    {
-        private const string _getQuery = @"
+		private const string _order =
+				"ORDER BY image_catalog.catalog_number_1, image_catalog.catalog_number_2, image_catalog.catalog_side";
+
+		public static string GetQuery(uint? userId, bool mask = false, bool ordered = true)
+			=> _getArtefact.Replace(
+								   "$Restriction"
+								   , userId.HasValue
+										   ? _userRestriction
+										   : _publicRestriction)
+						   .Replace(
+								   "$Mask"
+								   , mask
+										   ? _mask
+										   : "\"\"")
+						   .Replace(
+								   "$Order"
+								   , ordered
+										   ? _order
+										   : "");
+	}
+
+	public static class FindArtefactComponentId
+	{
+		private const string _getQuery = @"
             SELECT DISTINCT $Table_id
             FROM $Table
             JOIN $Table_owner USING($Table_id)
@@ -84,29 +95,34 @@ $Order";
                 AND $Table_owner.edition_id = @EditionId
             ";
 
-        private const string _normalArt = "$Table.artefact_id = @ArtefactId";
-        private const string _artStack = "$Table.artefact_A_id = @ArtefactId OR $Table.artefact_B_id = @ArtefactId";
+		private const string _normalArt = "$Table.artefact_id = @ArtefactId";
 
-        public static string GetQuery(string table, bool stack = false)
-        {
-            return _getQuery.Replace("$Where", stack ? _artStack : _normalArt)
-                .Replace("$Table", table);
-        }
-    }
+		private const string _artStack =
+				"$Table.artefact_A_id = @ArtefactId OR $Table.artefact_B_id = @ArtefactId";
 
-    internal static class FindArtefactShapeSqeImageId
-    {
-        public const string GetQuery = @"
+		public static string GetQuery(string table, bool stack = false) => _getQuery.Replace(
+																							"$Where"
+																							, stack
+																									? _artStack
+																									: _normalArt)
+																					.Replace(
+																							"$Table"
+																							, table);
+	}
+
+	internal static class FindArtefactShapeSqeImageId
+	{
+		public const string GetQuery = @"
         SELECT sqe_image_id
             FROM artefact_shape
             JOIN artefact_shape_owner USING(artefact_shape_id)
             WHERE artefact_shape.artefact_id = @ArtefactId
                 AND artefact_shape_owner.edition_id = @EditionId";
-    }
+	}
 
-    internal static class FindArtefactTextFragments
-    {
-        public const string GetQuery = @"
+	internal static class FindArtefactTextFragments
+	{
+		public const string GetQuery = @"
 SELECT DISTINCT text_fragment_id AS TextFragmentId, 
        text_fragment_data.name AS TextFragmentName, 
        text_fragment_data_owner.edition_editor_id AS TextFragmentEditorId
@@ -129,11 +145,11 @@ JOIN edition_editor ON edition_editor.edition_id = @EditionId
 WHERE artefact_id = @ArtefactId
     AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
-    }
+	}
 
-    internal static class FindSuggestedArtefactTextFragments
-    {
-        public const string GetQuery = @"
+	internal static class FindSuggestedArtefactTextFragments
+	{
+		public const string GetQuery = @"
 SELECT text_fragment_id AS TextFragmentId, 
        text_fragment_data.name AS TextFragmentName, 
        text_fragment_data_owner.edition_editor_id AS TextFragmentEditorId
@@ -151,11 +167,11 @@ JOIN edition_editor ON edition_editor.edition_id = @EditionId
 WHERE artefact_id = @ArtefactId
    AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
-    }
+	}
 
-    internal static class FindArtefactGroups
-    {
-        public const string GetQuery = @"
+	internal static class FindArtefactGroups
+	{
+		public const string GetQuery = @"
 SELECT artefact_group_member.artefact_group_id AS ArtefactGroupId,
        agd.name AS ArtefactGroupName,
        artefact_group_member.artefact_id AS ArtefactId
@@ -171,11 +187,11 @@ LEFT JOIN (
 WHERE artefact_group_member_owner.edition_id = @EditionId
 ORDER BY artefact_group_member.artefact_group_id, artefact_group_member.artefact_id
 ";
-    }
+	}
 
-    internal static class FindArtefactGroup
-    {
-        public const string GetQuery = @"
+	internal static class FindArtefactGroup
+	{
+		public const string GetQuery = @"
 SELECT artefact_group_member.artefact_group_id AS ArtefactGroupId,
        agd.name AS ArtefactGroupName,
        artefact_group_member.artefact_id AS ArtefactId
@@ -191,11 +207,11 @@ LEFT JOIN (
 WHERE artefact_group_member_owner.edition_id = @EditionId
     AND artefact_group_member.artefact_group_id = @ArtefactGroupId
 ";
-    }
+	}
 
-    internal static class FindArtefactGroupMembers
-    {
-        public const string GetQuery = @"
+	internal static class FindArtefactGroupMembers
+	{
+		public const string GetQuery = @"
 SELECT artefact_group_member.artefact_group_member_id AS ArtefactGroupMemberId,
        artefact_group_member.artefact_group_id AS ArtefactGroupId,
        artefact_group_member.artefact_id AS ArtefactId
@@ -204,11 +220,11 @@ JOIN artefact_group_member_owner USING(artefact_group_member_id)
 WHERE artefact_group_member.artefact_group_id = @ArtefactGroupId
     AND artefact_group_member_owner.edition_id = @EditionId
 ";
-    }
+	}
 
-    internal static class FindArtefactGroupDataId
-    {
-        public const string GetQuery = @"
+	internal static class FindArtefactGroupDataId
+	{
+		public const string GetQuery = @"
 SELECT artefact_group_data.artefact_group_data_id AS ArtefactGroupDataId,
        artefact_group_data.artefact_group_id AS ArtefactGroupId,
        artefact_group_data.name AS Name
@@ -217,27 +233,27 @@ JOIN artefact_group_data_owner USING(artefact_group_data_id)
 WHERE artefact_group_data.artefact_group_id = @ArtefactGroupId
     AND artefact_group_data_owner.edition_id = @EditionId
 ";
-    }
+	}
 
-    internal static class ArtefactsAlreadyInGroups
-    {
-        public const string GetQuery = @"
+	internal static class ArtefactsAlreadyInGroups
+	{
+		public const string GetQuery = @"
 SELECT artefact_group_member.artefact_id
 FROM artefact_group_member
 JOIN artefact_group_member_owner USING(artefact_group_member_id)
 WHERE artefact_group_member_owner.edition_id = @EditionId
     AND artefact_group_member.artefact_id IN @ArtefactIds
 ";
-    }
+	}
 
-    internal static class ArtefactsFromListInEdition
-    {
-        public const string GetQuery = @"
+	internal static class ArtefactsFromListInEdition
+	{
+		public const string GetQuery = @"
 SELECT artefact_id
 FROM artefact_shape
 JOIN artefact_shape_owner USING(artefact_shape_id)
 WHERE artefact_shape_owner.edition_id = @EditionId
     AND artefact_shape.artefact_id IN @ArtefactIds
 ";
-    }
+	}
 }

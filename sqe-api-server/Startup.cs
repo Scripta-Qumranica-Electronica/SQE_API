@@ -27,259 +27,298 @@ using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.API.Server
 {
-    public class Startup
-    {
-        public Startup(IConfiguration configuration, IWebHostEnvironment env)
-        {
-            Configuration = configuration;
-            Environment = env;
+	public class Startup
+	{
+		public Startup(IConfiguration configuration, IWebHostEnvironment env)
+		{
+			Configuration = configuration;
+			Environment = env;
 
-            // Run the startup checks to ensure all necessary external services are available.
-            StartupChecks.RunAllChecks(configuration, env);
-        }
+			// Run the startup checks to ensure all necessary external services are available.
+			StartupChecks.RunAllChecks(configuration, env);
+		}
 
-        private IConfiguration Configuration { get; }
-        private IWebHostEnvironment Environment { get; }
+		private IConfiguration      Configuration { get; }
+		private IWebHostEnvironment Environment   { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddCors();
+		// This method gets called by the runtime. Use this method to add services to the container.
+		public void ConfigureServices(IServiceCollection services)
+		{
+			services.AddCors();
 
-            // configure DI for application services
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IEditionService, EditionService>();
-            services.AddScoped<IImagedObjectService, ImagedObjectService>();
-            services.AddScoped<IArtefactService, ArtefactService>();
-            services.AddScoped<IImageService, ImageService>();
-            services.AddScoped<ITextService, TextService>();
-            services.AddScoped<IRoiService, RoiService>();
-            services.AddScoped<IUtilService, UtilService>();
-            services.AddScoped<ICatalogService, CatalogService>();
-            services.AddScoped<ISignInterpretationService, SignInterpretationService>();
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IEditionRepository, EditionRepository>();
-            services.AddScoped<IImagedObjectRepository, ImagedObjectRepository>();
-            services.AddScoped<IImageRepository, ImageRepository>();
-            services.AddScoped<IArtefactRepository, ArtefactRepository>();
-            services.AddScoped<IDatabaseWriter, DatabaseWriter>();
-            services.AddScoped<ITextRepository, TextRepository>();
-            services.AddScoped<IRoiRepository, RoiRepository>();
-            services.AddScoped<ISignInterpretationRepository, SignInterpretationRepository>();
-            services.AddScoped<ISignInterpretationCommentaryRepository, SignInterpretationCommentaryRepository>();
-            services.AddScoped<IAttributeRepository, AttributeRepository>();
-            services.AddScoped<ICatalogueRepository, CatalogueRepository>();
+			// configure DI for application services
+			services.AddScoped<IUserService, UserService>();
+			services.AddScoped<IEditionService, EditionService>();
+			services.AddScoped<IImagedObjectService, ImagedObjectService>();
+			services.AddScoped<IArtefactService, ArtefactService>();
+			services.AddScoped<IImageService, ImageService>();
+			services.AddScoped<ITextService, TextService>();
+			services.AddScoped<IRoiService, RoiService>();
+			services.AddScoped<IUtilService, UtilService>();
+			services.AddScoped<ICatalogService, CatalogService>();
 
-            services.AddResponseCompression();
-            services.Configure<BrotliCompressionProviderOptions>(
-                options =>
-                {
-                    // A custom compression level makes a huge difference CompressionLevel.Optimal uses level 11,
-                    // which is incredibly slow.  A level between 5–7 gives a similarly sized result at a considerably
-                    // faster speed. On one test Broti (CompressionLevel)5 compressed a 9.4 MB file to 1.57 MB, gzip
-                    // compressed it to 2.45 MB (albeit a little bit faster).
-                    options.Level = (CompressionLevel)5;
-                }
-            );
-            services.Configure<GzipCompressionProviderOptions>(
-                options => { options.Level = CompressionLevel.Optimal; }
-            );
+			services.AddScoped<ISignInterpretationService, SignInterpretationService>();
 
-            // When running integration tests, we do not actually send out emails. This checks ASPNETCORE_ENVIRONMENT
-            // and if it is "IntegrationTests", then a Fake for IEmailSender is used instead of the real one.
-            if (Environment.IsEnvironment("IntegrationTests"))
-                services.AddSingleton<IEmailSender, FakeEmailSender>();
-            else
-                services.AddSingleton<IEmailSender, EmailSender>();
+			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+			services.AddScoped<IUserRepository, UserRepository>();
+			services.AddScoped<IEditionRepository, EditionRepository>();
 
-            // Configure routing.
-            services.Configure<RouteOptions>(options => { options.LowercaseUrls = true; });
+			services.AddScoped<IImagedObjectRepository, ImagedObjectRepository>();
 
-            // configure strongly typed settings objects
-            var appSettingsSection = Configuration.GetSection("AppSettings");
-            services.Configure<AppSettings>(appSettingsSection);
+			services.AddScoped<IImageRepository, ImageRepository>();
+			services.AddScoped<IArtefactRepository, ArtefactRepository>();
+			services.AddScoped<IDatabaseWriter, DatabaseWriter>();
+			services.AddScoped<ITextRepository, TextRepository>();
+			services.AddScoped<IRoiRepository, RoiRepository>();
 
-            // configure jwt authentication
-            var appSettings = appSettingsSection.Get<AppSettings>();
-            var key = Encoding.ASCII.GetBytes(appSettings.Secret);
-            services.AddAuthentication(
-                    x =>
-                    {
-                        x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                        x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                    }
-                )
-                .AddJwtBearer(
-                    x =>
-                    {
-                        x.RequireHttpsMetadata = false;
-                        x.SaveToken = true;
-                        x.TokenValidationParameters = new TokenValidationParameters
-                        {
-                            ValidateIssuerSigningKey = true,
-                            IssuerSigningKey = new SymmetricSecurityKey(key),
-                            ValidateIssuer = false,
-                            ValidateAudience = false
-                        };
+			services.AddScoped<ISignInterpretationRepository, SignInterpretationRepository>();
 
-                        // From https://docs.microsoft.com/en-us/aspnet/core/signalr/authn-and-authz?view=aspnetcore-2.2
-                        // We have to hook the OnMessageReceived event in order to
-                        // allow the JWT authentication handler to read the access
-                        // token from the query string when a WebSocket or 
-                        // Server-Sent Events request comes in.
-                        x.Events = new JwtBearerEvents
-                        {
-                            OnMessageReceived = context =>
-                            {
-                                var accessToken = context.Request.Query["access_token"];
+			services
+					.AddScoped<ISignInterpretationCommentaryRepository,
+							SignInterpretationCommentaryRepository>();
 
-                                // If the request is for our hub...
-                                var path = context.HttpContext.Request.Path;
-                                if (!string.IsNullOrEmpty(accessToken)
-                                    && path.StartsWithSegments("/signalr"))
-                                    // Read the token out of the query string
-                                    context.Token = accessToken;
-                                return Task.CompletedTask;
-                            }
-                        };
-                    }
-                );
+			services.AddScoped<IAttributeRepository, AttributeRepository>();
+			services.AddScoped<ICatalogueRepository, CatalogueRepository>();
 
-            services.AddAuthorization(
-                options =>
-                {
-                    var defaultAuthorizationPolicyBuilder = new AuthorizationPolicyBuilder(
-                        JwtBearerDefaults.AuthenticationScheme
-                    );
-                    defaultAuthorizationPolicyBuilder =
-                        defaultAuthorizationPolicyBuilder.RequireAuthenticatedUser();
-                    options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
-                }
-            );
+			services.AddResponseCompression();
 
-            if (appSettings.HttpServer.ToLower() == "true")
-            {
-                services.AddSwaggerGen(
-                    c =>
-                    {
-                        c.SwaggerDoc("v1", new OpenApiInfo { Title = "SQE API", Version = "v1" });
-                        var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                        c.IncludeXmlComments(xmlPath);
-                        c.AddSecurityDefinition(
-                            "Bearer",
-                            new OpenApiSecurityScheme
-                            {
-                                Description =
-                                    "Add JWT Authorization header using the Bearer scheme. Example input: \"Bearer {token}\"",
-                                Name = "Authorization",
-                                In = ParameterLocation.Header,
-                                Type = SecuritySchemeType.ApiKey
-                            }
-                        );
+			services.Configure<BrotliCompressionProviderOptions>(
+					options =>
+					{
+						// A custom compression level makes a huge difference CompressionLevel.Optimal uses level 11,
+						// which is incredibly slow.  A level between 5–7 gives a similarly sized result at a considerably
+						// faster speed. On one test Broti (CompressionLevel)5 compressed a 9.4 MB file to 1.57 MB, gzip
+						// compressed it to 2.45 MB (albeit a little bit faster).
+						options.Level = (CompressionLevel) 5;
+					});
 
-                        c.AddSecurityRequirement(
-                            new OpenApiSecurityRequirement
-                            {
-                                {
-                                    new OpenApiSecurityScheme
-                                    {
-                                        Reference = new OpenApiReference
-                                        {
-                                            Type = ReferenceType.SecurityScheme,
-                                            Id = "Bearer"
-                                        },
-                                        Scheme = "apikey",
-                                        Name = "Bearer",
-                                        In = ParameterLocation.Header
-                                    },
-                                    new List<string>()
-                                }
-                            }
-                        );
-                    }
-                );
+			services.Configure<GzipCompressionProviderOptions>(
+					options => { options.Level = CompressionLevel.Optimal; });
 
-                services.AddControllers();
-            }
+			// When running integration tests, we do not actually send out emails. This checks ASPNETCORE_ENVIRONMENT
+			// and if it is "IntegrationTests", then a Fake for IEmailSender is used instead of the real one.
+			if (Environment.IsEnvironment("IntegrationTests"))
+				services.AddSingleton<IEmailSender, FakeEmailSender>();
+			else
+				services.AddSingleton<IEmailSender, EmailSender>();
 
-            // Add a Redis backplane if we need to scale horizontally.
-            // You must set sticky sessions in the load balancer.
-            // Remember that the docs warn to only use a Redis backplane in the same network as the SignalR Hubs,
-            // otherwise you may experience latency issues.
-            if (appSettings.UseRedis.ToLower() == "true"
-                && !Environment.IsEnvironment("IntegrationTests"))
-            {
-                if (string.IsNullOrEmpty(Configuration.GetConnectionString("RedisHost")))
-                    throw new Exception("Must set a value in appsettings.json for RedisHost");
-                if (string.IsNullOrEmpty(Configuration.GetConnectionString("RedisPort")))
-                    throw new Exception("Must set a value in appsettings.json for RedisPort");
-                if (string.IsNullOrEmpty(Configuration.GetConnectionString("RedisPassword")))
-                    throw new Exception("Must set a value in appsettings.json for RedisPassword");
+			// Configure routing.
+			services.Configure<RouteOptions>(options => { options.LowercaseUrls = true; });
 
-                var redisHost = Configuration.GetConnectionString("RedisHost");
-                var redisPort = Configuration.GetConnectionString("RedisPort");
-                var redisPassword = Configuration.GetConnectionString("RedisPassword");
-                var redisConn = $"{redisHost}:{redisPort},password={redisPassword},ssl=False,abortConnect=False";
-                services.AddSignalR().AddRedis(redisConn);
-            }
-            else
-            {
-                services.AddSignalR();
-            }
-        }
+			// configure strongly typed settings objects
+			var appSettingsSection = Configuration.GetSection("AppSettings");
+			services.Configure<AppSettings>(appSettingsSection);
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app)
-        {
-            if (Environment.IsDevelopment()) app.UseDeveloperExceptionPage();
+			// configure jwt authentication
+			var appSettings = appSettingsSection.Get<AppSettings>();
+			var key = Encoding.ASCII.GetBytes(appSettings.Secret);
 
-            // TODO: when we know the deployment details we should reassess the use of compression here. 
-            app.UseResponseCompression();
+			services.AddAuthentication(
+							x =>
+							{
+								x.DefaultAuthenticateScheme =
+										JwtBearerDefaults.AuthenticationScheme;
 
-            app.UseSerilogRequestLogging();
+								x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+							})
+					.AddJwtBearer(
+							x =>
+							{
+								x.RequireHttpsMetadata = false;
+								x.SaveToken = true;
 
-            app.UseCors(
-                builder => builder
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .SetIsOriginAllowed(host => true)
-                    .AllowCredentials()
-            );
+								x.TokenValidationParameters = new TokenValidationParameters
+								{
+										ValidateIssuerSigningKey = true
+										, IssuerSigningKey = new SymmetricSecurityKey(key)
+										, ValidateIssuer = false
+										, ValidateAudience = false
+										,
+								};
 
-            app.UseHttpException();
+								// From https://docs.microsoft.com/en-us/aspnet/core/signalr/authn-and-authz?view=aspnetcore-2.2
+								// We have to hook the OnMessageReceived event in order to
+								// allow the JWT authentication handler to read the access
+								// token from the query string when a WebSocket or
+								// Server-Sent Events request comes in.
+								x.Events = new JwtBearerEvents
+								{
+										OnMessageReceived = context =>
+															{
+																var accessToken =
+																		context.Request.Query[
+																				"access_token"];
 
-            // Get app settings
-            var appSettingsSection = Configuration.GetSection("AppSettings");
-            var appSettings = appSettingsSection.Get<AppSettings>();
+																// If the request is for our hub...
+																var path = context.HttpContext
+																				  .Request.Path;
 
-            if (appSettings.HttpServer.ToLower() == "true")
-            {
-                // Enable middleware to serve generated Swagger as a JSON endpoint.
-                app.UseSwagger();
+																if (!string.IsNullOrEmpty(
+																			accessToken)
+																	&& path.StartsWithSegments(
+																			"/signalr"))
 
-                // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
-                // specifying the Swagger JSON endpoint.
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SQE API v1");
-                });
-            }
+																		// Read the token out of the query string
+																	context.Token = accessToken;
 
-            app.UseRouting();
+																return Task.CompletedTask;
+															}
+										,
+								};
+							});
 
+			services.AddAuthorization(
+					options =>
+					{
+						var defaultAuthorizationPolicyBuilder =
+								new AuthorizationPolicyBuilder(
+										JwtBearerDefaults.AuthenticationScheme);
 
-            app.UseAuthorization();
-            app.UseAuthentication();
+						defaultAuthorizationPolicyBuilder = defaultAuthorizationPolicyBuilder
+								.RequireAuthenticatedUser();
 
-            app.UseEndpoints(
-                endpoints =>
-                {
-                    endpoints.MapHub<MainHub>("/signalr");
-                    if (appSettings.HttpServer.ToLower() == "true") endpoints.MapControllers();
-                }
-            );
-        }
-    }
+						options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
+					});
+
+			if (appSettings.HttpServer.ToLower() == "true")
+			{
+				services.AddSwaggerGen(
+						c =>
+						{
+							c.SwaggerDoc(
+									"v1"
+									, new OpenApiInfo
+									{
+											Title = "SQE API"
+											, Version = "v1"
+											,
+									});
+
+							var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+
+							var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+							c.IncludeXmlComments(xmlPath);
+
+							c.AddSecurityDefinition(
+									"Bearer"
+									, new OpenApiSecurityScheme
+									{
+											Description =
+													"Add JWT Authorization header using the Bearer scheme. Example input: \"Bearer {token}\""
+											, Name = "Authorization"
+											, In = ParameterLocation.Header
+											, Type = SecuritySchemeType.ApiKey
+											,
+									});
+
+							c.AddSecurityRequirement(
+									new OpenApiSecurityRequirement
+									{
+											{
+													new OpenApiSecurityScheme
+													{
+															Reference =
+																	new OpenApiReference
+																	{
+																			Type =
+																					ReferenceType
+																							.SecurityScheme
+																			, Id =
+																					"Bearer"
+																			,
+																	}
+															, Scheme = "apikey"
+															, Name = "Bearer"
+															, In = ParameterLocation.Header
+															,
+													}
+													, new List<string>()
+											}
+											,
+									});
+						});
+
+				services.AddControllers();
+			}
+
+			// Add a Redis backplane if we need to scale horizontally.
+			// You must set sticky sessions in the load balancer.
+			// Remember that the docs warn to only use a Redis backplane in the same network as the SignalR Hubs,
+			// otherwise you may experience latency issues.
+			if ((appSettings.UseRedis.ToLower() == "true")
+				&& !Environment.IsEnvironment("IntegrationTests"))
+			{
+				if (string.IsNullOrEmpty(Configuration.GetConnectionString("RedisHost")))
+					throw new Exception("Must set a value in appsettings.json for RedisHost");
+
+				if (string.IsNullOrEmpty(Configuration.GetConnectionString("RedisPort")))
+					throw new Exception("Must set a value in appsettings.json for RedisPort");
+
+				if (string.IsNullOrEmpty(Configuration.GetConnectionString("RedisPassword")))
+					throw new Exception("Must set a value in appsettings.json for RedisPassword");
+
+				var redisHost = Configuration.GetConnectionString("RedisHost");
+				var redisPort = Configuration.GetConnectionString("RedisPort");
+
+				var redisPassword = Configuration.GetConnectionString("RedisPassword");
+
+				var redisConn =
+						$"{redisHost}:{redisPort},password={redisPassword},ssl=False,abortConnect=False";
+
+				services.AddSignalR().AddRedis(redisConn);
+			}
+			else
+				services.AddSignalR();
+		}
+
+		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+		public void Configure(IApplicationBuilder app)
+		{
+			if (Environment.IsDevelopment())
+				app.UseDeveloperExceptionPage();
+
+			// TODO: when we know the deployment details we should reassess the use of compression here.
+			app.UseResponseCompression();
+
+			app.UseSerilogRequestLogging();
+
+			app.UseCors(
+					builder => builder.AllowAnyHeader()
+									  .AllowAnyMethod()
+									  .SetIsOriginAllowed(host => true)
+									  .AllowCredentials());
+
+			app.UseHttpException();
+
+			// Get app settings
+			var appSettingsSection = Configuration.GetSection("AppSettings");
+			var appSettings = appSettingsSection.Get<AppSettings>();
+
+			if (appSettings.HttpServer.ToLower() == "true")
+			{
+				// Enable middleware to serve generated Swagger as a JSON endpoint.
+				app.UseSwagger();
+
+				// Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
+				// specifying the Swagger JSON endpoint.
+				app.UseSwaggerUI(
+						c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "SQE API v1"); });
+			}
+
+			app.UseRouting();
+
+			app.UseAuthorization();
+			app.UseAuthentication();
+
+			app.UseEndpoints(
+					endpoints =>
+					{
+						endpoints.MapHub<MainHub>("/signalr");
+
+						if (appSettings.HttpServer.ToLower() == "true")
+							endpoints.MapControllers();
+					});
+		}
+	}
 }

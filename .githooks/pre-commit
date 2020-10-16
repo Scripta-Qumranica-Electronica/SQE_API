@@ -5,7 +5,7 @@
 
 check_docker_vars () {
     grep -n '\-[[:space:]]'"${1}"'=[^$]' docker/deploy/docker-compose.yml
-    if test "$?" -eq 0; then 
+    if test "$?" -eq 0; then
         printf "\e[31mPlease remove the custom settings for ${1} from docker/deploy/docker-compose.yml\n"
         printf "The line should be:\n"
         printf "#- ${1}=\e[0m\n"
@@ -14,16 +14,16 @@ check_docker_vars () {
 }
 
 check_appsettings_vars () {
-    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-server/appsettings.json 
-    if test "$?" -eq 0; then 
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-server/appsettings.json
+    if test "$?" -eq 0; then
         printf "\e[31mPlease remove the custom settings for ${1} from sqe-api-server/appsettings.json\n"
         printf "The line should be:\n"
         printf "\"${1}\": \"\",\e[0m\n"
         exit 1
     fi
-    
-    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-server/appsettings.Development.json 
-    if test "$?" -eq 0; then 
+
+    grep -n '"'"${1}"'"[ ]*:[ ]*"[^"].*,.*$' sqe-api-server/appsettings.Development.json
+    if test "$?" -eq 0; then
         printf "\e[31mPlease remove the custom settings for ${1} from sqe-api-server/appsettings.Development.json\n"
         printf "The line should be:\n"
         printf "\"${1}\": \"\",\e[0m\n"
@@ -52,11 +52,11 @@ check_appsettings_vars "MailerEmailSmtpPort"
 generate_realtime_hubs () {
     dotnet build sqe-realtime-hub-builder
     dotnet sqe-realtime-hub-builder/bin/Debug/netcoreapp3.1/sqe-realtime-hub-builder.dll
-        if test "$?" -ne 0; then 
+        if test "$?" -ne 0; then
         printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
         exit 1
-    fi 
+    fi
 }
 
 ## Generating realtime hub methods
@@ -66,11 +66,11 @@ generate_realtime_hubs
 ## We run the "linter" to ensure the code remains formatted consistently
 cleanup_code () {
     ## Check that dotnet-format is installed
-    if ! dotnet tool list -g | grep "dotnet-format"; then
-        dotnet tool install -g dotnet-format
+    if ! dotnet tool list -g | grep "jb"; then
+        dotnet tool install -g JetBrains.ReSharper.GlobalTools
     fi
-    
-    ~/.dotnet/tools/dotnet-format 
+
+    ~/.dotnet/tools/jb cleanupcode ./Qumran.sln
 }
 
 ## Cleaning up code formatting
@@ -82,11 +82,11 @@ generate_ts_from_dtos () {
     dotnet build Utilities/GenerateTypescriptDTOs
     dotnet build sqe-dto
     dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp3.1/GenerateTypescriptDTOs.dll
-    if test "$?" -ne 0; then 
+    if test "$?" -ne 0; then
         printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
         exit 1
-    fi 
+    fi
 }
 
 ## Generating typescript definitions
@@ -97,11 +97,11 @@ generate_ts_from_dtos
 generate_ts_interfaces () {
     dotnet build Utilities/GenerateTypescriptInterfaces
     dotnet Utilities/GenerateTypescriptInterfaces/bin/Debug/netcoreapp3.1/GenerateTypescriptInterfaces.dll
-    if test "$?" -ne 0; then 
+    if test "$?" -ne 0; then
         printf "\e[31mThere was an error generating the SQE typescript SignalR interface.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
         exit 1
-    fi 
+    fi
 }
 
 ## Generating typescript definitions
@@ -111,8 +111,8 @@ generate_ts_interfaces
 ## Now add any updated files
 git add -A
 
-if test "$?" -eq 0; then 
-    printf "\e[32mAll files have been succesfully checked.\e[0m\n\n"
+if test "$?" -eq 0; then
+    printf "\e[32mAll files have been successfully checked.\e[0m\n\n"
     exit 0
 else
     printf "\e[31mAn error occured adding the files for commit.\e[0m\n\n"
