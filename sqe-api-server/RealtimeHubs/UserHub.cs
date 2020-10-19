@@ -32,7 +32,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.AuthenticateAsync(payload.email, payload.password)
+				return await _userService.AuthenticateAsync(payload.email, payload.password);
 			}
 			catch (ApiException err)
 			{
@@ -61,7 +61,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				await _userService.UpdateUnactivatedAccountEmailAsync(
 						payload.email
-						, payload.newEmail)
+						, payload.newEmail);
 			}
 			catch (ApiException err)
 			{
@@ -87,7 +87,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.ResetLostPasswordAsync(payload.token, payload.password)
+				await _userService.ResetLostPasswordAsync(payload.token, payload.password);
 			}
 			catch (ApiException err)
 			{
@@ -115,7 +115,7 @@ namespace SQE.API.Server.RealtimeHubs
 				await _userService.ChangePasswordAsync(
 						_userService.GetCurrentUserId()
 						, payload.oldPassword
-						, payload.newPassword)
+						, payload.newPassword);
 			}
 			catch (ApiException err)
 			{
@@ -145,7 +145,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.UpdateUserAsync(_userService.GetCurrentUserId(), payload)
+				return await _userService.UpdateUserAsync(_userService.GetCurrentUserId(), payload);
 			}
 			catch (ApiException err)
 			{
@@ -171,7 +171,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.ConfirmUserRegistrationAsync(payload.token)
+				await _userService.ConfirmUserRegistrationAsync(payload.token);
 			}
 			catch (ApiException err)
 			{
@@ -196,7 +196,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.RequestResetLostPasswordAsync(payload.email)
+				await _userService.RequestResetLostPasswordAsync(payload.email);
 			}
 			catch (ApiException err)
 			{
@@ -221,7 +221,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.GetCurrentUser()
+				return await _userService.GetCurrentUser();
 			}
 			catch (ApiException err)
 			{
@@ -247,7 +247,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.CreateNewUserAsync(payload)
+				return await _userService.CreateNewUserAsync(payload);
 			}
 			catch (ApiException err)
 			{
@@ -274,7 +274,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.ResendActivationEmail(payload.email)
+				await _userService.ResendActivationEmail(payload.email);
 			}
 			catch (ApiException err)
 			{
@@ -299,7 +299,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.GetUserDataStoreAsync(_userService.GetCurrentUserId())
+				return await _userService.GetUserDataStoreAsync(_userService.GetCurrentUserId());
 			}
 			catch (ApiException err)
 			{
@@ -325,7 +325,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _userService.SetUserDataStoreAsync(_userService.GetCurrentUserId(), data)
+				await _userService.SetUserDataStoreAsync(_userService.GetCurrentUserId(), data);
 			}
 			catch (ApiException err)
 			{

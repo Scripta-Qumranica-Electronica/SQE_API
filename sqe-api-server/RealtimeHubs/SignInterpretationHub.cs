@@ -31,8 +31,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(
-						await _userService.GetCurrentUserObjectAsync(editionId))
+				return await _signInterpretationService.GetEditionSignInterpretationAttributesAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId));
 			}
 			catch (ApiException err)
 			{
@@ -62,9 +62,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.GetEditionSignInterpretationAsync(
+				return await _signInterpretationService.GetEditionSignInterpretationAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, signInterpretationId)
+						, signInterpretationId);
 			}
 			catch (ApiException err)
 			{
@@ -93,9 +93,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.CreateEditionAttributeAsync(
+				return await _signInterpretationService.CreateEditionAttributeAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, newAttribute)
+						, newAttribute);
 			}
 			catch (ApiException err)
 			{
@@ -127,7 +127,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				await _signInterpretationService.DeleteEditionAttributeAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, attributeId)
+						, attributeId);
 			}
 			catch (ApiException err)
 			{
@@ -160,10 +160,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.UpdateEditionAttributeAsync(
+				return await _signInterpretationService.UpdateEditionAttributeAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, attributeId
-						, updatedAttribute)
+						, updatedAttribute);
 			}
 			catch (ApiException err)
 			{
@@ -192,9 +192,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.CreateSignInterpretationAsync(
+				return await _signInterpretationService.CreateSignInterpretationAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, newSignInterpretation)
+						, newSignInterpretation);
 			}
 			catch (ApiException err)
 			{
@@ -226,7 +226,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				await _signInterpretationService.DeleteSignInterpretationAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, signInterpretationId)
+						, signInterpretationId);
 			}
 			catch (ApiException err)
 			{
@@ -258,10 +258,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.LinkSignInterpretationsAsync(
+				return await _signInterpretationService.LinkSignInterpretationsAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, signInterpretationId
-						, nextSignInterpretationId)
+						, nextSignInterpretationId);
 			}
 			catch (ApiException err)
 			{
@@ -293,10 +293,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.UnlinkSignInterpretationsAsync(
+				return await _signInterpretationService.UnlinkSignInterpretationsAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, signInterpretationId
-						, nextSignInterpretationId)
+						, nextSignInterpretationId);
 			}
 			catch (ApiException err)
 			{
@@ -328,10 +328,11 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.CreateOrUpdateSignInterpretationCommentaryAsync(
-						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, signInterpretationId
-						, commentary)
+				return await _signInterpretationService
+						.CreateOrUpdateSignInterpretationCommentaryAsync(
+								await _userService.GetCurrentUserObjectAsync(editionId, true)
+								, signInterpretationId
+								, commentary);
 			}
 			catch (ApiException err)
 			{
@@ -363,10 +364,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.CreateSignInterpretationAttributeAsync(
+				return await _signInterpretationService.CreateSignInterpretationAttributeAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, signInterpretationId
-						, newSignInterpretationAttributes)
+						, newSignInterpretationAttributes);
 			}
 			catch (ApiException err)
 			{
@@ -401,11 +402,11 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _signInterpretationService.UpdateSignInterpretationAttributeAsync(
+				return await _signInterpretationService.UpdateSignInterpretationAttributeAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, signInterpretationId
 						, attributeValueId
-						, alteredSignInterpretationAttribute)
+						, alteredSignInterpretationAttribute);
 			}
 			catch (ApiException err)
 			{
@@ -440,7 +441,7 @@ namespace SQE.API.Server.RealtimeHubs
 				await _signInterpretationService.DeleteSignInterpretationAttributeAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, signInterpretationId
-						, attributeValueId)
+						, attributeValueId);
 			}
 			catch (ApiException err)
 			{

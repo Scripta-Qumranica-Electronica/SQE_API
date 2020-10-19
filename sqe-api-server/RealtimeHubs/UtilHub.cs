@@ -29,7 +29,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				_utilService.RepairWktPolygonAsync(payload.wktPolygon)
+				return _utilService.RepairWktPolygonAsync(payload.wktPolygon);
 			}
 			catch (ApiException err)
 			{

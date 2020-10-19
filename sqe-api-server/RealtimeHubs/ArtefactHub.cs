@@ -37,9 +37,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.CreateArtefactAsync(
+				return await _artefactService.CreateArtefactAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, payload)
+						, payload);
 			}
 			catch (ApiException err)
 			{
@@ -69,7 +69,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				await _artefactService.DeleteArtefactAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, artefactId)
+						, artefactId);
 			}
 			catch (ApiException err)
 			{
@@ -99,10 +99,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.GetEditionArtefactAsync(
+				return await _artefactService.GetEditionArtefactAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
 						, artefactId
-						, optional)
+						, optional);
 			}
 			catch (ApiException err)
 			{
@@ -130,9 +130,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _roiService.GetRoisByArtefactIdAsync(
+				return await _roiService.GetRoisByArtefactIdAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, artefactId)
+						, artefactId);
 			}
 			catch (ApiException err)
 			{
@@ -160,9 +160,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.GetEditionArtefactListingsAsync(
+				return await _artefactService.GetEditionArtefactListingsAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, optional)
+						, optional);
 			}
 			catch (ApiException err)
 			{
@@ -195,10 +195,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.ArtefactTextFragmentsAsync(
+				return await _artefactService.ArtefactTextFragmentsAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
 						, artefactId
-						, optional)
+						, optional);
 			}
 			catch (ApiException err)
 			{
@@ -237,10 +237,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.UpdateArtefactAsync(
+				return await _artefactService.UpdateArtefactAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, artefactId
-						, payload)
+						, payload);
 			}
 			catch (ApiException err)
 			{
@@ -270,9 +270,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.BatchUpdateArtefactTransformAsync(
+				return await _artefactService.BatchUpdateArtefactTransformAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, payload)
+						, payload);
 			}
 			catch (ApiException err)
 			{
@@ -298,8 +298,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.ArtefactGroupsOfEditionAsync(
-						await _userService.GetCurrentUserObjectAsync(editionId))
+				return await _artefactService.ArtefactGroupsOfEditionAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId));
 			}
 			catch (ApiException err)
 			{
@@ -328,9 +328,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.GetArtefactGroupDataAsync(
+				return await _artefactService.GetArtefactGroupDataAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, artefactGroupId)
+						, artefactGroupId);
 			}
 			catch (ApiException err)
 			{
@@ -361,9 +361,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.CreateArtefactGroupAsync(
+				return await _artefactService.CreateArtefactGroupAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, payload)
+						, payload);
 			}
 			catch (ApiException err)
 			{
@@ -396,10 +396,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.UpdateArtefactGroupAsync(
+				return await _artefactService.UpdateArtefactGroupAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, artefactGroupId
-						, payload)
+						, payload);
 			}
 			catch (ApiException err)
 			{
@@ -428,9 +428,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _artefactService.DeleteArtefactGroupAsync(
+				return await _artefactService.DeleteArtefactGroupAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, artefactGroupId)
+						, artefactGroupId);
 			}
 			catch (ApiException err)
 			{

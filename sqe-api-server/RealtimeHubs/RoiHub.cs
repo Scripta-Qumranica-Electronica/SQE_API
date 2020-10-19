@@ -31,9 +31,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _roiService.GetRoiAsync(
+				return await _roiService.GetRoiAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, roiId)
+						, roiId);
 			}
 			catch (ApiException err)
 			{
@@ -61,9 +61,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _roiService.CreateRoiAsync(
+				return await _roiService.CreateRoiAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, newRoi)
+						, newRoi);
 			}
 			catch (ApiException err)
 			{
@@ -91,9 +91,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _roiService.CreateRoisAsync(
+				return await _roiService.CreateRoisAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, newRois)
+						, newRois);
 			}
 			catch (ApiException err)
 			{
@@ -121,9 +121,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _roiService.BatchEditRoisAsync(
+				return await _roiService.BatchEditRoisAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, rois)
+						, rois);
 			}
 			catch (ApiException err)
 			{
@@ -153,10 +153,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _roiService.UpdateRoiAsync(
+				return await _roiService.UpdateRoiAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, roiId
-						, updateRoi)
+						, updateRoi);
 			}
 			catch (ApiException err)
 			{
@@ -184,9 +184,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _roiService.UpdateRoisAsync(
+				return await _roiService.UpdateRoisAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, updateRois)
+						, updateRois);
 			}
 			catch (ApiException err)
 			{
@@ -214,7 +214,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				await _roiService.DeleteRoiAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, roiId)
+						, roiId);
 			}
 			catch (ApiException err)
 			{

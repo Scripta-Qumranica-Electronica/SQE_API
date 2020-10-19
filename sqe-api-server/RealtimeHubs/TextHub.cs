@@ -31,9 +31,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _textService.CreateTextFragmentAsync(
+				return await _textService.CreateTextFragmentAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, createFragment)
+						, createFragment);
 			}
 			catch (ApiException err)
 			{
@@ -64,10 +64,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _textService.UpdateTextFragmentAsync(
+				return await _textService.UpdateTextFragmentAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
 						, textFragmentId
-						, updatedTextFragment)
+						, updatedTextFragment);
 			}
 			catch (ApiException err)
 			{
@@ -94,8 +94,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _textService.GetFragmentDataAsync(
-						await _userService.GetCurrentUserObjectAsync(editionId))
+				return await _textService.GetFragmentDataAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId));
 			}
 			catch (ApiException err)
 			{
@@ -125,9 +125,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _textService.GetArtefactsAsync(
+				return await _textService.GetArtefactsAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, textFragmentId)
+						, textFragmentId);
 			}
 			catch (ApiException err)
 			{
@@ -156,9 +156,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _textService.GetLineIdsAsync(
+				return await _textService.GetLineIdsAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, textFragmentId)
+						, textFragmentId);
 			}
 			catch (ApiException err)
 			{
@@ -190,9 +190,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _textService.GetFragmentByIdAsync(
+				return await _textService.GetFragmentByIdAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, textFragmentId)
+						, textFragmentId);
 			}
 			catch (ApiException err)
 			{
@@ -224,9 +224,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _textService.GetLineByIdAsync(
+				return await _textService.GetLineByIdAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, lineId)
+						, lineId);
 			}
 			catch (ApiException err)
 			{

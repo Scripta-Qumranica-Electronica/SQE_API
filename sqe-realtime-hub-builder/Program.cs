@@ -61,7 +61,7 @@ namespace sqe_realtime_hub_builder
     {
         try
         {
-             $Method
+             $Method;
         }
         catch (ApiException err)
         {
@@ -328,7 +328,11 @@ namespace sqe_realtime_hub_builder
 									: ", clientId: Context.ConnectionId);");
 
 					// Write the method body
-					outputFile.WriteLine(_hubMethod.Replace("$Method", methodBody));
+					if ((returnType != "Task")
+						&& (methodBody.IndexOf("return") < 0))
+						outputFile.WriteLine(_hubMethod.Replace("$Method", "return " + methodBody));
+					else
+						outputFile.WriteLine(_hubMethod.Replace("$Method", methodBody));
 
 					outputFile.WriteLine("");
 				}

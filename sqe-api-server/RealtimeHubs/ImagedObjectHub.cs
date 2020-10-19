@@ -30,7 +30,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _imagedObjectService.GetImagedObjectImagesAsync(imagedObjectId)
+				return await _imagedObjectService.GetImagedObjectImagesAsync(imagedObjectId);
 			}
 			catch (ApiException err)
 			{
@@ -61,10 +61,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _imagedObjectService.GetImagedObjectAsync(
+				return await _imagedObjectService.GetImagedObjectAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
 						, imagedObjectId
-						, optional)
+						, optional);
 			}
 			catch (ApiException err)
 			{
@@ -93,9 +93,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _imagedObjectService.GetEditionImagedObjectsAsync(
+				return await _imagedObjectService.GetEditionImagedObjectsAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, optional)
+						, optional);
 			}
 			catch (ApiException err)
 			{
@@ -119,7 +119,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _imageService.GetImageInstitutionsAsync()
+				return await _imageService.GetImageInstitutionsAsync();
 			}
 			catch (ApiException err)
 			{
@@ -144,7 +144,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _imageService.GetInstitutionImagesAsync(institutionName)
+				return await _imageService.GetInstitutionImagesAsync(institutionName);
 			}
 			catch (ApiException err)
 			{
@@ -171,7 +171,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _imageService.GetImageTextFragmentsAsync(imagedObjectId)
+				return await _imageService.GetImageTextFragmentsAsync(imagedObjectId);
 			}
 			catch (ApiException err)
 			{

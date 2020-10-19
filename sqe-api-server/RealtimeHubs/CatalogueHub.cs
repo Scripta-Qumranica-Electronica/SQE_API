@@ -29,7 +29,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _catalogueService.GetTextFragmentsOfImagedObject(imagedObjectId)
+				return await _catalogueService.GetTextFragmentsOfImagedObject(imagedObjectId);
 			}
 			catch (ApiException err)
 			{
@@ -55,7 +55,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _catalogueService.GetImagedObjectsOfTextFragment(textFragmentId)
+				return await _catalogueService.GetImagedObjectsOfTextFragment(textFragmentId);
 			}
 			catch (ApiException err)
 			{
@@ -81,7 +81,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _catalogueService.GetTextFragmentsAndImagedObjectsOfEdition(editionId)
+				return await _catalogueService.GetTextFragmentsAndImagedObjectsOfEdition(editionId);
 			}
 			catch (ApiException err)
 			{
@@ -108,7 +108,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _catalogueService.GetTextFragmentsAndImagedObjectsOfManuscript(manuscriptId)
+				return await _catalogueService.GetTextFragmentsAndImagedObjectsOfManuscript(
+						manuscriptId);
 			}
 			catch (ApiException err)
 			{
@@ -136,7 +137,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				await _catalogueService.CreateTextFragmentImagedObjectMatch(
 						await _userService.GetCurrentUserObjectAsync(null, true)
-						, newMatch)
+						, newMatch);
 			}
 			catch (ApiException err)
 			{
@@ -166,7 +167,7 @@ namespace SQE.API.Server.RealtimeHubs
 				await _catalogueService.ConfirmTextFragmentImagedObjectMatch(
 						await _userService.GetCurrentUserObjectAsync(null, true)
 						, iaaEditionCatalogToTextFragmentId
-						, true)
+						, true);
 			}
 			catch (ApiException err)
 			{
@@ -196,7 +197,7 @@ namespace SQE.API.Server.RealtimeHubs
 				await _catalogueService.ConfirmTextFragmentImagedObjectMatch(
 						await _userService.GetCurrentUserObjectAsync(null, true)
 						, iaaEditionCatalogToTextFragmentId
-						, false)
+						, false);
 			}
 			catch (ApiException err)
 			{

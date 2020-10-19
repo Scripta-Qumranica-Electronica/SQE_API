@@ -34,7 +34,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				await _editionService.RequestNewEditionEditor(
 						await _userService.GetCurrentUserObjectAsync(editionId, admin: true)
-						, payload)
+						, payload);
 			}
 			catch (ApiException err)
 			{
@@ -60,7 +60,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.GetAdminEditorRequests(_userService.GetCurrentUserId() ?? 0)
+				return await _editionService.GetAdminEditorRequests(
+						_userService.GetCurrentUserId() ?? 0);
 			}
 			catch (ApiException err)
 			{
@@ -85,7 +86,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.GetUserEditorInvitations(_userService.GetCurrentUserId() ?? 0)
+				return await _editionService.GetUserEditorInvitations(
+						_userService.GetCurrentUserId() ?? 0);
 			}
 			catch (ApiException err)
 			{
@@ -111,7 +113,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.AddEditionEditor(_userService.GetCurrentUserId(), token)
+				return await _editionService.AddEditionEditor(
+						_userService.GetCurrentUserId()
+						, token);
 			}
 			catch (ApiException err)
 			{
@@ -141,10 +145,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.ChangeEditionEditorRights(
+				return await _editionService.ChangeEditionEditorRights(
 						await _userService.GetCurrentUserObjectAsync(editionId, admin: true)
 						, editorEmailId
-						, payload)
+						, payload);
 			}
 			catch (ApiException err)
 			{
@@ -172,9 +176,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.CopyEditionAsync(
+				return await _editionService.CopyEditionAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, request)
+						, request);
 			}
 			catch (ApiException err)
 			{
@@ -204,10 +208,10 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.DeleteEditionAsync(
+				return await _editionService.DeleteEditionAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, token
-						, optional)
+						, optional);
 			}
 			catch (ApiException err)
 			{
@@ -232,8 +236,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.GetEditionAsync(
-						await _userService.GetCurrentUserObjectAsync(editionId))
+				return await _editionService.GetEditionAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId));
 			}
 			catch (ApiException err)
 			{
@@ -257,7 +261,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.ListEditionsAsync(_userService.GetCurrentUserId())
+				return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
 			}
 			catch (ApiException err)
 			{
@@ -285,9 +289,9 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.UpdateEditionAsync(
+				return await _editionService.UpdateEditionAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, request)
+						, request);
 			}
 			catch (ApiException err)
 			{
@@ -314,8 +318,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.GetEditionScriptCollection(
-						await _userService.GetCurrentUserObjectAsync(editionId))
+				return await _editionService.GetEditionScriptCollection(
+						await _userService.GetCurrentUserObjectAsync(editionId));
 			}
 			catch (ApiException err)
 			{
@@ -342,8 +346,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				await _editionService.GetEditionScriptLines(
-						await _userService.GetCurrentUserObjectAsync(editionId))
+				return await _editionService.GetEditionScriptLines(
+						await _userService.GetCurrentUserObjectAsync(editionId));
 			}
 			catch (ApiException err)
 			{
