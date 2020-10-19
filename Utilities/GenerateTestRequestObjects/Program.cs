@@ -18,89 +18,124 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace GenerateTestRequestObjects
 {
-    internal static class Program
-    {
-        private static readonly Regex _rx = new Regex(
-            @"Task?<(?<return>.*)?>",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
+	internal static class Program
+	{
+		private static readonly Regex _rx = new Regex(
+				@"Task?<(?<return>.*)?>"
+				, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private static async Task Main(string[] args)
-        {
-            //MSBuildLocator.RegisterDefaults();
-            await ParseSqeHttpControllers();
-        }
+		private static async Task Main(string[] args)
+		{
+			//MSBuildLocator.RegisterDefaults();
+			await ParseSqeHttpControllers();
+		}
 
-        private static async Task ParseSqeHttpControllers()
-        {
-            Console.WriteLine("Parsing the HTTP controllers and creating corresponding ApiRequest Objects.");
+		private static async Task ParseSqeHttpControllers()
+		{
+			Console.WriteLine(
+					"Parsing the HTTP controllers and creating corresponding ApiRequest Objects.");
 
-            // TODO: Can we find a better way to resolve these paths instead of all the backtracking?
-            var projectRoot =
-                Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../", "../", "../", "../"));
-            var ApiServerRoot = Path.GetFullPath(Path.Combine(projectRoot, "../", "sqe-api-server"));
-            var csProjFile = Path.Combine(ApiServerRoot, "sqe-api-server.csproj");
-            var testFolder = Path.Combine(ApiServerRoot, "../", "sqe-api-test");
+			// TODO: Can we find a better way to resolve these paths instead of all the backtracking?
+			var projectRoot = Path.GetFullPath(
+					Path.Combine(
+							AppDomain.CurrentDomain.BaseDirectory
+							, "../"
+							, "../"
+							, "../"
+							, "../"));
 
-            // Get the compilation of the project
-            Console.WriteLine($"Parsing {csProjFile}");
-            var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(csProjFile);
-            var workspace = new AdhocWorkspace();
-            var project = analyzer.AddToWorkspace(workspace);
-            var compilation = await project.GetCompilationAsync();
+			var ApiServerRoot =
+					Path.GetFullPath(Path.Combine(projectRoot, "../", "sqe-api-server"));
 
-            // Fetch the Semantic models for only the controllers and service.
-            // We want failures if things are not found in these two namespaces.
-            var semModels = compilation.SyntaxTrees.Select(x => compilation.GetSemanticModel(x))
-                // TODO: really get the namespace
-                .Where(x =>
-                    x.SyntaxTree.GetRoot().ToString().Contains("namespace SQE.API.Server.Services")
-                    || x.SyntaxTree.GetRoot().ToString().Contains("namespace SQE.API.Server.HttpControllers"));
+			var csProjFile = Path.Combine(ApiServerRoot, "sqe-api-server.csproj");
 
-            // Collect all the methods in the services namespace
-            var serviceMethods = await Parsers.GetAllSyntaxNodesAsync<MethodDeclarationSyntax>(compilation, semModels,
-                new List<string> { "SQE.API.Server.Services" });
+			var testFolder = Path.Combine(ApiServerRoot, "../", "sqe-api-test");
 
-            // Collect all the methods in the services namespace
-            var broadcastMethods = (await Parsers.GetAllSyntaxNodesAsync<InterfaceDeclarationSyntax>(compilation,
-                    semModels,
-                    new List<string> { "SQE.API.Server.RealtimeHubs" }))
-                .SelectMany(x => x.Syntax.Members)
-                .OfType<MethodDeclarationSyntax>();
+			// Get the compilation of the project
+			Console.WriteLine($"Parsing {csProjFile}");
+			var manager = new AnalyzerManager();
+			var analyzer = manager.GetProject(csProjFile);
+			var workspace = new AdhocWorkspace();
+			var project = analyzer.AddToWorkspace(workspace);
+			var compilation = await project.GetCompilationAsync();
 
-            var completeListenerList = new List<ParameterDescription>();
+			// Fetch the Semantic models for only the controllers and service.
+			// We want failures if things are not found in these two namespaces.
+			var semModels = compilation.SyntaxTrees.Select(x => compilation.GetSemanticModel(x))
 
-            // Begin walking the syntax tree in order to parse the controller classes
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                var rootSyntaxNode = await tree.GetRootAsync();
+									   // TODO: really get the namespace
+									   .Where(
+											   x => x.SyntaxTree.GetRoot()
+													 .ToString()
+													 .Contains("namespace SQE.API.Server.Services")
+													|| x.SyntaxTree.GetRoot()
+														.ToString()
+														.Contains(
+																"namespace SQE.API.Server.HttpControllers"));
 
-                // Look at each class declaration
-                foreach (var node in rootSyntaxNode.DescendantNodes().OfType<ClassDeclarationSyntax>())
-                {
-                    // Ignore all classes except those in the HttpControllers namespace
-                    NamespaceDeclarationSyntax namespaceDeclarationSyntax = null;
-                    if (!Helpers.SyntaxNodeHelper.TryGetParentSyntax(node, out namespaceDeclarationSyntax)) continue;
-                    if (namespaceDeclarationSyntax.Name.ToString() != "SQE.API.Server.HttpControllers") continue;
+			// Collect all the methods in the services namespace
+			var serviceMethods = await Parsers.GetAllSyntaxNodesAsync<MethodDeclarationSyntax>(
+					compilation
+					, semModels
+					, new List<string> { "SQE.API.Server.Services" });
 
-                    completeListenerList = completeListenerList.Concat(await Parsers.ParseAndWriteClassesAsync(
-                        testFolder, node, semModels, serviceMethods,
-                        broadcastMethods, project)).ToList();
-                }
-            }
+			// Collect all the methods in the services namespace
+			var broadcastMethods =
+					(await Parsers.GetAllSyntaxNodesAsync<InterfaceDeclarationSyntax>(
+							compilation
+							, semModels
+							, new List<string> { "SQE.API.Server.RealtimeHubs" }))
+					.SelectMany(x => x.Syntax.Members)
+					.OfType<MethodDeclarationSyntax>();
 
-            // Write the Enum with completeListenerList
-            var listenerEnumPath = Path.Combine(testFolder, "ApiRequests", "ListenerMethods.cs");
-            Console.WriteLine($"Writing listener methods enum to {listenerEnumPath}");
-            completeListenerList = completeListenerList.Distinct().ToList();
-            using (var outputFile = new StreamWriter(listenerEnumPath))
-            {
-                await Writers.WriteListenerEnumsAsync(completeListenerList, outputFile);
-            }
+			var completeListenerList = new List<ParameterDescription>();
 
-            // Finish
-            Console.WriteLine("Successfully parsed all endpoints.");
-        }
-    }
+			// Begin walking the syntax tree in order to parse the controller classes
+			foreach (var tree in compilation.SyntaxTrees)
+			{
+				var rootSyntaxNode = await tree.GetRootAsync();
+
+				// Look at each class declaration
+				foreach (var node in rootSyntaxNode.DescendantNodes()
+												   .OfType<ClassDeclarationSyntax>())
+				{
+					// Ignore all classes except those in the HttpControllers namespace
+					NamespaceDeclarationSyntax namespaceDeclarationSyntax = null;
+
+					if (!Helpers.SyntaxNodeHelper.TryGetParentSyntax(
+							node
+							, out namespaceDeclarationSyntax))
+						continue;
+
+					if (namespaceDeclarationSyntax.Name.ToString()
+						!= "SQE.API.Server.HttpControllers")
+						continue;
+
+					completeListenerList = completeListenerList.Concat(
+																	   await Parsers
+																			   .ParseAndWriteClassesAsync(
+																					   testFolder
+																					   , node
+																					   , semModels
+																					   , serviceMethods
+																					   , broadcastMethods
+																					   , project))
+															   .ToList();
+				}
+			}
+
+			// Write the Enum with completeListenerList
+			var listenerEnumPath = Path.Combine(testFolder, "ApiRequests", "ListenerMethods.cs");
+
+			Console.WriteLine($"Writing listener methods enum to {listenerEnumPath}");
+
+			completeListenerList = completeListenerList.Distinct().ToList();
+
+			using (var outputFile = new StreamWriter(listenerEnumPath))
+				await Writers.WriteListenerEnumsAsync(completeListenerList, outputFile);
+
+			// Finish
+			Console.WriteLine("Successfully parsed all endpoints.");
+		}
+	}
 }

@@ -4,75 +4,61 @@ using SQE.DatabaseAccess.Models;
 
 namespace SQE.DatabaseAccess.Helpers
 {
-    public enum Readability : uint
-    {
-        IncompleteButClear = 18,
-        IncompleteButNotClear = 19
-    }
+	public enum Readability : uint
+	{
+		IncompleteButClear      = 18
+		, IncompleteButNotClear = 19
+		,
+	}
 
-    public enum RelativePosition : uint
-    {
-        BelowLine = 34,
-        AboveLine = 35,
-        LeftMargin = 36,
-        RightMargin = 37,
-        Margin = 38,
-        UpperMargin = 39,
-        LowerMargin = 40
-    }
+	public enum RelativePosition : uint
+	{
+		BelowLine     = 34
+		, AboveLine   = 35
+		, LeftMargin  = 36
+		, RightMargin = 37
+		, Margin      = 38
+		, UpperMargin = 39
+		, LowerMargin = 40
+		,
+	}
 
-    public static class SignInterpretationAttributeFactory
-    {
-        public static SignInterpretationAttributeData CreateCharacterAttribute(
-            float width = 1)
-        {
-            return _createNumericAttribute(1, width);
-        }
+	public static class SignInterpretationAttributeFactory
+	{
+		public static SignInterpretationAttributeData CreateCharacterAttribute(float width = 1)
+			=> _createNumericAttribute(1, width);
 
-        public static SignInterpretationAttributeData CreateSpaceAttribute(float width = 1)
-        {
-            return _createNumericAttribute(2, width);
-        }
+		public static SignInterpretationAttributeData CreateSpaceAttribute(float width = 1)
+			=> _createNumericAttribute(2, width);
 
-        public static SignInterpretationAttributeData CreateVacatAttribute(float width = 5)
-        {
-            return _createNumericAttribute(4, width);
-        }
+		public static SignInterpretationAttributeData CreateVacatAttribute(float width = 5)
+			=> _createNumericAttribute(4, width);
 
-        public static SignInterpretationAttributeData CreateDamageAttribute(float width = 1)
-        {
-            return _createNumericAttribute(5, width);
-        }
+		public static SignInterpretationAttributeData CreateDamageAttribute(float width = 1)
+			=> _createNumericAttribute(5, width);
 
+		public static List<SignInterpretationAttributeData> CreateElementTerminatorAttributes(
+				TableData.Table            table
+				, TableData.TerminatorType terminatorType)
+		{
+			return TableData.AllTerminators(table, terminatorType)
+							.Select(
+									value => new SignInterpretationAttributeData
+									{
+											AttributeValueId = value,
+									})
+							.ToList();
+		}
 
-        public static List<SignInterpretationAttributeData> CreateElementTerminatorAttributes(
-            TableData.Table table,
-            TableData.TerminatorType terminatorType)
-        {
-            return TableData.AllTerminators(table, terminatorType).Select(value =>
-                new SignInterpretationAttributeData { AttributeValueId = value }).ToList();
-        }
+		public static SignInterpretationAttributeData CreateProbabilityAttribute(float value)
+			=> _createNumericAttribute(16, value);
 
+		public static SignInterpretationAttributeData CreateReadabilityAttribute(
+				Readability readability) => _createNumericAttribute((uint) readability, 0);
 
-        public static SignInterpretationAttributeData CreateProbabilityAttribute(float value)
-        {
-            return _createNumericAttribute(16, value);
-        }
-
-        public static SignInterpretationAttributeData CreateReadabilityAttribute(Readability readability)
-        {
-            return _createNumericAttribute((uint)readability, 0);
-        }
-
-
-        private static SignInterpretationAttributeData _createNumericAttribute(
-            uint attributeValueId,
-            float value)
-        {
-            return new SignInterpretationAttributeData
-            {
-                AttributeValueId = attributeValueId
-            };
-        }
-    }
+		private static SignInterpretationAttributeData _createNumericAttribute(
+				uint    attributeValueId
+				, float value)
+			=> new SignInterpretationAttributeData { AttributeValueId = attributeValueId };
+	}
 }

@@ -1,8 +1,8 @@
 namespace SQE.DatabaseAccess.Queries
 {
-    public static class EditionScriptLines
-    {
-        public static string GetQuery = @"
+	public static class EditionScriptLines
+	{
+		public static string GetQuery = @"
 SELECT DISTINCT text_fragment_data.text_fragment_id AS TextFragmentId, 
                 text_fragment_data.name AS TextFragmentName, 
                 
@@ -89,5 +89,5 @@ ORDER BY text_fragment_to_line.text_fragment_id,
          sign_interpretation_attribute.sign_interpretation_attribute_id,
          position_in_stream.position_in_stream_id
 ";
-    }
+	}
 }

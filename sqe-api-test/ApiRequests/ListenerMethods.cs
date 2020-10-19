@@ -6,29 +6,30 @@
 
 namespace SQE.ApiTest.ApiRequests
 {
-    public enum ListenerMethods
-    {
-        CreatedArtefact,
-        UpdatedArtefact,
-        CreatedArtefactGroup,
-        DeletedArtefact,
-        DeletedArtefactGroup,
-        UpdatedArtefactGroup,
-        RequestedEditor,
-        CreatedEditor,
-        CreatedEdition,
-        UpdatedEdition,
-        DeletedEdition,
-        CreatedRoisBatch,
-        EditedRoisBatch,
-        UpdatedRoisBatch,
-        DeletedRoi,
-        CreatedAttribute,
-        CreatedSignInterpretation,
-        UpdatedSignInterpretation,
-        DeletedAttribute,
-        DeletedSignInterpretation,
-        UpdatedAttribute,
-        CreatedTextFragment,
-    }
+	public enum ListenerMethods
+	{
+		CreatedArtefact
+		, UpdatedArtefact
+		, CreatedArtefactGroup
+		, DeletedArtefact
+		, DeletedArtefactGroup
+		, UpdatedArtefactGroup
+		, RequestedEditor
+		, CreatedEditor
+		, CreatedEdition
+		, UpdatedEdition
+		, DeletedEdition
+		, CreatedRoisBatch
+		, EditedRoisBatch
+		, UpdatedRoisBatch
+		, DeletedRoi
+		, CreatedAttribute
+		, CreatedSignInterpretation
+		, UpdatedSignInterpretation
+		, DeletedAttribute
+		, DeletedSignInterpretation
+		, UpdatedAttribute
+		, CreatedTextFragment
+		,
+	}
 }

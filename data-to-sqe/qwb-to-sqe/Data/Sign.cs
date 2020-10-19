@@ -2,54 +2,56 @@ using System.Collections.Generic;
 
 namespace qwb_to_sqe
 {
-    public class Sign
-    {
-        public readonly Dictionary<int, SQESignAttribute> Attributes = new Dictionary<int, SQESignAttribute>();
-        public string character = "";
-        public int is_variant = 0;
-        public int sign_id = 0;
-        public int sign_interpretation_id = 0;
+	public class Sign
+	{
+		public readonly Dictionary<int, SQESignAttribute> Attributes =
+				new Dictionary<int, SQESignAttribute>();
 
+		public string character              = "";
+		public int    is_variant             = 0;
+		public int    sign_id                = 0;
+		public int    sign_interpretation_id = 0;
 
-        protected Sign(string character, params int[] attributeValues)
-        {
-            this.character = character;
-            AddAttributes(attributeValues);
-        }
+		protected Sign(string character, params int[] attributeValues)
+		{
+			this.character = character;
+			AddAttributes(attributeValues);
+		}
 
-        public void AddAttributes(params int[] attributeValues)
-        {
-            foreach (var attributeValue in attributeValues) AddAttribute(attributeValue);
-        }
+		public void AddAttributes(params int[] attributeValues)
+		{
+			foreach (var attributeValue in attributeValues)
+				AddAttribute(attributeValue);
+		}
 
-        public void AddAttribute(int attributeValue, int value = 0, int sequence = 0)
-        {
-            var attribute = new SQESignAttribute
-            {
-                attribute_value_id = attributeValue,
-                value = value,
-                sequence = sequence
-            };
-            Attributes.Add(attributeValue, attribute);
-        }
+		public void AddAttribute(int attributeValue, int value = 0, int sequence = 0)
+		{
+			var attribute = new SQESignAttribute
+			{
+					attribute_value_id = attributeValue
+					, value = value
+					, sequence = sequence
+					,
+			};
 
-        protected void SetBoolAttribute(int attributeValueId, bool value)
-        {
-            if (value && !Attributes.ContainsKey(attributeValueId)) AddAttribute(attributeValueId);
-            else if (Attributes.ContainsKey(attributeValueId)) Attributes.Remove(attributeValueId);
-        }
+			Attributes.Add(attributeValue, attribute);
+		}
 
-        // Add a new sign after the given previous sign
-        public void addAfter(Sign previousSign)
-        {
-            //New sign
-            if (previousSign.sign_id == 0)
-            {
-            }
-        }
+		protected void SetBoolAttribute(int attributeValueId, bool value)
+		{
+			if (value && !Attributes.ContainsKey(attributeValueId))
+				AddAttribute(attributeValueId);
+			else if (Attributes.ContainsKey(attributeValueId))
+				Attributes.Remove(attributeValueId);
+		}
 
-        public void Add(Sign s)
-        {
-        }
-    }
+		// Add a new sign after the given previous sign
+		public void addAfter(Sign previousSign)
+		{
+			//New sign
+			if (previousSign.sign_id == 0) { }
+		}
+
+		public void Add(Sign s) { }
+	}
 }

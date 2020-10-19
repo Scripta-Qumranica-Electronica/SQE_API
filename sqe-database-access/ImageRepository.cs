@@ -8,116 +8,124 @@ using SQE.DatabaseAccess.Queries;
 
 namespace SQE.DatabaseAccess
 {
-    public interface IImageRepository
-    {
-        Task<IEnumerable<Image>> GetImagesAsync(UserInfo editionUser, string imagedObjectId);
-        Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync();
-        Task<IEnumerable<InstitutionImage>> InstitutionImages(string institution);
-        Task<List<ImagedObjectTextFragmentMatch>> GetImageTextFragmentsAsync(string imagedObjectId);
-    }
+	public interface IImageRepository
+	{
+		Task<IEnumerable<Image>> GetImagesAsync(UserInfo editionUser, string imagedObjectId);
 
-    public class ImageRepository : DbConnectionBase, IImageRepository
-    {
-        public ImageRepository(IConfiguration config) : base(config)
-        {
-        }
+		Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync();
 
-        public async Task<IEnumerable<Image>> GetImagesAsync(UserInfo editionUser, string imagedObjectId)
-        {
-            var sql = ImageQueries.GetImageQuery(!string.IsNullOrEmpty(imagedObjectId));
+		Task<IEnumerable<InstitutionImage>> InstitutionImages(string institution);
 
-            using (var connection = OpenConnection())
-            {
-                var results = await connection.QueryAsync<ImageQueries.Result>(
-                    sql,
-                    new
-                    {
-                        UserId = editionUser.userId,
-                        editionUser.EditionId,
-                        ObjectId = imagedObjectId
-                    }
-                );
+		Task<List<ImagedObjectTextFragmentMatch>> GetImageTextFragmentsAsync(string imagedObjectId);
+	}
 
-                var models = results.Select(CreateImage);
-                return models;
-            }
-        }
+	public class ImageRepository : DbConnectionBase
+								   , IImageRepository
+	{
+		public ImageRepository(IConfiguration config) : base(config) { }
 
-        public async Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync()
-        {
-            var sql = ImageInstitutionQuery.GetQuery();
+		public async Task<IEnumerable<Image>> GetImagesAsync(
+				UserInfo editionUser
+				, string imagedObjectId)
+		{
+			var sql = ImageQueries.GetImageQuery(!string.IsNullOrEmpty(imagedObjectId));
 
-            using (var connection = OpenConnection())
-            {
-                var results = await connection.QueryAsync<ImageInstitutionQuery.Result>(sql);
+			using (var connection = OpenConnection())
+			{
+				var results = await connection.QueryAsync<ImageQueries.Result>(
+						sql
+						, new
+						{
+								UserId = editionUser.userId
+								, editionUser.EditionId
+								, ObjectId = imagedObjectId
+								,
+						});
 
-                var models = results.Select(CreateInstitution);
-                return models;
-            }
-        }
+				var models = results.Select(CreateImage);
 
-        public async Task<IEnumerable<InstitutionImage>> InstitutionImages(string institution)
-        {
-            using (var connection = OpenConnection())
-            {
-                var results = await connection.QueryAsync<InstitutionImage>(InstitutionImagesQuery.GetQuery, new
-                {
-                    Institution = institution
-                });
+				return models;
+			}
+		}
 
-                return results;
-            }
-        }
+		public async Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync()
+		{
+			var sql = ImageInstitutionQuery.GetQuery();
 
-        public async Task<List<ImagedObjectTextFragmentMatch>> GetImageTextFragmentsAsync(string imagedObjectId)
-        {
-            using var connection = OpenConnection();
-            return (await connection.QueryAsync<ImagedObjectTextFragmentMatch>(
-                    ImagedObjectTextFragmentsQuery.GetQuery,
-                    new { ImagedObjectId = imagedObjectId })
-                ).AsList();
-        }
+			using (var connection = OpenConnection())
+			{
+				var results = await connection.QueryAsync<ImageInstitutionQuery.Result>(sql);
 
-        private Image CreateImage(ImageQueries.Result image)
-        {
-            var model = new Image
-            {
-                URL = image.proxy + image.url + image.filename,
-                Id = image.sqe_image_id,
-                ImageToImageMapEditorId = image.image_to_image_map_editor_id,
-                Side = image.side == 0 ? "recto" : "verso",
-                Type = image.img_type,
-                PPI = image.ppi,
-                WaveLength = GetWave(image.wave_start, image.wave_end),
-                Institution = image.institution,
-                Catalog1 = image.catalog_1,
-                Catalog2 = image.catalog_2,
-                ImageCatalogId = image.image_catalog_id,
-                ObjectId = image.object_id,
-                Master = image.master,
-                RegionInMaster = image.region_on_image1,
-                RegionOfMaster = image.region_on_image2,
-                TransformMatrix = image.transform_matrix
-            };
-            return model;
-        }
+				var models = results.Select(CreateInstitution);
 
-        private static string[] GetWave(ushort start, ushort end)
-        {
-            var str = new string[2];
-            str[0] = start.ToString();
-            str[1] = end.ToString();
-            return str;
-        }
+				return models;
+			}
+		}
 
-        private static ImageInstitution CreateInstitution(ImageInstitutionQuery.Result result)
-        {
-            var model = new ImageInstitution
-            {
-                Name = result.Institution
-            };
+		public async Task<IEnumerable<InstitutionImage>> InstitutionImages(string institution)
+		{
+			using (var connection = OpenConnection())
+			{
+				var results = await connection.QueryAsync<InstitutionImage>(
+						InstitutionImagesQuery.GetQuery
+						, new { Institution = institution });
 
-            return model;
-        }
-    }
+				return results;
+			}
+		}
+
+		public async Task<List<ImagedObjectTextFragmentMatch>> GetImageTextFragmentsAsync(
+				string imagedObjectId)
+		{
+			using var connection = OpenConnection();
+
+			return (await connection.QueryAsync<ImagedObjectTextFragmentMatch>(
+					ImagedObjectTextFragmentsQuery.GetQuery
+					, new { ImagedObjectId = imagedObjectId })).AsList();
+		}
+
+		private Image CreateImage(ImageQueries.Result image)
+		{
+			var model = new Image
+			{
+					URL = image.proxy + image.url + image.filename
+					, Id = image.sqe_image_id
+					, ImageToImageMapEditorId = image.image_to_image_map_editor_id
+					, Side = image.side == 0
+							? "recto"
+							: "verso"
+					, Type = image.img_type
+					, PPI = image.ppi
+					, WaveLength = GetWave(image.wave_start, image.wave_end)
+					, Institution = image.institution
+					, Catalog1 = image.catalog_1
+					, Catalog2 = image.catalog_2
+					, ImageCatalogId = image.image_catalog_id
+					, ObjectId = image.object_id
+					, Master = image.master
+					, RegionInMaster = image.region_on_image1
+					, RegionOfMaster = image.region_on_image2
+					, TransformMatrix = image.transform_matrix
+					,
+			};
+
+			return model;
+		}
+
+		private static string[] GetWave(ushort start, ushort end)
+		{
+			var str = new string[2];
+			str[0] = start.ToString();
+			str[1] = end.ToString();
+
+			return str;
+		}
+
+		private static ImageInstitution CreateInstitution(ImageInstitutionQuery.Result result)
+		{
+			var model = new ImageInstitution { Name = result.Institution };
+
+			return model;
+		}
+	}
 }

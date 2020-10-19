@@ -10,204 +10,257 @@ using Xunit;
 
 namespace SQE.ApiTest.Helpers
 {
-    public static class CatalogueHelpers
-    {
-        public static async Task<CatalogueMatchListDTO> GetImagedObjectsAndTextFragmentsOfEdition(
-            uint editionId,
-            HttpClient client,
-            Func<string, Task<HubConnection>> signalr,
-            Request.UserAuthDetails user = null)
-        {
-            // Act
-            var requestobj = new Get.V1_Catalogue_Editions_EditionId_ImagedObjectTextFragmentMatches(editionId);
-            await requestobj.SendAsync(client, signalr);
+	public static class CatalogueHelpers
+	{
+		public static async Task<CatalogueMatchListDTO> GetImagedObjectsAndTextFragmentsOfEdition(
+				uint                                editionId
+				, HttpClient                        client
+				, Func<string, Task<HubConnection>> signalr
+				, Request.UserAuthDetails           user = null)
+		{
+			// Act
+			var requestobj =
+					new Get.V1_Catalogue_Editions_EditionId_ImagedObjectTextFragmentMatches(
+							editionId);
 
-            // Assert
-            requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
-            Assert.NotEmpty(requestobj.HttpResponseObject.matches);
-            var firstMatch = requestobj.HttpResponseObject.matches.First();
-            ConfirmValidMatch(firstMatch);
+			await requestobj.SendAsync(client, signalr);
 
-            return requestobj.HttpResponseObject;
-        }
+			// Assert
+			requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
 
-        public static async Task<CatalogueMatchListDTO> GetImagedObjectsAndTextFragmentsOfManuscript(
-            uint manuscriptId,
-            HttpClient client,
-            Func<string, Task<HubConnection>> signalr,
-            Request.UserAuthDetails user = null)
-        {
-            // Act
-            var requestobj =
-                new Get.V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches(manuscriptId);
-            await requestobj.SendAsync(client, signalr);
+			Assert.NotEmpty(requestobj.HttpResponseObject.matches);
+			var firstMatch = requestobj.HttpResponseObject.matches.First();
+			ConfirmValidMatch(firstMatch);
 
-            // Assert
-            requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
-            Assert.NotEmpty(requestobj.HttpResponseObject.matches);
-            var firstMatch = requestobj.HttpResponseObject.matches.First();
-            ConfirmValidMatch(firstMatch);
+			return requestobj.HttpResponseObject;
+		}
 
-            return requestobj.HttpResponseObject;
-        }
+		public static async Task<CatalogueMatchListDTO>
+				GetImagedObjectsAndTextFragmentsOfManuscript(
+						uint                                manuscriptId
+						, HttpClient                        client
+						, Func<string, Task<HubConnection>> signalr
+						, Request.UserAuthDetails           user = null)
+		{
+			// Act
+			var requestobj =
+					new Get.V1_Catalogue_Manuscripts_ManuscriptId_ImagedObjectTextFragmentMatches(
+							manuscriptId);
 
-        /// <summary>
-        ///     Create a new text fragment to imaged object match.
-        ///     This will make the initial request via HTTP.
-        ///     Then it will make a second request via Signal to match the opposite side.
-        /// </summary>
-        /// <param name="catalogSide"></param>
-        /// <param name="imagedObjectId"></param>
-        /// <param name="manuscriptId"></param>
-        /// <param name="editionName"></param>
-        /// <param name="editionVolume"></param>
-        /// <param name="editionLocation1"></param>
-        /// <param name="editionLocation2"></param>
-        /// <param name="editionSide"></param>
-        /// <param name="comment"></param>
-        /// <param name="textFragmentId"></param>
-        /// <param name="editionId"></param>
-        /// <param name="client"></param>
-        /// <param name="signalr"></param>
-        /// <returns></returns>
-        public static async Task CreateImagedObjectTextFragmentMatch(
-            SideDesignation catalogSide,
-            string imagedObjectId,
-            uint manuscriptId,
-            string editionName,
-            string editionVolume,
-            string editionLocation1,
-            string editionLocation2,
-            SideDesignation editionSide,
-            string comment,
-            uint textFragmentId,
-            uint editionId,
-            HttpClient client,
-            Func<string, Task<HubConnection>> signalr,
-            bool realtime = false,
-            bool? confirmed = false)
-        {
-            var match = new CatalogueMatchInputDTO
-            {
-                catalogSide = catalogSide,
-                imagedObjectId = imagedObjectId,
-                manuscriptId = manuscriptId,
-                editionName = editionName,
-                editionVolume = editionVolume,
-                editionLocation1 = editionLocation1,
-                editionLocation2 = editionLocation2,
-                editionSide = editionSide,
-                comment = comment,
-                textFragmentId = textFragmentId,
-                editionId = editionId,
-                confirmed = confirmed
-            };
+			await requestobj.SendAsync(client, signalr);
 
-            var request = new Post.V1_Catalogue(match);
-            await request.SendAsync(
-                realtime ? null : client,
-                signalr,
-                true,
-                requestRealtime: realtime,
-                requestUser: Request.DefaultUsers.User1);
-            if (!realtime)
-                request.HttpResponseMessage.EnsureSuccessStatusCode();
+			// Assert
+			requestobj.HttpResponseObject.ShouldDeepEqual(requestobj.SignalrResponseObject);
 
-            var match2 = match;
-            match2.catalogSide = match2.catalogSide == SideDesignation.recto
-                ? SideDesignation.verso
-                : SideDesignation.recto;
-            match2.editionSide = match2.editionSide == SideDesignation.recto
-                ? SideDesignation.verso
-                : SideDesignation.recto;
-            var requestConf = new Post.V1_Catalogue(match2);
-            await requestConf.SendAsync(
-                realtime ? null : client,
-                signalr,
-                true,
-                requestRealtime: realtime,
-                requestUser: Request.DefaultUsers.User1);
+			Assert.NotEmpty(requestobj.HttpResponseObject.matches);
+			var firstMatch = requestobj.HttpResponseObject.matches.First();
+			ConfirmValidMatch(firstMatch);
 
-            var matches = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr);
-            Assert.Contains(matches.matches, x =>
-                x.imagedObjectId == match.imagedObjectId
-                && x.textFragmentId == match.textFragmentId
-                && x.editionId == match.editionId
-                && x.manuscriptId == match.manuscriptId);
-            Assert.Contains(matches.matches, x =>
-                x.imagedObjectId == match2.imagedObjectId
-                && x.textFragmentId == match2.textFragmentId
-                && x.editionId == match2.editionId
-                && x.manuscriptId == match2.manuscriptId);
-        }
+			return requestobj.HttpResponseObject;
+		}
 
-        public static async Task ConfirmTextFragmentImagedObjectMatch(
-            uint editionId,
-            uint matchId,
-            HttpClient client,
-            Func<string, Task<HubConnection>> signalr,
-            bool realtime = false,
-            Request.UserAuthDetails user = null)
-        {
-            var request = new Post.V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId(matchId);
-            await request.SendAsync(
-                realtime ? null : client,
-                realtime ? signalr : null,
-                user != null,
-                user,
-                requestRealtime: realtime);
+		/// <summary>
+		///  Create a new text fragment to imaged object match.
+		///  This will make the initial request via HTTP.
+		///  Then it will make a second request via Signal to match the opposite side.
+		/// </summary>
+		/// <param name="catalogSide"></param>
+		/// <param name="imagedObjectId"></param>
+		/// <param name="manuscriptId"></param>
+		/// <param name="editionName"></param>
+		/// <param name="editionVolume"></param>
+		/// <param name="editionLocation1"></param>
+		/// <param name="editionLocation2"></param>
+		/// <param name="editionSide"></param>
+		/// <param name="comment"></param>
+		/// <param name="textFragmentId"></param>
+		/// <param name="editionId"></param>
+		/// <param name="client"></param>
+		/// <param name="signalr"></param>
+		/// <returns></returns>
+		public static async Task CreateImagedObjectTextFragmentMatch(
+				SideDesignation                     catalogSide
+				, string                            imagedObjectId
+				, uint                              manuscriptId
+				, string                            editionName
+				, string                            editionVolume
+				, string                            editionLocation1
+				, string                            editionLocation2
+				, SideDesignation                   editionSide
+				, string                            comment
+				, uint                              textFragmentId
+				, uint                              editionId
+				, HttpClient                        client
+				, Func<string, Task<HubConnection>> signalr
+				, bool                              realtime  = false
+				, bool?                             confirmed = false)
+		{
+			var match = new CatalogueMatchInputDTO
+			{
+					catalogSide = catalogSide
+					, imagedObjectId = imagedObjectId
+					, manuscriptId = manuscriptId
+					, editionName = editionName
+					, editionVolume = editionVolume
+					, editionLocation1 = editionLocation1
+					, editionLocation2 = editionLocation2
+					, editionSide = editionSide
+					, comment = comment
+					, textFragmentId = textFragmentId
+					, editionId = editionId
+					, confirmed = confirmed
+					,
+			};
 
-            var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
-            Assert.Contains(matchList.matches, x => x.matchId == matchId && x.confirmed == true);
-        }
+			var request = new Post.V1_Catalogue(match);
 
-        public static async Task UnconfirmTextFragmentImagedObjectMatch(
-            uint editionId,
-            uint matchId,
-            HttpClient client,
-            Func<string, Task<HubConnection>> signalr,
-            bool realtime = false,
-            Request.UserAuthDetails user = null)
-        {
-            var request = new Delete.V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId(matchId);
-            await request.SendAsync(
-                realtime ? null : client,
-                realtime ? signalr : null,
-                user != null,
-                user,
-                requestRealtime: realtime);
+			await request.SendAsync(
+					realtime
+							? null
+							: client
+					, signalr
+					, true
+					, requestRealtime: realtime
+					, requestUser: Request.DefaultUsers.User1);
 
-            var matchList = await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr, user);
-            Assert.Contains(matchList.matches, x => x.matchId == matchId);
-            var matches = matchList.matches.Where(x => x.matchId == matchId);
-            Assert.Contains(matches, x => x.confirmed == true);
-            //Assert.All(matches, x => Assert.False(x.confirmed));
-        }
+			if (!realtime)
+				request.HttpResponseMessage.EnsureSuccessStatusCode();
 
-        private static void ConfirmValidMatch(CatalogueMatchDTO match)
-        {
-            Assert.NotNull(match.matchAuthor);
-            if (match.confirmed.HasValue)
-            {
-                Assert.NotNull(match.matchConfirmationAuthor);
-                Assert.NotNull(match.dateOfConfirmation);
-            }
+			var match2 = match;
 
-            if (!match.confirmed.HasValue)
-            {
-                Assert.Null(match.matchConfirmationAuthor);
-                Assert.Null(match.dateOfConfirmation);
-            }
+			match2.catalogSide = match2.catalogSide == SideDesignation.recto
+					? SideDesignation.verso
+					: SideDesignation.recto;
 
-            Assert.NotNull(match.manuscriptName);
-            Assert.NotNull(match.name);
-            Assert.NotNull(match.imagedObjectId);
-            Assert.NotNull(match.institution);
-            Assert.NotNull(match.editionName);
-            Assert.NotNull(match.filename);
-            Assert.NotNull(match.thumbnail);
-            Assert.NotNull(match.url);
-            Assert.True(match.dateOfMatch < DateTime.Now);
-        }
-    }
+			match2.editionSide = match2.editionSide == SideDesignation.recto
+					? SideDesignation.verso
+					: SideDesignation.recto;
+
+			var requestConf = new Post.V1_Catalogue(match2);
+
+			await requestConf.SendAsync(
+					realtime
+							? null
+							: client
+					, signalr
+					, true
+					, requestRealtime: realtime
+					, requestUser: Request.DefaultUsers.User1);
+
+			var matches =
+					await GetImagedObjectsAndTextFragmentsOfEdition(editionId, client, signalr);
+
+			Assert.Contains(
+					matches.matches
+					, x => (x.imagedObjectId == match.imagedObjectId)
+						   && (x.textFragmentId == match.textFragmentId)
+						   && (x.editionId == match.editionId)
+						   && (x.manuscriptId == match.manuscriptId));
+
+			Assert.Contains(
+					matches.matches
+					, x => (x.imagedObjectId == match2.imagedObjectId)
+						   && (x.textFragmentId == match2.textFragmentId)
+						   && (x.editionId == match2.editionId)
+						   && (x.manuscriptId == match2.manuscriptId));
+		}
+
+		public static async Task ConfirmTextFragmentImagedObjectMatch(
+				uint                                editionId
+				, uint                              matchId
+				, HttpClient                        client
+				, Func<string, Task<HubConnection>> signalr
+				, bool                              realtime = false
+				, Request.UserAuthDetails           user     = null)
+		{
+			var request =
+					new Post.V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId(matchId);
+
+			await request.SendAsync(
+					realtime
+							? null
+							: client
+					, realtime
+							? signalr
+							: null
+					, user != null
+					, user
+					, requestRealtime: realtime);
+
+			var matchList =
+					await GetImagedObjectsAndTextFragmentsOfEdition(
+							editionId
+							, client
+							, signalr
+							, user);
+
+			Assert.Contains(
+					matchList.matches
+					, x => (x.matchId == matchId) && (x.confirmed == true));
+		}
+
+		public static async Task UnconfirmTextFragmentImagedObjectMatch(
+				uint                                editionId
+				, uint                              matchId
+				, HttpClient                        client
+				, Func<string, Task<HubConnection>> signalr
+				, bool                              realtime = false
+				, Request.UserAuthDetails           user     = null)
+		{
+			var request =
+					new Delete.V1_Catalogue_ConfirmMatch_IaaEditionCatalogToTextFragmentId(matchId);
+
+			await request.SendAsync(
+					realtime
+							? null
+							: client
+					, realtime
+							? signalr
+							: null
+					, user != null
+					, user
+					, requestRealtime: realtime);
+
+			var matchList =
+					await GetImagedObjectsAndTextFragmentsOfEdition(
+							editionId
+							, client
+							, signalr
+							, user);
+
+			Assert.Contains(matchList.matches, x => x.matchId == matchId);
+
+			var matches = matchList.matches.Where(x => x.matchId == matchId);
+			Assert.Contains(matches, x => x.confirmed == true);
+
+			//Assert.All(matches, x => Assert.False(x.confirmed));
+		}
+
+		private static void ConfirmValidMatch(CatalogueMatchDTO match)
+		{
+			Assert.NotNull(match.matchAuthor);
+
+			if (match.confirmed.HasValue)
+			{
+				Assert.NotNull(match.matchConfirmationAuthor);
+				Assert.NotNull(match.dateOfConfirmation);
+			}
+
+			if (!match.confirmed.HasValue)
+			{
+				Assert.Null(match.matchConfirmationAuthor);
+				Assert.Null(match.dateOfConfirmation);
+			}
+
+			Assert.NotNull(match.manuscriptName);
+			Assert.NotNull(match.name);
+			Assert.NotNull(match.imagedObjectId);
+			Assert.NotNull(match.institution);
+			Assert.NotNull(match.editionName);
+			Assert.NotNull(match.filename);
+			Assert.NotNull(match.thumbnail);
+			Assert.NotNull(match.url);
+			Assert.True(match.dateOfMatch < DateTime.Now);
+		}
+	}
 }

@@ -10,359 +10,446 @@ using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Services
 {
-    public interface ISignInterpretationService
-    {
-        Task<AttributeListDTO> GetEditionSignInterpretationAttributesAsync(UserInfo user);
+	public interface ISignInterpretationService
+	{
+		Task<AttributeListDTO> GetEditionSignInterpretationAttributesAsync(UserInfo user);
 
-        Task<AttributeDTO> CreateEditionAttributeAsync(
-            UserInfo user,
-            CreateAttributeDTO newAttribute,
-            string clientId = null);
+		Task<AttributeDTO> CreateEditionAttributeAsync(
+				UserInfo             user
+				, CreateAttributeDTO newAttribute
+				, string             clientId = null);
 
-        Task<AttributeDTO> UpdateEditionAttributeAsync(
-            UserInfo user,
-            uint attributeId,
-            UpdateAttributeDTO updatedAttribute,
-            string clientId = null);
+		Task<AttributeDTO> UpdateEditionAttributeAsync(
+				UserInfo             user
+				, uint               attributeId
+				, UpdateAttributeDTO updatedAttribute
+				, string             clientId = null);
 
-        Task<NoContentResult> DeleteEditionAttributeAsync(
-            UserInfo user,
-            uint attributeId,
-            string clientId = null);
+		Task<NoContentResult> DeleteEditionAttributeAsync(
+				UserInfo user
+				, uint   attributeId
+				, string clientId = null);
 
-        Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
-            UserInfo user,
-            SignInterpretationCreateDTO signInterpretation,
-            string clientId = null);
+		Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
+				UserInfo                      user
+				, SignInterpretationCreateDTO signInterpretation
+				, string                      clientId = null);
 
-        Task<NoContentResult> DeleteSignInterpretationAsync(
-            UserInfo user,
-            uint signInterpretationId,
-            string clientId = null);
+		Task<NoContentResult> DeleteSignInterpretationAsync(
+				UserInfo user
+				, uint   signInterpretationId
+				, string clientId = null);
 
-        Task<SignInterpretationDTO> LinkSignInterpretationsAsync(
-            UserInfo user,
-            uint firstSignInterpretationId,
-            uint secondSignInterpretationId,
-            string clientId = null);
+		Task<SignInterpretationDTO> LinkSignInterpretationsAsync(
+				UserInfo user
+				, uint   firstSignInterpretationId
+				, uint   secondSignInterpretationId
+				, string clientId = null);
 
-        Task<SignInterpretationDTO> UnlinkSignInterpretationsAsync(
-            UserInfo user,
-            uint firstSignInterpretationId,
-            uint secondSignInterpretationId,
-            string clientId = null);
+		Task<SignInterpretationDTO> UnlinkSignInterpretationsAsync(
+				UserInfo user
+				, uint   firstSignInterpretationId
+				, uint   secondSignInterpretationId
+				, string clientId = null);
 
-        Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(
-            UserInfo user,
-            uint signInterpretationId);
+		Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(
+				UserInfo user
+				, uint   signInterpretationId);
 
-        Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(
-            UserInfo user,
-            uint signInterpretationId,
-            CommentaryCreateDTO commentary,
-            string clientId = null);
+		Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(
+				UserInfo              user
+				, uint                signInterpretationId
+				, CommentaryCreateDTO commentary
+				, string              clientId = null);
 
-        Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(
-            UserInfo user,
-            uint signInterpretationId,
-            InterpretationAttributeCreateDTO attribute,
-            string clientId = null);
+		Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(
+				UserInfo                           user
+				, uint                             signInterpretationId
+				, InterpretationAttributeCreateDTO attribute
+				, string                           clientId = null);
 
-        Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(
-            UserInfo user,
-            uint signInterpretationId,
-            uint attributeValueId,
-            InterpretationAttributeCreateDTO attribute,
-            string clientId = null);
+		Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(
+				UserInfo                           user
+				, uint                             signInterpretationId
+				, uint                             attributeValueId
+				, InterpretationAttributeCreateDTO attribute
+				, string                           clientId = null);
 
-        Task<NoContentResult> DeleteSignInterpretationAttributeAsync(
-            UserInfo user,
-            uint signInterpretationAttributeId,
-            uint attributeValueId,
-            string clientId = null);
-    }
+		Task<NoContentResult> DeleteSignInterpretationAttributeAsync(
+				UserInfo user
+				, uint   signInterpretationAttributeId
+				, uint   attributeValueId
+				, string clientId = null);
+	}
 
-    public class SignInterpretationService : ISignInterpretationService
-    {
-        private readonly IAttributeRepository _attributeRepository;
-        private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
-        private readonly IHubContext<MainHub, ISQEClient> _hubContext;
-        private readonly ISignInterpretationRepository _signInterpretationRepository;
-        private readonly ITextRepository _textRepository;
+	public class SignInterpretationService : ISignInterpretationService
+	{
+		private readonly IAttributeRepository _attributeRepository;
 
+		private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
 
-        public SignInterpretationService(
-            IHubContext<MainHub, ISQEClient> hubContext,
-            IAttributeRepository attributeRepository,
-            ISignInterpretationRepository signInterpretationRepository,
-            ISignInterpretationCommentaryRepository commentaryRepository,
-            ITextRepository textRepository)
-        {
-            _hubContext = hubContext;
-            _attributeRepository = attributeRepository;
-            _signInterpretationRepository = signInterpretationRepository;
-            _commentaryRepository = commentaryRepository;
-            _textRepository = textRepository;
-        }
+		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 
-        public async Task<AttributeListDTO> GetEditionSignInterpretationAttributesAsync(UserInfo user)
-        {
-            return (await _attributeRepository.GetAllEditionAttributesAsync(user)).ToDTO();
-        }
+		private readonly ISignInterpretationRepository _signInterpretationRepository;
 
-        public async Task<AttributeDTO> CreateEditionAttributeAsync(UserInfo user, CreateAttributeDTO newAttribute,
-            string clientId = null)
-        {
-            var newAttributeId = await _attributeRepository.CreateEditionAttribute(
-                user,
-                newAttribute.attributeName,
-                newAttribute.description,
-                newAttribute.editable,
-                newAttribute.removable,
-                newAttribute.repeatable,
-                newAttribute.batchEditable,
-                newAttribute.values.Select(x => new SignInterpretationAttributeValueInput
-                {
-                    AttributeStringValue = x.value,
-                    AttributeStringValueDescription = x.description,
-                    Css = x.cssDirectives
-                }));
+		private readonly ITextRepository _textRepository;
 
-            var createdAttribute = (await _attributeRepository.GetEditionAttributeAsync(user, newAttributeId)).ToDTO()
-                .attributes.FirstOrDefault();
+		public SignInterpretationService(
+				IHubContext<MainHub, ISQEClient>          hubContext
+				, IAttributeRepository                    attributeRepository
+				, ISignInterpretationRepository           signInterpretationRepository
+				, ISignInterpretationCommentaryRepository commentaryRepository
+				, ITextRepository                         textRepository)
+		{
+			_hubContext = hubContext;
+			_attributeRepository = attributeRepository;
+			_signInterpretationRepository = signInterpretationRepository;
+			_commentaryRepository = commentaryRepository;
+			_textRepository = textRepository;
+		}
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .CreatedAttribute(createdAttribute);
+		public async Task<AttributeListDTO>
+				GetEditionSignInterpretationAttributesAsync(UserInfo user)
+			=> (await _attributeRepository.GetAllEditionAttributesAsync(user)).ToDTO();
 
-            return createdAttribute;
-        }
+		public async Task<AttributeDTO> CreateEditionAttributeAsync(
+				UserInfo             user
+				, CreateAttributeDTO newAttribute
+				, string             clientId = null)
+		{
+			var newAttributeId = await _attributeRepository.CreateEditionAttribute(
+					user
+					, newAttribute.attributeName
+					, newAttribute.description
+					, newAttribute.editable
+					, newAttribute.removable
+					, newAttribute.repeatable
+					, newAttribute.batchEditable
+					, newAttribute.values.Select(
+							x => new SignInterpretationAttributeValueInput
+							{
+									AttributeStringValue = x.value
+									, AttributeStringValueDescription = x.description
+									, Css = x.cssDirectives
+									,
+							}));
 
-        public async Task<AttributeDTO> UpdateEditionAttributeAsync(UserInfo user, uint attributeId,
-            UpdateAttributeDTO updatedAttribute, string clientId = null)
-        {
-            var updatedAttributeId = await _attributeRepository.UpdateEditionAttribute(
-                user,
-                attributeId,
-                null,
-                null,
-                updatedAttribute.editable,
-                updatedAttribute.removable,
-                updatedAttribute.repeatable,
-                updatedAttribute.batchEditable,
-                updatedAttribute.createValues.Select(x => x.FromDTO()),
-                updatedAttribute.updateValues.Select(x => x.FromDTO()),
-                updatedAttribute.deleteValues);
+			var createdAttribute =
+					(await _attributeRepository.GetEditionAttributeAsync(user, newAttributeId))
+					.ToDTO()
+					.attributes.FirstOrDefault();
 
-            var updatedAttributeDetails =
-                (await _attributeRepository.GetEditionAttributeAsync(user, updatedAttributeId)).ToDTO().attributes
-                .FirstOrDefault();
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .CreatedAttribute(createdAttribute);
 
-            if (updatedAttributeId != attributeId) // Broadcast the changes as a create and a delete
-            {
-                await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                    .CreatedAttribute(updatedAttributeDetails);
-                await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                    .DeletedAttribute(new DeleteDTO(EditionEntities.attribute, attributeId));
-            }
-            else // Broadcast the changes as an update
-            {
-                await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                    .UpdatedAttribute(updatedAttributeDetails);
-            }
+			return createdAttribute;
+		}
 
-            return updatedAttributeDetails;
-        }
+		public async Task<AttributeDTO> UpdateEditionAttributeAsync(
+				UserInfo             user
+				, uint               attributeId
+				, UpdateAttributeDTO updatedAttribute
+				, string             clientId = null)
+		{
+			var updatedAttributeId = await _attributeRepository.UpdateEditionAttribute(
+					user
+					, attributeId
+					, null
+					, null
+					, updatedAttribute.editable
+					, updatedAttribute.removable
+					, updatedAttribute.repeatable
+					, updatedAttribute.batchEditable
+					, updatedAttribute.createValues.Select(x => x.FromDTO())
+					, updatedAttribute.updateValues.Select(x => x.FromDTO())
+					, updatedAttribute.deleteValues);
 
-        public async Task<NoContentResult> DeleteEditionAttributeAsync(UserInfo user, uint attributeId,
-            string clientId = null)
-        {
-            await _attributeRepository.DeleteEditionAttributeAsync(user, attributeId);
+			var updatedAttributeDetails =
+					(await _attributeRepository.GetEditionAttributeAsync(user, updatedAttributeId))
+					.ToDTO()
+					.attributes.FirstOrDefault();
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .DeletedAttribute(new DeleteDTO(EditionEntities.attribute, attributeId));
+			if (updatedAttributeId != attributeId) // Broadcast the changes as a create and a delete
+			{
+				await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+								 .CreatedAttribute(updatedAttributeDetails);
 
-            return new NoContentResult();
-        }
+				await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+								 .DeletedAttribute(
+										 new DeleteDTO(EditionEntities.attribute, attributeId));
+			}
+			else // Broadcast the changes as an update
+			{
+				await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+								 .UpdatedAttribute(updatedAttributeDetails);
+			}
 
-        public async Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
-            UserInfo user,
-            SignInterpretationCreateDTO signInterpretation,
-            string clientId = null)
-        {
-            var createdSignInterpretation = await _textRepository.CreateSignsAsync(
-                user,
-                signInterpretation.lineId,
-                signInterpretation.ToSignData(),
-                signInterpretation.previousSignInterpretationIds.ToList(),
-                signInterpretation.nextSignInterpretationIds.ToList(),
-                signInterpretation.breakPreviousAndNextSignInterpretations);
+			return updatedAttributeDetails;
+		}
 
-            // Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
-            var alteredSignInterpretations = await Task.WhenAll( // Await all async operations
-                signInterpretation.previousSignInterpretationIds
-                    .ToList() // Take list of previous sign interpretation ids
-                    .Concat(createdSignInterpretation.SelectMany(
-                        x => // Concat all sign interpretation ids from createdSignInterpretation
-                            x.SignInterpretations
-                                .Where(y => y.SignInterpretationId.HasValue)
-                                .Select(y => y.SignInterpretationId.Value)))
-                    .Select(async x =>
-                        await GetEditionSignInterpretationAsync(user,
-                            x))); // Get the SignInterpretationDTO fpr each sign interpretation
-            var response = new SignInterpretationListDTO { signInterpretations = alteredSignInterpretations.ToArray() };
+		public async Task<NoContentResult> DeleteEditionAttributeAsync(
+				UserInfo user
+				, uint   attributeId
+				, string clientId = null)
+		{
+			await _attributeRepository.DeleteEditionAttributeAsync(user, attributeId);
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .CreatedSignInterpretation(response);
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .DeletedAttribute(
+									 new DeleteDTO(EditionEntities.attribute, attributeId));
 
-            return response;
-        }
+			return new NoContentResult();
+		}
 
-        public async Task<NoContentResult> DeleteSignInterpretationAsync(
-            UserInfo user,
-            uint signInterpretationId,
-            string clientId = null)
-        {
-            await _textRepository.RemoveSignInterpretationAsync(user, signInterpretationId);
+		public async Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
+				UserInfo                      user
+				, SignInterpretationCreateDTO signInterpretation
+				, string                      clientId = null)
+		{
+			var createdSignInterpretation = await _textRepository.CreateSignsAsync(
+					user
+					, signInterpretation.lineId
+					, signInterpretation.ToSignData()
+					, signInterpretation.previousSignInterpretationIds.ToList()
+					, signInterpretation.nextSignInterpretationIds.ToList()
+					, signInterpretation.breakPreviousAndNextSignInterpretations);
 
-            // TODO: Should we also gather and sign interpretations prior to this one in the signstream and
-            // broadcast that information as well? Should that also be returned to the original requester?
+			// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
+			var alteredSignInterpretations = await Task.WhenAll( // Await all async operations
+					signInterpretation.previousSignInterpretationIds
+									  .ToList() // Take list of previous sign interpretation ids
+									  .Concat(
+											  createdSignInterpretation.SelectMany(
+													  x => // Concat all sign interpretation ids from createdSignInterpretation
+															  x.SignInterpretations
+															   .Where(
+																	   y
+																			   => y
+																				  .SignInterpretationId
+																				  .HasValue)
+															   .Select(
+																	   y => y.SignInterpretationId
+																			 .Value)))
+									  .Select(
+											  async x => await GetEditionSignInterpretationAsync(
+													  user
+													  , x))); // Get the SignInterpretationDTO fpr each sign interpretation
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .DeletedSignInterpretation(new DeleteDTO(EditionEntities.signInterpretation, signInterpretationId));
+			var response = new SignInterpretationListDTO
+			{
+					signInterpretations = alteredSignInterpretations.ToArray(),
+			};
 
-            return new NoContentResult();
-        }
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .CreatedSignInterpretation(response);
 
-        public async Task<SignInterpretationDTO> LinkSignInterpretationsAsync(
-            UserInfo user,
-            uint firstSignInterpretationId,
-            uint secondSignInterpretationId,
-            string clientId = null)
-        {
-            await _textRepository.LinkSignInterpretationsAsync(user, firstSignInterpretationId,
-                secondSignInterpretationId);
-            var changedSignInterpretation = await GetEditionSignInterpretationAsync(user, firstSignInterpretationId);
+			return response;
+		}
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .UpdatedSignInterpretation(changedSignInterpretation);
+		public async Task<NoContentResult> DeleteSignInterpretationAsync(
+				UserInfo user
+				, uint   signInterpretationId
+				, string clientId = null)
+		{
+			await _textRepository.RemoveSignInterpretationAsync(user, signInterpretationId);
 
-            return changedSignInterpretation;
-        }
+			// TODO: Should we also gather and sign interpretations prior to this one in the signstream and
+			// broadcast that information as well? Should that also be returned to the original requester?
 
-        public async Task<SignInterpretationDTO> UnlinkSignInterpretationsAsync(
-            UserInfo user,
-            uint firstSignInterpretationId,
-            uint secondSignInterpretationId,
-            string clientId = null)
-        {
-            await _textRepository.UnlinkSignInterpretationsAsync(user, firstSignInterpretationId,
-                secondSignInterpretationId);
-            var changedSignInterpretation = await GetEditionSignInterpretationAsync(user, firstSignInterpretationId);
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .DeletedSignInterpretation(
+									 new DeleteDTO(
+											 EditionEntities.signInterpretation
+											 , signInterpretationId));
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .UpdatedSignInterpretation(changedSignInterpretation);
+			return new NoContentResult();
+		}
 
-            return changedSignInterpretation;
-        }
+		public async Task<SignInterpretationDTO> LinkSignInterpretationsAsync(
+				UserInfo user
+				, uint   firstSignInterpretationId
+				, uint   secondSignInterpretationId
+				, string clientId = null)
+		{
+			await _textRepository.LinkSignInterpretationsAsync(
+					user
+					, firstSignInterpretationId
+					, secondSignInterpretationId);
 
-        public async Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(UserInfo user,
-            uint signInterpretationId)
-        {
-            var signInterpretation = await
-                _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId);
+			var changedSignInterpretation =
+					await GetEditionSignInterpretationAsync(user, firstSignInterpretationId);
 
-            return signInterpretation.ToDTO();
-        }
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretation(changedSignInterpretation);
 
-        public async Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(UserInfo user,
-            uint signInterpretationId, CommentaryCreateDTO commentary, string clientId = null)
-        {
-            await _commentaryRepository.CreateOrUpdateCommentaryAsync(user, signInterpretationId, null,
-                commentary.commentary);
+			return changedSignInterpretation;
+		}
 
-            var updatedSignInterpretation = (await
-                _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId)).ToDTO();
+		public async Task<SignInterpretationDTO> UnlinkSignInterpretationsAsync(
+				UserInfo user
+				, uint   firstSignInterpretationId
+				, uint   secondSignInterpretationId
+				, string clientId = null)
+		{
+			await _textRepository.UnlinkSignInterpretationsAsync(
+					user
+					, firstSignInterpretationId
+					, secondSignInterpretationId);
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .UpdatedSignInterpretation(updatedSignInterpretation);
+			var changedSignInterpretation =
+					await GetEditionSignInterpretationAsync(user, firstSignInterpretationId);
 
-            return updatedSignInterpretation;
-        }
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretation(changedSignInterpretation);
 
-        public async Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(UserInfo user,
-            uint signInterpretationId, InterpretationAttributeCreateDTO attribute, string clientId = null)
-        {
-            var createAttribute = new SignInterpretationAttributeData
-            {
-                AttributeValueId = attribute.attributeValueId,
-                Sequence = attribute.sequence
-            };
-            await _attributeRepository.CreateSignInterpretationAttributesAsync(user, signInterpretationId,
-                createAttribute);
+			return changedSignInterpretation;
+		}
 
-            if (!string.IsNullOrEmpty(attribute.commentary))
-            {
-                var commentary = new SignInterpretationCommentaryData
-                {
-                    AttributeId = attribute.attributeId,
-                    Commentary = attribute.commentary
-                };
-                await _commentaryRepository.CreateCommentaryAsync(user, signInterpretationId, commentary);
-            }
+		public async Task<SignInterpretationDTO> GetEditionSignInterpretationAsync(
+				UserInfo user
+				, uint   signInterpretationId)
+		{
+			var signInterpretation =
+					await _signInterpretationRepository.GetSignInterpretationById(
+							user
+							, signInterpretationId);
 
-            var updatedSignInterpretation = (await
-                _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId)).ToDTO();
+			return signInterpretation.ToDTO();
+		}
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .UpdatedSignInterpretation(updatedSignInterpretation);
+		public async Task<SignInterpretationDTO> CreateOrUpdateSignInterpretationCommentaryAsync(
+				UserInfo              user
+				, uint                signInterpretationId
+				, CommentaryCreateDTO commentary
+				, string              clientId = null)
+		{
+			await _commentaryRepository.CreateOrUpdateCommentaryAsync(
+					user
+					, signInterpretationId
+					, null
+					, commentary.commentary);
 
-            return updatedSignInterpretation;
-        }
+			var updatedSignInterpretation =
+					(await _signInterpretationRepository.GetSignInterpretationById(
+							user
+							, signInterpretationId)).ToDTO();
 
-        public async Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(UserInfo user,
-            uint signInterpretationId, uint attributeValueId, InterpretationAttributeCreateDTO attribute,
-            string clientId = null)
-        {
-            if (attribute.sequence.HasValue)
-                await _attributeRepository.UpdateAttributeForSignInterpretationAsync(user, signInterpretationId,
-                    attributeValueId, attribute.sequence);
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretation(updatedSignInterpretation);
 
-            if (!string.IsNullOrEmpty(attribute.commentary))
-                await _commentaryRepository.CreateOrUpdateCommentaryAsync(user, signInterpretationId, attributeValueId,
-                    attribute.commentary);
+			return updatedSignInterpretation;
+		}
 
-            var updatedSignInterpretation = (await
-                _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId)).ToDTO();
+		public async Task<SignInterpretationDTO> CreateSignInterpretationAttributeAsync(
+				UserInfo                           user
+				, uint                             signInterpretationId
+				, InterpretationAttributeCreateDTO attribute
+				, string                           clientId = null)
+		{
+			var createAttribute = new SignInterpretationAttributeData
+			{
+					AttributeValueId = attribute.attributeValueId
+					, Sequence = attribute.sequence
+					,
+			};
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .UpdatedSignInterpretation(updatedSignInterpretation);
+			await _attributeRepository.CreateSignInterpretationAttributesAsync(
+					user
+					, signInterpretationId
+					, createAttribute);
 
-            return updatedSignInterpretation;
-        }
+			if (!string.IsNullOrEmpty(attribute.commentary))
+			{
+				var commentary = new SignInterpretationCommentaryData
+				{
+						AttributeId = attribute.attributeId
+						, Commentary = attribute.commentary
+						,
+				};
 
-        public async Task<NoContentResult> DeleteSignInterpretationAttributeAsync(UserInfo user,
-            uint signInterpretationId, uint attributeValueId, string clientId = null)
-        {
-            await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(user, signInterpretationId,
-                attributeValueId);
+				await _commentaryRepository.CreateCommentaryAsync(
+						user
+						, signInterpretationId
+						, commentary);
+			}
 
-            var updatedSignInterpretation = (await
-                _signInterpretationRepository.GetSignInterpretationById(user, signInterpretationId)).ToDTO();
+			var updatedSignInterpretation =
+					(await _signInterpretationRepository.GetSignInterpretationById(
+							user
+							, signInterpretationId)).ToDTO();
 
-            // Broadcast the changes
-            await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-                .UpdatedSignInterpretation(updatedSignInterpretation);
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretation(updatedSignInterpretation);
 
-            return new NoContentResult();
-        }
-    }
+			return updatedSignInterpretation;
+		}
+
+		public async Task<SignInterpretationDTO> UpdateSignInterpretationAttributeAsync(
+				UserInfo                           user
+				, uint                             signInterpretationId
+				, uint                             attributeValueId
+				, InterpretationAttributeCreateDTO attribute
+				, string                           clientId = null)
+		{
+			if (attribute.sequence.HasValue)
+			{
+				await _attributeRepository.UpdateAttributeForSignInterpretationAsync(
+						user
+						, signInterpretationId
+						, attributeValueId
+						, attribute.sequence);
+			}
+
+			if (!string.IsNullOrEmpty(attribute.commentary))
+			{
+				await _commentaryRepository.CreateOrUpdateCommentaryAsync(
+						user
+						, signInterpretationId
+						, attributeValueId
+						, attribute.commentary);
+			}
+
+			var updatedSignInterpretation =
+					(await _signInterpretationRepository.GetSignInterpretationById(
+							user
+							, signInterpretationId)).ToDTO();
+
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretation(updatedSignInterpretation);
+
+			return updatedSignInterpretation;
+		}
+
+		public async Task<NoContentResult> DeleteSignInterpretationAttributeAsync(
+				UserInfo user
+				, uint   signInterpretationId
+				, uint   attributeValueId
+				, string clientId = null)
+		{
+			await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
+					user
+					, signInterpretationId
+					, attributeValueId);
+
+			var updatedSignInterpretation =
+					(await _signInterpretationRepository.GetSignInterpretationById(
+							user
+							, signInterpretationId)).ToDTO();
+
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretation(updatedSignInterpretation);
+
+			return new NoContentResult();
+		}
+	}
 }

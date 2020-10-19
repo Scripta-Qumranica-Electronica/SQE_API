@@ -2,9 +2,9 @@
 
 namespace SQE.DatabaseAccess.Queries
 {
-    internal class ImageQueries
-    {
-        private const string _getImageQuery = @"
+	internal class ImageQueries
+	{
+		private const string _getImageQuery = @"
 SELECT image_urls.url AS url,
     image_urls.proxy AS proxy,
     image_catalog.image_catalog_id,
@@ -39,45 +39,47 @@ WHERE edition.edition_id = @EditionId
     AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
 
-        public static string GetImageQuery(bool filterFragment)
-        {
-            if (!filterFragment)
-                return _getImageQuery;
-            var str = new StringBuilder(_getImageQuery);
-            str.Append(" AND image_catalog.object_id=@ObjectId");
-            return str.ToString();
-        }
+		public static string GetImageQuery(bool filterFragment)
+		{
+			if (!filterFragment)
+				return _getImageQuery;
 
-        internal class Result
-        {
-            public string url { get; set; }
-            public string proxy { get; set; }
-            public string filename { get; set; }
-            public uint sqe_image_id { get; set; }
-            public uint image_catalog_id { get; set; }
-            public byte img_type { get; set; }
-            public uint ppi { get; set; }
-            public byte side { get; set; }
-            public bool master { get; set; }
-            public ushort wave_start { get; set; }
+			var str = new StringBuilder(_getImageQuery);
+			str.Append(" AND image_catalog.object_id=@ObjectId");
 
-            public ushort wave_end { get; set; }
+			return str.ToString();
+		}
 
-            //public string TransformMatrix { get; set; }
-            public string institution { get; set; }
-            public string catalog_1 { get; set; }
-            public string catalog_2 { get; set; }
-            public string object_id { get; set; }
-            public uint? image_to_image_map_editor_id { get; set; }
-            public string region_on_image1 { get; set; }
-            public string region_on_image2 { get; set; }
-            public string transform_matrix { get; set; }
-        }
-    }
+		internal class Result
+		{
+			public string url              { get; set; }
+			public string proxy            { get; set; }
+			public string filename         { get; set; }
+			public uint   sqe_image_id     { get; set; }
+			public uint   image_catalog_id { get; set; }
+			public byte   img_type         { get; set; }
+			public uint   ppi              { get; set; }
+			public byte   side             { get; set; }
+			public bool   master           { get; set; }
+			public ushort wave_start       { get; set; }
 
-    internal class ImagedObjectImageQuery
-    {
-        public const string GetQuery = @"
+			public ushort wave_end { get; set; }
+
+			//public string TransformMatrix { get; set; }
+			public string institution                  { get; set; }
+			public string catalog_1                    { get; set; }
+			public string catalog_2                    { get; set; }
+			public string object_id                    { get; set; }
+			public uint?  image_to_image_map_editor_id { get; set; }
+			public string region_on_image1             { get; set; }
+			public string region_on_image2             { get; set; }
+			public string transform_matrix             { get; set; }
+		}
+	}
+
+	internal class ImagedObjectImageQuery
+	{
+		public const string GetQuery = @"
 SELECT image_urls.url AS url,
     image_urls.proxy AS proxy,
     image_catalog.image_catalog_id,
@@ -99,57 +101,54 @@ FROM image_catalog
     JOIN image_urls USING(image_urls_id)
 WHERE image_catalog.object_id = @ImagedObjectId
 ";
-    }
+	}
 
-    //     internal class ImageGroupQuery
-    //     {
-    //         private const string _baseQuery = @"
-    // SELECT  image_catalog.image_catalog_id, 
-    //         image_catalog.Institution, 
-    //         image_catalog.catalog_number_1, 
-    //         image_catalog.catalog_number_2, 
-    //         image_catalog.catalog_side
-    // FROM image_catalog
-    // ";
-    //
-    //         private const string _scrollLimit = @"
-    // JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
-    // JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
-    // JOIN edition USING(manuscript_id)
-    // WHERE edition.edition_id = @EditionId
-    // ";
-    //
-    //         public static string GetQuery(bool limitScrolls)
-    //         {
-    //             return limitScrolls ? _baseQuery + _scrollLimit : _baseQuery;
-    //         }
-    //
-    //         internal class Result
-    //         {
-    //             public uint image_catalog_id { get; set; }
-    //             public string institution { get; set; }
-    //             public string catalog_number_1 { get; set; }
-    //             public string catalog_number_2 { get; set; }
-    //             public byte catalog_side { get; set; }
-    //         }
-    //     }
+	//     internal class ImageGroupQuery
+	//     {
+	//         private const string _baseQuery = @"
+	// SELECT  image_catalog.image_catalog_id, 
+	//         image_catalog.Institution, 
+	//         image_catalog.catalog_number_1, 
+	//         image_catalog.catalog_number_2, 
+	//         image_catalog.catalog_side
+	// FROM image_catalog
+	// ";
+	//
+	//         private const string _scrollLimit = @"
+	// JOIN image_to_iaa_edition_catalog USING(ImageCatalogId)
+	// JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
+	// JOIN edition USING(manuscript_id)
+	// WHERE edition.edition_id = @EditionId
+	// ";
+	//
+	//         public static string GetQuery(bool limitScrolls)
+	//         {
+	//             return limitScrolls ? _baseQuery + _scrollLimit : _baseQuery;
+	//         }
+	//
+	//         internal class Result
+	//         {
+	//             public uint image_catalog_id { get; set; }
+	//             public string institution { get; set; }
+	//             public string catalog_number_1 { get; set; }
+	//             public string catalog_number_2 { get; set; }
+	//             public byte catalog_side { get; set; }
+	//         }
+	//     }
 
-    internal static class ImageInstitutionQuery
-    {
-        public static string GetQuery()
-        {
-            return "SELECT DISTINCT Institution FROM image_catalog";
-        }
+	internal static class ImageInstitutionQuery
+	{
+		public static string GetQuery() => "SELECT DISTINCT Institution FROM image_catalog";
 
-        internal class Result
-        {
-            public string Institution { get; set; }
-        }
-    }
+		internal class Result
+		{
+			public string Institution { get; set; }
+		}
+	}
 
-    internal static class InstitutionImagesQuery
-    {
-        public const string GetQuery = @"
+	internal static class InstitutionImagesQuery
+	{
+		public const string GetQuery = @"
 SELECT image_catalog.object_id AS Name, 
        CONCAT(image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS Thumbnail,
        image_urls.license AS License
@@ -158,11 +157,11 @@ JOIN SQE_image USING(image_catalog_id)
 JOIN image_urls USING(image_urls_id)
 WHERE image_catalog.institution = @Institution
 ";
-    }
+	}
 
-    internal static class ImagedObjectTextFragmentsQuery
-    {
-        public static string GetQuery = @"
+	internal static class ImagedObjectTextFragmentsQuery
+	{
+		public static string GetQuery = @"
 SELECT manuscript_data.name AS ManuscriptName, 
        text_fragment_data.name AS TextFragmentName, 
        manuscript_data_owner.edition_id AS EditionId, 
@@ -179,5 +178,5 @@ FROM image_catalog
 WHERE image_catalog.object_id = @ImagedObjectId
     AND edition.public = 1
 GROUP BY iaa_edition_catalog_to_text_fragment.text_fragment_id";
-    }
+	}
 }
