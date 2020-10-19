@@ -37,6 +37,7 @@ namespace SQE.API.Server.RealtimeHubs
 				var user = _userService.GetCurrentUserId(); // Get the user_id if possible
 
 				// If the user is authenticated, add this connection to the user's user_id group.
+				// ReSharper disable once EnforceIfStatementBraces
 				if (user.HasValue)
 					await Groups.AddToGroupAsync(
 							Context.ConnectionId
