@@ -674,6 +674,16 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Get a listing of all text fragments to imaged object matches
+	 *
+	 *
+	 *
+	 */
+    public async getV1CatalogueAllMatches(): Promise<CatalogueMatchListDTO> {
+        return await this._connection.invoke('GetV1CatalogueAllMatches');
+    }
+
+    /**
 	 * Get a listing of all text fragments matches that correspond to an imaged object
 	 *
 	 * @param imagedObjectId - Id of imaged object to search for transcription matches

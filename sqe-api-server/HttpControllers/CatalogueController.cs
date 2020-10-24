@@ -20,6 +20,14 @@ namespace SQE.API.Server.HttpControllers
 		}
 
 		/// <summary>
+		///  Get a listing of all text fragments to imaged object matches
+		/// </summary>
+		[AllowAnonymous]
+		[HttpGet("v1/catalogue/all-matches")]
+		public async Task<ActionResult<CatalogueMatchListDTO>> GetAllMatches()
+			=> await _catalogueService.GetAllMatches();
+
+		/// <summary>
 		///  Get a listing of all text fragments matches that correspond to an imaged object
 		/// </summary>
 		/// <param name="imagedObjectId">Id of imaged object to search for transcription matches</param>

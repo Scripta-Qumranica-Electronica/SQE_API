@@ -14,6 +14,8 @@ namespace SQE.API.Server.Services
 {
 	public interface ICatalogService
 	{
+		Task<CatalogueMatchListDTO> GetAllMatches();
+
 		Task<CatalogueMatchListDTO> GetImagedObjectsOfTextFragment(uint textFragmentId);
 
 		Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId);
@@ -46,6 +48,9 @@ namespace SQE.API.Server.Services
 			_catalogueRepo = catalogueRepository;
 			_hubContext = hubContext;
 		}
+
+		public async Task<CatalogueMatchListDTO> GetAllMatches()
+			=> (await _catalogueRepo.GetAllMetchesAsync()).ToDTO();
 
 		public async Task<CatalogueMatchListDTO> GetImagedObjectsOfTextFragment(uint textFragmentId)
 			=> (await _catalogueRepo.GetImagedObjectMatchesForTextFragmentAsync(textFragmentId))

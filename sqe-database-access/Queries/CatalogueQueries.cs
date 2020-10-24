@@ -16,10 +16,10 @@ namespace SQE.DatabaseAccess.Queries
 	internal static class CatalogueQuery
 	{
 		public const string _GetQuery = @"
-SELECT image_catalog_id AS ImageCatalogId, 
-       institution AS Institution, 
-       catalog_number_1 AS CatalogueNumber1, 
-       catalog_number_2 AS CatalogueNumber2, 
+SELECT image_catalog_id AS ImageCatalogId,
+       institution AS Institution,
+       catalog_number_1 AS CatalogueNumber1,
+       catalog_number_2 AS CatalogueNumber2,
        catalog_side AS CatalogSide,
        url AS Url,
        proxy AS Proxy,
@@ -27,15 +27,15 @@ SELECT image_catalog_id AS ImageCatalogId,
        license AS License,
        filename AS Filename,
        object_id AS ImagedObjectId,
-       iaa_edition_catalog_id AS IaaEditionCatalogueId, 
-       manuscript_id AS ManuscriptId, 
-       edition_name AS EditionName, 
-       edition_volume AS EditionVolume, 
-       edition_location_1 AS EditionLocation1, 
-       edition_location_2 AS EditionLocation2, 
-       edition_side AS EditionSide, 
+       iaa_edition_catalog_id AS IaaEditionCatalogueId,
+       manuscript_id AS ManuscriptId,
+       edition_name AS EditionName,
+       edition_volume AS EditionVolume,
+       edition_location_1 AS EditionLocation1,
+       edition_location_2 AS EditionLocation2,
+       edition_side AS EditionSide,
        comment AS Comment,
-       text_fragment_id AS TextFragmentId, 
+       text_fragment_id AS TextFragmentId,
        name AS Name,
        manuscript_name AS ManuscriptName,
        edition_id AS EditionId,
@@ -65,7 +65,7 @@ JOIN (
 ) AS iecc1 ON iecc1.iaa_edition_catalog_to_text_fragment_id = image_text_fragment_match_catalogue.iaa_edition_catalog_to_text_fragment_id
 JOIN (
     SELECT iecttfc.iaa_edition_catalog_to_text_fragment_id, iecttfc.time, iecttfc.confirmed, user.email
-    FROM iaa_edition_catalog_to_text_fragment_confirmation AS `iecttfc` 
+    FROM iaa_edition_catalog_to_text_fragment_confirmation AS `iecttfc`
     LEFT JOIN user ON user.user_id = iecttfc.user_id
     WHERE iecttfc.time = (
         SELECT time
@@ -113,6 +113,65 @@ JOIN SQE.iaa_edition_catalog_to_text_fragment_confirmation AS iecc2 USING(iaa_ed
 
 			return _GetQuery.Replace("$Where", where).Replace("$Latest", group);
 		}
+	}
+
+	internal static class FullCatalogueQuery
+	{
+		internal const string GetQuery = @"
+SELECT DISTINCT image_catalog.image_catalog_id AS ImageCatalogId,
+       image_catalog.institution AS Institution,
+       image_catalog.catalog_number_2 AS CatalogueNumber1,
+       image_catalog.catalog_number_2 AS CatalogueNumber2,
+       image_catalog.catalog_side AS CatalogSide,
+       image_catalog.object_id AS ImagedObjectId,
+       image_urls.proxy AS Proxy,
+       image_urls.url AS Url,
+       SQE_image.filename AS Filename,
+       image_urls.suffix AS Suffix,
+       image_urls.license AS License,
+       iaa_edition_catalog.iaa_edition_catalog_id AS IaaEditionCatalogueId,
+       iaa_edition_catalog.manuscript_id AS ManuscriptId,
+       iaa_edition_catalog.manuscript AS ManuscriptName,
+       iaa_edition_catalog.edition_name AS EditionName,
+       iaa_edition_catalog.edition_volume AS EditionVolume,
+       iaa_edition_catalog.edition_location_1 AS EditionLocation1,
+       iaa_edition_catalog.edition_location_2 AS EditionLocation2,
+       iaa_edition_catalog.edition_side AS EditionSide,
+       iaa_edition_catalog.comment AS Comment,
+       iaa_edition_catalog_to_text_fragment.text_fragment_id AS TextFragmentId,
+       text_fragment_data.name AS Name,
+       text_fragment_data_owner.edition_id AS EditionId,
+       iaa_edition_catalog_to_text_fragment_confirmation.confirmed AS Confirmed,
+       catalog_creator.email AS MatchAuthor,
+       catalog_confirmation.email AS MatchConfirmationAuthor,
+       iaa_edition_catalog_to_text_fragment.iaa_edition_catalog_to_text_fragment_id MatchId,
+       match_creation.time AS MatchDate,
+       match_confirmation.time AS MatchConfirmationDate
+FROM iaa_edition_catalog_to_text_fragment_confirmation
+JOIN iaa_edition_catalog_to_text_fragment USING(iaa_edition_catalog_to_text_fragment_id)
+JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
+JOIN iaa_edition_catalog_author USING(iaa_edition_catalog_id)
+JOIN text_fragment_data USING(text_fragment_id)
+JOIN text_fragment_data_owner USING(text_fragment_data_id)
+JOIN edition_editor USING(edition_id)
+LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation AS match_creation
+    ON match_creation.iaa_edition_catalog_to_text_fragment_id = iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id
+    AND (match_creation.confirmed IS NULL)
+LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation AS match_confirmation
+    ON match_confirmation.iaa_edition_catalog_to_text_fragment_id = iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id
+    AND (match_confirmation.confirmed = 0 || match_confirmation.confirmed = 1)
+LEFT JOIN user AS catalog_creator ON  catalog_creator.user_id = match_creation.user_id
+LEFT JOIN user AS catalog_confirmation ON  catalog_confirmation.user_id = match_confirmation.user_id
+JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
+JOIN image_catalog USING(image_catalog_id)
+LEFT JOIN SQE_image ON SQE_image.image_catalog_id = image_catalog.image_catalog_id
+    AND SQE_image.is_master = 1
+LEFT JOIN image_urls ON image_urls.image_urls_id = SQE_image.image_urls_id
+WHERE edition_editor.user_id = 1
+ORDER BY iaa_edition_catalog.manuscript,
+         iaa_edition_catalog_to_text_fragment.iaa_edition_catalog_to_text_fragment_id,
+         iaa_edition_catalog_to_text_fragment_confirmation.time DESC
+";
 	}
 
 	internal static class EditionCatalogueQuery
@@ -189,20 +248,20 @@ $Where
 	internal static class EditionCatalogueInsertQuery
 	{
 		public const string GetQuery = @"
-INSERT INTO iaa_edition_catalog (manuscript, 
-                                 edition_name, 
-                                 edition_volume, 
-                                 edition_location_1, 
+INSERT INTO iaa_edition_catalog (manuscript,
+                                 edition_name,
+                                 edition_volume,
+                                 edition_location_1,
                                  edition_location_2,
-                                 edition_side,  
-                                 comment, 
-                                 manuscript_id) 
-SELECT @Manuscript, 
-      @EditionName, 
-      @EditionVolume, 
-      @EditionLocation1, 
-      @EditionLocation2, 
-      @EditionSide, 
+                                 edition_side,
+                                 comment,
+                                 manuscript_id)
+SELECT @Manuscript,
+      @EditionName,
+      @EditionVolume,
+      @EditionLocation1,
+      @EditionLocation2,
+      @EditionSide,
       @Comment,
       manuscript_id
 FROM manuscript_data_owner
@@ -216,9 +275,9 @@ WHERE edition_id = @EditionId
 	internal static class EditionCatalogueAuthorInsertQuery
 	{
 		public const string GetQuery = @"
-INSERT INTO iaa_edition_catalog_author (iaa_edition_catalog_id, user_id) 
+INSERT INTO iaa_edition_catalog_author (iaa_edition_catalog_id, user_id)
 SELECT @IaaEditionCatalogId, users_system_roles.user_id
-FROM users_system_roles 
+FROM users_system_roles
 WHERE users_system_roles.user_id = @UserId
     AND users_system_roles.system_roles_id = 2
     AND NOT EXISTS
@@ -232,9 +291,9 @@ WHERE users_system_roles.user_id = @UserId
 	internal static class EditionCatalogTextFragmentMatchInsertQuery
 	{
 		public const string GetQuery = @"
-INSERT INTO iaa_edition_catalog_to_text_fragment (iaa_edition_catalog_id, text_fragment_id) 
+INSERT INTO iaa_edition_catalog_to_text_fragment (iaa_edition_catalog_id, text_fragment_id)
 SELECT @IaaEditionCatalogId, @TextFragmentId
-FROM users_system_roles 
+FROM users_system_roles
 WHERE users_system_roles.user_id = @UserId
     AND users_system_roles.system_roles_id = 2
     AND NOT EXISTS
@@ -250,7 +309,7 @@ WHERE users_system_roles.user_id = @UserId
 		public const string GetQuery = @"
 INSERT INTO iaa_edition_catalog_to_text_fragment_confirmation (iaa_edition_catalog_to_text_fragment_id, user_id, confirmed)
 SELECT @IaaEditionCatalogToTextFragmentId, @UserId, @Confirmed
-FROM users_system_roles 
+FROM users_system_roles
 WHERE users_system_roles.user_id = @UserId
     AND users_system_roles.system_roles_id = 2
 ";
@@ -259,9 +318,9 @@ WHERE users_system_roles.user_id = @UserId
 	internal static class EditionCatalogTextFragmentMatchConfirmationUpdateQuery
 	{
 		public const string GetQuery = @"
-UPDATE iaa_edition_catalog_to_text_fragment_confirmation 
+UPDATE iaa_edition_catalog_to_text_fragment_confirmation
 JOIN users_system_roles USING(user_id)
-    SET iaa_edition_catalog_to_text_fragment_confirmation.user_id = @UserId, 
+    SET iaa_edition_catalog_to_text_fragment_confirmation.user_id = @UserId,
         iaa_edition_catalog_to_text_fragment_confirmation.confirmed = @Confirmed
 WHERE iaa_edition_catalog_to_text_fragment_id = @IaaEditionCatalogToTextFragmentId
     AND (iaa_edition_catalog_to_text_fragment_confirmation.user_id != @UserId
@@ -279,7 +338,7 @@ SELECT @IaaEditionCatalogId, image_catalog_id
 FROM image_catalog
 JOIN users_system_roles ON users_system_roles.user_id = @UserId
     AND users_system_roles.system_roles_id = 2
-WHERE object_id = @ImagedObjectId 
+WHERE object_id = @ImagedObjectId
   AND image_catalog.catalog_side = @Side
   AND NOT EXISTS
   ( SELECT iaa_edition_catalog_id, image_catalog_id

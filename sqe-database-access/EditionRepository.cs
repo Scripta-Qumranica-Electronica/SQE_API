@@ -363,7 +363,7 @@ namespace SQE.DatabaseAccess
 						using (var connection = OpenConnection())
 						{
 							// Create a new edition
-							connection.Execute(
+							await connection.ExecuteAsync(
 									CopyEditionQuery.GetQuery
 									, new
 									{
@@ -383,7 +383,7 @@ namespace SQE.DatabaseAccess
 							}
 
 							// Create new edition_editor
-							connection.Execute(
+							await connection.ExecuteAsync(
 									CreateEditionEditorQuery.GetQuery
 									, new
 									{

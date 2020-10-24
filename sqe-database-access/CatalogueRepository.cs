@@ -12,6 +12,8 @@ namespace SQE.DatabaseAccess
 {
 	public interface ICatalogueRepository
 	{
+		Task<IEnumerable<CatalogueMatch>> GetAllMetchesAsync();
+
 		Task<IEnumerable<CatalogueMatch>> GetTextFragmentMatchesForImagedObjectAsync(
 				string imagedObjectId);
 
@@ -47,6 +49,12 @@ namespace SQE.DatabaseAccess
 									   , ICatalogueRepository
 	{
 		public CatalogueRepository(IConfiguration config) : base(config) { }
+
+		public async Task<IEnumerable<CatalogueMatch>> GetAllMetchesAsync()
+		{
+			using (var connection = OpenConnection())
+				return await connection.QueryAsync<CatalogueMatch>(FullCatalogueQuery.GetQuery);
+		}
 
 		public async Task<IEnumerable<CatalogueMatch>> GetTextFragmentMatchesForImagedObjectAsync(
 				string imagedObjectId)

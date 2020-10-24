@@ -19,6 +19,30 @@ namespace SQE.API.Server.RealtimeHubs
 	public partial class MainHub
 	{
 		/// <summary>
+		///  Get a listing of all text fragments to imaged object matches
+		/// </summary>
+		[AllowAnonymous]
+		public async Task<CatalogueMatchListDTO> GetV1CatalogueAllMatches()
+
+		{
+			try
+			{
+				return await _catalogueService.GetAllMatches();
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
 		///  Get a listing of all text fragments matches that correspond to an imaged object
 		/// </summary>
 		/// <param name="imagedObjectId">Id of imaged object to search for transcription matches</param>
