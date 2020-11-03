@@ -90,6 +90,7 @@ namespace SQE.ApiTest.Helpers
 				, string                            comment
 				, uint                              textFragmentId
 				, uint                              editionId
+				, string                            manuscriptName
 				, HttpClient                        client
 				, Func<string, Task<HubConnection>> signalr
 				, bool                              realtime  = false
@@ -109,6 +110,7 @@ namespace SQE.ApiTest.Helpers
 					, textFragmentId = textFragmentId
 					, editionId = editionId
 					, confirmed = confirmed
+					, manuscriptName = manuscriptName
 					,
 			};
 

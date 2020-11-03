@@ -65,16 +65,12 @@ namespace SQE.ApiTest.ApiRequests
 				_optional = optional;
 			}
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{_editionId.ToString()}")
-													.Replace(
-															"/imaged-object-id"
-															, $"/{_imagedObjectId}")
-													+ (_optional != null
-															? $"?optional={string.Join("&optional=", _optional)}"
-															: "");
+			protected override string HttpPath()
+				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+							  .Replace("/imaged-object-id", $"/{_imagedObjectId}")
+				   + (_optional != null
+						   ? $"?optional={string.Join("&optional=", _optional)}"
+						   : "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{

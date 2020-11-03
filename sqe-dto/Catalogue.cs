@@ -23,6 +23,9 @@ namespace SQE.API.DTO
 		public uint manuscriptId { get; set; }
 
 		[Required]
+		public string manuscriptName { get; set; }
+
+		[Required]
 		public string editionName { get; set; }
 
 		[Required]

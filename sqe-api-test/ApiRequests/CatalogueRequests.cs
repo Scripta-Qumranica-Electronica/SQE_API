@@ -47,6 +47,16 @@ namespace SQE.ApiTest.ApiRequests
 
 	public static partial class Get
 	{
+		public class V1_Catalogue_AllMatches : RequestObject<EmptyInput, CatalogueMatchListDTO>
+		{
+			protected override string HttpPath() => RequestPath;
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+			}
+		}
+
 		public class V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments :
 				RequestObject<EmptyInput, CatalogueMatchListDTO>
 		{

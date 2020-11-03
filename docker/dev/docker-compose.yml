@@ -1,10 +1,10 @@
 # This is a docker-compose file for developing SQE_API
-# Start it up and you get all the services 
+# Start it up and you get all the services
 version: '3.7'
 
 services:
     sqe-database:
-        image: qumranica/sqe-database:0.21.2
+        image: qumranica/sqe-database:0.21.3
         container_name: SQE_Database
         # These environment variables match the default db connection settings for the project.
         environment:

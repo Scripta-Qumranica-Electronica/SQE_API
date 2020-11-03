@@ -45,11 +45,9 @@ namespace SQE.ApiTest.ApiRequests
 			public DeleteDTO DeletedRoi { get; private set; }
 
 			private void DeletedRoiListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteDTO>(
 						"DeletedRoi"
 						, receivedData => DeletedRoi = receivedData);
-			}
 
 			private bool DeletedRoiIsNull() => DeletedRoi == null;
 
@@ -116,8 +114,8 @@ namespace SQE.ApiTest.ApiRequests
 
 	public static partial class Post
 	{
-		public class V1_Editions_EditionId_Rois : RequestObject<
-				SetInterpretationRoiDTO, InterpretationRoiDTO>
+		public class V1_Editions_EditionId_Rois :
+				RequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO>
 		{
 			private readonly uint                    _editionId;
 			private readonly SetInterpretationRoiDTO _payload;
@@ -127,9 +125,8 @@ namespace SQE.ApiTest.ApiRequests
 			/// </summary>
 			/// <param name="editionId">Id of the edition</param>
 			/// <param name="newRoi">A JSON object with the new ROI to be created</param>
-			public V1_Editions_EditionId_Rois(
-					uint                      editionId
-					, SetInterpretationRoiDTO payload) : base(payload)
+			public V1_Editions_EditionId_Rois(uint editionId, SetInterpretationRoiDTO payload)
+					: base(payload)
 			{
 				_editionId = editionId;
 				_payload = payload;
@@ -145,11 +142,9 @@ namespace SQE.ApiTest.ApiRequests
 			public InterpretationRoiDTOList CreatedRoisBatch { get; private set; }
 
 			private void CreatedRoisBatchListener(HubConnection signalrListener)
-			{
-				signalrListener.On<InterpretationRoiDTOList>(
+				=> signalrListener.On<InterpretationRoiDTOList>(
 						"CreatedRoisBatch"
 						, receivedData => CreatedRoisBatch = receivedData);
-			}
 
 			private bool CreatedRoisBatchIsNull() => CreatedRoisBatch == null;
 
@@ -173,8 +168,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Editions_EditionId_Rois_Batch : RequestObject<
-				SetInterpretationRoiDTOList, InterpretationRoiDTOList>
+		public class V1_Editions_EditionId_Rois_Batch :
+				RequestObject<SetInterpretationRoiDTOList, InterpretationRoiDTOList>
 		{
 			private readonly uint                        _editionId;
 			private readonly SetInterpretationRoiDTOList _payload;
@@ -202,11 +197,9 @@ namespace SQE.ApiTest.ApiRequests
 			public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
 
 			private void EditedRoisBatchListener(HubConnection signalrListener)
-			{
-				signalrListener.On<BatchEditRoiResponseDTO>(
+				=> signalrListener.On<BatchEditRoiResponseDTO>(
 						"EditedRoisBatch"
 						, receivedData => EditedRoisBatch = receivedData);
-			}
 
 			private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
 
@@ -230,8 +223,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Editions_EditionId_Rois_BatchEdit : RequestObject<
-				BatchEditRoiDTO, BatchEditRoiResponseDTO>
+		public class V1_Editions_EditionId_Rois_BatchEdit :
+				RequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO>
 		{
 			private readonly uint            _editionId;
 			private readonly BatchEditRoiDTO _payload;
@@ -258,11 +251,9 @@ namespace SQE.ApiTest.ApiRequests
 			public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
 
 			private void EditedRoisBatchListener(HubConnection signalrListener)
-			{
-				signalrListener.On<BatchEditRoiResponseDTO>(
+				=> signalrListener.On<BatchEditRoiResponseDTO>(
 						"EditedRoisBatch"
 						, receivedData => EditedRoisBatch = receivedData);
-			}
 
 			private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
 
@@ -289,8 +280,8 @@ namespace SQE.ApiTest.ApiRequests
 
 	public static partial class Put
 	{
-		public class V1_Editions_EditionId_Rois_RoiId : RequestObject<
-				SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO>
+		public class V1_Editions_EditionId_Rois_RoiId :
+				RequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO>
 		{
 			private readonly uint                    _editionId;
 			private readonly SetInterpretationRoiDTO _payload;
@@ -322,11 +313,9 @@ namespace SQE.ApiTest.ApiRequests
 			public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
 
 			private void EditedRoisBatchListener(HubConnection signalrListener)
-			{
-				signalrListener.On<BatchEditRoiResponseDTO>(
+				=> signalrListener.On<BatchEditRoiResponseDTO>(
 						"EditedRoisBatch"
 						, receivedData => EditedRoisBatch = receivedData);
-			}
 
 			private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
 
@@ -382,11 +371,9 @@ namespace SQE.ApiTest.ApiRequests
 			public UpdatedInterpretationRoiDTOList UpdatedRoisBatch { get; private set; }
 
 			private void UpdatedRoisBatchListener(HubConnection signalrListener)
-			{
-				signalrListener.On<UpdatedInterpretationRoiDTOList>(
+				=> signalrListener.On<UpdatedInterpretationRoiDTOList>(
 						"UpdatedRoisBatch"
 						, receivedData => UpdatedRoisBatch = receivedData);
-			}
 
 			private bool UpdatedRoisBatchIsNull() => UpdatedRoisBatch == null;
 

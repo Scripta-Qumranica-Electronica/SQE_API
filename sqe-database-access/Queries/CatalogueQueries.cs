@@ -203,7 +203,8 @@ $Where
 				, bool editionSide
 				, bool comment
 				, bool manuscriptId
-				, bool editionId)
+				, bool editionId
+				, bool manuscriptName)
 		{
 			var searchOptions = new List<string>();
 
@@ -233,6 +234,9 @@ $Where
 
 			if (manuscriptId)
 				searchOptions.Add("manuscript_id = @ManuscriptId");
+
+			if (manuscriptName)
+				searchOptions.Add("manuscript = @ManuscriptName");
 
 			if (editionId)
 				searchOptions.Add("edition_id = @EditionId");

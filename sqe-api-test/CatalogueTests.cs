@@ -107,6 +107,7 @@ namespace SQE.ApiTest
 					, "This is test of the system"
 					, textFragmentId
 					, 1
+					, "1Q28"
 					, _client
 					, StartConnectionAsync
 					, realtime);

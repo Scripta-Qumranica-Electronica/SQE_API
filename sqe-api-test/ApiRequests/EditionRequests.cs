@@ -52,11 +52,9 @@ namespace SQE.ApiTest.ApiRequests
 			public DeleteTokenDTO DeletedEdition { get; private set; }
 
 			private void DeletedEditionListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteTokenDTO>(
+				=> signalrListener.On<DeleteTokenDTO>(
 						"DeletedEdition"
 						, receivedData => DeletedEdition = receivedData);
-			}
 
 			private bool DeletedEditionIsNull() => DeletedEdition == null;
 
@@ -223,11 +221,9 @@ namespace SQE.ApiTest.ApiRequests
 			public EditorInvitationDTO RequestedEditor { get; private set; }
 
 			private void RequestedEditorListener(HubConnection signalrListener)
-			{
-				signalrListener.On<EditorInvitationDTO>(
+				=> signalrListener.On<EditorInvitationDTO>(
 						"RequestedEditor"
 						, receivedData => RequestedEditor = receivedData);
-			}
 
 			private bool RequestedEditorIsNull() => RequestedEditor == null;
 
@@ -276,11 +272,9 @@ namespace SQE.ApiTest.ApiRequests
 			public DetailedEditorRightsDTO CreatedEditor { get; private set; }
 
 			private void CreatedEditorListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DetailedEditorRightsDTO>(
+				=> signalrListener.On<DetailedEditorRightsDTO>(
 						"CreatedEditor"
 						, receivedData => CreatedEditor = receivedData);
-			}
 
 			private bool CreatedEditorIsNull() => CreatedEditor == null;
 
@@ -323,11 +317,9 @@ namespace SQE.ApiTest.ApiRequests
 			public EditionDTO CreatedEdition { get; private set; }
 
 			private void CreatedEditionListener(HubConnection signalrListener)
-			{
-				signalrListener.On<EditionDTO>(
+				=> signalrListener.On<EditionDTO>(
 						"CreatedEdition"
 						, receivedData => CreatedEdition = receivedData);
-			}
 
 			private bool CreatedEditionIsNull() => CreatedEdition == null;
 
@@ -354,8 +346,8 @@ namespace SQE.ApiTest.ApiRequests
 
 	public static partial class Put
 	{
-		public class V1_Editions_EditionId_Editors_EditorEmailId : RequestObject
-				<UpdateEditorRightsDTO, DetailedEditorRightsDTO>
+		public class V1_Editions_EditionId_Editors_EditorEmailId :
+				RequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO>
 		{
 			private readonly uint                  _editionId;
 			private readonly string                _editorEmailId;
@@ -387,11 +379,9 @@ namespace SQE.ApiTest.ApiRequests
 			public DetailedEditorRightsDTO CreatedEditor { get; private set; }
 
 			private void CreatedEditorListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DetailedEditorRightsDTO>(
+				=> signalrListener.On<DetailedEditorRightsDTO>(
 						"CreatedEditor"
 						, receivedData => CreatedEditor = receivedData);
-			}
 
 			private bool CreatedEditorIsNull() => CreatedEditor == null;
 
@@ -447,11 +437,9 @@ namespace SQE.ApiTest.ApiRequests
 			public EditionDTO UpdatedEdition { get; private set; }
 
 			private void UpdatedEditionListener(HubConnection signalrListener)
-			{
-				signalrListener.On<EditionDTO>(
+				=> signalrListener.On<EditionDTO>(
 						"UpdatedEdition"
 						, receivedData => UpdatedEdition = receivedData);
-			}
 
 			private bool UpdatedEditionIsNull() => UpdatedEdition == null;
 

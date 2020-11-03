@@ -50,11 +50,9 @@ namespace SQE.ApiTest.ApiRequests
 			public DeleteDTO DeletedAttribute { get; private set; }
 
 			private void DeletedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteDTO>(
 						"DeletedAttribute"
 						, receivedData => DeletedAttribute = receivedData);
-			}
 
 			private bool DeletedAttributeIsNull() => DeletedAttribute == null;
 
@@ -114,11 +112,9 @@ namespace SQE.ApiTest.ApiRequests
 			public DeleteDTO DeletedSignInterpretation { get; private set; }
 
 			private void DeletedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteDTO>(
 						"DeletedSignInterpretation"
 						, receivedData => DeletedSignInterpretation = receivedData);
-			}
 
 			private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
 
@@ -184,11 +180,9 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
@@ -322,11 +316,9 @@ namespace SQE.ApiTest.ApiRequests
 			public AttributeDTO CreatedAttribute { get; private set; }
 
 			private void CreatedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<AttributeDTO>(
+				=> signalrListener.On<AttributeDTO>(
 						"CreatedAttribute"
 						, receivedData => CreatedAttribute = receivedData);
-			}
 
 			private bool CreatedAttributeIsNull() => CreatedAttribute == null;
 
@@ -350,8 +342,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Editions_EditionId_SignInterpretations : RequestObject<
-				SignInterpretationCreateDTO, SignInterpretationListDTO>
+		public class V1_Editions_EditionId_SignInterpretations :
+				RequestObject<SignInterpretationCreateDTO, SignInterpretationListDTO>
 		{
 			private readonly uint                        _editionId;
 			private readonly SignInterpretationCreateDTO _payload;
@@ -380,11 +372,9 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationListDTO CreatedSignInterpretation { get; private set; }
 
 			private void CreatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationListDTO>(
+				=> signalrListener.On<SignInterpretationListDTO>(
 						"CreatedSignInterpretation"
 						, receivedData => CreatedSignInterpretation = receivedData);
-			}
 
 			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
 
@@ -446,11 +436,9 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
@@ -520,11 +508,9 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
@@ -591,11 +577,9 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
@@ -673,29 +657,23 @@ namespace SQE.ApiTest.ApiRequests
 			public AttributeDTO UpdatedAttribute { get; private set; }
 
 			private void CreatedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<AttributeDTO>(
+				=> signalrListener.On<AttributeDTO>(
 						"CreatedAttribute"
 						, receivedData => CreatedAttribute = receivedData);
-			}
 
 			private bool CreatedAttributeIsNull() => CreatedAttribute == null;
 
 			private void DeletedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteDTO>(
 						"DeletedAttribute"
 						, receivedData => DeletedAttribute = receivedData);
-			}
 
 			private bool DeletedAttributeIsNull() => DeletedAttribute == null;
 
 			private void UpdatedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<AttributeDTO>(
+				=> signalrListener.On<AttributeDTO>(
 						"UpdatedAttribute"
 						, receivedData => UpdatedAttribute = receivedData);
-			}
 
 			private bool UpdatedAttributeIsNull() => UpdatedAttribute == null;
 
@@ -721,9 +699,7 @@ namespace SQE.ApiTest.ApiRequests
 			public class Listeners
 			{
 				public ListenerMethods CreatedAttribute = ListenerMethods.CreatedAttribute;
-
 				public ListenerMethods DeletedAttribute = ListenerMethods.DeletedAttribute;
-
 				public ListenerMethods UpdatedAttribute = ListenerMethods.UpdatedAttribute;
 			}
 		}
@@ -762,11 +738,9 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
@@ -837,11 +811,9 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 

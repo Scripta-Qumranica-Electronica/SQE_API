@@ -89,7 +89,8 @@ namespace SQE.API.Server.Services
 					, match.editionLocation1
 					, match.editionLocation2
 					, (byte) match.editionSide
-					, match.comment);
+					, match.comment
+					, match.manuscriptName);
 
 			return new NoContentResult();
 		}

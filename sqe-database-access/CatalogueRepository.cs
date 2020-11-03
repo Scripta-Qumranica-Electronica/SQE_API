@@ -37,7 +37,8 @@ namespace SQE.DatabaseAccess
 				, string canonicalEditionLoc1
 				, string canonicalEditionLoc2
 				, byte   canonicalEditionSide
-				, string comment);
+				, string comment
+				, string manuscriptName);
 
 		Task ConfirmImagedObjectTextFragmentMatchAsync(
 				uint   userId
@@ -111,7 +112,8 @@ namespace SQE.DatabaseAccess
 				, string canonicalEditionLoc1
 				, string canonicalEditionLoc2
 				, byte   canonicalEditionSide
-				, string comment)
+				, string comment
+				, string manuscriptName)
 		{
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -128,7 +130,8 @@ namespace SQE.DatabaseAccess
 								, true
 								, string.IsNullOrEmpty(comment)
 								, false
-								, true)
+								, true
+								, string.IsNullOrEmpty(manuscriptName))
 						, new
 						{
 								EditionName = canonicalEditionName
@@ -139,6 +142,7 @@ namespace SQE.DatabaseAccess
 								, Comment = comment
 								, EditionId = editionId
 								, UserId = userId
+								, ManuscriptName = manuscriptName
 								,
 						})).AsList();
 
@@ -160,6 +164,7 @@ namespace SQE.DatabaseAccess
 									, Comment = comment
 									, EditionId = editionId
 									, UserId = userId
+									, Manuscript = manuscriptName
 									,
 							});
 

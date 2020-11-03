@@ -278,7 +278,8 @@ namespace SQE.ApiTest
 				, Func<string, Task<HubConnection>> signalr)
 		{
 			// Act
-			var request = new Get.V1_ImagedObjects_ImagedObjectId(imagedObjectId);
+			var request =
+					new Get.V1_ImagedObjects_ImagedObjectId(HttpUtility.UrlEncode(imagedObjectId));
 
 			await request.SendAsync(client, signalr);
 

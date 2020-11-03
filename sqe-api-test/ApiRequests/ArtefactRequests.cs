@@ -47,11 +47,9 @@ namespace SQE.ApiTest.ApiRequests
 			public DeleteDTO DeletedArtefact { get; private set; }
 
 			private void DeletedArtefactListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteDTO>(
 						"DeletedArtefact"
 						, receivedData => DeletedArtefact = receivedData);
-			}
 
 			private bool DeletedArtefactIsNull() => DeletedArtefact == null;
 
@@ -110,11 +108,9 @@ namespace SQE.ApiTest.ApiRequests
 			public DeleteDTO DeletedArtefactGroup { get; private set; }
 
 			private void DeletedArtefactGroupListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteDTO>(
 						"DeletedArtefactGroup"
 						, receivedData => DeletedArtefactGroup = receivedData);
-			}
 
 			private bool DeletedArtefactGroupIsNull() => DeletedArtefactGroup == null;
 
@@ -169,16 +165,12 @@ namespace SQE.ApiTest.ApiRequests
 				_optional = optional;
 			}
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{_editionId.ToString()}")
-													.Replace(
-															"/artefact-id"
-															, $"/{_artefactId.ToString()}")
-													+ (_optional != null
-															? $"?optional={string.Join("&optional=", _optional)}"
-															: "");
+			protected override string HttpPath()
+				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+							  .Replace("/artefact-id", $"/{_artefactId.ToString()}")
+				   + (_optional != null
+						   ? $"?optional={string.Join("&optional=", _optional)}"
+						   : "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -289,16 +281,12 @@ namespace SQE.ApiTest.ApiRequests
 				_optional = optional;
 			}
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{_editionId.ToString()}")
-													.Replace(
-															"/artefact-id"
-															, $"/{_artefactId.ToString()}")
-													+ (_optional != null
-															? $"?optional={string.Join("&optional=", _optional)}"
-															: "");
+			protected override string HttpPath()
+				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
+							  .Replace("/artefact-id", $"/{_artefactId.ToString()}")
+				   + (_optional != null
+						   ? $"?optional={string.Join("&optional=", _optional)}"
+						   : "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -411,11 +399,9 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactDTO CreatedArtefact { get; private set; }
 
 			private void CreatedArtefactListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactDTO>(
+				=> signalrListener.On<ArtefactDTO>(
 						"CreatedArtefact"
 						, receivedData => CreatedArtefact = receivedData);
-			}
 
 			private bool CreatedArtefactIsNull() => CreatedArtefact == null;
 
@@ -469,11 +455,9 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactDTO UpdatedArtefact { get; private set; }
 
 			private void UpdatedArtefactListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactDTO>(
+				=> signalrListener.On<ArtefactDTO>(
 						"UpdatedArtefact"
 						, receivedData => UpdatedArtefact = receivedData);
-			}
 
 			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
 
@@ -497,8 +481,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Editions_EditionId_ArtefactGroups : RequestObject<
-				CreateArtefactGroupDTO, ArtefactGroupDTO>
+		public class V1_Editions_EditionId_ArtefactGroups :
+				RequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO>
 		{
 			private readonly uint                   _editionId;
 			private readonly CreateArtefactGroupDTO _payload;
@@ -529,11 +513,9 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactGroupDTO CreatedArtefactGroup { get; private set; }
 
 			private void CreatedArtefactGroupListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactGroupDTO>(
+				=> signalrListener.On<ArtefactGroupDTO>(
 						"CreatedArtefactGroup"
 						, receivedData => CreatedArtefactGroup = receivedData);
-			}
 
 			private bool CreatedArtefactGroupIsNull() => CreatedArtefactGroup == null;
 
@@ -602,11 +584,9 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactDTO UpdatedArtefact { get; private set; }
 
 			private void UpdatedArtefactListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactDTO>(
+				=> signalrListener.On<ArtefactDTO>(
 						"UpdatedArtefact"
 						, receivedData => UpdatedArtefact = receivedData);
-			}
 
 			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
 
@@ -671,11 +651,9 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactGroupDTO UpdatedArtefactGroup { get; private set; }
 
 			private void UpdatedArtefactGroupListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactGroupDTO>(
+				=> signalrListener.On<ArtefactGroupDTO>(
 						"UpdatedArtefactGroup"
 						, receivedData => UpdatedArtefactGroup = receivedData);
-			}
 
 			private bool UpdatedArtefactGroupIsNull() => UpdatedArtefactGroup == null;
 

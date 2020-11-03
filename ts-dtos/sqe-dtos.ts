@@ -611,6 +611,7 @@ export interface CatalogueMatchInputDTO {
     catalogSide?: SideDesignation;
     imagedObjectId: string;
     manuscriptId: number;
+    manuscriptName: string;
     editionName: string;
     editionVolume: string;
     editionLocation1: string;

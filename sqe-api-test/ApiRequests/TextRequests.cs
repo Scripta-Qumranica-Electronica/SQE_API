@@ -206,8 +206,8 @@ namespace SQE.ApiTest.ApiRequests
 
 	public static partial class Post
 	{
-		public class V1_Editions_EditionId_TextFragments : RequestObject<
-				CreateTextFragmentDTO, TextFragmentDataDTO>
+		public class V1_Editions_EditionId_TextFragments :
+				RequestObject<CreateTextFragmentDTO, TextFragmentDataDTO>
 		{
 			private readonly uint                  _editionId;
 			private readonly CreateTextFragmentDTO _payload;
@@ -235,11 +235,9 @@ namespace SQE.ApiTest.ApiRequests
 			public TextFragmentDataDTO CreatedTextFragment { get; private set; }
 
 			private void CreatedTextFragmentListener(HubConnection signalrListener)
-			{
-				signalrListener.On<TextFragmentDataDTO>(
+				=> signalrListener.On<TextFragmentDataDTO>(
 						"CreatedTextFragment"
 						, receivedData => CreatedTextFragment = receivedData);
-			}
 
 			private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
 
@@ -300,11 +298,9 @@ namespace SQE.ApiTest.ApiRequests
 			public TextFragmentDataDTO CreatedTextFragment { get; private set; }
 
 			private void CreatedTextFragmentListener(HubConnection signalrListener)
-			{
-				signalrListener.On<TextFragmentDataDTO>(
+				=> signalrListener.On<TextFragmentDataDTO>(
 						"CreatedTextFragment"
 						, receivedData => CreatedTextFragment = receivedData);
-			}
 
 			private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
 

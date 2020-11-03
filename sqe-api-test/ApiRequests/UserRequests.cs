@@ -63,8 +63,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Users_ChangeUnactivatedEmail : RequestObject<
-				UnactivatedEmailUpdateRequestDTO, EmptyOutput>
+		public class V1_Users_ChangeUnactivatedEmail :
+				RequestObject<UnactivatedEmailUpdateRequestDTO, EmptyOutput>
 		{
 			private readonly UnactivatedEmailUpdateRequestDTO _payload;
 
@@ -84,8 +84,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Users_ChangeForgottenPassword : RequestObject<
-				ResetForgottenUserPasswordRequestDTO, EmptyOutput>
+		public class V1_Users_ChangeForgottenPassword :
+				RequestObject<ResetForgottenUserPasswordRequestDTO, EmptyOutput>
 		{
 			private readonly ResetForgottenUserPasswordRequestDTO _payload;
 
@@ -104,8 +104,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Users_ChangePassword : RequestObject<
-				ResetLoggedInUserPasswordRequestDTO, EmptyOutput>
+		public class V1_Users_ChangePassword :
+				RequestObject<ResetLoggedInUserPasswordRequestDTO, EmptyOutput>
 		{
 			private readonly ResetLoggedInUserPasswordRequestDTO _payload;
 
@@ -124,8 +124,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Users_ConfirmRegistration : RequestObject<
-				AccountActivationRequestDTO, EmptyOutput>
+		public class V1_Users_ConfirmRegistration :
+				RequestObject<AccountActivationRequestDTO, EmptyOutput>
 		{
 			private readonly AccountActivationRequestDTO _payload;
 
@@ -145,8 +145,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Users_ForgotPassword : RequestObject<
-				ResetUserPasswordRequestDTO, EmptyOutput>
+		public class V1_Users_ForgotPassword :
+				RequestObject<ResetUserPasswordRequestDTO, EmptyOutput>
 		{
 			private readonly ResetUserPasswordRequestDTO _payload;
 
@@ -184,8 +184,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Users_ResendActivationEmail : RequestObject<
-				ResendUserAccountActivationRequestDTO, EmptyOutput>
+		public class V1_Users_ResendActivationEmail :
+				RequestObject<ResendUserAccountActivationRequestDTO, EmptyOutput>
 		{
 			private readonly ResendUserAccountActivationRequestDTO _payload;
 
