@@ -141,12 +141,12 @@ SELECT DISTINCT image_catalog.image_catalog_id AS ImageCatalogId,
        iaa_edition_catalog_to_text_fragment.text_fragment_id AS TextFragmentId,
        text_fragment_data.name AS Name,
        text_fragment_data_owner.edition_id AS EditionId,
-       iaa_edition_catalog_to_text_fragment_confirmation.confirmed AS Confirmed,
+       IF(match_rejection.time IS NULL AND match_confirmation.time IS NULL, NULL, IF (match_rejection.time > match_confirmation.time, 0, 1)) AS Confirmed,
        catalog_creator.email AS MatchAuthor,
-       catalog_confirmation.email AS MatchConfirmationAuthor,
+       IF(match_rejection.time IS NULL AND match_confirmation.time IS NULL, NULL, IF (match_rejection.time > match_confirmation.time, catalog_rejection.email, catalog_confirmation.email)) AS MatchConfirmationAuthor,
        iaa_edition_catalog_to_text_fragment.iaa_edition_catalog_to_text_fragment_id MatchId,
        match_creation.time AS MatchDate,
-       match_confirmation.time AS MatchConfirmationDate
+       IF(match_rejection.time IS NULL AND match_confirmation.time IS NULL, NULL, IF (match_rejection.time > match_confirmation.time, match_rejection.time, match_confirmation.time)) AS MatchConfirmationDate
 FROM iaa_edition_catalog_to_text_fragment_confirmation
 JOIN iaa_edition_catalog_to_text_fragment USING(iaa_edition_catalog_to_text_fragment_id)
 JOIN iaa_edition_catalog USING(iaa_edition_catalog_id)
@@ -159,9 +159,13 @@ LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation AS match_creation
     AND (match_creation.confirmed IS NULL)
 LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation AS match_confirmation
     ON match_confirmation.iaa_edition_catalog_to_text_fragment_id = iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id
-    AND (match_confirmation.confirmed = 0 || match_confirmation.confirmed = 1)
+    AND (match_confirmation.confirmed = 1)
+LEFT JOIN iaa_edition_catalog_to_text_fragment_confirmation AS match_rejection
+    ON match_rejection.iaa_edition_catalog_to_text_fragment_id = iaa_edition_catalog_to_text_fragment_confirmation.iaa_edition_catalog_to_text_fragment_id
+    AND (match_rejection.confirmed = 0)
 LEFT JOIN user AS catalog_creator ON  catalog_creator.user_id = match_creation.user_id
 LEFT JOIN user AS catalog_confirmation ON  catalog_confirmation.user_id = match_confirmation.user_id
+LEFT JOIN user AS catalog_rejection ON  catalog_rejection.user_id = match_rejection.user_id
 JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
 JOIN image_catalog USING(image_catalog_id)
 LEFT JOIN SQE_image ON SQE_image.image_catalog_id = image_catalog.image_catalog_id
