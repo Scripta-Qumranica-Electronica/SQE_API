@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
@@ -54,9 +53,8 @@ namespace SQE.ApiTest
 		[Trait("Category", "Imaged Object")]
 		public async Task CanDecodeImagedObjectIdWithUrlEncodedValue()
 		{
-			// Note: the dotnet HTTP Request system automatically escapes the URL's we submit,
-			// so we need to encode the URL first (remember this!!!).
-			var id = HttpUtility.UrlEncode("IAA-275%2F1-1");
+			// Note: the dotnet HTTP Request system must automatically decode the escaped the URL's we submit.
+			var id = "IAA-275/1-1";
 
 			var textFragRequest = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(id);
 
@@ -278,8 +276,7 @@ namespace SQE.ApiTest
 				, Func<string, Task<HubConnection>> signalr)
 		{
 			// Act
-			var request =
-					new Get.V1_ImagedObjects_ImagedObjectId(HttpUtility.UrlEncode(imagedObjectId));
+			var request = new Get.V1_ImagedObjects_ImagedObjectId(imagedObjectId);
 
 			await request.SendAsync(client, signalr);
 

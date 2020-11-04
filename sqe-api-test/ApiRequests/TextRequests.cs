@@ -11,6 +11,7 @@
 
 using System;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
@@ -32,7 +33,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -66,10 +67,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/text-fragment-id"
-															, $"/{_textFragmentId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -106,10 +107,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/text-fragment-id"
-															, $"/{_textFragmentId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -149,10 +150,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/text-fragment-id"
-															, $"/{_textFragmentId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -189,8 +190,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
-													.Replace("/line-id", $"/{_lineId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/line-id"
+															, $"/{HttpUtility.UrlEncode(_lineId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -243,7 +246,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -307,10 +310,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/text-fragment-id"
-															, $"/{_textFragmentId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{

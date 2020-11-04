@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
@@ -66,7 +67,7 @@ namespace SQE.API.Server.Services
 		public async Task<ImagedObjectTextFragmentMatchListDTO> GetImageTextFragmentsAsync(
 				string imagedObjectId)
 		{
-			imagedObjectId = imagedObjectId.Replace("%2F", "/").Replace("%20", " ");
+			imagedObjectId = HttpUtility.UrlDecode(imagedObjectId);
 
 			var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
 

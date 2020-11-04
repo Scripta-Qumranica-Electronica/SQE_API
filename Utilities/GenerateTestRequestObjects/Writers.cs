@@ -164,13 +164,13 @@ namespace GenerateTestRequestObjects
 												", "
 												, constructorParams.Select(
 														x => $"{x.ParamType} {x.ParamName}{(endpoint.queryParams.Contains(x) ? " = null" : "")}"))
-									}) 
+									})
                         {
 										(constructorParams.Any(x => x.ParamName == "payload")
 												? ": base(payload)"
 												: "")
-									} 
-                    {{  
+									}
+                    {{
                         {
 										string.Join(
 												"\n"
@@ -192,7 +192,7 @@ namespace GenerateTestRequestObjects
 										string.Join(
 												""
 												, endpoint.routeParams.Select(
-														x => $".Replace(\"/{x.ParamName.ToKebabCase()}\", $\"/{{_{x.ParamName.ToCamelCase()}.ToString()}}\")"))
+														x => $".Replace(\"/{x.ParamName.ToKebabCase()}\", $\"/{{HttpUtility.UrlEncode(_{x.ParamName.ToCamelCase()}.ToString())}}\")"))
 									}{
 										optionals
 									};
@@ -211,7 +211,7 @@ namespace GenerateTestRequestObjects
 														x => $"_{x.ParamName.ToCamelCase()}"))
 									});
                     }}
-                    
+
                     {
 										(endpoint.routeParams.Any(
 												x => x.ParamName.ToLowerInvariant() == "editionid")

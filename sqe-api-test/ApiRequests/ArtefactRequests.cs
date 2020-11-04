@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
@@ -56,10 +57,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-id"
-															, $"/{_artefactId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -117,10 +118,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-group-id"
-															, $"/{_artefactGroupId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -165,12 +166,16 @@ namespace SQE.ApiTest.ApiRequests
 				_optional = optional;
 			}
 
-			protected override string HttpPath()
-				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-							  .Replace("/artefact-id", $"/{_artefactId.ToString()}")
-				   + (_optional != null
-						   ? $"?optional={string.Join("&optional=", _optional)}"
-						   : "");
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/artefact-id"
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -205,10 +210,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-id"
-															, $"/{_artefactId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -238,11 +243,12 @@ namespace SQE.ApiTest.ApiRequests
 				_optional = optional;
 			}
 
-			protected override string HttpPath()
-				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-				   + (_optional != null
-						   ? $"?optional={string.Join("&optional=", _optional)}"
-						   : "");
+			protected override string HttpPath() => RequestPath.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -281,12 +287,16 @@ namespace SQE.ApiTest.ApiRequests
 				_optional = optional;
 			}
 
-			protected override string HttpPath()
-				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-							  .Replace("/artefact-id", $"/{_artefactId.ToString()}")
-				   + (_optional != null
-						   ? $"?optional={string.Join("&optional=", _optional)}"
-						   : "");
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/artefact-id"
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -314,7 +324,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -348,10 +358,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-group-id"
-															, $"/{_artefactGroupId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -407,7 +417,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -463,7 +473,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -521,7 +531,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -593,10 +603,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-id"
-															, $"/{_artefactId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -660,10 +670,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-group-id"
-															, $"/{_artefactGroupId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{

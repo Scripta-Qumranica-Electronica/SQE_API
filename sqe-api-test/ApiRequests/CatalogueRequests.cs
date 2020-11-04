@@ -11,6 +11,7 @@
 
 using System;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
@@ -34,7 +35,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/iaa-edition-catalog-to-text-fragment-id"
-					, $"/{_iaaEditionCatalogToTextFragmentId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_iaaEditionCatalogToTextFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -71,7 +72,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/imaged-object-id"
-					, $"/{_imagedObjectId}");
+					, $"/{HttpUtility.UrlEncode(_imagedObjectId)}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -93,7 +94,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/text-fragment-id"
-					, $"/{_textFragmentId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -115,7 +116,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -139,7 +140,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/manuscript-id"
-					, $"/{_manuscriptId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_manuscriptId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -186,7 +187,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/iaa-edition-catalog-to-text-fragment-id"
-					, $"/{_iaaEditionCatalogToTextFragmentId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_iaaEditionCatalogToTextFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{

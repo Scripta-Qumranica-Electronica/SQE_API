@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
@@ -58,14 +59,15 @@ namespace SQE.ApiTest.ApiRequests
 
 			private bool DeletedEditionIsNull() => DeletedEdition == null;
 
-			protected override string HttpPath()
-				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-				   + (_optional != null
-						   ? $"?optional={string.Join("&optional=", _optional)}"
-						   : "")
-				   + (_token != null
-						   ? $"&token={_token}"
-						   : "");
+			protected override string HttpPath() => RequestPath.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "")
+													+ (_token != null
+															? $"&token={_token}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -121,7 +123,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -155,7 +157,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -180,7 +182,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -229,7 +231,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -278,7 +280,9 @@ namespace SQE.ApiTest.ApiRequests
 
 			private bool CreatedEditorIsNull() => CreatedEditor == null;
 
-			protected override string HttpPath() => RequestPath.Replace("/token", $"/{_token}");
+			protected override string HttpPath() => RequestPath.Replace(
+					"/token"
+					, $"/{HttpUtility.UrlEncode(_token)}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -325,7 +329,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -388,10 +392,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/editor-email-id"
-															, $"/{_editorEmailId}");
+															, $"/{HttpUtility.UrlEncode(_editorEmailId)}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -445,7 +449,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
