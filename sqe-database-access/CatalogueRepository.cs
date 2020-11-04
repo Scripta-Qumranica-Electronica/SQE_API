@@ -122,13 +122,13 @@ namespace SQE.DatabaseAccess
 				var existingEditionCats = (await connection.QueryAsync<EditionCatalogueEntry>(
 						EditionCatalogueQuery.GetQuery(
 								false
-								, string.IsNullOrEmpty(manuscriptName)
-								, string.IsNullOrEmpty(canonicalEditionName)
-								, string.IsNullOrEmpty(canonicalEditionVolume)
-								, string.IsNullOrEmpty(canonicalEditionLoc1)
-								, string.IsNullOrEmpty(canonicalEditionLoc2)
+								, !string.IsNullOrEmpty(manuscriptName)
+								, !string.IsNullOrEmpty(canonicalEditionName)
+								, !string.IsNullOrEmpty(canonicalEditionVolume)
+								, !string.IsNullOrEmpty(canonicalEditionLoc1)
+								, !string.IsNullOrEmpty(canonicalEditionLoc2)
 								, true
-								, string.IsNullOrEmpty(comment)
+								, !string.IsNullOrEmpty(comment)
 								, false
 								, true)
 						, new
@@ -145,6 +145,7 @@ namespace SQE.DatabaseAccess
 								,
 						})).AsList();
 
+				// TODO: if we get a match , make sure the comments match, if not then update the comment.
 				var editionCatalogueId = existingEditionCats.Any()
 						? existingEditionCats.First().IaaEditionCatalogId
 						: (uint?) null;
