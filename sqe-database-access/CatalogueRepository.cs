@@ -122,7 +122,7 @@ namespace SQE.DatabaseAccess
 				var existingEditionCats = (await connection.QueryAsync<EditionCatalogueEntry>(
 						EditionCatalogueQuery.GetQuery(
 								false
-								, false
+								, string.IsNullOrEmpty(manuscriptName)
 								, string.IsNullOrEmpty(canonicalEditionName)
 								, string.IsNullOrEmpty(canonicalEditionVolume)
 								, string.IsNullOrEmpty(canonicalEditionLoc1)
@@ -130,8 +130,7 @@ namespace SQE.DatabaseAccess
 								, true
 								, string.IsNullOrEmpty(comment)
 								, false
-								, true
-								, string.IsNullOrEmpty(manuscriptName))
+								, true)
 						, new
 						{
 								EditionName = canonicalEditionName
@@ -142,7 +141,7 @@ namespace SQE.DatabaseAccess
 								, Comment = comment
 								, EditionId = editionId
 								, UserId = userId
-								, ManuscriptName = manuscriptName
+								, Manuscript = manuscriptName
 								,
 						})).AsList();
 

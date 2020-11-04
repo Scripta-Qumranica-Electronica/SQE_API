@@ -85,9 +85,6 @@ namespace SQE.API.DTO
 		public uint iaaEditionCatalogueId { get; set; }
 
 		[Required]
-		public string manuscriptName { get; set; }
-
-		[Required]
 		public string name { get; set; }
 
 		[Required]

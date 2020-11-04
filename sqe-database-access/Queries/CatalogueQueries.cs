@@ -48,7 +48,7 @@ SELECT image_catalog_id AS ImageCatalogId,
 FROM image_text_fragment_match_catalogue
     $Latest
 $Where
-GROUP BY object_id, catalog_side, text_fragment_id, edition_side
+GROUP BY object_id, catalog_side, text_fragment_id, edition_name, edition_volume, edition_location_1, edition_location_2, edition_side
 ";
 
 		private const string latestFilter = @"
@@ -203,8 +203,7 @@ $Where
 				, bool editionSide
 				, bool comment
 				, bool manuscriptId
-				, bool editionId
-				, bool manuscriptName)
+				, bool editionId)
 		{
 			var searchOptions = new List<string>();
 
@@ -234,9 +233,6 @@ $Where
 
 			if (manuscriptId)
 				searchOptions.Add("manuscript_id = @ManuscriptId");
-
-			if (manuscriptName)
-				searchOptions.Add("manuscript = @ManuscriptName");
 
 			if (editionId)
 				searchOptions.Add("edition_id = @EditionId");

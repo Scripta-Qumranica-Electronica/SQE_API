@@ -635,7 +635,6 @@ export interface CatalogueMatchDTO extends CatalogueMatchInputDTO {
     thumbnail: string;
     license: string;
     iaaEditionCatalogueId: number;
-    manuscriptName: string;
     name: string;
     matchAuthor: string;
     matchConfirmationAuthor?: string;
