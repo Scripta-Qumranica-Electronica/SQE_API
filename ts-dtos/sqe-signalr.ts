@@ -34,6 +34,7 @@ import {
 	SignInterpretationCreateDTO,
 	SignInterpretationDTO,
 	SignInterpretationListDTO,
+	SignInterpretationDeleteDTO,
 	InterpretationAttributeBaseDTO,
 	InterpretationAttributeCreateDTO,
 	InterpretationAttributeDTO,
@@ -809,7 +810,9 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Creates a new sign interpretation
+	 * Creates a new sign interpretation. This creates a new sign entity for the submitted
+	 *		 interpretation. This also takes care of inserting the sign interpretation into the
+	 *		 sign stream following the specifications in the newSignInterpretation.
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param newSignInterpretation - New sign interpretation data to be added
@@ -820,19 +823,45 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-	 *		 by connecting all the deleted sign's next and previous nodes.
+	 * Creates a variant sign interpretation to the submitted sign interpretation id.
+	 *		 This variant will be inserted into the sign stream following the specifications
+	 *		 in the newSignInterpretation.
 	 *
 	 * @param editionId - ID of the edition being changed
-	 * @param signInterpretationId - ID of the sign interpretation being deleted
-	 * @returns - Ok or Error
+	 * @param signInterpretationId - 
+	 *		  Id of the sign interpretation for which this variant
+	 *		  will be created
+	 *		 
+	 * @param newSignInterpretation - New sign interpretation data to be added
+	 * @returns - The new sign interpretation
 	 */
-    public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId);
+    public async postV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number, newSignInterpretation: SignInterpretationCreateDTO): Promise<SignInterpretationListDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId, newSignInterpretation);
     }
 
     /**
-	 * Links two sign interpretations in the edition's sign stream
+	 * Deletes the sign interpretation in the route. The endpoint automatically manages the
+	 *		 sign stream by connecting all the deleted sign's next and previous nodes. Adding
+	 *		 "delete-all-variants" to the optional query parameter will cause all variant sign
+	 *		 interpretations to be deleted as well.
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - ID of the sign interpretation being deleted
+	 * @param optional - 
+	 *		  If the string "delete-all-variants" is submitted here, then
+	 *		  all variant readings to the submitted sign interpretation id will be deleted as well
+	 *		 
+	 * @returns - 
+	 *		  A list of all the sign interpretations that were deleted and changed as a result of
+	 *		  the deletion operation
+	 *		 
+	 */
+    public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number, optional: string[]): Promise<SignInterpretationDeleteDTO> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId, optional);
+    }
+
+    /**
+	 * Links two sign interpretations together in the edition's sign stream
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param signInterpretationId - The sign interpretation to be linked to the nextSignInterpretationId
@@ -1429,6 +1458,23 @@ export class SignalRUtilities {
 	 */
     public disconnectUpdatedSignInterpretation(handler: (msg: SignInterpretationDTO) => void): void {
         this._connection.off('UpdatedSignInterpretation', handler)
+    }
+
+
+    /**
+	 * Add a listener for when the server broadcasts the update of a sign interpretation
+	 *
+	 */
+    public connectUpdatedSignInterpretations(handler: (msg: SignInterpretationListDTO) => void): void {
+        this._connection.on('UpdatedSignInterpretations', handler)
+    }
+
+    /**
+	 * Remove an existing listener that triggers when the server broadcasts the update of a sign interpretation
+	 *
+	 */
+    public disconnectUpdatedSignInterpretations(handler: (msg: SignInterpretationListDTO) => void): void {
+        this._connection.off('UpdatedSignInterpretations', handler)
     }
 
 

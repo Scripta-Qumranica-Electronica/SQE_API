@@ -6,7 +6,6 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
-using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -116,7 +115,6 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="editionId">The ID of the edition being edited</param>
 		/// <param name="attributeId">The ID of the attribute to delete</param>
 		/// <returns></returns>
-		/// <exception cref="NotImplementedException"></exception>
 		[Authorize]
 		public async Task DeleteV1EditionsEditionIdSignInterpretationsAttributesAttributeId(
 				uint   editionId
@@ -149,7 +147,6 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="attributeId">The ID of the attribute to update</param>
 		/// <param name="updatedAttribute">The details of the updated attribute</param>
 		/// <returns></returns>
-		/// <exception cref="NotImplementedException"></exception>
 		[Authorize]
 		public async Task<AttributeDTO>
 				PutV1EditionsEditionIdSignInterpretationsAttributesAttributeId(
@@ -179,7 +176,9 @@ namespace SQE.API.Server.RealtimeHubs
 		}
 
 		/// <summary>
-		///  Creates a new sign interpretation
+		///  Creates a new sign interpretation.  This creates a new sign entity for the submitted
+		///  interpretation. This also takes care of inserting the sign interpretation into the
+		///  sign stream following the specifications in the newSignInterpretation.
 		/// </summary>
 		/// <param name="editionId">ID of the edition being changed</param>
 		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
@@ -194,6 +193,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				return await _signInterpretationService.CreateSignInterpretationAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, null
 						, newSignInterpretation);
 			}
 			catch (ApiException err)
@@ -210,23 +210,31 @@ namespace SQE.API.Server.RealtimeHubs
 		}
 
 		/// <summary>
-		///  Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-		///  by connecting all the deleted sign's next and previous nodes.
+		///  Creates a variant sign interpretation to the submitted sign interpretation id.
+		///  This variant will be inserted into the sign stream following the specifications
+		///  in the newSignInterpretation.
 		/// </summary>
 		/// <param name="editionId">ID of the edition being changed</param>
-		/// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
-		/// <returns>Ok or Error</returns>
+		/// <param name="signInterpretationId">
+		///  Id of the sign interpretation for which this variant
+		///  will be created
+		/// </param>
+		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+		/// <returns>The new sign interpretation</returns>
 		[Authorize]
-		public async Task DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(
-				uint   editionId
-				, uint signInterpretationId)
+		public async Task<SignInterpretationListDTO>
+				PostV1EditionsEditionIdSignInterpretationsSignInterpretationId(
+						uint                          editionId
+						, uint                        signInterpretationId
+						, SignInterpretationCreateDTO newSignInterpretation)
 
 		{
 			try
 			{
-				await _signInterpretationService.DeleteSignInterpretationAsync(
+				return await _signInterpretationService.CreateSignInterpretationAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, signInterpretationId);
+						, signInterpretationId
+						, newSignInterpretation);
 			}
 			catch (ApiException err)
 			{
@@ -242,7 +250,51 @@ namespace SQE.API.Server.RealtimeHubs
 		}
 
 		/// <summary>
-		///  Links two sign interpretations in the edition's sign stream
+		///  Deletes the sign interpretation in the route. The endpoint automatically manages the
+		///  sign stream by connecting all the deleted sign's next and previous nodes.  Adding
+		///  "delete-all-variants" to the optional query parameter will cause all variant sign
+		///  interpretations to be deleted as well.
+		/// </summary>
+		/// <param name="editionId">ID of the edition being changed</param>
+		/// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
+		/// <param name="optional">
+		///  If the string "delete-all-variants" is submitted here, then
+		///  all variant readings to the submitted sign interpretation id will be deleted as well
+		/// </param>
+		/// <returns>
+		///  A list of all the sign interpretations that were deleted and changed as a result of
+		///  the deletion operation
+		/// </returns>
+		[Authorize]
+		public async Task<SignInterpretationDeleteDTO>
+				DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(
+						uint       editionId
+						, uint     signInterpretationId
+						, string[] optional)
+
+		{
+			try
+			{
+				return await _signInterpretationService.DeleteSignInterpretationAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, signInterpretationId
+						, optional);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
+		///  Links two sign interpretations together in the edition's sign stream
 		/// </summary>
 		/// <param name="editionId">ID of the edition being changed</param>
 		/// <param name="signInterpretationId">The sign interpretation to be linked to the nextSignInterpretationId</param>

@@ -33,30 +33,24 @@ namespace SQE.DatabaseAccess
 
 		#endregion
 
-		#region Sign and its Interpretation
-
-		Task<List<SignInterpretationData>> AddSignInterpretationsAsync(
-				UserInfo                       editionUser
-				, uint                         signId
-				, List<SignInterpretationData> signInterpretations
-				, List<uint>                   anchorsBefore
-				, List<uint>                   anchorsAfter
-				, bool                         breakAnchors = false);
+		#region Sign and its Interpretation                        breakAnchors = false);
 
 		Task<List<SignData>> CreateSignsAsync(
 				UserInfo                editionUser
-				, uint                  lineId
+				, uint?                 lineId
 				, IEnumerable<SignData> signs
 				, List<uint>            anchorsBefore
 				, List<uint>            anchorsAfter
+				, uint?                 signInterpretationId
 				, bool                  breakNeighboringAnchors = false);
 
 		Task<List<SignData>> CreateSignsAsync(
 				UserInfo     editionUser
-				, uint       lineId
+				, uint?      lineId
 				, SignData   signs
 				, List<uint> anchorsBefore
 				, List<uint> anchorsAfter
+				, uint?      signInterpretationId
 				, bool       breakNeighboringAnchors = false);
 
 		Task LinkSignInterpretationsAsync(
@@ -103,9 +97,14 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signId);
 
-		Task RemoveSignInterpretationAsync(UserInfo editionUser, uint signInterpretationId);
+		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignInterpretationAsync(
+				UserInfo editionUser
+				, uint   signInterpretationId
+				, bool   deleteVariants);
 
-		Task<uint> RemoveSignAsync(UserInfo editionUser, uint signId);
+		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignAsync(
+				UserInfo editionUser
+				, uint   signId);
 
 		#endregion
 
@@ -243,7 +242,8 @@ namespace SQE.DatabaseAccess
 											: new List<uint>()
 									, anchorAfter > 0
 											? new List<uint> { anchorAfter }
-											: new List<uint>());
+											: new List<uint>()
+									, null);
 
 							// End the transaction (it was all or nothing)
 							transactionScope.Complete();
@@ -361,10 +361,11 @@ namespace SQE.DatabaseAccess
 		/// <returns></returns>
 		public async Task<List<SignData>> CreateSignsAsync(
 				UserInfo                editionUser
-				, uint                  lineId
+				, uint?                 lineId
 				, IEnumerable<SignData> signs
 				, List<uint>            anchorsBefore
 				, List<uint>            anchorsAfter
+				, uint?                 signInterpretationId
 				, bool                  breakNeighboringAnchors = false)
 		{
 			var newSigns = new List<SignData>();
@@ -375,21 +376,37 @@ namespace SQE.DatabaseAccess
 			// var internalAnchorsBefore = anchorsBefore;
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+			using (var connection = OpenConnection())
 			{
 				foreach (var sign in signs)
 				{
-					// First, create a simple entry in the sign table
-					var newSignId = await _createSignAsync(editionUser, lineId);
+					// Check if a line id was submitted, if not get it from the prev/next sign interpretation
+					if (!lineId.HasValue)
+					{
+						var adjacentSignInterpretationId =
+								anchorsBefore?.First() ?? anchorsAfter.First();
+
+						lineId = await connection.QuerySingleAsync<uint>(
+								SignInterpretationLineIdQuery.GetQuery
+								, new { SignInterpretationId = adjacentSignInterpretationId });
+					}
+
+					// First, get the sign Id or create a new one if needed
+					var signId = signInterpretationId.HasValue
+							? await connection.QuerySingleAsync<uint>(
+									SignInterpretationSignIdQuery.GetQuery
+									, new { SignInterpretationId = signInterpretationId.Value })
+							: await _createSignAsync(editionUser, lineId.Value);
 
 					var newSignData = new SignData
 					{
-							SignId = newSignId
+							SignId = signId
 							,
 
 							// Add the given sign interpretations which also inject the sign in the reading stream
-							SignInterpretations = await AddSignInterpretationsAsync(
+							SignInterpretations = await _addSignInterpretationsAsync(
 									editionUser
-									, newSignId
+									, signId
 									, sign.SignInterpretations
 									, anchorsBefore
 									, anchorsAfter
@@ -448,16 +465,18 @@ namespace SQE.DatabaseAccess
 		/// <returns></returns>
 		public async Task<List<SignData>> CreateSignsAsync(
 				UserInfo     editionUser
-				, uint       lineId
+				, uint?      lineId
 				, SignData   sign
 				, List<uint> anchorsBefore
 				, List<uint> anchorsAfter
+				, uint?      signInterpretationId
 				, bool       breakNeighboringAnchors = false) => await CreateSignsAsync(
 				editionUser
 				, lineId
 				, new List<SignData> { sign }
 				, anchorsBefore
 				, anchorsAfter
+				, signInterpretationId
 				, breakNeighboringAnchors);
 
 		/// <summary>
@@ -720,7 +739,7 @@ namespace SQE.DatabaseAccess
 		/// <param name="breakAnchors"></param>
 		/// <returns>List of sign Interpretation objects with the new ids</returns>
 		/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
-		public async Task<List<SignInterpretationData>> AddSignInterpretationsAsync(
+		private async Task<List<SignInterpretationData>> _addSignInterpretationsAsync(
 				UserInfo                       editionUser
 				, uint                         signId
 				, List<SignInterpretationData> signInterpretations
@@ -863,47 +882,74 @@ namespace SQE.DatabaseAccess
 		/// <param name="editionUser">Edition user object</param>
 		/// <param name="signInterpretationId">Id of sign interpretation</param>
 		/// <returns>Id of the sign interpretation</returns>
-		public async Task RemoveSignInterpretationAsync(
-				UserInfo editionUser
-				, uint   signInterpretationId)
+		public async Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)>
+				RemoveSignInterpretationAsync(
+						UserInfo editionUser
+						, uint   signInterpretationId
+						, bool   deleteVariants)
 		{
+			var alteredSignInterpretations = new List<uint>();
+			var deletedSignInterpretations = new List<uint>();
+
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
 			{
-				// Remove all attributes
-				await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(
-						editionUser
-						, signInterpretationId);
-
-				// Remove all commentaries
-				await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(
-						editionUser
-						, signInterpretationId);
-
-				// Remove all ROIs
-				await _roiRepository.DeleteAllRoisForSignInterpretationAsync(
-						editionUser
-						, signInterpretationId);
-
-				// Take out from path
-				using (var connection = OpenConnection())
+				if (deleteVariants)
 				{
-					var positionDataRequest = await PositionDataRequestFactory.CreateInstanceAsync(
-							connection
-							, StreamType.SignInterpretationStream
-							, signInterpretationId
-							, editionUser.EditionId.Value
-							, true);
+					// If deleting all variants, then get the sign id and call RemoveSignAsync
+					using (var connection = OpenConnection())
+					{
+						var signId = await connection.QuerySingleAsync<uint>(
+								SignInterpretationSignIdQuery.GetQuery
+								, new { SignInterpretationId = signInterpretationId });
 
-					positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
-
-					var requests = await positionDataRequest.CreateRequestsAsync();
-
-					await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+						var (deleted, updated) = await RemoveSignAsync(editionUser, signId);
+						alteredSignInterpretations.Concat(updated);
+						deletedSignInterpretations.Concat(deleted);
+					}
 				}
+				else
+				{ // Else delete only the input signInterpretationId
 
-				transactionScope.Complete();
+					// Remove all attributes
+					await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(
+							editionUser
+							, signInterpretationId);
+
+					// Remove all commentaries
+					await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(
+							editionUser
+							, signInterpretationId);
+
+					// Remove all ROIs
+					await _roiRepository.DeleteAllRoisForSignInterpretationAsync(
+							editionUser
+							, signInterpretationId);
+
+					// Take out from path
+					using (var connection = OpenConnection())
+					{
+						var positionDataRequest =
+								await PositionDataRequestFactory.CreateInstanceAsync(
+										connection
+										, StreamType.SignInterpretationStream
+										, signInterpretationId
+										, editionUser.EditionId.Value
+										, true);
+
+						positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
+						var requests = await positionDataRequest.CreateRequestsAsync();
+						await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+
+						alteredSignInterpretations.Concat(positionDataRequest.AnchorsBefore);
+						deletedSignInterpretations.Add(signInterpretationId);
+					}
+
+					transactionScope.Complete();
+				}
 			}
+
+			return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations);
 		}
 
 		/// <summary>
@@ -911,16 +957,28 @@ namespace SQE.DatabaseAccess
 		/// </summary>
 		/// <param name="editionUser"></param>
 		/// <param name="signId">Id of sign</param>
-		/// <returns>Id of removed sign</returns>
-		public async Task<uint> RemoveSignAsync(UserInfo editionUser, uint signId)
+		/// <returns>Ids of all altered sign interpretations</returns>
+		public async Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignAsync(
+				UserInfo editionUser
+				, uint   signId)
 		{
+			var alteredSignInterpretations = new List<uint>();
+
 			var signInterpretationIds =
 					await GetAllSignInterpretationIdsForSignIdAsync(editionUser, signId);
 
 			foreach (var signInterpretationId in signInterpretationIds)
-				await RemoveSignInterpretationAsync(editionUser, signInterpretationId);
+			{
+				alteredSignInterpretations.Concat(
+						(await RemoveSignInterpretationAsync(
+								editionUser
+								, signInterpretationId
+								, false)).Updated);
+			}
 
-			return await _removeElementAsync(editionUser, "line_to_sign", signId);
+			await _removeElementAsync(editionUser, "line_to_sign", signId);
+
+			return (Deleted: signInterpretationIds, Updated: alteredSignInterpretations);
 		}
 
 		#endregion

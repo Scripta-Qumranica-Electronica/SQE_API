@@ -40,4 +40,21 @@ WHERE sign_interpretation.sign_interpretation_id = @SignInterpretationId
 ORDER BY pos.next_sign_interpretation_id, pos.sign_stream_section_id
 ";
 	}
+
+	internal static class SignInterpretationLineIdQuery
+	{
+		public const string GetQuery = @"
+SELECT line_id
+FROM sign_interpretation
+JOIN line_to_sign on sign_interpretation.sign_id = line_to_sign.sign_id
+WHERE sign_interpretation.sign_interpretation_id = @SignInterpretationId";
+	}
+
+	internal static class SignInterpretationSignIdQuery
+	{
+		public const string GetQuery = @"
+SELECT sign_id
+FROM sign_interpretation
+WHERE sign_interpretation.sign_interpretation_id = @SignInterpretationId";
+	}
 }

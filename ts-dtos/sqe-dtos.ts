@@ -129,7 +129,7 @@ export interface SignInterpretationBaseDTO {
 }
 
 export interface SignInterpretationCreateDTO extends SignInterpretationBaseDTO {
-    lineId: number;
+    lineId?: number;
     previousSignInterpretationIds?: Array<number>;
     nextSignInterpretationIds?: Array<number>;
     attributes: Array<InterpretationAttributeCreateDTO>;
@@ -148,6 +148,11 @@ export interface SignInterpretationDTO extends SignInterpretationBaseDTO {
 
 export interface SignInterpretationListDTO {
     signInterpretations?: Array<SignInterpretationDTO>;
+}
+
+export interface SignInterpretationDeleteDTO {
+    updates?: SignInterpretationListDTO;
+    deletes?: Array<number>;
 }
 
 export interface InterpretationAttributeBaseDTO {

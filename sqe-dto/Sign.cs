@@ -31,7 +31,7 @@ namespace SQE.API.DTO
 
 	public class SignInterpretationCreateDTO : SignInterpretationBaseDTO
 	{
-		public uint   lineId                        { get; set; }
+		public uint?  lineId                        { get; set; }
 		public uint[] previousSignInterpretationIds { get; set; }
 		public uint[] nextSignInterpretationIds     { get; set; }
 
@@ -66,6 +66,12 @@ namespace SQE.API.DTO
 	public class SignInterpretationListDTO
 	{
 		public SignInterpretationDTO[] signInterpretations { get; set; }
+	}
+
+	public class SignInterpretationDeleteDTO
+	{
+		public SignInterpretationListDTO updates { get; set; }
+		public uint[]                    deletes { get; set; }
 	}
 
 	public class InterpretationAttributeBaseDTO

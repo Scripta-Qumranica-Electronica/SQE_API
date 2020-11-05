@@ -158,6 +158,13 @@ namespace SQE.API.Server.RealtimeHubs
 		Task UpdatedSignInterpretation(SignInterpretationDTO returnedData);
 
 		/// <summary>
+		///  broadcasts the update of a sign interpretation
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task UpdatedSignInterpretations(SignInterpretationListDTO returnedData);
+
+		/// <summary>
 		///  broadcasts the delete of a sign interpretation
 		/// </summary>
 		/// <param name="returnedData"></param>

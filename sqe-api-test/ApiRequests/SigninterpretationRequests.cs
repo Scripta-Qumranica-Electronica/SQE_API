@@ -31,7 +31,6 @@ namespace SQE.ApiTest.ApiRequests
 			/// <param name="editionId">The ID of the edition being edited</param>
 			/// <param name="attributeId">The ID of the attribute to delete</param>
 			/// <returns></returns>
-			/// <exception cref="NotImplementedException"></exception>
 			public V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(
 					uint   editionId
 					, uint attributeId)
@@ -82,26 +81,42 @@ namespace SQE.ApiTest.ApiRequests
 		}
 
 		public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId :
-				RequestObject<EmptyInput, EmptyOutput>
+				RequestObject<EmptyInput, SignInterpretationDeleteDTO>
 		{
-			private readonly uint _editionId;
-			private readonly uint _signInterpretationId;
+			private readonly uint     _editionId;
+			private readonly string[] _optional;
+			private readonly uint     _signInterpretationId;
 
 			/// <summary>
-			///  Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-			///  by connecting all the deleted sign's next and previous nodes.
+			///  Deletes the sign interpretation in the route. The endpoint automatically manages the
+			///  sign stream by connecting all the deleted sign's next and previous nodes.  Adding
+			///  "delete-all-variants" to the optional query parameter will cause all variant sign
+			///  interpretations to be deleted as well.
 			/// </summary>
 			/// <param name="editionId">ID of the edition being changed</param>
 			/// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
-			/// <returns>Ok or Error</returns>
+			/// <param name="optional">
+			///  If the string "delete-all-variants" is submitted here, then
+			///  all variant readings to the submitted sign interpretation id will be deleted as well
+			/// </param>
+			/// <returns>
+			///  A list of all the sign interpretations that were deleted and changed as a result of
+			///  the deletion operation
+			/// </returns>
 			public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
-					uint   editionId
-					, uint signInterpretationId)
+					uint       editionId
+					, uint     signInterpretationId
+					, string[] optional = null)
 
 			{
 				_editionId = editionId;
 				_signInterpretationId = signInterpretationId;
+				_optional = optional;
 				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretations
+						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
 
 				_listenerDict.Add(
 						ListenerMethods.DeletedSignInterpretation
@@ -110,7 +125,15 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedSignInterpretation { get; private set; }
+			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
+			public DeleteDTO                 DeletedSignInterpretation  { get; private set; }
+
+			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"UpdatedSignInterpretations"
+						, receivedData => UpdatedSignInterpretations = receivedData);
+
+			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
 
 			private void DeletedSignInterpretationListener(HubConnection signalrListener)
 				=> signalrListener.On<DeleteDTO>(
@@ -125,14 +148,18 @@ namespace SQE.ApiTest.ApiRequests
 															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}");
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
 				return signalR => signalR.InvokeAsync<T>(
 							   SignalrRequestString()
 							   , _editionId
-							   , _signInterpretationId);
+							   , _signInterpretationId
+							   , _optional);
 			}
 
 			public override uint? GetEditionId() => _editionId;
@@ -141,6 +168,9 @@ namespace SQE.ApiTest.ApiRequests
 			{
 				public ListenerMethods DeletedSignInterpretation =
 						ListenerMethods.DeletedSignInterpretation;
+
+				public ListenerMethods UpdatedSignInterpretations =
+						ListenerMethods.UpdatedSignInterpretations;
 			}
 		}
 
@@ -350,7 +380,9 @@ namespace SQE.ApiTest.ApiRequests
 			private readonly SignInterpretationCreateDTO _payload;
 
 			/// <summary>
-			///  Creates a new sign interpretation
+			///  Creates a new sign interpretation.  This creates a new sign entity for the submitted
+			///  interpretation. This also takes care of inserting the sign interpretation into the
+			///  sign stream following the specifications in the newSignInterpretation.
 			/// </summary>
 			/// <param name="editionId">ID of the edition being changed</param>
 			/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
@@ -400,6 +432,77 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
+		public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId :
+				RequestObject<SignInterpretationCreateDTO, SignInterpretationListDTO>
+		{
+			private readonly uint                        _editionId;
+			private readonly SignInterpretationCreateDTO _payload;
+			private readonly uint                        _signInterpretationId;
+
+			/// <summary>
+			///  Creates a variant sign interpretation to the submitted sign interpretation id.
+			///  This variant will be inserted into the sign stream following the specifications
+			///  in the newSignInterpretation.
+			/// </summary>
+			/// <param name="editionId">ID of the edition being changed</param>
+			/// <param name="signInterpretationId">
+			///  Id of the sign interpretation for which this variant
+			///  will be created
+			/// </param>
+			/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+			/// <returns>The new sign interpretation</returns>
+			public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
+					uint                          editionId
+					, uint                        signInterpretationId
+					, SignInterpretationCreateDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_signInterpretationId = signInterpretationId;
+				_payload = payload;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.CreatedSignInterpretation
+						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public SignInterpretationListDTO CreatedSignInterpretation { get; private set; }
+
+			private void CreatedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"CreatedSignInterpretation"
+						, receivedData => CreatedSignInterpretation = receivedData);
+
+			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/sign-interpretation-id"
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _signInterpretationId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods CreatedSignInterpretation =
+						ListenerMethods.CreatedSignInterpretation;
+			}
+		}
+
 		public class
 				V1_Editions_EditionId_SignInterpretations_SignInterpretationId_LinkTo_NextSignInterpretationId :
 						RequestObject<EmptyInput, SignInterpretationDTO>
@@ -409,7 +512,7 @@ namespace SQE.ApiTest.ApiRequests
 			private readonly uint _signInterpretationId;
 
 			/// <summary>
-			///  Links two sign interpretations in the edition's sign stream
+			///  Links two sign interpretations together in the edition's sign stream
 			/// </summary>
 			/// <param name="editionId">ID of the edition being changed</param>
 			/// <param name="signInterpretationId">The sign interpretation to be linked to the nextSignInterpretationId</param>
@@ -627,7 +730,6 @@ namespace SQE.ApiTest.ApiRequests
 			/// <param name="attributeId">The ID of the attribute to update</param>
 			/// <param name="updatedAttribute">The details of the updated attribute</param>
 			/// <returns></returns>
-			/// <exception cref="NotImplementedException"></exception>
 			public V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(
 					uint                 editionId
 					, uint               attributeId

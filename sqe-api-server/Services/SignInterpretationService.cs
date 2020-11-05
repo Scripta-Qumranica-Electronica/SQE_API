@@ -32,13 +32,15 @@ namespace SQE.API.Server.Services
 
 		Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
 				UserInfo                      user
+				, uint?                       signInterpretationId
 				, SignInterpretationCreateDTO signInterpretation
 				, string                      clientId = null);
 
-		Task<NoContentResult> DeleteSignInterpretationAsync(
-				UserInfo user
-				, uint   signInterpretationId
-				, string clientId = null);
+		Task<SignInterpretationDeleteDTO> DeleteSignInterpretationAsync(
+				UserInfo   user
+				, uint     signInterpretationId
+				, string[] optional
+				, string   clientId = null);
 
 		Task<SignInterpretationDTO> LinkSignInterpretationsAsync(
 				UserInfo user
@@ -203,8 +205,24 @@ namespace SQE.API.Server.Services
 			return new NoContentResult();
 		}
 
+		/// <summary>
+		///  This method creates a new sign interpretation.
+		///  If a sign interpretation is provided then this creates an alternate
+		///  reading of that sign interpretation, otherwise it creates a completely
+		///  new sign for the sign interpretation to define.
+		/// </summary>
+		/// <param name="user">The requesting user's object</param>
+		/// <param name="signInterpretationId">
+		///  Optional sign interpretation, if null a new sign is
+		///  created for the sign interpretation here, otherwise the sign interpretation is created
+		///  as a variant of the signInterpretationId.
+		/// </param>
+		/// <param name="signInterpretation">Information about the new sign interpretation to be created</param>
+		/// <param name="clientId"></param>
+		/// <returns></returns>
 		public async Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
 				UserInfo                      user
+				, uint?                       signInterpretationId
 				, SignInterpretationCreateDTO signInterpretation
 				, string                      clientId = null)
 		{
@@ -214,6 +232,7 @@ namespace SQE.API.Server.Services
 					, signInterpretation.ToSignData()
 					, signInterpretation.previousSignInterpretationIds.ToList()
 					, signInterpretation.nextSignInterpretationIds.ToList()
+					, signInterpretationId
 					, signInterpretation.breakPreviousAndNextSignInterpretations);
 
 			// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
@@ -249,24 +268,64 @@ namespace SQE.API.Server.Services
 			return response;
 		}
 
-		public async Task<NoContentResult> DeleteSignInterpretationAsync(
-				UserInfo user
-				, uint   signInterpretationId
-				, string clientId = null)
+		/// <summary>
+		///  Deletes a sign interpretation from the edition.  If the list of strings in optional
+		///  contains "delete-all-variants", then the system will search for all variant readings
+		///  to the sign interpretation id and delete those as well.
+		/// </summary>
+		/// <param name="user">The requesting user's object</param>
+		/// <param name="signInterpretationId">The id of the sign interpretation to be deleted</param>
+		/// <param name="optional">
+		///  A list of optional commands, "delete-all-variants" will
+		///  delete all variant interpretations of the signInterpretationId as well
+		/// </param>
+		/// <param name="clientId"></param>
+		/// <returns>
+		///  A list of all sign interpretations that have changed as a result of the
+		///  operation
+		/// </returns>
+		public async Task<SignInterpretationDeleteDTO> DeleteSignInterpretationAsync(
+				UserInfo   user
+				, uint     signInterpretationId
+				, string[] optional
+				, string   clientId = null)
 		{
-			await _textRepository.RemoveSignInterpretationAsync(user, signInterpretationId);
+			var (deleted, updated) = await _textRepository.RemoveSignInterpretationAsync(
+					user
+					, signInterpretationId
+					, optional.Contains("delete-all-variants"));
 
-			// TODO: Should we also gather and sign interpretations prior to this one in the signstream and
-			// broadcast that information as well? Should that also be returned to the original requester?
+			var deletedList = deleted.ToArray();
+
+			// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
+			var formattedUpdates = await Task.WhenAll( // Await all async operations
+					updated.Select(
+							async x => await GetEditionSignInterpretationAsync(
+									user
+									, x))); // Get the SignInterpretationDTO fpr each sign interpretation
+
+			var changes = new SignInterpretationListDTO
+			{
+					signInterpretations = formattedUpdates.ToArray(),
+			};
 
 			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretations(changes);
+
+			// Broadcast the deletes
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 							 .DeletedSignInterpretation(
 									 new DeleteDTO(
 											 EditionEntities.signInterpretation
-											 , signInterpretationId));
+											 , deletedList.ToList()));
 
-			return new NoContentResult();
+			return new SignInterpretationDeleteDTO
+			{
+					updates = changes
+					, deletes = deletedList
+					,
+			};
 		}
 
 		public async Task<SignInterpretationDTO> LinkSignInterpretationsAsync(

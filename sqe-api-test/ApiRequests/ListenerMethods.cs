@@ -27,6 +27,7 @@ namespace SQE.ApiTest.ApiRequests
 		, CreatedSignInterpretation
 		, UpdatedSignInterpretation
 		, DeletedAttribute
+		, UpdatedSignInterpretations
 		, DeletedSignInterpretation
 		, UpdatedAttribute
 		, CreatedTextFragment

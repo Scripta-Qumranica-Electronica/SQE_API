@@ -424,6 +424,7 @@ namespace SQE.ApiTest
 						_client
 						, StartConnectionAsync
 						, true
+						, requestRealtime: false
 						, listenToEdition: true
 						, listeningFor: deleteRequest.AvailableListeners
 													 .DeletedSignInterpretation);
