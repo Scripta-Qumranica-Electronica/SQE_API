@@ -15,7 +15,7 @@ namespace SQE.DatabaseAccess.Queries
 WITH RECURSIVE sign_interpretation_ids
 	AS (
 		SELECT 	position_in_stream.position_in_stream_id,
-				position_in_stream.sign_interpretation_id AS signInterpretationId, 
+				position_in_stream.sign_interpretation_id AS signInterpretationId,
 				position_in_stream.next_sign_interpretation_id,
 				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
@@ -23,7 +23,7 @@ WITH RECURSIVE sign_interpretation_ids
 				position_in_stream.creator_id,
 				@X := 0 AS sequence
 		FROM position_in_stream
-			JOIN position_in_stream_owner 
+			JOIN position_in_stream_owner
 				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
 					AND position_in_stream_owner.edition_id = @EditionId
 		WHERE position_in_stream.sign_interpretation_id = @StartId
@@ -31,7 +31,7 @@ WITH RECURSIVE sign_interpretation_ids
 		UNION
 
 		SELECT 	position_in_stream.position_in_stream_id,
-				position_in_stream.sign_interpretation_id AS signInterpretationId, 
+				position_in_stream.sign_interpretation_id AS signInterpretationId,
 				position_in_stream.next_sign_interpretation_id,
 				position_in_stream_owner.is_main,
 				position_in_stream_owner.edition_editor_id,
@@ -39,10 +39,10 @@ WITH RECURSIVE sign_interpretation_ids
 				position_in_stream.creator_id,
 				@X := @X + 1 AS sequence
 		FROM  sign_interpretation_ids
-			JOIN position_in_stream 
+			JOIN position_in_stream
 				ON position_in_stream.sign_interpretation_id = sign_interpretation_ids.next_sign_interpretation_id
 				AND signInterpretationId != @EndId
-			JOIN position_in_stream_owner 
+			JOIN position_in_stream_owner
 				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
 					AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
 		GROUP BY sign_interpretation_ids.signInterpretationId,position_in_stream.next_sign_interpretation_id
@@ -99,7 +99,7 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
 	JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_id = signInterpretationId
-	JOIN sign_interpretation_attribute_owner 
+	JOIN sign_interpretation_attribute_owner
 		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
 		AND sign_interpretation_attribute_owner.edition_id = sign_interpretation_ids.edition_id
 	JOIN attribute_value USING(attribute_value_id)
@@ -111,7 +111,7 @@ FROM sign_interpretation_ids
 
 	JOIN text_fragment_to_line USING (line_id)
 	JOIN text_fragment_data USING (text_fragment_id)
-	JOIN text_fragment_data_owner 
+	JOIN text_fragment_data_owner
 		ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
 			AND text_fragment_data_owner.edition_id = sign_interpretation_ids.edition_id
 
@@ -119,8 +119,8 @@ FROM sign_interpretation_ids
 	JOIN manuscript_data USING (manuscript_id)
 	JOIN manuscript_data_owner ON manuscript_data_owner.manuscript_data_id = manuscript_data.manuscript_data_id
 		AND manuscript_data_owner.edition_id = sign_interpretation_ids.edition_id
-	  
-	LEFT JOIN 
+
+	LEFT JOIN
 		(SELECT	sign_interpretation_roi.sign_interpretation_roi_id,
 				sign_interpretation_roi.sign_interpretation_id,
 				sign_interpretation_roi_owner.edition_editor_id,
@@ -133,12 +133,12 @@ FROM sign_interpretation_ids
 				roi_position.artefact_id,
 				sign_interpretation_roi_owner.edition_id
 		FROM sign_interpretation_roi
-			JOIN sign_interpretation_roi_owner 
+			JOIN sign_interpretation_roi_owner
 				ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
 			JOIN roi_shape ON roi_shape.roi_shape_id = sign_interpretation_roi.roi_shape_id
 			JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
 		)
-		AS roi 
+		AS roi
 			ON roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
 				AND roi.edition_id = sign_interpretation_ids.edition_id
 
@@ -162,15 +162,15 @@ FROM sign_interpretation_ids
 
 	LEFT JOIN position_in_stream_to_section_rel USING (position_in_stream_id)
     LEFT JOIN sign_stream_section USING(sign_stream_section_id)
-    LEFT JOIN sign_stream_section_owner 
+    LEFT JOIN sign_stream_section_owner
         ON sign_stream_section.sign_stream_section_id=sign_stream_section_owner.sign_stream_section_id
         AND sign_stream_section_owner.edition_id = sign_interpretation_ids.edition_id
 
-  
-ORDER BY sign_interpretation_ids.sequence, 
-	sign_interpretation_ids.is_main, 
-	nextSignInterpretationId, 
-	SignInterpretationAttributeId, 
+
+ORDER BY sign_interpretation_ids.sequence,
+	sign_interpretation_ids.is_main,
+	nextSignInterpretationId,
+	SignInterpretationAttributeId,
 	SignInterpretationRoiId
 ";
 	}
@@ -191,10 +191,10 @@ FROM line_to_sign
     	AND line_to_sign_owner.edition_id = edition.edition_id
 	JOIN sign_interpretation USING (sign_id)
 	JOIN sign_interpretation_attribute USING (sign_interpretation_id)
-	JOIN sign_interpretation_attribute_owner 
+	JOIN sign_interpretation_attribute_owner
 	    ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
 		AND sign_interpretation_attribute_owner.edition_id=edition.edition_id
-        
+
 WHERE line_id = @EntityId
 	AND (attribute_value_id = 10 OR attribute_value_id = 11)
 	AND (edition_editor.user_id = @UserId OR edition.public = 1)
@@ -222,9 +222,9 @@ ORDER BY attribute_value_id
           AND line_data_owner.edition_id = @EditionId
           AND (edition_editor.user_id = @UserId OR edition.public = 1)
           AND attribute_value_id = 12
-        
+
        UNION
-        
+
         SELECT fragmentId, lts2.line_id AS lineId, line_data.name AS lineName, editionId
         FROM lineIds
           JOIN line_to_sign AS lts1 ON lts1.line_id =lineId
@@ -247,7 +247,7 @@ ORDER BY attribute_value_id
         )
       SELECT lineId, lineName
       FROM lineIds
-    
+
     ";
 	}
 
@@ -295,9 +295,9 @@ ORDER BY cte_fragment.sequence
 		public const string GetQuery = @"
 WITH RECURSIVE text_fragment_ids
 	AS (
-	    SELECT 	position_in_text_fragment_stream.text_fragment_id AS textFragmentId, 
+	    SELECT 	position_in_text_fragment_stream.text_fragment_id AS textFragmentId,
 		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
-		    position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
+		    position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId,
 		    position_in_text_fragment_stream_owner.edition_id AS editionId,
 		    @X := 0 AS sequence
 	    FROM position_in_text_fragment_stream_owner
@@ -311,21 +311,21 @@ WITH RECURSIVE text_fragment_ids
 				)
 			)
 		UNION
-		
-		SELECT 	position_in_text_fragment_stream.next_text_fragment_id AS textFragmentId, 
+
+		SELECT 	position_in_text_fragment_stream.next_text_fragment_id AS textFragmentId,
 		    position_in_text_fragment_stream.position_in_text_fragment_stream_id AS textFragmentPositionId,
-			position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId, 
+			position_in_text_fragment_stream.next_text_fragment_id AS nextTextFragmentId,
 		    position_in_text_fragment_stream_owner.edition_id AS editionId,
 			@X := @X + 1 AS sequence
 		FROM text_fragment_ids
-		JOIN position_in_text_fragment_stream 
+		JOIN position_in_text_fragment_stream
 			ON position_in_text_fragment_stream.text_fragment_id = text_fragment_ids.textFragmentId
-		JOIN position_in_text_fragment_stream_owner 
+		JOIN position_in_text_fragment_stream_owner
 			ON position_in_text_fragment_stream_owner.edition_id = text_fragment_ids.editionId
 				AND position_in_text_fragment_stream_owner.position_in_text_fragment_stream_id = text_fragment_ids.textFragmentPositionId
 	)
-SELECT	text_fragment_id AS TextFragmentId, name AS TextFragmentName, 
-		text_fragment_ids.sequence AS Position, 
+SELECT	text_fragment_id AS TextFragmentId, name AS TextFragmentName,
+		text_fragment_ids.sequence AS Position,
 		text_fragment_data_owner.edition_editor_id AS EditionEditorId
 FROM text_fragment_ids
 	JOIN text_fragment_data ON text_fragment_data.text_fragment_id = text_fragment_ids.textFragmentId
@@ -346,8 +346,8 @@ FROM text_fragment_data
 JOIN text_fragment_data_owner USING(text_fragment_data_id)
 JOIN edition USING(edition_id)
 JOIN edition_editor USING(edition_id)
-WHERE text_fragment_data.text_fragment_id = @TextFragmentId 
-  AND edition_id = @EditionId 
+WHERE text_fragment_data.text_fragment_id = @TextFragmentId
+  AND edition_id = @EditionId
   AND (edition_editor.user_id = @UserId OR edition.public = 1)
 ";
 	}
@@ -355,7 +355,7 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
 	internal static class GetTextFragmentArtefacts
 	{
 		public const string Query = @"
-SELECT DISTINCT artefact_id AS ArtefactId, 
+SELECT DISTINCT artefact_id AS ArtefactId,
        artefact_data.name AS Name
 FROM text_fragment_data
 JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
@@ -383,17 +383,17 @@ WHERE text_fragment_data.text_fragment_id = @TextFragmentId
 	internal static class TextFragmentAttributes
 	{
 		public const string GetQuery = @"
-SELECT DISTINCT attribute_value.attribute_value_id AS attributeValueId, 
+SELECT DISTINCT attribute_value.attribute_value_id AS attributeValueId,
                 attribute_value.string_value AS attributeValueString,
                 attribute_value.attribute_id AS attributeId,
                 attribute.name AS attributeString
 FROM attribute_value
-JOIN attribute_value_owner 
-	ON attribute_value_owner.attribute_value_id = attribute_value.attribute_value_id 
+JOIN attribute_value_owner
+	ON attribute_value_owner.attribute_value_id = attribute_value.attribute_value_id
 	AND attribute_value_owner.edition_id = @EditionId
 JOIN attribute USING(attribute_id)
-JOIN attribute_owner 
-	ON attribute_owner.attribute_id = attribute.attribute_id 
+JOIN attribute_owner
+	ON attribute_owner.attribute_id = attribute.attribute_id
 	AND attribute_owner.edition_id = @EditionId
 ";
 	}
@@ -431,7 +431,7 @@ WHERE name LIKE @Name and edition_id=@EditionId
 SELECT text_fragment_data_id
 FROM text_fragment_data
 JOIN text_fragment_data_owner USING (text_fragment_data_id)
-WHERE text_fragment_data.text_fragment_id = @TextFragmentId 
+WHERE text_fragment_data.text_fragment_id = @TextFragmentId
   AND text_fragment_data_owner.edition_id=@EditionId
 ";
 	}
@@ -471,8 +471,9 @@ WHERE edition_id = @EditionId
 	{
 		public const string GetQuery = @"
 			INSERT INTO sign_interpretation
-				(sign_id,  `character`) 
+				(sign_id,  `character`)
 				VALUES (@SignId,  @Character)
+			ON DUPLICATE KEY UPDATE sign_interpretation_id = LAST_INSERT_ID(sign_interpretation_id)
 		";
 	}
 }

@@ -185,7 +185,7 @@ namespace SQE.API.Server.Serialization
 									   x => new SignInterpretationCommentaryData
 									   {
 											   AttributeId = x.attributeId
-											   , Commentary = sicd.commentary.commentary
+											   , Commentary = sicd.commentary?.commentary
 											   ,
 									   })
 							   .ToList();
@@ -195,7 +195,7 @@ namespace SQE.API.Server.Serialization
 				response.Add(
 						new SignInterpretationCommentaryData
 						{
-								Commentary = sicd.commentary.commentary,
+								Commentary = sicd.commentary?.commentary,
 						});
 			}
 

@@ -398,6 +398,22 @@ namespace SQE.DatabaseAccess
 									, new { SignInterpretationId = signInterpretationId.Value })
 							: await _createSignAsync(editionUser, lineId.Value);
 
+					// Check is the after anchors were supplied with a sign variant request
+					// If not, then collect them automatically
+					if (signInterpretationId.HasValue
+						&& !anchorsAfter.Any())
+					{
+						anchorsAfter =
+								(await _signInterpretationRepository.GetSignInterpretationById(
+										editionUser
+										, signInterpretationId.Value)).NextSignInterpretations
+																	  .Select(
+																			  x
+																					  => x
+																							  .NextSignInterpretationId)
+																	  .AsList();
+					}
+
 					var newSignData = new SignData
 					{
 							SignId = signId
