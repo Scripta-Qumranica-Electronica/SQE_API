@@ -408,6 +408,9 @@ namespace sqe_realtime_hub_builder
 
 			foreach (var attribute in attributes)
 			{
+				if (attribute.Name.ToString() == "ApiExplorerSettings")
+					continue;
+
 				if (attribute.Name.ToString() == "AllowAnonymous")
 					anonymousAllowed = true;
 				else

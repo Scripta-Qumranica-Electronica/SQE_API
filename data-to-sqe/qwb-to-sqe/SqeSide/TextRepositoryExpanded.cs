@@ -37,13 +37,15 @@ namespace qwb_to_sqe.Repositories
 				, IAttributeRepository                    attributeRepository
 				, ISignInterpretationRepository           signInterpretationRepository
 				, ISignInterpretationCommentaryRepository commentaryRepository
-				, IRoiRepository                          roiRepository) : base(
+				, IRoiRepository                          roiRepository
+				, ISignStreamMaterializationRepository    materializationRepository) : base(
 				config
 				, databaseWriter
 				, attributeRepository
 				, signInterpretationRepository
 				, commentaryRepository
-				, roiRepository) { }
+				, roiRepository
+				, materializationRepository) { }
 
 		public TextEdition GetSQEWord(UserInfo editionUser, uint qwbWordId)
 		{

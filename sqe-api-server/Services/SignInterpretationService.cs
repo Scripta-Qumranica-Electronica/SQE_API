@@ -6,6 +6,7 @@ using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
+using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Services
@@ -82,6 +83,8 @@ namespace SQE.API.Server.Services
 				, uint   signInterpretationAttributeId
 				, uint   attributeValueId
 				, string clientId = null);
+
+		Task<NoContentResult> MaterializeSignStreams(UserInfo user, uint[] editionIds);
 	}
 
 	public class SignInterpretationService : ISignInterpretationService
@@ -90,7 +93,8 @@ namespace SQE.API.Server.Services
 
 		private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
 
-		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+		private readonly IHubContext<MainHub, ISQEClient>     _hubContext;
+		private readonly ISignStreamMaterializationRepository _materializationRepository;
 
 		private readonly ISignInterpretationRepository _signInterpretationRepository;
 
@@ -101,13 +105,15 @@ namespace SQE.API.Server.Services
 				, IAttributeRepository                    attributeRepository
 				, ISignInterpretationRepository           signInterpretationRepository
 				, ISignInterpretationCommentaryRepository commentaryRepository
-				, ITextRepository                         textRepository)
+				, ITextRepository                         textRepository
+				, ISignStreamMaterializationRepository    materializationRepository)
 		{
 			_hubContext = hubContext;
 			_attributeRepository = attributeRepository;
 			_signInterpretationRepository = signInterpretationRepository;
 			_commentaryRepository = commentaryRepository;
 			_textRepository = textRepository;
+			_materializationRepository = materializationRepository;
 		}
 
 		public async Task<AttributeListDTO>
@@ -507,6 +513,20 @@ namespace SQE.API.Server.Services
 			// Broadcast the changes
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 							 .UpdatedSignInterpretation(updatedSignInterpretation);
+
+			return new NoContentResult();
+		}
+
+		public async Task<NoContentResult> MaterializeSignStreams(UserInfo user, uint[] editionIds)
+		{
+			if (!user.SystemRoles.Contains(UserSystemRoles.USER_ADMIN))
+				throw new StandardExceptions.NoSystemPermissionsException(user);
+
+			if (editionIds.Length == 0)
+				await _materializationRepository.MaterializeAllSignStreamsAsync();
+
+			foreach (var editionId in editionIds)
+				await _materializationRepository.RequestMaterializationAsync(editionId);
 
 			return new NoContentResult();
 		}

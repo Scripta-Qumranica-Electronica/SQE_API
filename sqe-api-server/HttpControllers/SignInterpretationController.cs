@@ -113,7 +113,8 @@ namespace SQE.API.Server.HttpControllers
 		/// <summary>
 		///  Creates a variant sign interpretation to the submitted sign interpretation id.
 		///  This variant will be inserted into the sign stream following the specifications
-		///  in the newSignInterpretation.
+		///  in the newSignInterpretation. If the properties for `attributes`, `rois`, or
+		///  `commentary`
 		/// </summary>
 		/// <param name="editionId">ID of the edition being changed</param>
 		/// <param name="signInterpretationId">
@@ -267,5 +268,24 @@ namespace SQE.API.Server.HttpControllers
 					await _userService.GetCurrentUserObjectAsync(editionId, true)
 					, signInterpretationId
 					, attributeValueId);
+
+		/// <summary>
+		///  This is an admin endpoint used to trigger the generation of materialized sign streams.
+		///  These streams are generated on demand by the API, but it can happen that some do not
+		///  complete (a record in the database exists when a materialization was started but
+		///  never finished).
+		/// </summary>
+		/// <param name="editionIds">
+		///  A list of edition IDs for which to generate materialized
+		///  sign streams.  If the list is empty, then the system will look for any unfinished
+		///  jobs and complete those.
+		/// </param>
+		/// <returns></returns>
+		[ApiExplorerSettings(IgnoreApi = true)]
+		[HttpPost("v1/materialize-sign-streams")]
+		public async Task<ActionResult> MaterializeSignStream([FromBody] uint[] editionIds)
+			=> await _signInterpretationService.MaterializeSignStreams(
+					await _userService.GetCurrentUserObjectAsync(null)
+					, editionIds);
 	}
 }

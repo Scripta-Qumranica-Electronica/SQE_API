@@ -2,6 +2,26 @@ using System.Collections.Generic;
 
 namespace SQE.DatabaseAccess.Models
 {
+	public class BasicSignInterpretationAttribute
+	{
+		public uint AttributeId      { get; set; }
+		public uint AttributeValueId { get; set; }
+	}
+
+	public class BasicSingleSignInterpretation
+	{
+		public uint                                      SignInterpretationId     { get; set; }
+		public string                                    Character                { get; set; }
+		public uint                                      NextSignInterpretationId { get; set; }
+		public byte                                      IsVariant                { get; set; }
+		public HashSet<BasicSignInterpretationAttribute> Attributes               { get; set; }
+	}
+
+	public class BasicSignInterpretation : BasicSingleSignInterpretation
+	{
+		public HashSet<uint> NextSignInterpretationIds { get; set; }
+	}
+
 	public class SignInterpretationData
 	{
 		public uint?      SignInterpretationId                 { get; set; }

@@ -32,6 +32,7 @@ import {
 	NextSignInterpretationDTO,
 	SignInterpretationBaseDTO,
 	SignInterpretationCreateDTO,
+	SignInterpretationReplicateDTO,
 	SignInterpretationDTO,
 	SignInterpretationListDTO,
 	SignInterpretationDeleteDTO,
@@ -825,7 +826,8 @@ export class SignalRUtilities {
     /**
 	 * Creates a variant sign interpretation to the submitted sign interpretation id.
 	 *		 This variant will be inserted into the sign stream following the specifications
-	 *		 in the newSignInterpretation.
+	 *		 in the newSignInterpretation. If the properties for `attributes`, `rois`, or
+	 *		 `commentary`
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param signInterpretationId - 
@@ -932,6 +934,23 @@ export class SignalRUtilities {
 	 */
     public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId(editionId: number, signInterpretationId: number, attributeValueId: number): Promise<void> {
         return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationIdAttributesAttributeValueId', editionId, signInterpretationId, attributeValueId);
+    }
+
+    /**
+	 * This is an admin endpoint used to trigger the generation of materialized sign streams.
+	 *		 These streams are generated on demand by the API, but it can happen that some do not
+	 *		 complete (a record in the database exists when a materialization was started but
+	 *		 never finished).
+	 *
+	 * @param editionIds - 
+	 *		  A list of edition IDs for which to generate materialized
+	 *		  sign streams.  If the list is empty, then the system will look for any unfinished
+	 *		  jobs and complete those.
+	 *		 
+	 *
+	 */
+    public async postV1MaterializeSignStreams(editionIds: uint[]): Promise<void> {
+        return await this._connection.invoke('PostV1MaterializeSignStreams', editionIds);
     }
 
     /**

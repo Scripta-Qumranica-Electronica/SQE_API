@@ -148,6 +148,8 @@ namespace SQE.DatabaseAccess
 
 		private readonly IRoiRepository _roiRepository;
 
+		private readonly ISignStreamMaterializationRepository _materializationRepository;
+
 		private readonly List<uint> _signAttributeControlCharacters = new List<uint>
 		{
 				10
@@ -165,7 +167,8 @@ namespace SQE.DatabaseAccess
 				, IAttributeRepository                    attributeRepository
 				, ISignInterpretationRepository           signInterpretationRepository
 				, ISignInterpretationCommentaryRepository commentaryRepository
-				, IRoiRepository                          roiRepository) : base(config)
+				, IRoiRepository                          roiRepository
+				, ISignStreamMaterializationRepository    materializationRepository) : base(config)
 		{
 			_databaseWriter = databaseWriter;
 
@@ -176,6 +179,7 @@ namespace SQE.DatabaseAccess
 			_signInterpretationRepository = signInterpretationRepository;
 			_commentaryRepository = commentaryRepository;
 			_roiRepository = roiRepository;
+			_materializationRepository = materializationRepository;
 		}
 
 		#endregion
@@ -357,6 +361,7 @@ namespace SQE.DatabaseAccess
 		/// <param name="signs"></param>
 		/// <param name="anchorsBefore"></param>
 		/// <param name="anchorsAfter"></param>
+		/// <param name="signInterpretationId"></param>
 		/// <param name="breakNeighboringAnchors"></param>
 		/// <returns></returns>
 		public async Task<List<SignData>> CreateSignsAsync(
@@ -398,20 +403,52 @@ namespace SQE.DatabaseAccess
 									, new { SignInterpretationId = signInterpretationId.Value })
 							: await _createSignAsync(editionUser, lineId.Value);
 
-					// Check is the after anchors were supplied with a sign variant request
-					// If not, then collect them automatically
-					if (signInterpretationId.HasValue
-						&& !anchorsAfter.Any())
+					if (signInterpretationId.HasValue)
 					{
-						anchorsAfter =
-								(await _signInterpretationRepository.GetSignInterpretationById(
-										editionUser
-										, signInterpretationId.Value)).NextSignInterpretations
-																	  .Select(
-																			  x
-																					  => x
-																							  .NextSignInterpretationId)
-																	  .AsList();
+						// See if there is any data that should be copied from the signInterpretationId
+						// to this new sign interpretation
+						if (sign.SignInterpretations.Any(
+									x => (x.Attributes == null)
+										 || (x.Commentaries == null)
+										 || (x.SignInterpretationRois == null))
+							|| !anchorsAfter.Any())
+						{
+							var originalSignInterpretationData =
+									await _signInterpretationRepository.GetSignInterpretationById(
+											editionUser
+											, signInterpretationId.Value);
+
+							// Replace any missing info in the sign with data from the
+							// original sign interpretation
+							sign.SignInterpretations = sign.SignInterpretations.Select(
+																   x =>
+																   {
+																	   x.Attributes ??=
+																			   originalSignInterpretationData
+																					   .Attributes;
+
+																	   x.Commentaries ??=
+																			   originalSignInterpretationData
+																					   .Commentaries;
+
+																	   x.SignInterpretationRois ??=
+																			   originalSignInterpretationData
+																					   .SignInterpretationRois;
+
+																	   return x;
+																   })
+														   .ToList();
+
+							// Check if the after anchors were supplied with a sign variant request
+							// If not, then collect them automatically
+							if (!anchorsAfter.Any())
+							{
+								anchorsAfter = originalSignInterpretationData
+											   .NextSignInterpretations
+											   .Select(x => x.NextSignInterpretationId)
+											   .AsList();
+							}
+						}
 					}
 
 					var newSignData = new SignData
@@ -536,6 +573,11 @@ namespace SQE.DatabaseAccess
 				var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
 
 				await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+
+				// Rebuild any affected materialized sign streams
+				await _materializationRepository.RequestMaterializationAsync(
+						editionUser.EditionId.Value
+						, firstSignInterpretations.First());
 
 				transactionScope.Complete();
 			}

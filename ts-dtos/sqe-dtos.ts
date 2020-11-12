@@ -138,6 +138,11 @@ export interface SignInterpretationCreateDTO extends SignInterpretationBaseDTO {
     breakPreviousAndNextSignInterpretations: boolean;
 }
 
+export interface SignInterpretationReplicateDTO extends SignInterpretationCreateDTO {
+    attributes?: Array<InterpretationAttributeCreateDTO>;
+    rois?: Array<SetInterpretationRoiDTO>;
+}
+
 export interface SignInterpretationDTO extends SignInterpretationBaseDTO {
     signInterpretationId: number;
     nextSignInterpretations: Array<NextSignInterpretationDTO>;

@@ -80,6 +80,10 @@ namespace SQE.API.Server
 			services.AddScoped<IAttributeRepository, AttributeRepository>();
 			services.AddScoped<ICatalogueRepository, CatalogueRepository>();
 
+			services
+					.AddTransient<ISignStreamMaterializationRepository,
+							SignStreamMaterializationRepository>();
+
 			services.AddResponseCompression();
 
 			services.Configure<BrotliCompressionProviderOptions>(

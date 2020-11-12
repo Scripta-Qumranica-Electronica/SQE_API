@@ -165,9 +165,9 @@ namespace SQE.API.Server.Serialization
 			};
 
 		public static List<SignInterpretationAttributeData> ToSignInterpretationAttributeDatas(
-				this SignInterpretationCreateDTO sicd)
+				this IEnumerable<InterpretationAttributeCreateDTO> attr)
 		{
-			return sicd.attributes.Select(
+			return attr.Select(
 							   x => new SignInterpretationAttributeData
 							   {
 									   AttributeId = x.attributeId
@@ -181,14 +181,16 @@ namespace SQE.API.Server.Serialization
 		public static List<SignInterpretationCommentaryData> ToSignInterpretationCommentaryDatas(
 				this SignInterpretationCreateDTO sicd)
 		{
-			var response = sicd.attributes.Select(
-									   x => new SignInterpretationCommentaryData
-									   {
-											   AttributeId = x.attributeId
-											   , Commentary = sicd.commentary?.commentary
-											   ,
-									   })
-							   .ToList();
+			var response = sicd.attributes == null
+					? new List<SignInterpretationCommentaryData>()
+					: sicd.attributes.Select(
+								  x => new SignInterpretationCommentaryData
+								  {
+										  AttributeId = x.attributeId
+										  , Commentary = sicd.commentary?.commentary
+										  ,
+								  })
+						  .ToList();
 
 			if (sicd.commentary != null)
 			{
@@ -203,9 +205,9 @@ namespace SQE.API.Server.Serialization
 		}
 
 		public static List<SignInterpretationRoiData> ToSignInterpretationRoiDatas(
-				this SignInterpretationCreateDTO sicd)
+				this IEnumerable<SetInterpretationRoiDTO> rois)
 		{
-			return sicd.rois.Select(
+			return rois.Select(
 							   x => new SignInterpretationRoiData
 							   {
 									   ArtefactId = x.artefactId
@@ -224,12 +226,12 @@ namespace SQE.API.Server.Serialization
 				ToSignInterpretationData(this SignInterpretationCreateDTO sicd)
 			=> new SignInterpretationData
 			{
-					Attributes = sicd.ToSignInterpretationAttributeDatas()
+					Attributes = sicd.attributes?.ToSignInterpretationAttributeDatas()
 					, Character = sicd.character
 					, Commentaries = sicd.ToSignInterpretationCommentaryDatas()
 					, IsVariant = sicd.isVariant
 					, NextSignInterpretations = null
-					, SignInterpretationRois = sicd.ToSignInterpretationRoiDatas()
+					, SignInterpretationRois = sicd.rois?.ToSignInterpretationRoiDatas()
 					,
 			};
 

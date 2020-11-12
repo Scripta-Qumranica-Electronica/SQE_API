@@ -67,6 +67,9 @@ namespace GenerateTestRequestObjects
 					anonymousAllowed = true;
 				else
 				{
+					if (attribute.Name.ToString() == "ApiExplorerSettings")
+						continue;
+
 					var attributeName = attribute.Name.ToString();
 
 					if (!validPathAttrs.Contains(
