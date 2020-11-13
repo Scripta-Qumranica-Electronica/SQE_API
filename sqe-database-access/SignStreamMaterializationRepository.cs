@@ -35,8 +35,10 @@ namespace SQE.DatabaseAccess
 				GetAllScheduledSignStreamMaterializationsAsync()
 		{
 			using (var connection = OpenConnection())
+			{
 				return await connection.QueryAsync<(uint EditionId, uint SignInterpretationId)>(
 						QueuedMaterializationsQuery.GetQuery);
+			}
 		}
 
 		public async Task RequestMaterializationAsync(uint editionId, uint signInterpretationId)
@@ -125,7 +127,8 @@ namespace SQE.DatabaseAccess
 						, new
 						{
 								EditionId = editionId
-								, SignInterpretationId = signInterpretationId,
+								, SignInterpretationId = signInterpretationId
+								,
 						});
 
 				// Try to perform the materialization.  If it is successful, it
@@ -150,7 +153,8 @@ namespace SQE.DatabaseAccess
 						, new
 						{
 								EditionId = editionId
-								, SignInterpretationId = signInterpretationId,
+								, SignInterpretationId = signInterpretationId
+								,
 						});
 
 				// Collect the materialized stream possibilities (maintain the indices for individual characters)
@@ -191,7 +195,8 @@ namespace SQE.DatabaseAccess
 													  new HashSet<uint>
 													  {
 															  sign
-																	  .NextSignInterpretationId,
+																	  .NextSignInterpretationId
+															  ,
 													  }
 											  , SignInterpretationId =
 													  sign.SignInterpretationId
@@ -267,7 +272,8 @@ VALUES {
 						, new
 						{
 								EditionId = editionId
-								, SignInterpretationId = signInterpretationId,
+								, SignInterpretationId = signInterpretationId
+								,
 						});
 
 				transaction.Complete();
@@ -309,8 +315,10 @@ VALUES {
 				var nextResponse = _walkSignStream(index, sign, signDict);
 
 				foreach (var (nextText, nextIndices) in nextResponse)
+				{
 					response.Add(
 							(text.Concat(nextText).ToList(), indices.Concat(nextIndices).ToList()));
+				}
 			}
 
 			if (response.Count == 0)

@@ -2,22 +2,23 @@
 
 namespace SQE.DatabaseAccess.Queries
 {
-	internal abstract class ImagedObjectQueries
+	internal abstract class EditionImagedObjectQueries
 	{
 		private const string _getFragments = @"
-SELECT image_catalog.institution AS Institution,
-    image_catalog.catalog_number_1 AS catalog_1,
-    image_catalog.catalog_number_2 AS catalog_2,
-    image_catalog.object_id AS object_id
-FROM iaa_edition_catalog
-JOIN edition USING(manuscript_id)
+SELECT DISTINCT image_catalog.institution AS Institution,
+    image_catalog.catalog_number_1 AS Catalog1,
+    image_catalog.catalog_number_2 AS Catalog2,
+    image_catalog.object_id AS Id
+FROM artefact_shape
+JOIN artefact_shape_owner USING(artefact_shape_id)
+JOIN edition USING(edition_id)
 JOIN edition_editor USING(edition_id)
-JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
+JOIN SQE_image USING(sqe_image_id)
 JOIN image_catalog USING(image_catalog_id)
 WHERE edition.edition_id = @EditionId
-  AND (edition.public = 1 
-         OR edition_editor.user_id = @UserId) 
-  AND iaa_edition_catalog.edition_side =0
+  AND (edition.public = 1
+         OR edition_editor.user_id = @UserId)
+  AND image_catalog.catalog_side = 0
 ";
 
 		public static string GetQuery(bool fragmentId)
@@ -29,14 +30,6 @@ WHERE edition.edition_id = @EditionId
 			str.Append(" AND image_catalog.object_id=@ObjectId");
 
 			return str.ToString();
-		}
-
-		internal class Result
-		{
-			public string Institution { get; set; }
-			public string catalog_1   { get; set; }
-			public string catalog_2   { get; set; }
-			public string object_id   { get; set; }
 		}
 	}
 }

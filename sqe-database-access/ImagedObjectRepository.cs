@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +9,7 @@ namespace SQE.DatabaseAccess
 {
 	public interface IImagedObjectRepository
 	{
-		Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(
+		Task<IEnumerable<ImagedObject>> GetEditionImagedObjectsAsync(
 				UserInfo editionUser
 				, string imagedObjectId);
 
@@ -22,15 +21,15 @@ namespace SQE.DatabaseAccess
 	{
 		public ImagedObjectRepository(IConfiguration config) : base(config) { }
 
-		public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(
+		public async Task<IEnumerable<ImagedObject>> GetEditionImagedObjectsAsync(
 				UserInfo editionUser
 				, string imagedObjectId)
 		{
-			var sql = ImagedObjectQueries.GetQuery(imagedObjectId != null);
+			var sql = EditionImagedObjectQueries.GetQuery(imagedObjectId != null);
 
 			using (var connection = OpenConnection())
 			{
-				var results = await connection.QueryAsync<ImagedObjectQueries.Result>(
+				var results = await connection.QueryAsync<ImagedObject>(
 						sql
 						, new
 						{
@@ -40,9 +39,7 @@ namespace SQE.DatabaseAccess
 								,
 						});
 
-				var models = results.Select(CreateImagedObject);
-
-				return models;
+				return results;
 			}
 		}
 
@@ -55,20 +52,6 @@ namespace SQE.DatabaseAccess
 						ImagedObjectImageQuery.GetQuery
 						, new { ImagedObjectId = imagedObjectId });
 			}
-		}
-
-		private static ImagedObject CreateImagedObject(ImagedObjectQueries.Result imagedFragment)
-		{
-			var model = new ImagedObject
-			{
-					Id = imagedFragment.object_id
-					, Institution = imagedFragment.Institution
-					, Catalog1 = imagedFragment.catalog_1
-					, Catalog2 = imagedFragment.catalog_2
-					,
-			};
-
-			return model;
 		}
 	}
 }

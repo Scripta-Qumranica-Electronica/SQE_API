@@ -1271,6 +1271,28 @@ namespace SQE.ApiTest
 			}
 		}
 
+		[Fact]
+		[Trait("Category", "Sign Stream")]
+		public async Task CanMaterializeSignStream()
+		{
+			var request = new Post.V1_MaterializeSignStreams(new uint[] { 1 });
+			await request.SendAsync(_client, null, true);
+		}
+
+		[Fact]
+		[Trait("Category", "Sign Stream")]
+		public async Task CanNotMaterializeSignStreamWithoutSysRole()
+		{
+			var request = new Post.V1_MaterializeSignStreams(new uint[] { 1 });
+
+			await request.SendAsync(
+					_client
+					, null
+					, true
+					, Request.DefaultUsers.User2
+					, shouldSucceed: false);
+		}
+
 		private async
 				Task<(TextFragmentDTO Fragments, LineDTO Line, uint PreviousSignInterpretationId,
 						uint NextSignInterpretationId, uint AfterNextSignInterpretation)>

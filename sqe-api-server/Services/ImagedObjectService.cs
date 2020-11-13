@@ -66,7 +66,7 @@ namespace SQE.API.Server.Services
 			if (artefacts)
 				return await GetImagedObjectsWithArtefactsAsync(editionUser, masks);
 
-			var imagedObjects = await _repo.GetImagedObjectsAsync(editionUser, null);
+			var imagedObjects = await _repo.GetEditionImagedObjectsAsync(editionUser, null);
 
 			if (imagedObjects == null)
 			{

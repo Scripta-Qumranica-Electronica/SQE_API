@@ -500,6 +500,15 @@ namespace SQE.DatabaseAccess
 				transactionScope.Complete();
 			}
 
+			// Rebuild any affected materialized sign streams
+			// Do not await it, we don't care if it finishes before this
+			// request is over.
+			// TODO: change RequestMaterializationAsync to take an array,
+			// it should be able to check how many sign streams would need a rebuild.
+			_materializationRepository.RequestMaterializationAsync(
+					editionUser.EditionId.Value
+					, anchorsBefore.First());
+
 			return newSigns;
 		}
 
@@ -574,13 +583,17 @@ namespace SQE.DatabaseAccess
 
 				await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
 
-				// Rebuild any affected materialized sign streams
-				await _materializationRepository.RequestMaterializationAsync(
-						editionUser.EditionId.Value
-						, firstSignInterpretations.First());
-
 				transactionScope.Complete();
 			}
+
+			// Rebuild any affected materialized sign streams
+			// Do not await it, we don't care if it finishes before this
+			// request is over.
+			// TODO: change RequestMaterializationAsync to take an array,
+			// it should be able to check how many sign streams would need a rebuild.
+			_materializationRepository.RequestMaterializationAsync(
+					editionUser.EditionId.Value
+					, firstSignInterpretations.First());
 		}
 
 		/// <summary>
@@ -717,6 +730,15 @@ namespace SQE.DatabaseAccess
 
 				transactionScope.Complete();
 			}
+
+			// Rebuild any affected materialized sign streams
+			// Do not await it, we don't care if it finishes before this
+			// request is over.
+			// TODO: change RequestMaterializationAsync to take an array,
+			// it should be able to check how many sign streams would need a rebuild.
+			_materializationRepository.RequestMaterializationAsync(
+					editionUser.EditionId.Value
+					, firstSignInterpretations.First());
 		}
 
 		/// <summary>
@@ -1005,6 +1027,23 @@ namespace SQE.DatabaseAccess
 
 					transactionScope.Complete();
 				}
+			}
+
+			if (alteredSignInterpretations.Any())
+			{ // Rebuild any affected materialized sign streams
+				// Do not await it, we don't care if it finishes before this
+				// request is over.
+				// TODO: change RequestMaterializationAsync to take an array,
+				// it should be able to check how many sign streams would need a rebuild.
+				_materializationRepository.RequestMaterializationAsync(
+						editionUser.EditionId.Value
+						, alteredSignInterpretations.First());
+			}
+			else
+			{
+				// TODO: What is the most efficient way to trigger a rebuild when we have no anchors?
+				// probably collect the deleted sign's next sign interpretation IDs and trigger a rebuild on those.
+				_materializationRepository.RequestMaterializationAsync(editionUser.EditionId.Value);
 			}
 
 			return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations);
