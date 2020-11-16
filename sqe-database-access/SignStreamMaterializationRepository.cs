@@ -5,7 +5,6 @@ using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using MoreLinq.Extensions;
-using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
@@ -24,12 +23,7 @@ namespace SQE.DatabaseAccess
 	public class SignStreamMaterializationRepository : DbConnectionBase
 													   , ISignStreamMaterializationRepository
 	{
-		private readonly IDatabaseWriter _databaseWriter;
-
-		public SignStreamMaterializationRepository(
-				IConfiguration    config
-				, IDatabaseWriter databaseWriter) : base(config)
-			=> _databaseWriter = databaseWriter;
+		public SignStreamMaterializationRepository(IConfiguration config) : base(config) { }
 
 		public async Task<IEnumerable<(uint EditionId, uint SignInterpretationId)>>
 				GetAllScheduledSignStreamMaterializationsAsync()
@@ -44,12 +38,12 @@ namespace SQE.DatabaseAccess
 		public async Task RequestMaterializationAsync(uint editionId, uint signInterpretationId)
 		{
 			var firstSignInterpretationIdsInSignStream =
-					await getBeginningsOfSignStreamForInterpretationId(
+					await GetBeginningsOfSignStreamForInterpretationId(
 							editionId
 							, signInterpretationId);
 
 			foreach (var initialSignInterpretationId in firstSignInterpretationIdsInSignStream)
-				await beginMaterializationAsync(editionId, initialSignInterpretationId);
+				await BeginMaterializationAsync(editionId, initialSignInterpretationId);
 		}
 
 		public async Task RequestMaterializationAsync(uint editionId)
@@ -70,10 +64,10 @@ namespace SQE.DatabaseAccess
 			// Collect all materialization requests that were not successfully completed.
 			foreach (var (editionId, signInterpretationId) in
 					await GetAllScheduledSignStreamMaterializationsAsync())
-				await materializeStreamForSignInterpretationAsync(editionId, signInterpretationId);
+				await MaterializeStreamForSignInterpretationAsync(editionId, signInterpretationId);
 		}
 
-		private async Task<IEnumerable<uint>> getBeginningsOfSignStreamForInterpretationId(
+		private async Task<IEnumerable<uint>> GetBeginningsOfSignStreamForInterpretationId(
 				uint   editionId
 				, uint signInterpretationId)
 		{
@@ -90,7 +84,7 @@ namespace SQE.DatabaseAccess
 			}
 		}
 
-		private async Task beginMaterializationAsync(uint editionId, uint signInterpretationId)
+		private async Task BeginMaterializationAsync(uint editionId, uint signInterpretationId)
 		{
 			// Don't use a transaction here, we want the materialization request to be written
 			// and we don't really care at this point if it ever gets accomplished.  We will
@@ -99,7 +93,9 @@ namespace SQE.DatabaseAccess
 			using (var connection = OpenConnection())
 			{
 				// Check if the request already exists
-				var existingRequests = await GetAllScheduledSignStreamMaterializationsAsync();
+				var existingRequests =
+						(await GetAllScheduledSignStreamMaterializationsAsync()).ToArray();
+
 				var waitCount = 0;
 
 				// Wait 2.5 seconds for the outstanding request to finish before
@@ -110,7 +106,10 @@ namespace SQE.DatabaseAccess
 									&& (x.SignInterpretationId == signInterpretationId)))
 				{
 					await Task.Delay(50);
-					existingRequests = await GetAllScheduledSignStreamMaterializationsAsync();
+
+					existingRequests =
+							(await GetAllScheduledSignStreamMaterializationsAsync()).ToArray();
+
 					waitCount += 1;
 				}
 
@@ -133,11 +132,11 @@ namespace SQE.DatabaseAccess
 
 				// Try to perform the materialization.  If it is successful, it
 				// will delete the request from the queue
-				await materializeStreamForSignInterpretationAsync(editionId, signInterpretationId);
+				await MaterializeStreamForSignInterpretationAsync(editionId, signInterpretationId);
 			}
 		}
 
-		private async Task materializeStreamForSignInterpretationAsync(
+		private async Task MaterializeStreamForSignInterpretationAsync(
 				uint   editionId
 				, uint signInterpretationId)
 		{
@@ -231,7 +230,7 @@ namespace SQE.DatabaseAccess
 						});
 
 				// Write the paths
-				foreach (var path in paths)
+				foreach (var (text, indices) in paths)
 				{
 					// Write the materialized stream
 					await connection.ExecuteAsync(
@@ -240,7 +239,7 @@ namespace SQE.DatabaseAccess
 							{
 									EditionId = editionId
 									, SignInterpretationId = signInterpretationId
-									, MaterializedText = string.Join("", path.Text)
+									, MaterializedText = string.Join("", text)
 									,
 							});
 
@@ -249,7 +248,7 @@ namespace SQE.DatabaseAccess
 					var materializedId =
 							await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
-					var sequences = path.Indices.Batch(900);
+					var sequences = indices.Batch(900);
 
 					foreach (var sequence in sequences)
 					{
@@ -293,7 +292,13 @@ VALUES {
 
 			// Stop recursion when there are no new signs available
 			if (!signDict.TryGetValue(currentSignInterpretationId, out var currentSign))
+			{
+				// Index the last sign id (it is a control character)
+				indices.Add((index, currentSignInterpretationId));
+				response.Add((text, indices));
+
 				return response;
+			}
 
 			// Add the index info
 			indices.Add((index, currentSignInterpretationId));

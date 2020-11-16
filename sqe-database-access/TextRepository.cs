@@ -451,6 +451,30 @@ namespace SQE.DatabaseAccess
 						}
 					}
 
+					// Check if the after anchors were supplied with a sign variant request
+					// If not, then collect them automatically (if necessary).
+					if (!anchorsAfter.Any())
+					{
+						// Collect the next sign interpretation ids for every anchor before
+						var collectedAnchorsAfter = new List<uint>();
+
+						foreach (var id in anchorsBefore)
+						{
+							collectedAnchorsAfter.AddRange(
+
+									// Get the data for the anchor before
+									(await _signInterpretationRepository.GetSignInterpretationById(
+											editionUser
+											, id))
+
+									// Collect all of its next sign interpretation IDs
+									.NextSignInterpretations.Select(
+											x => x.NextSignInterpretationId));
+						}
+
+						anchorsAfter = collectedAnchorsAfter.AsList();
+					}
+
 					var newSignData = new SignData
 					{
 							SignId = signId
@@ -975,8 +999,7 @@ namespace SQE.DatabaseAccess
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
 			{
 				if (deleteVariants)
-				{
-					// If deleting all variants, then get the sign id and call RemoveSignAsync
+				{ // If deleting all variants, then get the sign id and call RemoveSignAsync
 					using (var connection = OpenConnection())
 					{
 						var signId = await connection.QuerySingleAsync<uint>(
@@ -984,8 +1007,8 @@ namespace SQE.DatabaseAccess
 								, new { SignInterpretationId = signInterpretationId });
 
 						var (deleted, updated) = await RemoveSignAsync(editionUser, signId);
-						alteredSignInterpretations.Concat(updated);
-						deletedSignInterpretations.Concat(deleted);
+						alteredSignInterpretations.AddRange(updated);
+						deletedSignInterpretations.AddRange(deleted);
 					}
 				}
 				else
@@ -1021,12 +1044,12 @@ namespace SQE.DatabaseAccess
 						var requests = await positionDataRequest.CreateRequestsAsync();
 						await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
-						alteredSignInterpretations.Concat(positionDataRequest.AnchorsBefore);
+						alteredSignInterpretations.AddRange(positionDataRequest.AnchorsBefore);
 						deletedSignInterpretations.Add(signInterpretationId);
 					}
-
-					transactionScope.Complete();
 				}
+
+				transactionScope.Complete();
 			}
 
 			if (alteredSignInterpretations.Any())
@@ -1066,14 +1089,13 @@ namespace SQE.DatabaseAccess
 
 			foreach (var signInterpretationId in signInterpretationIds)
 			{
-				alteredSignInterpretations.Concat(
-						(await RemoveSignInterpretationAsync(
-								editionUser
-								, signInterpretationId
-								, false)).Updated);
-			}
+				var (_, updates) = await RemoveSignInterpretationAsync(
+						editionUser
+						, signInterpretationId
+						, false);
 
-			await _removeElementAsync(editionUser, "line_to_sign", signId);
+				alteredSignInterpretations.AddRange(updates);
+			}
 
 			return (Deleted: signInterpretationIds, Updated: alteredSignInterpretations);
 		}

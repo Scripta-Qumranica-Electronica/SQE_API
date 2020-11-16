@@ -231,9 +231,16 @@ namespace SQE.ApiTest
 			}
 		}
 
-		[Fact]
+		[Theory]
+		[InlineData(true, true, false)]
+		[InlineData(true, true, true)]
+		[InlineData(false, false, false)]
+		[InlineData(false, false, true)]
 		[Trait("Category", "Sign Interpretation")]
-		public async Task CanCreateAndDeleteSignInterpretation()
+		public async Task CanCreateAndDeleteSignInterpretation(
+				bool   deleteAll
+				, bool testSignAfterId
+				, bool realtime)
 		{
 			using (var editionCreator =
 					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -249,10 +256,7 @@ namespace SQE.ApiTest
 						character = "ט"
 						, isVariant = false
 						, commentary =
-								new CommentaryCreateDTO
-								{
-										commentary = "I just made this one up.",
-								}
+								new CommentaryCreateDTO { commentary = "I just made this one up." }
 						, attributes =
 								new[]
 								{
@@ -266,9 +270,10 @@ namespace SQE.ApiTest
 										,
 								}
 						, lineId = line.lineId
-						, previousSignInterpretationIds =
-								new[] { previousSignInterpretation }
-						, nextSignInterpretationIds = new[] { nextSignInterpretation }
+						, previousSignInterpretationIds = new[] { previousSignInterpretation }
+						, nextSignInterpretationIds = testSignAfterId
+								? new[] { nextSignInterpretation }
+								: new uint[0]
 						, rois = new SetInterpretationRoiDTO [0]
 						,
 				};
@@ -279,13 +284,16 @@ namespace SQE.ApiTest
 						, textFragment
 						, line
 						, previousSignInterpretation
-						, nextSignInterpretation);
+						, nextSignInterpretation
+						, realtime);
 
 				await _deleteSignInterpretationAsync(
 						editionId
 						, newlyCreatedInterpretationId
 						, textFragment
-						, line);
+						, line
+						, deleteAll
+						, realtime);
 			}
 		}
 
@@ -1456,13 +1464,17 @@ namespace SQE.ApiTest
 				, uint            newlyCreatedInterpretationId
 				, TextFragmentDTO textFragment
 				, LineDTO         line
-				, bool            realtime = false)
+				, bool            deleteAll = false
+				, bool            realtime  = false)
 		{
 			// Act Delete new sign interpretation
 			var deleteRequest =
 					new Delete.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
 							editionId
-							, newlyCreatedInterpretationId);
+							, newlyCreatedInterpretationId
+							, deleteAll
+									? new[] { "delete-all-variants" }
+									: new string[0]);
 
 			await deleteRequest.SendAsync(
 					new List<ListenerMethods>
@@ -1476,6 +1488,7 @@ namespace SQE.ApiTest
 							: _client
 					, StartConnectionAsync
 					, true
+					, deterministic: false
 					, requestRealtime: realtime
 					, listenToEdition: true);
 
@@ -1493,6 +1506,8 @@ namespace SQE.ApiTest
 					, deleteRequest.DeletedSignInterpretation.ids.First());
 
 			Assert.Equal(deleteRequest.DeletedSignInterpretation.ids, deleteResponse.deletes);
+
+			Assert.NotEmpty(deleteResponse.updates.signInterpretations);
 
 			// Get the sign stream again
 			var alteredTextFragment = await EditionHelpers.GetEditionTextFragmentWithSigns(

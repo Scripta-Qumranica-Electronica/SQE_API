@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -236,8 +237,8 @@ namespace SQE.API.Server.Services
 					user
 					, signInterpretation.lineId
 					, signInterpretation.ToSignData()
-					, signInterpretation.previousSignInterpretationIds.ToList()
-					, signInterpretation.nextSignInterpretationIds.ToList()
+					, signInterpretation.previousSignInterpretationIds?.ToList() ?? new List<uint>()
+					, signInterpretation.nextSignInterpretationIds?.ToList() ?? new List<uint>()
 					, signInterpretationId
 					, signInterpretation.breakPreviousAndNextSignInterpretations);
 
