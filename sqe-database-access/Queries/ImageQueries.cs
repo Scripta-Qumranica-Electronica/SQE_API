@@ -24,18 +24,17 @@ SELECT image_urls.url AS url,
     ASTEXT(image_to_image_map.region_on_image2) AS region_on_image2,
     NULL AS image_to_image_map_editor_id,
     image_to_image_map.transform_matrix AS transform_matrix
-FROM iaa_edition_catalog
-JOIN edition USING(manuscript_id)
+FROM artefact_shape
+JOIN artefact_shape_owner USING(artefact_shape_id)
+JOIN edition USING(edition_id)
 JOIN edition_editor USING(edition_id)
-JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
-JOIN image_catalog USING(image_catalog_id)
-JOIN SQE_image USING(image_catalog_id)
-JOIN SQE_image AS master_image ON image_catalog.image_catalog_id = master_image.image_catalog_id 
-    AND master_image.is_master = 1
+JOIN SQE_image AS master_image USING(sqe_image_id)
+JOIN image_catalog ON image_catalog.image_catalog_id = master_image.image_catalog_id
+JOIN SQE_image ON image_catalog.image_catalog_id = SQE_image.image_catalog_id
 LEFT JOIN image_to_image_map ON SQE_image.sqe_image_id = image_to_image_map.image2_id
-    AND image_to_image_map.image1_id = master_image.sqe_image_id 
+    AND image_to_image_map.image1_id = master_image.sqe_image_id
 JOIN image_urls ON SQE_image.image_urls_id = image_urls.image_urls_id
-WHERE edition.edition_id = @EditionId
+WHERE artefact_shape_owner.edition_id = @EditionId
     AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
 
@@ -106,10 +105,10 @@ WHERE image_catalog.object_id = @ImagedObjectId
 	//     internal class ImageGroupQuery
 	//     {
 	//         private const string _baseQuery = @"
-	// SELECT  image_catalog.image_catalog_id, 
-	//         image_catalog.Institution, 
-	//         image_catalog.catalog_number_1, 
-	//         image_catalog.catalog_number_2, 
+	// SELECT  image_catalog.image_catalog_id,
+	//         image_catalog.Institution,
+	//         image_catalog.catalog_number_1,
+	//         image_catalog.catalog_number_2,
 	//         image_catalog.catalog_side
 	// FROM image_catalog
 	// ";
@@ -149,7 +148,7 @@ WHERE image_catalog.object_id = @ImagedObjectId
 	internal static class InstitutionImagesQuery
 	{
 		public const string GetQuery = @"
-SELECT image_catalog.object_id AS Name, 
+SELECT image_catalog.object_id AS Name,
        CONCAT(image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS Thumbnail,
        image_urls.license AS License
 FROM image_catalog
@@ -162,9 +161,9 @@ WHERE image_catalog.institution = @Institution
 	internal static class ImagedObjectTextFragmentsQuery
 	{
 		public static string GetQuery = @"
-SELECT manuscript_data.name AS ManuscriptName, 
-       text_fragment_data.name AS TextFragmentName, 
-       manuscript_data_owner.edition_id AS EditionId, 
+SELECT manuscript_data.name AS ManuscriptName,
+       text_fragment_data.name AS TextFragmentName,
+       manuscript_data_owner.edition_id AS EditionId,
        iaa_edition_catalog_to_text_fragment.text_fragment_id AS TextFragmentId,
        min(image_catalog.catalog_side) AS Side
 FROM image_catalog

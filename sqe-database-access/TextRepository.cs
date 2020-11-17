@@ -539,7 +539,8 @@ namespace SQE.DatabaseAccess
 											, new
 											{
 													SignInterpretationId =
-															adjacentSignInterpretationId,
+															adjacentSignInterpretationId
+													,
 											});
 								}
 							}
