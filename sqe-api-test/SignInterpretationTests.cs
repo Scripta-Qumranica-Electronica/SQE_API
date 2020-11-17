@@ -311,28 +311,19 @@ namespace SQE.ApiTest
 								nextSignInterpretation) =
 						await _getTestingSignInterpretationData(editionId);
 
-				var newSignInterpretation = new SignInterpretationCreateDTO
+				var originalSignInterpretation =
+						new Get.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
+								editionId
+								, copySignInterpretation);
+
+				await originalSignInterpretation.SendAsync(_client, StartConnectionAsync, true);
+
+				var newSignInterpretation = new SignInterpretationVariantDTO
 				{
 						character = "ט"
-						, isVariant = false
-						, commentary = null
-						, attributes =
-								new[]
-								{
-										new InterpretationAttributeCreateDTO
-										{
-												attributeId = 1
-												, attributeValueId = 1
-												, sequence = 1
-												,
-										}
-										,
-								}
-						, lineId = line.lineId
-						, previousSignInterpretationIds =
-								new[] { previousSignInterpretation }
-						, nextSignInterpretationIds = new uint[0]
-						, rois = new SetInterpretationRoiDTO [0]
+						, attributeId = 1
+						, attributeValueId = 1
+						, sequence = null
 						,
 				};
 
@@ -347,6 +338,35 @@ namespace SQE.ApiTest
 				request.HttpResponseMessage.EnsureSuccessStatusCode();
 
 				// TODO: Check that everything was done properly
+				Assert.NotEmpty(request.HttpResponseObject.created);
+				Assert.NotEmpty(request.HttpResponseObject.updated);
+
+				Assert.NotEqual(
+						originalSignInterpretation.HttpResponseObject.character
+						, request.HttpResponseObject.created[0].character);
+
+				Assert.Equal(
+						newSignInterpretation.character
+						, request.HttpResponseObject.created[0].character);
+
+				Assert.Equal(
+						newSignInterpretation.attributeId
+						, request.HttpResponseObject.created[0].attributes[0].attributeId);
+
+				Assert.Equal(
+						newSignInterpretation.attributeValueId
+						, request.HttpResponseObject.created[0].attributes[0].attributeValueId);
+
+				Assert.Contains(
+						request.HttpResponseObject.updated[0].nextSignInterpretations
+						, x => x.nextSignInterpretationId
+							   == originalSignInterpretation.HttpResponseObject
+															.signInterpretationId);
+
+				Assert.Contains(
+						request.HttpResponseObject.updated[0].nextSignInterpretations
+						, x => x.nextSignInterpretationId
+							   == request.HttpResponseObject.created[0].signInterpretationId);
 			}
 		}
 
@@ -1285,6 +1305,38 @@ namespace SQE.ApiTest
 		{
 			var request = new Post.V1_MaterializeSignStreams(new uint[] { 1 });
 			await request.SendAsync(_client, null, true);
+
+			// Fire off a bunch of unawaited requests and make sure the next
+			// call picks them up
+			var request2 = new Post.V1_MaterializeSignStreams(
+					new uint[]
+					{
+							1
+							, 2
+							, 3
+							, 4
+							, 5
+							, 6
+							, 7
+							, 8
+							, 9
+							, 10
+							, 11
+							, 12
+							, 13
+							, 14
+							, 15
+							, 16
+							, 17
+							, 18
+							, 19
+							, 20,
+					});
+
+			request2.SendAsync(_client, null, true);
+
+			var request3 = new Post.V1_MaterializeSignStreams(new uint[0]);
+			await request3.SendAsync(_client, null, true);
 		}
 
 		[Fact]
@@ -1368,7 +1420,7 @@ namespace SQE.ApiTest
 
 			responseObject.ShouldDeepEqual(newSignInterpretationRequest.CreatedSignInterpretation);
 
-			Assert.Equal(2, responseObject.signInterpretations.Length);
+			Assert.Equal(2, responseObject.created.Length);
 
 			// Get the text of this text fragment again
 			var alteredTextFragment = await EditionHelpers.GetEditionTextFragmentWithSigns(
@@ -1391,24 +1443,24 @@ namespace SQE.ApiTest
 																						.attributeValueId)
 																		.ToArray();
 
-			responseObject.signInterpretations.First().attributes = responseObject
-																	.signInterpretations.First()
-																	.attributes.OrderBy(
-																			x => x.attributeValueId)
-																	.ToArray();
+			responseObject.created.First().attributes = responseObject.created.First()
+																	  .attributes.OrderBy(
+																			  x => x
+																					  .attributeValueId)
+																	  .ToArray();
 
 			// Make sure the two updated/new sign interpretations are in the stream
 			signs.First()
 				 .signInterpretations.First()
-				 .ShouldDeepEqual(responseObject.signInterpretations.First());
+				 .ShouldDeepEqual(responseObject.created.First());
 
 			Assert.Contains(
 					signs
 					, x => x.signInterpretations.Any(
-							  y => y.IsDeepEqual(responseObject.signInterpretations.First())));
+							  y => y.IsDeepEqual(responseObject.created.First())));
 
 			// Check that we have a matching sign interpretation in the stream
-			var newlyCreatedInterpretation = responseObject.signInterpretations.Last();
+			var newlyCreatedInterpretation = responseObject.created.Last();
 
 			var interpretationMatchingCreate = signs
 											   .FirstOrDefault(

@@ -102,7 +102,7 @@ namespace SQE.API.Server.HttpControllers
 		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
 		/// <returns>The new sign interpretation</returns>
 		[HttpPost("v1/editions/{editionId}/sign-interpretations")]
-		public async Task<ActionResult<SignInterpretationListDTO>> PostNewSignInterpretation(
+		public async Task<ActionResult<SignInterpretationCreatedDTO>> PostNewSignInterpretation(
 				[FromRoute]  uint                        editionId
 				, [FromBody] SignInterpretationCreateDTO newSignInterpretation)
 			=> await _signInterpretationService.CreateSignInterpretationAsync(
@@ -111,10 +111,10 @@ namespace SQE.API.Server.HttpControllers
 					, newSignInterpretation);
 
 		/// <summary>
-		///  Creates a variant sign interpretation to the submitted sign interpretation id.
-		///  This variant will be inserted into the sign stream following the specifications
-		///  in the newSignInterpretation. If the properties for `attributes`, `rois`, or
-		///  `commentary`
+		///  Creates a variant sign interpretation to the submitted sign interpretation id using
+		///  the character and attribute settings of the newSignInterpretation payload. It will
+		///  copy the ROIs from the original sign interpretation to the new one, but it will not
+		///  copy the attributes (or any commentaries associated with the attributes).
 		/// </summary>
 		/// <param name="editionId">ID of the edition being changed</param>
 		/// <param name="signInterpretationId">
@@ -124,11 +124,12 @@ namespace SQE.API.Server.HttpControllers
 		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
 		/// <returns>The new sign interpretation</returns>
 		[HttpPost("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
-		public async Task<ActionResult<SignInterpretationListDTO>> PostAlternateSignInterpretation(
-				[FromRoute]   uint                        editionId
-				, [FromRoute] uint                        signInterpretationId
-				, [FromBody]  SignInterpretationCreateDTO newSignInterpretation)
-			=> await _signInterpretationService.CreateSignInterpretationAsync(
+		public async Task<ActionResult<SignInterpretationCreatedDTO>>
+				PostAlternateSignInterpretation(
+						[FromRoute]   uint                         editionId
+						, [FromRoute] uint                         signInterpretationId
+						, [FromBody]  SignInterpretationVariantDTO newSignInterpretation)
+			=> await _signInterpretationService.CreateVariantSignInterpretationAsync(
 					await _userService.GetCurrentUserObjectAsync(editionId, true)
 					, signInterpretationId
 					, newSignInterpretation);

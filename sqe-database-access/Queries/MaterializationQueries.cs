@@ -3,7 +3,10 @@ namespace SQE.DatabaseAccess.Queries
 	internal static class QueuedMaterializationsQuery
 	{
 		public const string GetQuery = @"
-SELECT edition_id, initial_sign_interpretation_id
+SELECT edition_id AS EditionId,
+       initial_sign_interpretation_id AS SignInterpretationId,
+       time_initiated AS CreatedDate,
+       CURRENT_DATE() AS CurrentTime
 FROM materialized_sign_stream_schedule";
 	}
 

@@ -32,11 +32,17 @@ namespace SQE.API.Server.Services
 				, uint   attributeId
 				, string clientId = null);
 
-		Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
+		Task<SignInterpretationCreatedDTO> CreateSignInterpretationAsync(
 				UserInfo                      user
 				, uint?                       signInterpretationId
 				, SignInterpretationCreateDTO signInterpretation
 				, string                      clientId = null);
+
+		Task<SignInterpretationCreatedDTO> CreateVariantSignInterpretationAsync(
+				UserInfo                       user
+				, uint                         signInterpretationId
+				, SignInterpretationVariantDTO signInterpretation
+				, string                       clientId = null);
 
 		Task<SignInterpretationDeleteDTO> DeleteSignInterpretationAsync(
 				UserInfo   user
@@ -227,20 +233,23 @@ namespace SQE.API.Server.Services
 		/// <param name="signInterpretation">Information about the new sign interpretation to be created</param>
 		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<SignInterpretationListDTO> CreateSignInterpretationAsync(
+		public async Task<SignInterpretationCreatedDTO> CreateSignInterpretationAsync(
 				UserInfo                      user
 				, uint?                       signInterpretationId
 				, SignInterpretationCreateDTO signInterpretation
 				, string                      clientId = null)
 		{
-			var createdSignInterpretation = await _textRepository.CreateSignsAsync(
-					user
-					, signInterpretation.lineId
-					, signInterpretation.ToSignData()
-					, signInterpretation.previousSignInterpretationIds?.ToList() ?? new List<uint>()
-					, signInterpretation.nextSignInterpretationIds?.ToList() ?? new List<uint>()
-					, signInterpretationId
-					, signInterpretation.breakPreviousAndNextSignInterpretations);
+			var (createdSignInterpretation, updatedSignInterpretations) =
+					await _textRepository.CreateSignsAsync(
+							user
+							, signInterpretation.lineId
+							, signInterpretation.ToSignData()
+							, signInterpretation.previousSignInterpretationIds?.ToList()
+							  ?? new List<uint>()
+							, signInterpretation.nextSignInterpretationIds?.ToList()
+							  ?? new List<uint>()
+							, signInterpretationId
+							, signInterpretation.breakPreviousAndNextSignInterpretations);
 
 			// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
 			var alteredSignInterpretations = await Task.WhenAll( // Await all async operations
@@ -268,11 +277,72 @@ namespace SQE.API.Server.Services
 					signInterpretations = alteredSignInterpretations.ToArray(),
 			};
 
-			// Broadcast the changes
+			// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
+			var formattedUpdates = await Task.WhenAll( // Await all async operations
+					updatedSignInterpretations.Select(
+							async x => await GetEditionSignInterpretationAsync(
+									user
+									, x))); // Get the SignInterpretationDTO fpr each sign interpretation
+
+			var changes = new SignInterpretationListDTO
+			{
+					signInterpretations = formattedUpdates.ToArray(),
+			};
+
+			// Broadcast the new sign interpretations
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 							 .CreatedSignInterpretation(response);
 
-			return response;
+			// Broadcast the updated sign interpretations
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretations(changes);
+
+			return new SignInterpretationCreatedDTO
+			{
+					created = response.signInterpretations
+					, updated = changes.signInterpretations
+					,
+			};
+		}
+
+		public async Task<SignInterpretationCreatedDTO> CreateVariantSignInterpretationAsync(
+				UserInfo                       user
+				, uint                         signInterpretationId
+				, SignInterpretationVariantDTO signInterpretation
+				, string                       clientId = null)
+		{
+			return await CreateSignInterpretationAsync(
+					user
+					, signInterpretationId
+					, new SignInterpretationCreateDTO
+					{
+							character = signInterpretation.character
+							, attributes = new[]
+							{
+									new InterpretationAttributeCreateDTO
+									{
+											attributeId =
+													signInterpretation
+															.attributeId
+											, attributeValueId =
+													signInterpretation
+															.attributeValueId
+											, sequence =
+													signInterpretation
+															.sequence
+											, commentary = null
+											,
+									}
+									,
+							}
+							, commentary = null
+							, isVariant = true
+							, nextSignInterpretationIds = new uint[0]
+							, previousSignInterpretationIds = new uint[0]
+							, rois = null
+							,
+					}
+					, clientId);
 		}
 
 		/// <summary>

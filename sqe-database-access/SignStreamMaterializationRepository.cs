@@ -12,7 +12,7 @@ namespace SQE.DatabaseAccess
 {
 	public interface ISignStreamMaterializationRepository
 	{
-		Task<IEnumerable<(uint EditionId, uint SignInterpretationId)>>
+		Task<IEnumerable<SignStreamMaterializationSchedule>>
 				GetAllScheduledSignStreamMaterializationsAsync();
 
 		Task RequestMaterializationAsync(uint editionId, uint signInterpretationId);
@@ -25,12 +25,12 @@ namespace SQE.DatabaseAccess
 	{
 		public SignStreamMaterializationRepository(IConfiguration config) : base(config) { }
 
-		public async Task<IEnumerable<(uint EditionId, uint SignInterpretationId)>>
+		public async Task<IEnumerable<SignStreamMaterializationSchedule>>
 				GetAllScheduledSignStreamMaterializationsAsync()
 		{
 			using (var connection = OpenConnection())
 			{
-				return await connection.QueryAsync<(uint EditionId, uint SignInterpretationId)>(
+				return await connection.QueryAsync<SignStreamMaterializationSchedule>(
 						QueuedMaterializationsQuery.GetQuery);
 			}
 		}
@@ -62,9 +62,18 @@ namespace SQE.DatabaseAccess
 		public async Task MaterializeAllSignStreamsAsync()
 		{
 			// Collect all materialization requests that were not successfully completed.
-			foreach (var (editionId, signInterpretationId) in
+			foreach (var materializationRequest in
 					await GetAllScheduledSignStreamMaterializationsAsync())
-				await MaterializeStreamForSignInterpretationAsync(editionId, signInterpretationId);
+			{
+				// Give a padding of 5 minutes so that any in-process jobs can be
+				// allowed to complete.  If they failed, we will get them on the next
+				// scheduled materialization.
+				if (materializationRequest.CreatedDate.AddMinutes(5)
+					< materializationRequest.CurrentTime)
+					await MaterializeStreamForSignInterpretationAsync(
+							materializationRequest.EditionId
+							, materializationRequest.SignInterpretationId);
+			}
 		}
 
 		private async Task<IEnumerable<uint>> GetBeginningsOfSignStreamForInterpretationId(

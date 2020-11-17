@@ -373,8 +373,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Editions_EditionId_SignInterpretations :
-				RequestObject<SignInterpretationCreateDTO, SignInterpretationListDTO>
+		public class V1_Editions_EditionId_SignInterpretations : RequestObject<
+				SignInterpretationCreateDTO, SignInterpretationCreatedDTO>
 		{
 			private readonly uint                        _editionId;
 			private readonly SignInterpretationCreateDTO _payload;
@@ -398,11 +398,16 @@ namespace SQE.ApiTest.ApiRequests
 				_listenerDict.Add(
 						ListenerMethods.CreatedSignInterpretation
 						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretations
+						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
 			}
 
 			public Listeners AvailableListeners { get; }
 
-			public SignInterpretationListDTO CreatedSignInterpretation { get; private set; }
+			public SignInterpretationListDTO CreatedSignInterpretation  { get; private set; }
+			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
 
 			private void CreatedSignInterpretationListener(HubConnection signalrListener)
 				=> signalrListener.On<SignInterpretationListDTO>(
@@ -410,6 +415,13 @@ namespace SQE.ApiTest.ApiRequests
 						, receivedData => CreatedSignInterpretation = receivedData);
 
 			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+
+			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"UpdatedSignInterpretations"
+						, receivedData => UpdatedSignInterpretations = receivedData);
+
+			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
@@ -429,21 +441,24 @@ namespace SQE.ApiTest.ApiRequests
 			{
 				public ListenerMethods CreatedSignInterpretation =
 						ListenerMethods.CreatedSignInterpretation;
+
+				public ListenerMethods UpdatedSignInterpretations =
+						ListenerMethods.UpdatedSignInterpretations;
 			}
 		}
 
-		public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId :
-				RequestObject<SignInterpretationCreateDTO, SignInterpretationListDTO>
+		public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId : RequestObject<
+				SignInterpretationVariantDTO, SignInterpretationCreatedDTO>
 		{
-			private readonly uint                        _editionId;
-			private readonly SignInterpretationCreateDTO _payload;
-			private readonly uint                        _signInterpretationId;
+			private readonly uint                         _editionId;
+			private readonly SignInterpretationVariantDTO _payload;
+			private readonly uint                         _signInterpretationId;
 
 			/// <summary>
-			///  Creates a variant sign interpretation to the submitted sign interpretation id.
-			///  This variant will be inserted into the sign stream following the specifications
-			///  in the newSignInterpretation. If the properties for `attributes`, `rois`, or
-			///  `commentary`
+			///  Creates a variant sign interpretation to the submitted sign interpretation id using
+			///  the character and attribute settings of the newSignInterpretation payload. It will
+			///  copy the ROIs from the original sign interpretation to the new one, but it will not
+			///  copy the attributes (or any commentaries associated with the attributes).
 			/// </summary>
 			/// <param name="editionId">ID of the edition being changed</param>
 			/// <param name="signInterpretationId">
@@ -453,30 +468,14 @@ namespace SQE.ApiTest.ApiRequests
 			/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
 			/// <returns>The new sign interpretation</returns>
 			public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
-					uint                          editionId
-					, uint                        signInterpretationId
-					, SignInterpretationCreateDTO payload) : base(payload)
+					uint                           editionId
+					, uint                         signInterpretationId
+					, SignInterpretationVariantDTO payload) : base(payload)
 			{
 				_editionId = editionId;
 				_signInterpretationId = signInterpretationId;
 				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.CreatedSignInterpretation
-						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
 			}
-
-			public Listeners AvailableListeners { get; }
-
-			public SignInterpretationListDTO CreatedSignInterpretation { get; private set; }
-
-			private void CreatedSignInterpretationListener(HubConnection signalrListener)
-				=> signalrListener.On<SignInterpretationListDTO>(
-						"CreatedSignInterpretation"
-						, receivedData => CreatedSignInterpretation = receivedData);
-
-			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
@@ -496,12 +495,6 @@ namespace SQE.ApiTest.ApiRequests
 			}
 
 			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods CreatedSignInterpretation =
-						ListenerMethods.CreatedSignInterpretation;
-			}
 		}
 
 		public class

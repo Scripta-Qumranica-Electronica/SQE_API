@@ -35,7 +35,7 @@ namespace SQE.DatabaseAccess
 
 		#region Sign and its Interpretation                        breakAnchors = false);
 
-		Task<List<SignData>> CreateSignsAsync(
+		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsAsync(
 				UserInfo                editionUser
 				, uint?                 lineId
 				, IEnumerable<SignData> signs
@@ -44,7 +44,7 @@ namespace SQE.DatabaseAccess
 				, uint?                 signInterpretationId
 				, bool                  breakNeighboringAnchors = false);
 
-		Task<List<SignData>> CreateSignsAsync(
+		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsAsync(
 				UserInfo     editionUser
 				, uint?      lineId
 				, SignData   signs
@@ -237,7 +237,7 @@ namespace SQE.DatabaseAccess
 											TableData.Table.line
 											, TableData.TerminatorType.End));
 
-							lineData.Signs = await CreateSignsAsync(
+							lineData.Signs = (await CreateSignsAsync(
 									editionUser
 									, lineData.LineId.GetValueOrDefault()
 									, lineData.Signs
@@ -247,7 +247,7 @@ namespace SQE.DatabaseAccess
 									, anchorAfter > 0
 											? new List<uint> { anchorAfter }
 											: new List<uint>()
-									, null);
+									, null)).NewSigns;
 
 							// End the transaction (it was all or nothing)
 							transactionScope.Complete();
@@ -364,7 +364,7 @@ namespace SQE.DatabaseAccess
 		/// <param name="signInterpretationId"></param>
 		/// <param name="breakNeighboringAnchors"></param>
 		/// <returns></returns>
-		public async Task<List<SignData>> CreateSignsAsync(
+		public async Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsAsync(
 				UserInfo                editionUser
 				, uint?                 lineId
 				, IEnumerable<SignData> signs
@@ -386,14 +386,18 @@ namespace SQE.DatabaseAccess
 				foreach (var sign in signs)
 				{
 					// Check if a line id was submitted, if not get it from the prev/next sign interpretation
+					// if possible
 					if (!lineId.HasValue)
 					{
-						var adjacentSignInterpretationId =
-								anchorsBefore?.First() ?? anchorsAfter.First();
+						var adjacentSignInterpretationId = anchorsBefore?.FirstOrDefault()
+														   ?? anchorsAfter?.FirstOrDefault();
 
-						lineId = await connection.QuerySingleAsync<uint>(
-								SignInterpretationLineIdQuery.GetQuery
-								, new { SignInterpretationId = adjacentSignInterpretationId });
+						if (adjacentSignInterpretationId != 0)
+						{
+							lineId = await connection.QuerySingleAsync<uint>(
+									SignInterpretationLineIdQuery.GetQuery
+									, new { SignInterpretationId = adjacentSignInterpretationId });
+						}
 					}
 
 					// First, get the sign Id or create a new one if needed
@@ -411,7 +415,8 @@ namespace SQE.DatabaseAccess
 									x => (x.Attributes == null)
 										 || (x.Commentaries == null)
 										 || (x.SignInterpretationRois == null))
-							|| !anchorsAfter.Any())
+							|| !anchorsAfter.Any()
+							|| !anchorsBefore.Any())
 						{
 							var originalSignInterpretationData =
 									await _signInterpretationRepository.GetSignInterpretationById(
@@ -448,10 +453,19 @@ namespace SQE.DatabaseAccess
 											   .Select(x => x.NextSignInterpretationId)
 											   .AsList();
 							}
+
+							// Check if we need to borrow the anchorsBefore
+							if (!anchorsBefore.Any())
+							{
+								anchorsBefore.AddRange(
+										await _getPreviousSignInterpretationIds(
+												editionUser.EditionId.Value
+												, signInterpretationId.Value));
+							}
 						}
 					}
 
-					// Check if the after anchors were supplied with a sign variant request
+					// Check if the after anchors were supplied with a sign create request
 					// If not, then collect them automatically (if necessary).
 					if (!anchorsAfter.Any())
 					{
@@ -473,6 +487,19 @@ namespace SQE.DatabaseAccess
 						}
 
 						anchorsAfter = collectedAnchorsAfter.AsList();
+					}
+
+					// Check if the before anchors were supplied with a sign create request
+					// If not, then collect them automatically (if necessary).
+					if (!anchorsBefore.Any())
+					{
+						foreach (var id in anchorsAfter.Where(id => editionUser.EditionId.HasValue))
+						{
+							anchorsBefore.AddRange(
+									await _getPreviousSignInterpretationIds(
+											editionUser.EditionId.Value
+											, id));
+						}
 					}
 
 					var newSignData = new SignData
@@ -529,11 +556,16 @@ namespace SQE.DatabaseAccess
 			// request is over.
 			// TODO: change RequestMaterializationAsync to take an array,
 			// it should be able to check how many sign streams would need a rebuild.
-			_materializationRepository.RequestMaterializationAsync(
-					editionUser.EditionId.Value
-					, anchorsBefore.First());
+			if (anchorsBefore.Any())
+			{
+				_materializationRepository.RequestMaterializationAsync(
+						editionUser.EditionId.Value
+						, anchorsBefore.First());
+			}
+			else
+				anchorsBefore = new List<uint>();
 
-			return newSigns;
+			return (newSigns, anchorsBefore);
 		}
 
 		/// <summary>
@@ -549,7 +581,7 @@ namespace SQE.DatabaseAccess
 		/// <param name="anchorsAfter"></param>
 		/// <param name="breakNeighboringAnchors"></param>
 		/// <returns></returns>
-		public async Task<List<SignData>> CreateSignsAsync(
+		public async Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsAsync(
 				UserInfo     editionUser
 				, uint?      lineId
 				, SignData   sign
@@ -1873,7 +1905,7 @@ namespace SQE.DatabaseAccess
 		/// <param name="editionUser">Edition user object</param>
 		/// <param name="lineId">Id of line to which the sign should belong</param>
 		/// <returns></returns>
-		public async Task<uint> _createSignAsync(UserInfo editionUser, uint lineId)
+		public async Task<uint> _createSignAsync(UserInfo editionUser, uint? lineId)
 		{
 			// return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
 			//     async () =>
@@ -1885,7 +1917,8 @@ namespace SQE.DatabaseAccess
 				var newSignId = await _simpleInsertAsync(TableData.Table.sign);
 
 				// Add the new sign to the edition manuscript by linking it to a line
-				await _addSignToLine(editionUser, newSignId, lineId);
+				if (lineId.HasValue)
+					await _addSignToLine(editionUser, newSignId, lineId.Value);
 
 				// End the transaction (it was all or nothing)
 				transactionScope.Complete();
@@ -1896,6 +1929,23 @@ namespace SQE.DatabaseAccess
 
 			//     }
 			// );
+		}
+
+		private async Task<IEnumerable<uint>> _getPreviousSignInterpretationIds(
+				uint   editionId
+				, uint signInterpretationId)
+		{
+			using (var conn = OpenConnection())
+			{
+				return await conn.QueryAsync<uint>(
+						PreviousSignInterpretationsQuery.GetQuery
+						, new
+						{
+								EditionId = editionId
+								, SignInterpretationId = signInterpretationId
+								,
+						});
+			}
 		}
 
 		#endregion

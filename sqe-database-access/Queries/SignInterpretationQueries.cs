@@ -57,4 +57,14 @@ SELECT sign_id
 FROM sign_interpretation
 WHERE sign_interpretation.sign_interpretation_id = @SignInterpretationId";
 	}
+
+	internal static class PreviousSignInterpretationsQuery
+	{
+		public const string GetQuery = @"
+SELECT DISTINCT position_in_stream.sign_interpretation_id
+FROM position_in_stream
+JOIN position_in_stream_owner USING(position_in_stream_id)
+WHERE position_in_stream_owner.edition_id = @EditionId
+    AND position_in_stream.next_sign_interpretation_id = @SignInterpretationId";
+	}
 }

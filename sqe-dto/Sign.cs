@@ -46,11 +46,14 @@ namespace SQE.API.DTO
 		public bool breakPreviousAndNextSignInterpretations { get; set; } = false;
 	}
 
-	public class SignInterpretationReplicateDTO : SignInterpretationCreateDTO
+	public class SignInterpretationVariantDTO : InterpretationAttributeBaseDTO
 	{
-		public new InterpretationAttributeCreateDTO[] attributes { get; set; }
-
-		public new SetInterpretationRoiDTO[] rois { get; set; }
+		[Required]
+		[StringLength(
+				1
+				, ErrorMessage =
+						"The character string must not exceed a single character in length.")]
+		public string character { get; set; }
 	}
 
 	public class SignInterpretationDTO : SignInterpretationBaseDTO
@@ -73,6 +76,12 @@ namespace SQE.API.DTO
 	public class SignInterpretationListDTO
 	{
 		public SignInterpretationDTO[] signInterpretations { get; set; }
+	}
+
+	public class SignInterpretationCreatedDTO
+	{
+		public SignInterpretationDTO[] created { get; set; }
+		public SignInterpretationDTO[] updated { get; set; }
 	}
 
 	public class SignInterpretationDeleteDTO

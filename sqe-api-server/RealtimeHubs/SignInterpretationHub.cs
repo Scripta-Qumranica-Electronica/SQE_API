@@ -184,7 +184,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
 		/// <returns>The new sign interpretation</returns>
 		[Authorize]
-		public async Task<SignInterpretationListDTO> PostV1EditionsEditionIdSignInterpretations(
+		public async Task<SignInterpretationCreatedDTO> PostV1EditionsEditionIdSignInterpretations(
 				uint                          editionId
 				, SignInterpretationCreateDTO newSignInterpretation)
 
@@ -210,10 +210,10 @@ namespace SQE.API.Server.RealtimeHubs
 		}
 
 		/// <summary>
-		///  Creates a variant sign interpretation to the submitted sign interpretation id.
-		///  This variant will be inserted into the sign stream following the specifications
-		///  in the newSignInterpretation. If the properties for `attributes`, `rois`, or
-		///  `commentary`
+		///  Creates a variant sign interpretation to the submitted sign interpretation id using
+		///  the character and attribute settings of the newSignInterpretation payload. It will
+		///  copy the ROIs from the original sign interpretation to the new one, but it will not
+		///  copy the attributes (or any commentaries associated with the attributes).
 		/// </summary>
 		/// <param name="editionId">ID of the edition being changed</param>
 		/// <param name="signInterpretationId">
@@ -223,16 +223,16 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
 		/// <returns>The new sign interpretation</returns>
 		[Authorize]
-		public async Task<SignInterpretationListDTO>
+		public async Task<SignInterpretationCreatedDTO>
 				PostV1EditionsEditionIdSignInterpretationsSignInterpretationId(
-						uint                          editionId
-						, uint                        signInterpretationId
-						, SignInterpretationCreateDTO newSignInterpretation)
+						uint                           editionId
+						, uint                         signInterpretationId
+						, SignInterpretationVariantDTO newSignInterpretation)
 
 		{
 			try
 			{
-				return await _signInterpretationService.CreateSignInterpretationAsync(
+				return await _signInterpretationService.CreateVariantSignInterpretationAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, signInterpretationId
 						, newSignInterpretation);
