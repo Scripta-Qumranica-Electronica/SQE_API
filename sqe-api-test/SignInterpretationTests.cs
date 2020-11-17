@@ -1330,7 +1330,8 @@ namespace SQE.ApiTest
 							, 17
 							, 18
 							, 19
-							, 20,
+							, 20
+							,
 					});
 
 			request2.SendAsync(_client, null, true);
@@ -1400,14 +1401,20 @@ namespace SQE.ApiTest
 							, newSignInterpretation);
 
 			await newSignInterpretationRequest.SendAsync(
-					realtime
+					new List<ListenerMethods>
+					{
+							newSignInterpretationRequest.AvailableListeners
+														.CreatedSignInterpretation
+							, newSignInterpretationRequest.AvailableListeners
+														  .UpdatedSignInterpretations
+							,
+					}
+					, realtime
 							? null
 							: _client
 					, StartConnectionAsync
 					, true
 					, listenToEdition: true
-					, listeningFor: newSignInterpretationRequest.AvailableListeners
-																.CreatedSignInterpretation
 					, requestRealtime: realtime);
 
 			// Assert
@@ -1418,7 +1425,11 @@ namespace SQE.ApiTest
 					? newSignInterpretationRequest.SignalrResponseObject
 					: newSignInterpretationRequest.HttpResponseObject;
 
-			responseObject.ShouldDeepEqual(newSignInterpretationRequest.CreatedSignInterpretation);
+			responseObject.created.ShouldDeepEqual(
+					newSignInterpretationRequest.CreatedSignInterpretation.signInterpretations);
+
+			responseObject.updated.ShouldDeepEqual(
+					newSignInterpretationRequest.UpdatedSignInterpretations.signInterpretations);
 
 			Assert.Equal(2, responseObject.created.Length);
 

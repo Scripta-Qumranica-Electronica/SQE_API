@@ -70,9 +70,11 @@ namespace SQE.DatabaseAccess
 				// scheduled materialization.
 				if (materializationRequest.CreatedDate.AddMinutes(5)
 					< materializationRequest.CurrentTime)
+				{
 					await MaterializeStreamForSignInterpretationAsync(
 							materializationRequest.EditionId
 							, materializationRequest.SignInterpretationId);
+				}
 			}
 		}
 
