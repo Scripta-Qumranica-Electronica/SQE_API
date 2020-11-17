@@ -240,7 +240,7 @@ namespace SQE.API.Server.Services
 				, string                      clientId = null)
 		{
 			var (createdSignInterpretation, updatedSignInterpretations) =
-					await _textRepository.CreateSignsAsync(
+					await _textRepository.CreateSignInterpretationAsync(
 							user
 							, signInterpretation.lineId
 							, signInterpretation.ToSignData()

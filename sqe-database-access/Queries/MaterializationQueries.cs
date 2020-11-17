@@ -101,4 +101,38 @@ WHERE latch='dijkstras'
     AND sign_interpretation_attribute_owner.edition_id = @EditionId
 ORDER BY seq ASC";
 	}
+
+	/// <summary>
+	///  This Query will take a previous sign interpretation id (a) and a
+	///  next sign interpretation id (c) for an edition and search to see if
+	///  there is a single sign interpretation already linking the two:
+	///  a -> b -> c, for which it returns the `sign_id` of "b".
+	/// </summary>
+	internal static class PossibleIntermediarySignInSignStream
+	{
+		public const string GetQuery = @"
+SELECT DISTINCT sign_interpretation.sign_id
+FROM sign_stream
+
+JOIN position_in_stream piso ON piso.sign_interpretation_id = sign_stream.origid
+    AND piso.next_sign_interpretation_id = sign_stream.linkid
+JOIN position_in_stream_owner pisoo ON pisoo.position_in_stream_id = piso.position_in_stream_id
+
+JOIN position_in_stream pisa ON pisa.sign_interpretation_id = sign_stream.linkid
+    AND pisa.next_sign_interpretation_id = sign_stream.destid
+JOIN position_in_stream_owner pisao ON pisao.position_in_stream_id = piso.position_in_stream_id
+    AND pisao.edition_id = pisoo.edition_id
+
+JOIN position_in_stream pisd ON pisd.sign_interpretation_id = sign_stream.destid
+JOIN position_in_stream_owner pisdo ON pisdo.position_in_stream_id = pisd.position_in_stream_id
+    AND pisdo.edition_id = pisoo.edition_id
+
+JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = pisa.sign_interpretation_id
+WHERE latch='dijkstra'
+    AND origid = @PreviousSignInterpretationId
+    AND destid = @NextSignInterpretationId
+    AND linkid != origid
+    AND linkid != destid
+    AND pisoo.edition_id = @EditionId";
+	}
 }

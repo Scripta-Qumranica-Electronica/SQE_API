@@ -35,7 +35,7 @@ namespace SQE.DatabaseAccess
 
 		#region Sign and its Interpretation                        breakAnchors = false);
 
-		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsAsync(
+		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignInterpretationsAsync(
 				UserInfo                editionUser
 				, uint?                 lineId
 				, IEnumerable<SignData> signs
@@ -44,7 +44,7 @@ namespace SQE.DatabaseAccess
 				, uint?                 signInterpretationId
 				, bool                  breakNeighboringAnchors = false);
 
-		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsAsync(
+		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignInterpretationAsync(
 				UserInfo     editionUser
 				, uint?      lineId
 				, SignData   signs
@@ -237,7 +237,7 @@ namespace SQE.DatabaseAccess
 											TableData.Table.line
 											, TableData.TerminatorType.End));
 
-							lineData.Signs = (await CreateSignsAsync(
+							lineData.Signs = (await CreateSignInterpretationsAsync(
 									editionUser
 									, lineData.LineId.GetValueOrDefault()
 									, lineData.Signs
@@ -364,14 +364,15 @@ namespace SQE.DatabaseAccess
 		/// <param name="signInterpretationId"></param>
 		/// <param name="breakNeighboringAnchors"></param>
 		/// <returns></returns>
-		public async Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsAsync(
-				UserInfo                editionUser
-				, uint?                 lineId
-				, IEnumerable<SignData> signs
-				, List<uint>            anchorsBefore
-				, List<uint>            anchorsAfter
-				, uint?                 signInterpretationId
-				, bool                  breakNeighboringAnchors = false)
+		public async Task<(List<SignData> NewSigns, List<uint>AlteredSigns)>
+				CreateSignInterpretationsAsync(
+						UserInfo                editionUser
+						, uint?                 lineId
+						, IEnumerable<SignData> signs
+						, List<uint>            anchorsBefore
+						, List<uint>            anchorsAfter
+						, uint?                 signInterpretationId
+						, bool                  breakNeighboringAnchors = false)
 		{
 			var newSigns = new List<SignData>();
 
@@ -385,30 +386,14 @@ namespace SQE.DatabaseAccess
 			{
 				foreach (var sign in signs)
 				{
-					// Check if a line id was submitted, if not get it from the prev/next sign interpretation
-					// if possible
-					if (!lineId.HasValue)
-					{
-						var adjacentSignInterpretationId = anchorsBefore?.FirstOrDefault()
-														   ?? anchorsAfter?.FirstOrDefault();
-
-						if (adjacentSignInterpretationId != 0)
-						{
-							lineId = await connection.QuerySingleAsync<uint>(
-									SignInterpretationLineIdQuery.GetQuery
-									, new { SignInterpretationId = adjacentSignInterpretationId });
-						}
-					}
-
-					// First, get the sign Id or create a new one if needed
-					var signId = signInterpretationId.HasValue
-							? await connection.QuerySingleAsync<uint>(
-									SignInterpretationSignIdQuery.GetQuery
-									, new { SignInterpretationId = signInterpretationId.Value })
-							: await _createSignAsync(editionUser, lineId.Value);
+					uint signId;
 
 					if (signInterpretationId.HasValue)
 					{
+						signId = await connection.QuerySingleAsync<uint>(
+								SignInterpretationSignIdQuery.GetQuery
+								, new { SignInterpretationId = signInterpretationId.Value });
+
 						// See if there is any data that should be copied from the signInterpretationId
 						// to this new sign interpretation
 						if (sign.SignInterpretations.Any(
@@ -464,44 +449,107 @@ namespace SQE.DatabaseAccess
 							}
 						}
 					}
-
-					// Check if the after anchors were supplied with a sign create request
-					// If not, then collect them automatically (if necessary).
-					if (!anchorsAfter.Any())
+					else
 					{
-						// Collect the next sign interpretation ids for every anchor before
-						var collectedAnchorsAfter = new List<uint>();
-
-						foreach (var id in anchorsBefore)
+						// Check if the after anchors were supplied with a sign create request
+						// If not, then collect them automatically (if necessary).
+						if (!anchorsAfter.Any())
 						{
-							collectedAnchorsAfter.AddRange(
+							// Collect the next sign interpretation ids for every anchor before
+							var collectedAnchorsAfter = new List<uint>();
 
-									// Get the data for the anchor before
-									(await _signInterpretationRepository.GetSignInterpretationById(
-											editionUser
-											, id))
+							foreach (var id in anchorsBefore)
+							{
+								collectedAnchorsAfter.AddRange(
 
-									// Collect all of its next sign interpretation IDs
-									.NextSignInterpretations.Select(
-											x => x.NextSignInterpretationId));
+										// Get the data for the anchor before
+										(await _signInterpretationRepository
+												.GetSignInterpretationById(editionUser, id))
+
+										// Collect all of its next sign interpretation IDs
+										.NextSignInterpretations.Select(
+												x => x.NextSignInterpretationId));
+							}
+
+							anchorsAfter = collectedAnchorsAfter.AsList();
 						}
 
-						anchorsAfter = collectedAnchorsAfter.AsList();
-					}
-
-					// Check if the before anchors were supplied with a sign create request
-					// If not, then collect them automatically (if necessary).
-					if (!anchorsBefore.Any())
-					{
-						foreach (var id in anchorsAfter.Where(id => editionUser.EditionId.HasValue))
+						// Check if the before anchors were supplied with a sign create request
+						// If not, then collect them automatically (if necessary).
+						if (!anchorsBefore.Any())
 						{
-							anchorsBefore.AddRange(
-									await _getPreviousSignInterpretationIds(
-											editionUser.EditionId.Value
-											, id));
+							foreach (var id in anchorsAfter.Where(
+									id => editionUser.EditionId.HasValue))
+							{
+								anchorsBefore.AddRange(
+										await _getPreviousSignInterpretationIds(
+												editionUser.EditionId.Value
+												, id));
+							}
+						}
+
+						// Collect possible signIds that would fit the beforeAnchor and
+						// afterAnchor constraints of this sign interpretation
+						var possibleExistingSignIds = new HashSet<uint>();
+
+						if (anchorsBefore.Any()
+							&& anchorsAfter.Any())
+						{
+							// Check each combination of beforeAnchor and afterAnchor
+							foreach (var anchorBefore in anchorsBefore)
+							{
+								foreach (var anchorAfter in anchorsAfter)
+								{
+									foreach (var possibleSignId in await
+											connection.QueryAsync<uint>(
+													PossibleIntermediarySignInSignStream.GetQuery
+													, new
+													{
+															PreviousSignInterpretationId =
+																	anchorBefore
+															, NextSignInterpretationId =
+																	anchorAfter
+															, EditionId =
+																	editionUser.EditionId
+																			   .Value
+															,
+													}))
+										possibleExistingSignIds.Add(possibleSignId);
+								}
+							}
+						}
+
+						// Check if only one possible signId was found
+						if (possibleExistingSignIds.Count == 1) // If so, use that for the signId
+							signId = possibleExistingSignIds.First();
+						else // Otherwise, create a brand new signId for this sign interpretation
+						{
+							// Check if a line id was submitted, if not get it from the prev/next sign interpretation
+							// if possible
+							if (!lineId.HasValue)
+							{
+								var adjacentSignInterpretationId = anchorsBefore?.FirstOrDefault()
+																   ?? anchorsAfter
+																		   ?.FirstOrDefault();
+
+								if (adjacentSignInterpretationId != 0)
+								{
+									lineId = await connection.QuerySingleAsync<uint>(
+											SignInterpretationLineIdQuery.GetQuery
+											, new
+											{
+													SignInterpretationId =
+															adjacentSignInterpretationId,
+											});
+								}
+							}
+
+							// Create the new sign Id (it does not matter if any lineId has been found)
+							signId = await _createSignAsync(editionUser, lineId);
 						}
 					}
 
+					// Create the new interpretation and gather the necessary data about it
 					var newSignData = new SignData
 					{
 							SignId = signId
@@ -581,21 +629,23 @@ namespace SQE.DatabaseAccess
 		/// <param name="anchorsAfter"></param>
 		/// <param name="breakNeighboringAnchors"></param>
 		/// <returns></returns>
-		public async Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsAsync(
-				UserInfo     editionUser
-				, uint?      lineId
-				, SignData   sign
-				, List<uint> anchorsBefore
-				, List<uint> anchorsAfter
-				, uint?      signInterpretationId
-				, bool       breakNeighboringAnchors = false) => await CreateSignsAsync(
-				editionUser
-				, lineId
-				, new List<SignData> { sign }
-				, anchorsBefore
-				, anchorsAfter
-				, signInterpretationId
-				, breakNeighboringAnchors);
+		public async Task<(List<SignData> NewSigns, List<uint>AlteredSigns)>
+				CreateSignInterpretationAsync(
+						UserInfo     editionUser
+						, uint?      lineId
+						, SignData   sign
+						, List<uint> anchorsBefore
+						, List<uint> anchorsAfter
+						, uint?      signInterpretationId
+						, bool       breakNeighboringAnchors = false)
+			=> await CreateSignInterpretationsAsync(
+					editionUser
+					, lineId
+					, new List<SignData> { sign }
+					, anchorsBefore
+					, anchorsAfter
+					, signInterpretationId
+					, breakNeighboringAnchors);
 
 		/// <summary>
 		///  Join each member of firstSignInterpretations with each member of secondSignInterpretations
