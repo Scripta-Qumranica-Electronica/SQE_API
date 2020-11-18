@@ -38,7 +38,7 @@ namespace SQE.DatabaseAccess
 		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignInterpretationsAsync(
 				UserInfo                editionUser
 				, uint?                 lineId
-				, IEnumerable<SignData> signs
+				, IEnumerable<SignData> newSignInterpretations
 				, List<uint>            anchorsBefore
 				, List<uint>            anchorsAfter
 				, uint?                 signInterpretationId
@@ -358,7 +358,7 @@ namespace SQE.DatabaseAccess
 		/// </summary>
 		/// <param name="editionUser"></param>
 		/// <param name="lineId"></param>
-		/// <param name="signs"></param>
+		/// <param name="newSignInterpretations"></param>
 		/// <param name="anchorsBefore"></param>
 		/// <param name="anchorsAfter"></param>
 		/// <param name="signInterpretationId"></param>
@@ -368,35 +368,40 @@ namespace SQE.DatabaseAccess
 				CreateSignInterpretationsAsync(
 						UserInfo                editionUser
 						, uint?                 lineId
-						, IEnumerable<SignData> signs
+						, IEnumerable<SignData> newSignInterpretations
 						, List<uint>            anchorsBefore
 						, List<uint>            anchorsAfter
 						, uint?                 signInterpretationId
 						, bool                  breakNeighboringAnchors = false)
 		{
-			var newSigns = new List<SignData>();
+			// TODO: This method is a total mess, nesting should be reduces by using subroutines
+			// there are a lot of conditionals that are too hard to follow, and I doubt it will
+			// be clear what the intended outcome is or how it is accomplished.
+			var newlyCreatedSignInterpretations = new List<SignData>();
 
-			// SignData previousSignData = null;
-			// // Stores for each sign the actual anchors after which it should be injected
-			// // into th reading stream
-			// var internalAnchorsBefore = anchorsBefore;
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
 			using (var connection = OpenConnection())
 			{
-				foreach (var sign in signs)
+				// Loop over each submitted sign interpretation
+				foreach (var newSignInterpretation in newSignInterpretations)
 				{
+					// Declare a junk variable for the sign id (we will either find one or create one)
 					uint signId;
 
+					// If a signInterpretationId was submitted in the method parameters, then the
+					// newSignInterpretation is supposed to be a variant of that signInterpretationId
 					if (signInterpretationId.HasValue)
 					{
+						// Get the sign id of the signInterpretationId, it will be the same sign id
+						// for the newSignInterpretation (that makes it a variant)
 						signId = await connection.QuerySingleAsync<uint>(
 								SignInterpretationSignIdQuery.GetQuery
 								, new { SignInterpretationId = signInterpretationId.Value });
 
 						// See if there is any data that should be copied from the signInterpretationId
 						// to this new sign interpretation
-						if (sign.SignInterpretations.Any(
+						if (newSignInterpretation.SignInterpretations.Any(
 									x => (x.Attributes == null)
 										 || (x.Commentaries == null)
 										 || (x.SignInterpretationRois == null))
@@ -408,26 +413,29 @@ namespace SQE.DatabaseAccess
 											editionUser
 											, signInterpretationId.Value);
 
-							// Replace any missing info in the sign with data from the
-							// original sign interpretation
-							sign.SignInterpretations = sign.SignInterpretations.Select(
-																   x =>
-																   {
-																	   x.Attributes ??=
-																			   originalSignInterpretationData
-																					   .Attributes;
+							// Replace any missing info in the newSignInterpretation with data from the
+							// sign interpretation it is a variant of.
+							newSignInterpretation.SignInterpretations = newSignInterpretation
+																		.SignInterpretations.Select(
+																				x =>
+																				{
+																					x.Attributes ??=
+																							originalSignInterpretationData
+																									.Attributes;
 
-																	   x.Commentaries ??=
-																			   originalSignInterpretationData
-																					   .Commentaries;
+																					x.Commentaries
+																							??=
+																							originalSignInterpretationData
+																									.Commentaries;
 
-																	   x.SignInterpretationRois ??=
-																			   originalSignInterpretationData
-																					   .SignInterpretationRois;
+																					x.SignInterpretationRois
+																							??=
+																							originalSignInterpretationData
+																									.SignInterpretationRois;
 
-																	   return x;
-																   })
-														   .ToList();
+																					return x;
+																				})
+																		.ToList();
 
 							// Check if the after anchors were supplied with a sign variant request
 							// If not, then collect them automatically
@@ -439,7 +447,7 @@ namespace SQE.DatabaseAccess
 											   .AsList();
 							}
 
-							// Check if we need to borrow the anchorsBefore
+							// Check if we need to borrow the anchorsBefore as well
 							if (!anchorsBefore.Any())
 							{
 								anchorsBefore.AddRange(
@@ -449,10 +457,10 @@ namespace SQE.DatabaseAccess
 							}
 						}
 					}
-					else
+					else // The newSignInterpretation was not submitted as a variant sign interpretation
 					{
 						// Check if the after anchors were supplied with a sign create request
-						// If not, then collect them automatically (if necessary).
+						// If not, then collect them automatically based on anchorsBefore (if necessary).
 						if (!anchorsAfter.Any())
 						{
 							// Collect the next sign interpretation ids for every anchor before
@@ -475,7 +483,7 @@ namespace SQE.DatabaseAccess
 						}
 
 						// Check if the before anchors were supplied with a sign create request
-						// If not, then collect them automatically (if necessary).
+						// If not, then collect them automatically based on the anchorsAfter (if necessary).
 						if (!anchorsBefore.Any())
 						{
 							foreach (var id in anchorsAfter.Where(
@@ -488,14 +496,17 @@ namespace SQE.DatabaseAccess
 							}
 						}
 
-						// Collect possible signIds that would fit the beforeAnchor and
-						// afterAnchor constraints of this sign interpretation
+						// Even though this was not submitted as a variant sign interpretation,
+						// it still might be one in actuality.  Collect possible signIds that
+						// would fit the beforeAnchor and afterAnchor constraints of this new
+						// sign interpretation
 						var possibleExistingSignIds = new HashSet<uint>();
 
 						if (anchorsBefore.Any()
 							&& anchorsAfter.Any())
 						{
-							// Check each combination of beforeAnchor and afterAnchor
+							// Check each combination of beforeAnchor and afterAnchor for a single
+							// sign id for the sign interpretation(s) between them
 							foreach (var anchorBefore in anchorsBefore)
 							{
 								foreach (var anchorAfter in anchorsAfter)
@@ -525,7 +536,7 @@ namespace SQE.DatabaseAccess
 						else // Otherwise, create a brand new signId for this sign interpretation
 						{
 							// Check if a line id was submitted, if not get it from the prev/next sign interpretation
-							// if possible
+							// if possible.  It is not necessary for the sign to have a line id.
 							if (!lineId.HasValue)
 							{
 								var adjacentSignInterpretationId = anchorsBefore?.FirstOrDefault()
@@ -550,8 +561,9 @@ namespace SQE.DatabaseAccess
 						}
 					}
 
-					// Create the new interpretation and gather the necessary data about it
-					var newSignData = new SignData
+					// Now that all the preliminary data collection has been completed,
+					// create the new interpretation and gather the necessary data about it
+					var newSignInterpretationData = new SignData
 					{
 							SignId = signId
 							,
@@ -560,7 +572,7 @@ namespace SQE.DatabaseAccess
 							SignInterpretations = await _addSignInterpretationsAsync(
 									editionUser
 									, signId
-									, sign.SignInterpretations
+									, newSignInterpretation.SignInterpretations
 									, anchorsBefore
 									, anchorsAfter
 									, breakNeighboringAnchors)
@@ -594,7 +606,9 @@ namespace SQE.DatabaseAccess
 					// }
 					//
 					// previousSignData = newSignData;
-					newSigns.Add(newSignData);
+
+					// Collect the info for each new sign interpretation
+					newlyCreatedSignInterpretations.Add(newSignInterpretationData);
 				}
 
 				transactionScope.Complete();
@@ -614,7 +628,7 @@ namespace SQE.DatabaseAccess
 			else
 				anchorsBefore = new List<uint>();
 
-			return (newSigns, anchorsBefore);
+			return (newlyCreatedSignInterpretations, anchorsBefore);
 		}
 
 		/// <summary>
