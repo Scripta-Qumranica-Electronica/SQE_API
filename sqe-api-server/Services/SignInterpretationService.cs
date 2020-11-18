@@ -252,29 +252,26 @@ namespace SQE.API.Server.Services
 							, signInterpretation.breakPreviousAndNextSignInterpretations);
 
 			// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
-			var alteredSignInterpretations = await Task.WhenAll( // Await all async operations
-					signInterpretation.previousSignInterpretationIds
-									  .ToList() // Take list of previous sign interpretation ids
-									  .Concat(
-											  createdSignInterpretation.SelectMany(
-													  x => // Concat all sign interpretation ids from createdSignInterpretation
-															  x.SignInterpretations
-															   .Where(
-																	   y
-																			   => y
-																				  .SignInterpretationId
-																				  .HasValue)
-															   .Select(
-																	   y => y.SignInterpretationId
-																			 .Value)))
-									  .Select(
-											  async x => await GetEditionSignInterpretationAsync(
-													  user
-													  , x))); // Get the SignInterpretationDTO fpr each sign interpretation
+			var createdSignInterpretations = await Task.WhenAll( // Await all async operations
+					// Concat all sign interpretation ids from createdSignInterpretation
+					createdSignInterpretation.SelectMany(
+													 x => x.SignInterpretations.Where(
+																   y
+																		   => y.SignInterpretationId
+																			   .HasValue)
+														   .Select(
+																   y => y.SignInterpretationId
+																		 .Value))
+											 .Select( // Get the SignInterpretationDTO for each sign interpretation
+													 async x
+															 => await
+																	 GetEditionSignInterpretationAsync(
+																			 user
+																			 , x)));
 
 			var response = new SignInterpretationListDTO
 			{
-					signInterpretations = alteredSignInterpretations.ToArray(),
+					signInterpretations = createdSignInterpretations.ToArray(),
 			};
 
 			// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations

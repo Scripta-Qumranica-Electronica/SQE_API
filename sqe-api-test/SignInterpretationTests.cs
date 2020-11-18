@@ -1431,7 +1431,7 @@ namespace SQE.ApiTest
 			responseObject.updated.ShouldDeepEqual(
 					newSignInterpretationRequest.UpdatedSignInterpretations.signInterpretations);
 
-			Assert.Equal(2, responseObject.created.Length);
+			Assert.Equal(1, responseObject.created.Length);
 
 			// Get the text of this text fragment again
 			var alteredTextFragment = await EditionHelpers.GetEditionTextFragmentWithSigns(
@@ -1446,14 +1446,6 @@ namespace SQE.ApiTest
 										   .lines.First(x => x.lineId == line.lineId)
 										   .signs;
 
-			// Sort the lists of sign attributes (otherwise ShouldDeepEqual will possibly fail)
-			signs.First().signInterpretations.First().attributes = signs.First()
-																		.signInterpretations.First()
-																		.attributes.OrderBy(
-																				x => x
-																						.attributeValueId)
-																		.ToArray();
-
 			responseObject.created.First().attributes = responseObject.created.First()
 																	  .attributes.OrderBy(
 																			  x => x
@@ -1461,9 +1453,7 @@ namespace SQE.ApiTest
 																	  .ToArray();
 
 			// Make sure the two updated/new sign interpretations are in the stream
-			signs.First()
-				 .signInterpretations.First()
-				 .ShouldDeepEqual(responseObject.created.First());
+			signs[2].signInterpretations.First().ShouldDeepEqual(responseObject.created.First());
 
 			Assert.Contains(
 					signs
