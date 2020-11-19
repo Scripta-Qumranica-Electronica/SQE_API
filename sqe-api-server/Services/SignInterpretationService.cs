@@ -91,7 +91,9 @@ namespace SQE.API.Server.Services
 				, uint   attributeValueId
 				, string clientId = null);
 
-		Task<NoContentResult> MaterializeSignStreams(UserInfo user, uint[] editionIds);
+		Task<NoContentResult> MaterializeSignStreams(
+				UserInfo                    user
+				, RequestMaterializationDTO requestedEditions);
 	}
 
 	public class SignInterpretationService : ISignInterpretationService
@@ -585,15 +587,18 @@ namespace SQE.API.Server.Services
 			return new NoContentResult();
 		}
 
-		public async Task<NoContentResult> MaterializeSignStreams(UserInfo user, uint[] editionIds)
+		public async Task<NoContentResult> MaterializeSignStreams(
+				UserInfo                    user
+				, RequestMaterializationDTO requestedEditions)
 		{
 			if (!user.SystemRoles.Contains(UserSystemRoles.USER_ADMIN))
 				throw new StandardExceptions.NoSystemPermissionsException(user);
 
-			if (editionIds.Length == 0)
+			if ((requestedEditions.editionIds == null)
+				|| (requestedEditions.editionIds.Length == 0))
 				await _materializationRepository.MaterializeAllSignStreamsAsync();
 
-			foreach (var editionId in editionIds)
+			foreach (var editionId in requestedEditions.editionIds)
 				await _materializationRepository.RequestMaterializationAsync(editionId);
 
 			return new NoContentResult();

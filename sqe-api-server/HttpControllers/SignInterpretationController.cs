@@ -284,9 +284,10 @@ namespace SQE.API.Server.HttpControllers
 		/// <returns></returns>
 		[ApiExplorerSettings(IgnoreApi = true)]
 		[HttpPost("v1/materialize-sign-streams")]
-		public async Task<ActionResult> MaterializeSignStream([FromBody] uint[] editionIds)
+		public async Task<ActionResult> MaterializeSignStream(
+				[FromBody] RequestMaterializationDTO requestedEditions)
 			=> await _signInterpretationService.MaterializeSignStreams(
 					await _userService.GetCurrentUserObjectAsync(null)
-					, editionIds);
+					, requestedEditions);
 	}
 }

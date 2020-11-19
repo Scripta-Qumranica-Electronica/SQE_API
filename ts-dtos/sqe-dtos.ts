@@ -113,6 +113,10 @@ export interface CreateTextFragmentDTO extends UpdateTextFragmentDTO {
     name: string;
 }
 
+export interface RequestMaterializationDTO {
+    editionIds: Array<number>;
+}
+
 export interface SignDTO {
     signInterpretations: Array<SignInterpretationDTO>;
 }

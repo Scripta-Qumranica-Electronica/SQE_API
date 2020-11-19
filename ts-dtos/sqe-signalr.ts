@@ -28,6 +28,7 @@ import {
 	LineTextDTO,
 	UpdateTextFragmentDTO,
 	CreateTextFragmentDTO,
+	RequestMaterializationDTO,
 	SignDTO,
 	NextSignInterpretationDTO,
 	SignInterpretationBaseDTO,
@@ -950,8 +951,8 @@ export class SignalRUtilities {
 	 *		 
 	 *
 	 */
-    public async postV1MaterializeSignStreams(editionIds: uint[]): Promise<void> {
-        return await this._connection.invoke('PostV1MaterializeSignStreams', editionIds);
+    public async postV1MaterializeSignStreams(requestedEditions: RequestMaterializationDTO): Promise<void> {
+        return await this._connection.invoke('PostV1MaterializeSignStreams', requestedEditions);
     }
 
     /**

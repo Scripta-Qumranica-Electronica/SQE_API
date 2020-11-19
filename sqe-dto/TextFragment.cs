@@ -209,5 +209,11 @@ namespace SQE.API.DTO
 		public override string name { get; set; }
 	}
 
+	public class RequestMaterializationDTO
+	{
+		[Required]
+		public uint[] editionIds { get; set; }
+	}
+
 	#endregion
 }

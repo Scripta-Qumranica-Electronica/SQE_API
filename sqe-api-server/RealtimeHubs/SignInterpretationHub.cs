@@ -522,14 +522,14 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </param>
 		/// <returns></returns>
 		[Authorize]
-		public async Task PostV1MaterializeSignStreams(uint[] editionIds)
+		public async Task PostV1MaterializeSignStreams(RequestMaterializationDTO requestedEditions)
 
 		{
 			try
 			{
 				await _signInterpretationService.MaterializeSignStreams(
 						await _userService.GetCurrentUserObjectAsync(null)
-						, editionIds);
+						, requestedEditions);
 			}
 			catch (ApiException err)
 			{
