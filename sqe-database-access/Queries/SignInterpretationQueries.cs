@@ -67,4 +67,10 @@ JOIN position_in_stream_owner USING(position_in_stream_id)
 WHERE position_in_stream_owner.edition_id = @EditionId
     AND position_in_stream.next_sign_interpretation_id = @SignInterpretationId";
 	}
+
+	internal static class CheckForCycleQuery
+	{
+		public const string GetQuery = @"
+";
+	}
 }

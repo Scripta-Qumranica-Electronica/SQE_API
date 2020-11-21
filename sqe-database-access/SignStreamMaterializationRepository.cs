@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using MoreLinq.Extensions;
+using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
@@ -15,7 +17,12 @@ namespace SQE.DatabaseAccess
 		Task<IEnumerable<SignStreamMaterializationSchedule>>
 				GetAllScheduledSignStreamMaterializationsAsync();
 
-		Task RequestMaterializationAsync(uint editionId, uint signInterpretationId);
+		Task RequestMaterializationAsync(
+				uint                                                 editionId
+				, uint                                               signInterpretationId
+				, SignStreamGraph                                    graph    = null
+				, IReadOnlyDictionary<uint, BasicSignInterpretation> SignDict = null);
+
 		Task RequestMaterializationAsync(uint editionId);
 		Task MaterializeAllSignStreamsAsync();
 	}
@@ -35,15 +42,25 @@ namespace SQE.DatabaseAccess
 			}
 		}
 
-		public async Task RequestMaterializationAsync(uint editionId, uint signInterpretationId)
+		public async Task RequestMaterializationAsync(
+				uint                                                 editionId
+				, uint                                               signInterpretationId
+				, SignStreamGraph                                    graph    = null
+				, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict = null)
 		{
+			if ((graph == null)
+				|| (signDict == null))
+				(graph, signDict) = await _getEditionGraph(editionId);
+
 			var firstSignInterpretationIdsInSignStream =
-					await GetBeginningsOfSignStreamForInterpretationId(
-							editionId
-							, signInterpretationId);
+					graph.FindAllPaths(signInterpretationId, true).Select(x => x.Last());
 
 			foreach (var initialSignInterpretationId in firstSignInterpretationIdsInSignStream)
-				await BeginMaterializationAsync(editionId, initialSignInterpretationId);
+				await BeginMaterializationAsync(
+						editionId
+						, initialSignInterpretationId
+						, graph
+						, signDict);
 		}
 
 		public async Task RequestMaterializationAsync(uint editionId)
@@ -69,33 +86,24 @@ namespace SQE.DatabaseAccess
 				// allowed to complete.  If they failed, we will get them on the next
 				// scheduled materialization.
 				if (materializationRequest.CreatedDate.AddMinutes(5)
-					< materializationRequest.CurrentTime)
-				{
-					await MaterializeStreamForSignInterpretationAsync(
-							materializationRequest.EditionId
-							, materializationRequest.SignInterpretationId);
-				}
+					>= materializationRequest.CurrentTime)
+					continue;
+
+				var (graph, signDict) = await _getEditionGraph(materializationRequest.EditionId);
+
+				await MaterializeStreamForSignInterpretationAsync(
+						materializationRequest.EditionId
+						, materializationRequest.SignInterpretationId
+						, graph
+						, signDict);
 			}
 		}
 
-		private async Task<IEnumerable<uint>> GetBeginningsOfSignStreamForInterpretationId(
-				uint   editionId
-				, uint signInterpretationId)
-		{
-			using (var connection = OpenConnection())
-			{
-				return await connection.QueryAsync<uint>(
-						BeginningsOfStreamForSignInterpretation.GetQuery
-						, new
-						{
-								EditionId = editionId
-								, SignInterpretationId = signInterpretationId
-								,
-						});
-			}
-		}
-
-		private async Task BeginMaterializationAsync(uint editionId, uint signInterpretationId)
+		private async Task BeginMaterializationAsync(
+				uint                                                 editionId
+				, uint                                               signInterpretationId
+				, SignStreamGraph                                    graph
+				, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict)
 		{
 			// Don't use a transaction here, we want the materialization request to be written
 			// and we don't really care at this point if it ever gets accomplished.  We will
@@ -143,13 +151,19 @@ namespace SQE.DatabaseAccess
 
 				// Try to perform the materialization.  If it is successful, it
 				// will delete the request from the queue
-				await MaterializeStreamForSignInterpretationAsync(editionId, signInterpretationId);
+				await MaterializeStreamForSignInterpretationAsync(
+						editionId
+						, signInterpretationId
+						, graph
+						, signDict);
 			}
 		}
 
 		private async Task MaterializeStreamForSignInterpretationAsync(
-				uint   editionId
-				, uint signInterpretationId)
+				uint                                                 editionId
+				, uint                                               signInterpretationId
+				, SignStreamGraph                                    graph
+				, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict)
 		{
 			// Wrap this in a transaction, we do not delete the materialization request
 			// from the queue until the materialization has actually been performed.
@@ -158,6 +172,55 @@ namespace SQE.DatabaseAccess
 					, new TransactionOptions { IsolationLevel = IsolationLevel.Serializable }))
 			using (var connection = OpenConnection())
 			{
+				var streams = _parseGraph(signInterpretationId, graph, signDict);
+
+				// Delete preexisting materialized streams
+				await connection.ExecuteAsync(
+						DeleteMaterializationsQuery.GetQuery
+						, new
+						{
+								EditionId = editionId
+								, SignInterpretationId = signInterpretationId
+								,
+						});
+
+				// Write the paths
+				foreach (var (text, index) in streams)
+				{
+					// Write the materialized stream
+					await connection.ExecuteAsync(
+							CreateMaterializationsQuery.GetQuery
+							, new
+							{
+									EditionId = editionId
+									, SignInterpretationId = signInterpretationId
+									, MaterializedText = text
+									,
+							});
+
+					// Write the indices in large batches (I did not see the possibility to load
+					// from a DataTable with MysqlBulkLoader).
+					var materializedId =
+							await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+
+					var sequences = index.Batch(900);
+
+					foreach (var sequence in sequences)
+					{
+						await connection.ExecuteAsync(
+								$@"
+INSERT IGNORE INTO materialized_sign_stream_indices (materialized_sign_stream_id, `index`, sign_interpretation_id)
+VALUES {
+											string.Join(
+													",\n"
+													, sequence.Select(
+															x => $"({materializedId},{x.Index},{x.Id})"))
+										}
+");
+					}
+				}
+
+				// Delete the request from the queue table
 				await connection.ExecuteAsync(
 						DeleteQueuedMaterializationQuery.GetQuery
 						, new
@@ -167,11 +230,63 @@ namespace SQE.DatabaseAccess
 								,
 						});
 
-				// Collect the materialized stream possibilities (maintain the indices for individual characters)
+				transaction.Complete();
+			}
+		}
 
-				// Serialize the Database results into a formatted lookup dictionary
-				var signDict = new Dictionary<uint, BasicSignInterpretation>();
+		private static IEnumerable<(string Text, List<(uint Index, uint Id)> Index)> _parseGraph(
+				uint                                                 startId
+				, SignStreamGraph                                    graph
+				, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict)
+		{
+			var paths = graph.FindAllPaths(startId);
 
+			return paths.Select(
+								x =>
+								{
+									var index = new List<(uint Index, uint Id)>();
+									var text = new StringBuilder("", x.Count);
+									var currIdx = 0u;
+
+									foreach (var signInterpretationId in x)
+									{
+										index.Add((currIdx, signInterpretationId));
+
+										if (!signDict.TryGetValue(
+												signInterpretationId
+												, out var signInterpretation))
+											continue;
+
+										if (string.IsNullOrEmpty(signInterpretation.Character))
+										{
+											if (signInterpretation.Attributes.Any(
+													x => x.AttributeValueId == 2))
+												text.Append(" ");
+
+											currIdx += 1;
+
+											continue;
+										}
+
+										text.Append(signInterpretation.Character);
+										currIdx += 1;
+									}
+
+									return (text.ToString(), index);
+								})
+						.ToList();
+		}
+
+		private async
+				Task<(SignStreamGraph SignGraph, IReadOnlyDictionary<uint, BasicSignInterpretation>
+						SignDict)> _getEditionGraph(uint editionId)
+		{
+			// Serialize the Database results into a formatted lookup dictionary
+			var signDict = new Dictionary<uint, BasicSignInterpretation>();
+			var signGraph = new SignStreamGraph(null);
+
+			using (var connection = OpenConnection())
+			{
 				await connection
 						.QueryAsync<BasicSingleSignInterpretation, BasicSignInterpretationAttribute,
 								BasicSingleSignInterpretation>(
@@ -179,6 +294,10 @@ namespace SQE.DatabaseAccess
 								, (sign, attribute) =>
 
 								  {
+									  signGraph.UnsafeAddLink(
+											  sign.SignInterpretationId
+											  , sign.NextSignInterpretationId);
+
 									  if (signDict.TryGetValue(
 											  sign.SignInterpretationId
 											  , out var existingSign))
@@ -219,128 +338,13 @@ namespace SQE.DatabaseAccess
 
 									  return sign;
 								  }
-								, new
-								{
-										EditionId = editionId
-										, SignInterpretationId = signInterpretationId
-										,
-								}
+								, new { EditionId = editionId }
 								, splitOn: "AttributeId");
-
-				// Use the dictionary to recursively build all possible stream combinations
-				var paths = _walkSignStream(0, signInterpretationId, signDict);
-
-				// Delete preexisting materialized streams
-				await connection.ExecuteAsync(
-						DeleteMaterializationsQuery.GetQuery
-						, new
-						{
-								EditionId = editionId
-								, SignInterpretationId = signInterpretationId
-								,
-						});
-
-				// Write the paths
-				foreach (var (text, indices) in paths)
-				{
-					// Write the materialized stream
-					await connection.ExecuteAsync(
-							CreateMaterializationsQuery.GetQuery
-							, new
-							{
-									EditionId = editionId
-									, SignInterpretationId = signInterpretationId
-									, MaterializedText = string.Join("", text)
-									,
-							});
-
-					// Write the indices in large batches (I did not see the possibility to load
-					// from a DataTable with MysqlBulkLoader).
-					var materializedId =
-							await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
-
-					var sequences = indices.Batch(900);
-
-					foreach (var sequence in sequences)
-					{
-						await connection.ExecuteAsync(
-								$@"
-INSERT IGNORE INTO materialized_sign_stream_indices (materialized_sign_stream_id, `index`, sign_interpretation_id)
-VALUES {
-											string.Join(
-													",\n"
-													, sequence.Select(
-															x => $"({materializedId},{x.Index},{x.Id})"))
-										}
-");
-					}
-				}
-
-				// Delete the request from the queue table
-				await connection.ExecuteAsync(
-						DeleteQueuedMaterializationQuery.GetQuery
-						, new
-						{
-								EditionId = editionId
-								, SignInterpretationId = signInterpretationId
-								,
-						});
-
-				transaction.Complete();
-			}
-		}
-
-		private static List<(List<string> Text, List<(uint Index, uint Id)> Indices)>
-				_walkSignStream(
-						uint index
-						, uint currentSignInterpretationId
-						, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict)
-		{
-			var response = new List<(List<string> Text, List<(uint Index, uint Id)> Indices)>();
-
-			var text = new List<string>();
-			var indices = new List<(uint Index, uint Id)>();
-
-			// Stop recursion when there are no new signs available
-			if (!signDict.TryGetValue(currentSignInterpretationId, out var currentSign))
-			{
-				// Index the last sign id (it is a control character)
-				indices.Add((index, currentSignInterpretationId));
-				response.Add((text, indices));
-
-				return response;
 			}
 
-			// Add the index info
-			indices.Add((index, currentSignInterpretationId));
+			signGraph.FindLeaves();
 
-			// Add a character to the character stream list (if available)
-			if (currentSign.Attributes.Any(x => x.AttributeId == 1))
-			{
-				text.Add(
-						string.IsNullOrEmpty(currentSign.Character)
-								? " "
-								: currentSign.Character);
-
-				index += 1;
-			}
-
-			// Recurse on every next interpretation Id
-			foreach (var sign in currentSign.NextSignInterpretationIds)
-			{
-				var nextResponse = _walkSignStream(index, sign, signDict);
-
-				foreach (var (nextText, nextIndices) in nextResponse)
-				{
-					response.Add(
-							(text.Concat(nextText).ToList(), indices.Concat(nextIndices).ToList()));
-				}
-			}
-
-			if (response.Count == 0)
-				response.Add((text, indices));
-
-			return response;
+			return (signGraph, signDict);
 		}
 	}
 }

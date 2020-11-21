@@ -707,9 +707,10 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_MaterializeSignStreams : RequestObject<uint[], EmptyOutput>
+		public class V1_MaterializeSignStreams :
+				RequestObject<RequestMaterializationDTO, EmptyOutput>
 		{
-			private readonly uint[] _payload;
+			private readonly RequestMaterializationDTO _payload;
 
 			/// <summary>
 			///  This is an admin endpoint used to trigger the generation of materialized sign streams.
@@ -723,7 +724,8 @@ namespace SQE.ApiTest.ApiRequests
 			///  jobs and complete those.
 			/// </param>
 			/// <returns></returns>
-			public V1_MaterializeSignStreams(uint[] payload) : base(payload) => _payload = payload;
+			public V1_MaterializeSignStreams(RequestMaterializationDTO payload) : base(payload)
+				=> _payload = payload;
 
 			protected override string HttpPath() => RequestPath;
 

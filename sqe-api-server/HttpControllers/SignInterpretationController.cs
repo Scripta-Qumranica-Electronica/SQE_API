@@ -276,13 +276,14 @@ namespace SQE.API.Server.HttpControllers
 		///  complete (a record in the database exists when a materialization was started but
 		///  never finished).
 		/// </summary>
-		/// <param name="editionIds">
+		/// <param name="requestedEditions">
 		///  A list of edition IDs for which to generate materialized
 		///  sign streams.  If the list is empty, then the system will look for any unfinished
 		///  jobs and complete those.
 		/// </param>
 		/// <returns></returns>
-		[ApiExplorerSettings(IgnoreApi = true)]
+
+		//[ApiExplorerSettings(IgnoreApi = true)]
 		[HttpPost("v1/materialize-sign-streams")]
 		public async Task<ActionResult> MaterializeSignStream(
 				[FromBody] RequestMaterializationDTO requestedEditions)

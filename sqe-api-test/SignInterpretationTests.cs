@@ -1303,40 +1303,48 @@ namespace SQE.ApiTest
 		[Trait("Category", "Sign Stream")]
 		public async Task CanMaterializeSignStream()
 		{
-			var request = new Post.V1_MaterializeSignStreams(new uint[] { 1 });
+			var request = new Post.V1_MaterializeSignStreams(
+					new RequestMaterializationDTO { editionIds = new uint[] { 1 } });
+
 			await request.SendAsync(_client, null, true);
 
 			// Fire off a bunch of unawaited requests and make sure the next
 			// call picks them up
 			var request2 = new Post.V1_MaterializeSignStreams(
-					new uint[]
+					new RequestMaterializationDTO
 					{
-							1
-							, 2
-							, 3
-							, 4
-							, 5
-							, 6
-							, 7
-							, 8
-							, 9
-							, 10
-							, 11
-							, 12
-							, 13
-							, 14
-							, 15
-							, 16
-							, 17
-							, 18
-							, 19
-							, 20
+							editionIds = new uint[]
+							{
+									1
+									, 2
+									, 3
+									, 4
+									, 5
+									, 6
+									, 7
+									, 8
+									, 9
+									, 10
+									, 11
+									, 12
+									, 13
+									, 14
+									, 15
+									, 16
+									, 17
+									, 18
+									, 19
+									, 20
+									,
+							}
 							,
 					});
 
 			request2.SendAsync(_client, null, true);
 
-			var request3 = new Post.V1_MaterializeSignStreams(new uint[0]);
+			var request3 = new Post.V1_MaterializeSignStreams(
+					new RequestMaterializationDTO { editionIds = new uint[0] });
+
 			await request3.SendAsync(_client, null, true);
 		}
 
@@ -1344,7 +1352,8 @@ namespace SQE.ApiTest
 		[Trait("Category", "Sign Stream")]
 		public async Task CanNotMaterializeSignStreamWithoutSysRole()
 		{
-			var request = new Post.V1_MaterializeSignStreams(new uint[] { 1 });
+			var request = new Post.V1_MaterializeSignStreams(
+					new RequestMaterializationDTO { editionIds = new uint[] { 1 } });
 
 			await request.SendAsync(
 					_client

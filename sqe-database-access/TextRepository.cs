@@ -106,6 +106,11 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signId);
 
+		// Task<bool> IsCycleAsync(
+		// 		uint   editionId
+		// 		, uint startSignInterpretation
+		// 		, uint endSignInterpretationId);
+
 		#endregion
 
 		#region Text fragment
@@ -1196,6 +1201,25 @@ namespace SQE.DatabaseAccess
 
 			return (Deleted: signInterpretationIds, Updated: alteredSignInterpretations);
 		}
+
+		// public async Task<bool> IsCycleAsync(
+		// 		uint   editionId
+		// 		, uint startSignInterpretation
+		// 		, uint endSignInterpretationId)
+		// {
+		// 	using (var conn = OpenConnection())
+		// 	{
+		// 		var checkPath = await conn.QueryAsync<uint>(new
+		// 		{
+		// 				StartSignInterpretationId = startSignInterpretation
+		// 				, EndSignInterpretationId = endSignInterpretationId
+		// 				, EditionId = editionId
+		// 				,
+		// 		});
+		//
+		// 		return checkPath.Any();
+		// 	}
+		// }
 
 		#endregion
 

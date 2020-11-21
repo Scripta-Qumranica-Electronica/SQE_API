@@ -944,7 +944,7 @@ export class SignalRUtilities {
 	 *		 complete (a record in the database exists when a materialization was started but
 	 *		 never finished).
 	 *
-	 * @param editionIds - 
+	 * @param requestedEditions - 
 	 *		  A list of edition IDs for which to generate materialized
 	 *		  sign streams.  If the list is empty, then the system will look for any unfinished
 	 *		  jobs and complete those.
