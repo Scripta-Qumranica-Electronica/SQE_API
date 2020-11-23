@@ -56,11 +56,13 @@ namespace SQE.DatabaseAccess
 					graph.FindAllPaths(signInterpretationId, true).Select(x => x.Last());
 
 			foreach (var initialSignInterpretationId in firstSignInterpretationIdsInSignStream)
+			{
 				await BeginMaterializationAsync(
 						editionId
 						, initialSignInterpretationId
 						, graph
 						, signDict);
+			}
 		}
 
 		public async Task RequestMaterializationAsync(uint editionId)

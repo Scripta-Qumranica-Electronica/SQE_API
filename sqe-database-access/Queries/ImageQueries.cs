@@ -149,7 +149,7 @@ WHERE image_catalog.object_id = @ImagedObjectId
 	{
 		public const string GetQuery = @"
 SELECT image_catalog.object_id AS Name,
-       CONCAT(image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS Thumbnail,
+       CONCAT_WS('', image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS Thumbnail,
        image_urls.license AS License
 FROM image_catalog
 JOIN SQE_image USING(image_catalog_id)

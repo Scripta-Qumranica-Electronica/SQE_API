@@ -105,7 +105,7 @@ FROM edition AS ed1
 
     # Get a thumbnail if possible
          LEFT JOIN (
-    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT(proxy, url, SQE_image.filename)) AS thumbnail_url
+    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT_WS('', proxy, url, SQE_image.filename)) AS thumbnail_url
     FROM edition
              JOIN iaa_edition_catalog USING(manuscript_id)
              JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
@@ -377,13 +377,13 @@ WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
 		internal const string GetQuery = @"
 SELECT sign_interpretation_roi.sign_interpretation_id AS Id,
        sign_interpretation.character AS Letter,
-       GROUP_CONCAT(DISTINCT CONCAT(attr.name, '_', attr.string_value)) AS Attributes,
+       GROUP_CONCAT(DISTINCT CONCAT_WS('', attr.name, '_', attr.string_value)) AS Attributes,
        AsWKB(roi_shape.path) AS Polygon,
        roi_position.translate_x AS TranslateX,
        roi_position.translate_y AS TranslateY,
        roi_position.stance_rotation AS LetterRotation,
        COALESCE(art_pos.rotate, 0) AS ImageRotation,
-       CONCAT(image_urls.proxy, image_urls.url, SQE_image.filename) AS ImageURL,
+       CONCAT_WS('', image_urls.proxy, image_urls.url, SQE_image.filename) AS ImageURL,
        image_urls.suffix AS ImageSuffix
 FROM sign_interpretation_roi_owner
     JOIN sign_interpretation_roi USING(sign_interpretation_roi_id)
@@ -391,11 +391,13 @@ FROM sign_interpretation_roi_owner
     JOIN roi_shape USING(roi_shape_id)
     LEFT JOIN (
         SELECT artefact_position.rotate,
-            artefact_position_owner.edition_id
+               artefact_position.artefact_id,
+               artefact_position_owner.edition_id
         FROM artefact_position
         JOIN artefact_position_owner USING(artefact_position_id)
     ) AS art_pos ON art_pos.edition_id = sign_interpretation_roi_owner.edition_id
-    JOIN artefact_shape USING(artefact_id)
+    	AND art_pos.artefact_id = roi_position.artefact_id
+    JOIN artefact_shape ON artefact_shape.artefact_id = roi_position.artefact_id
     JOIN artefact_shape_owner ON artefact_shape_owner.artefact_shape_id = artefact_shape.artefact_shape_id
         AND artefact_shape_owner.edition_id = sign_interpretation_roi_owner.edition_id
     JOIN SQE_image USING(sqe_image_id)
