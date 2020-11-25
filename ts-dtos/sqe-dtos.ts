@@ -147,6 +147,7 @@ export interface SignInterpretationVariantDTO extends InterpretationAttributeBas
 }
 
 export interface SignInterpretationDTO extends SignInterpretationBaseDTO {
+    signId: number;
     signInterpretationId: number;
     nextSignInterpretations: Array<NextSignInterpretationDTO>;
     attributes: Array<InterpretationAttributeDTO>;

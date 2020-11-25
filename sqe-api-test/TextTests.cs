@@ -203,6 +203,9 @@ namespace SQE.ApiTest
 			foreach (var sign in msg.signs)
 			foreach (var signInterpretation in sign.signInterpretations)
 			{
+				Assert.NotNull(signInterpretation.signId);
+				Assert.NotEqual(0u, signInterpretation.signId);
+
 				foreach (var attr in signInterpretation.attributes)
 				{
 					if (!msg.editors.ContainsKey(attr.editorId.ToString()))
@@ -310,6 +313,9 @@ namespace SQE.ApiTest
 					foreach (var sign in line.signs)
 					foreach (var signInterpretation in sign.signInterpretations)
 					{
+						Assert.NotNull(signInterpretation.signId);
+						Assert.NotEqual(0u, signInterpretation.signId);
+
 						foreach (var attr in signInterpretation.attributes)
 						{
 							if (!msg.editors.ContainsKey(attr.editorId.ToString()))

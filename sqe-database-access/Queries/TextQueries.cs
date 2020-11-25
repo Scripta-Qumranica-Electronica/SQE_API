@@ -70,6 +70,7 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 
 		signInterpretationId,
 		sign_interpretation.`character` AS `character`,
+		sign_interpretation.sign_id AS SignId,
 		interpretation_commentary.commentary AS InterpretationCommentary,
 		interpretation_commentary.creator_id AS InterpretationCommentaryCreator,
 		interpretation_commentary.edition_editor_id AS InterpretationCommentaryEditor,

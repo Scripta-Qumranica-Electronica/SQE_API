@@ -30,6 +30,7 @@ namespace SQE.DatabaseAccess.Models
 
 	public class Character
 	{
+		public uint                          SignId                      { get; set; }
 		public uint                          SignInterpretationId        { get; set; }
 		public char                          SignInterpretationCharacter { get; set; }
 		public List<SpatialRoi>              Rois                        { get; set; }

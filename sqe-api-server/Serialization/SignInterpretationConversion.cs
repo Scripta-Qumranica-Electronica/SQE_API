@@ -127,10 +127,10 @@ namespace SQE.API.Server.Serialization
 		{
 			return new SignInterpretationDTO
 			{
-					character = si.Character
+					signId = si.SignId ?? 0
+					, character = si.Character
 					, signInterpretationId = si.SignInterpretationId ?? 0
-					, attributes =
-							si.Attributes.Select(x => x.ToDTO(si.Commentaries)).ToArray()
+					, attributes = si.Attributes.Select(x => x.ToDTO(si.Commentaries)).ToArray()
 					, rois = si.SignInterpretationRois.ToDTO().ToArray()
 					, nextSignInterpretations =
 							si.NextSignInterpretations.Where(x => x != null)

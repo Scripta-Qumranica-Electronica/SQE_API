@@ -1033,7 +1033,7 @@ namespace SQE.DatabaseAccess
 									, signInterpretation.SignInterpretationId.GetValueOrDefault()
 									, signInterpretation.Attributes);
 
-					// We have to store the create attributes  because the now contain also the new ids.
+					// We have to store the create attributes, because they now contain also the new ids.
 					signInterpretation.Attributes.Clear();
 					signInterpretation.Attributes.AddRange(attributes);
 

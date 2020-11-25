@@ -341,6 +341,12 @@ namespace SQE.ApiTest
 				Assert.NotEmpty(request.HttpResponseObject.created);
 				Assert.NotEmpty(request.HttpResponseObject.updated);
 
+				Assert.NotEqual(0u, request.HttpResponseObject.created[0].signId);
+
+				Assert.Equal(
+						originalSignInterpretation.HttpResponseObject.signId
+						, request.HttpResponseObject.created[0].signId);
+
 				Assert.NotEqual(
 						originalSignInterpretation.HttpResponseObject.character
 						, request.HttpResponseObject.created[0].character);
@@ -586,6 +592,8 @@ namespace SQE.ApiTest
 				httpResponse.EnsureSuccessStatusCode();
 				httpData.ShouldDeepEqual(listenerData);
 
+				Assert.NotNull(signInterpretation.signId);
+				Assert.NotEqual(0u, signInterpretation.signId);
 				Assert.Equal(signInterpretation.attributes.Length, httpData.attributes.Length);
 
 				Assert.Equal(signInterpretation.rois.Length, httpData.rois.Length);
@@ -1440,6 +1448,12 @@ namespace SQE.ApiTest
 			responseObject.updated.ShouldDeepEqual(
 					newSignInterpretationRequest.UpdatedSignInterpretations.signInterpretations);
 
+			Assert.NotEqual(
+					0u
+					, newSignInterpretationRequest.CreatedSignInterpretation.signInterpretations
+												  .First()
+												  .signId);
+
 			Assert.Equal(1, responseObject.created.Length);
 
 			// Get the text of this text fragment again
@@ -1488,6 +1502,9 @@ namespace SQE.ApiTest
 			Assert.Equal(
 					newlyCreatedInterpretation.character
 					, interpretationMatchingCreate.character);
+
+			Assert.NotEqual(0u, interpretationMatchingCreate.signId);
+			Assert.Equal(newlyCreatedInterpretation.signId, interpretationMatchingCreate.signId);
 
 			newlyCreatedInterpretation.nextSignInterpretations.ShouldDeepEqual(
 					interpretationMatchingCreate.nextSignInterpretations);

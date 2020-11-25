@@ -74,6 +74,7 @@ namespace SQE.ApiTest
 					, StartConnectionAsync);
 		}
 
+		// TODO: look into this test, it seems to fail randomly (not terribly often)
 		[Theory]
 		[Trait("Category", "Catalogue")]
 		[InlineData(true)]

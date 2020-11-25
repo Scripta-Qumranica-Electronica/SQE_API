@@ -60,7 +60,9 @@ namespace SQE.API.Server.Serialization
 					, characters = sac.Characters.Select(
 											  x => new SignInterpretationDTO
 											  {
-													  signInterpretationId = x.SignInterpretationId
+													  signId = x.SignId
+													  , signInterpretationId =
+															  x.SignInterpretationId
 													  , character = x.SignInterpretationCharacter
 																	 .ToString()
 													  , attributes = x.Attributes

@@ -270,7 +270,11 @@ namespace SQE.API.Server.Services
 																																					   => new
 																																							   SignInterpretationDTO
 																																							   {
-																																									   signInterpretationId
+																																									   signId
+																																											   =
+																																											   a.SignId
+																																											   ?? 0
+																																									   , signInterpretationId
 																																											   =
 																																											   a
 																																													   .SignInterpretationId
@@ -305,7 +309,7 @@ namespace SQE.API.Server.Services
 																																															   }
 																																									   ,
 
-																																									   //editorID = 
+																																									   //editorID =
 
 																																									   attributes
 																																											   =
@@ -528,7 +532,11 @@ namespace SQE.API.Server.Services
 																					   => new
 																							   SignInterpretationDTO
 																							   {
-																									   signInterpretationId
+																									   signId
+																											   = a
+																													   .SignId
+																											   ?? 0
+																									   , signInterpretationId
 																											   =
 																											   a.SignInterpretationId
 																												.GetValueOrDefault()

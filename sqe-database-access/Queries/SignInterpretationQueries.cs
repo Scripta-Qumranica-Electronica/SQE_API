@@ -5,6 +5,7 @@ namespace SQE.DatabaseAccess.Queries
 		public const string GetQuery = @"
 SELECT DISTINCT sign_interpretation.sign_interpretation_id AS SignInterpretationId,
                 sign_interpretation.`character` AS `Character`,
+                sign_interpretation.sign_id AS SignId,
                 sign_interpretation.is_variant AS IsVariant,
                 pos.next_sign_interpretation_id AS NextSignInterpretationId,
                 pos.is_main AS IsMainNextSignInterpretation,

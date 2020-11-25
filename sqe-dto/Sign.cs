@@ -58,6 +58,8 @@ namespace SQE.API.DTO
 
 	public class SignInterpretationDTO : SignInterpretationBaseDTO
 	{
+		public uint signId { get; set; }
+
 		[Required]
 		public uint signInterpretationId { get; set; }
 
