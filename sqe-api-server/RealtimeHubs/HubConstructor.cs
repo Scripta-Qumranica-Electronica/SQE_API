@@ -19,6 +19,7 @@ namespace SQE.API.Server.RealtimeHubs
 		private readonly IImagedObjectService       _imagedObjectService;
 		private readonly IImageService              _imageService;
 		private readonly IRoiService                _roiService;
+		private readonly ISearchService             _searchService;
 		private readonly ISignInterpretationService _signInterpretationService;
 		private readonly ITextService               _textService;
 		private readonly IUserService               _userService;
@@ -34,7 +35,8 @@ namespace SQE.API.Server.RealtimeHubs
 				, IImagedObjectService       imagedObjectService
 				, IImageService              imageService
 				, ICatalogService            catalogueService
-				, IUtilService               utilService)
+				, IUtilService               utilService
+				, ISearchService             searchService)
 		{
 			_roiService = roiService;
 			_userService = userService;
@@ -46,6 +48,7 @@ namespace SQE.API.Server.RealtimeHubs
 			_imageService = imageService;
 			_catalogueService = catalogueService;
 			_utilService = utilService;
+			_searchService = searchService;
 		}
 	}
 }

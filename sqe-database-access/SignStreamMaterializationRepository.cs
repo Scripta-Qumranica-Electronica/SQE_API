@@ -25,6 +25,11 @@ namespace SQE.DatabaseAccess
 
 		Task RequestMaterializationAsync(uint editionId);
 		Task MaterializeAllSignStreamsAsync();
+
+		Task<bool> IsCycleAsync(
+				uint   editionId
+				, uint signInterpretationId
+				, uint nextSignInterpretationId);
 	}
 
 	public class SignStreamMaterializationRepository : DbConnectionBase
@@ -57,7 +62,7 @@ namespace SQE.DatabaseAccess
 
 			foreach (var initialSignInterpretationId in firstSignInterpretationIdsInSignStream)
 			{
-				await BeginMaterializationAsync(
+				await _beginMaterializationAsync(
 						editionId
 						, initialSignInterpretationId
 						, graph
@@ -93,7 +98,7 @@ namespace SQE.DatabaseAccess
 
 				var (graph, signDict) = await _getEditionGraph(materializationRequest.EditionId);
 
-				await MaterializeStreamForSignInterpretationAsync(
+				await _materializeStreamForSignInterpretationAsync(
 						materializationRequest.EditionId
 						, materializationRequest.SignInterpretationId
 						, graph
@@ -101,7 +106,59 @@ namespace SQE.DatabaseAccess
 			}
 		}
 
-		private async Task BeginMaterializationAsync(
+		/// <summary>
+		///  This method checks to see if a path exists from signInterpretationId
+		///  to nextSignInterpretationId
+		/// </summary>
+		/// <param name="editionId">The edition in which the sign stream is searched</param>
+		/// <param name="signInterpretationId">The starting node of the search</param>
+		/// <param name="nextSignInterpretationId">The desired goal node of the search</param>
+		/// <returns>
+		///  True if a path exists from signInterpretationId to
+		///  nextSignInterpretationId, otherwise false
+		/// </returns>
+		public async Task<bool> IsCycleAsync(
+				uint   editionId
+				, uint signInterpretationId
+				, uint nextSignInterpretationId)
+		{
+			using (var conn = OpenConnection())
+			{
+				// First do a fast check with OQGraph, if it says there is no cycle,
+				// then that can be trusted
+				var oqGraphStreams = await conn.QueryAsync<uint>(
+						QuickConfirmExistingPath.GetQuery
+						, new
+						{
+								SignInterpretationId = signInterpretationId
+								, NextSignInterpretationId = nextSignInterpretationId
+								,
+						});
+
+				if (oqGraphStreams.First() == 0)
+					return false;
+
+				// If a cycle was found, it is not necessarily true that we have a cycle
+				// is this edition, we need to use the recursive CTE to verify that a cycle
+				// would indeed exist in this edition
+				var preciseGraphStreams = await conn.QueryAsync<uint>(
+						PreciseConfirmExistingPath.GetQuery
+						, new
+						{
+								EditionId = editionId
+								, SignInterpretationId = signInterpretationId
+								, NextSignInterpretationId = nextSignInterpretationId
+								,
+						});
+
+				if (preciseGraphStreams.First() == 0)
+					return false;
+			}
+
+			return true;
+		}
+
+		private async Task _beginMaterializationAsync(
 				uint                                                 editionId
 				, uint                                               signInterpretationId
 				, SignStreamGraph                                    graph
@@ -153,7 +210,7 @@ namespace SQE.DatabaseAccess
 
 				// Try to perform the materialization.  If it is successful, it
 				// will delete the request from the queue
-				await MaterializeStreamForSignInterpretationAsync(
+				await _materializeStreamForSignInterpretationAsync(
 						editionId
 						, signInterpretationId
 						, graph
@@ -161,7 +218,7 @@ namespace SQE.DatabaseAccess
 			}
 		}
 
-		private async Task MaterializeStreamForSignInterpretationAsync(
+		private async Task _materializeStreamForSignInterpretationAsync(
 				uint                                                 editionId
 				, uint                                               signInterpretationId
 				, SignStreamGraph                                    graph

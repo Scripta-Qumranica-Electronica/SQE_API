@@ -297,6 +297,98 @@ namespace SQE.ApiTest
 			}
 		}
 
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		[Trait("Category", "Sign Interpretation")]
+		public async Task CanUpdateSignInterpretationCharacter(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var editionId = await editionCreator.CreateEdition();
+
+				var (_, _, _, nextSignInterpretation, _) =
+						await _getTestingSignInterpretationData(editionId);
+
+				var origSignInterpretationRequest =
+						new Get.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
+								editionId
+								, nextSignInterpretation);
+
+				await origSignInterpretationRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var origSignInterpretation = realtime
+						? origSignInterpretationRequest.SignalrResponseObject
+						: origSignInterpretationRequest.HttpResponseObject;
+
+				const string newCharacter = "b";
+
+				// Act
+				var updatedSignInterpretationRequest =
+						new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
+								editionId
+								, nextSignInterpretation
+								, new SignInterpretationCharacterUpdateDTO
+								{
+										character = newCharacter
+										, priority = 0
+										,
+								});
+
+				await updatedSignInterpretationRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: updatedSignInterpretationRequest.AvailableListeners
+																		.UpdatedSignInterpretation);
+
+				var updatedSignInterpretation = realtime
+						? updatedSignInterpretationRequest.SignalrResponseObject
+						: updatedSignInterpretationRequest.HttpResponseObject;
+
+				// Assert
+				updatedSignInterpretationRequest.UpdatedSignInterpretation.IsDeepEqual(
+						updatedSignInterpretation);
+
+				Assert.Equal(newCharacter, updatedSignInterpretation.character);
+
+				Assert.NotEqual(
+						origSignInterpretation.character
+						, updatedSignInterpretation.character);
+
+				updatedSignInterpretation.character = origSignInterpretation.character;
+				updatedSignInterpretation.IsDeepEqual(origSignInterpretation);
+
+				// var newlyCreatedInterpretationId = await CreateSignInterpretation(
+				// 		editionId
+				// 		, newSignInterpretation
+				// 		, textFragment
+				// 		, line
+				// 		, previousSignInterpretation
+				// 		, nextSignInterpretation
+				// 		, realtime);
+				//
+				// await _deleteSignInterpretationAsync(
+				// 		editionId
+				// 		, newlyCreatedInterpretationId
+				// 		, textFragment
+				// 		, line
+				// 		, deleteAll
+				// 		, realtime);
+			}
+		}
+
 		[Fact]
 		[Trait("Category", "Sign Interpretation")]
 		public async Task CanCreateVariantSignInterpretation()

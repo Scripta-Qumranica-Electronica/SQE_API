@@ -376,7 +376,7 @@ WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
 	{
 		internal const string GetQuery = @"
 SELECT sign_interpretation_roi.sign_interpretation_id AS Id,
-       sign_interpretation.character AS Letter,
+       sign_interpretation_character.character AS Letter,
        GROUP_CONCAT(DISTINCT CONCAT_WS('', attr.name, '_', attr.string_value)) AS Attributes,
        AsWKB(roi_shape.path) AS Polygon,
        roi_position.translate_x AS TranslateX,
@@ -403,6 +403,9 @@ FROM sign_interpretation_roi_owner
     JOIN SQE_image USING(sqe_image_id)
     JOIN image_urls USING(image_urls_id)
     JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
+    JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
+    JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
+    	AND sign_interpretation_character_owner.edition_id = sign_interpretation_roi_owner.edition_id
     JOIN position_in_stream ON position_in_stream.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
     JOIN position_in_stream_owner ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
         AND position_in_stream_owner.edition_id = sign_interpretation_roi_owner.edition_id

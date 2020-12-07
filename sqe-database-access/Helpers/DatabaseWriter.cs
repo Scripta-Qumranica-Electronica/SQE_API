@@ -329,15 +329,13 @@ namespace SQE.DatabaseAccess.Helpers
 				, MutationRequest mutationRequest
 				, uint            userId)
 		{
-			// Format query
-			var hasNulls = mutationRequest.Parameters.ParameterNames.Any(
-					x => ((SqlMapper.IParameterLookup) mutationRequest.Parameters)[x] == null);
-
 			var query = OwnedTableInsertQuery.GetQuery();
 
 			query = query.Replace("$TableName", mutationRequest.TableName);
 
-			query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
+			query = query.Replace(
+					"$Columns"
+					, string.Join(",", mutationRequest.ColumnNames.Select(x => $"`{x}`")));
 
 			query = query.Replace(
 					"$Values"
@@ -355,7 +353,7 @@ namespace SQE.DatabaseAccess.Helpers
 					, string.Join(
 							" AND "
 							, mutationRequest.ColumnNames.Select(
-									x => $"{x} <=> "
+									x => $"`{x}` <=> "
 										 + (GeometryColumns.columns.IndexOf(
 													x + mutationRequest.TableName)
 											> -1
@@ -377,7 +375,9 @@ namespace SQE.DatabaseAccess.Helpers
 
 				query = query.Replace("$TableName", mutationRequest.TableName);
 
-				query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
+				query = query.Replace(
+						"$Columns"
+						, string.Join(",", mutationRequest.ColumnNames.Select(x => $"`{x}`")));
 
 				query = query.Replace(
 						"$Values"
@@ -395,7 +395,7 @@ namespace SQE.DatabaseAccess.Helpers
 						, string.Join(
 								" AND "
 								, mutationRequest.ColumnNames.Select(
-										x => $"{x} <=> "
+										x => $"`{x}` <=> "
 											 + (GeometryColumns.columns.IndexOf(
 														x + mutationRequest.TableName)
 												> -1

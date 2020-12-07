@@ -44,6 +44,12 @@ namespace SQE.API.Server.Services
 				, SignInterpretationVariantDTO signInterpretation
 				, string                       clientId = null);
 
+		Task<SignInterpretationDTO> ChangeSignInterpretationCharacterAsync(
+				UserInfo                               user
+				, uint                                 signInterpretationId
+				, SignInterpretationCharacterUpdateDTO signInterpretation
+				, string                               clientId = null);
+
 		Task<SignInterpretationDeleteDTO> DeleteSignInterpretationAsync(
 				UserInfo   user
 				, uint     signInterpretationId
@@ -342,6 +348,28 @@ namespace SQE.API.Server.Services
 							,
 					}
 					, clientId);
+		}
+
+		public async Task<SignInterpretationDTO> ChangeSignInterpretationCharacterAsync(
+				UserInfo                               user
+				, uint                                 signInterpretationId
+				, SignInterpretationCharacterUpdateDTO signInterpretation
+				, string                               clientId = null)
+		{
+			await _signInterpretationRepository.UpdateSignInterpretationCharacterById(
+					user
+					, signInterpretationId
+					, signInterpretation.character
+					, signInterpretation.priority);
+
+			var updatedSignInterpretation =
+					await GetEditionSignInterpretationAsync(user, signInterpretationId);
+
+			// Broadcast the changes
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretation(updatedSignInterpretation);
+
+			return updatedSignInterpretation;
 		}
 
 		/// <summary>

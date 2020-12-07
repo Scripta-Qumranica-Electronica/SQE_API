@@ -61,6 +61,63 @@ WHERE position_in_stream_owner.edition_id = @EditionId
     AND pos2.sign_interpretation_id IS NULL";
 	}
 
+	/// <summary>
+	///  This query is very fast, but can result in false positives,
+	///  but it will not give a false negative.
+	///  It will return [0] for no paths found.
+	/// </summary>
+	internal static class QuickConfirmExistingPath
+	{
+		public const string GetQuery = @"
+SELECT COUNT(linkid)
+FROM sign_stream
+WHERE latch = 'dijkstra'
+	AND origid = @SignInterpretationId
+	AND destid = @NextSignInterpretationId
+";
+	}
+
+	/// <summary>
+	///  This search can be (much) slower than QuickConfirmExistingPath,
+	///  but it is precise and will not return false negatives or positives.
+	///  It will return [0] for no paths found.
+	/// </summary>
+	internal static class PreciseConfirmExistingPath
+	{
+		public const string GetQuery = @"
+WITH RECURSIVE sign_interpretation_ids
+                   AS (
+        SELECT position_in_stream.position_in_stream_id,
+               position_in_stream.sign_interpretation_id AS signInterpretationId,
+               position_in_stream.next_sign_interpretation_id,
+               position_in_stream_owner.edition_id
+        FROM position_in_stream
+                 JOIN position_in_stream_owner
+                      ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
+                          AND position_in_stream_owner.edition_id = @EditionId
+        WHERE position_in_stream.sign_interpretation_id = @SignInterpretationId
+
+        UNION
+
+        SELECT     position_in_stream.position_in_stream_id,
+                   position_in_stream.sign_interpretation_id AS signInterpretationId,
+                   position_in_stream.next_sign_interpretation_id,
+                   sign_interpretation_ids.edition_id
+        FROM  sign_interpretation_ids
+                  JOIN position_in_stream
+                       ON position_in_stream.sign_interpretation_id = sign_interpretation_ids.next_sign_interpretation_id
+                        AND position_in_stream.sign_interpretation_id != @NextSignInterpretationId
+                  JOIN position_in_stream_owner
+                       ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
+                           AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
+    )
+
+SELECT COUNT(signInterpretationId)
+FROM sign_interpretation_ids
+WHERE next_sign_interpretation_id = @NextSignInterpretationId
+";
+	}
+
 	// 	internal static class AllSignStreamPossibilities1
 	// 	{
 	// 		public const string GetQuery = @"
@@ -91,8 +148,8 @@ WHERE position_in_stream_owner.edition_id = @EditionId
 		public const string GetQuery = @"
 SELECT DISTINCT sign_interpretation.sign_interpretation_id AS SignInterpretationId,
                 position_in_stream.next_sign_interpretation_id AS NextSignInterpretationId,
-                sign_interpretation.character AS `Character`,
-                sign_interpretation.is_variant AS IsVariant,
+                sign_interpretation_character.character AS `Character`,
+                sign_interpretation_character_owner.priority AS IsVariant,
                 position_in_stream.next_sign_interpretation_id AS NextSignInterpretationId,
                 attribute_value.attribute_id AS AttributeId,
                 sign_interpretation_attribute.attribute_value_id AS AttributeValueId
@@ -101,6 +158,9 @@ JOIN position_in_stream_owner
     ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
 JOIN sign_interpretation
     ON sign_interpretation.sign_interpretation_id = position_in_stream.sign_interpretation_id
+JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = position_in_stream.sign_interpretation_id
+JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
+    AND sign_interpretation_character_owner.edition_id = position_in_stream_owner.edition_id
 JOIN sign_interpretation_attribute
     ON sign_interpretation_attribute.sign_interpretation_id = position_in_stream.sign_interpretation_id
 JOIN sign_interpretation_attribute_owner

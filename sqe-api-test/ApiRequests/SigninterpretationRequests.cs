@@ -718,12 +718,14 @@ namespace SQE.ApiTest.ApiRequests
 			///  complete (a record in the database exists when a materialization was started but
 			///  never finished).
 			/// </summary>
-			/// <param name="editionIds">
+			/// <param name="requestedEditions">
 			///  A list of edition IDs for which to generate materialized
 			///  sign streams.  If the list is empty, then the system will look for any unfinished
 			///  jobs and complete those.
 			/// </param>
 			/// <returns></returns>
+
+			//[ApiExplorerSettings(IgnoreApi = true)]
 			public V1_MaterializeSignStreams(RequestMaterializationDTO payload) : base(payload)
 				=> _payload = payload;
 
@@ -826,6 +828,78 @@ namespace SQE.ApiTest.ApiRequests
 				public ListenerMethods CreatedAttribute = ListenerMethods.CreatedAttribute;
 				public ListenerMethods DeletedAttribute = ListenerMethods.DeletedAttribute;
 				public ListenerMethods UpdatedAttribute = ListenerMethods.UpdatedAttribute;
+			}
+		}
+
+		public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId : RequestObject<
+				SignInterpretationCharacterUpdateDTO, SignInterpretationDTO>
+		{
+			private readonly uint                                 _editionId;
+			private readonly SignInterpretationCharacterUpdateDTO _payload;
+			private readonly uint                                 _signInterpretationId;
+
+			/// <summary>
+			///  Creates a variant sign interpretation to the submitted sign interpretation id using
+			///  the character and attribute settings of the newSignInterpretation payload. It will
+			///  copy the ROIs from the original sign interpretation to the new one, but it will not
+			///  copy the attributes (or any commentaries associated with the attributes).
+			/// </summary>
+			/// <param name="editionId">ID of the edition being changed</param>
+			/// <param name="signInterpretationId">
+			///  Id of the sign interpretation for which this variant
+			///  will be created
+			/// </param>
+			/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+			/// <returns>The new sign interpretation</returns>
+			public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
+					uint                                   editionId
+					, uint                                 signInterpretationId
+					, SignInterpretationCharacterUpdateDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_signInterpretationId = signInterpretationId;
+				_payload = payload;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretation
+						, (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
+
+			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationDTO>(
+						"UpdatedSignInterpretation"
+						, receivedData => UpdatedSignInterpretation = receivedData);
+
+			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/sign-interpretation-id"
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _signInterpretationId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods UpdatedSignInterpretation =
+						ListenerMethods.UpdatedSignInterpretation;
 			}
 		}
 

@@ -251,6 +251,47 @@ namespace SQE.API.Server.RealtimeHubs
 		}
 
 		/// <summary>
+		///  Creates a variant sign interpretation to the submitted sign interpretation id using
+		///  the character and attribute settings of the newSignInterpretation payload. It will
+		///  copy the ROIs from the original sign interpretation to the new one, but it will not
+		///  copy the attributes (or any commentaries associated with the attributes).
+		/// </summary>
+		/// <param name="editionId">ID of the edition being changed</param>
+		/// <param name="signInterpretationId">
+		///  Id of the sign interpretation for which this variant
+		///  will be created
+		/// </param>
+		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+		/// <returns>The new sign interpretation</returns>
+		[Authorize]
+		public async Task<SignInterpretationDTO>
+				PutV1EditionsEditionIdSignInterpretationsSignInterpretationId(
+						uint                                   editionId
+						, uint                                 signInterpretationId
+						, SignInterpretationCharacterUpdateDTO newSignInterpretationCharacter)
+
+		{
+			try
+			{
+				return await _signInterpretationService.ChangeSignInterpretationCharacterAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, signInterpretationId
+						, newSignInterpretationCharacter);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
 		///  Deletes the sign interpretation in the route. The endpoint automatically manages the
 		///  sign stream by connecting all the deleted sign's next and previous nodes.  Adding
 		///  "delete-all-variants" to the optional query parameter will cause all variant sign

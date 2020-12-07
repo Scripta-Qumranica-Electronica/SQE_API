@@ -80,7 +80,7 @@ namespace SQE.ApiTest
 
 			// Assert
 			Assert.NotEmpty(artefacts);
-			var artefact = artefacts.First();
+			var artefact = artefacts.First(x => !string.IsNullOrEmpty(x.imagedObjectId));
 			Assert.True(artefact.editionId > 0);
 			Assert.True(artefact.id > 0);
 			Assert.NotNull(artefact.imagedObjectId);
@@ -914,7 +914,7 @@ namespace SQE.ApiTest
 
 				var allArtefacts = (await GetEditionArtefacts(newEdition)).artefacts;
 
-				var artefact = allArtefacts.First();
+				var artefact = allArtefacts.First(x => !string.IsNullOrEmpty(x.imagedObjectId));
 
 				const string newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
 
@@ -972,7 +972,7 @@ namespace SQE.ApiTest
 								, $"/v1/editions/{newEdition}/artefacts/{artefact.id}"
 								, new UpdateArtefactDTO
 								{
-										mask = null
+										mask = "POLYGON((0 0,0 10,10 10,10 0,0 0))"
 										, placement = new PlacementDTO
 										{
 												scale = newScale

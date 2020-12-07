@@ -27,7 +27,8 @@ namespace SQE.DatabaseAccess
 		Task<List<AlteredRecord>> UpdateArtefactShapeAsync(
 				UserInfo editionUser
 				, uint   artefactId
-				, string shape);
+				, string shape
+				, uint?  masterImageId = null);
 
 		Task<List<AlteredRecord>> UpdateArtefactStatusAsync(
 				UserInfo editionUser
@@ -54,7 +55,7 @@ namespace SQE.DatabaseAccess
 
 		Task<uint> CreateNewArtefactAsync(
 				UserInfo   editionUser
-				, uint     masterImageId
+				, uint?    masterImageId
 				, string   shape
 				, string   artefactName
 				, decimal? scale
@@ -155,7 +156,8 @@ namespace SQE.DatabaseAccess
 		public async Task<List<AlteredRecord>> UpdateArtefactShapeAsync(
 				UserInfo editionUser
 				, uint   artefactId
-				, string shape)
+				, string shape
+				, uint?  masterImageId = null)
 		{
 			/* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
 write the value directly into the database, but it does not seem to work right yet.  Thus we currently
@@ -170,10 +172,14 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 
 			if (artefactShapeId == 0)
 			{
-				throw new StandardExceptions.DataNotFoundException(
-						"artefact mask"
+				if (!masterImageId.HasValue)
+					throw new StandardExceptions.ImproperInputDataException("artefact shape");
+
+				return await InsertArtefactShapeAsync(
+						editionUser
 						, artefactId
-						, "artefact_id");
+						, masterImageId.Value
+						, shape);
 			}
 
 			var sqeImageId = await GetArtefactShapeSqeImageIdAsync(editionUser, artefactId);
@@ -322,7 +328,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 
 		public async Task<uint> CreateNewArtefactAsync(
 				UserInfo   editionUser
-				, uint     masterImageId
+				, uint?    masterImageId
 				, string   shape
 				, string   artefactName
 				, decimal? scale
@@ -346,7 +352,15 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 								new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
 						using (var connection = OpenConnection())
 						{
-							// Create a new edition
+							// Check for improper shape request
+							if (masterImageId.HasValue
+								&& string.IsNullOrEmpty(shape))
+							{
+								throw new StandardExceptions.InputDataRuleViolationException(
+										"an artefact mask must be submitted for a master image id");
+							}
+
+							// Create a new artefact
 							await connection.ExecuteAsync(
 									"INSERT INTO artefact (artefact_id) VALUES(NULL)");
 
@@ -359,16 +373,15 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 										"create artefact");
 							}
 
-							// If no shape is input, we use a tiny "dummy" shape as a placeholder
-							shape = string.IsNullOrEmpty(shape)
-									? "POLYGON((0 0,1 1,1 0,0 0))"
-									: shape;
-
-							await InsertArtefactShapeAsync(
-									editionUser
-									, artefactId
-									, masterImageId
-									, shape);
+							// Create a shape if it was submitted
+							if (!string.IsNullOrEmpty(shape))
+							{
+								await InsertArtefactShapeAsync(
+										editionUser
+										, artefactId
+										, masterImageId
+										, shape);
+							}
 
 							await InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
 
@@ -879,7 +892,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 		public async Task<List<AlteredRecord>> InsertArtefactShapeAsync(
 				UserInfo editionUser
 				, uint   artefactId
-				, uint   masterImageId
+				, uint?  masterImageId
 				, string shape)
 		{
 			/* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then

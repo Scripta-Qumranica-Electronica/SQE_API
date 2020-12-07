@@ -4,9 +4,9 @@ namespace SQE.DatabaseAccess.Queries
 	{
 		public const string GetQuery = @"
 SELECT DISTINCT sign_interpretation.sign_interpretation_id AS SignInterpretationId,
-                sign_interpretation.`character` AS `Character`,
+                sign_interpretation_character.`character` AS `Character`,
                 sign_interpretation.sign_id AS SignId,
-                sign_interpretation.is_variant AS IsVariant,
+                sign_interpretation_character_owner.priority AS IsVariant,
                 pos.next_sign_interpretation_id AS NextSignInterpretationId,
                 pos.is_main AS IsMainNextSignInterpretation,
                 pos.creator_id AS PositionCreatorId,
@@ -15,6 +15,9 @@ SELECT DISTINCT sign_interpretation.sign_interpretation_id AS SignInterpretation
 FROM sign_interpretation
 JOIN sign_interpretation_attribute USING(sign_interpretation_id)
 JOIN sign_interpretation_attribute_owner USING(sign_interpretation_attribute_id)
+JOIN sign_interpretation_character USING(sign_interpretation_id)
+JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
+    AND sign_interpretation_character_owner.edition_id = sign_interpretation_attribute_owner.edition_id
 LEFT JOIN (
     SELECT position_in_stream.sign_interpretation_id,
            position_in_stream.next_sign_interpretation_id,
@@ -69,9 +72,14 @@ WHERE position_in_stream_owner.edition_id = @EditionId
     AND position_in_stream.next_sign_interpretation_id = @SignInterpretationId";
 	}
 
-	internal static class CheckForCycleQuery
+	internal static class FindSignInterpretationCharacterId
 	{
 		public const string GetQuery = @"
+SELECT sign_interpretation_character_id
+FROM sign_interpretation_character
+JOIN sign_interpretation_character_owner USING(sign_interpretation_character_id)
+WHERE sign_interpretation_character.sign_interpretation_id = @SignInterpretationId
+	AND sign_interpretation_character_owner.edition_id = @EditionId
 ";
 	}
 }

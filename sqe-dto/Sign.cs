@@ -56,6 +56,19 @@ namespace SQE.API.DTO
 		public string character { get; set; }
 	}
 
+	public class SignInterpretationCharacterUpdateDTO
+	{
+		[Required]
+		[StringLength(
+				1
+				, ErrorMessage =
+						"The character string must not exceed a single character in length.")]
+		public string character { get; set; }
+
+		// Not yet implemented
+		public byte priority { get; set; }
+	}
+
 	public class SignInterpretationDTO : SignInterpretationBaseDTO
 	{
 		public uint signId { get; set; }

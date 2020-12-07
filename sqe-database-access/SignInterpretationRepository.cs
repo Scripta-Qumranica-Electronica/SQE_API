@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
@@ -13,12 +14,19 @@ namespace SQE.DatabaseAccess
 		Task<SignInterpretationData> GetSignInterpretationById(
 				UserInfo user
 				, uint   signInterpretationId);
+
+		Task UpdateSignInterpretationCharacterById(
+				UserInfo user
+				, uint   signInterpretationId
+				, string character
+				, byte   priority);
 	}
 
 	public class SignInterpretationRepository : DbConnectionBase
 												, ISignInterpretationRepository
 	{
 		private readonly IAttributeRepository _attributeRepository;
+		private readonly IDatabaseWriter      _databaseWriter;
 
 		private readonly ISignInterpretationCommentaryRepository
 				_interpretationCommentaryRepository;
@@ -29,13 +37,15 @@ namespace SQE.DatabaseAccess
 				IConfiguration                            config
 				, IAttributeRepository                    attributeRepository
 				, ISignInterpretationCommentaryRepository interpretationCommentaryRepository
-				, IRoiRepository                          roiRepository) : base(config)
+				, IRoiRepository                          roiRepository
+				, IDatabaseWriter                         databaseWriter) : base(config)
 		{
 			_attributeRepository = attributeRepository;
 
 			_interpretationCommentaryRepository = interpretationCommentaryRepository;
 
 			_roiRepository = roiRepository;
+			_databaseWriter = databaseWriter;
 		}
 
 		public async Task<SignInterpretationData> GetSignInterpretationById(
@@ -130,6 +140,68 @@ namespace SQE.DatabaseAccess
 				transactionScope.Complete();
 
 				return returnSignInterpretation;
+			}
+		}
+
+		public async Task UpdateSignInterpretationCharacterById(
+				UserInfo user
+				, uint   signInterpretationId
+				, string character
+				, byte   priority)
+		{
+			using (var transactionScope =
+					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+			using (var conn = OpenConnection())
+			{
+				var signInterpretationCharacterIds = await conn.QueryAsync<uint>(
+						FindSignInterpretationCharacterId.GetQuery
+						, new
+						{
+								user.EditionId
+								, SignInterpretationId = signInterpretationId
+								,
+						});
+
+				if (!signInterpretationCharacterIds.Any())
+				{
+					throw new StandardExceptions.DataNotFoundException(
+							"character"
+							, signInterpretationId.ToString()
+							, "sign_interpretation_character");
+				}
+
+				var signInterpretationCharacterId = signInterpretationCharacterIds.First();
+				var signInterpretationCharacterParameters = new DynamicParameters();
+
+				signInterpretationCharacterParameters.Add(
+						"@sign_interpretation_id"
+						, signInterpretationId);
+
+				signInterpretationCharacterParameters.Add("@character", character);
+
+				//signInterpretationCharacterParameters.Add("@priority", priority);
+				// TODO: Add support to write the "priority" to the owner table
+
+				var signInterpretationCharacterRequest = new MutationRequest(
+						MutateType.Update
+						, signInterpretationCharacterParameters
+						, "sign_interpretation_character"
+						, signInterpretationCharacterId);
+
+				var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+						user
+						, signInterpretationCharacterRequest);
+
+				// Check whether the request was processed.
+				// If so return the new signInterpretationCharacterId.
+				if ((writeResults.Count < 1)
+					|| !writeResults.First().NewId.HasValue)
+				{
+					throw new StandardExceptions.DataNotWrittenException(
+							"update sign interpretation character");
+				}
+
+				transactionScope.Complete();
 			}
 		}
 	}

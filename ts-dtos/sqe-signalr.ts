@@ -34,6 +34,7 @@ import {
 	SignInterpretationBaseDTO,
 	SignInterpretationCreateDTO,
 	SignInterpretationVariantDTO,
+	SignInterpretationCharacterUpdateDTO,
 	SignInterpretationDTO,
 	SignInterpretationListDTO,
 	SignInterpretationCreatedDTO,
@@ -111,6 +112,8 @@ import {
 	ImagedObjectDTO,
 	ImagedObjectListDTO,
 	WktPolygonDTO,
+	DetailedSearchRequestDTO,
+	DetailedSearchResponseDTO,
 	SetInterpretationRoiDTO,
 	UpdateInterpretationRoiDTO,
 	InterpretationRoiDTO,
@@ -757,6 +760,11 @@ export class SignalRUtilities {
         return await this._connection.invoke('DeleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId', iaaEditionCatalogToTextFragmentId);
     }
 
+    
+    public async postV1Search(searchParameters: DetailedSearchRequestDTO): Promise<DetailedSearchResponseDTO> {
+        return await this._connection.invoke('PostV1Search', searchParameters);
+    }
+
     /**
 	 * Retrieve a list of all possible attributes for an edition
 	 *
@@ -841,6 +849,24 @@ export class SignalRUtilities {
 	 */
     public async postV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number, newSignInterpretation: SignInterpretationVariantDTO): Promise<SignInterpretationCreatedDTO> {
         return await this._connection.invoke('PostV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId, newSignInterpretation);
+    }
+
+    /**
+	 * Creates a variant sign interpretation to the submitted sign interpretation id using
+	 *		 the character and attribute settings of the newSignInterpretation payload. It will
+	 *		 copy the ROIs from the original sign interpretation to the new one, but it will not
+	 *		 copy the attributes (or any commentaries associated with the attributes).
+	 *
+	 * @param editionId - ID of the edition being changed
+	 * @param signInterpretationId - 
+	 *		  Id of the sign interpretation for which this variant
+	 *		  will be created
+	 *		 
+	 * @param newSignInterpretation - New sign interpretation data to be added
+	 * @returns - The new sign interpretation
+	 */
+    public async putV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number, newSignInterpretationCharacter: SignInterpretationCharacterUpdateDTO): Promise<SignInterpretationDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId, newSignInterpretationCharacter);
     }
 
     /**

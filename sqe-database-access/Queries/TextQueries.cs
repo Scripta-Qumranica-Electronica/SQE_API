@@ -12,43 +12,44 @@ namespace SQE.DatabaseAccess.Queries
 		///  @editionId is the Id of the edition the text is to be taken from
 		/// </summary>
 		public const string GetQuery = @"
+set @X := 0;
 WITH RECURSIVE sign_interpretation_ids
-	AS (
-		SELECT 	position_in_stream.position_in_stream_id,
-				position_in_stream.sign_interpretation_id AS signInterpretationId,
-				position_in_stream.next_sign_interpretation_id,
-				position_in_stream_owner.is_main,
-				position_in_stream_owner.edition_editor_id,
-				position_in_stream_owner.edition_id,
-				position_in_stream.creator_id,
-				@X := 0 AS sequence
-		FROM position_in_stream
-			JOIN position_in_stream_owner
-				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
-					AND position_in_stream_owner.edition_id = @EditionId
-		WHERE position_in_stream.sign_interpretation_id = @StartId
+   AS (
+      SELECT position_in_stream.position_in_stream_id,
+             position_in_stream.sign_interpretation_id AS signInterpretationId,
+             position_in_stream.next_sign_interpretation_id,
+             position_in_stream_owner.is_main,
+             position_in_stream_owner.edition_editor_id,
+             position_in_stream_owner.edition_id,
+             position_in_stream.creator_id,
+             @X := @X +1 AS sequence
+      FROM position_in_stream
+         JOIN position_in_stream_owner
+            ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
+               AND position_in_stream_owner.edition_id = @EditionId
+      WHERE position_in_stream.sign_interpretation_id = @StartId
 
-		UNION
+      UNION
 
-		SELECT 	position_in_stream.position_in_stream_id,
-				position_in_stream.sign_interpretation_id AS signInterpretationId,
-				position_in_stream.next_sign_interpretation_id,
-				position_in_stream_owner.is_main,
-				position_in_stream_owner.edition_editor_id,
-				sign_interpretation_ids.edition_id,
-				position_in_stream.creator_id,
-				@X := @X + 1 AS sequence
-		FROM  sign_interpretation_ids
-			JOIN position_in_stream
-				ON position_in_stream.sign_interpretation_id = sign_interpretation_ids.next_sign_interpretation_id
-				AND signInterpretationId != @EndId
-			JOIN position_in_stream_owner
-				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
-					AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
-		GROUP BY sign_interpretation_ids.signInterpretationId,position_in_stream.next_sign_interpretation_id
-	)
+      SELECT     position_in_stream.position_in_stream_id,
+            position_in_stream.sign_interpretation_id AS signInterpretationId,
+            position_in_stream.next_sign_interpretation_id,
+            position_in_stream_owner.is_main,
+            position_in_stream_owner.edition_editor_id,
+            sign_interpretation_ids.edition_id,
+            position_in_stream.creator_id,
+            @X := @X + 1 AS sequence
+      FROM  sign_interpretation_ids
+         JOIN position_in_stream
+            ON position_in_stream.sign_interpretation_id = sign_interpretation_ids.next_sign_interpretation_id
+            AND signInterpretationId != @EndId
+         JOIN position_in_stream_owner
+            ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
+               AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
+   #  GROUP BY sign_interpretation_ids.signInterpretationId,position_in_stream.next_sign_interpretation_id
+   )
 
-SELECT 	manuscript_data.manuscript_id AS manuscriptId,
+SELECT     manuscript_data.manuscript_id AS manuscriptId,
 		manuscript_data.name AS editionName,
 		manuscript_data_owner.edition_editor_id AS manuscriptAuthor,
 
@@ -69,7 +70,8 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 		sign_interpretation_ids.creator_id AS PositionCreatorId,
 
 		signInterpretationId,
-		sign_interpretation.`character` AS `character`,
+		sign_interpretation_character.`character` AS `character`,
+		sign_interpretation_character_owner.priority AS Priority,
 		sign_interpretation.sign_id AS SignId,
 		interpretation_commentary.commentary AS InterpretationCommentary,
 		interpretation_commentary.creator_id AS InterpretationCommentaryCreator,
@@ -99,6 +101,9 @@ SELECT 	manuscript_data.manuscript_id AS manuscriptId,
 
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
+	JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = signInterpretationId
+	JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
+		AND sign_interpretation_character_owner.edition_id = sign_interpretation_ids.edition_id
 	JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_id = signInterpretationId
 	JOIN sign_interpretation_attribute_owner
 		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
@@ -463,7 +468,10 @@ WHERE edition_id = @EditionId
 		public const string GetQuery = @"
 			SELECT sign_interpretation_id
 			FROM sign_interpretation
+			JOIN sign_interpretation_character USING(sign_interpretation_id)
+			JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
 			WHERE sign_id = @SignId
+			  	AND sign_interpretation_character_owner.edition_id = @EditionId
 				AND `character`= @Character
 		";
 	}
@@ -472,8 +480,8 @@ WHERE edition_id = @EditionId
 	{
 		public const string GetQuery = @"
 			INSERT INTO sign_interpretation
-				(sign_id,  `character`)
-				VALUES (@SignId,  @Character)
+				(sign_id)
+				VALUES (@SignId)
 			ON DUPLICATE KEY UPDATE sign_interpretation_id = LAST_INSERT_ID(sign_interpretation_id)
 		";
 	}

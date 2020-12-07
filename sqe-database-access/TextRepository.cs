@@ -42,7 +42,8 @@ namespace SQE.DatabaseAccess
 				, List<uint>            anchorsBefore
 				, List<uint>            anchorsAfter
 				, uint?                 signInterpretationId
-				, bool                  breakNeighboringAnchors = false);
+				, bool                  breakNeighboringAnchors = false
+				, bool                  materializeSignStream   = true);
 
 		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignInterpretationAsync(
 				UserInfo     editionUser
@@ -51,47 +52,56 @@ namespace SQE.DatabaseAccess
 				, List<uint> anchorsBefore
 				, List<uint> anchorsAfter
 				, uint?      signInterpretationId
-				, bool       breakNeighboringAnchors = false);
+				, bool       breakNeighboringAnchors = false
+				, bool       materializeSignStream   = true);
 
 		Task LinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, IEnumerable<uint> firstSignInterpretations
-				, IEnumerable<uint> secondSignInterpretations);
+				, IEnumerable<uint> secondSignInterpretations
+				, bool              materializeSignStream = true);
 
 		Task LinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, IEnumerable<uint> firstSignInterpretations
-				, uint              secondSignInterpretation);
+				, uint              secondSignInterpretation
+				, bool              materializeSignStream = true);
 
 		Task LinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, uint              firstSignInterpretation
-				, IEnumerable<uint> secondSignInterpretations);
+				, IEnumerable<uint> secondSignInterpretations
+				, bool              materializeSignStream = true);
 
 		Task LinkSignInterpretationsAsync(
 				UserInfo editionUser
 				, uint   firstSignInterpretation
-				, uint   secondSignInterpretation);
+				, uint   secondSignInterpretation
+				, bool   materializeSignStream = true);
 
 		Task UnlinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, IEnumerable<uint> firstSignInterpretations
-				, IEnumerable<uint> secondSignInterpretations);
+				, IEnumerable<uint> secondSignInterpretations
+				, bool              materializeSignStream = true);
 
 		Task UnlinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, IEnumerable<uint> firstSignInterpretations
-				, uint              secondSignInterpretation);
+				, uint              secondSignInterpretation
+				, bool              materializeSignStream = true);
 
 		Task UnlinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, uint              firstSignInterpretation
-				, IEnumerable<uint> secondSignInterpretations);
+				, IEnumerable<uint> secondSignInterpretations
+				, bool              materializeSignStream = true);
 
 		Task UnlinkSignInterpretationsAsync(
 				UserInfo editionUser
 				, uint   firstSignInterpretation
-				, uint   secondSignInterpretation);
+				, uint   secondSignInterpretation
+				, bool   materializeSignStream = true);
 
 		Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(
 				UserInfo editionUser
@@ -100,7 +110,8 @@ namespace SQE.DatabaseAccess
 		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignInterpretationAsync(
 				UserInfo editionUser
 				, uint   signInterpretationId
-				, bool   deleteVariants);
+				, bool   deleteVariants
+				, bool   materializeSignStream = true);
 
 		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignAsync(
 				UserInfo editionUser
@@ -377,7 +388,8 @@ namespace SQE.DatabaseAccess
 						, List<uint>            anchorsBefore
 						, List<uint>            anchorsAfter
 						, uint?                 signInterpretationId
-						, bool                  breakNeighboringAnchors = false)
+						, bool                  breakNeighboringAnchors = false
+						, bool                  materializeSignStream   = true)
 		{
 			// TODO: This method is a total mess, nesting should be reduces by using subroutines
 			// there are a lot of conditionals that are too hard to follow, and I doubt it will
@@ -566,6 +578,28 @@ namespace SQE.DatabaseAccess
 						}
 					}
 
+					// First check against cycles in the graph
+					foreach (var firstSI in anchorsBefore)
+					{
+						foreach (var secondSI in anchorsAfter)
+						{
+							var createsCycle = await _materializationRepository.IsCycleAsync(
+									editionUser.EditionId ?? 0
+									, secondSI
+									, firstSI);
+
+							if (createsCycle)
+							{
+								throw new StandardExceptions.InputDataRuleViolationException(
+										$@"Invalid operation; it would result in a cycle between {
+													firstSI
+												} and {
+													secondSI
+												} in the sign stream graph");
+							}
+						}
+					}
+
 					// Now that all the preliminary data collection has been completed,
 					// create the new interpretation and gather the necessary data about it
 					var newSignInterpretationData = new SignData
@@ -624,7 +658,7 @@ namespace SQE.DatabaseAccess
 			// request is over.
 			// TODO: change RequestMaterializationAsync to take an array,
 			// it should be able to check how many sign streams would need a rebuild.
-			if (anchorsBefore.Any())
+			if (materializeSignStream && anchorsBefore.Any())
 			{
 				_materializationRepository.RequestMaterializationAsync(
 						editionUser.EditionId.Value
@@ -657,7 +691,8 @@ namespace SQE.DatabaseAccess
 						, List<uint> anchorsBefore
 						, List<uint> anchorsAfter
 						, uint?      signInterpretationId
-						, bool       breakNeighboringAnchors = false)
+						, bool       breakNeighboringAnchors = false
+						, bool       materializeSignStream   = true)
 			=> await CreateSignInterpretationsAsync(
 					editionUser
 					, lineId
@@ -665,7 +700,8 @@ namespace SQE.DatabaseAccess
 					, anchorsBefore
 					, anchorsAfter
 					, signInterpretationId
-					, breakNeighboringAnchors);
+					, breakNeighboringAnchors
+					, materializeSignStream);
 
 		/// <summary>
 		///  Join each member of firstSignInterpretations with each member of secondSignInterpretations
@@ -684,8 +720,31 @@ namespace SQE.DatabaseAccess
 		public async Task LinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, IEnumerable<uint> firstSignInterpretations
-				, IEnumerable<uint> secondSignInterpretations)
+				, IEnumerable<uint> secondSignInterpretations
+				, bool              materializeSignStream = true)
 		{
+			// First check against cycles in the graph
+			foreach (var firstSI in firstSignInterpretations)
+			{
+				foreach (var secondSI in secondSignInterpretations)
+				{
+					var createsCycle = await _materializationRepository.IsCycleAsync(
+							editionUser.EditionId ?? 0
+							, secondSI
+							, firstSI);
+
+					if (createsCycle)
+					{
+						throw new StandardExceptions.InputDataRuleViolationException(
+								$@"Cannot create cycles in the sign stream graph. Linking {
+											firstSI
+										} with {
+											secondSI
+										} would create a cycle in the graph");
+					}
+				}
+			}
+
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
 			using (var connection = OpenConnection())
@@ -717,9 +776,12 @@ namespace SQE.DatabaseAccess
 			// request is over.
 			// TODO: change RequestMaterializationAsync to take an array,
 			// it should be able to check how many sign streams would need a rebuild.
-			_materializationRepository.RequestMaterializationAsync(
-					editionUser.EditionId.Value
-					, firstSignInterpretations.First());
+			if (materializeSignStream)
+			{
+				_materializationRepository.RequestMaterializationAsync(
+						editionUser.EditionId.Value
+						, firstSignInterpretations.First());
+			}
 		}
 
 		/// <summary>
@@ -736,12 +798,14 @@ namespace SQE.DatabaseAccess
 		public async Task LinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, IEnumerable<uint> firstSignInterpretations
-				, uint              secondSignInterpretation)
+				, uint              secondSignInterpretation
+				, bool              materializeSignStream = true)
 		{
 			await LinkSignInterpretationsAsync(
 					editionUser
 					, firstSignInterpretations
-					, new List<uint> { secondSignInterpretation });
+					, new List<uint> { secondSignInterpretation }
+					, materializeSignStream);
 		}
 
 		/// <summary>
@@ -758,12 +822,14 @@ namespace SQE.DatabaseAccess
 		public async Task LinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, uint              firstSignInterpretation
-				, IEnumerable<uint> secondSignInterpretations)
+				, IEnumerable<uint> secondSignInterpretations
+				, bool              materializeSignStream = true)
 		{
 			await LinkSignInterpretationsAsync(
 					editionUser
 					, new List<uint> { firstSignInterpretation }
-					, secondSignInterpretations);
+					, secondSignInterpretations
+					, materializeSignStream);
 		}
 
 		/// <summary>
@@ -780,12 +846,14 @@ namespace SQE.DatabaseAccess
 		public async Task LinkSignInterpretationsAsync(
 				UserInfo editionUser
 				, uint   firstSignInterpretation
-				, uint   secondSignInterpretation)
+				, uint   secondSignInterpretation
+				, bool   materializeSignStream = true)
 		{
 			await LinkSignInterpretationsAsync(
 					editionUser
 					, new List<uint> { firstSignInterpretation }
-					, new List<uint> { secondSignInterpretation });
+					, new List<uint> { secondSignInterpretation }
+					, materializeSignStream);
 		}
 
 		/// <summary>
@@ -805,7 +873,8 @@ namespace SQE.DatabaseAccess
 		public async Task UnlinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, IEnumerable<uint> firstSignInterpretations
-				, IEnumerable<uint> secondSignInterpretations)
+				, IEnumerable<uint> secondSignInterpretations
+				, bool              materializeSignStream = true)
 		{
 			var secondSignInterpretationsList = secondSignInterpretations.ToList();
 
@@ -862,9 +931,12 @@ namespace SQE.DatabaseAccess
 			// request is over.
 			// TODO: change RequestMaterializationAsync to take an array,
 			// it should be able to check how many sign streams would need a rebuild.
-			_materializationRepository.RequestMaterializationAsync(
-					editionUser.EditionId.Value
-					, firstSignInterpretations.First());
+			if (materializeSignStream)
+			{
+				_materializationRepository.RequestMaterializationAsync(
+						editionUser.EditionId.Value
+						, firstSignInterpretations.First());
+			}
 		}
 
 		/// <summary>
@@ -881,12 +953,14 @@ namespace SQE.DatabaseAccess
 		public async Task UnlinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, IEnumerable<uint> firstSignInterpretations
-				, uint              secondSignInterpretation)
+				, uint              secondSignInterpretation
+				, bool              materializeSignStream = true)
 		{
 			await UnlinkSignInterpretationsAsync(
 					editionUser
 					, firstSignInterpretations
-					, new List<uint> { secondSignInterpretation });
+					, new List<uint> { secondSignInterpretation }
+					, materializeSignStream);
 		}
 
 		/// <summary>
@@ -903,12 +977,14 @@ namespace SQE.DatabaseAccess
 		public async Task UnlinkSignInterpretationsAsync(
 				UserInfo            editionUser
 				, uint              firstSignInterpretation
-				, IEnumerable<uint> secondSignInterpretations)
+				, IEnumerable<uint> secondSignInterpretations
+				, bool              materializeSignStream = true)
 		{
 			await UnlinkSignInterpretationsAsync(
 					editionUser
 					, new List<uint> { firstSignInterpretation }
-					, secondSignInterpretations);
+					, secondSignInterpretations
+					, materializeSignStream);
 		}
 
 		/// <summary>
@@ -925,12 +1001,14 @@ namespace SQE.DatabaseAccess
 		public async Task UnlinkSignInterpretationsAsync(
 				UserInfo editionUser
 				, uint   firstSignInterpretation
-				, uint   secondSignInterpretation)
+				, uint   secondSignInterpretation
+				, bool   materializeSignStream = true)
 		{
 			await UnlinkSignInterpretationsAsync(
 					editionUser
 					, new List<uint> { firstSignInterpretation }
-					, new List<uint> { secondSignInterpretation });
+					, new List<uint> { secondSignInterpretation }
+					, materializeSignStream);
 		}
 
 		/// <summary>
@@ -961,20 +1039,26 @@ namespace SQE.DatabaseAccess
 					var newSignInterpretation = true;
 
 					var createSignInterpretationIdParameters = new DynamicParameters();
-
 					createSignInterpretationIdParameters.Add("@SignId", signId);
 
 					createSignInterpretationIdParameters.Add(
 							"@Character"
 							, signInterpretation.Character);
 
-					var addSignInterpretationResult = await connection.ExecuteAsync(
-							AddSignInterpretationQuery.GetQuery
+					createSignInterpretationIdParameters.Add(
+							"@EditionId"
+							, editionUser.EditionId.Value);
+
+					var existingSignInterpretationId = await connection.QueryAsync<uint>(
+							GetSignInterpretationIdQuery.GetQuery
 							, createSignInterpretationIdParameters);
 
 					// If the creation fails than the raw sign interpretation could could already exist
-					if (addSignInterpretationResult == 0)
+					if (existingSignInterpretationId.Any())
 					{
+						signInterpretation.SignInterpretationId =
+								existingSignInterpretationId.First();
+
 						signInterpretation.SignInterpretationId =
 								await connection.QuerySingleOrDefaultAsync<uint>(
 										GetSignInterpretationIdQuery.GetQuery
@@ -991,6 +1075,10 @@ namespace SQE.DatabaseAccess
 					}
 					else // Store the new sign interpretation id
 					{
+						await connection.ExecuteAsync(
+								AddSignInterpretationQuery.GetQuery
+								, createSignInterpretationIdParameters);
+
 						signInterpretation.SignInterpretationId =
 								await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 					}
@@ -1021,6 +1109,12 @@ namespace SQE.DatabaseAccess
 					var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
 
 					await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+
+					// Add the character
+					await _createSignInterpretationCharacterAsync(
+							editionUser
+							, signInterpretation.SignInterpretationId.GetValueOrDefault()
+							, signInterpretation.Character);
 
 					// Add the attributes
 					var attributes = newSignInterpretation
@@ -1092,7 +1186,8 @@ namespace SQE.DatabaseAccess
 				RemoveSignInterpretationAsync(
 						UserInfo editionUser
 						, uint   signInterpretationId
-						, bool   deleteVariants)
+						, bool   deleteVariants
+						, bool   materializeSignStream = true)
 		{
 			var alteredSignInterpretations = new List<uint>();
 			var deletedSignInterpretations = new List<uint>();
@@ -1153,6 +1248,9 @@ namespace SQE.DatabaseAccess
 
 				transactionScope.Complete();
 			}
+
+			if (!materializeSignStream)
+				return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations);
 
 			if (alteredSignInterpretations.Any())
 			{ // Rebuild any affected materialized sign streams
@@ -1910,6 +2008,141 @@ namespace SQE.DatabaseAccess
 			}
 
 			return newElementId;
+		}
+
+		/// <summary>
+		///  Creates new character for a sign interpretation
+		/// </summary>
+		/// <param name="editionUser">Edition user object</param>
+		/// <param name="signInterpretationId">Id of sign interpretation</param>
+		/// <param name="character">New character to be created</param>
+		/// <returns>List of new attributes</returns>
+		public async Task<uint> _createSignInterpretationCharacterAsync(
+				UserInfo editionUser
+				, uint   signInterpretationId
+				, string character)
+		{
+			using (var transactionScope =
+					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+			{
+				var response = await _createOrUpdateCharacterAsync(
+						editionUser
+						, signInterpretationId
+						, character
+						, MutateType.Create);
+
+				transactionScope.Complete();
+
+				return response;
+			}
+		}
+
+		/// <summary>
+		///  Updates the character of a sign interpretation
+		/// </summary>
+		/// <param name="editionUser">Edition user object</param>
+		/// <param name="signInterpretationId">Id of sign interpretation</param>
+		/// <param name="character">New character to be created</param>
+		/// <returns>List of new attributes</returns>
+		public async Task<uint> _updateSignInterpretationCharacterAsync(
+				UserInfo editionUser
+				, uint   signInterpretationId
+				, string oldCharacter
+				, string character)
+		{
+			using (var transactionScope =
+					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+			using (var conn = OpenConnection())
+			{
+				var signInterpretationCharacterIds = await conn.QueryAsync<uint>(
+						FindSignInterpretationCharacterId.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, SignInterpretationId = signInterpretationId
+								, Character = oldCharacter
+								,
+						});
+
+				if (!signInterpretationCharacterIds.Any())
+				{
+					throw new StandardExceptions.DataNotFoundException(
+							oldCharacter
+							, signInterpretationId.ToString()
+							, "sign_interpretation_character");
+				}
+
+				var response = await _createOrUpdateCharacterAsync(
+						editionUser
+						, signInterpretationId
+						, character
+						, MutateType.Update
+						, signInterpretationCharacterIds.First());
+
+				transactionScope.Complete();
+
+				return response;
+			}
+		}
+
+		/// <summary>
+		///  Creates and executes create or update mutation requests for the given character
+		/// </summary>
+		/// <param name="editionUser">Edition user object</param>
+		/// <param name="signInterpretationId">Id of sign interpretation</param>
+		/// <param name="character">Character to be added/updated</param>
+		/// <param name="action">Mutate type create or update</param>
+		/// <returns>The new id of the sign interpretation character.</returns>
+		/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
+		private async Task<uint> _createOrUpdateCharacterAsync(
+				UserInfo     editionUser
+				, uint       signInterpretationId
+				, string     character
+				, MutateType action
+				, uint?      signInterpretationCharacterId = null)
+		{
+			// Throw if an update was requested without providing a sign interpretation character id
+			if ((action == MutateType.Update)
+				&& !signInterpretationCharacterId.HasValue)
+				throw new StandardExceptions.ImproperInputDataException(
+						"sign interpretation character");
+
+			var signInterpretationCharacterParameters = new DynamicParameters();
+
+			signInterpretationCharacterParameters.Add(
+					"@sign_interpretation_id"
+					, signInterpretationId);
+
+			signInterpretationCharacterParameters.Add("@character", character);
+
+			//signInterpretationCharacterParameters.Add("@priority", priority);
+			// TODO: Add support to write the "priority" to the owner table
+
+			var signInterpretationCharacterRequest = new MutationRequest(
+					action
+					, signInterpretationCharacterParameters
+					, "sign_interpretation_character"
+					, action == MutateType.Update
+							? signInterpretationCharacterId
+							: null);
+
+			var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+					editionUser
+					, signInterpretationCharacterRequest);
+
+			// Check whether the request was processed.
+			// If so return the new signInterpretationCharacterId.
+			if ((writeResults.Count >= 1)
+				&& writeResults.First().NewId.HasValue)
+				return writeResults.First().NewId.Value;
+
+			// Otherwise throw an error about the write failure
+			var actionName = action == MutateType.Create
+					? "create"
+					: "update";
+
+			throw new StandardExceptions.DataNotWrittenException(
+					$"{actionName} sign interpretation attribute");
 		}
 
 		#endregion

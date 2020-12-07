@@ -18,7 +18,7 @@ SELECT DISTINCT text_fragment_data.text_fragment_id AS TextFragmentId,
                 ap.z_index AS ArtefactZIndex,
 
                 sign_interpretation.sign_interpretation_id AS SignInterpretationId,
-                sign_interpretation.character AS SignInterpretationCharacter,
+                sign_interpretation_character.character AS SignInterpretationCharacter,
                 sign_interpretation.sign_id AS SignId,
 
                 sign_interpretation_roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
@@ -45,9 +45,12 @@ JOIN text_fragment_data USING(text_fragment_id)
 JOIN text_fragment_data_owner ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
     AND text_fragment_data_owner.edition_id = line_to_sign_owner.edition_id
 JOIN sign_interpretation ON sign_interpretation.sign_id = line_to_sign.sign_id
-    AND sign_interpretation.character != ''
-    AND sign_interpretation.character IS NOT NULL
-JOIN sign_interpretation_roi USING(sign_interpretation_id)
+JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = sign_interpretation.sign_interpretation_id
+    AND sign_interpretation_character.character != ''
+    AND sign_interpretation_character.character IS NOT NULL
+JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
+    AND sign_interpretation_character_owner.edition_id = line_to_sign_owner.edition_id
+JOIN sign_interpretation_roi ON sign_interpretation_roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
 JOIN sign_interpretation_roi_owner ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
 JOIN roi_position USING(roi_position_id)
 JOIN roi_shape USING(roi_shape_id)
