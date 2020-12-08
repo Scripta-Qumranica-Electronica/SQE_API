@@ -356,12 +356,39 @@ namespace SQE.API.Server.Services
 				, SignInterpretationCharacterUpdateDTO signInterpretation
 				, string                               clientId = null)
 		{
+			// immediately reject improper character + attribute value
+			if (string.IsNullOrEmpty(signInterpretation.character)
+				|| (signInterpretation.character == " "))
+			{
+				if (signInterpretation.attributeValueId == 1)
+				{
+					throw new StandardExceptions.InputDataRuleViolationException(
+							"a space/empty character may not have an attribute value id of 1");
+				}
+
+				signInterpretation.character = "";
+				signInterpretation.attributeValueId ??= 2;
+			}
+			else // the character has a value and it is not " "
+			{
+				signInterpretation.attributeValueId ??= 1;
+
+				if (signInterpretation.attributeValueId != 1)
+				{
+					throw new StandardExceptions.InputDataRuleViolationException(
+							"all characters must have an attribute value id of 1");
+				}
+			}
+
+			// perform the update
 			await _signInterpretationRepository.UpdateSignInterpretationCharacterById(
 					user
 					, signInterpretationId
 					, signInterpretation.character
-					, signInterpretation.priority);
+					, signInterpretation.priority
+					, signInterpretation.attributeValueId.Value);
 
+			// collect the result
 			var updatedSignInterpretation =
 					await GetEditionSignInterpretationAsync(user, signInterpretationId);
 

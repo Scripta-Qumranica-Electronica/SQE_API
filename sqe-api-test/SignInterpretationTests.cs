@@ -298,10 +298,19 @@ namespace SQE.ApiTest
 		}
 
 		[Theory]
-		[InlineData(false)]
-		[InlineData(true)]
+		[InlineData(false, "b", 1u)]
+		[InlineData(true, "b", 1u)]
+		[InlineData(false, "b", null)]
+		[InlineData(true, "b", null)]
+		[InlineData(false, "", 2u)]
+		[InlineData(true, "", 2u)]
+		[InlineData(false, "", null)]
+		[InlineData(true, "", null)]
 		[Trait("Category", "Sign Interpretation")]
-		public async Task CanUpdateSignInterpretationCharacter(bool realtime)
+		public async Task CanUpdateSignInterpretationCharacter(
+				bool     realtime
+				, string character
+				, uint?  attributeValueId)
 		{
 			using (var editionCreator =
 					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
@@ -329,8 +338,6 @@ namespace SQE.ApiTest
 						? origSignInterpretationRequest.SignalrResponseObject
 						: origSignInterpretationRequest.HttpResponseObject;
 
-				const string newCharacter = "b";
-
 				// Act
 				var updatedSignInterpretationRequest =
 						new Put.V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
@@ -338,8 +345,9 @@ namespace SQE.ApiTest
 								, nextSignInterpretation
 								, new SignInterpretationCharacterUpdateDTO
 								{
-										character = newCharacter
+										character = character
 										, priority = 0
+										, attributeValueId = attributeValueId
 										,
 								});
 
@@ -361,11 +369,11 @@ namespace SQE.ApiTest
 				updatedSignInterpretationRequest.UpdatedSignInterpretation.IsDeepEqual(
 						updatedSignInterpretation);
 
-				Assert.Equal(newCharacter, updatedSignInterpretation.character);
+				Assert.Equal(character, updatedSignInterpretation.character);
 
-				Assert.NotEqual(
-						origSignInterpretation.character
-						, updatedSignInterpretation.character);
+				// Assert.NotEqual(
+				// 		origSignInterpretation.character
+				// 		, updatedSignInterpretation.character);
 
 				updatedSignInterpretation.character = origSignInterpretation.character;
 				updatedSignInterpretation.IsDeepEqual(origSignInterpretation);

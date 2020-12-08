@@ -19,7 +19,8 @@ namespace SQE.DatabaseAccess
 				UserInfo user
 				, uint   signInterpretationId
 				, string character
-				, byte   priority);
+				, byte   priority
+				, uint   attributeValueId);
 	}
 
 	public class SignInterpretationRepository : DbConnectionBase
@@ -147,7 +148,8 @@ namespace SQE.DatabaseAccess
 				UserInfo user
 				, uint   signInterpretationId
 				, string character
-				, byte   priority)
+				, byte   priority
+				, uint   attributeValueId)
 		{
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -200,6 +202,37 @@ namespace SQE.DatabaseAccess
 					throw new StandardExceptions.DataNotWrittenException(
 							"update sign interpretation character");
 				}
+
+				var signInterpretationAttribute =
+						await _attributeRepository
+								.GetSignInterpretationAttributesByInterpretationId(
+										user
+										, signInterpretationId);
+
+				// Check if the correct attribute value is already set
+				if (signInterpretationAttribute.Any(x => x.AttributeValueId == attributeValueId))
+				{
+					transactionScope.Complete();
+
+					return;
+				}
+
+				// if not the old one must be deleted and the new one set
+				var deleteAttribute = signInterpretationAttribute.First(x => x.AttributeId == 1);
+
+				// delete the old attribute
+				await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
+						user
+						, signInterpretationId
+						, deleteAttribute.AttributeValueId.Value);
+
+				// update to the current attribute
+				deleteAttribute.AttributeValueId = attributeValueId;
+
+				await _attributeRepository.CreateSignInterpretationAttributesAsync(
+						user
+						, signInterpretationId
+						, deleteAttribute);
 
 				transactionScope.Complete();
 			}

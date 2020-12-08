@@ -2104,8 +2104,10 @@ namespace SQE.DatabaseAccess
 			// Throw if an update was requested without providing a sign interpretation character id
 			if ((action == MutateType.Update)
 				&& !signInterpretationCharacterId.HasValue)
+			{
 				throw new StandardExceptions.ImproperInputDataException(
 						"sign interpretation character");
+			}
 
 			var signInterpretationCharacterParameters = new DynamicParameters();
 
