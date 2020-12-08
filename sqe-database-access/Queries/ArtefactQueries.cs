@@ -18,7 +18,7 @@
 SELECT artefact_data.name AS Name,
        artefact_data_owner.edition_editor_id AS ArtefactDataEditorId,
        $Mask as Mask,
-       ash.artefact_id AS ArtefactId,
+       artefact_data.artefact_id AS ArtefactId,
        ash.sqe_image_id AS ImageId,
        ash.edition_editor_id AS MaskEditorId,
        ap.scale AS Scale,
@@ -255,10 +255,10 @@ WHERE artefact_group_member_owner.edition_id = @EditionId
 	{
 		public const string GetQuery = @"
 SELECT artefact_id
-FROM artefact_shape
-JOIN artefact_shape_owner USING(artefact_shape_id)
-WHERE artefact_shape_owner.edition_id = @EditionId
-    AND artefact_shape.artefact_id IN @ArtefactIds
+FROM artefact_data
+JOIN artefact_data_owner USING(artefact_data_id)
+WHERE artefact_data_owner.edition_id = @EditionId
+    AND artefact_data.artefact_id IN @ArtefactIds
 ";
 	}
 }
