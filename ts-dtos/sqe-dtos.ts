@@ -359,8 +359,7 @@ export interface BatchUpdatedArtefactTransformDTO {
 }
 
 export interface CreateArtefactDTO extends UpdateArtefactDTO {
-    masterImageId: number;
-    mask: string;
+    masterImageId?: number;
 }
 
 export interface UpdateArtefactGroupDTO {
