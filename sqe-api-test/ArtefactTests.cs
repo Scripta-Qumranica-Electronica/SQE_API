@@ -825,7 +825,7 @@ namespace SQE.ApiTest
 
 				resp = await artefactResponse.Content.ReadAsStringAsync();
 
-				Assert.Contains("The mask must be a valid WKT POLYGON description.", resp);
+				Assert.Contains("The submitted WKT POLYGON is invalid", resp);
 			}
 		}
 

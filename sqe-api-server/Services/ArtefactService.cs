@@ -203,7 +203,7 @@ namespace SQE.API.Server.Services
 		// they are only trying to change only the z-Index. Such a situation would result in a lot
 		// of extra bandwidth usage and checking (the system does check to see if the mask has
 		// actually changed). If such is the case, consider breaking up the artefact update
-		// endpoint into several distinct endpoints, for example: one for name, another for 
+		// endpoint into several distinct endpoints, for example: one for name, another for
 		// position, and another for mask.
 		public async Task<ArtefactDTO> UpdateArtefactAsync(
 				UserInfo            editionUser
@@ -282,6 +282,11 @@ namespace SQE.API.Server.Services
 				, CreateArtefactDTO createArtefact
 				, string            clientId = null)
 		{
+			if (createArtefact.masterImageId.HasValue
+				&& string.IsNullOrEmpty(createArtefact.mask))
+				throw new StandardExceptions.ImproperInputDataException(
+						"The mask field is required.");
+
 			var cleanedPoly = string.IsNullOrEmpty(createArtefact.mask)
 					? null
 					: GeometryValidation.ValidatePolygon(createArtefact.mask, "artefact");
