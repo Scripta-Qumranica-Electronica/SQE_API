@@ -248,7 +248,8 @@ namespace SQE.API.Server.Services
 								, updateArtefact.placement.rotate
 								, updateArtefact.placement.translate?.x
 								, updateArtefact.placement.translate?.y
-								, updateArtefact.placement.zIndex));
+								, updateArtefact.placement.zIndex
+								, updateArtefact.placement.mirrored));
 			}
 
 			if (!string.IsNullOrEmpty(updateArtefact.statusMessage))
@@ -282,11 +283,6 @@ namespace SQE.API.Server.Services
 				, CreateArtefactDTO createArtefact
 				, string            clientId = null)
 		{
-			if (createArtefact.masterImageId.HasValue
-				&& string.IsNullOrEmpty(createArtefact.mask))
-				throw new StandardExceptions.ImproperInputDataException(
-						"The mask field is required.");
-
 			var cleanedPoly = string.IsNullOrEmpty(createArtefact.mask)
 					? null
 					: GeometryValidation.ValidatePolygon(createArtefact.mask, "artefact");
@@ -301,7 +297,8 @@ namespace SQE.API.Server.Services
 					, createArtefact.placement?.translate?.x
 					, createArtefact.placement?.translate?.y
 					, createArtefact.placement?.zIndex
-					, createArtefact.statusMessage);
+					, createArtefact.statusMessage
+					, createArtefact.placement?.mirrored ?? false);
 
 			var optional = string.IsNullOrEmpty(createArtefact.mask)
 					? new List<string>()

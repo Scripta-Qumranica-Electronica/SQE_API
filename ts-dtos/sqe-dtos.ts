@@ -249,6 +249,7 @@ export interface PlacementDTO {
     rotate: number;
     zIndex: number;
     translate?: TranslateDTO;
+    mirrored: boolean;
 }
 
 export interface TranslateDTO {
@@ -359,7 +360,7 @@ export interface BatchUpdatedArtefactTransformDTO {
 }
 
 export interface CreateArtefactDTO extends UpdateArtefactDTO {
-    masterImageId?: number;
+    masterImageId: number;
 }
 
 export interface UpdateArtefactGroupDTO {
