@@ -11,4 +11,13 @@ namespace SQE.DatabaseAccess.Models
 		public uint?          NextTextFragmentId     { get; set; }
 		public uint?          TextFragmentEditorId   { get; set; }
 	}
+
+	public class TextFragmentSearch
+	{
+		public uint   EditionId      { get; set; }
+		public string EditionName    { get; set; }
+		public uint   TextFragmentId { get; set; }
+		public string Name           { get; set; }
+		public string Editors        { get; set; }
+	}
 }

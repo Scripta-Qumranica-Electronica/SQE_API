@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Dapper;
 using SQE.API.DTO;
 using SQE.DatabaseAccess.Models;
 
@@ -69,5 +70,22 @@ namespace SQE.API.Server.Serialization
 		{
 			return new SimpleImageListDTO { images = images.Select(x => x.ToDTO()).ToArray() };
 		}
+
+		public static ImageSearchResponseListDTO ToDTO(this IEnumerable<SearchImagedObject> siol)
+		{
+			return new ImageSearchResponseListDTO
+			{
+					imagedObjects = siol.Select(x => x.ToDTO()).AsList(),
+			};
+		}
+
+		public static ImageSearchResponseDTO ToDTO(this SearchImagedObject sio)
+			=> new ImageSearchResponseDTO
+			{
+					id = sio.Id
+					, rectoThumbnail = sio.RectoThumbnail
+					, versoThumbnail = sio.VersoThumbnail
+					,
+			};
 	}
 }

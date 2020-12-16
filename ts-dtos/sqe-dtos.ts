@@ -396,6 +396,10 @@ export interface EditionListDTO {
     editions: Array<Array<EditionDTO>>;
 }
 
+export interface FlatEditionListDTO {
+    editions: Array<EditionDTO>;
+}
+
 export interface PermissionDTO {
     mayRead: boolean;
     mayWrite: boolean;
@@ -583,16 +587,42 @@ export interface WktPolygonDTO {
 
 export interface DetailedSearchRequestDTO {
     textDesignation?: string;
+    exactTextDesignation: boolean;
     imageDesignation?: string;
+    exactImageDesignation: boolean;
     textReference?: Array<string>;
+    exactTextReference: boolean;
     artefactDesignation?: Array<string>;
+    exactArtefactDesignation: boolean;
 }
 
 export interface DetailedSearchResponseDTO {
-    editions?: EditionListDTO;
-    textFragments?: TextFragmentDataListDTO;
-    artefacts?: ArtefactDataListDTO;
-    images?: ImagedObjectListDTO;
+    editions?: FlatEditionListDTO;
+    textFragments?: TextFragmentSearchResponseListDTO;
+    artefacts?: ArtefactListDTO;
+    images?: ImageSearchResponseListDTO;
+}
+
+export interface TextFragmentSearchResponseListDTO {
+    textFragments?: Array<TextFragmentSearchResponseDTO>;
+}
+
+export interface TextFragmentSearchResponseDTO {
+    id: number;
+    editionId: number;
+    name?: string;
+    editionName?: string;
+    editionEditors?: Array<string>;
+}
+
+export interface ImageSearchResponseListDTO {
+    imagedObjects?: Array<ImageSearchResponseDTO>;
+}
+
+export interface ImageSearchResponseDTO {
+    id?: string;
+    rectoThumbnail?: string;
+    versoThumbnail?: string;
 }
 
 export interface SetInterpretationRoiDTO {

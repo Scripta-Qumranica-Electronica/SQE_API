@@ -18,6 +18,12 @@ namespace SQE.API.Server.RealtimeHubs
 {
 	public partial class MainHub
 	{
+		/// <summary>
+		///  Basic searching of the Qumranica database. Results are truncated
+		///  to 100 results per search category.
+		/// </summary>
+		/// <param name="searchParameters">The parameters of the search</param>
+		/// <returns></returns>
 		[AllowAnonymous]
 		public async Task<DetailedSearchResponseDTO> PostV1Search(
 				DetailedSearchRequestDTO searchParameters)

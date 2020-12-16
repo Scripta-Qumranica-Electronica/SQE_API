@@ -76,6 +76,7 @@ import {
 	EditionDTO,
 	EditionGroupDTO,
 	EditionListDTO,
+	FlatEditionListDTO,
 	PermissionDTO,
 	UpdateEditorRightsDTO,
 	InviteEditorDTO,
@@ -114,6 +115,10 @@ import {
 	WktPolygonDTO,
 	DetailedSearchRequestDTO,
 	DetailedSearchResponseDTO,
+	TextFragmentSearchResponseListDTO,
+	TextFragmentSearchResponseDTO,
+	ImageSearchResponseListDTO,
+	ImageSearchResponseDTO,
 	SetInterpretationRoiDTO,
 	UpdateInterpretationRoiDTO,
 	InterpretationRoiDTO,
@@ -760,7 +765,13 @@ export class SignalRUtilities {
         return await this._connection.invoke('DeleteV1CatalogueConfirmMatchIaaEditionCatalogToTextFragmentId', iaaEditionCatalogToTextFragmentId);
     }
 
-    
+    /**
+	 * Basic searching of the Qumranica database. Results are truncated
+	 *		 to 100 results per search category.
+	 *
+	 * @param searchParameters - The parameters of the search
+	 *
+	 */
     public async postV1Search(searchParameters: DetailedSearchRequestDTO): Promise<DetailedSearchResponseDTO> {
         return await this._connection.invoke('PostV1Search', searchParameters);
     }

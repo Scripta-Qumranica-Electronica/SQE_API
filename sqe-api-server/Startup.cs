@@ -82,8 +82,10 @@ namespace SQE.API.Server
 			services.AddScoped<ICatalogueRepository, CatalogueRepository>();
 
 			services
-					.AddTransient<ISignStreamMaterializationRepository,
+					.AddScoped<ISignStreamMaterializationRepository,
 							SignStreamMaterializationRepository>();
+
+			services.AddScoped<ISearchRepository, SearchRepository>();
 
 			services.AddResponseCompression();
 

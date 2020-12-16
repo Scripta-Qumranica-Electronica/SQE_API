@@ -16,6 +16,8 @@ namespace SQE.DatabaseAccess
 	{
 		Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
 
+		Task<Edition> GetEditionAsync(uint? userId, uint editionId);
+
 		Task ChangeEditionNameAsync(UserInfo editionUser, string name);
 
 		Task UpdateEditionMetricsAsync(
@@ -199,6 +201,120 @@ namespace SQE.DatabaseAccess
 								, splitOn: "EditorId");
 
 				return editionDictionary.Values;
+			}
+		}
+
+		public async Task<Edition> GetEditionAsync(uint? userId, uint editionId) //
+		{
+			using (var connection = OpenConnection())
+			{
+				var editionDictionary = new Dictionary<uint, Edition>();
+				Edition lastEdition = null;
+
+				await connection.QueryAsync<EditionQuery.Result, EditorWithPermissions, Edition>(
+						EditionQuery.GetQuery(userId.HasValue, true)
+						, (editionGroup, editor) =>
+						  {
+							  // Check if we have moved on to a new edition
+							  if (!editionDictionary.TryGetValue(
+									  editionGroup.EditionId
+									  , out lastEdition))
+							  {
+								  // Set the copyrights for the previous, and now complete, edition before making the new one
+								  if (lastEdition != null)
+								  {
+									  lastEdition.Copyright = Licence.printLicence(
+											  lastEdition.CopyrightHolder
+											  , string.IsNullOrEmpty(lastEdition.Collaborators)
+													  ? string.Join(
+															  ", "
+															  , lastEdition.Editors.Select(
+																	  y =>
+																	  {
+																		  if ((y.Forename == null)
+																			  && (y.Surname == null)
+																		  )
+																		  {
+																			  return y.EditorEmail;
+																		  }
+
+																		  return $@"{
+																					  y.Forename
+																				  } {
+																					  y.Surname
+																				  }".Trim();
+																	  }))
+													  : lastEdition.Collaborators);
+								  }
+
+								  // Now start building the new edition
+								  lastEdition = new Edition
+								  {
+										  Name = editionGroup.Name
+										  , Width = editionGroup.Width
+										  , Height = editionGroup.Height
+										  , XOrigin = editionGroup.XOrigin
+										  , YOrigin = editionGroup.YOrigin
+										  , PPI = editionGroup.PPI
+										  , ManuscriptMetricsEditor =
+												  editionGroup.ManuscriptMetricsEditor
+										  , Collaborators = editionGroup.Collaborators
+										  , Copyright = null
+										  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+										  CopyrightHolder = editionGroup.CopyrightHolder
+										  , EditionDataEditorId = editionGroup.EditionDataEditorId
+										  , EditionId = editionGroup.EditionId
+										  , IsPublic = editionGroup.IsPublic
+										  , LastEdit = editionGroup.LastEdit
+										  , Locked = editionGroup.Locked
+										  , Owner =
+												  new User
+												  {
+														  Email = editionGroup.CurrentEmail
+														  , UserId =
+																  editionGroup.CurrentUserId
+														  ,
+												  }
+										  , Permission =
+												  new Permission
+												  {
+														  IsAdmin =
+																  editionGroup
+																		  .CurrentIsAdmin
+														  , MayLock =
+																  editionGroup
+																		  .CurrentMayLock
+														  , MayWrite =
+																  editionGroup
+																		  .CurrentMayWrite
+														  , MayRead =
+																  editionGroup
+																		  .CurrentMayRead
+														  ,
+												  }
+										  , Thumbnail = editionGroup.Thumbnail
+										  , ManuscriptId = editionGroup.ManuscriptId
+										  , Editors = new List<EditorWithPermissions>()
+										  ,
+								  };
+
+								  editionDictionary.Add(lastEdition.EditionId, lastEdition);
+							  }
+
+							  // Add the new editor to this edition
+							  lastEdition.Editors.Add(editor);
+
+							  return lastEdition;
+						  }
+						, new
+						{
+								UserId = userId
+								, EditionId = editionId
+								,
+						}
+						, splitOn: "EditorId");
+
+				return lastEdition ?? new Edition();
 			}
 		}
 
