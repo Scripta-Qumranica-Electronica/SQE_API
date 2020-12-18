@@ -140,7 +140,7 @@ namespace sqe_api
 						+ $"{x} {0}))";
 
 			return _artefactRep.CreateNewArtefactAsync(
-									   _userInfo
+										_userInfo
 									   , fileInfo.SqeImageId
 									   , shape
 									   , fileInfo.ColName
@@ -149,7 +149,8 @@ namespace sqe_api
 									   , null
 									   , null
 									   , null
-									   , null)
+									   , null
+					, false)
 							   .Result;
 		}
 
