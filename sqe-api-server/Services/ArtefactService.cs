@@ -203,7 +203,7 @@ namespace SQE.API.Server.Services
 		// they are only trying to change only the z-Index. Such a situation would result in a lot
 		// of extra bandwidth usage and checking (the system does check to see if the mask has
 		// actually changed). If such is the case, consider breaking up the artefact update
-		// endpoint into several distinct endpoints, for example: one for name, another for 
+		// endpoint into several distinct endpoints, for example: one for name, another for
 		// position, and another for mask.
 		public async Task<ArtefactDTO> UpdateArtefactAsync(
 				UserInfo            editionUser
@@ -248,7 +248,8 @@ namespace SQE.API.Server.Services
 								, updateArtefact.placement.rotate
 								, updateArtefact.placement.translate?.x
 								, updateArtefact.placement.translate?.y
-								, updateArtefact.placement.zIndex));
+								, updateArtefact.placement.zIndex
+								, updateArtefact.placement.mirrored));
 			}
 
 			if (!string.IsNullOrEmpty(updateArtefact.statusMessage))
@@ -296,7 +297,8 @@ namespace SQE.API.Server.Services
 					, createArtefact.placement?.translate?.x
 					, createArtefact.placement?.translate?.y
 					, createArtefact.placement?.zIndex
-					, createArtefact.statusMessage);
+					, createArtefact.statusMessage
+					, createArtefact.placement?.mirrored ?? false);
 
 			var optional = string.IsNullOrEmpty(createArtefact.mask)
 					? new List<string>()

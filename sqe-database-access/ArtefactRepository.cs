@@ -52,11 +52,12 @@ namespace SQE.DatabaseAccess
 				, decimal? rotate
 				, int?     translateX
 				, int?     translateY
-				, int?     zIndex);
+				, int?     zIndex
+				, bool     mirrored);
 
 		Task<uint> CreateNewArtefactAsync(
 				UserInfo   editionUser
-				, uint?    masterImageId
+				, uint     masterImageId
 				, string   shape
 				, string   artefactName
 				, decimal? scale
@@ -64,7 +65,8 @@ namespace SQE.DatabaseAccess
 				, int?     translateX
 				, int?     translateY
 				, int?     zIndex
-				, string   workStatus);
+				, string   workStatus
+				, bool     mirrored);
 
 		Task DeleteArtefactAsync(UserInfo editionUser, uint artefactId);
 
@@ -296,7 +298,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 									? transform.placement?.translate?.y
 									: null
 							, // set to null if explicitly not placed
-							transform.placement?.zIndex);
+							transform.placement?.zIndex
+							, transform.placement?.mirrored ?? false);
 				}
 
 				updates = await _databaseWriter.WriteToDatabaseAsync(
@@ -316,7 +319,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 				, decimal? rotate
 				, int?     translateX
 				, int?     translateY
-				, int?     zIndex) => await WriteArtefactAsync(
+				, int?     zIndex
+				, bool     mirrored) => await WriteArtefactAsync(
 				editionUser
 				, await FormatArtefactPositionUpdateRequestAsync(
 						editionUser
@@ -325,11 +329,12 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 						, rotate
 						, translateX
 						, translateY
-						, zIndex));
+						, zIndex
+						, mirrored));
 
 		public async Task<uint> CreateNewArtefactAsync(
 				UserInfo   editionUser
-				, uint?    masterImageId
+				, uint     masterImageId
 				, string   shape
 				, string   artefactName
 				, decimal? scale
@@ -337,7 +342,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 				, int?     translateX
 				, int?     translateY
 				, int?     zIndex
-				, string   workStatus)
+				, string   workStatus
+				, bool     mirrored)
 		{
 			/* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
 write the value directly into the database, but it does not seem to work right yet.  Thus we currently
@@ -353,14 +359,6 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 								new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
 						using (var connection = OpenConnection())
 						{
-							// Check for improper shape request
-							if (masterImageId.HasValue
-								&& string.IsNullOrEmpty(shape))
-							{
-								throw new StandardExceptions.InputDataRuleViolationException(
-										"an artefact mask must be submitted for a master image id");
-							}
-
 							// Create a new artefact
 							await connection.ExecuteAsync(
 									"INSERT INTO artefact (artefact_id) VALUES(NULL)");
@@ -374,15 +372,11 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 										"create artefact");
 							}
 
-							// Create a shape if it was submitted
-							if (!string.IsNullOrEmpty(shape))
-							{
-								await InsertArtefactShapeAsync(
-										editionUser
-										, artefactId
-										, masterImageId
-										, shape);
-							}
+							await InsertArtefactShapeAsync(
+									editionUser
+									, artefactId
+									, masterImageId
+									, shape);
 
 							await InsertArtefactStatusAsync(editionUser, artefactId, workStatus);
 
@@ -404,7 +398,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 										, rotate
 										, translateX
 										, translateY
-										, zIndex);
+										, zIndex
+										, mirrored);
 							}
 
 							//Cleanup
@@ -837,7 +832,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 				, decimal? rotate
 				, int?     translateX
 				, int?     translateY
-				, int?     zIndex)
+				, int?     zIndex
+				, bool?    mirrored)
 		{
 			const string tableName = "artefact_position";
 
@@ -860,7 +856,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 						, rotate
 						, translateX
 						, translateY
-						, zIndex);
+						, zIndex
+						, mirrored);
 			}
 
 			var artefactChangeParams = new DynamicParameters();
@@ -960,7 +957,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 				, decimal? rotate
 				, int?     translateX
 				, int?     translateY
-				, int?     zIndex) => await WriteArtefactAsync(
+				, int?     zIndex
+				, bool?    mirrored) => await WriteArtefactAsync(
 				editionUser
 				, FormatArtefactPositionInsertion(
 						artefactId
@@ -968,7 +966,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 						, rotate
 						, translateX
 						, translateY
-						, zIndex));
+						, zIndex
+						, mirrored));
 
 		private static MutationRequest FormatArtefactPositionInsertion(
 				uint       artefactId
@@ -976,7 +975,8 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 				, decimal? rotate
 				, int?     translateX
 				, int?     translateY
-				, int?     zIndex)
+				, int?     zIndex
+				, bool?    mirrored)
 		{
 			var artefactChangeParams = new DynamicParameters();
 
@@ -988,6 +988,9 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 
 			if (zIndex.HasValue)
 				artefactChangeParams.Add("@z_index", zIndex);
+
+			if (mirrored.HasValue)
+				artefactChangeParams.Add("@mirrored", mirrored);
 
 			artefactChangeParams.Add("@translate_x", translateX);
 			artefactChangeParams.Add("@translate_y", translateY);

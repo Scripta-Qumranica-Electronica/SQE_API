@@ -119,8 +119,8 @@ namespace SQE.API.Server.Services
 
 			var editionGroup = new EditionGroupDTO
 			{
-					primary = EditionModelToDTO(primaryModel)
-					, others = otherModels.Select(EditionModelToDTO)
+					primary = primaryModel.ToDTO()
+					, others = otherModels.Select(x => x.ToDTO())
 					,
 			};
 
@@ -137,7 +137,8 @@ namespace SQE.API.Server.Services
 											   .ManuscriptId) // Group the edition listings by scroll_id
 							   .Select(
 									   x => x.Select(
-											   EditionModelToDTO)) // Format each entry as an EditionDTO
+											   y => y
+													   .ToDTO())) // Format each entry as an EditionDTO
 							   .Select(
 									   x => x
 											   .ToList()) // Convert the groups from IEnumerable to List
@@ -188,8 +189,7 @@ namespace SQE.API.Server.Services
 							editionUser.userId
 							, editionUser.EditionId); //get wanted edition by edition Id
 
-			var updatedEdition = EditionModelToDTO(
-					editions.First(x => x.EditionId == editionUser.EditionId));
+			var updatedEdition = editions.First(x => x.EditionId == editionUser.EditionId).ToDTO();
 
 			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 			// made the request, that client directly received the response.
@@ -241,7 +241,7 @@ namespace SQE.API.Server.Services
 						, editionUser.EditionId.Value);
 			}
 
-			edition = EditionModelToDTO(unformattedEdition);
+			edition = unformattedEdition.ToDTO();
 
 			// Broadcast edition creation notification to all connections of this user
 			await _hubContext.Clients.GroupExcept($"user-{editionUser.userId.ToString()}", clientId)
@@ -349,8 +349,7 @@ namespace SQE.API.Server.Services
 							editionUser.userId
 							, editionUser.EditionId); //get wanted edition by edition Id
 
-			var edition = EditionModelToDTO(
-					editions.First(x => x.EditionId == editionUser.EditionId));
+			var edition = editions.First(x => x.EditionId == editionUser.EditionId).ToDTO();
 
 			const string emailBody = @"
 <html><body>Dear $User,<br>
@@ -676,60 +675,6 @@ The Scripta Qumranica Electronica team</body></html>";
 					textFragments = results.Select(a => a.ToDTO()).ToList(),
 			};
 		}
-
-		private static EditionDTO EditionModelToDTO(Edition model)
-		{
-			return new EditionDTO
-			{
-					id = model.EditionId
-					, name = model.Name
-					, editionDataEditorId = model.EditionDataEditorId
-					, metrics =
-							new EditionManuscriptMetricsDTO
-							{
-									editorId = model.ManuscriptMetricsEditor
-									, height = model.Height
-									, width = model.Width
-									, ppi = model.PPI
-									, xOrigin = model.XOrigin
-									, yOrigin = model.YOrigin
-									,
-							}
-					, permission = PermissionModelToDTO(model.Permission)
-					, owner = UserService.UserModelToDto(model.Owner)
-					, thumbnailUrl = model.Thumbnail
-					, locked = model.Locked
-					, isPublic = model.IsPublic
-					, lastEdit = model.LastEdit
-					, copyright =
-							model.Copyright
-							?? Licence.printLicence(
-									model.CopyrightHolder
-									, model.Collaborators
-									, model.Editors)
-					, shares = model.Editors.Select(
-											x => new DetailedEditorRightsDTO
-											{
-													email = x.EditorEmail
-													, editionId = model.EditionId
-													, isAdmin = x.IsAdmin
-													, mayLock = x.MayLock
-													, mayRead = x.MayRead
-													, mayWrite = x.MayWrite
-													,
-											})
-									.ToList()
-					,
-			};
-		}
-
-		private static PermissionDTO PermissionModelToDTO(Permission model) => new PermissionDTO
-		{
-				isAdmin = model.IsAdmin
-				, mayWrite = model.MayWrite
-				, mayRead = model.MayRead
-				,
-		};
 
 		private static DetailedEditorRightsDTO _permissionsToEditorRightsDTO(
 				string editorEmail

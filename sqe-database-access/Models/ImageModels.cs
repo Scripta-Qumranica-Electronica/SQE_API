@@ -31,4 +31,11 @@
 		public string Thumbnail { get; set; }
 		public string License   { get; set; }
 	}
+
+	public class SearchImagedObject
+	{
+		public string Id             { get; set; }
+		public string RectoThumbnail { get; set; }
+		public string VersoThumbnail { get; set; }
+	}
 }

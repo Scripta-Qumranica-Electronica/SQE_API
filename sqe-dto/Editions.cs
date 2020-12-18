@@ -58,6 +58,12 @@ namespace SQE.API.DTO
 		public List<List<EditionDTO>> editions { get; set; }
 	}
 
+	public class FlatEditionListDTO
+	{
+		[Required]
+		public List<EditionDTO> editions { get; set; }
+	}
+
 	public class PermissionDTO
 	{
 		[Required]
