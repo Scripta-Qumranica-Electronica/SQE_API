@@ -1359,7 +1359,7 @@ namespace SQE.DatabaseAccess
 					}
 
 
-					if (breakAnchors)
+					if (breakAnchors && signInterpretations.First()==signInterpretation)
 						await _breakSignStreamAsync(editionUser, anchorsBefore, anchorsAfter);
 
 					// Now insert the new sign interpretation into the path

@@ -206,7 +206,7 @@ namespace from_goettingen
 
 		private static void Main()
 		{
-			const bool reset = false;
+			const bool reset = true;
 			const string oldScrollName = "CD";
 			const string newScrollName = "CD A_2";
 
@@ -253,8 +253,8 @@ namespace from_goettingen
 				{
 					var lineName = sourceLine.LineName;
 
-				//				if (!lineName.Equals("17"))
-				//									continue;
+								if (!lineName.Equals("19") && !lineName.Equals("20"))
+													continue;
 
 					// We add from the last line the last Id as AnchorAfter to the last
 					// line to be added
