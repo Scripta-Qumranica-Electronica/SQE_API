@@ -9,6 +9,7 @@ using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server.Services
 {
@@ -248,7 +249,7 @@ namespace SQE.API.Server.Services
 				, string                      clientId = null)
 		{
 			var (createdSignInterpretation, updatedSignInterpretations) =
-					await _textRepository.CreateSignInterpretationAsync(
+					await _textRepository.CreateSignWithSignInterpretationAsync(
 							user
 							, signInterpretation.lineId
 							, signInterpretation.ToSignData()
@@ -421,10 +422,13 @@ namespace SQE.API.Server.Services
 				, string[] optional
 				, string   clientId = null)
 		{
+			//Ingo I added the false to prevent clothing the path if only one signInterpretstionId
+			// is deleted. If delete-all-variants is true, the path will be closed.
 			var (deleted, updated) = await _textRepository.RemoveSignInterpretationAsync(
 					user
 					, signInterpretationId
-					, optional.Contains("delete-all-variants"));
+					, optional.Contains("delete-all-variants")
+					, false);
 
 			var deletedList = deleted.ToArray();
 

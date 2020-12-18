@@ -56,7 +56,7 @@ SELECT attribute.attribute_id AS AttributeId,
        attribute.removable as Removable,
        attribute.repeatable as Repeatable,
        attribute.batch_editable as BatchEditable
-FROM attribute 
+FROM attribute
 JOIN attribute_owner USING(attribute_id)
 JOIN attribute_value USING(attribute_id)
 JOIN attribute_value_owner ON attribute_value.attribute_value_id = attribute_value_owner.attribute_value_id

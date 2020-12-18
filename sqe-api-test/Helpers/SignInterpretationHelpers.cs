@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.ApiTest.Helpers
 {

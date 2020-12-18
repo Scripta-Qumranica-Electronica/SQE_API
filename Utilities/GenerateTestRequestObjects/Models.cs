@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.CodeAnalysis;
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace GenerateTestRequestObjects
 {

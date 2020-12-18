@@ -8,6 +8,7 @@ using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
+// ReSharper disable ArrangeRedundantParentheses
 
 // TODO: all the tests for sharing have been commented out, since I updated the sharing system in
 // accordance with the team wishes.  They simply should be updated to reflect the new API endpoints
@@ -142,7 +143,7 @@ namespace SQE.ApiTest
 			try
 			{
 				// Act
-				// Send in the editor request 
+				// Send in the editor request
 				var (_, listenerResponse) = await ShareEdition(
 						newEdition
 						, Request.DefaultUsers.User1
@@ -246,7 +247,7 @@ namespace SQE.ApiTest
 						, Request.DefaultUsers.User2
 						, Request.DefaultUsers.User1);
 
-				// Act 
+				// Act
 				// Check permissions for edition info request
 				var get1 = new Get.V1_Editions_EditionId(newEdition);
 
@@ -294,7 +295,7 @@ namespace SQE.ApiTest
 				Assert.False(share2Msg.mayLock);
 				Assert.True(share2Msg.isAdmin);
 
-				// Act 
+				// Act
 				// Check permissions for edition info request
 				await get1.SendAsync(
 						_client
@@ -481,7 +482,7 @@ namespace SQE.ApiTest
 						, Request.DefaultUsers.User2
 						, Request.DefaultUsers.User1);
 
-				// Act 
+				// Act
 				// Check permissions for edition info request
 				var get1 = new Get.V1_Editions_EditionId(newEdition);
 
@@ -604,7 +605,7 @@ namespace SQE.ApiTest
 						, Request.DefaultUsers.User2
 						, Request.DefaultUsers.User1);
 
-				// Act 
+				// Act
 				// Check permissions for edition info request
 				var get1 = new Get.V1_Editions_EditionId(newEdition);
 
@@ -820,7 +821,7 @@ namespace SQE.ApiTest
 			try
 			{
 				// Act
-				// Send in the editor request 
+				// Send in the editor request
 				var (_, listenerResponse) = await ShareEdition(
 						newEdition
 						, Request.DefaultUsers.User1
@@ -885,7 +886,7 @@ namespace SQE.ApiTest
 			try
 			{
 				// Act
-				// Send in the editor request 
+				// Send in the editor request
 				var (httpResponse, listenerResponse) = await ShareEdition(
 						newEdition
 						, Request.DefaultUsers.User1
@@ -1167,8 +1168,8 @@ namespace SQE.ApiTest
 			const uint editionId = 1;
 
 			const string necessaryCCLicenseText =
-					@"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. 
-To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/4.0/legalcode 
+					@"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/4.0/legalcode
 or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.";
 
 			// Act
