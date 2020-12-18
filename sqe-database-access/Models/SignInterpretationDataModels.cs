@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.DatabaseAccess.Models
 {
@@ -24,8 +25,15 @@ namespace SQE.DatabaseAccess.Models
 
 	public class SignInterpretationData
 	{
-		public uint?      SignId                               { get; set; }
-		public uint?      SignInterpretationId                 { get; set; }
+		private uint? _signInterpretationId;
+		public  uint? SignId { get; set; }
+
+		public uint? SignInterpretationId
+		{
+			get => _signInterpretationId;
+			set => _setSignInterpretationId(value);
+		}
+
 		public uint?      SignInterpretationAttributeCreatorId { get; set; }
 		public List<uint> SignStreamSectionIds                 { get; set; } = new List<uint>();
 
@@ -47,6 +55,18 @@ namespace SQE.DatabaseAccess.Models
 		public string InterpretationCommentary        { get; set; }
 		public uint?  InterpretationCommentaryCreator { get; set; }
 		public uint?  InterpretationCommentaryEditor  { get; set; }
+
+		private void _setSignInterpretationId(uint? newSignInterpretaionId)
+		{
+			_signInterpretationId = newSignInterpretaionId;
+
+			foreach (var attribute in Attributes)
+				attribute.SignInterpretationId = _signInterpretationId;
+			foreach (var commentary in Commentaries)
+				commentary.SignInterpretationId = _signInterpretationId;
+			foreach (var roi in SignInterpretationRois)
+				roi.SignInterpretationId = _signInterpretationId;
+		}
 	}
 
 	public class NextSignInterpretation

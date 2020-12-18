@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.DatabaseAccess.Helpers
 {
 	/// <summary>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using SQE.DatabaseAccess.Models;
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.DatabaseAccess.Helpers
 {

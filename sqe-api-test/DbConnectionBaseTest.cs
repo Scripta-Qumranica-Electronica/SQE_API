@@ -8,13 +8,14 @@ using MySql.Data.MySqlClient;
 using Polly.CircuitBreaker;
 using SQE.DatabaseAccess;
 using Xunit;
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.ApiTest
 {
 	public class DbConnectionBaseTest
 	{
 		// TODO: probably we should have tests for ReliableMySqlConnection and ReliableMySqlDbCommand
-		// They are in use and all other tests pass, but some things, like ReliableMySqlDbCommand.Prepare() or 
+		// They are in use and all other tests pass, but some things, like ReliableMySqlDbCommand.Prepare() or
 		// ReliableMySqlConnection.DataSource, never get tested (I don't necessarily know what they all should do).
 		// Perhaps something could be wrong there and we would not see it for a very long time.
 		private const int RetryCount        = 21;
