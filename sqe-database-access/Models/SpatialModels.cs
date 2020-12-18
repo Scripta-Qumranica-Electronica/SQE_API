@@ -59,4 +59,34 @@ namespace SQE.DatabaseAccess.Models
 		public uint PositionInStreamId       { get; set; }
 		public uint NextSignInterpretationId { get; set; }
 	}
+
+	public class Glyph
+	{
+		public char   Character     { get; set; }
+		public uint   CreatorId     { get; set; }
+		public uint   EditorId      { get; set; }
+		public string Shape         { get; set; }
+		public short  YOffset       { get; set; }
+		public uint   ScribalFontId { get; set; }
+	}
+
+	public class KerningPair
+	{
+		public char  FirstCharacter  { get; set; }
+		public char  SecondCharacter { get; set; }
+		public uint  CreatorId       { get; set; }
+		public uint  EditorId        { get; set; }
+		public short XKern           { get; set; }
+		public short YKern           { get; set; }
+		public uint  ScribalFontId   { get; set; }
+	}
+
+	public class FontInfo
+	{
+		public uint   CreatorId     { get; set; }
+		public uint   EditorId      { get; set; }
+		public ushort SpaceSize     { get; set; }
+		public ushort LineSpaceSize { get; set; }
+		public uint   ScribalFontId { get; set; }
+	}
 }

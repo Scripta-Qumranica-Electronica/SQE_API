@@ -117,6 +117,66 @@ export interface RequestMaterializationDTO {
     editionIds: Array<number>;
 }
 
+export interface CreateScriptDataDTO {
+    wordSpace: number;
+    lineSpace: number;
+}
+
+export interface ScriptDataDTO extends CreateScriptDataDTO {
+    kerningPairs?: Array<KernPairDTO>;
+    glyphs?: Array<GlyphDataDTO>;
+    creatorId: number;
+    editorId: number;
+    scribalFontId: number;
+}
+
+export interface ScriptDataListDTO {
+    scripts?: Array<ScriptDataDTO>;
+}
+
+export interface CreateKernPairDTO {
+    firstCharacter: string;
+    secondCharacter: string;
+    xKern: number;
+    yKern: number;
+}
+
+export interface KernPairDTO extends CreateKernPairDTO {
+    creatorId: number;
+    editorId: number;
+    scribalFontId: number;
+}
+
+export interface DeleteKernPairDTO {
+    firstCharacter: string;
+    secondCharacter: string;
+    editorId: number;
+    scribalFontId: number;
+}
+
+export interface CreateGlyphDataDTO {
+    character: string;
+    shape: string;
+    yOffset: number;
+}
+
+export interface GlyphDataDTO extends CreateGlyphDataDTO {
+    creatorId: number;
+    editorId: number;
+    scribalFontId: number;
+}
+
+export interface DeleteGlyphDataDTO {
+    character: string;
+    editorId: number;
+    scribalFontId: number;
+}
+
+export interface DeleteScribalFontDTO {
+    scribalFontId: number;
+    editionEditorId: number;
+}
+
 export interface SignDTO {
     signInterpretations: Array<SignInterpretationDTO>;
 }

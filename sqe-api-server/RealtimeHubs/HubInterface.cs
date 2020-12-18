@@ -191,5 +191,68 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="returnedData"></param>
 		/// <returns></returns>
 		Task DeletedAttribute(DeleteDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the creation of scribal font information
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task CreatedScribalFontInfo(ScriptDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the update of scribal font information
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task UpdatedScribalFontInfo(ScriptDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the creation of scribal font kerning pair
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task CreatedScribalFontKerningPair(KernPairDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the update of scribal font kerning pair
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task UpdatedScribalFontKerningPair(KernPairDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the deletion of scribal font kerning pair
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task DeletedScribalFontKerningPair(DeleteKernPairDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the creation of scribal font glyph
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task CreatedScribalFontGlyph(GlyphDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the update of scribal font glyph
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task UpdatedScribalFontGlyph(GlyphDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the deletion of scribal font glyph
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task DeletedScribalFontGlyph(DeleteGlyphDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the deletion of a scribal font
+		/// </summary>
+		/// <param name="scribalFontId"></param>
+		/// <returns></returns>
+		Task DeletedScribalFont(DeleteScribalFontDTO returnedData);
 	}
 }

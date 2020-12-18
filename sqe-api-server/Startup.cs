@@ -57,6 +57,7 @@ namespace SQE.API.Server
 			services.AddScoped<IUtilService, UtilService>();
 			services.AddScoped<ICatalogService, CatalogService>();
 			services.AddScoped<ISearchService, SearchService>();
+			services.AddScoped<IScriptService, ScriptService>();
 
 			services.AddScoped<ISignInterpretationService, SignInterpretationService>();
 
@@ -86,6 +87,7 @@ namespace SQE.API.Server
 							SignStreamMaterializationRepository>();
 
 			services.AddScoped<ISearchRepository, SearchRepository>();
+			services.AddScoped<IScriptRepository, ScriptRepository>();
 
 			services.AddResponseCompression();
 

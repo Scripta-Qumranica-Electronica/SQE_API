@@ -19,6 +19,7 @@ namespace SQE.API.Server.RealtimeHubs
 		private readonly IImagedObjectService       _imagedObjectService;
 		private readonly IImageService              _imageService;
 		private readonly IRoiService                _roiService;
+		private readonly IScriptService             _scriptService;
 		private readonly ISearchService             _searchService;
 		private readonly ISignInterpretationService _signInterpretationService;
 		private readonly ITextService               _textService;
@@ -34,6 +35,7 @@ namespace SQE.API.Server.RealtimeHubs
 				, ISignInterpretationService signInterpretationService
 				, IImagedObjectService       imagedObjectService
 				, IImageService              imageService
+				, IScriptService             scriptService
 				, ICatalogService            catalogueService
 				, IUtilService               utilService
 				, ISearchService             searchService)
@@ -46,6 +48,7 @@ namespace SQE.API.Server.RealtimeHubs
 			_signInterpretationService = signInterpretationService;
 			_imagedObjectService = imagedObjectService;
 			_imageService = imageService;
+			_scriptService = scriptService;
 			_catalogueService = catalogueService;
 			_utilService = utilService;
 			_searchService = searchService;

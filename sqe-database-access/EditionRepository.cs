@@ -234,9 +234,7 @@ namespace SQE.DatabaseAccess
 																		  if ((y.Forename == null)
 																			  && (y.Surname == null)
 																		  )
-																		  {
 																			  return y.EditorEmail;
-																		  }
 
 																		  return $@"{
 																					  y.Forename
