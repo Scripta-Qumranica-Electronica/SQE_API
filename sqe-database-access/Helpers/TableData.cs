@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.DatabaseAccess.Helpers
@@ -192,7 +193,6 @@ namespace SQE.DatabaseAccess.Helpers
 		/// <param name="addRois"></param>
 		/// <param name="addCommentaries"></param>
 		/// <returns>Part of query string</returns>
-		///
 		/// INGO: the add...-parameters are never true (the function is called only once and without these parameters
 		public static string FromQueryPart(
 				Table  table

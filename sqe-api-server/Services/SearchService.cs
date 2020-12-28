@@ -7,6 +7,7 @@ using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server.Services

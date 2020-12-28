@@ -1,21 +1,19 @@
-using System;
-
 namespace sqe_api
 {
 	public class SourceFileInfo
 	{
-		public string    FileName;
+		public uint      ArtefactId;
 		public string    ColName;
+		public string    FileName;
 		public string    ImageFileName;
-		public uint      SqeImageId;
-		public int       OffsetX   = 0;
-		public int       OffsetY   = 0;
-		public decimal   Scale     = decimal.One;
-		public double    Rotate    = 0.0;
+		public imagePart ImagePart = imagePart.Full;
 		public int       MidpointX = 0;
 		public int       Midpointy = 0;
-		public uint      ArtefactId;
-		public imagePart ImagePart = imagePart.Full;
+		public int       OffsetX   = 0;
+		public int       OffsetY   = 0;
+		public double    Rotate    = 0.0;
+		public decimal   Scale     = decimal.One;
+		public uint      SqeImageId;
 	}
 
 	public enum imagePart

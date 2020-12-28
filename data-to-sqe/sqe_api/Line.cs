@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualBasic.CompilerServices;
 using SQE.DatabaseAccess.Models;
 
 namespace sqe_api
@@ -12,34 +11,20 @@ namespace sqe_api
 	}
 
 	/// <summary>
-	///     Provides an extended version of LineData which additional functionality to retrieve and handle the signs
+	///  Provides an extended version of LineData which additional functionality to retrieve and handle the signs
 	/// </summary>
 	public class Line
 	{
-		public readonly LineData LineData;
-		public           SignData FirstAnchor { get; }
-		public           SignData LastAnchor  { get; }
-
-
-
-		public uint StartAnchorId
-		{
-			get;
-		}
-
-		public uint EndAnchorId
-		{
-			get;
-		}
-
-		public uint AnchorBefore = 0;
-		public uint AnchorAfter  = 0;
-
 		private readonly List<SignInterpretation> _signInterpretations =
 				new List<SignInterpretation>();
 
+		public readonly LineData LineData;
+
 		// referenc to the realted textEdition
 		private Scroll _textEdition;
+		public  uint   AnchorAfter = 0;
+
+		public uint AnchorBefore = 0;
 
 		public Line(LineData lineData) : this(null, lineData) { }
 
@@ -50,10 +35,18 @@ namespace sqe_api
 			FirstAnchor = _getLineAnchor(true);
 			LastAnchor = _getLineAnchor(false);
 			StartAnchorId = LineData.Signs[0].SignInterpretations[0].SignInterpretationId.Value;
-			if (LineData.Signs.Last().SignInterpretations[0].NextSignInterpretations.Count>0)
-			EndAnchorId = LineData.Signs.Last().SignInterpretations[0].NextSignInterpretations[0].NextSignInterpretationId;
 
-				; LineData.Signs.RemoveAll(
+			if (LineData.Signs.Last().SignInterpretations[0].NextSignInterpretations.Count > 0)
+			{
+				EndAnchorId = LineData.Signs.Last()
+									  .SignInterpretations[0]
+									  .NextSignInterpretations[0]
+									  .NextSignInterpretationId;
+			}
+
+			;
+
+			LineData.Signs.RemoveAll(
 					s => s.SignInterpretations.Any(
 							si => si.Attributes.Any(a => a.AttributeValueId == 9)));
 
@@ -68,6 +61,13 @@ namespace sqe_api
 			}
 		}
 
+		public SignData FirstAnchor { get; }
+		public SignData LastAnchor  { get; }
+
+		public uint StartAnchorId { get; }
+
+		public uint EndAnchorId { get; }
+
 		public List<SignInterpretationSequence> getSequences()
 		{
 			var sequences = new List<SignInterpretationSequence>();
@@ -80,7 +80,7 @@ namespace sqe_api
 		}
 
 		/// <summary>
-		///     Returns a list of allsignificant signs in the line (thus stripping of all break information)
+		///  Returns a list of allsignificant signs in the line (thus stripping of all break information)
 		/// </summary>
 		/// <returns></returns>
 		private List<SignInterpretationSequence> _getSequences(
@@ -144,7 +144,7 @@ namespace sqe_api
 					sourceSignInterpretation.Character = null;
 
 					oldNewIds.Add(
-							new OldNew()
+							new OldNew
 							{
 									OldId = sourceSignInterpretation.SignInterpretationId
 									, NewId = sqeSignInterpretation.SignInterpretationId
@@ -174,7 +174,6 @@ namespace sqe_api
 					s => s.SignInterpretations.Any(
 							si => si.SignInterpretationId == signInterpretationId));
 
-
 			return signData;
 		}
 
@@ -202,6 +201,5 @@ namespace sqe_api
 									 */
 
 		public uint GetLineId() => LineData.LineId.GetValueOrDefault();
-
 	}
 }

@@ -8,6 +8,7 @@ using MySql.Data.MySqlClient;
 using Polly.CircuitBreaker;
 using SQE.DatabaseAccess;
 using Xunit;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.ApiTest

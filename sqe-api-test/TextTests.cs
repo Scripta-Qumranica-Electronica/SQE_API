@@ -8,6 +8,7 @@ using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.ApiTest

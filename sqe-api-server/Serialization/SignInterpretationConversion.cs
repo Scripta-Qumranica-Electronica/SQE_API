@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SQE.API.DTO;
 using SQE.DatabaseAccess.Models;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server.Serialization

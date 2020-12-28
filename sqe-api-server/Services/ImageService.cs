@@ -8,6 +8,7 @@ using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Models;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server.Services

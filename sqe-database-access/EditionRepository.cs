@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
+
 // ReSharper disable ArrangeRedundantParentheses
 // ReSharper disable RemoveRedundantBraces
 namespace SQE.DatabaseAccess

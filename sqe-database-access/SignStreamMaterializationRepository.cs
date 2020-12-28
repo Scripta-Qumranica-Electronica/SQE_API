@@ -9,6 +9,7 @@ using MoreLinq.Extensions;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.DatabaseAccess
@@ -36,8 +37,8 @@ namespace SQE.DatabaseAccess
 	public class SignStreamMaterializationRepository : DbConnectionBase
 													   , ISignStreamMaterializationRepository
 	{
-		public bool RunMaterialization { get; set; } = true;
 		public SignStreamMaterializationRepository(IConfiguration config) : base(config) { }
+		public bool RunMaterialization { get; set; } = true;
 
 		public async Task<IEnumerable<SignStreamMaterializationSchedule>>
 				GetAllScheduledSignStreamMaterializationsAsync()
@@ -57,6 +58,7 @@ namespace SQE.DatabaseAccess
 		{
 			if (!RunMaterialization)
 				return;
+
 			if ((graph == null)
 				|| (signDict == null))
 				(graph, signDict) = await _getEditionGraph(editionId);
@@ -78,6 +80,7 @@ namespace SQE.DatabaseAccess
 		{
 			if (!RunMaterialization)
 				return;
+
 			using (var connection = OpenConnection())
 			{
 				var startIds = await connection.QueryAsync<uint>(

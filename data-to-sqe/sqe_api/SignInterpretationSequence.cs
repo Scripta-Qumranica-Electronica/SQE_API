@@ -38,8 +38,8 @@ namespace sqe_api
 			return newSequence;
 		}
 
-		public bool HasFollowers() => nextSignInterpretationIds != null
-									  && nextSignInterpretationIds.Count > 0;
+		public bool HasFollowers() => (nextSignInterpretationIds != null)
+									  && (nextSignInterpretationIds.Count > 0);
 
 		public uint GetSignInterpretationIdAtPosition(int position)
 			=> signInterpretationIds[position];

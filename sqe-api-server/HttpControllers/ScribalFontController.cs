@@ -69,7 +69,7 @@ namespace SQE.API.Server.HttpControllers
 		/// <param name="scribalFontId">The scribal font to be deleted</param>
 		/// <returns></returns>
 		[HttpDelete("v1/editions/{editionId}/[controller]s/{scribalFontId}")]
-		public async Task<ActionResult<NoContentResult>> DeleteScribalFont(
+		public async Task<ActionResult> DeleteScribalFont(
 				[FromRoute]   uint editionId
 				, [FromRoute] uint scribalFontId) => await _scriptService.DeleteScribalFont(
 				await _userService.GetCurrentUserObjectAsync(editionId, true)
@@ -103,7 +103,7 @@ namespace SQE.API.Server.HttpControllers
 		/// <param name="secondCharacter">The second character of the kerning pair</param>
 		/// <returns></returns>
 		[HttpDelete(
-				"v1/editions/{editionId}/[controller]s/{scribalFontId}/kerning-pairs/{firstCharacter}/{secondCharacter")]
+				"v1/editions/{editionId}/[controller]s/{scribalFontId}/kerning-pairs/{firstCharacter}/{secondCharacter}")]
 		public async Task<ActionResult> DeleteScribalFontKerningPair(
 				[FromRoute]   uint editionId
 				, [FromRoute] uint scribalFontId

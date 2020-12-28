@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.DatabaseAccess
@@ -114,7 +115,6 @@ namespace SQE.DatabaseAccess
 
 		public AttributeRepository(IConfiguration config, IDatabaseWriter databaseWriter) :
 				base(config) => _databaseWriter = databaseWriter;
-
 
 		/// <summary>
 		///  Get all attributes associated with a particular edition
@@ -874,7 +874,6 @@ namespace SQE.DatabaseAccess
 			// A quick hack to ensure that an attribute and it's value has the edition set as owner
 			using (var connection = OpenConnection())
 			{
-
 				// Now set the new Ids
 				for (var i = 0; i < attributes.Count; i++)
 				{
@@ -889,20 +888,21 @@ namespace SQE.DatabaseAccess
 					values (@AttributeValueId, @EditionEditorId, @EditionId)"
 							, new
 							{
-									AttributeValueId = attributes[i].AttributeValueId
-									, EditionEditorId = editionUser.EditionEditorId
-									, EditionId = editionUser.EditionId
+									attributes[i].AttributeValueId
+									, editionUser.EditionEditorId
+									, editionUser.EditionId
 									,
 							});
+
 					connection.Execute(
 							@"insert ignore into attribute_owner
 					(attribute_id, edition_editor_id, edition_id)
 					values (@AttributeId, @EditionEditorId, @EditionId)"
 							, new
 							{
-									AttributeId = attributes[i].AttributeId
-									, @EditionEditorId = editionUser.EditionEditorId
-									, @EditionId = editionUser.EditionId
+									attributes[i].AttributeId
+									, editionUser.EditionEditorId
+									, editionUser.EditionId
 									,
 							});
 				}

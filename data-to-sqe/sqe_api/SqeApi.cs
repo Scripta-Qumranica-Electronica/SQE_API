@@ -13,26 +13,24 @@ namespace sqe_api
 {
 	public class ImageData
 	{
-		public int NativeWidth;
-		public int NativeHeight;
 		public int Dpi;
+		public int NativeHeight;
+		public int NativeWidth;
 	}
 
 	/// <summary>
-	///     Provides an easy access to the SQE-Database using the sqe-api of the project.
+	///  Provides an easy access to the SQE-Database using the sqe-api of the project.
 	/// </summary>
 	public class SqeApi
 	{
-		private readonly EditionRepository      _editionRep;
-		private readonly ArtefactRepository     _artefactRep;
-		private readonly uint?                  _userId;
-		private readonly UserRepository         _userRep;
-		private readonly UserInfo               _userInfo;
-		public           ExpandedTextRepository TextRep      { get; }
-		private          IDbConnection          DbConnection => TextRep.GetConnection();
+		private readonly ArtefactRepository _artefactRep;
+		private readonly EditionRepository  _editionRep;
+		private readonly uint?              _userId;
+		private readonly UserInfo           _userInfo;
+		private readonly UserRepository     _userRep;
 
 		/// <summary>
-		///     Initialze with the id of the user to be used.
+		///  Initialze with the id of the user to be used.
 		/// </summary>
 		/// <param name="userId">The id of the user to be used</param>
 		public SqeApi(uint? userId)
@@ -47,7 +45,10 @@ namespace sqe_api
 			var dbw = new DatabaseWriter(sqeConfiguration);
 			_editionRep = new EditionRepository(sqeConfiguration, dbw);
 			var attrRep = new AttributeRepository(sqeConfiguration, dbw);
-			var commRep = new SignInterpretationCommentaryRepository(sqeConfiguration, dbw, attrRep);
+
+			var commRep =
+					new SignInterpretationCommentaryRepository(sqeConfiguration, dbw, attrRep);
+
 			var roiRep = new RoiRepository(sqeConfiguration, dbw);
 			_artefactRep = new ArtefactRepository(sqeConfiguration, dbw);
 
@@ -76,14 +77,17 @@ namespace sqe_api
 			_userInfo = new UserInfo(userId, null, _userRep);
 		}
 
+		public  ExpandedTextRepository TextRep      { get; }
+		private IDbConnection          DbConnection => TextRep.GetConnection();
+
 		public void SetEditionId(uint editionId)
 		{
 			_userInfo.SetEditionId(editionId);
 		}
 
 		/// <summary>
-		///     Retrieves the data of an edition and returns it as an instance of Scroll.
-		///     If no matching edition is found, an exception is thrown.
+		///  Retrieves the data of an edition and returns it as an instance of Scroll.
+		///  If no matching edition is found, an exception is thrown.
 		/// </summary>
 		/// <param name="scrollName">Name of the edition (eg. "CD")</param>
 		/// <returns>Scroll</returns>
@@ -101,7 +105,6 @@ namespace sqe_api
 			// If en edition is found create from it an instance of Scroll anr return it.
 			return new Scroll(edition, this, new UserInfo(_userId, edition.EditionId, _userRep));
 		}
-
 
 		public void DeleteSign(uint signId)
 		{
@@ -140,17 +143,17 @@ namespace sqe_api
 						+ $"{x} {0}))";
 
 			return _artefactRep.CreateNewArtefactAsync(
-										_userInfo
+									   _userInfo
 									   , fileInfo.SqeImageId
 									   , shape
 									   , fileInfo.ColName
 									   , null
-									   , Decimal.Zero
+									   , decimal.Zero
 									   , null
 									   , null
 									   , null
 									   , null
-					, false)
+									   , false)
 							   .Result;
 		}
 
@@ -223,7 +226,7 @@ namespace sqe_api
 		{
 			var editionId = _geteditionId(newScrollName, _userId.GetValueOrDefault());
 
-			if (reset && editionId != 0)
+			if (reset && (editionId != 0))
 			{
 				SetEditionId(editionId);
 				var token = _editionRep.GetDeleteToken(_userInfo).Result;
@@ -266,16 +269,18 @@ namespace sqe_api
 									and user_id = @UserId"
 					, new { ScrollName = scrollName, UserId = userId });
 
-		public List<SignInterpretationData> AddSignInterpretations(uint                           signId
-																   , List<SignInterpretationData> signInterpretations
-				, List<uint>                                                                      anchorsBefore
-				, List<uint>                                                                      anchorsAfter) =>  TextRep.AddSignInterpretationsAsync(
-				_userInfo
-				, signId
-				, signInterpretations
-				, anchorsBefore
-				, anchorsAfter
-				, true).Result;
+		public List<SignInterpretationData> AddSignInterpretations(
+				uint                           signId
+				, List<SignInterpretationData> signInterpretations
+				, List<uint>                   anchorsBefore
+				, List<uint>                   anchorsAfter) => TextRep.AddSignInterpretationsAsync(
+																			   _userInfo
+																			   , signId
+																			   , signInterpretations
+																			   , anchorsBefore
+																			   , anchorsAfter
+																			   , true)
+																	   .Result;
 
 		public void DeleteSignInterpretations(List<SignInterpretationData> signInterpretations)
 		{
@@ -301,7 +306,11 @@ namespace sqe_api
 
 		public void InsertLine(uint fragmentId, LineData lineData, uint previousLineId)
 		{
-			TextRep.InsertLineAfterAsync(_userInfo, fragmentId, lineData, previousLineId);
+			TextRep.InsertLineAfterAsync(
+					_userInfo
+					, fragmentId
+					, lineData
+					, previousLineId);
 		}
 	}
 }

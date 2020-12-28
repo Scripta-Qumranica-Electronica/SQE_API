@@ -80,7 +80,7 @@ namespace SQE.API.Server.Helpers
 				{
 					// If the status code indicates that the email address is undeliverable, throw a descriptive error
 					if (_env.IsProduction()
-						&& e.StatusCode == SmtpStatusCode.MailboxUnavailable)
+						&& (e.StatusCode == SmtpStatusCode.MailboxUnavailable))
 						throw new StandardExceptions.EmailAddressUndeliverableException(email);
 
 					// Throw a less revealing error when running in production

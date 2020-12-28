@@ -22,6 +22,12 @@ namespace SQE.ApiTest.ApiRequests
 		{
 			private readonly DetailedSearchRequestDTO _payload;
 
+			/// <summary>
+			///  Basic searching of the Qumranica database. Results are truncated
+			///  to 100 results per search category.
+			/// </summary>
+			/// <param name="searchParameters">The parameters of the search</param>
+			/// <returns></returns>
 			public V1_Search(DetailedSearchRequestDTO payload) : base(payload)
 				=> _payload = payload;
 

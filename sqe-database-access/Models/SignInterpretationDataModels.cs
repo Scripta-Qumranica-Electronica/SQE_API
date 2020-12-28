@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.DatabaseAccess.Models
@@ -62,8 +63,10 @@ namespace SQE.DatabaseAccess.Models
 
 			foreach (var attribute in Attributes)
 				attribute.SignInterpretationId = _signInterpretationId;
+
 			foreach (var commentary in Commentaries)
 				commentary.SignInterpretationId = _signInterpretationId;
+
 			foreach (var roi in SignInterpretationRois)
 				roi.SignInterpretationId = _signInterpretationId;
 		}

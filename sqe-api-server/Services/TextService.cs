@@ -282,6 +282,9 @@ namespace SQE.API.Server.Services
 																																									   , character
 																																											   = a
 																																													   .Character
+																																									   , isVariant
+																																											   = a
+																																													   .IsVariant
 																																									   , commentary
 																																											   = string
 																																													   .IsNullOrEmpty(
@@ -543,6 +546,9 @@ namespace SQE.API.Server.Services
 																									   , character
 																											   = a
 																													   .Character
+																									   , isVariant
+																											   = a
+																													   .IsVariant
 																									   , commentary
 																											   = string
 																													   .IsNullOrEmpty(

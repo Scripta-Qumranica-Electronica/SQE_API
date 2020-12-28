@@ -12,6 +12,7 @@ using CaseExtensions;
 using CommandLine;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace GenerateTypescriptInterfaces

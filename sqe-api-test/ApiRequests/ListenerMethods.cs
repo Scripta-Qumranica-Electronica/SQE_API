@@ -23,6 +23,13 @@ namespace SQE.ApiTest.ApiRequests
 		, EditedRoisBatch
 		, UpdatedRoisBatch
 		, DeletedRoi
+		, CreatedScribalFontInfo
+		, CreatedScribalFontKerningPair
+		, CreatedScribalFontGlyph
+		, UpdatedScribalFontInfo
+		, DeletedScribalFont
+		, DeletedScribalFontKerningPair
+		, DeletedScribalFontGlyph
 		, CreatedAttribute
 		, CreatedSignInterpretation
 		, UpdatedSignInterpretations

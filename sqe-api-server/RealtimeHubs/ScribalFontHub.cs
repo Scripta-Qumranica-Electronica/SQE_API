@@ -119,14 +119,14 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="scribalFontId">The scribal font to be deleted</param>
 		/// <returns></returns>
 		[Authorize]
-		public async Task<NoContentResult> DeleteV1EditionsEditionIdScribalFontsScribalFontId(
+		public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontId(
 				uint   editionId
 				, uint scribalFontId)
 
 		{
 			try
 			{
-				return await _scriptService.DeleteScribalFont(
+				await _scriptService.DeleteScribalFont(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, scribalFontId);
 			}

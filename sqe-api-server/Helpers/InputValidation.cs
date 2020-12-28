@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using NetTopologySuite.IO;
 using NetTopologySuite.Simplify;
 using SQE.DatabaseAccess.Helpers;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server.Helpers
@@ -124,6 +125,7 @@ namespace SQE.API.Server.Helpers
 					// length of the smallest possible valid WKB (a POINT geometry).
 					// ReSharper disable once ArrangeRedundantParentheses
 					if (((int) bin.len < 21)
+
 						// ReSharper disable once ArrangeRedundantParentheses
 						|| (bin.data == IntPtr.Zero))
 					{

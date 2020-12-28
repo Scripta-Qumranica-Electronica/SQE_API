@@ -9,6 +9,7 @@ using CaseExtensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace GenerateTestRequestObjects

@@ -8,6 +8,7 @@ using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 // TODO: all the tests for sharing have been commented out, since I updated the sharing system in
@@ -1168,9 +1169,7 @@ namespace SQE.ApiTest
 			const uint editionId = 1;
 
 			const string necessaryCCLicenseText =
-					@"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
-To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/4.0/legalcode
-or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.";
+					@"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.";
 
 			// Act
 			var editionRequest = new Get.V1_Editions_EditionId(editionId);

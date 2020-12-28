@@ -157,7 +157,8 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 						{
 								user.EditionId
 								, UserId = user.userId
-								, ScribalFontId = scribalFontId,
+								, ScribalFontId = scribalFontId
+								,
 						})).FirstOrDefault();
 			}
 		}
@@ -219,8 +220,10 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 				var execute = await _databaseWriter.WriteToDatabaseAsync(user, request);
 
 				if (!execute.Any())
+				{
 					throw new StandardExceptions.DataNotWrittenException(
 							"set scribal font metrics");
+				}
 
 				transaction.Complete();
 			}

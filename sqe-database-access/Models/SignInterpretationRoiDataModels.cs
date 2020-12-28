@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 // ReSharper disable ArrangeRedundantParentheses
 namespace SQE.DatabaseAccess.Models
 {

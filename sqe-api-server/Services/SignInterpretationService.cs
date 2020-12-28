@@ -9,6 +9,7 @@ using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server.Services
@@ -288,7 +289,7 @@ namespace SQE.API.Server.Services
 					updatedSignInterpretations.Select(
 							async x => await GetEditionSignInterpretationAsync(
 									user
-									, x))); // Get the SignInterpretationDTO fpr each sign interpretation
+									, x))); // Get the SignInterpretationDTO for each sign interpretation
 
 			var changes = new SignInterpretationListDTO
 			{

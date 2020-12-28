@@ -231,8 +231,9 @@ namespace SQE.DatabaseAccess.Helpers
 									, mutationRequest
 									, editionUser.userId.Value);
 
-						//	System.Threading.Thread.Sleep(1000);
+							//	System.Threading.Thread.Sleep(1000);
 							alteredRecords.Add(createdRecord);
+
 							break;
 
 						case MutateType.Update:
@@ -252,7 +253,6 @@ namespace SQE.DatabaseAccess.Helpers
 							// Add info to the return object
 							alteredRecords.Add(insertedRecord);
 
-
 							break;
 
 						case MutateType.Delete:
@@ -260,6 +260,7 @@ namespace SQE.DatabaseAccess.Helpers
 							var deletedRecord = await DeleteAsync(connection, mutationRequest);
 
 							alteredRecords.Add(deletedRecord);
+
 							break;
 
 						default:
@@ -285,7 +286,6 @@ namespace SQE.DatabaseAccess.Helpers
 		{
 			// Insert the record (or return the id of a preexisting record matching the unique constraints.
 			var createInsertId = await InsertOwnedTableAsync(connection, mutationRequest, userId);
-
 
 			// Insert the link to the editionId in the owner table
 			await InsertOwnerTableAsync(connection, mutationRequest, createInsertId);
@@ -448,14 +448,11 @@ namespace SQE.DatabaseAccess.Helpers
 
 			if (mutationRequest.TableName.Equals("position_in_stream"))
 			{
-
 				var r = connection.Query<uint>(
 						$@"
 select position_in_stream_id from position_in_stream_owner where position_in_stream_id={
 									insertId
 								};");
-
-
 			}
 		}
 

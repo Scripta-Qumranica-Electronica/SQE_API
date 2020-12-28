@@ -7,10 +7,10 @@ namespace sqe_api
 	public class Scroll
 	{
 		private readonly List<TextFragmentData> _fragments = new List<TextFragmentData>();
-		public readonly  string                 ScrollName;
-		public readonly  uint                   EditionId;
 		private readonly SqeApi                 _sqeApi;
 		private readonly UserInfo               _userInfo;
+		public readonly  uint                   EditionId;
+		public readonly  string                 ScrollName;
 
 		//	public static Create
 
@@ -31,12 +31,11 @@ namespace sqe_api
 				throw new Exception($"Fragment {fragmentName} not found.");
 
 			return fragment;
-
 		}
 
 		/// <summary>
-		///     Retrieves the Data of a given line as an instance of LineDataExtended,
-		///     Throws an exception if the fragment or the line is not found.
+		///  Retrieves the Data of a given line as an instance of LineDataExtended,
+		///  Throws an exception if the fragment or the line is not found.
 		/// </summary>
 		/// <param name="fragmentName"></param>
 		/// <param name="lineName"></param>
@@ -46,8 +45,8 @@ namespace sqe_api
 		{
 			var fragment = _getFragmentData(fragmentName);
 
-			if (fragment.Lines == null
-				|| fragment.Lines.Count == 0)
+			if ((fragment.Lines == null)
+				|| (fragment.Lines.Count == 0))
 			{
 				Console.Write($"Loading fragment {fragmentName}.");
 
@@ -72,6 +71,7 @@ namespace sqe_api
 					: new Line(this, line);
 		}
 
-		public uint GetFragmentId(string fragName) => _getFragmentData(fragName).TextFragmentId.GetValueOrDefault();
+		public uint GetFragmentId(string fragName)
+			=> _getFragmentData(fragName).TextFragmentId.GetValueOrDefault();
 	}
 }

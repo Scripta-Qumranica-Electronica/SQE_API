@@ -24,6 +24,7 @@ using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Services;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server

@@ -1,19 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Converters;
 using SQE.DatabaseAccess.Models;
 
 namespace sqe_api
 {
-    public class SignInterpretation
-    {
-        private readonly SignInterpretationData _data;
-
-		public uint SignInterpretationId => _data.SignInterpretationId.GetValueOrDefault();
-        public string Character => _data.Character;
-        public string CharacterForComparison => _getCharacterForComparison();
-
-        public uint SignId { get; }
+	public class SignInterpretation
+	{
+		private readonly SignInterpretationData _data;
 
 		public SignInterpretation(SignInterpretationData data, uint signId)
 		{
@@ -21,11 +14,17 @@ namespace sqe_api
 			SignId = signId;
 		}
 
-        public List<uint> NextSignInterpretationIds => _data.NextSignInterpretations
-            .Select(s => s.NextSignInterpretationId)
-            .ToList();
+		public uint   SignInterpretationId   => _data.SignInterpretationId.GetValueOrDefault();
+		public string Character              => _data.Character;
+		public string CharacterForComparison => _getCharacterForComparison();
 
-        private bool IsSpace() => _attributeExists(2);
+		public uint SignId { get; }
+
+		public List<uint> NextSignInterpretationIds => _data.NextSignInterpretations
+															.Select(s => s.NextSignInterpretationId)
+															.ToList();
+
+		private bool IsSpace() => _attributeExists(2);
 
 		private bool IsDamage() => _attributeExists(5);
 
@@ -34,17 +33,24 @@ namespace sqe_api
 		private bool IsBreak() => _attributeExists(9);
 
 		private bool _attributeExists(uint attributeValueId)
-        {
-            return _data.Attributes.Exists(a => a.AttributeValueId == attributeValueId);
-        }
+		{
+			return _data.Attributes.Exists(a => a.AttributeValueId == attributeValueId);
+		}
 
-        private string _getCharacterForComparison()
-        {
-            if (IsSpace()) return " ";
-            if (IsVacat()) return "V";
-            if (IsBreak()) return "X";
-            return Character == "" ? "?" : Character;
-        }
+		private string _getCharacterForComparison()
+		{
+			if (IsSpace())
+				return " ";
 
-    }
+			if (IsVacat())
+				return "V";
+
+			if (IsBreak())
+				return "X";
+
+			return Character == ""
+					? "?"
+					: Character;
+		}
+	}
 }

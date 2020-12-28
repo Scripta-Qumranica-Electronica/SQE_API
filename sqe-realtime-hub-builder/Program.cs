@@ -23,6 +23,7 @@ using System.Text.RegularExpressions;
 using CaseExtensions;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace sqe_realtime_hub_builder

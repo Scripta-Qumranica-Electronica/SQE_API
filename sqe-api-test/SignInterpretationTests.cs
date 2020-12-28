@@ -7,6 +7,7 @@ using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.ApiTest
@@ -284,8 +285,6 @@ namespace SQE.ApiTest
 						, newSignInterpretation
 						, textFragment
 						, line
-						, previousSignInterpretation
-						, nextSignInterpretation
 						, realtime);
 
 				await _deleteSignInterpretationAsync(
@@ -1508,8 +1507,6 @@ namespace SQE.ApiTest
 				, SignInterpretationCreateDTO newSignInterpretation
 				, TextFragmentDTO             textFragment
 				, LineDTO                     line
-				, uint                        previousSignInterpretation
-				, uint                        nextSignInterpretation
 				, bool                        realtime = false)
 		{
 			// Act
@@ -1577,7 +1574,7 @@ namespace SQE.ApiTest
 																	  .ToArray();
 
 			// Make sure the two updated/new sign interpretations are in the stream
-			signs[2].signInterpretations.First().ShouldDeepEqual(responseObject.created.First());
+			signs[1].signInterpretations.First().ShouldDeepEqual(responseObject.created.First());
 
 			Assert.Contains(
 					signs

@@ -1,16 +1,15 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Net.Mail;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using Org.BouncyCastle.Bcpg;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 using static SQE.DatabaseAccess.Helpers.SignFactory;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.DatabaseAccess
@@ -49,7 +48,6 @@ namespace SQE.DatabaseAccess
 		Task UpdateSignInterpretationDataAsync(
 				UserInfo                 editionUser
 				, SignInterpretationData signInterpretationData);
-
 
 		Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignsWithInterpretationsAsync(
 				UserInfo                editionUser
@@ -128,7 +126,7 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signInterpretationId
 				, bool   deleteVariants
-				, bool clothPath
+				, bool   clothPath
 				, bool   materializeSignStream = true);
 
 		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignAsync(
@@ -301,7 +299,11 @@ namespace SQE.DatabaseAccess
 		/// <returns>A detailed text object</returns>
 		public async Task<TextEdition> GetLineByIdAsync(UserInfo editionUser, uint lineId)
 		{
-			var terminators = _getTerminators(editionUser, TableData.Table.line, lineId);
+			var terminators = _getTerminators(
+					editionUser
+					, TableData.Table.line
+					, lineId
+					, true);
 
 			if (!terminators.IsValid)
 				return new TextEdition();
@@ -365,8 +367,8 @@ namespace SQE.DatabaseAccess
 		}
 
 		/// <summary>
-		/// Inserts new line as fitstline into an existing text fragment which masu contasin
-		/// already at least one line
+		///  Inserts new line as fitstline into an existing text fragment which masu contasin
+		///  already at least one line
 		/// </summary>
 		/// <param name="editionUser"></param>
 		/// <param name="lineData"></param>
@@ -452,8 +454,8 @@ namespace SQE.DatabaseAccess
 
 				return newLine;
 			}
-			else
-				return null;
+
+			return null;
 		}
 
 		public async Task<LineData> InsertLineAfterAsync(
@@ -556,7 +558,6 @@ namespace SQE.DatabaseAccess
 
 		#region Sign and its interpretation
 
-
 		public async Task UpdateSignInterpretationDataAsync(
 				UserInfo                 editionUser
 				, SignInterpretationData signInterpretationData)
@@ -650,6 +651,7 @@ namespace SQE.DatabaseAccess
 			// INGO: It is clearified a bit by renaming both, the name of the function and the names
 			// of some variables to reflect corredctly if they refere to a sign or a sign intepretation.
 			var newlyCreatedSigns = new List<SignData>();
+			var updatedSignInterpretationIds = new List<uint>();
 
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -910,6 +912,7 @@ namespace SQE.DatabaseAccess
 
 					// Added by Ingo: We have to set the anchorsBefore to the NextSignItnterpretationsId of the last
 					// created Sign.
+					updatedSignInterpretationIds.AddRange(anchorsBefore);
 					anchorsBefore.Clear();
 
 					anchorsBefore.AddRange(
@@ -925,16 +928,14 @@ namespace SQE.DatabaseAccess
 			// request is over.
 			// TODO: change RequestMaterializationAsync to take an array,
 			// it should be able to check how many sign streams would need a rebuild.
-			if (materializeSignStream && anchorsBefore.Any())
+			if (materializeSignStream && updatedSignInterpretationIds.Any())
 			{
 				_materializationRepository.RequestMaterializationAsync(
 						editionUser.EditionId.Value
 						, anchorsBefore.First());
 			}
-			else
-				anchorsBefore = new List<uint>();
 
-			return (newlyCreatedSigns, anchorsBefore);
+			return (newlyCreatedSigns, updatedSignInterpretationIds);
 		}
 
 		/// <summary>
@@ -972,7 +973,7 @@ namespace SQE.DatabaseAccess
 
 		/// <summary>
 		///  Join each sign interpretaton referenced by firstSignInterpretationIds
-		/// with each sign interpretation referenced by secondSignInterpretationId
+		///  with each sign interpretation referenced by secondSignInterpretationId
 		///  in the edition sign stream.
 		/// </summary>
 		/// <param name="editionUser">The details of the edition and user</param>
@@ -1054,7 +1055,7 @@ namespace SQE.DatabaseAccess
 
 		/// <summary>
 		///  Join each sign interpretaton referenced by firstSignInterpretationIds
-		/// with each sign interpretation referenced by secondSignInterpretationId
+		///  with each sign interpretation referenced by secondSignInterpretationId
 		///  in the edition sign stream.
 		/// </summary>
 		/// <param name="editionUser">The details of the edition and user</param>
@@ -1079,7 +1080,7 @@ namespace SQE.DatabaseAccess
 
 		/// <summary>
 		///  Join each sign interpretaton referenced by firstSignInterpretationIds
-		/// with each sign interpretation referenced by secondSignInterpretationId
+		///  with each sign interpretation referenced by secondSignInterpretationId
 		///  in the edition sign stream.
 		/// </summary>
 		/// <param name="editionUser">The details of the edition and user</param>
@@ -1358,8 +1359,7 @@ namespace SQE.DatabaseAccess
 								await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 					}
 
-
-					if (breakAnchors && signInterpretations.First()==signInterpretation)
+					if (breakAnchors && (signInterpretations.First() == signInterpretation))
 						await _breakSignStreamAsync(editionUser, anchorsBefore, anchorsAfter);
 
 					// Now insert the new sign interpretation into the path
@@ -1376,7 +1376,6 @@ namespace SQE.DatabaseAccess
 									? PositionAction.CreatePathFromItems
 									: PositionAction.MoveInBetween);
 
-
 					positionDataRequestFactory.AddAnchorsAfter(anchorsAfter);
 					positionDataRequestFactory.AddAnchorsBefore(anchorsBefore);
 
@@ -1389,7 +1388,9 @@ namespace SQE.DatabaseAccess
 							editionUser
 							, signInterpretation.SignInterpretationId.GetValueOrDefault()
 							, signInterpretation.Character
-							,  signInterpretation.IsVariant ? (byte) 0 : (byte) 1);
+							, signInterpretation.IsVariant
+									? (byte) 0
+									: (byte) 1);
 
 					// Add the attributes
 					var attributes = newSignInterpretation
@@ -1458,17 +1459,14 @@ namespace SQE.DatabaseAccess
 					var nextSignInterpretationIds = await _getNextSignInterpretationIds(
 							editionUser.EditionId.Value
 							, signInterpretation.SignInterpretationId.Value);
+
 					signInterpretation.NextSignInterpretations.Clear();
 
 					foreach (var nsIid in nextSignInterpretationIds)
 					{
-						signInterpretation.NextSignInterpretations.Add(new NextSignInterpretation()
-						{
-								NextSignInterpretationId = nsIid
-										,
-						});
+						signInterpretation.NextSignInterpretations.Add(
+								new NextSignInterpretation { NextSignInterpretationId = nsIid });
 					}
-
 				}
 			}
 
@@ -1488,7 +1486,7 @@ namespace SQE.DatabaseAccess
 						UserInfo editionUser
 						, uint   signInterpretationId
 						, bool   deleteVariants
-						, bool clothPath
+						, bool   clothPath
 						, bool   materializeSignStream = true)
 		{
 			var alteredSignInterpretations = new List<uint>();
@@ -1534,15 +1532,12 @@ namespace SQE.DatabaseAccess
 							editionUser
 							, signInterpretationId);
 
-
-
 					using (var connection = OpenConnection())
 
-					// Take out from path
+							// Take out from path
 					{
 						if (clothPath)
 						{
-
 							var positionDataRequest =
 									await PositionDataRequestFactory.CreateInstanceAsync(
 											connection
@@ -1551,22 +1546,19 @@ namespace SQE.DatabaseAccess
 											, editionUser.EditionId.Value
 											, true);
 
-							positionDataRequest.AddAction(
-									PositionAction.TakeOutPathOfItems
-							);
+							positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
 							var requests = await positionDataRequest.CreateRequestsAsync();
 							await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
 
 							alteredSignInterpretations.AddRange(positionDataRequest.AnchorsBefore);
 							deletedSignInterpretations.Add(signInterpretationId);
-
-
 						}
 						else
 						{
+							var previousInterpretationIds = await _getPreviousSignInterpretationIds(
+									editionUser.EditionId.Value
+									, signInterpretationId);
 
-							var previousInterpretationIds =
-									await _getPreviousSignInterpretationIds(editionUser.EditionId.Value,signInterpretationId);
 							var nextInterpretationIds = await _getNextSignInterpretationIds(
 									editionUser.EditionId.Value
 									, signInterpretationId);
@@ -1576,15 +1568,14 @@ namespace SQE.DatabaseAccess
 											connection
 											, StreamType.SignInterpretationStream
 											, signInterpretationId
-											, editionUser.EditionId.Value
-											, false);
+											, editionUser.EditionId.Value);
 
 							positionDataRequest.AddAction(
-									PositionAction.DisconnectNeighbouringAnchors
-							);
+									PositionAction.DisconnectNeighbouringAnchors);
 
 							positionDataRequest.AnchorsAfter.Add(signInterpretationId);
 							positionDataRequest.AnchorsBefore.AddRange(previousInterpretationIds);
+							alteredSignInterpretations.AddRange(positionDataRequest.AnchorsBefore);
 							var requests = await positionDataRequest.CreateRequestsAsync();
 
 							positionDataRequest.AnchorsAfter.Clear();
@@ -1594,8 +1585,7 @@ namespace SQE.DatabaseAccess
 							requests.AddRange(await positionDataRequest.CreateRequestsAsync());
 
 							await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
-
-
+							deletedSignInterpretations.Add(signInterpretationId);
 						}
 					}
 				}
@@ -1797,7 +1787,8 @@ namespace SQE.DatabaseAccess
 			var terminators = _getTerminators(
 					editionUser
 					, TableData.Table.text_fragment
-					, textFragmentId);
+					, textFragmentId
+					, true);
 
 			if (!terminators.IsValid)
 				return new TextEdition();
@@ -1937,17 +1928,20 @@ namespace SQE.DatabaseAccess
 		private Terminators _getTerminators(
 				UserInfo          editionUser
 				, TableData.Table table
-				, uint            elementId)
+				, uint            elementId
+				, bool            allowPublicEditions = false)
 		{
 			// Ingo deleted addPublicEdition: true - if you add new lines add the beginning of a
 			// fragment, you would get more than one fragment start-terminators.
+			// Bronson added the bool allowPublicEditions, since we need that possibility for
+			// anonymous users to get public data, etc.
 			// Sind TableData.FromQueryPart is only invoked here we may simplify the function
 			// I added also the editionId since the same user may have different edition with the sam text.
 			var query = $@"SELECT DISTINCT sign_interpretation_id
                         {
-						TableData.FromQueryPart(table)
+						TableData.FromQueryPart(table, addPublicEdition: allowPublicEditions)
 					}
-						AND edition_id=@EditionId
+						AND edition_editor.edition_id=@EditionId
                         AND attribute_value_id in @Breaks
                         ORDER BY attribute_value_id";
 
@@ -1961,7 +1955,7 @@ namespace SQE.DatabaseAccess
 												  ElementId = elementId
 												  , UserId = editionUser.userId
 												  , Breaks = TableData.Terminators(table)
-												  , EditionId = editionUser.EditionId
+												  , editionUser.EditionId
 												  ,
 										  })
 								  .ToArray());
@@ -2431,10 +2425,9 @@ namespace SQE.DatabaseAccess
 
 		#region Sign and sign interpretation
 
-
 		private async Task _breakSignStreamAsync(
-				 UserInfo     editionUser
-							   , List<uint> firstAnchors
+				UserInfo     editionUser
+				, List<uint> firstAnchors
 				, List<uint> secondAnchors)
 		{
 			using (var connection = OpenConnection())
@@ -2454,7 +2447,6 @@ namespace SQE.DatabaseAccess
 
 				await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
 			}
-
 		}
 
 		public async Task _removeSignInterpretationCharacterAsync(
@@ -2470,23 +2462,24 @@ namespace SQE.DatabaseAccess
 							$@"
 								select sign_interpretation_character_id
 								from sign_interpretation_character
-								where sign_interpretation_id = {signInterpretationId}");
+								where sign_interpretation_id = {
+										signInterpretationId
+									}");
 
 					foreach (var characterId in characterIds)
 					{
-
 						var signInterpretationCharacterRequest = new MutationRequest(
 								MutateType.Delete
 								, new DynamicParameters()
 								, "sign_interpretation_character"
-								, (uint?) characterId);
+								, characterId);
 
 						var writeResults = await _databaseWriter.WriteToDatabaseAsync(
 								editionUser
 								, signInterpretationCharacterRequest);
-
 					}
 				}
+
 				transactionScope.Complete();
 			}
 		}
@@ -2502,7 +2495,7 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signInterpretationId
 				, string character
-				, byte priority = 0)
+				, byte   priority = 0)
 		{
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -2587,7 +2580,7 @@ namespace SQE.DatabaseAccess
 				, string     character
 				, MutateType action
 				, uint?      signInterpretationCharacterId = null
-				, byte priority = 0)
+				, byte       priority                      = 0)
 		{
 			// Throw if an update was requested without providing a sign interpretation character id
 			if ((action == MutateType.Update)
@@ -2604,7 +2597,6 @@ namespace SQE.DatabaseAccess
 					, signInterpretationId);
 
 			signInterpretationCharacterParameters.Add("@character", character);
-
 
 			// TODO: Add support to write the "priority" to the owner table
 			// INGO: I added it see below, but what still has to be done is to
@@ -2642,6 +2634,7 @@ namespace SQE.DatabaseAccess
 										editionUser.EditionId
 									}");
 				}
+
 				return writeResults.First().NewId.Value;
 			}
 

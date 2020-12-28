@@ -8,6 +8,7 @@ using DeepEqual.Syntax;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.ApiTest.Helpers;
 using Xunit;
+
 // ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.ApiTest.ApiRequests

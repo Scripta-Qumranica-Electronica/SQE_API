@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
+using SQE.ApiTest.ApiRequests;
 
 namespace SQE.ApiTest.Helpers
 {
@@ -100,11 +101,11 @@ namespace SQE.ApiTest.Helpers
 					,
 			};
 
-			var (response, msg) = await SendHttpRequestAsync<LoginRequestDTO, DetailedUserTokenDTO>(
-					client
-					, HttpMethod.Post
-					, "/v1/users/login"
-					, login);
+			var loginRequest = new Post.V1_Users_Login(login);
+			await loginRequest.SendAsync(client);
+
+			var (response, msg) =
+					(loginRequest.HttpResponseMessage, loginRequest.HttpResponseObject);
 
 			response.EnsureSuccessStatusCode();
 
