@@ -45,7 +45,7 @@ namespace SQE.API.Server.Services
 				uint?                      userId
 				, DetailedSearchRequestDTO request)
 		{
-			var editions = new FlatEditionListDTO();
+			var editions = new FlatEditionListDTO { editions = new List<EditionDTO>() };
 
 			var textFragments = new TextFragmentSearchResponseListDTO
 			{
@@ -53,7 +53,12 @@ namespace SQE.API.Server.Services
 			};
 
 			var artefacts = new ArtefactListDTO { artefacts = new List<ArtefactDTO>() };
-			var images = new ImageSearchResponseListDTO();
+
+			var images =
+					new ImageSearchResponseListDTO
+					{
+							imagedObjects = new List<ImageSearchResponseDTO>(),
+					};
 
 			if (!string.IsNullOrEmpty(request.imageDesignation))
 			{
@@ -130,7 +135,7 @@ namespace SQE.API.Server.Services
 			}
 
 			foreach (var textReference in request.textReference.Where(
-					artDesignation => !string.IsNullOrEmpty(artDesignation)))
+					textReference => !string.IsNullOrEmpty(textReference)))
 			{
 				var results = await _searchRepository.SearchTextFragments(
 						userId ?? 1
