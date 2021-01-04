@@ -251,7 +251,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <summary>
 		///  broadcasts the deletion of a scribal font
 		/// </summary>
-		/// <param name="scribalFontId"></param>
+		/// <param name="returnedData"></param>
 		/// <returns></returns>
 		Task DeletedScribalFont(DeleteScribalFontDTO returnedData);
 	}

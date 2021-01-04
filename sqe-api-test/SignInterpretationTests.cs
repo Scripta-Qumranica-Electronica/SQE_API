@@ -692,7 +692,6 @@ namespace SQE.ApiTest
 				httpResponse.EnsureSuccessStatusCode();
 				httpData.ShouldDeepEqual(listenerData);
 
-				Assert.NotNull(signInterpretation.signId);
 				Assert.NotEqual(0u, signInterpretation.signId);
 				Assert.Equal(signInterpretation.attributes.Length, httpData.attributes.Length);
 

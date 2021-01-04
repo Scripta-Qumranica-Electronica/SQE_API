@@ -261,7 +261,7 @@ namespace SQE.API.Server.RealtimeHubs
 		///  Id of the sign interpretation for which this variant
 		///  will be created
 		/// </param>
-		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+		/// <param name="newSignInterpretationCharacter">New sign interpretation data to be added</param>
 		/// <returns>The new sign interpretation</returns>
 		[Authorize]
 		public async Task<SignInterpretationDTO>

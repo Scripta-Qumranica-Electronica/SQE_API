@@ -116,7 +116,7 @@ namespace SQE.API.Server.Services
 			var newScribalFont = await _setEditionScriptData(user, scribalFontId, data);
 
 			// Broadcast the update
-			_hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 					   .CreatedScribalFontInfo(newScribalFont);
 
 			return newScribalFont;
@@ -131,7 +131,7 @@ namespace SQE.API.Server.Services
 			var updatedScribalFont = await _setEditionScriptData(user, scribalFontId, data);
 
 			// Broadcast the update
-			_hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 					   .UpdatedScribalFontInfo(updatedScribalFont);
 
 			return updatedScribalFont;
@@ -145,7 +145,7 @@ namespace SQE.API.Server.Services
 			await _scriptRepository.DeleteScribalFont(user, scribalFontId);
 
 			// Broadcast the deletion
-			_hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 					   .DeletedScribalFont(
 							   new DeleteScribalFontDTO
 							   {
@@ -182,7 +182,7 @@ namespace SQE.API.Server.Services
 															   == kernPair.secondCharacter));
 
 			// Broadcast update as well
-			_hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 					   .CreatedScribalFontKerningPair(updatedScriptKern);
 
 			return updatedScriptKern;
@@ -202,7 +202,7 @@ namespace SQE.API.Server.Services
 					, secondCharacter);
 
 			// Broadcast update
-			_hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 					   .DeletedScribalFontKerningPair(
 							   new DeleteKernPairDTO
 							   {
@@ -240,7 +240,7 @@ namespace SQE.API.Server.Services
 											   .glyphs.First(x => x.character == glyph.character);
 
 			// Broadcast update as well
-			_hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 					   .CreatedScribalFontGlyph(updatedScriptGlyph);
 
 			return updatedScriptGlyph;
@@ -255,7 +255,7 @@ namespace SQE.API.Server.Services
 			await _scriptRepository.DeleteScribalFontGlyph(user, scribalFontId, glyph);
 
 			// Broadcast update
-			_hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 					   .DeletedScribalFontGlyph(
 							   new DeleteGlyphDataDTO
 							   {

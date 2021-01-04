@@ -145,7 +145,7 @@ namespace SQE.API.Server.HttpControllers
 		///  Id of the sign interpretation for which this variant
 		///  will be created
 		/// </param>
-		/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+		/// <param name="newSignInterpretationCharacter">New sign interpretation data to be added</param>
 		/// <returns>The new sign interpretation</returns>
 		[HttpPut("v1/editions/{editionId}/sign-interpretations/{signInterpretationId}")]
 		public async Task<ActionResult<SignInterpretationDTO>> ChangeSignInterpretationCharacter(
