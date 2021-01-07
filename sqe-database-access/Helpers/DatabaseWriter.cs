@@ -51,7 +51,7 @@ namespace SQE.DatabaseAccess.Helpers
 				, uint?             tablePkId = null)
 		{
 			Action = action;
-			Parameters = parameters;
+			Parameters = parameters ?? new DynamicParameters();
 			TableName = tableName;
 			TablePkId = tablePkId;
 
@@ -104,7 +104,7 @@ namespace SQE.DatabaseAccess.Helpers
 				, "point_on_image1point_to_point_map"
 				, "point_on_image2point_to_point_map"
 				, "pathroi_shape"
-				, "scribal_font_glyph_metrics"
+				, "shapescribal_font_glyph_metrics"
 				,
 		};
 	}

@@ -261,10 +261,10 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="glyph">The glyph to be deleted</param>
 		/// <returns></returns>
 		[Authorize]
-		public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyph(
+		public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter(
 				uint   editionId
 				, uint scribalFontId
-				, char glyph)
+				, char glyphCharacter)
 
 		{
 			try
@@ -272,7 +272,7 @@ namespace SQE.API.Server.RealtimeHubs
 				await _scriptService.DeleteEditionScribalFontGlyph(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, scribalFontId
-						, glyph);
+						, glyphCharacter);
 			}
 			catch (ApiException err)
 			{

@@ -141,13 +141,15 @@ namespace SQE.API.Server.HttpControllers
 		/// <param name="scribalFontId">Scribal font from which the glyph is deleted</param>
 		/// <param name="glyph">The glyph to be deleted</param>
 		/// <returns></returns>
-		[HttpDelete("v1/editions/{editionId}/[controller]s/{scribalFontId}/glyphs/{glyph}")]
+		[HttpDelete(
+				"v1/editions/{editionId}/[controller]s/{scribalFontId}/glyphs/{glyphCharacter}")]
 		public async Task<ActionResult> DeleteScribalFontGlyph(
 				[FromRoute]   uint editionId
 				, [FromRoute] uint scribalFontId
-				, [FromRoute] char glyph) => await _scriptService.DeleteEditionScribalFontGlyph(
-				await _userService.GetCurrentUserObjectAsync(editionId, true)
-				, scribalFontId
-				, glyph);
+				, [FromRoute] char glyphCharacter)
+			=> await _scriptService.DeleteEditionScribalFontGlyph(
+					await _userService.GetCurrentUserObjectAsync(editionId, true)
+					, scribalFontId
+					, glyphCharacter);
 	}
 }

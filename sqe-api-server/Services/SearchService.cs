@@ -111,40 +111,47 @@ namespace SQE.API.Server.Services
 
 			var searchEditionIds = editions.editions.Select(x => x.id);
 
-			foreach (var artDesignation in request.artefactDesignation.Where(
-					artDesignation => !string.IsNullOrEmpty(artDesignation)))
+			if (request.artefactDesignation != null)
 			{
-				var editionArtefacts = await _searchRepository.SearchArtefacts(
-						userId ?? 1
-						, artDesignation
-						, searchEditionIds
-						, request.exactTextReference);
-
-				// Todo: this is pretty clunky and cannot perform well, consider writing a custom method
-				foreach (var editionArtefact in editionArtefacts)
+				foreach (var artDesignation in request.artefactDesignation.Where(
+						artDesignation => !string.IsNullOrEmpty(artDesignation)))
 				{
-					var userInfo =
-							await _userService.GetCurrentUserObjectAsync(editionArtefact.EditionId);
+					var editionArtefacts = await _searchRepository.SearchArtefacts(
+							userId ?? 1
+							, artDesignation
+							, searchEditionIds
+							, request.exactTextReference);
 
-					artefacts.artefacts.Add(
-							await _artefactService.GetEditionArtefactAsync(
-									userInfo
-									, editionArtefact.ArtefactId
-									, new List<string> { "images", "masks" }));
+					// Todo: this is pretty clunky and cannot perform well, consider writing a custom method
+					foreach (var editionArtefact in editionArtefacts)
+					{
+						var userInfo =
+								await _userService.GetCurrentUserObjectAsync(
+										editionArtefact.EditionId);
+
+						artefacts.artefacts.Add(
+								await _artefactService.GetEditionArtefactAsync(
+										userInfo
+										, editionArtefact.ArtefactId
+										, new List<string> { "images", "masks" }));
+					}
 				}
 			}
 
-			foreach (var textReference in request.textReference.Where(
-					textReference => !string.IsNullOrEmpty(textReference)))
+			if (request.textReference != null)
 			{
-				var results = await _searchRepository.SearchTextFragments(
-						userId ?? 1
-						, textReference
-						, searchEditionIds
-						, request.exactArtefactDesignation);
+				foreach (var textReference in request.textReference.Where(
+						textReference => !string.IsNullOrEmpty(textReference)))
+				{
+					var results = await _searchRepository.SearchTextFragments(
+							userId ?? 1
+							, textReference
+							, searchEditionIds
+							, request.exactArtefactDesignation);
 
-				if (results.Any())
-					textFragments.textFragments.AddRange(results.ToDTO().textFragments);
+					if (results.Any())
+						textFragments.textFragments.AddRange(results.ToDTO().textFragments);
+				}
 			}
 
 			return new DetailedSearchResponseDTO

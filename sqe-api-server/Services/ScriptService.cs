@@ -117,7 +117,7 @@ namespace SQE.API.Server.Services
 
 			// Broadcast the update
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-					   .CreatedScribalFontInfo(newScribalFont);
+							 .CreatedScribalFontInfo(newScribalFont);
 
 			return newScribalFont;
 		}
@@ -132,7 +132,7 @@ namespace SQE.API.Server.Services
 
 			// Broadcast the update
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-					   .UpdatedScribalFontInfo(updatedScribalFont);
+							 .UpdatedScribalFontInfo(updatedScribalFont);
 
 			return updatedScribalFont;
 		}
@@ -146,13 +146,13 @@ namespace SQE.API.Server.Services
 
 			// Broadcast the deletion
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-					   .DeletedScribalFont(
-							   new DeleteScribalFontDTO
-							   {
-									   editionEditorId = user.EditionEditorId.Value
-									   , scribalFontId = scribalFontId
-									   ,
-							   });
+							 .DeletedScribalFont(
+									 new DeleteScribalFontDTO
+									 {
+											 editionEditorId = user.EditionEditorId.Value
+											 , scribalFontId = scribalFontId
+											 ,
+									 });
 
 			return new NoContentResult();
 		}
@@ -183,7 +183,7 @@ namespace SQE.API.Server.Services
 
 			// Broadcast update as well
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-					   .CreatedScribalFontKerningPair(updatedScriptKern);
+							 .CreatedScribalFontKerningPair(updatedScriptKern);
 
 			return updatedScriptKern;
 		}
@@ -203,17 +203,17 @@ namespace SQE.API.Server.Services
 
 			// Broadcast update
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-					   .DeletedScribalFontKerningPair(
-							   new DeleteKernPairDTO
-							   {
-									   editorId =
-											   user.EditionEditorId
-												   .Value // The value will exist because the user already passed the test of having write access
-									   , firstCharacter = firstCharacter
-									   , secondCharacter = secondCharacter
-									   , scribalFontId = scribalFontId
-									   ,
-							   });
+							 .DeletedScribalFontKerningPair(
+									 new DeleteKernPairDTO
+									 {
+											 editorId =
+													 user.EditionEditorId
+														 .Value // The value will exist because the user already passed the test of having write access
+											 , firstCharacter = firstCharacter
+											 , secondCharacter = secondCharacter
+											 , scribalFontId = scribalFontId
+											 ,
+									 });
 
 			return new NoContentResult();
 		}
@@ -241,7 +241,7 @@ namespace SQE.API.Server.Services
 
 			// Broadcast update as well
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-					   .CreatedScribalFontGlyph(updatedScriptGlyph);
+							 .CreatedScribalFontGlyph(updatedScriptGlyph);
 
 			return updatedScriptGlyph;
 		}
@@ -256,16 +256,16 @@ namespace SQE.API.Server.Services
 
 			// Broadcast update
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-					   .DeletedScribalFontGlyph(
-							   new DeleteGlyphDataDTO
-							   {
-									   character = glyph
-									   , editorId =
-											   user.EditionEditorId
-												   .Value // The value will exist because the user already passed the test of having write access
-									   , scribalFontId = scribalFontId
-									   ,
-							   });
+							 .DeletedScribalFontGlyph(
+									 new DeleteGlyphDataDTO
+									 {
+											 character = glyph
+											 , editorId =
+													 user.EditionEditorId
+														 .Value // The value will exist because the user already passed the test of having write access
+											 , scribalFontId = scribalFontId
+											 ,
+									 });
 
 			return new NoContentResult();
 		}

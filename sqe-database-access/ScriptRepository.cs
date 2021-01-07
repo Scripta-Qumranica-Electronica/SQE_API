@@ -138,7 +138,7 @@ WHERE scribal_font_kerning.scribal_font_id = @ScribalFontId
 SELECT DISTINCT	default_word_space AS SpaceSize,
 				default_interlinear_space AS LineSpaceSize,
 				scribal_font_metrics.creator_id AS CreatorId,
-                scribal_font_metrics_owner.editor_id AS EditorId,
+                scribal_font_metrics_owner.edition_editor_id AS EditorId,
        			scribal_font_id AS ScribalFontId
 FROM scribal_font_metrics
 JOIN scribal_font_metrics_owner USING(scribal_font_metrics_id)
@@ -173,7 +173,7 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 			using (var conn = OpenConnection())
 			{
 				var fontInfoParameters = new DynamicParameters();
-				fontInfoParameters.Add("@scribal_font_id", wordSpace);
+				fontInfoParameters.Add("@scribal_font_id", scribalFontId);
 				fontInfoParameters.Add("@default_word_space", wordSpace);
 				fontInfoParameters.Add("@default_interlinear_space", lineSpace);
 				MutationRequest request;
@@ -436,7 +436,7 @@ WHERE scribal_font_metrics_owner.edition_id = @EditionId";
 SELECT scribal_font_kerning_id
 FROM scribal_font_kerning
 JOIN scribal_font_kerning_owner USING(scribal_font_kerning_id)
-WHERE scribal_font_kerning_owner = @EditionId
+WHERE scribal_font_kerning_owner.edition_id = @EditionId
   	AND scribal_font_kerning.scribal_font_id = @ScribalFontId
 	AND scribal_font_kerning.first_unicode_char = @FirstChar
 	AND scribal_font_kerning.second_unicode_char = @SecondChar
@@ -480,7 +480,7 @@ WHERE scribal_font_kerning_owner = @EditionId
 SELECT scribal_font_glyph_metrics_id
 FROM scribal_font_glyph_metrics
 JOIN scribal_font_glyph_metrics_owner USING(scribal_font_glyph_metrics_id)
-WHERE scribal_font_glyph_metrics_owner = @EditionId
+WHERE scribal_font_glyph_metrics_owner.edition_id = @EditionId
   	AND scribal_font_glyph_metrics.scribal_font_id = @ScribalFontId
 	AND scribal_font_glyph_metrics.unicode_char = @Character
 ";

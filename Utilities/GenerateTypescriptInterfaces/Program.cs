@@ -254,6 +254,8 @@ namespace GenerateTypescriptInterfaces
 			{
 				case "byte":
 				case "sbyte":
+				case "short":
+				case "ushort":
 				case "uint16":
 				case "uint32":
 				case "uint64":
@@ -261,13 +263,19 @@ namespace GenerateTypescriptInterfaces
 				case "int32":
 				case "int64":
 				case "decimal":
+				case "float":
 				case "double":
 				case "single":
 				case "uint":
 				case "int":
+				case "long":
+				case "ulong":
 					return "number";
 
 				case "string":
+				case "char":
+				case "Guid":
+				case "DateTime":
 					return "string";
 
 				case "bool":

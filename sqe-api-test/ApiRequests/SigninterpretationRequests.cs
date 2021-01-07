@@ -849,7 +849,7 @@ namespace SQE.ApiTest.ApiRequests
 			///  Id of the sign interpretation for which this variant
 			///  will be created
 			/// </param>
-			/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+			/// <param name="newSignInterpretationCharacter">New sign interpretation data to be added</param>
 			/// <returns>The new sign interpretation</returns>
 			public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
 					uint                                   editionId

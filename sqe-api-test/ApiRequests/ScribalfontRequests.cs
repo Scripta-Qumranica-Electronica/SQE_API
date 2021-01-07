@@ -162,11 +162,11 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Editions_EditionId_Scribalfonts_ScribalFontId_Glyphs_Glyph :
+		public class V1_Editions_EditionId_Scribalfonts_ScribalFontId_Glyphs_GlyphCharacter :
 				RequestObject<EmptyInput, EmptyOutput>
 		{
 			private readonly uint _editionId;
-			private readonly char _glyph;
+			private readonly char _glyphCharacter;
 			private readonly uint _scribalFontId;
 
 			/// <summary>
@@ -176,15 +176,15 @@ namespace SQE.ApiTest.ApiRequests
 			/// <param name="scribalFontId">Scribal font from which the glyph is deleted</param>
 			/// <param name="glyph">The glyph to be deleted</param>
 			/// <returns></returns>
-			public V1_Editions_EditionId_Scribalfonts_ScribalFontId_Glyphs_Glyph(
+			public V1_Editions_EditionId_Scribalfonts_ScribalFontId_Glyphs_GlyphCharacter(
 					uint   editionId
 					, uint scribalFontId
-					, char glyph)
+					, char glyphCharacter)
 
 			{
 				_editionId = editionId;
 				_scribalFontId = scribalFontId;
-				_glyph = glyph;
+				_glyphCharacter = glyphCharacter;
 				AvailableListeners = new Listeners();
 
 				_listenerDict.Add(
@@ -211,8 +211,8 @@ namespace SQE.ApiTest.ApiRequests
 															"/scribal-font-id"
 															, $"/{HttpUtility.UrlEncode(_scribalFontId.ToString())}")
 													.Replace(
-															"/glyph"
-															, $"/{HttpUtility.UrlEncode(_glyph.ToString())}");
+															"/glyph-character"
+															, $"/{HttpUtility.UrlEncode(_glyphCharacter.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -220,7 +220,7 @@ namespace SQE.ApiTest.ApiRequests
 							   SignalrRequestString()
 							   , _editionId
 							   , _scribalFontId
-							   , _glyph);
+							   , _glyphCharacter);
 			}
 
 			public override uint? GetEditionId() => _editionId;

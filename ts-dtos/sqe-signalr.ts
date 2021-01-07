@@ -486,7 +486,7 @@ export class SignalRUtilities {
 	 * @param secondCharacter - The second character of the kerning pair
 	 *
 	 */
-    public async deleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter(editionId: number, scribalFontId: number, firstCharacter: char, secondCharacter: char): Promise<void> {
+    public async deleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter(editionId: number, scribalFontId: number, firstCharacter: string, secondCharacter: string): Promise<void> {
         return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter', editionId, scribalFontId, firstCharacter, secondCharacter);
     }
 
@@ -512,8 +512,8 @@ export class SignalRUtilities {
 	 * @param glyph - The glyph to be deleted
 	 *
 	 */
-    public async deleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyph(editionId: number, scribalFontId: number, glyph: char): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyph', editionId, scribalFontId, glyph);
+    public async deleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter(editionId: number, scribalFontId: number, glyphCharacter: string): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter', editionId, scribalFontId, glyphCharacter);
     }
 
     /**
@@ -981,7 +981,7 @@ export class SignalRUtilities {
 	 *		  Id of the sign interpretation for which this variant
 	 *		  will be created
 	 *		 
-	 * @param newSignInterpretation - New sign interpretation data to be added
+	 * @param newSignInterpretationCharacter - New sign interpretation data to be added
 	 * @returns - The new sign interpretation
 	 */
     public async putV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number, newSignInterpretationCharacter: SignInterpretationCharacterUpdateDTO): Promise<SignInterpretationDTO> {
