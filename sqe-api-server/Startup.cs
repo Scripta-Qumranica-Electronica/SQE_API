@@ -64,32 +64,32 @@ namespace SQE.API.Server
 			services.AddScoped<ISignInterpretationService, SignInterpretationService>();
 
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-			services.AddScoped<IUserRepository, UserRepository>();
-			services.AddScoped<IEditionRepository, EditionRepository>();
+			services.AddTransient<IUserRepository, UserRepository>();
+			services.AddTransient<IEditionRepository, EditionRepository>();
 
-			services.AddScoped<IImagedObjectRepository, ImagedObjectRepository>();
+			services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();
 
-			services.AddScoped<IImageRepository, ImageRepository>();
-			services.AddScoped<IArtefactRepository, ArtefactRepository>();
-			services.AddScoped<IDatabaseWriter, DatabaseWriter>();
-			services.AddScoped<ITextRepository, TextRepository>();
-			services.AddScoped<IRoiRepository, RoiRepository>();
+			services.AddTransient<IImageRepository, ImageRepository>();
+			services.AddTransient<IArtefactRepository, ArtefactRepository>();
+			services.AddTransient<IDatabaseWriter, DatabaseWriter>();
+			services.AddTransient<ITextRepository, TextRepository>();
+			services.AddTransient<IRoiRepository, RoiRepository>();
 
-			services.AddScoped<ISignInterpretationRepository, SignInterpretationRepository>();
+			services.AddTransient<ISignInterpretationRepository, SignInterpretationRepository>();
 
 			services
-					.AddScoped<ISignInterpretationCommentaryRepository,
+					.AddTransient<ISignInterpretationCommentaryRepository,
 							SignInterpretationCommentaryRepository>();
 
-			services.AddScoped<IAttributeRepository, AttributeRepository>();
-			services.AddScoped<ICatalogueRepository, CatalogueRepository>();
+			services.AddTransient<IAttributeRepository, AttributeRepository>();
+			services.AddTransient<ICatalogueRepository, CatalogueRepository>();
 
 			services
-					.AddScoped<ISignStreamMaterializationRepository,
+					.AddTransient<ISignStreamMaterializationRepository,
 							SignStreamMaterializationRepository>();
 
-			services.AddScoped<ISearchRepository, SearchRepository>();
-			services.AddScoped<IScriptRepository, ScriptRepository>();
+			services.AddTransient<ISearchRepository, SearchRepository>();
+			services.AddTransient<IScriptRepository, ScriptRepository>();
 
 			services.AddResponseCompression();
 

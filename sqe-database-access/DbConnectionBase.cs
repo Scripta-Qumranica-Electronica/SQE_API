@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Polly;
@@ -42,7 +43,13 @@ namespace SQE.DatabaseAccess
 		// the transient database errors where MariaDB says the transaction should be retried and pauses all attemtps
 		// to get a connection from the database when it errors out more that 5 times trying to get a connection.
 		protected IDbConnection OpenConnection()
-			=> new ReliableMySqlConnection(ConnectionString, _circuitBreakPolicy);
+		{
+			// Dapper automatically times out at 30 seconds, but the MariaDB
+			// database has a timeout of 60 seconds. Set Dapper here to match that.
+			SqlMapper.Settings.CommandTimeout = 60;
+
+			return new ReliableMySqlConnection(ConnectionString, _circuitBreakPolicy);
+		}
 	}
 
 	// https://sergeyakopov.com/reliable-database-connections-and-commands-with-polly/ provided many tips
