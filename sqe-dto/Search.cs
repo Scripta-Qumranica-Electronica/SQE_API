@@ -46,5 +46,6 @@ namespace SQE.API.DTO
 		public string id             { get; set; }
 		public string rectoThumbnail { get; set; }
 		public string versoThumbnail { get; set; }
+		public uint[] editionIds     { get; set; }
 	}
 }

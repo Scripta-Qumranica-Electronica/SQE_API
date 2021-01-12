@@ -37,8 +37,8 @@ namespace SQE.ApiTest
 		}
 
 		[Theory]
-		[InlineData(true, "IAA-1094-1", true)]
-		[InlineData(false, "IAA-1094-1", true)]
+		[InlineData(true, "IAA-1094-2", true)]
+		[InlineData(false, "IAA-1094-2", true)]
 		[InlineData(true, "IAA-1094", false)]
 		[InlineData(false, "IAA-1094", false)]
 		[Trait("Category", "Search")]
@@ -53,6 +53,7 @@ namespace SQE.ApiTest
 			// Assert
 			Assert.NotEmpty(response.images.imagedObjects);
 			Assert.All(response.images.imagedObjects, x => x.id.Contains(imagedObject));
+			Assert.NotEmpty(response.images.imagedObjects.First().editionIds);
 			Assert.Empty(response.artefacts.artefacts);
 			Assert.Empty(response.editions.editions);
 			Assert.Empty(response.textFragments.textFragments);

@@ -24,6 +24,7 @@ namespace SQE.API.Server.Services
 		private readonly IArtefactService                 _artefactService;
 		private readonly IEditionRepository               _editionRepo;
 		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+		private readonly IImagedObjectRepository          _iooRepository;
 		private readonly ISearchRepository                _searchRepository;
 		private readonly IUserService                     _userService;
 
@@ -32,13 +33,15 @@ namespace SQE.API.Server.Services
 				, IEditionRepository             editionRepo
 				, ISearchRepository              searchRepository
 				, IArtefactService               artefactService
-				, IUserService                   userService)
+				, IUserService                   userService
+				, IImagedObjectRepository        iooRepository)
 		{
 			_hubContext = hubContext;
 			_editionRepo = editionRepo;
 			_searchRepository = searchRepository;
 			_artefactService = artefactService;
 			_userService = userService;
+			_iooRepository = iooRepository;
 		}
 
 		public async Task<DetailedSearchResponseDTO> PerformDetailedSearchAsync(
@@ -60,6 +63,24 @@ namespace SQE.API.Server.Services
 							imagedObjects = new List<ImageSearchResponseDTO>(),
 					};
 
+			// Find editions first
+			if (!string.IsNullOrEmpty(request.textDesignation))
+			{
+				var editionIds = await _searchRepository.SearchEditions(
+						userId ?? 1
+						, request.textDesignation
+						, request.exactTextDesignation);
+
+				var editionList = await Task.WhenAll(
+						editionIds.Select(
+								async x => await _editionRepo.GetEditionAsync(userId ?? 1, x)));
+
+				editions = new FlatEditionListDTO { editions = editionList.ToDTO() };
+			}
+
+			var searchEditionIds = editions.editions.Select(x => x.id);
+
+			// Find imaged objects
 			if (!string.IsNullOrEmpty(request.imageDesignation))
 			{
 				const string imagedObjectRegex = "(.*)-(.*)-(.*)";
@@ -89,28 +110,38 @@ namespace SQE.API.Server.Services
 				if (!string.IsNullOrEmpty(searchString))
 				{
 					// Search for the imaged object
-					images = (await _searchRepository.SearchImagedObjects(
+					var initialImages = (await _searchRepository.SearchImagedObjects(
 							searchString
 							, request.exactImageDesignation)).ToDTO();
+
+					foreach (var image in initialImages.imagedObjects)
+					{
+						var matchingEditions =
+								await _iooRepository.GetImagedObjectEditionsAsync(userId, image.id);
+
+						// Check if a text designation was submitted
+						if (!string.IsNullOrEmpty(request.textDesignation))
+						{
+							// Find all edition ids shared between the text designation editions
+							// and the imaged object editions
+							var intersection = editions.editions.Select(x => x.id)
+													   .Intersect(matchingEditions);
+
+							// Store the intersections or reject the search result if there are none
+							if (intersection.Any())
+								image.editionIds = intersection.ToArray();
+							else
+								initialImages.imagedObjects.Remove(image);
+						}
+						else // No text designation was submitted, so return all found edition ids
+							image.editionIds = matchingEditions.ToArray();
+					}
+
+					images = initialImages;
 				}
 			}
 
-			if (!string.IsNullOrEmpty(request.textDesignation))
-			{
-				var editionIds = await _searchRepository.SearchEditions(
-						userId ?? 1
-						, request.textDesignation
-						, request.exactTextDesignation);
-
-				var editionList = await Task.WhenAll(
-						editionIds.Select(
-								async x => await _editionRepo.GetEditionAsync(userId ?? 1, x)));
-
-				editions = new FlatEditionListDTO { editions = editionList.ToDTO() };
-			}
-
-			var searchEditionIds = editions.editions.Select(x => x.id);
-
+			// Find artefacts
 			if (request.artefactDesignation != null)
 			{
 				foreach (var artDesignation in request.artefactDesignation.Where(
@@ -138,6 +169,7 @@ namespace SQE.API.Server.Services
 				}
 			}
 
+			// Find Text Fragments
 			if (request.textReference != null)
 			{
 				foreach (var textReference in request.textReference.Where(
