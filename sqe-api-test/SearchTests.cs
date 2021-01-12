@@ -180,14 +180,14 @@ namespace SQE.ApiTest
 		[InlineData(
 				true
 				, "4Q51"
-				, "IAA-1094-1"
+				, "IAA-1094-2"
 				, "col. 1a"
 				, "Frg. 77"
 				, true)]
 		[InlineData(
 				false
 				, "4Q51"
-				, "IAA-1094-1"
+				, "IAA-1094-2"
 				, "col. 1a"
 				, "Frg. 77"
 				, true)]

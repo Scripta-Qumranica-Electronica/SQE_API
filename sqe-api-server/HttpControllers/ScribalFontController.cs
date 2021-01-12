@@ -139,7 +139,7 @@ namespace SQE.API.Server.HttpControllers
 		/// </summary>
 		/// <param name="editionId">Edition from which the glyph is deleted</param>
 		/// <param name="scribalFontId">Scribal font from which the glyph is deleted</param>
-		/// <param name="glyph">The glyph to be deleted</param>
+		/// <param name="glyphCharacter">The glyph to be deleted</param>
 		/// <returns></returns>
 		[HttpDelete(
 				"v1/editions/{editionId}/[controller]s/{scribalFontId}/glyphs/{glyphCharacter}")]

@@ -98,15 +98,15 @@ namespace SQE.API.Server.Helpers
 					return simplifier.GetResultGeometry().ToString();
 				}
 
+				// It is invalid, but could be repaired as a binary representation
+				// Throw an error if no request to fix it has been made
+				if (!fix)
+				{
+					throw new StandardExceptions.InputDataRuleViolationException(
+							"The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
+				}
+
 				// TODO: repairing via binary data is not working, just use the WKT for now
-				// // It is invalid, but could be repaired as a binary representation
-				// // Throw an error if no request to fix it has been made
-				// if (!fix)
-				// {
-				// 	throw new StandardExceptions.InputDataRuleViolationException(
-				// 			"The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
-				// }
-				//
 				// // Try repairing the binary version of the polygon
 				// var wkb_in = polygon.AsBinary(); // Get the binary data
 				//
@@ -181,7 +181,7 @@ namespace SQE.API.Server.Helpers
 			}
 			catch
 			{
-				// The polygon could not be loaded, so throw an error if no request to fix it has been made
+				// Throw an error if no request to fix it has been made.
 				if (!fix)
 				{
 					throw new StandardExceptions.InputDataRuleViolationException(

@@ -110,14 +110,16 @@ namespace SQE.API.Server.Services
 				if (!string.IsNullOrEmpty(searchString))
 				{
 					// Search for the imaged object
-					var initialImages = (await _searchRepository.SearchImagedObjects(
+					var initialImages = await _searchRepository.SearchImagedObjects(
 							searchString
-							, request.exactImageDesignation)).ToDTO();
+							, request.exactImageDesignation);
 
-					foreach (var image in initialImages.imagedObjects)
+					// Use a traditional for loop here because we may modify the
+					// initialImages.imagedObjects in place by removing some entries.
+					foreach (var image in initialImages)
 					{
 						var matchingEditions =
-								await _iooRepository.GetImagedObjectEditionsAsync(userId, image.id);
+								await _iooRepository.GetImagedObjectEditionsAsync(userId, image.Id);
 
 						// Check if a text designation was submitted
 						if (!string.IsNullOrEmpty(request.textDesignation))
@@ -129,15 +131,19 @@ namespace SQE.API.Server.Services
 
 							// Store the intersections or reject the search result if there are none
 							if (intersection.Any())
-								image.editionIds = intersection.ToArray();
-							else
-								initialImages.imagedObjects.Remove(image);
+							{
+								var formattedImage = image.ToDTO();
+								formattedImage.editionIds = intersection.ToArray();
+								images.imagedObjects.Add(formattedImage);
+							}
 						}
 						else // No text designation was submitted, so return all found edition ids
-							image.editionIds = matchingEditions.ToArray();
+						{
+							var formattedImage = image.ToDTO();
+							formattedImage.editionIds = matchingEditions.ToArray();
+							images.imagedObjects.Add(formattedImage);
+						}
 					}
-
-					images = initialImages;
 				}
 			}
 
