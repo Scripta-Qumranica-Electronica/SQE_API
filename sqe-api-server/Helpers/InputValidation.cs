@@ -13,17 +13,17 @@ namespace SQE.API.Server.Helpers
 	public static class GeometryValidation
 	{
 		// You must DllImport before each external function imported (beware the paths)
-		[DllImport(
-				"geo_repair_polygon"
-				, CharSet = CharSet.Ansi
-				, CallingConvention = CallingConvention.Cdecl)]
-		private static extern BinaryData repair_wkb(IntPtr data, UIntPtr len);
-
-		[DllImport(
-				"geo_repair_polygon"
-				, CharSet = CharSet.Ansi
-				, CallingConvention = CallingConvention.Cdecl)]
-		private static extern void c_bin_data_free(BinaryData bin_data);
+		// [DllImport(
+		// 		"geo_repair_polygon"
+		// 		, CharSet = CharSet.Ansi
+		// 		, CallingConvention = CallingConvention.Cdecl)]
+		// private static extern BinaryData repair_wkb(IntPtr data, UIntPtr len);
+		//
+		// [DllImport(
+		// 		"geo_repair_polygon"
+		// 		, CharSet = CharSet.Ansi
+		// 		, CallingConvention = CallingConvention.Cdecl)]
+		// private static extern void c_bin_data_free(BinaryData bin_data);
 
 		[DllImport(
 				"geo_repair_polygon"
@@ -98,85 +98,86 @@ namespace SQE.API.Server.Helpers
 					return simplifier.GetResultGeometry().ToString();
 				}
 
-				// It is invalid, but could be repaired as a binary representation
-				// Throw an error if no request to fix it has been made
-				if (!fix)
-				{
-					throw new StandardExceptions.InputDataRuleViolationException(
-							"The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
-				}
-
-				// Try repairing the binary version of the polygon
-				var wkb_in = polygon.AsBinary(); // Get the binary data
-
-				// Instantiate the variable to process the response from the FFI
-				var bin = new BinaryData();
-
-				try
-				{
-					var pinnedArray = GCHandle.Alloc(wkb_in, GCHandleType.Pinned);
-
-					var unmanagedWkbIn = pinnedArray.AddrOfPinnedObject();
-					bin = repair_wkb(unmanagedWkbIn, (UIntPtr) wkb_in.Length);
-					pinnedArray.Free();
-
-					// The FFI function repair_wkb returns a null pointer with a 0 length if it could not repair the poly.
-					// For safety throw on either.  In fact, check for a length less than 21, because 21 bytes is the
-					// length of the smallest possible valid WKB (a POINT geometry).
-					// ReSharper disable once ArrangeRedundantParentheses
-					if (((int) bin.len < 21)
-
-						// ReSharper disable once ArrangeRedundantParentheses
-						|| (bin.data == IntPtr.Zero))
-					{
-						throw new StandardExceptions.InputDataRuleViolationException(
-								"The submitted WKT POLYGON is invalid and cannot be repaired");
-					}
-
-					// Parse the returned binary data
-					var wkbData = new byte[(int) bin.len];
-
-					Marshal.Copy(
-							bin.data
-							, wkbData
-							, 0
-							, (int) bin.len);
-
-					// Dear possible future reader, we have decided to do this marshalling the safe way.
-					// Should you find that this is causing unacceptable memory pressure and/or latency, then
-					// the returned binary data can be read directly in an unsafe way.
-					// The procedure is as follows
-					/*
-					// Map the response of the FFI into a Span
-					Span<byte> wkbData;
-					unsafe
-					{
-					    wkbData = new Span<byte>(bin.data.ToPointer(), (int)bin.len);
-					}
-					// You will then need to cast the Span<byte> to a byte[] to read it as WKB data.
-					*/
-
-					// Read the binary data into a Net Topology geometry and get the WKT representation
-					var wkbReader = new WKBReader();
-
-					// Completely unnecessary points
-					var simplifier =
-							new DouglasPeuckerSimplifier(wkbReader.Read(wkbData))
-							{
-									DistanceTolerance = 0,
-							};
-
-					// Free the data allocated by Rust (we do it this way since we do not know the length of the response,
-					// so it would be just a guess if we passed Rust memory managed by C#)
-					c_bin_data_free(bin);
-
-					return simplifier.GetResultGeometry().ToString();
-				}
-				catch
-				{
-					throw new StandardExceptions.InputDataRuleViolationException(
-							"The submitted WKT POLYGON is invalid and cannot be repaired");
-				}
+				// TODO: repairing via binary data is not working, just use the WKT for now
+				// // It is invalid, but could be repaired as a binary representation
+				// // Throw an error if no request to fix it has been made
+				// if (!fix)
+				// {
+				// 	throw new StandardExceptions.InputDataRuleViolationException(
+				// 			"The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
+				// }
+				//
+				// // Try repairing the binary version of the polygon
+				// var wkb_in = polygon.AsBinary(); // Get the binary data
+				//
+				// // Instantiate the variable to process the response from the FFI
+				// var bin = new BinaryData();
+				//
+				// try
+				// {
+				// 	var pinnedArray = GCHandle.Alloc(wkb_in, GCHandleType.Pinned);
+				//
+				// 	var unmanagedWkbIn = pinnedArray.AddrOfPinnedObject();
+				// 	bin = repair_wkb(unmanagedWkbIn, (UIntPtr) wkb_in.Length);
+				// 	pinnedArray.Free();
+				//
+				// 	// The FFI function repair_wkb returns a null pointer with a 0 length if it could not repair the poly.
+				// 	// For safety throw on either.  In fact, check for a length less than 21, because 21 bytes is the
+				// 	// length of the smallest possible valid WKB (a POINT geometry).
+				// 	// ReSharper disable once ArrangeRedundantParentheses
+				// 	if (((int)(ulong) bin.len < 21)
+				//
+				// 		// ReSharper disable once ArrangeRedundantParentheses
+				// 		|| (bin.data == IntPtr.Zero))
+				// 	{
+				// 		throw new StandardExceptions.InputDataRuleViolationException(
+				// 				"The submitted WKT POLYGON is invalid and cannot be repaired");
+				// 	}
+				//
+				// 	// Parse the returned binary data
+				// 	var wkbData = new byte[(int)(ulong) bin.len];
+				//
+				// 	Marshal.Copy(
+				// 			bin.data
+				// 			, wkbData
+				// 			, 0
+				// 			, (int)(ulong) bin.len);
+				//
+				// 	// Dear possible future reader, we have decided to do this marshalling the safe way.
+				// 	// Should you find that this is causing unacceptable memory pressure and/or latency, then
+				// 	// the returned binary data can be read directly in an unsafe way.
+				// 	// The procedure is as follows
+				// 	/*
+				// 	// Map the response of the FFI into a Span
+				// 	Span<byte> wkbData;
+				// 	unsafe
+				// 	{
+				// 	    wkbData = new Span<byte>(bin.data.ToPointer(), (int)bin.len);
+				// 	}
+				// 	// You will then need to cast the Span<byte> to a byte[] to read it as WKB data.
+				// 	*/
+				//
+				// 	// Read the binary data into a Net Topology geometry and get the WKT representation
+				// 	var wkbReader = new WKBReader();
+				//
+				// 	// Completely unnecessary points
+				// 	var simplifier =
+				// 			new DouglasPeuckerSimplifier(wkbReader.Read(wkbData))
+				// 			{
+				// 					DistanceTolerance = 0,
+				// 			};
+				//
+				// 	// Free the data allocated by Rust (we do it this way since we do not know the length of the response,
+				// 	// so it would be just a guess if we passed Rust memory managed by C#)
+				// 	c_bin_data_free(bin);
+				//
+				// 	return simplifier.GetResultGeometry().ToString();
+				// }
+				// catch
+				// {
+				// 	throw new StandardExceptions.InputDataRuleViolationException(
+				// 			"The submitted WKT POLYGON is invalid and cannot be repaired");
+				// }
 			}
 			catch
 			{
