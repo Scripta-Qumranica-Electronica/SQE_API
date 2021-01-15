@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -48,6 +50,21 @@ namespace SQE.API.Server
 		{
 			services.AddCors();
 
+			services.AddHttpClient<IWordService, WordService>(Options.DefaultName)
+					.ConfigurePrimaryHttpMessageHandler(
+							() => new HttpClientHandler
+							{
+									ClientCertificateOptions =
+											ClientCertificateOption.Manual
+									, ServerCertificateCustomValidationCallback =
+									(
+											httpRequestMessage
+											, cert
+											, certChain
+											, policyErrors) => true
+									,
+							});
+
 			// configure DI for application services
 			services.AddScoped<IUserService, UserService>();
 			services.AddScoped<IEditionService, EditionService>();
@@ -60,8 +77,8 @@ namespace SQE.API.Server
 			services.AddScoped<ICatalogService, CatalogService>();
 			services.AddScoped<ISearchService, SearchService>();
 			services.AddScoped<IScriptService, ScriptService>();
-
 			services.AddScoped<ISignInterpretationService, SignInterpretationService>();
+			services.AddTransient<IWordService, WordService>();
 
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddTransient<IUserRepository, UserRepository>();

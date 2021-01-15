@@ -95,7 +95,8 @@ SELECT distinctrow 	manuscript_data.manuscript_id AS manuscriptId,
 		roi.stance_rotation AS StanceRotation,
 		roi.artefact_id AS ArtefactId,
 
-		sign_stream_section.sign_stream_section_id AS WordId
+		sign_stream_section.sign_stream_section_id AS SectionId,
+		sign_stream_section_to_qwb_word.qwb_word_id AS QwbWordId
 
 
 
@@ -167,6 +168,7 @@ FROM sign_interpretation_ids
 	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
 
 	LEFT JOIN position_in_stream_to_section_rel USING (position_in_stream_id)
+	LEFT JOIN sign_stream_section_to_qwb_word USING(sign_stream_section_id)
     LEFT JOIN sign_stream_section USING(sign_stream_section_id)
     LEFT JOIN sign_stream_section_owner
         ON sign_stream_section.sign_stream_section_id=sign_stream_section_owner.sign_stream_section_id

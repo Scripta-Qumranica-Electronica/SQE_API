@@ -1994,6 +1994,7 @@ namespace SQE.DatabaseAccess
 								, typeof(SignInterpretationAttributeData)
 								, typeof(SignInterpretationRoiData)
 								, typeof(uint?)
+								, typeof(uint?)
 								,
 						}
 						, objects =>
@@ -2014,7 +2015,9 @@ namespace SQE.DatabaseAccess
 
 							  var roi = objects[7] as SignInterpretationRoiData;
 
-							  var wordId = objects[8] as uint?;
+							  var qwbWordId = objects[8] as uint?;
+
+							  var sectionId = objects[9] as uint?;
 
 							  var newManuscript = (manuscript != null)
 												  && (manuscript.manuscriptId
@@ -2116,8 +2119,15 @@ namespace SQE.DatabaseAccess
 										  : null;
 							  }
 
-							  if (wordId != null)
-								  lastSignInterpretation.SignStreamSectionIds.Add(wordId.Value);
+							  if ((sectionId.HasValue)
+								  && lastSignInterpretation.SignStreamSectionIds.All(
+										  x => x != sectionId.Value))
+								  lastSignInterpretation.SignStreamSectionIds.Add(sectionId.Value);
+
+							  if ((qwbWordId.HasValue)
+								  && lastSignInterpretation.QwbWordIds.All(
+										  x => x != qwbWordId.Value))
+								  lastSignInterpretation.QwbWordIds.Add(qwbWordId.Value);
 
 							  return newManuscript
 									  ? manuscript
@@ -2131,7 +2141,7 @@ namespace SQE.DatabaseAccess
 								,
 						}
 						, splitOn: "textFragmentId, lineId, signId, nextSignInterpretationId,"
-								   + "signInterpretationId, SignInterpretationAttributeId, SignInterpretationRoiId, WordId");
+								   + "signInterpretationId, SignInterpretationAttributeId, SignInterpretationRoiId, SectionId, QwbWordId");
 
 				var formattedEdition = scrolls.First();
 				formattedEdition.AddLicence();

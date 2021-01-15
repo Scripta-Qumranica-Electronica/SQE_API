@@ -38,6 +38,8 @@ namespace SQE.DatabaseAccess.Models
 		public uint?      SignInterpretationAttributeCreatorId { get; set; }
 		public List<uint> SignStreamSectionIds                 { get; set; } = new List<uint>();
 
+		public List<uint> QwbWordIds { get; set; } = new List<uint>();
+
 		public List<SignInterpretationAttributeData> Attributes { get; set; } =
 			new List<SignInterpretationAttributeData>();
 

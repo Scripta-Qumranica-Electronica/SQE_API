@@ -87,7 +87,9 @@ namespace SQE.API.DTO
 		[Required]
 		public InterpretationRoiDTO[] rois { get; set; }
 
-		public CommentaryDTO commentary { get; set; }
+		public CommentaryDTO commentary           { get; set; }
+		public uint[]        signStreamSectionIds { get; set; }
+		public uint[]        qwbWordIds           { get; set; }
 	}
 
 	public class SignInterpretationListDTO

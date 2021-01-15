@@ -17,6 +17,11 @@ namespace SQE.DatabaseAccess
 				UserInfo user
 				, uint   signInterpretationId);
 
+		Task<uint> GetQwbWordIfForSignInterpretationId(
+				UserInfo user
+				, uint   editionId
+				, uint   signInterpretationId);
+
 		Task UpdateSignInterpretationCharacterById(
 				UserInfo user
 				, uint   signInterpretationId
@@ -237,6 +242,43 @@ namespace SQE.DatabaseAccess
 						, deleteAttribute);
 
 				transactionScope.Complete();
+			}
+		}
+
+		public async Task<uint> GetQwbWordIfForSignInterpretationId(
+				UserInfo user
+				, uint   editionId
+				, uint   signInterpretationId)
+		{
+			const string sql = @"
+SELECT sign_stream_section_to_qwb_word.qwb_word_id
+FROM position_in_stream
+JOIN position_in_stream_owner USING(position_in_stream_id)
+JOIN position_in_stream_to_section_rel USING(position_in_stream_id)
+JOIN sign_stream_section_to_qwb_word USING(sign_stream_section_id)
+JOIN sign_stream_section_owner ON sign_stream_section_owner.sign_stream_section_id = position_in_stream_to_section_rel.sign_stream_section_id
+    AND sign_stream_section_owner.edition_id = position_in_stream_owner.edition_id
+JOIN edition ON edition.edition_id = position_in_stream_owner.edition_id
+JOIN edition_editor ON edition_editor.edition_id = position_in_stream_owner.edition_id
+WHERE (edition.public = 1 OR edition_editor.user_id = @UserId)
+    AND position_in_stream_owner.edition_id = @EditionId
+    AND position_in_stream.sign_interpretation_id = @SignInterpretationId";
+
+			using (var conn = OpenConnection())
+			{
+				var wordIds = await conn.QueryAsync<uint>(
+						sql
+						, new
+						{
+								EditionId = editionId
+								, SignInterpretationId = signInterpretationId
+								, UserId = user.userId
+								,
+						});
+
+				return wordIds.Any()
+						? wordIds.First()
+						: 0;
 			}
 		}
 	}

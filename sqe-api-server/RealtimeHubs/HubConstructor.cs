@@ -25,6 +25,7 @@ namespace SQE.API.Server.RealtimeHubs
 		private readonly ITextService               _textService;
 		private readonly IUserService               _userService;
 		private readonly IUtilService               _utilService;
+		private readonly IWordService               _wordService;
 
 		public MainHub(
 				IRoiService                  roiService
@@ -38,7 +39,8 @@ namespace SQE.API.Server.RealtimeHubs
 				, IScriptService             scriptService
 				, ICatalogService            catalogueService
 				, IUtilService               utilService
-				, ISearchService             searchService)
+				, ISearchService             searchService
+				, IWordService               wordService)
 		{
 			_roiService = roiService;
 			_userService = userService;
@@ -52,6 +54,7 @@ namespace SQE.API.Server.RealtimeHubs
 			_catalogueService = catalogueService;
 			_utilService = utilService;
 			_searchService = searchService;
+			_wordService = wordService;
 		}
 	}
 }

@@ -481,9 +481,15 @@ namespace SQE.API.Server.Services
 																																																					   ,
 																																																			   })
 																																													   .ToArray()
+																																									   , qwbWordIds
+																																											   = a
+																																												 .QwbWordIds
+																																												 .ToArray()
+																																									   , signStreamSectionIds
+																																											   = a
+																																												 .SignStreamSectionIds
+																																												 .ToArray()
 																																									   ,
-
-																																									   //TODO (Ingo) Here we should add the output fot the wordIds.
 																																							   })
 																																	   .ToList()
 																															 ,
@@ -629,79 +635,90 @@ namespace SQE.API.Server.Services
 																																		 })
 																												 .ToArray()
 																									   , rois
-																											   = a
-																												 .SignInterpretationRois
-																												 .Select(
-																														 b => new
-																																 InterpretationRoiDTO
-																																 {
-																																		 interpretationRoiId
-																																				 =
-																																				 b.SignInterpretationRoiId
-																																				  .GetValueOrDefault()
-																																		 , signInterpretationId
-																																				 =
-																																				 b.SignInterpretationId
-																																				  .GetValueOrDefault()
-																																		 , editorId
-																																				 =
-																																				 b.SignInterpretationRoiEditorId
-																																				  .GetValueOrDefault()
-																																		 , creatorId
-																																				 =
-																																				 b.SignInterpretationRoiCreatorId
-																																				  .GetValueOrDefault()
-																																		 , artefactId
-																																				 =
-																																				 b.ArtefactId
-																																				  .GetValueOrDefault()
-																																		 , shape
-																																				 = b
-																																						 .Shape
-																																		 , translate
-																																				 =
-																																				 new
-																																						 TranslateDTO
-																																						 {
-																																								 x =
-																																										 b.TranslateX
-																																										  .GetValueOrDefault()
-																																								 , y
-																																										 = b
-																																										   .TranslateY
-																																										   .GetValueOrDefault()
-																																								 ,
-																																						 }
-																																		 , exceptional
-																																				 =
-																																				 b.Exceptional
-																																				  .GetValueOrDefault()
-																																		 , valuesSet
-																																				 =
-																																				 b.ValuesSet
-																																				  .GetValueOrDefault()
-																																		 ,
-																																 })
-																												 .ToArray()
+																											   =
+																											   a.SignInterpretationRois
+																												.Select(
+																														b
+																																=> new
+																																		InterpretationRoiDTO
+																																		{
+																																				interpretationRoiId
+																																						= b
+																																						  .SignInterpretationRoiId
+																																						  .GetValueOrDefault()
+																																				, signInterpretationId
+																																						= b
+																																						  .SignInterpretationId
+																																						  .GetValueOrDefault()
+																																				, editorId
+																																						=
+																																						b.SignInterpretationRoiEditorId
+																																						 .GetValueOrDefault()
+																																				, creatorId
+																																						=
+																																						b.SignInterpretationRoiCreatorId
+																																						 .GetValueOrDefault()
+																																				, artefactId
+																																						=
+																																						b.ArtefactId
+																																						 .GetValueOrDefault()
+																																				, shape
+																																						=
+																																						b.Shape
+																																				, translate
+																																						=
+																																						new
+																																								TranslateDTO
+																																								{
+																																										x =
+																																												b
+																																														.TranslateX
+																																														.GetValueOrDefault()
+																																										, y
+																																												= b
+																																												  .TranslateY
+																																												  .GetValueOrDefault()
+																																										,
+																																								}
+																																				, exceptional
+																																						=
+																																						b.Exceptional
+																																						 .GetValueOrDefault()
+																																				, valuesSet
+																																						=
+																																						b.ValuesSet
+																																						 .GetValueOrDefault()
+																																				,
+																																		})
+																												.ToArray()
 																									   , nextSignInterpretations
+																											   =
+																											   a.NextSignInterpretations
+																												.Select(
+																														b
+																																=> new
+																																		NextSignInterpretationDTO
+																																		{
+																																				nextSignInterpretationId
+																																						= b
+																																								.NextSignInterpretationId
+																																				, editorId
+																																						=
+																																						b.SignSequenceAuthor
+																																				, creatorId
+																																						=
+																																						b.PositionCreatorId
+																																				,
+																																		})
+																												.ToArray()
+																									   , qwbWordIds
 																											   = a
-																												 .NextSignInterpretations
-																												 .Select(
-																														 b => new
-																																 NextSignInterpretationDTO
-																																 {
-																																		 nextSignInterpretationId
-																																				 = b
-																																						 .NextSignInterpretationId
-																																		 , editorId
-																																				 = b
-																																						 .SignSequenceAuthor
-																																		 , creatorId
-																																				 = b
-																																						 .PositionCreatorId
-																																		 ,
-																																 })
+																												 .QwbWordIds
 																												 .ToArray()
+																									   , signStreamSectionIds
+																											   =
+																											   a.SignStreamSectionIds
+																												.ToArray()
 																									   ,
 																							   })
 																	   .ToList()
