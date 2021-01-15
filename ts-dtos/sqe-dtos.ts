@@ -434,43 +434,6 @@ export interface CreateArtefactGroupDTO extends UpdateArtefactGroupDTO {
     name: string;
 }
 
-export interface QwbWordVariantListDTO {
-    variants?: Array<QwbWordVariantDTO>;
-}
-
-export interface QwbWordVariantDTO {
-    variantReading?: string;
-    bibliography?: Array<QwbBibliographyDTO>;
-}
-
-export interface QwbBibliographyDTO {
-    bibliographyId: number;
-    shortTitle?: string;
-    comment?: string;
-    pageReference?: string;
-}
-
-export interface QwbParallelWordDTO {
-    isVariant: boolean;
-    isReconstructed: boolean;
-    qwbWordId: number;
-    relatedQwbWordId: number;
-    word?: string;
-}
-
-export interface QwbParallelDTO {
-    qwbTextReference?: string;
-    parallelWords?: Array<QwbParallelWordDTO>;
-}
-
-export interface QwbParallelListDTO {
-    parallels?: Array<QwbParallelDTO>;
-}
-
-export interface QwbBibliographyEntryDTO {
-    entry?: string;
-}
-
 export interface EditionDTO {
     id: number;
     name: string;
@@ -774,6 +737,43 @@ export interface BatchEditRoiResponseDTO {
     createRois: Array<InterpretationRoiDTO>;
     updateRois: Array<UpdatedInterpretationRoiDTO>;
     deleteRois: Array<number>;
+}
+
+export interface QwbWordVariantListDTO {
+    variants?: Array<QwbWordVariantDTO>;
+}
+
+export interface QwbWordVariantDTO {
+    variantReading?: string;
+    bibliography?: Array<QwbBibliographyDTO>;
+}
+
+export interface QwbBibliographyDTO {
+    bibliographyId: number;
+    shortTitle?: string;
+    comment?: string;
+    pageReference?: string;
+}
+
+export interface QwbParallelWordDTO {
+    isVariant: boolean;
+    isReconstructed: boolean;
+    qwbWordId: number;
+    relatedQwbWordId: number;
+    word?: string;
+}
+
+export interface QwbParallelDTO {
+    qwbTextReference?: string;
+    parallelWords?: Array<QwbParallelWordDTO>;
+}
+
+export interface QwbParallelListDTO {
+    parallels?: Array<QwbParallelDTO>;
+}
+
+export interface QwbBibliographyEntryDTO {
+    entry?: string;
 }
 
 export interface CatalogueMatchInputDTO {

@@ -174,8 +174,8 @@ namespace SQE.API.Server.Services
 	{
 		public bool   isVariant       { get; set; }
 		public bool   isReconstructed { get; set; }
-		public int    wordId          { get; set; }
-		public int    relatedWordId   { get; set; }
+		public uint   wordId          { get; set; }
+		public uint   relatedWordId   { get; set; }
 		public string word            { get; set; }
 	}
 

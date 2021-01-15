@@ -23,8 +23,8 @@ namespace SQE.API.DTO
 	{
 		public bool   isVariant        { get; set; }
 		public bool   isReconstructed  { get; set; }
-		public int    qwbWordId        { get; set; }
-		public int    relatedQwbWordId { get; set; }
+		public uint   qwbWordId        { get; set; }
+		public uint   relatedQwbWordId { get; set; }
 		public string word             { get; set; }
 	}
 

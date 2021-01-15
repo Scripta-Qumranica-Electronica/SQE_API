@@ -1,3 +1,6 @@
+//TODO: Check that we are maintaining links to sign stream sections and to qwb word ids
+// when we make changes to a sign interpretation (Bronson thinks we are now). Write a test for it.
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
