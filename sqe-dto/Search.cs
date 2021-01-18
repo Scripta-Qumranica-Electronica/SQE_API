@@ -18,7 +18,7 @@ namespace SQE.API.DTO
 	{
 		public FlatEditionListDTO                editions      { get; set; }
 		public TextFragmentSearchResponseListDTO textFragments { get; set; }
-		public ArtefactListDTO                   artefacts     { get; set; }
+		public ExtendedArtefactListDTO           artefacts     { get; set; }
 		public ImageSearchResponseListDTO        images        { get; set; }
 	}
 

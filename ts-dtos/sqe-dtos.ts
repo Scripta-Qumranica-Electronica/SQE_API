@@ -380,8 +380,17 @@ export interface ArtefactDTO extends ArtefactDataDTO {
     statusMessage?: string;
 }
 
+export interface ExtendedArtefactDTO extends ArtefactDTO {
+    url?: string;
+    ppi: number;
+}
+
 export interface ArtefactListDTO {
     artefacts: Array<ArtefactDTO>;
+}
+
+export interface ExtendedArtefactListDTO {
+    artefacts: Array<ExtendedArtefactDTO>;
 }
 
 export interface ArtefactDataListDTO {
@@ -661,7 +670,7 @@ export interface DetailedSearchRequestDTO {
 export interface DetailedSearchResponseDTO {
     editions?: FlatEditionListDTO;
     textFragments?: TextFragmentSearchResponseListDTO;
-    artefacts?: ArtefactListDTO;
+    artefacts?: ExtendedArtefactListDTO;
     images?: ImageSearchResponseListDTO;
 }
 

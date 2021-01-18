@@ -55,7 +55,8 @@ namespace SQE.API.Server.Services
 					textFragments = new List<TextFragmentSearchResponseDTO>(),
 			};
 
-			var artefacts = new ArtefactListDTO { artefacts = new List<ArtefactDTO>() };
+			var artefacts =
+					new ExtendedArtefactListDTO { artefacts = new List<ExtendedArtefactDTO>() };
 
 			var images =
 					new ImageSearchResponseListDTO
@@ -160,17 +161,41 @@ namespace SQE.API.Server.Services
 							, request.exactTextReference);
 
 					// Todo: this is pretty clunky and cannot perform well, consider writing a custom method
+					// Really we could gather all the needed info in one query in the
+					// _searchRepository.SearchArtefacts method.
 					foreach (var editionArtefact in editionArtefacts)
 					{
 						var userInfo =
 								await _userService.GetCurrentUserObjectAsync(
 										editionArtefact.EditionId);
 
+						var artInfo = await _artefactService.GetEditionArtefactAsync(
+								userInfo
+								, editionArtefact.ArtefactId
+								, new List<string> { "images", "masks" });
+
 						artefacts.artefacts.Add(
-								await _artefactService.GetEditionArtefactAsync(
-										userInfo
-										, editionArtefact.ArtefactId
-										, new List<string> { "images", "masks" }));
+								new ExtendedArtefactDTO
+								{
+										artefactDataEditorId = artInfo.artefactDataEditorId
+										, artefactMaskEditorId =
+												artInfo.artefactMaskEditorId
+										, artefactPlacementEditorId =
+												artInfo.artefactPlacementEditorId
+										, editionId = artInfo.editionId
+										, id = artInfo.id
+										, imagedObjectId = artInfo.imagedObjectId
+										, imageId = artInfo.imageId
+										, isPlaced = artInfo.isPlaced
+										, mask = artInfo.mask
+										, name = artInfo.name
+										, placement = artInfo.placement
+										, ppi = editionArtefact.PixelsPerInch
+										, side = artInfo.side
+										, url = editionArtefact.Url
+										, statusMessage = artInfo.statusMessage
+										,
+								});
 					}
 				}
 			}

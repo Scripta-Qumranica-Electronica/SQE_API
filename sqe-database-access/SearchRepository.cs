@@ -126,11 +126,26 @@ LIMIT 100";
 			using (var conn = OpenConnection())
 			{
 				var sql = @"
-SELECT DISTINCT edition_id AS EditionId, artefact_id AS ArtefactId
+SELECT DISTINCT edition.edition_id AS EditionId,
+                artefact_data.artefact_id AS ArtefactId,
+                manuscript_metrics.pixels_per_inch AS PixelsPerInch,
+                CONCAT_WS('', art_shape.proxy, art_shape.url, art_shape.filename) AS Url
 FROM artefact_data
 JOIN artefact_data_owner USING(artefact_data_id)
 JOIN edition USING(edition_id)
 JOIN edition_editor USING(edition_id)
+JOIN manuscript_metrics USING(manuscript_id)
+JOIN manuscript_metrics_owner ON manuscript_metrics_owner.manuscript_metrics_id = manuscript_metrics.manuscript_metrics_id
+	AND manuscript_metrics_owner.edition_id = artefact_data_owner.edition_id
+LEFT JOIN (
+    SELECT artefact_id, edition_id, proxy, url, filename
+    FROM artefact_shape
+    JOIN artefact_shape_owner USING(artefact_shape_id)
+    JOIN SQE_image ON SQE_image.SQE_image_id = artefact_shape.SQE_image_id
+        AND SQE_image.is_master = 1
+    JOIN image_urls USING(image_urls_id)
+) AS art_shape ON art_shape.artefact_id = artefact_data.artefact_id
+	AND art_shape.edition_id = artefact_data_owner.edition_id
 WHERE artefact_data.name $Match
     AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 $Where
@@ -139,7 +154,7 @@ LIMIT 100";
 				sql = sql.Replace(
 								 "$Where"
 								 , editionIds.Any()
-										 ? "AND edition_id in @EditionIds"
+										 ? "AND edition.edition_id in @EditionIds"
 										 : "")
 						 .Replace(
 								 "$Match"

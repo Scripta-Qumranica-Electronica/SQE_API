@@ -48,10 +48,22 @@ namespace SQE.API.DTO
 		public string statusMessage { get; set; }
 	}
 
+	public class ExtendedArtefactDTO : ArtefactDTO
+	{
+		public string url { get; set; }
+		public uint   ppi { get; set; }
+	}
+
 	public class ArtefactListDTO
 	{
 		[Required]
 		public List<ArtefactDTO> artefacts { get; set; }
+	}
+
+	public class ExtendedArtefactListDTO
+	{
+		[Required]
+		public List<ExtendedArtefactDTO> artefacts { get; set; }
 	}
 
 	public class ArtefactDataListDTO

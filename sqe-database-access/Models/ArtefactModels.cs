@@ -4,8 +4,10 @@ namespace SQE.DatabaseAccess.Models
 {
 	public class EditionArtefact
 	{
-		public uint EditionId  { get; set; }
-		public uint ArtefactId { get; set; }
+		public uint   EditionId     { get; set; }
+		public uint   ArtefactId    { get; set; }
+		public uint   PixelsPerInch { get; set; }
+		public string Url           { get; set; }
 	}
 
 	public class ArtefactDataModel
