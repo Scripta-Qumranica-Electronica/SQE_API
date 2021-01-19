@@ -33,6 +33,8 @@ namespace SQE.API.Server.Services
 
 		Task<EditionListDTO> ListEditionsAsync(uint? userId);
 
+		Task<EditionListDTO> GetManuscriptEditionsAsync(uint? userId, uint manuscriptId);
+
 		Task<EditionDTO> UpdateEditionAsync(
 				UserInfo                  editionUser
 				, EditionUpdateRequestDTO updatedEdition
@@ -134,8 +136,23 @@ namespace SQE.API.Server.Services
 			return new EditionListDTO
 			{
 					editions = (await _editionRepo.ListEditionsAsync(userId, null))
-							   .OrderBy(x => x.Name, StringComparison.OrdinalIgnoreCase.WithNaturalSort())
-							   .Select(x => new List<EditionDTO>() {x.ToDTO()})
+							   .OrderBy(
+									   x => x.Name
+									   , StringComparison.OrdinalIgnoreCase.WithNaturalSort())
+							   .Select(x => new List<EditionDTO> { x.ToDTO() })
+							   .ToList()
+					, // Convert the list of groups from IEnumerable to List so we now have List<List<EditionDTO>>
+			};
+		}
+
+		public async Task<EditionListDTO> GetManuscriptEditionsAsync(
+				uint?  userId
+				, uint manuscriptId)
+		{
+			return new EditionListDTO
+			{
+					editions = (await _editionRepo.GetManuscriptEditions(userId, manuscriptId))
+							   .Select(x => new List<EditionDTO> { x.ToDTO() })
 							   .ToList()
 					, // Convert the list of groups from IEnumerable to List so we now have List<List<EditionDTO>>
 			};

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
+using MoreLinq;
 using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
@@ -1350,6 +1351,56 @@ namespace SQE.ApiTest
 			Assert.Equal(metrics.yOrigin, msg2.metrics.yOrigin);
 
 			await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId);
+		}
+
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public async Task CanGetEditionsByManuscript(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var newEdition = await editionCreator.CreateEdition();
+				var editionRequest = new Get.V1_Editions_EditionId(newEdition);
+
+				await editionRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionData = realtime
+						? editionRequest.SignalrResponseObject
+						: editionRequest.HttpResponseObject;
+
+				// Act
+				var manuscriptRequest =
+						new Get.V1_Manuscripts_ManuscriptId_Editions(
+								editionData.primary.manuscriptId);
+
+				await manuscriptRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var manuscriptData = realtime
+						? manuscriptRequest.SignalrResponseObject
+						: manuscriptRequest.HttpResponseObject;
+
+				// Assert
+				Assert.True(1 < manuscriptData.editions.Count);
+
+				Assert.Contains(
+						manuscriptData.editions.Flatten()
+						, x => x.IsDeepEqual(editionData.primary));
+			}
 		}
 
 		[Fact]

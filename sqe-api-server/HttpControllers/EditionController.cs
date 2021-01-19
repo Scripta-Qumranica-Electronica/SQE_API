@@ -157,5 +157,12 @@ namespace SQE.API.Server.HttpControllers
 				GetEditionScriptLines([FromRoute] uint editionId)
 			=> await _editionService.GetEditionScriptLines(
 					await _userService.GetCurrentUserObjectAsync(editionId));
+
+		[HttpGet("v1/manuscripts/{manuscriptId}/[controller]s")]
+		[AllowAnonymous]
+		public async Task<EditionListDTO> GetManuscriptEditions([FromRoute] uint manuscriptId)
+			=> await _editionService.GetManuscriptEditionsAsync(
+					_userService.GetCurrentUserId()
+					, manuscriptId);
 	}
 }

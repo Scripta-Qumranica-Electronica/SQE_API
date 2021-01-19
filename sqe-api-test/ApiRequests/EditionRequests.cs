@@ -191,6 +191,24 @@ namespace SQE.ApiTest.ApiRequests
 
 			public override uint? GetEditionId() => _editionId;
 		}
+
+		public class V1_Manuscripts_ManuscriptId_Editions :
+				RequestObject<EmptyInput, EditionListDTO>
+		{
+			private readonly uint _manuscriptId;
+
+			public V1_Manuscripts_ManuscriptId_Editions(uint manuscriptId)
+				=> _manuscriptId = manuscriptId;
+
+			protected override string HttpPath() => RequestPath.Replace(
+					"/manuscript-id"
+					, $"/{HttpUtility.UrlEncode(_manuscriptId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _manuscriptId);
+			}
+		}
 	}
 
 	public static partial class Post

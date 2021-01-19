@@ -18,6 +18,7 @@ namespace SQE.API.Server.Serialization
 			{
 					id = model.EditionId
 					, name = model.Name
+					, manuscriptId = model.ManuscriptId
 					, editionDataEditorId = model.EditionDataEditorId
 					, metrics =
 							new EditionManuscriptMetricsDTO

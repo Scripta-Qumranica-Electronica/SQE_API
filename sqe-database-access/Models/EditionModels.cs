@@ -10,7 +10,7 @@ namespace SQE.DatabaseAccess.Models
 		public uint                        EditionId               { get; set; }
 		public string                      Name                    { get; set; }
 		public uint                        EditionDataEditorId     { get; set; }
-		public string                      ManuscriptId            { get; set; }
+		public uint                        ManuscriptId            { get; set; }
 		public uint                        Width                   { get; set; }
 		public uint                        Height                  { get; set; }
 		public int                         XOrigin                 { get; set; }

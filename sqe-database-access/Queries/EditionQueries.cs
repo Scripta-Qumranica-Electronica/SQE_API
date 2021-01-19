@@ -147,7 +147,7 @@ ORDER BY manuscript_data.manuscript_id, ed2.edition_id
 			public int       YOrigin                 { get; set; }
 			public uint      PPI                     { get; set; }
 			public uint      ManuscriptMetricsEditor { get; set; }
-			public string    ManuscriptId            { get; set; }
+			public uint      ManuscriptId            { get; set; }
 			public string    Thumbnail               { get; set; }
 			public bool      Locked                  { get; set; }
 			public bool      CurrentMayLock          { get; set; }
@@ -256,12 +256,16 @@ FROM edition
 
 WHERE (edition.public = 1 $UserFilter)
 $Where
+$Manuscript
 
 # Add some ordering so sorting makes more sense (adding the ORDER BY surprisingly makes the query faster)
 ORDER BY manuscript_data.name, edition.edition_id
 ";
 
-		public static string GetQuery(bool limitUser, bool limitScrolls)
+		public static string GetQuery(
+				bool   limitUser
+				, bool limitScrolls
+				, bool searchByManuscript = false)
 		{
 			// Build the WHERE clauses
 			var where = limitScrolls
@@ -272,7 +276,13 @@ ORDER BY manuscript_data.name, edition.edition_id
 					? "OR (edition_editor.user_id = @UserId AND edition_editor.may_read = 1)"
 					: "";
 
-			return _baseQuery.Replace("$Where", where).Replace("$UserFilter", userFilter);
+			var manuscriptFilter = searchByManuscript
+					? "AND edition.manuscript_id = @ManuscriptId"
+					: "";
+
+			return _baseQuery.Replace("$Where", where)
+							 .Replace("$UserFilter", userFilter)
+							 .Replace("$Manuscript", manuscriptFilter);
 		}
 
 		internal class Result
@@ -287,7 +297,7 @@ ORDER BY manuscript_data.name, edition.edition_id
 			public int       YOrigin                 { get; set; }
 			public uint      PPI                     { get; set; }
 			public uint      ManuscriptMetricsEditor { get; set; }
-			public string    ManuscriptId            { get; set; }
+			public uint      ManuscriptId            { get; set; }
 			public string    Thumbnail               { get; set; }
 			public bool      Locked                  { get; set; }
 			public bool      CurrentMayLock          { get; set; }
@@ -422,7 +432,7 @@ $Where
 			public int       YOrigin                 { get; set; }
 			public uint      PPI                     { get; set; }
 			public uint      ManuscriptMetricsEditor { get; set; }
-			public string    ManuscriptId            { get; set; }
+			public uint      ManuscriptId            { get; set; }
 			public string    Thumbnail               { get; set; }
 			public bool      Locked                  { get; set; }
 			public bool      CurrentMayLock          { get; set; }

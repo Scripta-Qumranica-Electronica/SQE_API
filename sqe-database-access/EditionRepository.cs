@@ -70,6 +70,8 @@ namespace SQE.DatabaseAccess
 
 		Task<List<uint>> GetEditionEditorUserIdsAsync(UserInfo editionUser);
 
+		Task<IEnumerable<Edition>> GetManuscriptEditions(uint? userId, uint manuscriptId);
+
 		Task<List<LetterShape>> GetEditionScriptCollectionAsync(UserInfo editonUser);
 
 		Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser);
@@ -87,8 +89,6 @@ namespace SQE.DatabaseAccess
 		{
 			using (var connection = OpenConnection())
 			{
-				// TODO: check the performance here, I think we may be looping several times, here
-				// and in the calling function.  Maybe it doesn't matter much though.
 				var editions = new List<Edition>();
 				Edition lastEdition;
 
@@ -98,13 +98,15 @@ namespace SQE.DatabaseAccess
 								, (editionGroup, editor) =>
 								  {
 									  // Set the copyrights for the previous, and now complete, edition before making the new one
-									  if ((editions.LastOrDefault()?.EditionId != null) && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+									  if ((editions.LastOrDefault()?.EditionId != null)
+										  && (editions.LastOrDefault()?.EditionId
+											  != editionGroup.EditionId))
 									  {
 										  lastEdition = editions.Last();
+
 										  lastEdition.Copyright = Licence.printLicence(
 												  lastEdition.CopyrightHolder
-												  , string.IsNullOrEmpty(
-														  lastEdition.Collaborators)
+												  , string.IsNullOrEmpty(lastEdition.Collaborators)
 														  ? string.Join(
 																  ", "
 																  , lastEdition.Editors.Select(
@@ -127,7 +129,10 @@ namespace SQE.DatabaseAccess
 																		  }))
 														  : lastEdition.Collaborators);
 									  }
-									  if ((editions.LastOrDefault()?.EditionId == null) || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+
+									  if ((editions.LastOrDefault()?.EditionId == null)
+										  || (editions.LastOrDefault()?.EditionId
+											  != editionGroup.EditionId))
 									  {
 										  // Now start building the new edition
 										  lastEdition = new Edition
@@ -182,6 +187,7 @@ namespace SQE.DatabaseAccess
 												  , Editors = new List<EditorWithPermissions>()
 												  ,
 										  };
+
 										  editions.Add(lastEdition);
 									  }
 
@@ -198,32 +204,27 @@ namespace SQE.DatabaseAccess
 								}
 								, splitOn: "EditorId");
 
-				if (editions.Count > 0)
+				if (editions.Count <= 0)
+					return editions;
+
 				{
 					lastEdition = editions.Last();
+
 					lastEdition.Copyright = Licence.printLicence(
 							lastEdition.CopyrightHolder
-							, string.IsNullOrEmpty(
-									lastEdition.Collaborators)
+							, string.IsNullOrEmpty(lastEdition.Collaborators)
 									? string.Join(
 											", "
 											, lastEdition.Editors.Select(
 													y =>
 													{
-														if ((y.Forename
-															 == null)
-															&& (y.Surname
-																== null))
+														if ((y.Forename == null)
+															&& (y.Surname == null))
 														{
-															return y
-																	.EditorEmail;
+															return y.EditorEmail;
 														}
 
-														return $@"{
-																	y.Forename
-																} {
-																	y.Surname
-																}".Trim();
+														return $@"{y.Forename} {y.Surname}".Trim();
 													}))
 									: lastEdition.Collaborators);
 				}
@@ -1140,6 +1141,149 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 								, UserId = editionUser.userId
 								,
 						})).ToList();
+			}
+		}
+
+		public async Task<IEnumerable<Edition>> GetManuscriptEditions(
+				uint?  userId
+				, uint manuscriptId)
+		{
+			using (var conn = OpenConnection())
+			{
+				var editions = new List<Edition>();
+				Edition lastEdition;
+
+				await conn.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
+						EditionListQuery.GetQuery(userId.HasValue, false, true)
+						, (editionGroup, editor) =>
+						  {
+							  // Set the copyrights for the previous, and now complete, edition before making the new one
+							  if ((editions.LastOrDefault()?.EditionId != null)
+								  && (editions.LastOrDefault()?.EditionId
+									  != editionGroup.EditionId))
+							  {
+								  lastEdition = editions.Last();
+
+								  lastEdition.Copyright = Licence.printLicence(
+										  lastEdition.CopyrightHolder
+										  , string.IsNullOrEmpty(lastEdition.Collaborators)
+												  ? string.Join(
+														  ", "
+														  , lastEdition.Editors.Select(
+																  y =>
+																  {
+																	  if ((y.Forename == null)
+																		  && (y.Surname == null))
+																	  {
+																		  return y.EditorEmail;
+																	  }
+
+																	  return $@"{
+																				  y.Forename
+																			  } {
+																				  y.Surname
+																			  }".Trim();
+																  }))
+												  : lastEdition.Collaborators);
+							  }
+
+							  if ((editions.LastOrDefault()?.EditionId == null)
+								  || (editions.LastOrDefault()?.EditionId
+									  != editionGroup.EditionId))
+							  {
+								  // Now start building the new edition
+								  lastEdition = new Edition
+								  {
+										  Name = editionGroup.Name
+										  , Width = editionGroup.Width
+										  , Height = editionGroup.Height
+										  , XOrigin = editionGroup.XOrigin
+										  , YOrigin = editionGroup.YOrigin
+										  , PPI = editionGroup.PPI
+										  , ManuscriptMetricsEditor =
+												  editionGroup.ManuscriptMetricsEditor
+										  , Collaborators = editionGroup.Collaborators
+										  , Copyright = null
+										  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+										  CopyrightHolder = editionGroup.CopyrightHolder
+										  , EditionDataEditorId = editionGroup.EditionDataEditorId
+										  , EditionId = editionGroup.EditionId
+										  , IsPublic = editionGroup.IsPublic
+										  , LastEdit = editionGroup.LastEdit
+										  , Locked = editionGroup.Locked
+										  , Owner =
+												  new User
+												  {
+														  Email = editionGroup.CurrentEmail
+														  , UserId =
+																  editionGroup.CurrentUserId
+														  ,
+												  }
+										  , Permission =
+												  new Permission
+												  {
+														  IsAdmin =
+																  editionGroup
+																		  .CurrentIsAdmin
+														  , MayLock =
+																  editionGroup
+																		  .CurrentMayLock
+														  , MayWrite =
+																  editionGroup
+																		  .CurrentMayWrite
+														  , MayRead =
+																  editionGroup
+																		  .CurrentMayRead
+														  ,
+												  }
+										  , Thumbnail = editionGroup.Thumbnail
+										  , ManuscriptId = editionGroup.ManuscriptId
+										  , Editors = new List<EditorWithPermissions>()
+										  ,
+								  };
+
+								  editions.Add(lastEdition);
+							  }
+
+							  // Add the new editor to this edition
+							  editions.Last().Editors.Add(editor);
+
+							  return editions.Last();
+						  }
+						, new
+						{
+								UserId = userId
+								, ManuscriptId = manuscriptId
+								,
+						}
+						, splitOn: "EditorId");
+
+				if (editions.Count <= 0)
+					return editions;
+
+				{
+					lastEdition = editions.Last();
+
+					lastEdition.Copyright = Licence.printLicence(
+							lastEdition.CopyrightHolder
+							, string.IsNullOrEmpty(lastEdition.Collaborators)
+									? string.Join(
+											", "
+											, lastEdition.Editors.Select(
+													y =>
+													{
+														if ((y.Forename == null)
+															&& (y.Surname == null))
+														{
+															return y.EditorEmail;
+														}
+
+														return $@"{y.Forename} {y.Surname}".Trim();
+													}))
+									: lastEdition.Collaborators);
+				}
+
+				return editions;
 			}
 		}
 

@@ -361,5 +361,28 @@ namespace SQE.API.Server.RealtimeHubs
 												: null)));
 			}
 		}
+
+		[AllowAnonymous]
+		public async Task<EditionListDTO> GetV1ManuscriptsManuscriptIdEditions(uint manuscriptId)
+
+		{
+			try
+			{
+				return await _editionService.GetManuscriptEditionsAsync(
+						_userService.GetCurrentUserId()
+						, manuscriptId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 	}
 }
