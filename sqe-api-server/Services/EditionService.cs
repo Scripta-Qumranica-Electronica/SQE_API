@@ -132,18 +132,7 @@ namespace SQE.API.Server.Services
 		{
 			return new EditionListDTO
 			{
-					editions = (await _editionRepo.ListEditionsAsync(userId, null))
-							   .GroupBy(
-									   x => x
-											   .ManuscriptId) // Group the edition listings by scroll_id
-							   .Select(
-									   x => x.Select(
-											   y => y
-													   .ToDTO())) // Format each entry as an EditionDTO
-							   .Select(
-									   x => x
-											   .ToList()) // Convert the groups from IEnumerable to List
-							   .ToList()
+					editions = (await _editionRepo.ListEditionsAsync(userId, null)).Select(x => new List<EditionDTO>() {x.ToDTO()}).ToList()
 					, // Convert the list of groups from IEnumerable to List so we now have List<List<EditionDTO>>
 			};
 		}

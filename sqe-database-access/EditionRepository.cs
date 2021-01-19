@@ -89,49 +89,46 @@ namespace SQE.DatabaseAccess
 			{
 				// TODO: check the performance here, I think we may be looping several times, here
 				// and in the calling function.  Maybe it doesn't matter much though.
-				var editionDictionary = new Dictionary<uint, Edition>();
+				var editions = new List<Edition>();
 				Edition lastEdition;
 
 				await connection
-						.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
-								EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue)
+						.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
+								EditionListQuery.GetQuery(userId.HasValue, editionId.HasValue)
 								, (editionGroup, editor) =>
 								  {
-									  // Check if we have moved on to a new edition
-									  if (!editionDictionary.TryGetValue(
-											  editionGroup.EditionId
-											  , out lastEdition))
+									  // Set the copyrights for the previous, and now complete, edition before making the new one
+									  if ((editions.LastOrDefault()?.EditionId != null) && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
 									  {
-										  // Set the copyrights for the previous, and now complete, edition before making the new one
-										  if (lastEdition != null)
-										  {
-											  lastEdition.Copyright = Licence.printLicence(
-													  lastEdition.CopyrightHolder
-													  , string.IsNullOrEmpty(
-															  lastEdition.Collaborators)
-															  ? string.Join(
-																	  ", "
-																	  , lastEdition.Editors.Select(
-																			  y =>
+										  lastEdition = editions.Last();
+										  lastEdition.Copyright = Licence.printLicence(
+												  lastEdition.CopyrightHolder
+												  , string.IsNullOrEmpty(
+														  lastEdition.Collaborators)
+														  ? string.Join(
+																  ", "
+																  , lastEdition.Editors.Select(
+																		  y =>
+																		  {
+																			  if ((y.Forename
+																				   == null)
+																				  && (y.Surname
+																					  == null))
 																			  {
-																				  if ((y.Forename
-																					   == null)
-																					  && (y.Surname
-																						  == null))
-																				  {
-																					  return y
-																							  .EditorEmail;
-																				  }
+																				  return y
+																						  .EditorEmail;
+																			  }
 
-																				  return $@"{
-																							  y.Forename
-																						  } {
-																							  y.Surname
-																						  }".Trim();
-																			  }))
-															  : lastEdition.Collaborators);
-										  }
-
+																			  return $@"{
+																						  y.Forename
+																					  } {
+																						  y.Surname
+																					  }".Trim();
+																		  }))
+														  : lastEdition.Collaborators);
+									  }
+									  if ((editions.LastOrDefault()?.EditionId == null) || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+									  {
 										  // Now start building the new edition
 										  lastEdition = new Edition
 										  {
@@ -185,14 +182,13 @@ namespace SQE.DatabaseAccess
 												  , Editors = new List<EditorWithPermissions>()
 												  ,
 										  };
-
-										  editionDictionary.Add(lastEdition.EditionId, lastEdition);
+										  editions.Add(lastEdition);
 									  }
 
 									  // Add the new editor to this edition
-									  lastEdition.Editors.Add(editor);
+									  editions.Last().Editors.Add(editor);
 
-									  return lastEdition;
+									  return editions.Last();
 								  }
 								, new
 								{
@@ -202,7 +198,37 @@ namespace SQE.DatabaseAccess
 								}
 								, splitOn: "EditorId");
 
-				return editionDictionary.Values;
+				if (editions.Count > 0)
+				{
+					lastEdition = editions.Last();
+					lastEdition.Copyright = Licence.printLicence(
+							lastEdition.CopyrightHolder
+							, string.IsNullOrEmpty(
+									lastEdition.Collaborators)
+									? string.Join(
+											", "
+											, lastEdition.Editors.Select(
+													y =>
+													{
+														if ((y.Forename
+															 == null)
+															&& (y.Surname
+																== null))
+														{
+															return y
+																	.EditorEmail;
+														}
+
+														return $@"{
+																	y.Forename
+																} {
+																	y.Surname
+																}".Trim();
+													}))
+									: lastEdition.Collaborators);
+				}
+
+				return editions;
 			}
 		}
 
