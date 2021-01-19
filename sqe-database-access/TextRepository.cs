@@ -2015,9 +2015,9 @@ namespace SQE.DatabaseAccess
 
 							  var roi = objects[7] as SignInterpretationRoiData;
 
-							  var qwbWordId = objects[8] as uint?;
+							  var sectionId = objects[8] as uint?;
 
-							  var sectionId = objects[9] as uint?;
+							  var qwbWordId = objects[9] as uint?;
 
 							  var newManuscript = (manuscript != null)
 												  && (manuscript.manuscriptId
