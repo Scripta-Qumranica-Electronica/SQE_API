@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using NaturalSort.Extension;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Utilities;
 using NetTopologySuite.IO;
@@ -132,7 +133,10 @@ namespace SQE.API.Server.Services
 		{
 			return new EditionListDTO
 			{
-					editions = (await _editionRepo.ListEditionsAsync(userId, null)).Select(x => new List<EditionDTO>() {x.ToDTO()}).ToList()
+					editions = (await _editionRepo.ListEditionsAsync(userId, null))
+							   .OrderBy(x => x.Name, StringComparison.OrdinalIgnoreCase.WithNaturalSort())
+							   .Select(x => new List<EditionDTO>() {x.ToDTO()})
+							   .ToList()
 					, // Convert the list of groups from IEnumerable to List so we now have List<List<EditionDTO>>
 			};
 		}
