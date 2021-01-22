@@ -415,11 +415,7 @@ WHERE scribal_font_metrics_owner.edition_id = @EditionId";
 
 				var scribalFontIds = await conn.QueryAsync<uint>(sql, new { user.EditionId });
 
-				if (scribalFontIds.Any())
-					return scribalFontIds;
-
-				// The edition does not yet have a scribal font, so create one
-				return new List<uint> { await CreateNewScribalFontId(user) };
+				return scribalFontIds;
 			}
 		}
 

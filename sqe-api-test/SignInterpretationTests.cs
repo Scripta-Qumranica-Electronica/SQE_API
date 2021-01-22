@@ -1575,7 +1575,7 @@ namespace SQE.ApiTest
 			// Make sure the two updated/new sign interpretations are in the stream
 			responseObject.created.First().qwbWordIds = new uint[0];
 			responseObject.created.First().signStreamSectionIds = new uint[0];
-			signs[1].signInterpretations.First().ShouldDeepEqual(responseObject.created.First());
+			signs[2].signInterpretations.First().ShouldDeepEqual(responseObject.created.First());
 
 			Assert.Contains(
 					signs
