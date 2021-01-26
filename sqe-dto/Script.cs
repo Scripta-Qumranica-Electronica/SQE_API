@@ -29,10 +29,12 @@ namespace SQE.API.DTO
 	public class CreateKernPairDTO
 	{
 		[Required]
-		public char firstCharacter { get; set; }
+		[StringLength(1, ErrorMessage = "The {0} value cannot exceed {1} characters. ")]
+		public string firstCharacter { get; set; }
 
 		[Required]
-		public char secondCharacter { get; set; }
+		[StringLength(1, ErrorMessage = "The {0} value cannot exceed {1} characters. ")]
+		public string secondCharacter { get; set; }
 
 		[Required]
 		public short xKern { get; set; }
@@ -51,10 +53,12 @@ namespace SQE.API.DTO
 	public class DeleteKernPairDTO
 	{
 		[Required]
-		public char firstCharacter { get; set; }
+		[StringLength(1, ErrorMessage = "The {0} value cannot exceed {1} characters. ")]
+		public string firstCharacter { get; set; }
 
 		[Required]
-		public char secondCharacter { get; set; }
+		[StringLength(1, ErrorMessage = "The {0} value cannot exceed {1} characters. ")]
+		public string secondCharacter { get; set; }
 
 		[Required]
 		public uint editorId { get; set; }
@@ -66,7 +70,8 @@ namespace SQE.API.DTO
 	public class CreateGlyphDataDTO
 	{
 		[Required]
-		public char character { get; set; }
+		[StringLength(1, ErrorMessage = "The {0} value cannot exceed {1} characters. ")]
+		public string character { get; set; }
 
 		[Required]
 		public string shape { get; set; }
@@ -84,7 +89,8 @@ namespace SQE.API.DTO
 	public class DeleteGlyphDataDTO
 	{
 		[Required]
-		public char character { get; set; }
+		[StringLength(1, ErrorMessage = "The {0} value cannot exceed {1} characters. ")]
+		public string character { get; set; }
 
 		[Required]
 		public uint editorId { get; set; }

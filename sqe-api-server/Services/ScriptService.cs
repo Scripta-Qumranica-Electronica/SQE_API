@@ -4,12 +4,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
+using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Services
@@ -43,8 +45,8 @@ namespace SQE.API.Server.Services
 		Task<NoContentResult> DeleteEditionScribalFontKerningPair(
 				UserInfo user
 				, uint   scribalFontId
-				, char   firstCharacter
-				, char   secondCharacter
+				, string   firstCharacter
+				, string   secondCharacter
 				, string clientId = null);
 
 		Task<GlyphDataDTO> SetEditionScribalFontGlyph(
@@ -56,7 +58,7 @@ namespace SQE.API.Server.Services
 		Task<NoContentResult> DeleteEditionScribalFontGlyph(
 				UserInfo user
 				, uint   scribalFontId
-				, char   glyph
+				, string   glyph
 				, string clientId = null);
 	}
 
@@ -191,10 +193,18 @@ namespace SQE.API.Server.Services
 		public async Task<NoContentResult> DeleteEditionScribalFontKerningPair(
 				UserInfo user
 				, uint   scribalFontId
-				, char   firstCharacter
-				, char   secondCharacter
+				, string   firstCharacter
+				, string   secondCharacter
 				, string clientId = null)
 		{
+			firstCharacter = HttpUtility.HtmlDecode(firstCharacter);
+			secondCharacter = HttpUtility.HtmlDecode(secondCharacter);
+
+			if (firstCharacter.Length != 1)
+				throw new StandardExceptions.ImproperInputDataException("first character");
+			if (secondCharacter.Length != 1)
+				throw new StandardExceptions.ImproperInputDataException("second character");
+
 			await _scriptRepository.DeleteScribalFontKern(
 					user
 					, scribalFontId
@@ -249,9 +259,13 @@ namespace SQE.API.Server.Services
 		public async Task<NoContentResult> DeleteEditionScribalFontGlyph(
 				UserInfo user
 				, uint   scribalFontId
-				, char   glyph
+				, string   glyph
 				, string clientId = null)
 		{
+			glyph = HttpUtility.HtmlDecode(glyph);
+			if (glyph.Length != 1)
+				throw new StandardExceptions.ImproperInputDataException("glyph character");
+
 			await _scriptRepository.DeleteScribalFontGlyph(user, scribalFontId, glyph);
 
 			// Broadcast update

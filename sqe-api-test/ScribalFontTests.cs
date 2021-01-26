@@ -167,7 +167,7 @@ namespace SQE.ApiTest
 				var _ = await _createGlyph(
 						newEdition
 						, newFont.scribalFontId
-						, 'ז'
+						, "ז"
 						, "POLYGON((0 0,10 0,10 10,0 10,0 0))"
 						, 10
 						, realtime);
@@ -192,7 +192,7 @@ namespace SQE.ApiTest
 						, 5
 						, realtime);
 
-				const char character = 'ז';
+				const string character = "ז";
 
 				var _ = await _createGlyph(
 						newEdition
@@ -254,8 +254,8 @@ namespace SQE.ApiTest
 				var _ = await _createKernPair(
 						newEdition
 						, newFont.scribalFontId
-						, 'ז'
-						, 'ז'
+						, "ז"
+						, "ז"
 						, 10
 						, 0
 						, realtime);
@@ -280,8 +280,8 @@ namespace SQE.ApiTest
 						, 5
 						, realtime);
 
-				const char firstCharacter = 'ז';
-				const char secondCharacter = 'ז';
+				const string firstCharacter = "ז";
+				const string secondCharacter = "ז";
 
 				var _ = await _createKernPair(
 						newEdition
@@ -392,7 +392,7 @@ namespace SQE.ApiTest
 		private async Task<GlyphDataDTO> _createGlyph(
 				uint     editionId
 				, uint   scribalFontId
-				, char   character
+				, string   character
 				, string shape
 				, short  yOffset
 				, bool   realtime
@@ -446,14 +446,14 @@ namespace SQE.ApiTest
 		}
 
 		private async Task<KernPairDTO> _createKernPair(
-				uint    editionId
-				, uint  scribalFontId
-				, char  firstCharacter
-				, char  secondCharacter
-				, short xKern
-				, short yKern
-				, bool  realtime
-				, bool  shouldSucceed = true)
+				uint     editionId
+				, uint   scribalFontId
+				, string firstCharacter
+				, string secondCharacter
+				, short  xKern
+				, short  yKern
+				, bool   realtime
+				, bool   shouldSucceed = true)
 		{
 			var kernPair = new CreateKernPairDTO
 			{

@@ -190,10 +190,10 @@ namespace SQE.API.Server.RealtimeHubs
 		[Authorize]
 		public async Task
 				DeleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter(
-						uint   editionId
-						, uint scribalFontId
-						, char firstCharacter
-						, char secondCharacter)
+						uint     editionId
+						, uint   scribalFontId
+						, string firstCharacter
+						, string secondCharacter)
 
 		{
 			try
@@ -262,9 +262,9 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <returns></returns>
 		[Authorize]
 		public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter(
-				uint   editionId
-				, uint scribalFontId
-				, char glyphCharacter)
+				uint     editionId
+				, uint   scribalFontId
+				, string glyphCharacter)
 
 		{
 			try

@@ -62,7 +62,7 @@ namespace SQE.DatabaseAccess.Models
 
 	public class Glyph
 	{
-		public char   Character     { get; set; }
+		public string   Character     { get; set; }
 		public uint   CreatorId     { get; set; }
 		public uint   EditorId      { get; set; }
 		public string Shape         { get; set; }
@@ -72,8 +72,8 @@ namespace SQE.DatabaseAccess.Models
 
 	public class KerningPair
 	{
-		public char  FirstCharacter  { get; set; }
-		public char  SecondCharacter { get; set; }
+		public string  FirstCharacter  { get; set; }
+		public string  SecondCharacter { get; set; }
 		public uint  CreatorId       { get; set; }
 		public uint  EditorId        { get; set; }
 		public short XKern           { get; set; }
