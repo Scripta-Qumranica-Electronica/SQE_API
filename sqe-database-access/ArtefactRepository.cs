@@ -58,7 +58,7 @@ namespace SQE.DatabaseAccess
 
 		Task<uint> CreateNewArtefactAsync(
 				UserInfo   editionUser
-				, uint     masterImageId
+				, uint?     masterImageId
 				, string   shape
 				, string   artefactName
 				, decimal? scale
@@ -335,7 +335,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 
 		public async Task<uint> CreateNewArtefactAsync(
 				UserInfo   editionUser
-				, uint     masterImageId
+				, uint?     masterImageId
 				, string   shape
 				, string   artefactName
 				, decimal? scale
