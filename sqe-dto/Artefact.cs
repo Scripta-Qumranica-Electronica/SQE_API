@@ -134,7 +134,6 @@ namespace SQE.API.DTO
 
 	public class CreateArtefactDTO : UpdateArtefactDTO
 	{
-		[Required]
 		public uint? masterImageId { get; set; }
 
 		// Run a quick regex to make sure we have a the valid text for a WKT polygon (does not check polygon validity)
