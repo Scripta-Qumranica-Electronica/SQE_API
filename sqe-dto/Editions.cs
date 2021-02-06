@@ -171,7 +171,7 @@ namespace SQE.API.DTO
 		public List<TextFragmentDTO> textFragments { get; set; }
 	}
 
-	public class DeleteTokenDTO
+	public class ArchiveTokenDTO
 	{
 		[Required]
 		public uint editionId { get; set; }
@@ -196,7 +196,7 @@ namespace SQE.API.DTO
 
 	/// <summary>
 	///  This is a list of all entities in an edition, including the edition itself.
-	///  This is initially intended to be used with the DeleteDTO object
+	///  This is initially intended to be used with the DeleteIntIdDTO object
 	/// </summary>
 	[JsonConverter(typeof(JsonStringEnumConverter))]
 	public enum EditionEntities
@@ -209,31 +209,59 @@ namespace SQE.API.DTO
 		, line
 		, signInterpretation
 		, roi
+		, imagedObject
 		,
 	}
 
-	public class DeleteDTO
+	public abstract class DeleteDTO
 	{
-		public DeleteDTO(EditionEntities entity, List<uint> ids)
-		{
-			this.entity = entity;
-			this.ids = ids;
-		}
-
-		public DeleteDTO(EditionEntities entity, uint id)
-		{
-			this.entity = entity;
-			ids = new List<uint> { id };
-		}
+		public DeleteDTO(EditionEntities entity) => this.entity = entity;
 
 		public DeleteDTO() { }
 
 		[JsonConverter(typeof(JsonStringEnumConverter))]
 		[Required]
 		public EditionEntities entity { get; set; }
+	}
+
+	public class DeleteIntIdDTO : DeleteDTO
+	{
+		public DeleteIntIdDTO(EditionEntities entity, List<uint> ids)
+		{
+			this.entity = entity;
+			this.ids = ids;
+		}
+
+		public DeleteIntIdDTO(EditionEntities entity, uint id)
+		{
+			this.entity = entity;
+			ids = new List<uint> { id };
+		}
+
+		public DeleteIntIdDTO() { }
 
 		[Required]
 		public List<uint> ids { get; set; }
+	}
+
+	public class DeleteStringIdDTO : DeleteDTO
+	{
+		public DeleteStringIdDTO(EditionEntities entity, List<string> ids)
+		{
+			this.entity = entity;
+			this.ids = ids;
+		}
+
+		public DeleteStringIdDTO(EditionEntities entity, string id)
+		{
+			this.entity = entity;
+			ids = new List<string> { id };
+		}
+
+		public DeleteStringIdDTO() { }
+
+		[Required]
+		public List<string> ids { get; set; }
 	}
 
 	#region Request DTO's

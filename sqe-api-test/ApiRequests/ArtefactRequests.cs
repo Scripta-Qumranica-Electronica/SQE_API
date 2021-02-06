@@ -45,10 +45,10 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedArtefact { get; private set; }
+			public DeleteIntIdDTO DeletedArtefact { get; private set; }
 
 			private void DeletedArtefactListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedArtefact"
 						, receivedData => DeletedArtefact = receivedData);
 
@@ -79,7 +79,7 @@ namespace SQE.ApiTest.ApiRequests
 		}
 
 		public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId :
-				RequestObject<EmptyInput, DeleteDTO>
+				RequestObject<EmptyInput, DeleteIntIdDTO>
 		{
 			private readonly uint _artefactGroupId;
 			private readonly uint _editionId;
@@ -106,10 +106,10 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedArtefactGroup { get; private set; }
+			public DeleteIntIdDTO DeletedArtefactGroup { get; private set; }
 
 			private void DeletedArtefactGroupListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedArtefactGroup"
 						, receivedData => DeletedArtefactGroup = receivedData);
 

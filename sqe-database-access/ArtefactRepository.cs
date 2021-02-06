@@ -58,7 +58,7 @@ namespace SQE.DatabaseAccess
 
 		Task<uint> CreateNewArtefactAsync(
 				UserInfo   editionUser
-				, uint?     masterImageId
+				, uint?    masterImageId
 				, string   shape
 				, string   artefactName
 				, decimal? scale
@@ -335,7 +335,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 
 		public async Task<uint> CreateNewArtefactAsync(
 				UserInfo   editionUser
-				, uint?     masterImageId
+				, uint?    masterImageId
 				, string   shape
 				, string   artefactName
 				, decimal? scale
@@ -360,6 +360,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 								new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
 						using (var connection = OpenConnection())
 						{
+							// TODO make sure the imaged object is part of the edition already (add it automatically)
 							// Create a new artefact
 							await connection.ExecuteAsync(
 									"INSERT INTO artefact (artefact_id) VALUES(NULL)");
@@ -413,39 +414,63 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 
 		public async Task DeleteArtefactAsync(UserInfo editionUser, uint artefactId)
 		{
-			var mutations = new List<MutationRequest>();
-
-			foreach (var table in ArtefactTableNames.All())
+			using (var transaction = new TransactionScope())
+			using (var conn = OpenConnection())
 			{
-				if (table != ArtefactTableNames.Stack)
-				{
-					var pk = await GetArtefactPkAsync(editionUser, artefactId, table);
+				// First ensure that the artefact has no related ROIs
+				const string roiCheckSql = @"SELECT sign_interpretation_roi.roi_position_id
+FROM roi_position
+JOIN sign_interpretation_roi USING(roi_position_id)
+JOIN sign_interpretation_roi_owner USING(sign_interpretation_roi_id)
+WHERE artefact_id = @ArtefactId
+AND edition_id = @EditionId";
 
-					if (pk != 0)
-					{
-						mutations.Add(
-								new MutationRequest(
-										MutateType.Delete
-										, new DynamicParameters()
-										, table
-										, pk));
-					}
+				var rois = await conn.QueryAsync<uint>(
+						roiCheckSql
+						, new { ArtefactId = artefactId, editionUser.EditionId });
+
+				if (rois.Count() > 0)
+				{
+					throw new StandardExceptions.InputDataRuleViolationException(
+							"must delete all ROIs for an artefact before deleting the artefact");
 				}
-				else
-				{
-					var pks = await GetArtefactStackPksAsync(editionUser, artefactId, table);
 
-					mutations.AddRange(
-							pks.Select(
-									pk => new MutationRequest(
+				// Begin building the delete request
+				var mutations = new List<MutationRequest>();
+
+				foreach (var table in ArtefactTableNames.All())
+				{
+					if (table != ArtefactTableNames.Stack)
+					{
+						var pk = await GetArtefactPkAsync(editionUser, artefactId, table);
+
+						if (pk != 0)
+						{
+							mutations.Add(
+									new MutationRequest(
 											MutateType.Delete
 											, new DynamicParameters()
 											, table
-											, pk)));
-				}
-			}
+											, pk));
+						}
+					}
+					else
+					{
+						var pks = await GetArtefactStackPksAsync(editionUser, artefactId, table);
 
-			var _ = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutations);
+						mutations.AddRange(
+								pks.Select(
+										pk => new MutationRequest(
+												MutateType.Delete
+												, new DynamicParameters()
+												, table
+												, pk)));
+					}
+				}
+
+				var _ = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutations);
+				transaction.Complete();
+			}
 		}
 
 		public async Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(

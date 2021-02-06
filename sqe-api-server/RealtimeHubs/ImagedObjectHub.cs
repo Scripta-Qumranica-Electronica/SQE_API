@@ -80,6 +80,67 @@ namespace SQE.API.Server.RealtimeHubs
 		}
 
 		/// <summary>
+		///  Add an imaged object to an edition.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+		[Authorize]
+		public async Task<ImagedObjectDTO> PostV1EditionsEditionIdImagedObjectsImagedObjectId(
+				uint     editionId
+				, string imagedObjectId)
+
+		{
+			try
+			{
+				return await _imagedObjectService.AddImagedObjectToEditionAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, imagedObjectId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
+		///  Remove an imaged object from an edition. All artefacts must first be removed from the
+		///  imaged object.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+		[Authorize]
+		public async Task DeleteV1EditionsEditionIdImagedObjectsImagedObjectId(
+				uint     editionId
+				, string imagedObjectId)
+
+		{
+			try
+			{
+				await _imagedObjectService.RemoveImagedObjectFromEditionAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, imagedObjectId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
 		///  Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
 		///  optional.
 		/// </summary>
@@ -95,6 +156,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				return await _imagedObjectService.GetEditionImagedObjectsAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
+						, null
 						, optional);
 			}
 			catch (ApiException err)

@@ -45,8 +45,8 @@ namespace SQE.API.Server.Services
 		Task<NoContentResult> DeleteEditionScribalFontKerningPair(
 				UserInfo user
 				, uint   scribalFontId
-				, string   firstCharacter
-				, string   secondCharacter
+				, string firstCharacter
+				, string secondCharacter
 				, string clientId = null);
 
 		Task<GlyphDataDTO> SetEditionScribalFontGlyph(
@@ -58,7 +58,7 @@ namespace SQE.API.Server.Services
 		Task<NoContentResult> DeleteEditionScribalFontGlyph(
 				UserInfo user
 				, uint   scribalFontId
-				, string   glyph
+				, string glyph
 				, string clientId = null);
 	}
 
@@ -193,8 +193,8 @@ namespace SQE.API.Server.Services
 		public async Task<NoContentResult> DeleteEditionScribalFontKerningPair(
 				UserInfo user
 				, uint   scribalFontId
-				, string   firstCharacter
-				, string   secondCharacter
+				, string firstCharacter
+				, string secondCharacter
 				, string clientId = null)
 		{
 			firstCharacter = HttpUtility.HtmlDecode(firstCharacter);
@@ -202,6 +202,7 @@ namespace SQE.API.Server.Services
 
 			if (firstCharacter.Length != 1)
 				throw new StandardExceptions.ImproperInputDataException("first character");
+
 			if (secondCharacter.Length != 1)
 				throw new StandardExceptions.ImproperInputDataException("second character");
 
@@ -259,10 +260,11 @@ namespace SQE.API.Server.Services
 		public async Task<NoContentResult> DeleteEditionScribalFontGlyph(
 				UserInfo user
 				, uint   scribalFontId
-				, string   glyph
+				, string glyph
 				, string clientId = null)
 		{
 			glyph = HttpUtility.HtmlDecode(glyph);
+
 			if (glyph.Length != 1)
 				throw new StandardExceptions.ImproperInputDataException("glyph character");
 

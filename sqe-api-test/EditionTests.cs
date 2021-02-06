@@ -791,10 +791,11 @@ namespace SQE.ApiTest
 												,
 										}));
 
-				if (user1Resp2.StatusCode == HttpStatusCode.NoContent)
+				Assert.Equal(user1Resp2.StatusCode, HttpStatusCode.Forbidden);
+
+				if (user1Resp2.StatusCode == HttpStatusCode.Forbidden)
 					notDeleted = false;
 
-				user1Resp2.EnsureSuccessStatusCode();
 				Assert.Null(user1Msg2);
 			}
 			finally

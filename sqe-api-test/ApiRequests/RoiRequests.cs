@@ -43,10 +43,10 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedRoi { get; private set; }
+			public DeleteIntIdDTO DeletedRoi { get; private set; }
 
 			private void DeletedRoiListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedRoi"
 						, receivedData => DeletedRoi = receivedData);
 

@@ -57,7 +57,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData">Details of the deleted edition</param>
 		/// <returns></returns>
-		Task DeletedEdition(DeleteTokenDTO returnedData);
+		Task DeletedEdition(ArchiveTokenDTO returnedData);
 
 		/// <summary>
 		///  broadcasts an edition's details have been updated
@@ -92,7 +92,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData">Details of the deleted ROI</param>
 		/// <returns></returns>
-		Task DeletedRoi(DeleteDTO returnedData);
+		Task DeletedRoi(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts an artefact has been created
@@ -106,7 +106,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData">Details of the deleted artefact</param>
 		/// <returns></returns>
-		Task DeletedArtefact(DeleteDTO returnedData);
+		Task DeletedArtefact(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts an artefact has been updated
@@ -134,7 +134,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData">Delete DTO with the id of the deleted artefact group</param>
 		/// <returns></returns>
-		Task DeletedArtefactGroup(DeleteDTO returnedData);
+		Task DeletedArtefactGroup(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts the transform details for a batch of artefacts has been updated
@@ -169,7 +169,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData"></param>
 		/// <returns></returns>
-		Task DeletedSignInterpretation(DeleteDTO returnedData);
+		Task DeletedSignInterpretation(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts the creation of an attribute
@@ -190,7 +190,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData"></param>
 		/// <returns></returns>
-		Task DeletedAttribute(DeleteDTO returnedData);
+		Task DeletedAttribute(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts the creation of scribal font information
@@ -254,5 +254,19 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="returnedData"></param>
 		/// <returns></returns>
 		Task DeletedScribalFont(DeleteScribalFontDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the addition of an imaged object to an edition
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task CreatedImagedObject(ImagedObjectDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the removal of an imaged object from an edition
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task DeletedImagedObject(DeleteStringIdDTO returnedData);
 	}
 }

@@ -227,7 +227,7 @@ namespace SQE.API.Server.HttpControllers
 		/// <param name="artefactGroupId">Unique Id of the artefact group to be deleted</param>
 		/// <returns></returns>
 		[HttpDelete("v1/editions/{editionId}/[controller]-groups/{artefactGroupId}")]
-		public async Task<ActionResult<DeleteDTO>> DeleteEditionArtefactGroup(
+		public async Task<ActionResult<DeleteIntIdDTO>> DeleteEditionArtefactGroup(
 				[FromRoute]   uint editionId
 				, [FromRoute] uint artefactGroupId)
 			=> await _artefactService.DeleteArtefactGroupAsync(

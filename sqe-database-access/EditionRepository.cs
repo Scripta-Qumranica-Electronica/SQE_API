@@ -40,9 +40,9 @@ namespace SQE.DatabaseAccess
 				, string copyrightHolder = null
 				, string collaborators   = null);
 
-		Task<string> DeleteAllEditionDataAsync(UserInfo editionUser, string token);
+		Task<string> ArchiveEditionAsync(UserInfo editionUser, string token);
 
-		Task<string> GetDeleteToken(UserInfo editionUser);
+		Task<string> GetArchiveToken(UserInfo editionUser);
 
 		Task<DetailedUserWithToken> RequestAddEditionEditorAsync(
 				UserInfo editionUser
@@ -648,15 +648,15 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 		}
 
 		/// <summary>
-		///  Delete all data from the edition that the user is currently subscribed to.
+		///  Archive an edition that the user is currently subscribed to.
 		/// </summary>
-		/// <param name="editionUser">User object requesting the delete</param>
+		/// <param name="editionUser">User object requesting the achival</param>
 		/// <param name="token">
-		///  Token required to verify delete. If this is null, one will be created and sent
-		///  to the requester to use a confirmation of the delete.
+		///  Token required to verify archiving. If this is null, one will be created and sent
+		///  to the requester to use a confirmation of the archival process.
 		/// </param>
 		/// <returns>Returns a null string if successful; a string with a confirmation token if no token was provided.</returns>
-		public async Task<string> DeleteAllEditionDataAsync(UserInfo editionUser, string token)
+		public async Task<string> ArchiveEditionAsync(UserInfo editionUser, string token)
 		{
 			// We only allow admins to delete all data in an unlocked edition.
 			if (!editionUser.IsAdmin)
@@ -664,35 +664,12 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 
 			// A token is required to delete an edition (we make sure here that people don't accidentally do it)
 			if (string.IsNullOrEmpty(token))
-				return await GetDeleteToken(editionUser);
+				return await GetArchiveToken(editionUser);
 
-			// Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
-			var editors = await _getEditionEditors(editionUser.EditionId.Value);
-
-			foreach (var editor in editors)
-			{
-				await ChangeEditionEditorRightsAsync(
-						editionUser
-						, editor.Email
-						, editor.MayRead
-						, false
-						, editor.MayLock
-						, editor.IsAdmin);
-			}
-
-			// Note: I had wrapped the following in a transaction, but this has the problem that it can lockup every
-			// *_owner table in the entire database for a significant amount of time (sometimes 1000's of rows will be
-			// deleted from a single table). So I am doing it now without any transaction and with some retry
-			// logic.  What this means is that a delete might be partially carried out and return with an error,
-			// in which case the user will need to try again. This is not too worrisome since an inconsistent state
-			// for a deleted edition is not a cause for user concern (the users only care about the edition
-			// becoming unusable, not whether any data was left behind). It is a concern for those maintaining the
-			// database, and we should discuss what might be done for that.  We could check for this and other things
-			// with some "health check" services.
 			using (var connection = OpenConnection())
 			{
 				// Verify that the token is still valid
-				var deleteToken = await connection.ExecuteAsync(
+				var archiveToken = await connection.ExecuteAsync(
 						DeleteUserEmailTokenQuery.GetTokenQuery
 						, new
 						{
@@ -701,27 +678,31 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 								,
 						});
 
-				if (deleteToken != 1)
+				if (archiveToken != 1)
 				{
 					throw new StandardExceptions.DataNotWrittenException(
 							"verifying the delete request token");
 				}
 
-				// Dynamically get all tables that can be part of an edition, that way we don't worry about
-				// this breaking due to future updates.
-				var dataTables =
-						await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
+				const string archiveSql =
+						"UPDATE edition SET archived = 1 WHERE edition_id = @EditionId";
 
-				// Loop over every table and remove every entry with the requested editionId
-				// Each individual delete can be async and happen concurrently
-				foreach (var dataTable in dataTables)
-					await DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser);
+				var archive = await connection.ExecuteAsync(
+						archiveSql
+						, new { editionUser.EditionId });
+
+				if (archive != 1)
+				{
+					throw new StandardExceptions.DataNotWrittenException(
+							"archive edition"
+							, "unknown reason");
+				}
 
 				return null;
 			}
 		}
 
-		public async Task<string> GetDeleteToken(UserInfo editionUser)
+		public async Task<string> GetArchiveToken(UserInfo editionUser)
 		{
 			// Generate our secret token
 			var token = Guid.NewGuid().ToString();
@@ -1434,6 +1415,52 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 						"LineId,ArtefactId,SignInterpretationId,SignInterpretationRoiId,SignInterpretationAttributeId,PositionInStreamId");
 
 				return scriptLines.Where(x => x != null).ToList();
+			}
+		}
+
+		/// <summary>
+		///  This method performs a full wipe of an edition's data. The information for the edition
+		///  remains but the association with this edition is deleted. This method is intended
+		///  for system admins to use.
+		/// </summary>
+		/// <param name="editionUser">User details for the edition to be deleted</param>
+		/// <returns></returns>
+		private async Task _fullEditionDelete(UserInfo editionUser)
+		{
+			// Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
+			var editors = await _getEditionEditors(editionUser.EditionId.Value);
+
+			foreach (var editor in editors)
+			{
+				await ChangeEditionEditorRightsAsync(
+						editionUser
+						, editor.Email
+						, editor.MayRead
+						, false
+						, editor.MayLock
+						, editor.IsAdmin);
+			}
+
+			// Note: I had wrapped the following in a transaction, but this has the problem that it can lockup every
+			// *_owner table in the entire database for a significant amount of time (sometimes 1000's of rows will be
+			// deleted from a single table). So I am doing it now without any transaction and with some retry
+			// logic.  What this means is that a delete might be partially carried out and return with an error,
+			// in which case the user will need to try again. This is not too worrisome since an inconsistent state
+			// for a deleted edition is not a cause for user concern (the users only care about the edition
+			// becoming unusable, not whether any data was left behind). It is a concern for those maintaining the
+			// database, and we should discuss what might be done for that.  We could check for this and other things
+			// with some "health check" services.
+			using (var connection = OpenConnection())
+			{
+				// Dynamically get all tables that can be part of an edition, that way we don't worry about
+				// this breaking due to future updates.
+				var dataTables =
+						await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
+
+				// Loop over every table and remove every entry with the requested editionId
+				// Each individual delete can be async and happen concurrently
+				foreach (var dataTable in dataTables)
+					await DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser);
 			}
 		}
 

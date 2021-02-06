@@ -205,7 +205,9 @@ namespace SQE.API.Server.Services
 
 				await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 								 .DeletedAttribute(
-										 new DeleteDTO(EditionEntities.attribute, attributeId));
+										 new DeleteIntIdDTO(
+												 EditionEntities.attribute
+												 , attributeId));
 			}
 			else // Broadcast the changes as an update
 			{
@@ -226,7 +228,7 @@ namespace SQE.API.Server.Services
 			// Broadcast the changes
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 							 .DeletedAttribute(
-									 new DeleteDTO(EditionEntities.attribute, attributeId));
+									 new DeleteIntIdDTO(EditionEntities.attribute, attributeId));
 
 			return new NoContentResult();
 		}
@@ -455,7 +457,7 @@ namespace SQE.API.Server.Services
 			// Broadcast the deletes
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
 							 .DeletedSignInterpretation(
-									 new DeleteDTO(
+									 new DeleteIntIdDTO(
 											 EditionEntities.signInterpretation
 											 , deletedList.ToList()));
 

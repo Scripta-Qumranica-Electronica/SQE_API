@@ -29,7 +29,7 @@ namespace SQE.ApiTest
 
 			Assert.True(
 					response.matches.Count(
-							x => (x.imagedObjectId == "IAA-1094-1") && (x.textFragmentId == 9977))
+							x => (x.imagedObjectId == "IAA-1106-63") && (x.textFragmentId == 9977))
 					== 2); // 894 9977
 		}
 
@@ -38,7 +38,7 @@ namespace SQE.ApiTest
 		public async Task CanGetTextFragmentsForImagedObjects()
 		{
 			var requestObj =
-					new Get.V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments("IAA-1094-1");
+					new Get.V1_Catalogue_ImagedObjects_ImagedObjectId_TextFragments("IAA-1106-63");
 
 			await requestObj.SendAsync(_client, StartConnectionAsync);
 

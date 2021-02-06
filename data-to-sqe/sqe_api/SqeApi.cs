@@ -229,8 +229,8 @@ namespace sqe_api
 			if (reset && (editionId != 0))
 			{
 				SetEditionId(editionId);
-				var token = _editionRep.GetDeleteToken(_userInfo).Result;
-				var result = _editionRep.DeleteAllEditionDataAsync(_userInfo, token);
+				var token = _editionRep.GetArchiveToken(_userInfo).Result;
+				var result = _editionRep.ArchiveEditionAsync(_userInfo, token);
 				editionId = 0;
 			}
 

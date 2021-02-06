@@ -19,6 +19,8 @@ namespace SQE.ApiTest.ApiRequests
 		, CreatedEdition
 		, UpdatedEdition
 		, DeletedEdition
+		, CreatedImagedObject
+		, DeletedImagedObject
 		, CreatedRoisBatch
 		, EditedRoisBatch
 		, UpdatedRoisBatch

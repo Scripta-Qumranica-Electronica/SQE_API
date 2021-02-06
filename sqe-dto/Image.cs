@@ -49,6 +49,9 @@ namespace SQE.API.DTO
 		public uint ppi { get; set; }
 
 		[Required]
+		public string imageManifest { get; set; }
+
+		[Required]
 		public bool master { get; set; }
 
 		[Required]

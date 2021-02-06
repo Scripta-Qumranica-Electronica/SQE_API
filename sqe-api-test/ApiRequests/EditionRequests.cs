@@ -20,18 +20,20 @@ namespace SQE.ApiTest.ApiRequests
 {
 	public static partial class Delete
 	{
-		public class V1_Editions_EditionId : RequestObject<EmptyInput, DeleteTokenDTO>
+		public class V1_Editions_EditionId : RequestObject<EmptyInput, ArchiveTokenDTO>
 		{
 			private readonly uint         _editionId;
 			private readonly List<string> _optional;
 			private readonly string       _token;
 
 			/// <summary>
-			///  Provides details about the specified edition and all accessible alternate editions
+			///  Archives an edition so that in no longer appears in user data and searches. An admin
+			///  may use the archiveForAllEditors optional parameter in order to archive the edition
+			///  for all editors (must be confirmed with an archive token).
 			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
-			/// <param name="token">token required when using optional 'deleteForAllEditors'</param>
+			/// <param name="editionId">Unique Id of the desired edition to be archived</param>
+			/// <param name="optional">Optional parameters: 'archiveForAllEditors'</param>
+			/// <param name="token">token required when using optional 'archiveForAllEditors'</param>
 			public V1_Editions_EditionId(
 					uint           editionId
 					, List<string> optional = null
@@ -50,10 +52,10 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteTokenDTO DeletedEdition { get; private set; }
+			public ArchiveTokenDTO DeletedEdition { get; private set; }
 
 			private void DeletedEditionListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteTokenDTO>(
+				=> signalrListener.On<ArchiveTokenDTO>(
 						"DeletedEdition"
 						, receivedData => DeletedEdition = receivedData);
 

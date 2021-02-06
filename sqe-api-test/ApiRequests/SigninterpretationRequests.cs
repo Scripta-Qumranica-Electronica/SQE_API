@@ -47,10 +47,10 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedAttribute { get; private set; }
+			public DeleteIntIdDTO DeletedAttribute { get; private set; }
 
 			private void DeletedAttributeListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedAttribute"
 						, receivedData => DeletedAttribute = receivedData);
 
@@ -126,7 +126,7 @@ namespace SQE.ApiTest.ApiRequests
 			public Listeners AvailableListeners { get; }
 
 			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
-			public DeleteDTO                 DeletedSignInterpretation  { get; private set; }
+			public DeleteIntIdDTO            DeletedSignInterpretation  { get; private set; }
 
 			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
 				=> signalrListener.On<SignInterpretationListDTO>(
@@ -136,7 +136,7 @@ namespace SQE.ApiTest.ApiRequests
 			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
 
 			private void DeletedSignInterpretationListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedSignInterpretation"
 						, receivedData => DeletedSignInterpretation = receivedData);
 
@@ -779,9 +779,9 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public AttributeDTO CreatedAttribute { get; private set; }
-			public DeleteDTO    DeletedAttribute { get; private set; }
-			public AttributeDTO UpdatedAttribute { get; private set; }
+			public AttributeDTO   CreatedAttribute { get; private set; }
+			public DeleteIntIdDTO DeletedAttribute { get; private set; }
+			public AttributeDTO   UpdatedAttribute { get; private set; }
 
 			private void CreatedAttributeListener(HubConnection signalrListener)
 				=> signalrListener.On<AttributeDTO>(
@@ -791,7 +791,7 @@ namespace SQE.ApiTest.ApiRequests
 			private bool CreatedAttributeIsNull() => CreatedAttribute == null;
 
 			private void DeletedAttributeListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedAttribute"
 						, receivedData => DeletedAttribute = receivedData);
 

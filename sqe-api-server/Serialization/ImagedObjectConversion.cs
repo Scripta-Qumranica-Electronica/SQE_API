@@ -57,6 +57,7 @@ namespace SQE.API.Server.Serialization
 					, type = image.wave_start == image.wave_end
 							? "infrared"
 							: "color"
+					, imageManifest = image.image_manifest
 					, url = $"{image.proxy}{image.url}{image.filename}"
 					, waveLength = new string[2]
 					{

@@ -71,7 +71,7 @@ namespace SQE.API.Server.Services
 				, UpdateArtefactGroupDTO artefactGroup
 				, string                 clientId = null);
 
-		Task<DeleteDTO> DeleteArtefactGroupAsync(
+		Task<DeleteIntIdDTO> DeleteArtefactGroupAsync(
 				UserInfo editionUser
 				, uint   artefactGroupId
 				, string clientId = null);
@@ -328,7 +328,7 @@ namespace SQE.API.Server.Services
 			// made the request, that client directly received the response.
 			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
 							 .DeletedArtefact(
-									 new DeleteDTO(
+									 new DeleteIntIdDTO(
 											 EditionEntities.artefact
 											 , new List<uint> { artefactId }));
 
@@ -410,14 +410,14 @@ namespace SQE.API.Server.Services
 			return results;
 		}
 
-		public async Task<DeleteDTO> DeleteArtefactGroupAsync(
+		public async Task<DeleteIntIdDTO> DeleteArtefactGroupAsync(
 				UserInfo editionUser
 				, uint   artefactGroupId
 				, string clientId = null)
 		{
 			await _artefactRepository.DeleteArtefactGroupAsync(editionUser, artefactGroupId);
 
-			var results = new DeleteDTO(EditionEntities.artefactGroup, artefactGroupId);
+			var results = new DeleteIntIdDTO(EditionEntities.artefactGroup, artefactGroupId);
 
 			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 			// made the request, that client directly received the response.

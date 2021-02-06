@@ -168,7 +168,7 @@ namespace SQE.ApiTest.Helpers
 			return request.HttpResponseObject;
 		}
 
-		public static async Task<DeleteDTO> DeleteEditionRoi(
+		public static async Task<DeleteIntIdDTO> DeleteEditionRoi(
 				HttpClient                          client
 				, Func<string, Task<HubConnection>> signalr
 				, uint                              editionId

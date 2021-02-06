@@ -94,6 +94,7 @@ namespace SQE.DatabaseAccess
 					, Side = image.side == 0
 							? "recto"
 							: "verso"
+					, ImageManifest = image.image_manifest
 					, Type = image.img_type
 					, PPI = image.ppi
 					, WaveLength = GetWave(image.wave_start, image.wave_end)

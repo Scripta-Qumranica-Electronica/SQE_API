@@ -421,7 +421,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="artefactGroupId">Unique Id of the artefact group to be deleted</param>
 		/// <returns></returns>
 		[Authorize]
-		public async Task<DeleteDTO> DeleteV1EditionsEditionIdArtefactGroupsArtefactGroupId(
+		public async Task<DeleteIntIdDTO> DeleteV1EditionsEditionIdArtefactGroupsArtefactGroupId(
 				uint   editionId
 				, uint artefactGroupId)
 

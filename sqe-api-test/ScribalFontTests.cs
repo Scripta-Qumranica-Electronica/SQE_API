@@ -392,7 +392,7 @@ namespace SQE.ApiTest
 		private async Task<GlyphDataDTO> _createGlyph(
 				uint     editionId
 				, uint   scribalFontId
-				, string   character
+				, string character
 				, string shape
 				, short  yOffset
 				, bool   realtime

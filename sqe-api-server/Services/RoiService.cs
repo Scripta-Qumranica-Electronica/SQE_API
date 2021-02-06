@@ -198,7 +198,7 @@ namespace SQE.API.Server.Services
 			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 			// made the request, that client directly received the response.
 			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-							 .DeletedRoi(new DeleteDTO(EditionEntities.roi, deleteRoi));
+							 .DeletedRoi(new DeleteIntIdDTO(EditionEntities.roi, deleteRoi));
 
 			return new NoContentResult();
 		}
@@ -245,7 +245,7 @@ namespace SQE.API.Server.Services
 		//     // made the request, that client directly received the response.
 		//     await _hubContext.Clients
 		//         .GroupExcept(editionUser.EditionId.ToString(), clientId)
-		//         .DeletedRoi(new DeleteDTO(EditionEntities.roi, response));
+		//         .DeletedRoi(new DeleteIntIdDTO(EditionEntities.roi, response));
 		//
 		//     return response;
 		// }

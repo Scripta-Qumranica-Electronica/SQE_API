@@ -31,6 +31,7 @@
 		public bool   master           { get; set; }
 		public ushort wave_start       { get; set; }
 		public ushort wave_end         { get; set; }
+		public string image_manifest   { get; set; }
 		public string institution      { get; set; }
 		public string catalog_1        { get; set; }
 		public string catalog_2        { get; set; }

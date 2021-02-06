@@ -54,6 +54,33 @@ namespace SQE.API.Server.HttpControllers
 					, optional);
 
 		/// <summary>
+		///  Add an imaged object to an edition.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+		[HttpPost("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
+		public async Task<ActionResult<ImagedObjectDTO>> CreateEditionImagedObject(
+				[FromRoute]   uint   editionId
+				, [FromRoute] string imagedObjectId)
+			=> await _imagedObjectService.AddImagedObjectToEditionAsync(
+					await _userService.GetCurrentUserObjectAsync(editionId, true)
+					, imagedObjectId);
+
+		/// <summary>
+		///  Remove an imaged object from an edition. All artefacts must first be removed from the
+		///  imaged object.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+		[HttpDelete("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
+		public async Task<ActionResult> DeleteEditionImagedObject(
+				[FromRoute]   uint   editionId
+				, [FromRoute] string imagedObjectId)
+			=> await _imagedObjectService.RemoveImagedObjectFromEditionAsync(
+					await _userService.GetCurrentUserObjectAsync(editionId, true)
+					, imagedObjectId);
+
+		/// <summary>
 		///  Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
 		///  optional.
 		/// </summary>
@@ -66,6 +93,7 @@ namespace SQE.API.Server.HttpControllers
 				, [FromQuery] List<string> optional)
 			=> await _imagedObjectService.GetEditionImagedObjectsAsync(
 					await _userService.GetCurrentUserObjectAsync(editionId)
+					, null
 					, optional);
 
 		/// <summary>

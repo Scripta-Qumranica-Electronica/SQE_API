@@ -194,13 +194,15 @@ namespace SQE.API.Server.RealtimeHubs
 		}
 
 		/// <summary>
-		///  Provides details about the specified edition and all accessible alternate editions
+		///  Archives an edition so that in no longer appears in user data and searches. An admin
+		///  may use the archiveForAllEditors optional parameter in order to archive the edition
+		///  for all editors (must be confirmed with an archive token).
 		/// </summary>
-		/// <param name="editionId">Unique Id of the desired edition</param>
-		/// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
-		/// <param name="token">token required when using optional 'deleteForAllEditors'</param>
+		/// <param name="editionId">Unique Id of the desired edition to be archived</param>
+		/// <param name="optional">Optional parameters: 'archiveForAllEditors'</param>
+		/// <param name="token">token required when using optional 'archiveForAllEditors'</param>
 		[Authorize]
-		public async Task<DeleteTokenDTO> DeleteV1EditionsEditionId(
+		public async Task<ArchiveTokenDTO> DeleteV1EditionsEditionId(
 				uint           editionId
 				, List<string> optional
 				, string       token)
@@ -208,7 +210,7 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				return await _editionService.DeleteEditionAsync(
+				return await _editionService.ArchiveEditionAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, token
 						, optional);

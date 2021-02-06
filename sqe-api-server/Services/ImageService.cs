@@ -50,6 +50,7 @@ namespace SQE.API.Server.Services
 				, side = model.Side == "recto"
 						? SideDesignation.recto
 						: SideDesignation.verso
+				, imageManifest = model.ImageManifest
 				, transformToMaster = model.TransformMatrix
 				, catalogNumber = model.ImageCatalogId
 				, master = model.Master

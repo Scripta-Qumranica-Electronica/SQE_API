@@ -115,7 +115,7 @@ FROM edition AS ed1
     GROUP BY manuscript_id
 ) AS im ON im.manuscript_id = ed2.manuscript_id
 
-$Where
+WHERE ed1.archived != 1 $Where
 
 # Add some ordering so sorting makes more sense (adding the ORDER BY surprisingly makes the query faster)
 ORDER BY manuscript_data.manuscript_id, ed2.edition_id
@@ -125,12 +125,14 @@ ORDER BY manuscript_data.manuscript_id, ed2.edition_id
 		{
 			// Build the WHERE clauses
 			var where = limitScrolls
-					? "WHERE ed1.edition_id = @EditionId"
+					? "AND (ed1.edition_id = @EditionId"
 					: "";
 
 			var userFilter = limitUser
-					? "OR (ed2.user_id = @UserId AND ed2.may_read = 1)"
-					: "";
+					? "OR (ed2.user_id = @UserId AND ed2.may_read = 1))"
+					: limitScrolls
+							? ")"
+							: "";
 
 			return _baseQuery.Replace("$Where", where).Replace("$UserFilter", userFilter);
 		}
@@ -254,7 +256,7 @@ FROM edition
     GROUP BY manuscript_id
 ) AS im ON im.manuscript_id = edition.manuscript_id
 
-WHERE (edition.public = 1 $UserFilter)
+WHERE edition.archived != 1 AND (edition.public = 1 $UserFilter)
 $Where
 $Manuscript
 
@@ -269,7 +271,7 @@ ORDER BY manuscript_data.name, edition.edition_id
 		{
 			// Build the WHERE clauses
 			var where = limitScrolls
-					? "AND edition.edition_id = @EditionId"
+					? "AND (edition.edition_id = @EditionId)"
 					: "";
 
 			var userFilter = limitUser
@@ -403,19 +405,21 @@ LEFT JOIN (
     GROUP BY manuscript_id
 ) AS im ON im.manuscript_id = ed1.manuscript_id
 
-$Where
+WHERE ed1.archived != 1 $Where
 ";
 
 		public static string GetQuery(bool limitUser, bool limitScrolls)
 		{
 			// Build the WHERE clauses
 			var where = limitScrolls
-					? "WHERE ed1.edition_id = @EditionId"
+					? "AND ed1.edition_id = @EditionId AND (ed1.public = 1 $UserFilter"
 					: "";
 
 			var userFilter = limitUser
-					? "OR (ed1.user_id = @UserId AND ed1.may_read = 1)"
-					: "";
+					? "OR (edition_editor.user_id = @UserId AND edition_editor.may_read = 1))"
+					: limitScrolls
+							? ")"
+							: "";
 
 			return _baseQuery.Replace("$Where", where).Replace("$UserFilter", userFilter);
 		}

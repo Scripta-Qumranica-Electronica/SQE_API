@@ -41,13 +41,13 @@ namespace SQE.DatabaseAccess
 		Task DeleteScribalFontKern(
 				UserInfo user
 				, uint   scribalFontId
-				, string   firstCharacter
-				, string   secondCharacter);
+				, string firstCharacter
+				, string secondCharacter);
 
 		Task SetScribalFontGlyph(
 				UserInfo user
 				, uint   scribalFontId
-				, string   character
+				, string character
 				, string shape
 				, short  yOffset);
 
@@ -298,8 +298,8 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 		public async Task DeleteScribalFontKern(
 				UserInfo user
 				, uint   scribalFontId
-				, string   firstCharacter
-				, string   secondCharacter)
+				, string firstCharacter
+				, string secondCharacter)
 		{
 			using (var transaction = new TransactionScope())
 			{
@@ -325,7 +325,7 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 		public async Task SetScribalFontGlyph(
 				UserInfo user
 				, uint   scribalFontId
-				, string   character
+				, string character
 				, string shape
 				, short  yOffset)
 		{
@@ -360,7 +360,10 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 			}
 		}
 
-		public async Task DeleteScribalFontGlyph(UserInfo user, uint scribalFontId, string character)
+		public async Task DeleteScribalFontGlyph(
+				UserInfo user
+				, uint   scribalFontId
+				, string character)
 		{
 			using (var transaction = new TransactionScope())
 			{
@@ -422,8 +425,8 @@ WHERE scribal_font_metrics_owner.edition_id = @EditionId";
 		private async Task<uint?> _getScriptKernId(
 				UserInfo user
 				, uint   scribalFontId
-				, string   firstCharacter
-				, string   secondCharacter
+				, string firstCharacter
+				, string secondCharacter
 				, bool   shouldExist)
 		{
 			using (var conn = OpenConnection())
@@ -467,7 +470,7 @@ WHERE scribal_font_kerning_owner.edition_id = @EditionId
 		private async Task<uint?> _getScriptGlyphId(
 				UserInfo user
 				, uint   scribalFontId
-				, string   character
+				, string character
 				, bool   shouldExist)
 		{
 			using (var conn = OpenConnection())

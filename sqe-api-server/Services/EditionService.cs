@@ -45,7 +45,7 @@ namespace SQE.API.Server.Services
 				, EditionCopyDTO editionInfo
 				, string         clientId = null);
 
-		Task<DeleteTokenDTO> DeleteEditionAsync(
+		Task<ArchiveTokenDTO> ArchiveEditionAsync(
 				UserInfo       editionUser
 				, string       token
 				, List<string> optional
@@ -262,23 +262,23 @@ namespace SQE.API.Server.Services
 		}
 
 		/// <summary>
-		///  Delete all data from the edition that the user is currently subscribed to. The user must be admin and
-		///  provide a valid delete token.
+		///  Archive an edition that the user is currently subscribed to. The user must be admin and
+		///  provide a valid archive token to archive the edition for all editors.
 		/// </summary>
-		/// <param name="editionUser">User object requesting the delete</param>
-		/// <param name="token">token required for optional "deleteForAllEditors"</param>
-		/// <param name="optional">optional parameters: "deleteForAllEditors"</param>
+		/// <param name="editionUser">User object requesting the archive</param>
+		/// <param name="token">token required for optional "archiveForAllEditors"</param>
+		/// <param name="optional">optional parameters: "archiveForAllEditors"</param>
 		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<DeleteTokenDTO> DeleteEditionAsync(
+		public async Task<ArchiveTokenDTO> ArchiveEditionAsync(
 				UserInfo       editionUser
 				, string       token
 				, List<string> optional
 				, string       clientId = null)
 		{
-			_parseOptional(optional, out var deleteForAllEditors);
+			_parseOptional(optional, out var archiveForAllEditors);
 
-			var deleteResponse = new DeleteTokenDTO
+			var archiveResponse = new ArchiveTokenDTO
 			{
 					editionId = editionUser.EditionId.Value
 					, token = null
@@ -286,12 +286,12 @@ namespace SQE.API.Server.Services
 			};
 
 			// Check if the edition should be deleted for all users
-			if (deleteForAllEditors)
+			if (archiveForAllEditors && editionUser.IsAdmin)
 			{
 				var editionUsers = await _editionRepo.GetEditionEditorUserIdsAsync(editionUser);
 
 				// Try to delete the edition fully for all editors
-				var newToken = await _editionRepo.DeleteAllEditionDataAsync(editionUser, token);
+				var newToken = await _editionRepo.ArchiveEditionAsync(editionUser, token);
 
 				// End the request with null for successful delete or a proper token for requests without a confirmation token
 				if (string.IsNullOrEmpty(newToken))
@@ -301,18 +301,20 @@ namespace SQE.API.Server.Services
 					foreach (var userId in editionUsers)
 					{
 						await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
-										 .DeletedEdition(deleteResponse);
+										 .DeletedEdition(archiveResponse);
 					}
 
 					return null;
 				}
 
-				deleteResponse.token = newToken;
+				// Return the token that an admin can use to confirm the archive request
+				// and complete it
+				archiveResponse.token = newToken;
 
-				return deleteResponse;
+				return archiveResponse;
 			}
 
-			// The edition should only be made inaccessible for the current user
+			// The edition should only be made inaccessible only for the current user
 			var userInfo = await _userRepo.GetDetailedUserByIdAsync(editionUser.userId);
 
 			// Setting all permission to false is how we delete a user's access to an edition.
@@ -326,9 +328,9 @@ namespace SQE.API.Server.Services
 
 			// Broadcast edition deletion notification to all connections of this user
 			await _hubContext.Clients.GroupExcept($"user-{editionUser.userId.ToString()}", clientId)
-							 .DeletedEdition(deleteResponse);
+							 .DeletedEdition(archiveResponse);
 
-			return deleteResponse;
+			return archiveResponse;
 		}
 
 		/// <summary>
@@ -704,9 +706,11 @@ The Scripta Qumranica Electronica team</body></html>";
 				,
 		};
 
-		private static void _parseOptional(List<string> optional, out bool deleteForAllEditors)
+		private static void _parseOptional(
+				ICollection<string> optional
+				, out bool          deleteForAllEditors)
 		{
-			deleteForAllEditors = optional.Contains("deleteForAllEditors");
+			deleteForAllEditors = optional.Contains("archiveForAllEditors");
 		}
 	}
 }
