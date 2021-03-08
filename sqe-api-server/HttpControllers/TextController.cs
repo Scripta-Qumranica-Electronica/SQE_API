@@ -107,6 +107,20 @@ namespace SQE.API.Server.HttpControllers
 				, textFragmentId);
 
 		/// <summary>
+		///  Retrieves all signs and their data from the entire edition
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <returns>
+		///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+		///  sequence
+		/// </returns>
+		[AllowAnonymous]
+		[HttpGet("v1/editions/{editionId}/full-text")]
+		public async Task<ActionResult<TextEditionDTO>> RetrieveTextFragmentsOfEdition(
+				[FromRoute] uint editionId) => await _textService.GetFragmentsOfEditionAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId));
+
+		/// <summary>
 		///  Retrieves all signs and their data from the given line
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>

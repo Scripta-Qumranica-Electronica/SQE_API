@@ -44,6 +44,7 @@ namespace SQE.API.Server.Services
 			_iooRepository = iooRepository;
 		}
 
+		// TODO: create separate methods to run the search for each entity
 		public async Task<DetailedSearchResponseDTO> PerformDetailedSearchAsync(
 				uint?                      userId
 				, DetailedSearchRequestDTO request)
@@ -72,6 +73,7 @@ namespace SQE.API.Server.Services
 						, request.textDesignation
 						, request.exactTextDesignation);
 
+				// TODO: fix this so we have only one DB query to get all the editions
 				var editionList = await Task.WhenAll(
 						editionIds.Select(
 								async x => await _editionRepo.GetEditionAsync(userId ?? 1, x)));
@@ -82,8 +84,11 @@ namespace SQE.API.Server.Services
 			var searchEditionIds = editions.editions.Select(x => x.id);
 
 			// Find imaged objects
+			// TODO: the string parsing logic could be a lot better here. After some usage, make refinements
 			if (!string.IsNullOrEmpty(request.imageDesignation))
 			{
+				// The imaged object ids consist of 2–3 entities separated by a hyphen.
+				// See first if the query input can be parsed this way.
 				const string imagedObjectRegex = "(.*)-(.*)-(.*)";
 				string searchString = null;
 
@@ -94,9 +99,11 @@ namespace SQE.API.Server.Services
 				}
 				else
 				{
+					// Check now for any numbers in the search query and extract those
 					const string imageRegex = @"(\d+)";
 					var mc = Regex.Matches(request.imageDesignation, imageRegex);
 
+					// paste the numbers together in a way that matches the imaged object id style
 					if (mc.Count > 0)
 					{
 						if (mc[0].Groups.Count > 0)

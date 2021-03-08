@@ -208,6 +208,36 @@ namespace SQE.API.Server.RealtimeHubs
 		}
 
 		/// <summary>
+		///  Retrieves all signs and their data from the entire edition
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <returns>
+		///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+		///  sequence
+		/// </returns>
+		[AllowAnonymous]
+		public async Task<TextEditionDTO> GetV1EditionsEditionIdFullText(uint editionId)
+
+		{
+			try
+			{
+				return await _textService.GetFragmentsOfEditionAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId));
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
 		///  Retrieves all signs and their data from the given line
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>

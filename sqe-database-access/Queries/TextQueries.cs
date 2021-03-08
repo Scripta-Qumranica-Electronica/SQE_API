@@ -185,6 +185,153 @@ ORDER BY sign_interpretation_ids.sequence,
 ";
 	}
 
+	internal static class GetAllEditionSigns
+	{
+		/// <summary>
+		///  Retrieves all textual data for a chunk of text
+		///  @startId is the Id of the first sign
+		///  @endId is the Id of the last sign
+		///  @editionId is the Id of the edition the text is to be taken from
+		/// </summary>
+		public const string GetQuery = @"
+SELECT distinctrow 	manuscript_data.manuscript_id AS manuscriptId,
+		manuscript_data.name AS editionName,
+		manuscript_data_owner.edition_editor_id AS manuscriptAuthor,
+
+		edition.copyright_holder AS copyrightHolder,
+		edition.collaborators,
+
+		text_fragment_to_line.text_fragment_id AS textFragmentId,
+        text_fragment_data.name AS textFragmentName,
+		text_fragment_data_owner.edition_editor_id AS TextFragmentEditorId,
+
+		line_data.line_id AS lineId,
+		line_data.name AS lineName,
+		line_data_owner.edition_editor_id AS lineAuthor,
+
+		sign_interpretation.sign_id AS signId,
+		sign_interpretation_ids.next_sign_interpretation_id AS nextSignInterpretationId,
+		sign_interpretation_ids.edition_editor_id AS signSequenceAuthor,
+		sign_interpretation_ids.creator_id AS PositionCreatorId,
+
+		signInterpretationId,
+		sign_interpretation_character.`character` AS `character`,
+		sign_interpretation_character_owner.priority AS IsVariant,
+		sign_interpretation.sign_id AS SignId,
+		interpretation_commentary.commentary AS InterpretationCommentary,
+		interpretation_commentary.creator_id AS InterpretationCommentaryCreator,
+		interpretation_commentary.edition_editor_id AS InterpretationCommentaryEditor,
+
+		sign_interpretation_attribute.sign_interpretation_attribute_id AS SignInterpretationAttributeId,
+		sign_interpretation_attribute.attribute_value_id AS AttributeValueId,
+		sign_interpretation_attribute.creator_id AS SignInterpretationAttributeCreatorId,
+		sign_interpretation_attribute.sequence AS Sequence,
+		sign_interpretation_attribute_owner.edition_editor_id AS SignInterpretationAttributeEditorId,
+		attribute_commentary.commentary AS AttributeCommentary,
+		attribute_commentary.creator_id AS AttributeCommentaryCreatorId,
+		attribute_commentary.edition_editor_id AS AttributeCommentaryEditorId,
+
+		roi.sign_interpretation_roi_id AS SignInterpretationRoiId,
+		roi.sign_interpretation_id AS SignInterpretationId,
+		roi.edition_editor_id AS SignInterpretationRoiAuthor,
+		roi.values_set AS ValuesSet,
+		roi.exceptional AS Exceptional,
+		ST_ASTEXT(roi.path) AS Shape,
+		roi.translate_x AS TranslateX,
+		roi.translate_y AS TranslateY,
+		roi.stance_rotation AS StanceRotation,
+		roi.artefact_id AS ArtefactId,
+
+		sign_stream_section.sign_stream_section_id AS SectionId,
+		sign_stream_section_to_qwb_word.qwb_word_id AS QwbWordId
+
+
+
+FROM sign_interpretation_ids
+	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
+	JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = signInterpretationId
+	JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
+		AND sign_interpretation_character_owner.edition_id = sign_interpretation_ids.edition_id
+	JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_id = signInterpretationId
+	JOIN sign_interpretation_attribute_owner
+		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
+		AND sign_interpretation_attribute_owner.edition_id = sign_interpretation_ids.edition_id
+	JOIN attribute_value USING(attribute_value_id)
+
+	JOIN line_to_sign ON line_to_sign.sign_id = sign_interpretation.sign_id
+	JOIN line_data USING (line_id)
+	JOIN line_data_owner ON line_data_owner.line_data_id = line_data.line_data_id
+	  AND line_data_owner.edition_id = sign_interpretation_ids.edition_id
+
+	JOIN text_fragment_to_line USING (line_id)
+	JOIN text_fragment_data USING (text_fragment_id)
+	JOIN text_fragment_data_owner
+		ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
+			AND text_fragment_data_owner.edition_id = sign_interpretation_ids.edition_id
+
+	JOIN manuscript_to_text_fragment USING (text_fragment_id)
+	JOIN manuscript_data USING (manuscript_id)
+	JOIN manuscript_data_owner ON manuscript_data_owner.manuscript_data_id = manuscript_data.manuscript_data_id
+		AND manuscript_data_owner.edition_id = sign_interpretation_ids.edition_id
+
+	LEFT JOIN
+		(SELECT	sign_interpretation_roi.sign_interpretation_roi_id,
+				sign_interpretation_roi.sign_interpretation_id,
+				sign_interpretation_roi_owner.edition_editor_id,
+				sign_interpretation_roi.values_set,
+				sign_interpretation_roi.exceptional,
+				roi_shape.path AS path,
+				roi_position.translate_x,
+				roi_position.translate_y,
+				roi_position.stance_rotation,
+				roi_position.artefact_id,
+				sign_interpretation_roi_owner.edition_id
+		FROM sign_interpretation_roi
+			JOIN sign_interpretation_roi_owner
+				ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sign_interpretation_roi.sign_interpretation_roi_id
+			JOIN roi_shape ON roi_shape.roi_shape_id = sign_interpretation_roi.roi_shape_id
+			JOIN roi_position ON roi_position.roi_position_id = sign_interpretation_roi.roi_position_id
+		)
+		AS roi
+			ON roi.sign_interpretation_id = sign_interpretation.sign_interpretation_id
+				AND roi.edition_id = sign_interpretation_ids.edition_id
+
+	LEFT JOIN
+		(SELECT sign_interpretation_id, commentary, creator_id, edition_id, edition_editor_id
+		FROM sign_interpretation_commentary
+		JOIN sign_interpretation_commentary_owner USING(sign_interpretation_commentary_id)
+		WHERE attribute_id IS NULL
+		) AS interpretation_commentary ON interpretation_commentary.sign_interpretation_id = sign_interpretation.sign_interpretation_id
+				AND interpretation_commentary.edition_id = sign_interpretation_ids.edition_id
+
+	LEFT JOIN
+		(SELECT sign_interpretation_id, attribute_id, commentary, creator_id, edition_id, edition_editor_id
+		FROM sign_interpretation_commentary
+		JOIN sign_interpretation_commentary_owner USING(sign_interpretation_commentary_id)
+		) AS attribute_commentary ON attribute_commentary.sign_interpretation_id = sign_interpretation.sign_interpretation_id
+				AND attribute_commentary.attribute_id = attribute_value.attribute_id
+				AND attribute_commentary.edition_id = sign_interpretation_ids.edition_id
+
+	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
+
+	LEFT JOIN position_in_stream_to_section_rel USING (position_in_stream_id)
+	LEFT JOIN sign_stream_section_to_qwb_word USING(sign_stream_section_id)
+    LEFT JOIN sign_stream_section USING(sign_stream_section_id)
+    LEFT JOIN sign_stream_section_owner
+        ON sign_stream_section.sign_stream_section_id=sign_stream_section_owner.sign_stream_section_id
+        AND sign_stream_section_owner.edition_id = sign_interpretation_ids.edition_id
+
+ORDER BY sign_interpretation_ids.sequence,
+	line_to_sign.sign_id,
+	sign_interpretation_ids.is_main,
+	sign_interpretation_character_owner.priority desc,
+	sign_interpretation_ids.signInterpretationId,
+	nextSignInterpretationId,
+	SignInterpretationAttributeId,
+	SignInterpretationRoiId
+";
+	}
+
 	internal static class GetLineTerminators
 	{
 		/// <summary>
@@ -488,5 +635,62 @@ WHERE edition_id = @EditionId
 				VALUES (@SignId)
 			ON DUPLICATE KEY UPDATE sign_interpretation_id = LAST_INSERT_ID(sign_interpretation_id)
 		";
+	}
+
+	internal static class GetCachedTextFragment
+	{
+		public const string GetQuery = @"
+SELECT cached_text_fragment.edition_id AS EditionId,
+       cached_text_fragment.text_fragment_id AS TextFragmentId,
+       cached_text_fragment.transcription_json AS CachedTranscription,
+       cached_text_fragment.transcription_date AS CachedTranscriptionDate,
+       CURRENT_TIMESTAMP() AS QueryDate
+FROM (SELECT @EditionId AS edition_id, @TextFragmentId AS text_fragment_id) AS base
+LEFT JOIN cached_text_fragment ON cached_text_fragment.edition_id = base.edition_id
+                                      AND cached_text_fragment.text_fragment_id = base.text_fragment_id";
+	}
+
+	internal static class SetCachedTextFragment
+	{
+		public const string GetQuery = @"
+INSERT INTO cached_text_fragment (edition_id, text_fragment_id, transcription_json, transcription_date)
+VALUES (@EditionId, @TextFragmentId, @Transcription, CURRENT_TIMESTAMP())
+		ON DUPLICATE KEY UPDATE transcription_json = CASE WHEN @ValidTime > transcription_date
+				THEN VALUES(transcription_json) ELSE transcription_json END,
+		transcription_date = CASE WHEN @ValidTime > transcription_date
+				THEN VALUES(transcription_date) ELSE transcription_date END";
+	}
+
+	internal static class RemoveCachedTextFragment
+	{
+		public const string GetQuery = @"
+INSERT INTO cached_text_fragment (edition_id, text_fragment_id, transcription_json, transcription_date)
+VALUES (@EditionId, @TextFragmentId, NULL, CURRENT_TIMESTAMP())
+ON DUPLICATE KEY UPDATE transcription_json = VALUES(transcription_json),
+                        transcription_date = VALUES(transcription_date)";
+	}
+
+	internal static class GetTextFragmentIdFromSingInterpretationId
+	{
+		public const string GetQuery = @"
+SELECT text_fragment_id
+FROM sign_interpretation
+JOIN line_to_sign USING(sign_id)
+JOIN line_to_sign_owner USING(line_to_sign_id)
+JOIN text_fragment_to_line USING(line_id)
+JOIN text_fragment_to_line_owner ON text_fragment_to_line_owner.text_fragment_to_line_id = text_fragment_to_line.text_fragment_to_line_id
+    AND text_fragment_to_line_owner.edition_id = line_to_sign_owner.edition_id
+WHERE line_to_sign_owner.edition_id = @EditionId
+    AND sign_interpretation_id = @SignInterpretationId";
+	}
+
+	internal static class GetTextFragmentIdFromLineId
+	{
+		public const string GetQuery = @"
+SELECT text_fragment_id
+FROM text_fragment_to_line
+JOIN text_fragment_to_line_owner USING(text_fragment_to_line_id)
+WHERE text_fragment_to_line_owner.edition_id = @EditionId
+    AND text_fragment_to_line.line_id = @LineId";
 	}
 }

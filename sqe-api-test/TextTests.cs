@@ -622,6 +622,66 @@ namespace SQE.ApiTest
 			}
 		}
 
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
+		[Trait("Category", "Text")]
+		public async Task CanGetEditionFullText(bool realtime)
+		{
+			// Arrange
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, _) = await _createEditionWithTextFragments(editionCreator);
+
+				// Act
+				var textRequest1 = new Get.V1_Editions_EditionId_FullText(editionId);
+
+				await textRequest1.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				// Assert
+				if (!realtime)
+					textRequest1.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var resp1 = realtime
+						? textRequest1.SignalrResponseObject
+						: textRequest1.HttpResponseObject;
+
+				Assert.NotEmpty(resp1.textFragments);
+				Assert.False(resp1.textFragments.Count == 1);
+
+				_verifyTextEditionDTO(resp1);
+
+				// Act (check that cached data is valid)
+				var textRequest2 = new Get.V1_Editions_EditionId_FullText(editionId);
+
+				await textRequest2.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				// Assert
+				if (!realtime)
+					textRequest2.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var resp2 = realtime
+						? textRequest2.SignalrResponseObject
+						: textRequest2.HttpResponseObject;
+
+				resp2.IsDeepEqual(resp1);
+			}
+		}
+
 		[Fact]
 		[Trait("Category", "Text")]
 		public async Task CanGetAnonymousEditionTextFragment()

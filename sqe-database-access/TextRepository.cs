@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -151,6 +152,23 @@ namespace SQE.DatabaseAccess
 		Task<List<ArtefactDataModel>> GetArtefactsAsync(UserInfo editionUser, uint textFragmentId);
 
 		Task<TextEdition> GetTextFragmentByIdAsync(UserInfo editionUser, uint textFragmentId);
+
+		Task<IEnumerable<CachedTextEdition>> GetCachedTextEdition(
+				UserInfo editionUser
+				, uint   textFragmentId);
+
+		Task SetCachedTextEdition(
+				UserInfo   editionUser
+				, uint     textFragmentId
+				, string   transcriptionJSON
+				, DateTime validTime);
+
+		Task InvalidateCachedTextEdition(UserInfo         editionUser, uint textFragmentId);
+		Task InvalidateCachedTextEditionByLineId(UserInfo editionUser, uint lineId);
+
+		Task InvalidateCachedTextEditionBySignInterpretationId(
+				UserInfo editionUser
+				, uint   signInterpretationId);
 
 		Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo editionUser);
 
@@ -367,7 +385,7 @@ namespace SQE.DatabaseAccess
 		}
 
 		/// <summary>
-		///  Inserts new line as fitstline into an existing text fragment which masu contasin
+		///  Inserts new line as firstline into an existing text fragment which must contain
 		///  already at least one line
 		/// </summary>
 		/// <param name="editionUser"></param>
@@ -1794,6 +1812,93 @@ namespace SQE.DatabaseAccess
 				return new TextEdition();
 
 			return await _getEntityById(editionUser, terminators);
+		}
+
+		public async Task<IEnumerable<CachedTextEdition>> GetCachedTextEdition(
+				UserInfo editionUser
+				, uint   textFragmentId)
+		{
+			using (var conn = OpenConnection())
+			{
+				return await conn.QueryAsync<CachedTextEdition>(
+						GetCachedTextFragment.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, TextFragmentId = textFragmentId
+								,
+						});
+			}
+		}
+
+		public async Task SetCachedTextEdition(
+				UserInfo   editionUser
+				, uint     textFragmentId
+				, string   transcriptionJSON
+				, DateTime validTime)
+		{
+			using (var conn = OpenConnection())
+			{
+				await conn.ExecuteAsync(
+						SetCachedTextFragment.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, TextFragmentId = textFragmentId
+								, Transcription = transcriptionJSON
+								, ValidTime = validTime
+								,
+						});
+			}
+		}
+
+		// TODO: Make sure we use this everywhere it is needed!!!
+		public async Task InvalidateCachedTextEdition(UserInfo editionUser, uint textFragmentId)
+		{
+			using (var conn = OpenConnection())
+			{
+				await conn.ExecuteAsync(
+						RemoveCachedTextFragment.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, TextFragmentId = textFragmentId
+								,
+						});
+			}
+		}
+
+		public async Task InvalidateCachedTextEditionByLineId(UserInfo editionUser, uint lineId)
+		{
+			using (var conn = OpenConnection())
+			{
+				var tfId = await conn.QueryAsync<uint>(
+						GetTextFragmentIdFromLineId.GetQuery
+						, new { editionUser.EditionId, LineId = lineId });
+
+				if (tfId.Any())
+					await InvalidateCachedTextEdition(editionUser, tfId.First());
+			}
+		}
+
+		public async Task InvalidateCachedTextEditionBySignInterpretationId(
+				UserInfo editionUser
+				, uint   signInterpretationId)
+		{
+			using (var conn = OpenConnection())
+			{
+				var tfId = await conn.QueryAsync<uint>(
+						GetTextFragmentIdFromSingInterpretationId.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, SignInterpretationId = signInterpretationId
+								,
+						});
+
+				if (tfId.Any())
+					await InvalidateCachedTextEdition(editionUser, tfId.First());
+			}
 		}
 
 		/// <summary>

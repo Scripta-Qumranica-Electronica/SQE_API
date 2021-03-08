@@ -604,6 +604,19 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Retrieves all signs and their data from the entire edition
+	 *
+	 * @param editionId - Id of the edition
+	 * @returns - 
+	 *		  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *		  sequence
+	 *		 
+	 */
+    public async getV1EditionsEditionIdFullText(editionId: number): Promise<TextEditionDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdFullText', editionId);
+    }
+
+    /**
 	 * Retrieves all signs and their data from the given line
 	 *
 	 * @param editionId - Id of the edition

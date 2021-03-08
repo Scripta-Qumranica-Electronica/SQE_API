@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
@@ -14,7 +15,8 @@ namespace SQE.API.Server.Services
 	{
 		Task<LineTextDTO> GetLineByIdAsync(UserInfo editionUser, uint lineId);
 
-		Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo editionUser, uint fragmentId);
+		Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo       editionUser, uint fragmentId);
+		Task<TextEditionDTO> GetFragmentsOfEditionAsync(UserInfo editionUser);
 
 		Task<ArtefactDataListDTO> GetArtefactsAsync(UserInfo editionUser, uint fragmentId);
 
@@ -66,6 +68,16 @@ namespace SQE.API.Server.Services
 				UserInfo editionUser
 				, uint   fragmentId)
 		{
+			// Try to get a cached version of the text fragment
+			// If it needs to be rebuilt the value of the json string will be null
+			var cachedEdition = await _textRepo.GetCachedTextEdition(editionUser, fragmentId);
+
+			if (cachedEdition.Any()
+				&& !string.IsNullOrEmpty(cachedEdition.First().CachedTranscription))
+				return JsonSerializer.Deserialize<TextEditionDTO>(
+						cachedEdition.First().CachedTranscription);
+
+			// Collect the text fragment manually, because it must have changed since the last cache
 			var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
 
 			var edition = await _textRepo.GetTextFragmentByIdAsync(editionUser, fragmentId);
@@ -78,7 +90,45 @@ namespace SQE.API.Server.Services
 						, "text_fragment_id");
 			}
 
-			return _textEditionToDTO(edition, await editionEditors);
+			var response = _textEditionToDTO(edition, await editionEditors);
+
+			// Now write the newly collected text fragment to the cache for quick access
+			// It will only get written if it really is up-to-date
+			await _textRepo.SetCachedTextEdition(
+					editionUser
+					, fragmentId
+					, JsonSerializer.Serialize(response)
+					, cachedEdition.First().QueryDate);
+
+			return response;
+		}
+
+		/// <summary>
+		///  Returns the full text of an edition
+		/// </summary>
+		/// <param name="editionUser"></param>
+		/// <returns></returns>
+		public async Task<TextEditionDTO> GetFragmentsOfEditionAsync(UserInfo editionUser)
+		{
+			// Note: I (Bronson) also tried caching the full-text of an edition,
+			// it did not appear to perform any faster than doing it this way.
+
+			// This simply finds all text fragments of an edition and then
+			// concatenates the results of getting the full text of each.
+			// Can we be faster?
+			var textFragments = await GetFragmentDataAsync(editionUser);
+
+			var response = await GetFragmentByIdAsync(
+					editionUser
+					, textFragments.textFragments.First().id);
+
+			var otherFrags = await Task.WhenAll(
+					textFragments.textFragments.Skip(1)
+								 .Select(x => GetFragmentByIdAsync(editionUser, x.id)));
+
+			response.textFragments.AddRange(otherFrags.SelectMany(x => x.textFragments));
+
+			return response;
 		}
 
 		public async Task<ArtefactDataListDTO> GetArtefactsAsync(

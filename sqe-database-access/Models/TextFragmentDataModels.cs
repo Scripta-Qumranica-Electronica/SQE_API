@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace SQE.DatabaseAccess.Models
@@ -19,5 +20,14 @@ namespace SQE.DatabaseAccess.Models
 		public uint   TextFragmentId { get; set; }
 		public string Name           { get; set; }
 		public string Editors        { get; set; }
+	}
+
+	public class CachedTextEdition
+	{
+		public uint     EditionId               { get; set; }
+		public uint     TextFragmentId          { get; set; }
+		public string   CachedTranscription     { get; set; }
+		public DateTime CachedTranscriptionDate { get; set; }
+		public DateTime QueryDate               { get; set; }
 	}
 }

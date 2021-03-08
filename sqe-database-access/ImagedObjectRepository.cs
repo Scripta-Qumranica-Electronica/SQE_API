@@ -99,9 +99,11 @@ WHERE image_catalog.object_id = @ImagedObjectId
 				var imageCatalogueIds = await _getImageCatalogId(imagedObjectId);
 
 				if (!imageCatalogueIds.Any())
+				{
 					throw new StandardExceptions.DataNotFoundException(
 							"imaged object"
 							, imagedObjectId);
+				}
 
 				var createRequests = imageCatalogueIds.Select(
 						x =>
@@ -133,9 +135,11 @@ WHERE image_catalog.object_id = @ImagedObjectId
 				var imageCatalogueIds = await _getImageCatalogId(imagedObjectId);
 
 				if (!imageCatalogueIds.Any())
+				{
 					throw new StandardExceptions.DataNotFoundException(
 							"imaged object"
 							, imagedObjectId);
+				}
 
 				var deleteRequests = imageCatalogueIds.Select(
 						x => new MutationRequest(

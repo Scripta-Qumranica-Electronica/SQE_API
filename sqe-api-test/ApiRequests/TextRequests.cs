@@ -166,6 +166,32 @@ namespace SQE.ApiTest.ApiRequests
 			public override uint? GetEditionId() => _editionId;
 		}
 
+		public class V1_Editions_EditionId_FullText : RequestObject<EmptyInput, TextEditionDTO>
+		{
+			private readonly uint _editionId;
+
+			/// <summary>
+			///  Retrieves all signs and their data from the entire edition
+			/// </summary>
+			/// <param name="editionId">Id of the edition</param>
+			/// <returns>
+			///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+			///  sequence
+			/// </returns>
+			public V1_Editions_EditionId_FullText(uint editionId) => _editionId = editionId;
+
+			protected override string HttpPath() => RequestPath.Replace(
+					"/edition-id"
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+		}
+
 		public class V1_Editions_EditionId_Lines_LineId : RequestObject<EmptyInput, LineTextDTO>
 		{
 			private readonly uint _editionId;
