@@ -644,7 +644,7 @@ SELECT cached_text_fragment.edition_id AS EditionId,
        cached_text_fragment.text_fragment_id AS TextFragmentId,
        cached_text_fragment.transcription_json AS CachedTranscription,
        cached_text_fragment.transcription_date AS CachedTranscriptionDate,
-       CURRENT_TIMESTAMP() AS QueryDate
+       NOW(6) AS QueryDate
 FROM (SELECT @EditionId AS edition_id, @TextFragmentId AS text_fragment_id) AS base
 LEFT JOIN cached_text_fragment ON cached_text_fragment.edition_id = base.edition_id
                                       AND cached_text_fragment.text_fragment_id = base.text_fragment_id";
@@ -654,20 +654,20 @@ LEFT JOIN cached_text_fragment ON cached_text_fragment.edition_id = base.edition
 	{
 		public const string GetQuery = @"
 INSERT INTO cached_text_fragment (edition_id, text_fragment_id, transcription_json, transcription_date)
-VALUES (@EditionId, @TextFragmentId, @Transcription, CURRENT_TIMESTAMP())
+VALUES (@EditionId, @TextFragmentId, @Transcription, @ValidTime)
 		ON DUPLICATE KEY UPDATE transcription_json = CASE WHEN @ValidTime > transcription_date
 				THEN VALUES(transcription_json) ELSE transcription_json END,
 		transcription_date = CASE WHEN @ValidTime > transcription_date
-				THEN VALUES(transcription_date) ELSE transcription_date END";
+				THEN @ValidTime ELSE transcription_date END";
 	}
 
 	internal static class RemoveCachedTextFragment
 	{
 		public const string GetQuery = @"
 INSERT INTO cached_text_fragment (edition_id, text_fragment_id, transcription_json, transcription_date)
-VALUES (@EditionId, @TextFragmentId, NULL, CURRENT_TIMESTAMP())
-ON DUPLICATE KEY UPDATE transcription_json = VALUES(transcription_json),
-                        transcription_date = VALUES(transcription_date)";
+VALUES (@EditionId, @TextFragmentId, NULL, NOW(6))
+ON DUPLICATE KEY UPDATE transcription_json = NULL,
+                        transcription_date = NOW(6)";
 	}
 
 	internal static class GetTextFragmentIdFromSingInterpretationId

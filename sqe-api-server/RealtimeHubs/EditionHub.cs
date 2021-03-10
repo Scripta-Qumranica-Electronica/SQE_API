@@ -258,12 +258,15 @@ namespace SQE.API.Server.RealtimeHubs
 		///  Provides a listing of all editions accessible to the current user
 		/// </summary>
 		[AllowAnonymous]
-		public async Task<EditionListDTO> GetV1Editions()
+		public async Task<EditionListDTO> GetV1Editions(bool? published, bool? personal)
 
 		{
 			try
 			{
-				return await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
+				return await _editionService.ListEditionsAsync(
+						_userService.GetCurrentUserId()
+						, published
+						, personal);
 			}
 			catch (ApiException err)
 			{

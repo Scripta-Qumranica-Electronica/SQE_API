@@ -395,8 +395,8 @@ export class SignalRUtilities {
 	 *
 	 *
 	 */
-    public async getV1Editions(): Promise<EditionListDTO> {
-        return await this._connection.invoke('GetV1Editions');
+    public async getV1Editions(published: bool?, personal: bool?): Promise<EditionListDTO> {
+        return await this._connection.invoke('GetV1Editions', published, personal);
     }
 
     /**

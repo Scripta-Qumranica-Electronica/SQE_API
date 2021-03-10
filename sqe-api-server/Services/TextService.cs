@@ -74,8 +74,10 @@ namespace SQE.API.Server.Services
 
 			if (cachedEdition.Any()
 				&& !string.IsNullOrEmpty(cachedEdition.First().CachedTranscription))
+			{
 				return JsonSerializer.Deserialize<TextEditionDTO>(
 						cachedEdition.First().CachedTranscription);
+			}
 
 			// Collect the text fragment manually, because it must have changed since the last cache
 			var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);

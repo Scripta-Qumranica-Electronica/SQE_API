@@ -29,7 +29,10 @@ namespace SQE.DatabaseAccess
 						, List<SignInterpretationRoiData> updateRois
 						, List<uint>                      deleteRois);
 
-		Task<List<uint>> DeleteRoisAsync(UserInfo editionUser, List<uint> deleteRoiIds);
+		Task<List<uint>> DeleteRoisAsync(
+				UserInfo     editionUser
+				, List<uint> deleteRoiIds
+				, uint?      signInterpretationId = null);
 
 		Task<List<uint>> DeleteAllRoisForSignInterpretationAsync(
 				UserInfo editionUser
@@ -212,14 +215,21 @@ namespace SQE.DatabaseAccess
 		/// </summary>
 		/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
 		/// <param name="deleteRoiIds">ROI ID's to be deleted'</param>
+		/// <param name="signInterpretationId"></param>
 		/// <returns></returns>
-		public async Task<List<uint>> DeleteRoisAsync(UserInfo editionUser, List<uint> deleteRoiIds)
+		public async Task<List<uint>> DeleteRoisAsync(
+				UserInfo     editionUser
+				, List<uint> deleteRoiIds
+				, uint?      signInterpretationId = null)
 		{
 			if (deleteRoiIds == null)
 				return new List<uint>();
 
 			foreach (var deleteRoiId in deleteRoiIds)
-				await DeleteSignInterpretationRoiAsync(editionUser, deleteRoiId);
+				await DeleteSignInterpretationRoiAsync(
+						editionUser
+						, deleteRoiId
+						, signInterpretationId);
 
 			return deleteRoiIds;
 		}
@@ -238,7 +248,7 @@ namespace SQE.DatabaseAccess
 					editionUser
 					, signInterpretationId);
 
-			return await DeleteRoisAsync(editionUser, roiIds);
+			return await DeleteRoisAsync(editionUser, roiIds, signInterpretationId);
 		}
 
 		public async Task<SignInterpretationRoiData> GetSignInterpretationRoiByIdAsync(
@@ -490,11 +500,21 @@ namespace SQE.DatabaseAccess
 
 		private async Task DeleteSignInterpretationRoiAsync(
 				UserInfo editionUser
-				, uint   signInterpretationRoiId)
+				, uint   signInterpretationRoiId
+				, uint?  signInterpretationId = null)
 		{
+			// Make sure we have the sign interpretation id, so the cached transcription will be
+			// rebuilt
+			signInterpretationId ??= await _getSignInterpretationIdForRoi(
+					editionUser
+					, signInterpretationRoiId);
+
+			var parameters = new DynamicParameters();
+			parameters.Add("@sign_interpretation_id", signInterpretationId);
+
 			var signInterpretationRoiRequest = new MutationRequest(
 					MutateType.Delete
-					, new DynamicParameters()
+					, parameters
 					, "sign_interpretation_roi"
 					, signInterpretationRoiId);
 
@@ -506,6 +526,30 @@ namespace SQE.DatabaseAccess
 			{
 				throw new StandardExceptions.DataNotWrittenException(
 						"delete sign interpretation roi");
+			}
+		}
+
+		private async Task<uint> _getSignInterpretationIdForRoi(
+				UserInfo editionUser
+				, uint   signInterpretationRoiId)
+		{
+			using (var conn = OpenConnection())
+			{
+				const string sql = @"
+SELECT sir.sign_interpretation_id
+FROM sign_interpretation_roi_owner
+JOIN sign_interpretation_roi sir ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sir.sign_interpretation_roi_id
+WHERE sign_interpretation_roi_owner.edition_id = @EditionId
+	AND sign_interpretation_roi_owner.sign_interpretation_roi_id = @SignInterpretationRoiId";
+
+				return await conn.QueryFirstAsync<uint>(
+						sql
+						, new
+						{
+								editionUser.EditionId
+								, SignInterpretationRoiId = signInterpretationRoiId
+								,
+						});
 			}
 		}
 

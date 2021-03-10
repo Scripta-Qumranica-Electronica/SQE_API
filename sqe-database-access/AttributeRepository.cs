@@ -495,7 +495,10 @@ namespace SQE.DatabaseAccess
 			var attributes =
 					await GetSignInterpretationAttributeIdsByDataAsync(editionUser, searchData);
 
-			return await DeleteSignInterpretationAttributesAsync(editionUser, attributes);
+			return await DeleteSignInterpretationAttributesAsync(
+					editionUser
+					, attributes
+					, signInterpretationId);
 		}
 
 		/// <summary>
@@ -513,7 +516,10 @@ namespace SQE.DatabaseAccess
 							editionUser
 							, signInterpretationId);
 
-			return await DeleteSignInterpretationAttributesAsync(editionUser, attributes);
+			return await DeleteSignInterpretationAttributesAsync(
+					editionUser
+					, attributes
+					, signInterpretationId);
 		}
 
 		/// <summary>
@@ -710,17 +716,27 @@ namespace SQE.DatabaseAccess
 		/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 		public async Task<List<uint>> DeleteSignInterpretationAttributesAsync(
 				UserInfo     editionUser
-				, List<uint> deleteAttributeIds)
+				, List<uint> deleteAttributeIds
+				, uint       signInterpretationId)
 		{
 			if (deleteAttributeIds == null)
 				return new List<uint>();
 
 			var requests = deleteAttributeIds.Select(
-													 id => new MutationRequest(
-															 MutateType.Delete
-															 , new DynamicParameters()
-															 , "sign_interpretation_attribute"
-															 , id))
+													 id =>
+													 {
+														 var parameters = new DynamicParameters();
+
+														 parameters.Add(
+																 "@sign_interpretation_id"
+																 , signInterpretationId);
+
+														 return new MutationRequest(
+																 MutateType.Delete
+																 , parameters
+																 , "sign_interpretation_attribute"
+																 , id);
+													 })
 											 .ToList();
 
 			var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);

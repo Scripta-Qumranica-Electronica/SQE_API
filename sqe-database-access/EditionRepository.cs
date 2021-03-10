@@ -16,7 +16,11 @@ namespace SQE.DatabaseAccess
 {
 	public interface IEditionRepository
 	{
-		Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
+		Task<IEnumerable<Edition>> ListEditionsAsync(
+				uint?   userId
+				, uint? editionId
+				, bool  published = true
+				, bool  personal  = true);
 
 		Task<Edition> GetEditionAsync(uint? userId, uint editionId);
 
@@ -85,7 +89,11 @@ namespace SQE.DatabaseAccess
 		public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) :
 				base(config) => _databaseWriter = databaseWriter;
 
-		public async Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId) //
+		public async Task<IEnumerable<Edition>> ListEditionsAsync(
+				uint?   userId
+				, uint? editionId
+				, bool  published = true
+				, bool  personal  = true)
 		{
 			using (var connection = OpenConnection())
 			{
@@ -94,7 +102,11 @@ namespace SQE.DatabaseAccess
 
 				await connection
 						.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
-								EditionListQuery.GetQuery(userId.HasValue, editionId.HasValue)
+								EditionListQuery.GetQuery(
+										userId.HasValue
+										, editionId.HasValue
+										, published
+										, personal)
 								, (editionGroup, editor) =>
 								  {
 									  // Set the copyrights for the previous, and now complete, edition before making the new one
@@ -605,6 +617,22 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 												, toEditionEditorId
 												, editionUser.EditionId.Value));
 							}
+
+							//Copy cached transcriptions
+							const string copyCacheQSL = @"
+INSERT INTO cached_text_fragment (edition_id, text_fragment_id, transcription_json, transcription_date)
+SELECT @NewEditionId, text_fragment_id, transcription_json, transcription_date
+FROM cached_text_fragment
+WHERE edition_id = @EditionId";
+
+							await connection.ExecuteAsync(
+									copyCacheQSL
+									, new
+									{
+											EditionId = editionUser.EditionId.Value
+											, NewEditionId = toEditionId
+											,
+									});
 
 							//Cleanup
 							transactionScope.Complete();
@@ -1135,7 +1163,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 				Edition lastEdition;
 
 				await conn.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
-						EditionListQuery.GetQuery(userId.HasValue, false, true)
+						EditionListQuery.GetQuery(userId.HasValue, false)
 						, (editionGroup, editor) =>
 						  {
 							  // Set the copyrights for the previous, and now complete, edition before making the new one

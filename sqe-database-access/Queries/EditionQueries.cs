@@ -256,7 +256,7 @@ FROM edition
     GROUP BY manuscript_id
 ) AS im ON im.manuscript_id = edition.manuscript_id
 
-WHERE edition.archived != 1 AND (edition.public = 1 $UserFilter)
+WHERE edition.archived != 1 $PubPriv
 $Where
 $Manuscript
 
@@ -267,15 +267,30 @@ ORDER BY manuscript_data.name, edition.edition_id
 		public static string GetQuery(
 				bool   limitUser
 				, bool limitScrolls
+				, bool published          = true
+				, bool personal           = true
 				, bool searchByManuscript = false)
 		{
+			var pubPriv = published && personal;
+
+			var userFilter = "";
+
+			if (pubPriv)
+			{
+				userFilter =
+						"AND (edition.public = 1 OR (edition_editor.user_id = @UserId AND edition_editor.may_read = 1))";
+			}
+			else if (published)
+				userFilter = "AND (edition.public = 1)";
+			else if (personal)
+			{
+				userFilter =
+						"AND (edition_editor.user_id = @UserId AND edition_editor.may_read = 1)";
+			}
+
 			// Build the WHERE clauses
 			var where = limitScrolls
 					? "AND (edition.edition_id = @EditionId)"
-					: "";
-
-			var userFilter = limitUser
-					? "OR (edition_editor.user_id = @UserId AND edition_editor.may_read = 1)"
 					: "";
 
 			var manuscriptFilter = searchByManuscript
@@ -283,7 +298,7 @@ ORDER BY manuscript_data.name, edition.edition_id
 					: "";
 
 			return _baseQuery.Replace("$Where", where)
-							 .Replace("$UserFilter", userFilter)
+							 .Replace("$PubPriv", userFilter)
 							 .Replace("$Manuscript", manuscriptFilter);
 		}
 

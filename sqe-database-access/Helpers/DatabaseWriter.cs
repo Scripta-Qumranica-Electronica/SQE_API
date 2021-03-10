@@ -75,12 +75,9 @@ namespace SQE.DatabaseAccess.Helpers
 
 		public MutateType Action { get; }
 
-		public List<string>
-				ColumnNames
-		{
-			get;
-		} // Itay, we still need this, since we add more to the SQL parameters than
+		public List<string> ColumnNames { get; }
 
+		// Itay, we still need this, since we add more to the SQL parameters than
 		// just the column names after this mutation request is created (e.g.
 		// @EditionId and maybe @OwnedTableId).  But now this is computed
 		// automatically from the Parameters in the constructor. So we no longer
@@ -267,6 +264,40 @@ namespace SQE.DatabaseAccess.Helpers
 							throw new ArgumentOutOfRangeException();
 					}
 				}
+
+				// Check if any operation here would invalidate a cached text transcription,
+				// if so, invalidate the cached transcription. First gather all referenced
+				// text fragments, then Union the results so there are no doubles.
+				var lineIds = (await Task.WhenAll(
+						mutationRequests.Where(x => x.Parameters.ParameterNames.Contains("line_id"))
+										.Select(x => x.Parameters.Get<uint>("line_id"))
+										.Select(
+												async x => await _textEditionByLineId(
+														editionUser
+														, x)))).SelectMany(x => x);
+
+				var signInterpretationIds = (await Task.WhenAll(
+						mutationRequests
+								.Where(
+										x => x.Parameters.ParameterNames.Contains(
+												"sign_interpretation_id"))
+								.Select(x => x.Parameters.Get<uint>("sign_interpretation_id"))
+								.Select(
+										async x => await _textEditionBySignInterpretationId(
+												editionUser
+												, x)))).SelectMany(x => x);
+
+				var textFragmentIds = mutationRequests
+									  .Where(
+											  x => x.Parameters.ParameterNames.Contains(
+													  "text_fragment_id"))
+									  .Select(x => x.Parameters.Get<uint>("text_fragment_id"))
+									  .Distinct()
+									  .Union(lineIds)
+									  .Union(signInterpretationIds);
+
+				foreach (var textFragmentId in textFragmentIds)
+					await _invalidateCachedTextEdition(editionUser, textFragmentId);
 			}
 
 			return alteredRecords;
@@ -540,6 +571,50 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 
 			// Execute query
 			await connection.ExecuteAsync(query, mutationRequest.Parameters);
+		}
+
+		private async Task _invalidateCachedTextEdition(UserInfo editionUser, uint textFragmentId)
+		{
+			using (var conn = OpenConnection())
+			{
+				await conn.ExecuteAsync(
+						RemoveCachedTextFragment.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, TextFragmentId = textFragmentId
+								,
+						});
+			}
+		}
+
+		private async Task<IEnumerable<uint>> _textEditionByLineId(
+				UserInfo editionUser
+				, uint   lineId)
+		{
+			using (var conn = OpenConnection())
+			{
+				return await conn.QueryAsync<uint>(
+						GetTextFragmentIdFromLineId.GetQuery
+						, new { editionUser.EditionId, LineId = lineId });
+			}
+		}
+
+		public async Task<IEnumerable<uint>> _textEditionBySignInterpretationId(
+				UserInfo editionUser
+				, uint   signInterpretationId)
+		{
+			using (var conn = OpenConnection())
+			{
+				return await conn.QueryAsync<uint>(
+						GetTextFragmentIdFromSingInterpretationId.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, SignInterpretationId = signInterpretationId
+								,
+						});
+			}
 		}
 
 		/// <summary>

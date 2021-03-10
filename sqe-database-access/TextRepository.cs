@@ -127,7 +127,7 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signInterpretationId
 				, bool   deleteVariants
-				, bool   clothPath
+				, bool   closePath
 				, bool   materializeSignStream = true);
 
 		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignAsync(
@@ -162,13 +162,6 @@ namespace SQE.DatabaseAccess
 				, uint     textFragmentId
 				, string   transcriptionJSON
 				, DateTime validTime);
-
-		Task InvalidateCachedTextEdition(UserInfo         editionUser, uint textFragmentId);
-		Task InvalidateCachedTextEditionByLineId(UserInfo editionUser, uint lineId);
-
-		Task InvalidateCachedTextEditionBySignInterpretationId(
-				UserInfo editionUser
-				, uint   signInterpretationId);
 
 		Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo editionUser);
 
@@ -1504,7 +1497,7 @@ namespace SQE.DatabaseAccess
 						UserInfo editionUser
 						, uint   signInterpretationId
 						, bool   deleteVariants
-						, bool   clothPath
+						, bool   closePath
 						, bool   materializeSignStream = true)
 		{
 			var alteredSignInterpretations = new List<uint>();
@@ -1554,7 +1547,7 @@ namespace SQE.DatabaseAccess
 
 							// Take out from path
 					{
-						if (clothPath)
+						if (closePath)
 						{
 							var positionDataRequest =
 									await PositionDataRequestFactory.CreateInstanceAsync(
@@ -1614,22 +1607,22 @@ namespace SQE.DatabaseAccess
 			if (!materializeSignStream)
 				return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations);
 
-			if (alteredSignInterpretations.Any())
-			{ // Rebuild any affected materialized sign streams
-				// Do not await it, we don't care if it finishes before this
-				// request is over.
-				// TODO: change RequestMaterializationAsync to take an array,
-				// it should be able to check how many sign streams would need a rebuild.
-				_materializationRepository.RequestMaterializationAsync(
-						editionUser.EditionId.Value
-						, alteredSignInterpretations.First());
-			}
-			else
-			{
-				// TODO: What is the most efficient way to trigger a rebuild when we have no anchors?
-				// probably collect the deleted sign's next sign interpretation IDs and trigger a rebuild on those.
-				_materializationRepository.RequestMaterializationAsync(editionUser.EditionId.Value);
-			}
+			// if (alteredSignInterpretations.Any())
+			// { // Rebuild any affected materialized sign streams
+			// 	// Do not await it, we don't care if it finishes before this
+			// 	// request is over.
+			// 	// TODO: change RequestMaterializationAsync to take an array,
+			// 	// it should be able to check how many sign streams would need a rebuild.
+			// 	_materializationRepository.RequestMaterializationAsync(
+			// 			editionUser.EditionId.Value
+			// 			, alteredSignInterpretations.First());
+			// }
+			// else
+			// {
+			// 	// TODO: What is the most efficient way to trigger a rebuild when we have no anchors?
+			// 	// probably collect the deleted sign's next sign interpretation IDs and trigger a rebuild on those.
+			// 	_materializationRepository.RequestMaterializationAsync(editionUser.EditionId.Value);
+			// }
 
 			return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations);
 		}
@@ -1849,55 +1842,6 @@ namespace SQE.DatabaseAccess
 								, ValidTime = validTime
 								,
 						});
-			}
-		}
-
-		// TODO: Make sure we use this everywhere it is needed!!!
-		public async Task InvalidateCachedTextEdition(UserInfo editionUser, uint textFragmentId)
-		{
-			using (var conn = OpenConnection())
-			{
-				await conn.ExecuteAsync(
-						RemoveCachedTextFragment.GetQuery
-						, new
-						{
-								editionUser.EditionId
-								, TextFragmentId = textFragmentId
-								,
-						});
-			}
-		}
-
-		public async Task InvalidateCachedTextEditionByLineId(UserInfo editionUser, uint lineId)
-		{
-			using (var conn = OpenConnection())
-			{
-				var tfId = await conn.QueryAsync<uint>(
-						GetTextFragmentIdFromLineId.GetQuery
-						, new { editionUser.EditionId, LineId = lineId });
-
-				if (tfId.Any())
-					await InvalidateCachedTextEdition(editionUser, tfId.First());
-			}
-		}
-
-		public async Task InvalidateCachedTextEditionBySignInterpretationId(
-				UserInfo editionUser
-				, uint   signInterpretationId)
-		{
-			using (var conn = OpenConnection())
-			{
-				var tfId = await conn.QueryAsync<uint>(
-						GetTextFragmentIdFromSingInterpretationId.GetQuery
-						, new
-						{
-								editionUser.EditionId
-								, SignInterpretationId = signInterpretationId
-								,
-						});
-
-				if (tfId.Any())
-					await InvalidateCachedTextEdition(editionUser, tfId.First());
 			}
 		}
 
@@ -2303,9 +2247,17 @@ namespace SQE.DatabaseAccess
 				, string tableName
 				, uint   elementId)
 		{
+			var parameters = new DynamicParameters();
+
+			// Add the line/text fragment ID so the cached text fragment is invalidated
+			if (tableName.Contains("line"))
+				parameters.Add("@line_id", elementId);
+			else if (tableName.Contains("fragment"))
+				parameters.Add("@text_fragment_id", elementId);
+
 			var removeRequest = new MutationRequest(
 					MutateType.Delete
-					, new DynamicParameters()
+					, parameters
 					, tableName
 					, elementId);
 
@@ -2583,9 +2535,12 @@ namespace SQE.DatabaseAccess
 
 					foreach (var characterId in characterIds)
 					{
+						var parameters = new DynamicParameters();
+						parameters.Add("@sign_interpretation_id", signInterpretationId);
+
 						var signInterpretationCharacterRequest = new MutationRequest(
 								MutateType.Delete
-								, new DynamicParameters()
+								, parameters
 								, "sign_interpretation_character"
 								, characterId);
 

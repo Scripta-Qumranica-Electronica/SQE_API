@@ -119,8 +119,14 @@ namespace SQE.API.Server.HttpControllers
 		/// </summary>
 		[AllowAnonymous]
 		[HttpGet("v1/[controller]s")]
-		public async Task<ActionResult<EditionListDTO>> ListEditions()
-			=> await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
+		public async Task<ActionResult<EditionListDTO>> ListEditions(
+				[FromQuery(Name = "published")]
+				bool? published
+				, [FromQuery(Name = "personal")]
+				bool? personal) => await _editionService.ListEditionsAsync(
+				_userService.GetCurrentUserId()
+				, published
+				, personal);
 
 		/// <summary>
 		///  Updates data for the specified edition

@@ -31,7 +31,8 @@ namespace SQE.DatabaseAccess
 
 		Task<List<uint>> DeleteCommentariesAsync(
 				UserInfo     editionUser
-				, List<uint> deleteCommentaryIds);
+				, List<uint> deleteCommentaryIds
+				, uint?      signInterpretationId = null);
 
 		Task<List<uint>> DeleteAllCommentariesForSignInterpretationAsync(
 				UserInfo editionUser
@@ -218,17 +219,31 @@ namespace SQE.DatabaseAccess
 		/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 		public async Task<List<uint>> DeleteCommentariesAsync(
 				UserInfo     editionUser
-				, List<uint> deleteCommentaryIds)
+				, List<uint> deleteCommentaryIds
+				, uint?      signInterpretationId = null)
 		{
-			if (deleteCommentaryIds == null)
+			if (!deleteCommentaryIds.Any())
 				return new List<uint>();
 
+			signInterpretationId ??= await _signInterpretationIdFromCommentary(
+					editionUser
+					, deleteCommentaryIds.First());
+
 			var requests = deleteCommentaryIds.Select(
-													  id => new MutationRequest(
-															  MutateType.Delete
-															  , new DynamicParameters()
-															  , "sign_interpretation_commentary"
-															  , id))
+													  id =>
+													  {
+														  var parameters = new DynamicParameters();
+
+														  parameters.Add(
+																  "@sign_interpretation_id"
+																  , signInterpretationId);
+
+														  return new MutationRequest(
+																  MutateType.Delete
+																  , parameters
+																  , "sign_interpretation_commentary"
+																  , id);
+													  })
 											  .ToList();
 
 			var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
@@ -263,7 +278,8 @@ namespace SQE.DatabaseAccess
 					, commentaries
 					  .Where(commentary => commentary.SignInterpretationCommentaryId.HasValue)
 					  .Select(commentary => commentary.SignInterpretationCommentaryId.Value)
-					  .ToList());
+					  .ToList()
+					, signInterpretationId);
 		}
 
 		/// <summary>
@@ -465,6 +481,25 @@ namespace SQE.DatabaseAccess
 
 			// Now return the list of new attributes which now also contains the the new ids.
 			return response;
+		}
+
+		private async Task<uint> _signInterpretationIdFromCommentary(
+				UserInfo editionUser
+				, uint   commentaryId)
+		{
+			using (var conn = OpenConnection())
+			{
+				const string sql = @"
+SELECT sic.sign_interpretation_id
+FROM sign_interpretation_commentary_owner
+JOIN sign_interpretation_commentary sic on sign_interpretation_commentary_owner.sign_interpretation_commentary_id = sic.sign_interpretation_commentary_id
+WHERE sign_interpretation_commentary_owner.edition_id = @EditionId
+	AND sign_interpretation_commentary_owner.sign_interpretation_commentary_id = @CommentaryId";
+
+				return await conn.QueryFirstAsync<uint>(
+						sql
+						, new { editionUser.EditionId, CommentaryId = commentaryId });
+			}
 		}
 
 		#endregion

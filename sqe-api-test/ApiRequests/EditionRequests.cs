@@ -137,11 +137,33 @@ namespace SQE.ApiTest.ApiRequests
 
 		public class V1_Editions : RequestObject<EmptyInput, EditionListDTO>
 		{
-			protected override string HttpPath() => RequestPath;
+			private readonly bool? _personal;
+			private readonly bool? _published;
+
+			/// <summary>
+			///  Provides a listing of all editions accessible to the current user
+			/// </summary>
+			public V1_Editions(bool? published = null, bool? personal = null)
+
+			{
+				_published = published;
+				_personal = personal;
+			}
+
+			protected override string HttpPath() => RequestPath
+													+ (_published != null
+															? $"?published={_published}"
+															: "")
+													+ (_personal != null
+															? $"&personal={_personal}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _published
+							   , _personal);
 			}
 		}
 

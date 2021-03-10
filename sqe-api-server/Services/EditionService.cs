@@ -31,7 +31,10 @@ namespace SQE.API.Server.Services
 				, bool   artefacts = false
 				, bool   fragments = false);
 
-		Task<EditionListDTO> ListEditionsAsync(uint? userId);
+		Task<EditionListDTO> ListEditionsAsync(
+				uint?   userId
+				, bool? published = null
+				, bool? personal  = null);
 
 		Task<EditionListDTO> GetManuscriptEditionsAsync(uint? userId, uint manuscriptId);
 
@@ -131,11 +134,30 @@ namespace SQE.API.Server.Services
 			return editionGroup;
 		}
 
-		public async Task<EditionListDTO> ListEditionsAsync(uint? userId)
+		public async Task<EditionListDTO> ListEditionsAsync(
+				uint?   userId
+				, bool? published = null
+				, bool? personal  = null)
 		{
+			// Check if both published and personal are null (if so assume true)
+			if (!published.HasValue
+				&& !personal.HasValue)
+			{
+				published = true;
+				personal = true;
+			}
+
+			// If either published or personal are null assume false
+			published ??= false;
+			personal ??= false;
+
 			return new EditionListDTO
 			{
-					editions = (await _editionRepo.ListEditionsAsync(userId, null))
+					editions = (await _editionRepo.ListEditionsAsync(
+									   userId
+									   , null
+									   , published.Value
+									   , personal.Value))
 							   .OrderBy(
 									   x => x.Name
 									   , StringComparison.OrdinalIgnoreCase.WithNaturalSort())

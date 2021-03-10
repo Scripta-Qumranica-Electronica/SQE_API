@@ -1357,6 +1357,88 @@ namespace SQE.ApiTest
 		[Theory]
 		[InlineData(false)]
 		[InlineData(true)]
+		public async Task CanGetFilteredEditions(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var newEdition = await editionCreator.CreateEdition();
+				var editionRequestNull = new Get.V1_Editions();
+
+				// Act
+				await editionRequestNull.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionReqNullData = realtime
+						? editionRequestNull.SignalrResponseObject
+						: editionRequestNull.HttpResponseObject;
+
+				var editionRequestPubPriv = new Get.V1_Editions(true, true);
+
+				await editionRequestPubPriv.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionReqPubPrivData = realtime
+						? editionRequestPubPriv.SignalrResponseObject
+						: editionRequestPubPriv.HttpResponseObject;
+
+				var editionRequestPub = new Get.V1_Editions(true, false);
+
+				await editionRequestPub.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionReqPubData = realtime
+						? editionRequestPub.SignalrResponseObject
+						: editionRequestPub.HttpResponseObject;
+
+				var editionRequestPriv = new Get.V1_Editions(false, true);
+
+				await editionRequestPriv.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionReqPrivData = realtime
+						? editionRequestPriv.SignalrResponseObject
+						: editionRequestPriv.HttpResponseObject;
+
+				// Assert
+				editionReqNullData.IsDeepEqual(editionReqPubPrivData);
+
+				Assert.Contains(editionReqPrivData.editions, x => x.First().id == newEdition);
+				Assert.Contains(editionReqPubPrivData.editions, x => x.First().id == newEdition);
+				Assert.DoesNotContain(editionReqPubData.editions, x => x.First().id == newEdition);
+
+				Assert.True(editionReqPrivData.editions.Count < editionReqPubData.editions.Count);
+
+				Assert.Equal(
+						editionReqPubPrivData.editions.Count
+						, editionReqPrivData.editions.Count + editionReqPubData.editions.Count);
+			}
+		}
+
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
 		public async Task CanGetEditionsByManuscript(bool realtime)
 		{
 			using (var editionCreator =
