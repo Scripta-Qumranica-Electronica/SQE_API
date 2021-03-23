@@ -1360,6 +1360,293 @@ namespace SQE.ApiTest
 			}
 		}
 
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
+		public async Task CanRenameLine(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var lines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragments.textFragments.First().id
+						, realtime
+						, true);
+
+				var firstLine = lines.lines.First();
+
+				var firstLineId = firstLine.lineId;
+				const string newLineName = "2aα";
+				var newLine = new UpdateLineDTO { lineName = newLineName };
+
+				// Act
+				var changeLineName =
+						new Put.V1_Editions_EditionId_Lines_LineId(editionId, firstLineId, newLine);
+
+				await changeLineName.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: changeLineName.AvailableListeners.UpdatedLine);
+
+				// Assert
+				if (!realtime)
+					changeLineName.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var response = realtime
+						? changeLineName.SignalrResponseObject
+						: changeLineName.HttpResponseObject;
+
+				Assert.NotEqual(firstLine.lineName, response.lineName);
+				Assert.Equal(newLineName, response.lineName);
+
+				var updatedLines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragments.textFragments.First().id
+						, realtime
+						, true);
+
+				Assert.Equal(response.lineName, updatedLines.lines.First().lineName);
+				Assert.Equal(response.editorId, updatedLines.lines.First().editorId);
+				Assert.Equal(response.lineId, updatedLines.lines.First().lineId);
+			}
+		}
+
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
+		public async Task CanPrependLine(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var textFragmentId = textFragments.textFragments.First().id;
+
+				var lines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var firstLine = lines.lines.First();
+
+				var firstLineId = firstLine.lineId;
+				const string newLineName = "5643";
+				var newLine = new CreateLineDTO(newLineName, null, firstLineId);
+
+				// Act
+				var createLine =
+						new Post.V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+								editionId
+								, textFragmentId
+								, newLine);
+
+				await createLine.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: createLine.AvailableListeners.CreatedLine);
+
+				// Assert
+				if (!realtime)
+					createLine.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var response = realtime
+						? createLine.SignalrResponseObject
+						: createLine.HttpResponseObject;
+
+				Assert.Equal(newLineName, response.lineName);
+
+				var updatedLines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var newFirstLine = updatedLines.lines.First();
+
+				// The old first line should now be second
+				lines.lines[0].ShouldDeepEqual(updatedLines.lines[1]);
+				Assert.NotEqual(firstLine.lineId, newFirstLine.lineId);
+
+				// The new first line should match the newly created line
+				Assert.Equal(response.lineId, newFirstLine.lineId);
+				Assert.Equal(response.lineName, newFirstLine.lineName);
+				Assert.Equal(response.editorId, newFirstLine.editorId);
+			}
+		}
+
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
+		public async Task CanAppendLine(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var textFragmentId = textFragments.textFragments.First().id;
+
+				var lines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var lastLine = lines.lines.Last();
+
+				var lastLineId = lastLine.lineId;
+				const string newLineName = "klo";
+				var newLine = new CreateLineDTO(newLineName, lastLineId);
+
+				// Act
+				var createLine =
+						new Post.V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+								editionId
+								, textFragmentId
+								, newLine);
+
+				await createLine.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: createLine.AvailableListeners.CreatedLine);
+
+				// Assert
+				if (!realtime)
+					createLine.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var response = realtime
+						? createLine.SignalrResponseObject
+						: createLine.HttpResponseObject;
+
+				Assert.Equal(newLineName, response.lineName);
+
+				var updatedLines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var newLastLine = updatedLines.lines.Last();
+
+				// The old first line should now be second
+				lines.lines.Last().ShouldDeepEqual(updatedLines.lines[^2]);
+				Assert.NotEqual(lastLine.lineId, newLastLine.lineId);
+
+				// The new first line should match the newly created line
+				Assert.Equal(response.lineId, newLastLine.lineId);
+				Assert.Equal(response.lineName, newLastLine.lineName);
+				Assert.Equal(response.editorId, newLastLine.editorId);
+			}
+		}
+
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
+		public async Task CanDeleteLine(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var textFragmentId = textFragments.textFragments.First().id;
+
+				var lines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var lastLine = lines.lines.Last();
+
+				var lastLineId = lastLine.lineId;
+
+				// Act
+				var deleteLine =
+						new Delete.V1_Editions_EditionId_Lines_LineId(editionId, lastLineId);
+
+				await deleteLine.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: deleteLine.AvailableListeners.DeletedLine);
+
+				// Assert
+				if (!realtime)
+					deleteLine.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				Assert.NotEmpty(deleteLine.DeletedLine.ids);
+				Assert.Contains(lastLineId, deleteLine.DeletedLine.ids);
+
+				var updatedLines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				Assert.NotEqual(lines.lines.Count, updatedLines.lines.Count);
+				Assert.Equal(lines.lines.Count - 1, updatedLines.lines.Count);
+				Assert.DoesNotContain(updatedLines.lines, x => x.lineId == lastLineId);
+			}
+		}
+
+		private async Task<LineDataListDTO> _getEditionTextFragmentLines(
+				uint   editionId
+				, uint textFragmentId
+				, bool realtime
+				, bool auth          = false
+				, bool shouldSucceed = true)
+		{
+			var linesRequest =
+					new Get.V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+							editionId
+							, textFragmentId);
+
+			await linesRequest.SendAsync(
+					realtime
+							? null
+							: _client
+					, StartConnectionAsync
+					, auth
+					, shouldSucceed: shouldSucceed
+					, requestRealtime: realtime);
+
+			if (!shouldSucceed)
+				return null;
+
+			return realtime
+					? linesRequest.SignalrResponseObject
+					: linesRequest.HttpResponseObject;
+		}
+
 		// TODO: Ingo changed the logic so two text fragments with the same name are allowed, so probably remove this test.
 		// [Fact]
 		// public async Task CanNotAddTwoTextFragmentsWithTheSameName()

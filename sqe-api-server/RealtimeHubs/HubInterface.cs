@@ -25,6 +25,27 @@ namespace SQE.API.Server.RealtimeHubs
 		Task UpdatedTextFragment(TextFragmentDataDTO returnedData);
 
 		/// <summary>
+		///  broadcasts a new text fragment has been created
+		/// </summary>
+		/// <param name="returnedData">Details of the newly created text fragment</param>
+		/// <returns></returns>
+		Task CreatedLine(LineDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts a text fragment has been updated
+		/// </summary>
+		/// <param name="returnedData">Details of the updated text fragment</param>
+		/// <returns></returns>
+		Task UpdatedLine(LineDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts a text fragment has been updated
+		/// </summary>
+		/// <param name="returnedData">Details of the updated text fragment</param>
+		/// <returns></returns>
+		Task DeletedLine(DeleteIntIdDTO returnedData);
+
+		/// <summary>
 		///  broadcasts a editor has been requested for the edition
 		/// </summary>
 		/// <param name="returnedData">Details of the new editor</param>

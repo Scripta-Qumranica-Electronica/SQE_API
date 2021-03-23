@@ -301,12 +301,12 @@ namespace sqe_api
 
 		public void PrependLine(uint fragmentId, LineData lineData)
 		{
-			TextRep.PrependLineAsync(_userInfo, lineData, fragmentId);
+			TextRep.PrependLineAsync(_userInfo, fragmentId, lineData);
 		}
 
 		public void InsertLine(uint fragmentId, LineData lineData, uint previousLineId)
 		{
-			TextRep.InsertLineAfterAsync(
+			TextRep.AppendLineAsync(
 					_userInfo
 					, fragmentId
 					, lineData

@@ -82,9 +82,9 @@ export interface TextFragmentDTO {
     lines: Array<LineDTO>;
 }
 
-export interface LineDataDTO {
+export interface LineDataDTO extends UpdateLineDTO {
     lineId: number;
-    lineName: string;
+    editorId: number;
 }
 
 export interface LineDataListDTO {
@@ -111,6 +111,15 @@ export interface UpdateTextFragmentDTO {
 
 export interface CreateTextFragmentDTO extends UpdateTextFragmentDTO {
     name: string;
+}
+
+export interface UpdateLineDTO {
+    lineName: string;
+}
+
+export interface CreateLineDTO extends UpdateLineDTO {
+    previousLineId?: number;
+    subsequentLineId?: number;
 }
 
 export interface RequestMaterializationDTO {

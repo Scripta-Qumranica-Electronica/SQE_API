@@ -292,14 +292,14 @@ namespace SQE.DatabaseAccess.Helpers
 						ConnectingTableToChild(table)
 					}
             JOIN {
-						child
+						Name(table)
 					}_data USING ({
-						child
+						Name(table)
 					}_id)
             JOIN {
-						child
+						Name(table)
 					}_data_owner USING ({
-						child
+						Name(table)
 					}_data_id)
             WHERE {
 						Name(table)
@@ -326,7 +326,7 @@ namespace SQE.DatabaseAccess.Helpers
 					}_id)
         WHERE {
 						dataTable
-					}t.{
+					}.{
 						Name(table)
 					}_id = @ElementId
         AND {

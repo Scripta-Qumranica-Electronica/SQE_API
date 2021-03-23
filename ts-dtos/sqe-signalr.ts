@@ -28,6 +28,8 @@ import {
 	LineTextDTO,
 	UpdateTextFragmentDTO,
 	CreateTextFragmentDTO,
+	UpdateLineDTO,
+	CreateLineDTO,
 	RequestMaterializationDTO,
 	CreateScriptDataDTO,
 	ScriptDataDTO,
@@ -622,12 +624,56 @@ export class SignalRUtilities {
 	 * @param editionId - Id of the edition
 	 * @param lineId - Id of the line
 	 * @returns - 
-	 *		  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *		  sequence
+	 *		  A manuscript edition object including the fragments and their lines in a
+	 *		  hierarchical order and in correct sequence
 	 *		 
 	 */
     public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
+    }
+
+    /**
+	 * Changes the details of the line (currently the lines name)
+	 *
+	 * @param editionId - Id of the edition
+	 * @param lineId - Id of the line
+	 * @param lineData - The updated line data
+	 * @returns - 
+	 *		  The updated details concerning the line sequence
+	 *		 
+	 */
+    public async putV1EditionsEditionIdLinesLineId(editionId: number, lineId: number, lineData: UpdateLineDTO): Promise<LineDataDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdLinesLineId', editionId, lineId, lineData);
+    }
+
+    /**
+	 * Delete a full line from a text fragment
+	 *
+	 * @param editionId - Id of the edition
+	 * @param lineId - Id of the line to be deleted
+	 * @returns - 
+	 *		  The updated details concerning the line sequence
+	 *		 
+	 */
+    public async deleteV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdLinesLineId', editionId, lineId);
+    }
+
+    /**
+	 * Creates a new line before or after another line.
+	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - 
+	 *		  Id of the text fragment where the line will be
+	 *		  added
+	 *		 
+	 * @param lineData - The information about the line to be created
+	 * @returns - 
+	 *		  The details concerning the newly created line
+	 *		 
+	 */
+    public async postV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number, lineData: CreateLineDTO): Promise<LineDataDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId, lineData);
     }
 
     /**
@@ -1399,6 +1445,57 @@ export class SignalRUtilities {
 	 */
     public disconnectUpdatedTextFragment(handler: (msg: TextFragmentDataDTO) => void): void {
         this._connection.off('UpdatedTextFragment', handler)
+    }
+
+
+    /**
+	 * Add a listener for when the server broadcasts a new text fragment has been created
+	 *
+	 */
+    public connectCreatedLine(handler: (msg: LineDataDTO) => void): void {
+        this._connection.on('CreatedLine', handler)
+    }
+
+    /**
+	 * Remove an existing listener that triggers when the server broadcasts a new text fragment has been created
+	 *
+	 */
+    public disconnectCreatedLine(handler: (msg: LineDataDTO) => void): void {
+        this._connection.off('CreatedLine', handler)
+    }
+
+
+    /**
+	 * Add a listener for when the server broadcasts a text fragment has been updated
+	 *
+	 */
+    public connectUpdatedLine(handler: (msg: LineDataDTO) => void): void {
+        this._connection.on('UpdatedLine', handler)
+    }
+
+    /**
+	 * Remove an existing listener that triggers when the server broadcasts a text fragment has been updated
+	 *
+	 */
+    public disconnectUpdatedLine(handler: (msg: LineDataDTO) => void): void {
+        this._connection.off('UpdatedLine', handler)
+    }
+
+
+    /**
+	 * Add a listener for when the server broadcasts a text fragment has been updated
+	 *
+	 */
+    public connectDeletedLine(handler: (msg: DeleteIntIdDTO) => void): void {
+        this._connection.on('DeletedLine', handler)
+    }
+
+    /**
+	 * Remove an existing listener that triggers when the server broadcasts a text fragment has been updated
+	 *
+	 */
+    public disconnectDeletedLine(handler: (msg: DeleteIntIdDTO) => void): void {
+        this._connection.off('DeletedLine', handler)
     }
 
 

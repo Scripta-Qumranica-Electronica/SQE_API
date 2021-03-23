@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
+using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -14,6 +16,23 @@ namespace SQE.API.Server.Services
 	public interface ITextService
 	{
 		Task<LineTextDTO> GetLineByIdAsync(UserInfo editionUser, uint lineId);
+
+		Task<LineDataDTO> UpdateLineByIdAsync(
+				UserInfo        editionUser
+				, uint          lineId
+				, UpdateLineDTO lineData
+				, string        clientId = null);
+
+		Task<NoContentResult> DeleteLineByIdAsync(
+				UserInfo editionUser
+				, uint   lineId
+				, string clientId = null);
+
+		Task<LineDataDTO> CreateLineAsync(
+				UserInfo        editionUser
+				, uint          textFragmentId
+				, CreateLineDTO lineData
+				, string        clientId = null);
 
 		Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo       editionUser, uint fragmentId);
 		Task<TextEditionDTO> GetFragmentsOfEditionAsync(UserInfo editionUser);
@@ -62,6 +81,95 @@ namespace SQE.API.Server.Services
 				throw new StandardExceptions.DataNotFoundException("line", lineId, "line_id");
 
 			return _textEditionLineToDTO(editionLine, await editionEditors);
+		}
+
+		public async Task<LineDataDTO> UpdateLineByIdAsync(
+				UserInfo        editionUser
+				, uint          lineId
+				, UpdateLineDTO lineData
+				, string        clientId = null)
+		{
+			var updatedLine = await _textRepo.UpdateLineAsync(
+					editionUser
+					, lineId
+					, lineData.lineName);
+
+			var response = updatedLine.ToDTO();
+
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .UpdatedLine(response);
+
+			return response;
+		}
+
+		public async Task<NoContentResult> DeleteLineByIdAsync(
+				UserInfo editionUser
+				, uint   lineId
+				, string clientId = null)
+		{
+			await _textRepo.RemoveLineAsync(editionUser, lineId);
+
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .DeletedLine(
+									 new DeleteIntIdDTO
+									 {
+											 entity = EditionEntities.line
+											 , ids = new List<uint> { lineId }
+											 ,
+									 });
+
+			return new NoContentResult();
+		}
+
+		public async Task<LineDataDTO> CreateLineAsync(
+				UserInfo        editionUser
+				, uint          textFragmentId
+				, CreateLineDTO lineData
+				, string        clientId = null)
+		{
+			var submittedData = new LineData
+			{
+					LineAuthor = null
+					, LineId = null
+					, LineName = lineData.lineName
+					, Signs = new List<SignData>()
+					,
+			};
+
+			var newLineData = true switch
+							  {
+									  true when lineData.previousLineId.HasValue =>
+											  await _textRepo.AppendLineAsync(
+													  editionUser
+													  , textFragmentId
+													  , submittedData
+													  , lineData.previousLineId.Value)
+									  , true when lineData.subsequentLineId.HasValue =>
+											  await _textRepo.PrependLineAsync(
+													  editionUser
+													  , textFragmentId
+													  , submittedData
+													  , lineData.subsequentLineId.Value)
+									  , _ => await _textRepo.AppendLineAsync(
+											  editionUser
+											  , textFragmentId
+											  , submittedData
+											  , null)
+									  ,
+							  };
+
+			var response = newLineData.ToDTO();
+
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .CreatedLine(response);
+
+			return response;
 		}
 
 		public async Task<TextEditionDTO> GetFragmentByIdAsync(

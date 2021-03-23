@@ -226,10 +226,12 @@ namespace SQE.DatabaseAccess
 				return new List<uint>();
 
 			foreach (var deleteRoiId in deleteRoiIds)
+			{
 				await DeleteSignInterpretationRoiAsync(
 						editionUser
 						, deleteRoiId
 						, signInterpretationId);
+			}
 
 			return deleteRoiIds;
 		}

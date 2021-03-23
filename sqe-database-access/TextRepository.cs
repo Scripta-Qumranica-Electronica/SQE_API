@@ -19,6 +19,7 @@ namespace SQE.DatabaseAccess
 	{
 		#region Line
 
+		// TODO: Check if we can remove this (see PrependLineAsync and AppendLineAsync)
 		Task<LineData> CreateLineAsync(
 				UserInfo   editionUser
 				, LineData lineData
@@ -34,13 +35,17 @@ namespace SQE.DatabaseAccess
 
 		Task<LineData> UpdateLineAsync(UserInfo editionUser, uint lineId, string lineName);
 
-		Task<LineData> PrependLineAsync(UserInfo editionUser, LineData lineData, uint fragmentId);
-
-		Task<LineData> InsertLineAfterAsync(
+		Task<LineData> PrependLineAsync(
 				UserInfo   editionUser
 				, uint     fragmentId
 				, LineData lineData
-				, uint     previouslineId);
+				, uint?    subsequentLineId);
+
+		Task<LineData> AppendLineAsync(
+				UserInfo   editionUser
+				, uint     fragmentId
+				, LineData lineData
+				, uint?    previousLineId);
 
 		#endregion
 
@@ -352,15 +357,101 @@ namespace SQE.DatabaseAccess
 		/// <returns>Id of removed line</returns>
 		public async Task<uint> RemoveLineAsync(UserInfo editionUser, uint lineId)
 		{
-			var signIds = await _getChildrenIds(editionUser, TableData.Table.line, lineId);
+			using (var transactionScope = new TransactionScope())
+			{
+				var signIds = await _getChildrenIds(editionUser, TableData.Table.line, lineId);
 
-			foreach (var signId in signIds)
-				await RemoveSignAsync(editionUser, signId);
+				foreach (var signId in signIds)
+					await RemoveSignAsync(editionUser, signId);
 
-			return await _removeElementAsync(
-					editionUser
-					, TableData.Name(TableData.Table.line)
-					, lineId);
+				using (var conn = OpenConnection())
+				{
+					// Delete line data
+					var lineIdentity = new
+					{
+							EditionId = editionUser.EditionId.Value
+							, LineId = lineId
+							,
+					};
+
+					const string lineDataSQL = @"
+SELECT line_data_id
+FROM line_data
+    JOIN line_data_owner USING(line_data_id)
+WHERE line_data.line_id = @LineId AND line_data_owner.edition_id = @EditionId";
+
+					var lineDataIds = await conn.QueryAsync<uint>(lineDataSQL, lineIdentity);
+
+					foreach (var lineDataId in lineDataIds)
+					{
+						var parameters = new DynamicParameters();
+
+						var removeRequest = new MutationRequest(
+								MutateType.Delete
+								, parameters
+								, "line_data"
+								, lineDataId);
+
+						await _databaseWriter.WriteToDatabaseAsync(
+								editionUser
+								, new List<MutationRequest> { removeRequest });
+					}
+
+					// Delete all line_to_sign_entries
+					const string lineToSignSQL = @"
+SELECT line_to_sign_id
+FROM line_to_sign
+JOIN line_to_sign_owner USING(line_to_sign_id)
+WHERE line_to_sign.line_id = @LineId AND line_to_sign_owner.edition_id = @EditionId";
+
+					var lineToSignIds = await conn.QueryAsync<uint>(lineToSignSQL, lineIdentity);
+
+					foreach (var lineToSignId in lineToSignIds)
+					{
+						var parameters = new DynamicParameters();
+
+						var removeRequest = new MutationRequest(
+								MutateType.Delete
+								, parameters
+								, "line_to_sign"
+								, lineToSignId);
+
+						await _databaseWriter.WriteToDatabaseAsync(
+								editionUser
+								, new List<MutationRequest> { removeRequest });
+					}
+
+					// Delete all text_fragment_to_line entries
+					const string textFragmentToLineSQL = @"
+SELECT text_fragment_to_line_id
+FROM text_fragment_to_line
+JOIN text_fragment_to_line_owner USING(text_fragment_to_line_id)
+WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.edition_id = @EditionId";
+
+					var textFragmentToLineIds = await conn.QueryAsync<uint>(
+							textFragmentToLineSQL
+							, lineIdentity);
+
+					foreach (var textFragmentToLineId in textFragmentToLineIds)
+					{
+						var parameters = new DynamicParameters();
+
+						var removeRequest = new MutationRequest(
+								MutateType.Delete
+								, parameters
+								, "text_fragment_to_line"
+								, textFragmentToLineId);
+
+						await _databaseWriter.WriteToDatabaseAsync(
+								editionUser
+								, new List<MutationRequest> { removeRequest });
+					}
+				}
+
+				transactionScope.Complete();
+
+				return lineId;
+			}
 		}
 
 		public async Task<LineData> UpdateLineAsync(
@@ -378,7 +469,7 @@ namespace SQE.DatabaseAccess
 		}
 
 		/// <summary>
-		///  Inserts new line as firstline into an existing text fragment which must contain
+		///  Inserts new line as first line into an existing text fragment which must contain
 		///  already at least one line
 		/// </summary>
 		/// <param name="editionUser"></param>
@@ -387,97 +478,98 @@ namespace SQE.DatabaseAccess
 		/// <returns></returns>
 		public async Task<LineData> PrependLineAsync(
 				UserInfo   editionUser
+				, uint     fragmentId
 				, LineData lineData
-				, uint     fragmentId)
+				, uint?    subsequentLineId = null)
 		{
-			// Get the terminators of the text fragment
-			var fragmentTerminators = _getTerminators(
-					editionUser
-					, TableData.Table.text_fragment
-					, fragmentId);
-
-			if (fragmentTerminators.IsValid)
-			{
-				// Insert the line before the sign holding the start break of the text fragment
-				var newLine = await CreateLineAsync(
-						editionUser
-						, lineData
-						, fragmentId
-						, 0
-						, fragmentTerminators.StartId);
-
-				// Create a new dummy attribute for a start break of a a text fragment
-				var attr = SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(
-						TableData.Table.text_fragment
-						, TableData.TerminatorType.Start);
-
-				// Add it to the first sign of the new line
-				// since the first sign of a line has by default only one sing inteprretaion
-				// holding all the break attributes we can simply chooose
-				// SignInterpretations[0]
-				var newAttributes =
-						await _attributeRepository.CreateSignInterpretationAttributesAsync(
-								editionUser
-								, newLine.Signs[0].SignInterpretations[0].SignInterpretationId.Value
-								, attr);
-
-				// Add it also to the result
-				newLine.Signs[0].SignInterpretations[0].Attributes.AddRange(newAttributes);
-
-				// remove the break attr for the text fragment from the previous old line
-				//TODO How do we signal this change?
-				await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
-						editionUser
-						, fragmentTerminators.StartId
-						, TableData.StartTerminator(TableData.Table.text_fragment));
-
-				// Try to delete also the scroll start terminator from the old line
-				var hadBeenFirstScrollLine =
-						(await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
-								editionUser
-								, fragmentTerminators.StartId
-								, TableData.StartTerminator(TableData.Table.manuscript))).Count
-						> 0;
-
-				// If the result contains element
-				if (hadBeenFirstScrollLine)
-				{
-					// Create a new dummy attribute for a start break of a scroll
-					attr = SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(
-							TableData.Table.manuscript
-							, TableData.TerminatorType.Start);
-
-					// Add it to the first sign of the new line
-					// since the first sign of a line has by default only one sing inteprretaion
-					// holding all the break attributes we can simply chooose
-					// SignInterpretations[0]
-					newAttributes =
-							await _attributeRepository.CreateSignInterpretationAttributesAsync(
+			var subsequentSignId = (subsequentLineId.HasValue
+							? _getTerminators(
 									editionUser
-									, newLine.Signs[0]
-											 .SignInterpretations[0]
-											 .SignInterpretationId.Value
-									, attr);
+									, TableData.Table.line
+									, subsequentLineId.Value)
+							: _getTerminators(
+									editionUser
+									, TableData.Table.text_fragment
+									, fragmentId))
+					.StartId;
 
-					// Add it also to the result
-					newLine.Signs[0].SignInterpretations[0].Attributes.AddRange(newAttributes);
-				}
+			// Insert the line before the sign holding the start break of the text fragment
+			var newLine = await CreateLineAsync(
+					editionUser
+					, lineData
+					, fragmentId
+					, 0
+					, subsequentSignId);
 
+			// Create a new dummy attribute for a start break of a a text fragment
+			var attr = SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(
+					TableData.Table.text_fragment
+					, TableData.TerminatorType.Start);
+
+			// Add it to the first sign of the new line
+			// since the first sign of a line has by default only one sing intepretation
+			// holding all the break attributes we can simply choose
+			// SignInterpretations[0]
+			var newAttributes = await _attributeRepository.CreateSignInterpretationAttributesAsync(
+					editionUser
+					, newLine.Signs[0].SignInterpretations[0].SignInterpretationId.Value
+					, attr);
+
+			// Add it also to the result
+			newLine.Signs[0].SignInterpretations[0].Attributes.AddRange(newAttributes);
+
+			// remove the break attr for the text fragment from the previous old line
+			//TODO How do we signal this change?
+			await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
+					editionUser
+					, subsequentSignId
+					, TableData.StartTerminator(TableData.Table.text_fragment));
+
+			// Try to delete also the scroll start terminator from the old line
+			var hadBeenFirstScrollLine =
+					(await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
+							editionUser
+							, subsequentSignId
+							, TableData.StartTerminator(TableData.Table.manuscript))).Count
+					> 0;
+
+			// If the result contains element
+			if (!hadBeenFirstScrollLine)
 				return newLine;
-			}
 
-			return null;
+			// Create a new dummy attribute for a start break of a scroll
+			attr = SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(
+					TableData.Table.manuscript
+					, TableData.TerminatorType.Start);
+
+			// Add it to the first sign of the new line
+			// since the first sign of a line has by default only one sing inteprretaion
+			// holding all the break attributes we can simply chooose
+			// SignInterpretations[0]
+			newAttributes = await _attributeRepository.CreateSignInterpretationAttributesAsync(
+					editionUser
+					, newLine.Signs[0].SignInterpretations[0].SignInterpretationId.Value
+					, attr);
+
+			// Add it also to the result
+			newLine.Signs[0].SignInterpretations[0].Attributes.AddRange(newAttributes);
+
+			return newLine;
 		}
 
-		public async Task<LineData> InsertLineAfterAsync(
+		public async Task<LineData> AppendLineAsync(
 				UserInfo   editionUser
 				, uint     fragmentId
 				, LineData lineData
-				, uint     previouslineId)
+				, uint?    previousLineId = null)
 		{
 			// Get the SignInterpretationId of the of the end break of the previous line
-			var anchorBefore =
-					_getTerminators(editionUser, TableData.Table.line, previouslineId).EndId;
+			var anchorBefore = (previousLineId.HasValue
+					? _getTerminators(editionUser, TableData.Table.line, previousLineId.Value)
+					: _getTerminators(
+							editionUser
+							, TableData.Table.text_fragment
+							, fragmentId)).EndId;
 
 			// Try to get the SignInterpretationId of the start break of the next line
 			var anchorsAfter = await _getNextSignInterpretationIds(
@@ -489,7 +581,7 @@ namespace SQE.DatabaseAccess
 					? anchorsAfter.First()
 					: 0;
 
-			// Creat the new line with all signs already given in line data.
+			// Create the new line with all signs already given in line data.
 			var newLine = await CreateLineAsync(
 					editionUser
 					, lineData
@@ -497,70 +589,65 @@ namespace SQE.DatabaseAccess
 					, anchorBefore
 					, anchorAfter);
 
-			// If anchorAfter == 0 then the new line is the new last line of thef fragment.
+			if (anchorAfter != 0)
+				return newLine;
+
+			// Since anchorAfter == 0, the new line is the new last line of the fragment.
 			// In this case we have to move the end break for the text fragment from the
 			// old last line to the new last line
-			if (anchorAfter == 0)
-			{
-				// Create the dummy break attribute
-				var attr = SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(
-						TableData.Table.text_fragment
-						, TableData.TerminatorType.End);
 
-				// Add it to the last sign of the newline
-				// since the last sign of a line has by default only one sing inteprretaion
-				// holding all the break attributes we can simply chooose
-				// SignInterpretations[0]
-				var newAttributes =
-						await _attributeRepository.CreateSignInterpretationAttributesAsync(
-								editionUser
-								, newLine.Signs.Last()
-										 .SignInterpretations[0]
-										 .SignInterpretationId.Value
-								, attr);
+			// Create the dummy break attribute
+			var attr = SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(
+					TableData.Table.text_fragment
+					, TableData.TerminatorType.End);
 
-				// Add the attribute also to the return value.
-				newLine.Signs.Last().SignInterpretations[0].Attributes.AddRange(newAttributes);
+			// Add it to the last sign of the newline
+			// since the last sign of a line has by default only one sing inteprretaion
+			// holding all the break attributes we can simply chooose
+			// SignInterpretations[0]
+			var newAttributes = await _attributeRepository.CreateSignInterpretationAttributesAsync(
+					editionUser
+					, newLine.Signs.Last().SignInterpretations[0].SignInterpretationId.Value
+					, attr);
 
-				// Delete the end break from the old last line
-				//TODO How do we signal this change?
-				await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
-						editionUser
-						, anchorBefore
-						, TableData.EndTerminator(TableData.Table.text_fragment));
+			// Add the attribute also to the return value.
+			newLine.Signs.Last().SignInterpretations[0].Attributes.AddRange(newAttributes);
 
-				// Try to delete also the scroll end terminator from the old line
-				var hadBeenLastScrollLine =
-						(await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
-								editionUser
-								, anchorBefore
-								, TableData.StartTerminator(TableData.Table.manuscript))).Count
-						> 0;
+			// Delete the end break from the old last line
+			//TODO How do we signal this change?
+			await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
+					editionUser
+					, anchorBefore
+					, TableData.EndTerminator(TableData.Table.text_fragment));
 
-				// If the result contains element
-				if (hadBeenLastScrollLine)
-				{
-					// Create a new dummy attribute for a start break of a scroll
-					attr = SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(
-							TableData.Table.manuscript
-							, TableData.TerminatorType.End);
+			// Try to delete also the scroll end terminator from the old line
+			var hadBeenLastScrollLine =
+					(await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
+							editionUser
+							, anchorBefore
+							, TableData.StartTerminator(TableData.Table.manuscript))).Count
+					> 0;
 
-					// Add it to the first sign of the new line
-					// since the first sign of a line has by default only one sing inteprretaion
-					// holding all the break attributes we can simply chooose
-					// SignInterpretations[0]
-					newAttributes =
-							await _attributeRepository.CreateSignInterpretationAttributesAsync(
-									editionUser
-									, newLine.Signs.Last()
-											 .SignInterpretations[0]
-											 .SignInterpretationId.Value
-									, attr);
+			// If the result contains element
+			if (!hadBeenLastScrollLine)
+				return newLine;
 
-					// Add it also to the result
-					newLine.Signs.Last().SignInterpretations[0].Attributes.AddRange(newAttributes);
-				}
-			}
+			// Create a new dummy attribute for a start break of a scroll
+			attr = SignInterpretationAttributeFactory.CreateElementTerminatorAttributes(
+					TableData.Table.manuscript
+					, TableData.TerminatorType.End);
+
+			// Add it to the first sign of the new line
+			// since the first sign of a line has by default only one sing intepretaion
+			// holding all the break attributes we can simply choose
+			// SignInterpretations[0]
+			newAttributes = await _attributeRepository.CreateSignInterpretationAttributesAsync(
+					editionUser
+					, newLine.Signs.Last().SignInterpretations[0].SignInterpretationId.Value
+					, attr);
+
+			// Add it also to the result
+			newLine.Signs.Last().SignInterpretations[0].Attributes.AddRange(newAttributes);
 
 			return newLine;
 		}
@@ -2249,7 +2336,7 @@ namespace SQE.DatabaseAccess
 		{
 			var parameters = new DynamicParameters();
 
-			// Add the line/text fragment ID so the cached text fragment is invalidated
+			// // Add the line/text fragment ID so the cached text fragment is invalidated
 			if (tableName.Contains("line"))
 				parameters.Add("@line_id", elementId);
 			else if (tableName.Contains("fragment"))

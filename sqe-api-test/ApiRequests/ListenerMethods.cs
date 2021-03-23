@@ -40,6 +40,9 @@ namespace SQE.ApiTest.ApiRequests
 		, DeletedSignInterpretation
 		, UpdatedAttribute
 		, CreatedTextFragment
+		, CreatedLine
+		, UpdatedLine
+		, DeletedLine
 		,
 	}
 }

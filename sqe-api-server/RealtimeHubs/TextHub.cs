@@ -243,8 +243,8 @@ namespace SQE.API.Server.RealtimeHubs
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="lineId">Id of the line</param>
 		/// <returns>
-		///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-		///  sequence
+		///  A manuscript edition object including the fragments and their lines in a
+		///  hierarchical order and in correct sequence
 		/// </returns>
 		[AllowAnonymous]
 		public async Task<LineTextDTO> GetV1EditionsEditionIdLinesLineId(
@@ -257,6 +257,112 @@ namespace SQE.API.Server.RealtimeHubs
 				return await _textService.GetLineByIdAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
 						, lineId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
+		///  Changes the details of the line (currently the lines name)
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="lineId">Id of the line</param>
+		/// <param name="lineData">The updated line data</param>
+		/// <returns>
+		///  The updated details concerning the line sequence
+		/// </returns>
+		[Authorize]
+		public async Task<LineDataDTO> PutV1EditionsEditionIdLinesLineId(
+				uint            editionId
+				, uint          lineId
+				, UpdateLineDTO lineData)
+
+		{
+			try
+			{
+				return await _textService.UpdateLineByIdAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, lineId
+						, lineData);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
+		///  Delete a full line from a text fragment
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="lineId">Id of the line to be deleted</param>
+		/// <returns>
+		///  The updated details concerning the line sequence
+		/// </returns>
+		[Authorize]
+		public async Task DeleteV1EditionsEditionIdLinesLineId(uint editionId, uint lineId)
+
+		{
+			try
+			{
+				await _textService.DeleteLineByIdAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, lineId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
+		///  Creates a new line before or after another line.
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="textFragmentId">
+		///  Id of the text fragment where the line will be
+		///  added
+		/// </param>
+		/// <param name="lineData">The information about the line to be created</param>
+		/// <returns>
+		///  The details concerning the newly created line
+		/// </returns>
+		[Authorize]
+		public async Task<LineDataDTO> PostV1EditionsEditionIdTextFragmentsTextFragmentIdLines(
+				uint            editionId
+				, uint          textFragmentId
+				, CreateLineDTO lineData)
+
+		{
+			try
+			{
+				return await _textService.CreateLineAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, textFragmentId
+						, lineData);
 			}
 			catch (ApiException err)
 			{
