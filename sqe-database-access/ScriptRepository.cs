@@ -392,12 +392,16 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 		/// <returns></returns>
 		public async Task<uint> CreateNewScribalFontId(UserInfo user)
 		{
+			using (var transaction = new TransactionScope())
 			using (var conn = OpenConnection())
 			{
 				const string sql = "INSERT INTO scribal_font (scribal_font_id) VALUES(null)";
 				await conn.ExecuteAsync(sql);
 
-				return await conn.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
+				var newId = await conn.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
+				transaction.Complete();
+
+				return newId;
 			}
 		}
 

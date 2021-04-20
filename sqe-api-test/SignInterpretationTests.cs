@@ -1447,7 +1447,7 @@ namespace SQE.ApiTest
 							,
 					});
 
-			request2.SendAsync(_client, null, true);
+			_ = request2.SendAsync(_client, null, true);
 
 			var request3 = new Post.V1_MaterializeSignStreams(
 					new RequestMaterializationDTO { editionIds = new uint[0] });

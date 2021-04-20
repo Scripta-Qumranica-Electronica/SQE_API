@@ -216,8 +216,8 @@ namespace SQE.API.Server.Services
 																												.id
 																										== imagedObjectId);
 
-			_hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-					   .CreatedImagedObject(newImagedObject);
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .CreatedImagedObject(newImagedObject);
 
 			return newImagedObject;
 		}
@@ -230,9 +230,11 @@ namespace SQE.API.Server.Services
 			await _repo.DeleteEditionImagedObjectsAsync(editionUser, imagedObjectId);
 
 			// Report the change to edition editors
-			_hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-					   .DeletedImagedObject(
-							   new DeleteStringIdDTO(EditionEntities.imagedObject, imagedObjectId));
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .DeletedImagedObject(
+									 new DeleteStringIdDTO(
+											 EditionEntities.imagedObject
+											 , imagedObjectId));
 
 			return new NoContentResult();
 		}
