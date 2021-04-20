@@ -337,8 +337,8 @@ namespace SQE.DatabaseAccess
 				UserInfo                          editionUser
 				, List<SignInterpretationRoiData> rois)
 		{
-			foreach (var signInterpretationId in rois.Select(r => r.SignInterpretationId).Distinct()
-			)
+			foreach (var signInterpretationId in
+					rois.Select(r => r.SignInterpretationId).Distinct())
 			{
 				await DeleteAllRoisForSignInterpretationAsync(
 						editionUser

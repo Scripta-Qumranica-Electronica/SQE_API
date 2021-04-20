@@ -40,17 +40,17 @@ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 			contributors ??= formattedEditors;
 
 			return $@"© {
-						copyrightHolder
-					} 
+				copyrightHolder
+			} 
 
 Provided by {
-						AddAndToLastComma(contributors)
-					} on the basis of a text provided by the Qumran-Wörterbuch of the Göttingen Academy of Sciences, 
+	AddAndToLastComma(contributors)
+} on the basis of a text provided by the Qumran-Wörterbuch of the Göttingen Academy of Sciences, 
 which is based upon a preliminary text provided by Martin Abegg.
 
 {
-						licenceText
-					}";
+	licenceText
+}";
 		}
 
 		/// <summary>

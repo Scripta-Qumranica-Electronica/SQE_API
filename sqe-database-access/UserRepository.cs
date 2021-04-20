@@ -370,8 +370,8 @@ namespace SQE.DatabaseAccess
 				{
 					foreach (var record in existingUser)
 					{
-						if (record.Activated
-						) // If this user record has been authenticated throw a conflict error
+						if (record
+								.Activated) // If this user record has been authenticated throw a conflict error
 							throw new StandardExceptions.ConflictingDataException("email");
 
 						await connection.ExecuteAsync(

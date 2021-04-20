@@ -288,15 +288,12 @@ namespace SQE.DatabaseAccess
 																				 x => new
 																						 SignInterpretationAttributeValueInput
 																						 {
-																								 AttributeStringValue
-																										 = x
-																												 .AttributeStringValue
-																								 , AttributeStringValueDescription
-																										 = x
-																												 .AttributeStringValueDescription
-																								 , Css
-																										 = x
-																												 .Css
+																								 AttributeStringValue =
+																										 x.AttributeStringValue
+																								 , AttributeStringValueDescription =
+																										 x.AttributeStringValueDescription
+																								 , Css =
+																										 x.Css
 																								 ,
 																						 }));
 				}

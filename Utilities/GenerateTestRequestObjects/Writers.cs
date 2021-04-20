@@ -25,8 +25,8 @@ namespace GenerateTestRequestObjects
 				await outputFile.WriteLineAsync(
 						@$"
             public static partial class {
-									httpVerb.ToString().ToLower().ToPascalCase()
-								}
+				httpVerb.ToString().ToLower().ToPascalCase()
+			}
             {{
         ");
 
@@ -48,11 +48,11 @@ namespace GenerateTestRequestObjects
 							: $@"public class Listeners
             {{
                 {
-										string.Join(
-												"\n"
-												, endpoint.listeners.Select(
-														x => $"public ListenerMethods {x.ParamName} = ListenerMethods.{x.ParamName};"))
-									}
+					string.Join(
+							"\n"
+							, endpoint.listeners.Select(
+									x => $"public ListenerMethods {x.ParamName} = ListenerMethods.{x.ParamName};"))
+				}
             }};
             public Listeners AvailableListeners {{ get; }}";
 
@@ -60,11 +60,11 @@ namespace GenerateTestRequestObjects
 							? ""
 							: $@"AvailableListeners = new Listeners();
                 {
-										string.Join(
-												"\n"
-												, endpoint.listeners.Select(
-														x => $"_listenerDict.Add(ListenerMethods.{x.ParamName}, ({x.ParamName}IsNull, {x.ParamName}Listener));"))
-									}";
+					string.Join(
+							"\n"
+							, endpoint.listeners.Select(
+									x => $"_listenerDict.Add(ListenerMethods.{x.ParamName}, ({x.ParamName}IsNull, {x.ParamName}Listener));"))
+				}";
 
 					var listenerMethods = endpoint.listeners.Count == 0
 							? ""
@@ -72,24 +72,24 @@ namespace GenerateTestRequestObjects
 									"\n"
 									, endpoint.listeners.Select(
 											x => $@"public {
-														x.ParamType
-													} {
-														x.ParamName
-													} {{ get; private set; }}
+												x.ParamType
+											} {
+												x.ParamName
+											} {{ get; private set; }}
             private void {
-														x.ParamName
-													}Listener(HubConnection signalrListener) => signalrListener.On<{
-														x.ParamType
-													}>(""{
-														x.ParamName
-													}"", receivedData => {
-														x.ParamName
-													} = receivedData);
+				x.ParamName
+			}Listener(HubConnection signalrListener) => signalrListener.On<{
+				x.ParamType
+			}>(""{
+				x.ParamName
+			}"", receivedData => {
+				x.ParamName
+			} = receivedData);
         private bool {
-														x.ParamName
-													}IsNull() => {
-														x.ParamName
-													} == null;"));
+			x.ParamName
+		}IsNull() => {
+			x.ParamName
+		} == null;"));
 
 					var methodName = endpoint.HttpString.Replace("\"", "")
 											 .ToPascalCase()
@@ -118,109 +118,109 @@ namespace GenerateTestRequestObjects
 
 						optionals += $@"
                             + (_{
-									qp.ParamName.ToCamelCase()
-								} != null ? $""{
-									(firstQp
-											? "?"
-											: "&")
-								}{
-									(qp.ParamType.Contains("List<")
-									 || qp.ParamType.Contains("Enumerable<")
-									 || qp.ParamType.Contains("[")
-											? $"{qp.ParamName}={{string.Join(\"&optional=\", _{qp.ParamName.ToCamelCase()})}}\""
-											: $"{qp.ParamName}={{_{qp.ParamName.ToCamelCase()}}}\"")
-								} : """")";
+								qp.ParamName.ToCamelCase()
+							} != null ? $""{
+								(firstQp
+										? "?"
+										: "&")
+							}{
+								(qp.ParamType.Contains("List<")
+								 || qp.ParamType.Contains("Enumerable<")
+								 || qp.ParamType.Contains("[")
+										? $"{qp.ParamName}={{string.Join(\"&optional=\", _{qp.ParamName.ToCamelCase()})}}\""
+										: $"{qp.ParamName}={{_{qp.ParamName.ToCamelCase()}}}\"")
+							} : """")";
 					}
 
 					await outputFile.WriteLineAsync(
 							$@"
                 public class {
-										methodName
-									}
+					methodName
+				}
                 : RequestObject<{
-										endpointInputType
-									}, {
-										endpointOutputType
-									}>
+					endpointInputType
+				}, {
+					endpointOutputType
+				}>
                 {{
                     {
-										string.Join(
-												"\n"
-												, constructorParams.Select(
-														x => $"private readonly {x.ParamType} _{x.ParamName.ToCamelCase()};"))
-									}
+						string.Join(
+								"\n"
+								, constructorParams.Select(
+										x => $"private readonly {x.ParamType} _{x.ParamName.ToCamelCase()};"))
+					}
 
                     {
-										listenersClass
-									}
+						listenersClass
+					}
 
                     {
-										endpoint.comments
-									}
+						endpoint.comments
+					}
                     public {
-										methodName
-									}({
-										string.Join(
-												", "
-												, constructorParams.Select(
-														x => $"{x.ParamType} {x.ParamName}{(endpoint.queryParams.Contains(x) ? " = null" : "")}"))
-									})
+						methodName
+					}({
+						string.Join(
+								", "
+								, constructorParams.Select(
+										x => $"{x.ParamType} {x.ParamName}{(endpoint.queryParams.Contains(x) ? " = null" : "")}"))
+					})
                         {
-										(constructorParams.Any(x => x.ParamName == "payload")
-												? ": base(payload)"
-												: "")
-									}
+							(constructorParams.Any(x => x.ParamName == "payload")
+									? ": base(payload)"
+									: "")
+						}
                     {{
                         {
-										string.Join(
-												"\n"
-												, constructorParams.Select(
-														x => $"_{x.ParamName.ToCamelCase()} = {x.ParamName};"))
-									}
+							string.Join(
+									"\n"
+									, constructorParams.Select(
+											x => $"_{x.ParamName.ToCamelCase()} = {x.ParamName};"))
+						}
                         {
-										listenersInstantiation
-									}
+							listenersInstantiation
+						}
                     }}
 
                     {
-										listenerMethods
-									}
+						listenerMethods
+					}
 
                     protected override string HttpPath()
                     {{
                         return RequestPath{
-										string.Join(
-												""
-												, endpoint.routeParams.Select(
-														x => $".Replace(\"/{x.ParamName.ToKebabCase()}\", $\"/{{HttpUtility.UrlEncode(_{x.ParamName.ToCamelCase()}.ToString())}}\")"))
-									}{
-										optionals
-									};
+							string.Join(
+									""
+									, endpoint.routeParams.Select(
+											x => $".Replace(\"/{x.ParamName.ToKebabCase()}\", $\"/{{HttpUtility.UrlEncode(_{x.ParamName.ToCamelCase()}.ToString())}}\")"))
+						}{
+							optionals
+						};
                     }}
 
                     public override Func<HubConnection, Task<T>> SignalrRequest<T>()
                     {{
                         return signalR => signalR.InvokeAsync<T>(SignalrRequestString(){
-										(constructorParams.Count() > 0
-												? ", "
-												: "")
-									}{
-										string.Join(
-												", "
-												, constructorParams.Select(
-														x => $"_{x.ParamName.ToCamelCase()}"))
-									});
+							(constructorParams.Count() > 0
+									? ", "
+									: "")
+						}{
+							string.Join(
+									", "
+									, constructorParams.Select(
+											x => $"_{x.ParamName.ToCamelCase()}"))
+						});
                     }}
 
                     {
-										(endpoint.routeParams.Any(
-												x => x.ParamName.ToLowerInvariant() == "editionid")
-												? @"public override uint? GetEditionId()
+						(endpoint.routeParams.Any(
+								x => x.ParamName.ToLowerInvariant() == "editionid")
+								? @"public override uint? GetEditionId()
                     {{
                         return _editionId;
                     }}"
-												: "")
-									}
+								: "")
+					}
                 }}");
 				}
 
@@ -240,12 +240,10 @@ namespace GenerateTestRequestObjects
     public enum ListenerMethods
     {{
         {
-								string.Join(
-										"\n\t\t\t"
-										, listeners.Select(x => x.ParamName)
-												   .Distinct()
-												   .Select(x => $"{x},"))
-							}
+			string.Join(
+					"\n\t\t\t"
+					, listeners.Select(x => x.ParamName).Distinct().Select(x => $"{x},"))
+		}
     }}
 }} ");
 		}

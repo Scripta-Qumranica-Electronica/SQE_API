@@ -178,19 +178,15 @@ namespace SQE.API.Server.Services
 																		 => new
 																				 UpdatedArtefactPlacementDTO
 																				 {
-																						 artefactId
-																								 = x
-																										 .id
-																						 , placementEditorId
-																								 =
+																						 artefactId =
+																								 x.id
+																						 , placementEditorId =
 																								 x.artefactPlacementEditorId
 																								 ?? 0
-																						 , isPlaced
-																								 = x
-																										 .isPlaced
-																						 , placement
-																								 = x
-																										 .placement
+																						 , isPlaced =
+																								 x.isPlaced
+																						 , placement =
+																								 x.placement
 																						 ,
 																				 })
 														 .ToList()

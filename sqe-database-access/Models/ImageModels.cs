@@ -12,7 +12,10 @@
 		public string   Side                    { get; set; }
 		public string   RegionInMaster          { set; get; }
 		public string   RegionOfMaster          { set; get; }
-		public string   TransformMatrix         { set; get; }
+		public decimal  Scale                   { set; get; }
+		public decimal  Rotate                  { set; get; }
+		public int      TranslateX              { set; get; }
+		public int      TranslateY              { set; get; }
 		public uint     ImageCatalogId          { set; get; }
 		public string   Institution             { set; get; }
 		public string   Catalog1                { set; get; }

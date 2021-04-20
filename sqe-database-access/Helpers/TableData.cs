@@ -233,44 +233,44 @@ namespace SQE.DatabaseAccess.Helpers
 			{
 				query += $@"
                                 JOIN {
-							ConnectingTableToChild(index)
-						} USING ({
-							TableId(index + 1)
-						})
+									ConnectingTableToChild(index)
+								} USING ({
+									TableId(index + 1)
+								})
                         ";
 
 				if (addDataTables && HasData(index))
 				{
 					query += $@"
                                 JOIN {
-								DataTableName(index)
-							} USING ({
-								TableId(index)
-							})
+									DataTableName(index)
+								} USING ({
+									TableId(index)
+								})
                                 JOIN {
-								DataTableName(index)
-							}_owner ON
+									DataTableName(index)
+								}_owner ON
                                             {
-								DataTableName(index)
-							}.{
-								DataTableName(index)
-							}_id
+												DataTableName(index)
+											}.{
+												DataTableName(index)
+											}_id
                                                    = {
-								DataTableName(index)
-							}_owner.{
-								DataTableName(index)
-							}_id
+													   DataTableName(index)
+												   }_owner.{
+													   DataTableName(index)
+												   }_id
                                         AND {
-								DataTableName(index)
-							}_owner.edition_id=edition_editor.edition_id
+											DataTableName(index)
+										}_owner.edition_id=edition_editor.edition_id
                          ";
 				}
 			}
 
 			query += $@"
                             WHERE {
-						TableId(table)
-					} = @ElementId
+								TableId(table)
+							} = @ElementId
                             AND ((edition_editor.user_id = @UserId AND edition_editor.may_read=1)
                         ";
 
@@ -286,27 +286,27 @@ namespace SQE.DatabaseAccess.Helpers
 			var child = Child(table);
 
 			return $@"SELECT {
-						child
-					}_id
+				child
+			}_id
             FROM {
-						ConnectingTableToChild(table)
-					}
+				ConnectingTableToChild(table)
+			}
             JOIN {
-						Name(table)
-					}_data USING ({
-						Name(table)
-					}_id)
+				Name(table)
+			}_data USING ({
+				Name(table)
+			}_id)
             JOIN {
-						Name(table)
-					}_data_owner USING ({
-						Name(table)
-					}_data_id)
+				Name(table)
+			}_data_owner USING ({
+				Name(table)
+			}_data_id)
             WHERE {
-						Name(table)
-					}_id = @ElementId
+				Name(table)
+			}_id = @ElementId
             AND {
-						DataTableName(table)
-					}_owner.edition_id = @EditionId";
+				DataTableName(table)
+			}_owner.edition_id = @EditionId";
 		}
 
 		public static string GetDataIdQuery(Table table)
@@ -314,24 +314,24 @@ namespace SQE.DatabaseAccess.Helpers
 			var dataTable = DataTableName(table);
 
 			return $@"SELECT {
-						dataTable
-					}_id
+				dataTable
+			}_id
                     FROM {
 						dataTable
 					}
             JOIN {
-						dataTable
-					}_owner USING ({
-						dataTable
-					}_id)
+				dataTable
+			}_owner USING ({
+				dataTable
+			}_id)
         WHERE {
-						dataTable
-					}.{
-						Name(table)
-					}_id = @ElementId
+			dataTable
+		}.{
+			Name(table)
+		}_id = @ElementId
         AND {
-						dataTable
-					}_owner.edition_id= @EditionId;";
+			dataTable
+		}_owner.edition_id= @EditionId;";
 		}
 
 		/// <summary>

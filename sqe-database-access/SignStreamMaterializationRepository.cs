@@ -279,11 +279,8 @@ namespace SQE.DatabaseAccess
 								$@"
 INSERT IGNORE INTO materialized_sign_stream_indices (materialized_sign_stream_id, `index`, sign_interpretation_id)
 VALUES {
-											string.Join(
-													",\n"
-													, sequence.Select(
-															x => $"({materializedId},{x.Index},{x.Id})"))
-										}
+	string.Join(",\n", sequence.Select(x => $"({materializedId},{x.Index},{x.Id})"))
+}
 ");
 					}
 				}
@@ -382,8 +379,10 @@ VALUES {
 									  {
 											  Attributes =
 													  new HashSet<
-																	  BasicSignInterpretationAttribute
-															  > { attribute }
+																	  BasicSignInterpretationAttribute>
+															  {
+																	  attribute,
+															  }
 											  , Character = sign.Character
 											  , IsVariant = sign.IsVariant
 											  , NextSignInterpretationId =

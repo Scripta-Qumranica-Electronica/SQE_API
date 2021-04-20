@@ -35,8 +35,8 @@ namespace SQE.API.Server.Services
 				$@"{_qwbHttpAPIAddress}/bibliography.xml\?bibId=";
 
 		private readonly string _qwbWordParallelsAddress = $@"{
-					_qwbHttpAPIAddress
-				}/parallels.xml\?startWordId=$StartWordId&endWordId=$EndWordId";
+			_qwbHttpAPIAddress
+		}/parallels.xml\?startWordId=$StartWordId&endWordId=$EndWordId";
 
 		private readonly string _qwbWordVariantsAddress =
 				$@"{_qwbHttpAPIAddress}/variants.xml\?wortId=";

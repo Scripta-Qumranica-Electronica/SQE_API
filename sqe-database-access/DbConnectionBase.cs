@@ -81,13 +81,13 @@ namespace SQE.DatabaseAccess
 		};
 
 		private static readonly AsyncPolicy _retryPolicyAsync = Policy
-																.Handle<MySqlException
-																		>(
-																				exception
-																						=> _retrySqlExceptions
-																								.Contains(
-																										exception
-																												.Code))
+																.Handle<
+																		MySqlException>(
+																		exception
+																				=> _retrySqlExceptions
+																						.Contains(
+																								exception
+																										.Code))
 																.WaitAndRetryAsync(
 																		RetryCount
 																		, attempt
@@ -101,8 +101,7 @@ namespace SQE.DatabaseAccess
 																				  , _) =>
 																		  {
 																			  Log.ForContext<
-																								 DbConnectionBase
-																						 >()
+																						 DbConnectionBase>()
 																				 .Warning(
 																						 "Exception encountered, retry {retryCount} in {delay} seconds. {@exception}"
 																						 , retryCount
@@ -111,13 +110,10 @@ namespace SQE.DatabaseAccess
 																		  });
 
 		private static readonly Policy _retryPolicy = Policy
-													  .Handle<MySqlException
-															  >(
-																	  exception
-																			  => _retrySqlExceptions
-																					  .Contains(
-																							  exception
-																									  .Code))
+													  .Handle<
+															  MySqlException>(
+															  exception => _retrySqlExceptions
+																	  .Contains(exception.Code))
 													  .WaitAndRetry(
 															  RetryCount
 															  , attempt
@@ -130,8 +126,8 @@ namespace SQE.DatabaseAccess
 																		, retryCount
 																		, _) =>
 																{
-																	Log.ForContext<DbConnectionBase
-																			   >()
+																	Log.ForContext<
+																			   DbConnectionBase>()
 																	   .Warning(
 																			   "Exception encountered, retry {retryCount} in {delay} seconds. {@exception}"
 																			   , retryCount
@@ -181,11 +177,10 @@ namespace SQE.DatabaseAccess
 		public DatabaseCommunicationCircuitBreakPolicy()
 		{
 			_circuitBreakerRetryPolicyAsync = Policy
-											  .Handle<MySqlException
-													  >(
-															  exception
-																	  => _pauseExceptions.Contains(
-																			  exception.Code))
+											  .Handle<
+													  MySqlException>(
+													  exception => _pauseExceptions.Contains(
+															  exception.Code))
 											  .WaitAndRetryAsync(
 													  RetryCount
 													  , attempt => TimeSpan.FromMilliseconds(
@@ -205,10 +200,10 @@ namespace SQE.DatabaseAccess
 														});
 
 			_circuitBreakerRetryPolicy = Policy
-										 .Handle<MySqlException
-												 >(
-														 exception => _pauseExceptions.Contains(
-																 exception.Code))
+										 .Handle<
+												 MySqlException>(
+												 exception => _pauseExceptions.Contains(
+														 exception.Code))
 										 .WaitAndRetry(
 												 RetryCount
 												 , attempt => TimeSpan.FromMilliseconds(

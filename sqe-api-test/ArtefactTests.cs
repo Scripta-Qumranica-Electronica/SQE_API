@@ -132,13 +132,11 @@ namespace SQE.ApiTest
 																								 => new
 																										 UpdateArtefactPlacementDTO
 																										 {
-																												 artefactId
-																														 = x
-																																 .id
-																												 , isPlaced
-																														 = true
-																												 , placement
-																														 =
+																												 artefactId =
+																														 x.id
+																												 , isPlaced =
+																														 true
+																												 , placement =
 																														 placement
 																												 ,
 																										 })
@@ -184,13 +182,11 @@ namespace SQE.ApiTest
 																								 => new
 																										 UpdateArtefactPlacementDTO
 																										 {
-																												 artefactId
-																														 = x
-																																 .id
-																												 , isPlaced
-																														 = false
-																												 , placement
-																														 =
+																												 artefactId =
+																														 x.id
+																												 , isPlaced =
+																														 false
+																												 , placement =
 																														 placement
 																												 ,
 																										 })
@@ -226,13 +222,12 @@ namespace SQE.ApiTest
 																								 => new
 																										 UpdateArtefactPlacementDTO
 																										 {
-																												 artefactId
-																														 = x
-																																 .id
-																												 , isPlaced
-																														 = false
-																												 , placement
-																														 = null
+																												 artefactId =
+																														 x.id
+																												 , isPlaced =
+																														 false
+																												 , placement =
+																														 null
 																												 ,
 																										 })
 																				 .ToList()

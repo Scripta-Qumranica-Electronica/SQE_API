@@ -28,33 +28,33 @@ namespace SQE.API.Server.RealtimeHubs
 		private readonly IWordService               _wordService;
 
 		public MainHub(
-				IRoiService                  roiService
+				IArtefactService             artefactService
+				, IRoiService                roiService
 				, IUserService               userService
+				, ICatalogService            catalogueService
 				, IEditionService            editionService
-				, ITextService               textService
-				, IArtefactService           artefactService
-				, ISignInterpretationService signInterpretationService
 				, IImagedObjectService       imagedObjectService
 				, IImageService              imageService
+				, IWordService               wordService
 				, IScriptService             scriptService
-				, ICatalogService            catalogueService
-				, IUtilService               utilService
 				, ISearchService             searchService
-				, IWordService               wordService)
+				, ISignInterpretationService signInterpretationService
+				, ITextService               textService
+				, IUtilService               utilService)
 		{
+			_artefactService = artefactService;
 			_roiService = roiService;
 			_userService = userService;
+			_catalogueService = catalogueService;
 			_editionService = editionService;
-			_textService = textService;
-			_artefactService = artefactService;
-			_signInterpretationService = signInterpretationService;
 			_imagedObjectService = imagedObjectService;
 			_imageService = imageService;
-			_scriptService = scriptService;
-			_catalogueService = catalogueService;
-			_utilService = utilService;
-			_searchService = searchService;
 			_wordService = wordService;
+			_scriptService = scriptService;
+			_searchService = searchService;
+			_signInterpretationService = signInterpretationService;
+			_textService = textService;
+			_utilService = utilService;
 		}
 	}
 }

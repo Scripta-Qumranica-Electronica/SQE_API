@@ -582,36 +582,36 @@ namespace SQE.DatabaseAccess.Helpers
 		{
 			var queryForConnection = $@"
                 SELECT COUNT({
-						_tableName
-					}_id)
+					_tableName
+				}_id)
                 FROM {
-						_tableName
-					}
+					_tableName
+				}
                     JOIN {
 						_tableName
 					}_owner USING ({
 						_tableName
 					}_id)
                 WHERE {
-						_itemName
-					}=@ItemId
+					_itemName
+				}=@ItemId
                     AND edition_id=@EditionId
                     AND (
                         SELECT 1
                         FROM {
-						_tableName
-					}
+							_tableName
+						}
                             JOIN {
-						_tableName
-					}_owner USING ({
-						_tableName
-					}_id)
+								_tableName
+							}_owner USING ({
+								_tableName
+							}_id)
                         WHERE {
-						_itemName
-					}=@ItemId
+							_itemName
+						}=@ItemId
                             AND {
-						_nextName
-					}=@NextItemId
+								_nextName
+							}=@NextItemId
                             AND edition_id=@EditionId
                          ) = 1";
 
@@ -635,25 +635,25 @@ namespace SQE.DatabaseAccess.Helpers
 		{
 			var queryForConnection = $@"
                 SELECT {
-						_itemName
-					} AS ItemId,
+					_itemName
+				} AS ItemId,
                        {
-						_nextName
-					} AS NextItemId,
+						   _nextName
+					   } AS NextItemId,
                        {
-						_tableName
-					}_id AS PositionInStreamId
+						   _tableName
+					   }_id AS PositionInStreamId
                 FROM {
-						_tableName
-					}
+					_tableName
+				}
                     JOIN {
 						_tableName
 					}_owner USING ({
 						_tableName
 					}_id)
                 WHERE {
-						_itemName
-					} in @ItemIds
+					_itemName
+				} in @ItemIds
                     AND {
 						_nextName
 					} in @NextItemIds
@@ -701,25 +701,25 @@ namespace SQE.DatabaseAccess.Helpers
 		{
 			var queryForConnection = $@"
                 SELECT {
-						_itemName
-					} AS ItemId,
+					_itemName
+				} AS ItemId,
                        {
-						_nextName
-					} AS NextItemId,
+						   _nextName
+					   } AS NextItemId,
                        {
-						_tableName
-					}_id AS PositionInStreamId
+						   _tableName
+					   }_id AS PositionInStreamId
                 FROM {
-						_tableName
-					}
+					_tableName
+				}
                     JOIN {
 						_tableName
 					}_owner USING ({
 						_tableName
 					}_id)
                 WHERE {
-						_itemName
-					} in @ItemIds
+					_itemName
+				} in @ItemIds
                     AND edition_id=@EditionId";
 
 			var parameters = new DynamicParameters();
@@ -746,25 +746,25 @@ namespace SQE.DatabaseAccess.Helpers
 		{
 			var queryForConnection = $@"
                 SELECT {
-						_itemName
-					} AS ItemId,
+					_itemName
+				} AS ItemId,
                        {
-						_nextName
-					} AS NextItemId,
+						   _nextName
+					   } AS NextItemId,
                        {
-						_tableName
-					}_id AS PositionInStreamId
+						   _tableName
+					   }_id AS PositionInStreamId
                 FROM {
-						_tableName
-					}
+					_tableName
+				}
                     JOIN {
 						_tableName
 					}_owner USING ({
 						_tableName
 					}_id)
                 WHERE {
-						_nextName
-					} in @NextItemIds
+					_nextName
+				} in @NextItemIds
                     AND edition_id=@EditionId";
 
 			var parameters = new DynamicParameters();
@@ -812,19 +812,19 @@ namespace SQE.DatabaseAccess.Helpers
 		{
 			var queryForConnection = $@"
                 SELECT {
-						_itemName
-					}
+					_itemName
+				}
                 FROM {
-						_tableName
-					}
+					_tableName
+				}
                     JOIN {
 						_tableName
 					}_owner USING ({
 						_tableName
 					}_id)
                 WHERE  {
-						_nextName
-					} = @ItemId
+					_nextName
+				} = @ItemId
                     AND edition_id=@EditionId";
 
 			var parameters = new DynamicParameters();
@@ -846,19 +846,19 @@ namespace SQE.DatabaseAccess.Helpers
 		{
 			var queryForConnection = $@"
                 SELECT {
-						_nextName
-					}
+					_nextName
+				}
                 FROM {
-						_tableName
-					}
+					_tableName
+				}
                     JOIN {
 						_tableName
 					}_owner USING ({
 						_tableName
 					}_id)
                 WHERE  {
-						_itemName
-					} = @ItemId
+					_itemName
+				} = @ItemId
                     AND edition_id=@EditionId";
 
 			var parameters = new DynamicParameters();

@@ -178,10 +178,10 @@ namespace SQE.API.Server.Services
 
 			var updatedScriptKern = scriptKern.scripts.First(x => x.scribalFontId == scribalFontId)
 											  .kerningPairs.First(
-													  x => (x.firstCharacter
-															== kernPair.firstCharacter)
-														   && (x.secondCharacter
-															   == kernPair.secondCharacter));
+													  x => x.firstCharacter
+														   == kernPair.firstCharacter
+														   && x.secondCharacter
+														   == kernPair.secondCharacter);
 
 			// Broadcast update as well
 			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)

@@ -402,8 +402,9 @@ namespace SQE.DatabaseAccess.Helpers
 
 			uint insertId;
 
-			if (alteredRecords == 0
-			) // Nothing was inserted because the exact record already existed.
+			if (
+					alteredRecords
+					== 0) // Nothing was inserted because the exact record already existed.
 			{
 				// Get id of new record (or the record matching the unique constraints of this request).
 				query = OwnedTableIdQuery.GetQuery();
@@ -482,8 +483,8 @@ namespace SQE.DatabaseAccess.Helpers
 				var r = connection.Query<uint>(
 						$@"
 select position_in_stream_id from position_in_stream_owner where position_in_stream_id={
-									insertId
-								};");
+	insertId
+};");
 			}
 		}
 

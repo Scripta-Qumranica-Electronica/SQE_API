@@ -51,9 +51,24 @@ namespace SQE.API.Server.Services
 						? SideDesignation.recto
 						: SideDesignation.verso
 				, imageManifest = model.ImageManifest
-				, transformToMaster = model.TransformMatrix
 				, catalogNumber = model.ImageCatalogId
 				, master = model.Master
+
+				// There is no placement info for a master image, it maps to itself 1:1
+				, placement = model.Master
+						? null
+						: new PlacementDTO
+						{
+								scale = model.Scale
+								, rotate = model.Rotate
+								, translate = new TranslateDTO
+								{
+										x = model.TranslateX
+										, y = model.TranslateY
+										,
+								}
+								,
+						}
 				,
 		};
 

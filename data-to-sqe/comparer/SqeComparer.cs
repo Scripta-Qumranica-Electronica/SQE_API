@@ -146,7 +146,7 @@ namespace comparer
 				}
 			}
 
-			changeIds.RemoveAll(i => (i.SourceId == null) && (i.SqeId == null));
+			changeIds.RemoveAll(i => i.SourceId == null && i.SqeId == null);
 		}
 
 		private static void _secondOptimization(
@@ -160,14 +160,14 @@ namespace comparer
 			{
 				runs = false;
 
-				for (var i = 0; i < (changeIds.Count - 1); i++)
+				for (var i = 0; i < changeIds.Count - 1; i++)
 				{
 					var data = changeIds[i];
 					var nextData = changeIds[i + 1];
 
-					if ((data.SqeId == null)
-						&& (nextData.SqeId != null)
-						&& (data.SourceId != null))
+					if (data.SqeId == null
+						&& nextData.SqeId != null
+						&& data.SourceId != null)
 					{
 						var sourceSign = sourceLine.GetSignInterpretationById(data.SourceId.Value)
 												   .Character;
@@ -182,9 +182,9 @@ namespace comparer
 							runs = true;
 						}
 					}
-					else if ((data.SourceId == null)
-							 && (nextData.SourceId != null)
-							 && (data.SqeId != null))
+					else if (data.SourceId == null
+							 && nextData.SourceId != null
+							 && data.SqeId != null)
 					{
 						var sourceSign = sourceLine
 										 .GetSignInterpretationById(nextData.SourceId.Value)
@@ -221,10 +221,10 @@ namespace comparer
 
 				// Add as correlating the next ids until we reach a position marked in the diffBlock.
 				//Or the end of one of the lists
-				while ((sqeListPosition < deleteStartSource)
-					   && (sourceListPosition < insertStartSqe)
-					   && (sourceListPosition < sourceSequence.NumberOfInterpretations())
-					   && (sqeListPosition < sqeSequence.NumberOfInterpretations()))
+				while (sqeListPosition < deleteStartSource
+					   && sourceListPosition < insertStartSqe
+					   && sourceListPosition < sourceSequence.NumberOfInterpretations()
+					   && sqeListPosition < sqeSequence.NumberOfInterpretations())
 				{
 					_changeIds.Add(
 							new ChangeIds
@@ -241,8 +241,8 @@ namespace comparer
 
 				// Source contains a block where  the sign is different and/or signs from
 				// source must be inserted
-				while ((deleteCountSource > 0)
-					   && (insertCountSqe > 0))
+				while (deleteCountSource > 0
+					   && insertCountSqe > 0)
 				{
 					_changeIds.Add(
 							new ChangeIds
@@ -289,8 +289,8 @@ namespace comparer
 				}
 			}
 
-			while ((sourceListPosition < sourceSequence.NumberOfInterpretations())
-				   && (sqeListPosition < sqeSequence.NumberOfInterpretations()))
+			while (sourceListPosition < sourceSequence.NumberOfInterpretations()
+				   && sqeListPosition < sqeSequence.NumberOfInterpretations())
 			{
 				_changeIds.Add(
 						new ChangeIds

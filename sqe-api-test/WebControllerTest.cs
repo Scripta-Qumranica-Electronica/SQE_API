@@ -55,10 +55,10 @@ namespace SQE.ApiTest
 																  "ws://localhost/signalr"
 																  , o =>
 																	{
-																		o.HttpMessageHandlerFactory
-																				= _ => _factory
-																					   .Server
-																					   .CreateHandler();
+																		o
+																				.HttpMessageHandlerFactory =
+																		_ => _factory.Server
+																					 .CreateHandler();
 
 																		if (!string.IsNullOrEmpty(
 																				token))

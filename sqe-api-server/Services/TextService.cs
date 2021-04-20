@@ -422,236 +422,204 @@ namespace SQE.API.Server.Services
 																											 => new
 																													 SignDTO
 																													 {
-																															 signInterpretations
-																																	 = z
-																																	   .SignInterpretations
-																																	   .Select(
-																																			   a
-																																					   => new
-																																							   SignInterpretationDTO
-																																							   {
-																																									   signId
-																																											   =
-																																											   a.SignId
-																																											   ?? 0
-																																									   , signInterpretationId
-																																											   =
-																																											   a
-																																													   .SignInterpretationId
-																																													   .GetValueOrDefault()
-																																									   , character
-																																											   = a
-																																													   .Character
-																																									   , isVariant
-																																											   = a
-																																													   .IsVariant
-																																									   , commentary
-																																											   = string
-																																													   .IsNullOrEmpty(
-																																															   a
-																																																	   .InterpretationCommentary)
-																																													   ? null
-																																													   : new
-																																															   CommentaryDTO
-																																															   {
-																																																	   commentary
-																																																			   =
-																																																			   a
-																																																					   .InterpretationCommentary
-																																																	   , creatorId
-																																																			   =
-																																																			   a
-																																																					   .InterpretationCommentaryCreator
-																																																					   .GetValueOrDefault()
-																																																	   , editorId
-																																																			   =
-																																																			   a
-																																																					   .InterpretationCommentaryEditor
-																																																					   .GetValueOrDefault()
-																																																	   ,
-																																															   }
-																																									   ,
+																															 signInterpretations =
+																																	 z
+																																			 .SignInterpretations
+																																			 .Select(
+																																					 a
+																																							 => new
+																																									 SignInterpretationDTO
+																																									 {
+																																											 signId =
+																																													 a
+																																															 .SignId
+																																													 ?? 0
+																																											 , signInterpretationId =
+																																													 a
+																																															 .SignInterpretationId
+																																															 .GetValueOrDefault()
+																																											 , character =
+																																													 a
+																																															 .Character
+																																											 , isVariant =
+																																													 a
+																																															 .IsVariant
+																																											 , commentary =
+																																													 string
+																																															 .IsNullOrEmpty(
+																																																	 a
+																																																			 .InterpretationCommentary)
+																																															 ? null
+																																															 : new
+																																																	 CommentaryDTO
+																																																	 {
+																																																			 commentary =
+																																																					 a
+																																																							 .InterpretationCommentary
+																																																			 , creatorId =
+																																																					 a
+																																																							 .InterpretationCommentaryCreator
+																																																							 .GetValueOrDefault()
+																																																			 , editorId =
+																																																					 a
+																																																							 .InterpretationCommentaryEditor
+																																																							 .GetValueOrDefault()
+																																																			 ,
+																																																	 }
+																																											 ,
 
-																																									   //editorID =
+																																											 //editorID =
 
-																																									   attributes
-																																											   =
-																																											   a
-																																													   .Attributes
-																																													   .Select(
-																																															   b
-																																																	   => new
-																																																			   InterpretationAttributeDTO
-																																																			   {
-																																																					   interpretationAttributeId
-																																																							   =
-																																																							   b
-																																																									   .SignInterpretationAttributeId
-																																																									   .GetValueOrDefault()
-																																																					   , sequence
-																																																							   =
-																																																							   b
-																																																									   .Sequence
-																																																									   .GetValueOrDefault()
-																																																					   , attributeId
-																																																							   =
-																																																							   b
-																																																									   .AttributeId
-																																																									   .GetValueOrDefault()
-																																																					   , attributeString
-																																																							   =
-																																																							   b
-																																																									   .AttributeString
-																																																					   , attributeValueId
-																																																							   =
-																																																							   b
-																																																									   .AttributeValueId
-																																																									   .GetValueOrDefault()
-																																																					   , attributeValueString
-																																																							   =
-																																																							   b
-																																																									   .AttributeValueString
-																																																					   , editorId
-																																																							   =
-																																																							   b
-																																																									   .SignInterpretationAttributeEditorId
-																																																									   .GetValueOrDefault()
-																																																					   , creatorId
-																																																							   =
-																																																							   b
-																																																									   .SignInterpretationAttributeCreatorId
-																																																									   .GetValueOrDefault()
-																																																					   , commentary
-																																																							   =
-																																																							   string
-																																																									   .IsNullOrEmpty(
-																																																											   b
-																																																													   .AttributeCommentary)
-																																																									   ? null
-																																																									   : new
-																																																											   CommentaryDTO
-																																																											   {
-																																																													   commentary
-																																																															   =
-																																																															   b
-																																																																	   .AttributeCommentary
-																																																													   , creatorId
-																																																															   =
-																																																															   b
-																																																																	   .AttributeCommentaryCreatorId
-																																																																	   .GetValueOrDefault()
-																																																													   , editorId
-																																																															   =
-																																																															   b
-																																																																	   .AttributeCommentaryEditorId
-																																																																	   .GetValueOrDefault()
-																																																													   ,
-																																																											   }
-																																																					   ,
-																																																			   })
-																																													   .ToArray()
-																																									   , rois
-																																											   =
-																																											   a
-																																													   .SignInterpretationRois
-																																													   .Select(
-																																															   b
-																																																	   => new
-																																																			   InterpretationRoiDTO
-																																																			   {
-																																																					   interpretationRoiId
-																																																							   =
-																																																							   b
-																																																									   .SignInterpretationRoiId
-																																																									   .GetValueOrDefault()
-																																																					   , signInterpretationId
-																																																							   =
-																																																							   b
-																																																									   .SignInterpretationId
-																																																									   .GetValueOrDefault()
-																																																					   , editorId
-																																																							   =
-																																																							   b
-																																																									   .SignInterpretationRoiEditorId
-																																																									   .GetValueOrDefault()
-																																																					   , creatorId
-																																																							   =
-																																																							   b
-																																																									   .SignInterpretationRoiCreatorId
-																																																									   .GetValueOrDefault()
-																																																					   , artefactId
-																																																							   =
-																																																							   b
-																																																									   .ArtefactId
-																																																									   .GetValueOrDefault()
-																																																					   , shape
-																																																							   =
-																																																							   b
-																																																									   .Shape
-																																																					   , translate
-																																																							   =
-																																																							   new
-																																																									   TranslateDTO
-																																																									   {
-																																																											   x =
-																																																													   b
-																																																															   .TranslateX
-																																																															   .GetValueOrDefault()
-																																																											   , y
-																																																													   =
-																																																													   b
-																																																															   .TranslateY
-																																																															   .GetValueOrDefault()
-																																																											   ,
-																																																									   }
-																																																					   , exceptional
-																																																							   =
-																																																							   b
-																																																									   .Exceptional
-																																																									   .GetValueOrDefault()
-																																																					   , valuesSet
-																																																							   =
-																																																							   b
-																																																									   .ValuesSet
-																																																									   .GetValueOrDefault()
-																																																					   ,
-																																																			   })
-																																													   .ToArray()
-																																									   , nextSignInterpretations
-																																											   =
-																																											   a
-																																													   .NextSignInterpretations
-																																													   .Select(
-																																															   b
-																																																	   => new
-																																																			   NextSignInterpretationDTO
-																																																			   {
-																																																					   nextSignInterpretationId
-																																																							   =
-																																																							   b
-																																																									   .NextSignInterpretationId
-																																																					   , editorId
-																																																							   =
-																																																							   b
-																																																									   .SignSequenceAuthor
-																																																					   , creatorId
-																																																							   =
-																																																							   b
-																																																									   .PositionCreatorId
-																																																					   ,
-																																																			   })
-																																													   .ToArray()
-																																									   , qwbWordIds
-																																											   = a
-																																												 .QwbWordIds
-																																												 .ToArray()
-																																									   , signStreamSectionIds
-																																											   = a
-																																												 .SignStreamSectionIds
-																																												 .ToArray()
-																																									   ,
-																																							   })
-																																	   .ToList()
+																																											 attributes =
+																																													 a
+																																															 .Attributes
+																																															 .Select(
+																																																	 b
+																																																			 => new
+																																																					 InterpretationAttributeDTO
+																																																					 {
+																																																							 interpretationAttributeId =
+																																																									 b
+																																																											 .SignInterpretationAttributeId
+																																																											 .GetValueOrDefault()
+																																																							 , sequence =
+																																																									 b
+																																																											 .Sequence
+																																																											 .GetValueOrDefault()
+																																																							 , attributeId =
+																																																									 b
+																																																											 .AttributeId
+																																																											 .GetValueOrDefault()
+																																																							 , attributeString =
+																																																									 b
+																																																											 .AttributeString
+																																																							 , attributeValueId =
+																																																									 b
+																																																											 .AttributeValueId
+																																																											 .GetValueOrDefault()
+																																																							 , attributeValueString =
+																																																									 b
+																																																											 .AttributeValueString
+																																																							 , editorId =
+																																																									 b
+																																																											 .SignInterpretationAttributeEditorId
+																																																											 .GetValueOrDefault()
+																																																							 , creatorId =
+																																																									 b
+																																																											 .SignInterpretationAttributeCreatorId
+																																																											 .GetValueOrDefault()
+																																																							 , commentary =
+																																																									 string
+																																																											 .IsNullOrEmpty(
+																																																													 b
+																																																															 .AttributeCommentary)
+																																																											 ? null
+																																																											 : new
+																																																													 CommentaryDTO
+																																																													 {
+																																																															 commentary =
+																																																																	 b
+																																																																			 .AttributeCommentary
+																																																															 , creatorId =
+																																																																	 b
+																																																																			 .AttributeCommentaryCreatorId
+																																																																			 .GetValueOrDefault()
+																																																															 , editorId =
+																																																																	 b
+																																																																			 .AttributeCommentaryEditorId
+																																																																			 .GetValueOrDefault()
+																																																															 ,
+																																																													 }
+																																																							 ,
+																																																					 })
+																																															 .ToArray()
+																																											 , rois =
+																																													 a
+																																															 .SignInterpretationRois
+																																															 .Select(
+																																																	 b
+																																																			 => new
+																																																					 InterpretationRoiDTO
+																																																					 {
+																																																							 interpretationRoiId =
+																																																									 b
+																																																											 .SignInterpretationRoiId
+																																																											 .GetValueOrDefault()
+																																																							 , signInterpretationId =
+																																																									 b
+																																																											 .SignInterpretationId
+																																																											 .GetValueOrDefault()
+																																																							 , editorId =
+																																																									 b
+																																																											 .SignInterpretationRoiEditorId
+																																																											 .GetValueOrDefault()
+																																																							 , creatorId =
+																																																									 b
+																																																											 .SignInterpretationRoiCreatorId
+																																																											 .GetValueOrDefault()
+																																																							 , artefactId =
+																																																									 b
+																																																											 .ArtefactId
+																																																											 .GetValueOrDefault()
+																																																							 , shape =
+																																																									 b
+																																																											 .Shape
+																																																							 , translate =
+																																																									 new
+																																																											 TranslateDTO
+																																																											 {
+																																																													 x =
+																																																															 b
+																																																																	 .TranslateX
+																																																																	 .GetValueOrDefault()
+																																																													 , y =
+																																																															 b
+																																																																	 .TranslateY
+																																																																	 .GetValueOrDefault()
+																																																													 ,
+																																																											 }
+																																																							 , exceptional =
+																																																									 b
+																																																											 .Exceptional
+																																																											 .GetValueOrDefault()
+																																																							 , valuesSet =
+																																																									 b
+																																																											 .ValuesSet
+																																																											 .GetValueOrDefault()
+																																																							 ,
+																																																					 })
+																																															 .ToArray()
+																																											 , nextSignInterpretations =
+																																													 a
+																																															 .NextSignInterpretations
+																																															 .Select(
+																																																	 b
+																																																			 => new
+																																																					 NextSignInterpretationDTO
+																																																					 {
+																																																							 nextSignInterpretationId =
+																																																									 b
+																																																											 .NextSignInterpretationId
+																																																							 , editorId =
+																																																									 b
+																																																											 .SignSequenceAuthor
+																																																							 , creatorId =
+																																																									 b
+																																																											 .PositionCreatorId
+																																																							 ,
+																																																					 })
+																																															 .ToArray()
+																																											 , qwbWordIds =
+																																													 a
+																																															 .QwbWordIds
+																																															 .ToArray()
+																																											 , signStreamSectionIds =
+																																													 a
+																																															 .SignStreamSectionIds
+																																															 .ToArray()
+																																											 ,
+																																									 })
+																																			 .ToList()
 																															 ,
 																													 })
 																							 .ToList()
@@ -701,132 +669,106 @@ namespace SQE.API.Server.Services
 																					   => new
 																							   SignInterpretationDTO
 																							   {
-																									   signId
-																											   = a
-																													   .SignId
+																									   signId =
+																											   a.SignId
 																											   ?? 0
-																									   , signInterpretationId
-																											   =
+																									   , signInterpretationId =
 																											   a.SignInterpretationId
 																												.GetValueOrDefault()
-																									   , character
-																											   = a
-																													   .Character
-																									   , isVariant
-																											   = a
-																													   .IsVariant
-																									   , commentary
-																											   = string
+																									   , character =
+																											   a.Character
+																									   , isVariant =
+																											   a.IsVariant
+																									   , commentary =
+																											   string
 																													   .IsNullOrEmpty(
 																															   a.InterpretationCommentary)
 																													   ? null
 																													   : new
 																															   CommentaryDTO
 																															   {
-																																	   commentary
-																																			   =
+																																	   commentary =
 																																			   a.InterpretationCommentary
-																																	   , creatorId
-																																			   =
+																																	   , creatorId =
 																																			   a.InterpretationCommentaryCreator
 																																				.GetValueOrDefault()
-																																	   , editorId
-																																			   =
+																																	   , editorId =
 																																			   a.InterpretationCommentaryEditor
 																																				.GetValueOrDefault()
 																																	   ,
 																															   }
-																									   , attributes
-																											   = a
-																												 .Attributes
-																												 .Select(
-																														 b
-																																 => new
-																																		 InterpretationAttributeDTO
-																																		 {
-																																				 interpretationAttributeId
-																																						 =
-																																						 b.SignInterpretationAttributeId
-																																						  .GetValueOrDefault()
-																																				 , sequence
-																																						 =
-																																						 b.Sequence
-																																						  .GetValueOrDefault()
-																																				 , attributeString
-																																						 =
-																																						 b.AttributeString
-																																				 , attributeValueId
-																																						 =
-																																						 b.AttributeValueId
-																																						  .GetValueOrDefault()
-																																				 , attributeValueString
-																																						 =
-																																						 b.AttributeValueString
-																																				 , editorId
-																																						 =
-																																						 b.SignInterpretationAttributeEditorId
-																																						  .GetValueOrDefault()
-																																				 , commentary
-																																						 =
-																																						 string
-																																								 .IsNullOrEmpty(
-																																										 b.AttributeCommentary)
-																																								 ? null
-																																								 : new
-																																										 CommentaryDTO
-																																										 {
-																																												 commentary
-																																														 =
-																																														 b
-																																																 .AttributeCommentary
-																																												 , creatorId
-																																														 =
-																																														 b
-																																																 .AttributeCommentaryCreatorId
-																																																 .GetValueOrDefault()
-																																												 , editorId
-																																														 =
-																																														 b
-																																																 .AttributeCommentaryEditorId
-																																																 .GetValueOrDefault()
-																																												 ,
-																																										 }
-																																				 ,
-																																		 })
-																												 .ToArray()
-																									   , rois
-																											   =
+																									   , attributes =
+																											   a.Attributes
+																												.Select(
+																														b
+																																=> new
+																																		InterpretationAttributeDTO
+																																		{
+																																				interpretationAttributeId =
+																																						b.SignInterpretationAttributeId
+																																						 .GetValueOrDefault()
+																																				, sequence =
+																																						b.Sequence
+																																						 .GetValueOrDefault()
+																																				, attributeString =
+																																						b.AttributeString
+																																				, attributeValueId =
+																																						b.AttributeValueId
+																																						 .GetValueOrDefault()
+																																				, attributeValueString =
+																																						b.AttributeValueString
+																																				, editorId =
+																																						b.SignInterpretationAttributeEditorId
+																																						 .GetValueOrDefault()
+																																				, commentary =
+																																						string
+																																								.IsNullOrEmpty(
+																																										b.AttributeCommentary)
+																																								? null
+																																								: new
+																																										CommentaryDTO
+																																										{
+																																												commentary =
+																																														b
+																																																.AttributeCommentary
+																																												, creatorId =
+																																														b
+																																																.AttributeCommentaryCreatorId
+																																																.GetValueOrDefault()
+																																												, editorId =
+																																														b
+																																																.AttributeCommentaryEditorId
+																																																.GetValueOrDefault()
+																																												,
+																																										}
+																																				,
+																																		})
+																												.ToArray()
+																									   , rois =
 																											   a.SignInterpretationRois
 																												.Select(
 																														b
 																																=> new
 																																		InterpretationRoiDTO
 																																		{
-																																				interpretationRoiId
-																																						= b
-																																						  .SignInterpretationRoiId
-																																						  .GetValueOrDefault()
-																																				, signInterpretationId
-																																						= b
-																																						  .SignInterpretationId
-																																						  .GetValueOrDefault()
-																																				, editorId
-																																						=
+																																				interpretationRoiId =
+																																						b.SignInterpretationRoiId
+																																						 .GetValueOrDefault()
+																																				, signInterpretationId =
+																																						b.SignInterpretationId
+																																						 .GetValueOrDefault()
+																																				, editorId =
 																																						b.SignInterpretationRoiEditorId
 																																						 .GetValueOrDefault()
-																																				, creatorId
-																																						=
+																																				, creatorId =
 																																						b.SignInterpretationRoiCreatorId
 																																						 .GetValueOrDefault()
-																																				, artefactId
-																																						=
+																																				, artefactId =
 																																						b.ArtefactId
 																																						 .GetValueOrDefault()
-																																				, shape
-																																						=
+																																				, shape =
 																																						b.Shape
-																																				, translate
-																																						=
+																																				, translate =
 																																						new
 																																								TranslateDTO
 																																								{
@@ -834,49 +776,41 @@ namespace SQE.API.Server.Services
 																																												b
 																																														.TranslateX
 																																														.GetValueOrDefault()
-																																										, y
-																																												= b
-																																												  .TranslateY
-																																												  .GetValueOrDefault()
+																																										, y =
+																																												b
+																																														.TranslateY
+																																														.GetValueOrDefault()
 																																										,
 																																								}
-																																				, exceptional
-																																						=
+																																				, exceptional =
 																																						b.Exceptional
 																																						 .GetValueOrDefault()
-																																				, valuesSet
-																																						=
+																																				, valuesSet =
 																																						b.ValuesSet
 																																						 .GetValueOrDefault()
 																																				,
 																																		})
 																												.ToArray()
-																									   , nextSignInterpretations
-																											   =
+																									   , nextSignInterpretations =
 																											   a.NextSignInterpretations
 																												.Select(
 																														b
 																																=> new
 																																		NextSignInterpretationDTO
 																																		{
-																																				nextSignInterpretationId
-																																						= b
-																																								.NextSignInterpretationId
-																																				, editorId
-																																						=
+																																				nextSignInterpretationId =
+																																						b.NextSignInterpretationId
+																																				, editorId =
 																																						b.SignSequenceAuthor
-																																				, creatorId
-																																						=
+																																				, creatorId =
 																																						b.PositionCreatorId
 																																				,
 																																		})
 																												.ToArray()
-																									   , qwbWordIds
-																											   = a
-																												 .QwbWordIds
-																												 .ToArray()
-																									   , signStreamSectionIds
-																											   =
+																									   , qwbWordIds =
+																											   a.QwbWordIds
+																												.ToArray()
+																									   , signStreamSectionIds =
 																											   a.SignStreamSectionIds
 																												.ToArray()
 																									   ,

@@ -45,8 +45,8 @@ namespace sqe_api
 		{
 			var fragment = _getFragmentData(fragmentName);
 
-			if ((fragment.Lines == null)
-				|| (fragment.Lines.Count == 0))
+			if (fragment.Lines == null
+				|| fragment.Lines.Count == 0)
 			{
 				Console.Write($"Loading fragment {fragmentName}.");
 

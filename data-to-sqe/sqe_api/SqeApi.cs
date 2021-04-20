@@ -123,8 +123,8 @@ namespace sqe_api
 											native_height as NativeHeight,
 											dpi as Dpi
 											from SQE_image where sqe_image_id = {
-												  fileInfo.SqeImageId
-											  }");
+												fileInfo.SqeImageId
+											}");
 
 			var scale = (decimal) 1215 / data.Dpi;
 			var w = data.NativeWidth * scale;
@@ -158,15 +158,15 @@ namespace sqe_api
 		}
 
 		public uint GetArtefactId(uint sqeImageId, string name) => TextRep.GetConnection()
-																		  .QueryFirstOrDefault<uint
-																				  >(
-																						  "select artefact_id"
-																						  + " from artefact_shape"
-																						  + " join artefact_shape_owner using (artefact_shape_id)"
-																						  + " join artefact_data using (artefact_id)"
-																						  + $" where sqe_image_id={sqeImageId}"
-																						  + $" and artefact_shape_owner.edition_id={_userInfo.EditionId}"
-																						  + $" and artefact_data.name =\"{name}\"");
+																		  .QueryFirstOrDefault<
+																				  uint>(
+																				  "select artefact_id"
+																				  + " from artefact_shape"
+																				  + " join artefact_shape_owner using (artefact_shape_id)"
+																				  + " join artefact_data using (artefact_id)"
+																				  + $" where sqe_image_id={sqeImageId}"
+																				  + $" and artefact_shape_owner.edition_id={_userInfo.EditionId}"
+																				  + $" and artefact_data.name =\"{name}\"");
 
 		public SignData CreateSigns(
 				uint             lineId
@@ -226,7 +226,7 @@ namespace sqe_api
 		{
 			var editionId = _geteditionId(newScrollName, _userId.GetValueOrDefault());
 
-			if (reset && (editionId != 0))
+			if (reset && editionId != 0)
 			{
 				SetEditionId(editionId);
 				var token = _editionRep.GetArchiveToken(_userInfo).Result;

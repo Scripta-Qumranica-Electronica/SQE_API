@@ -63,8 +63,8 @@ namespace SQE.API.Server.Services
 
 		public async Task<CatalogueMatchListDTO>
 				GetTextFragmentsAndImagedObjectsOfEdition(uint editionId)
-			=> (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForEditionAsync(editionId)
-					).ToDTO();
+			=> (await _catalogueRepo
+					.GetImagedObjectAndTextFragmentMatchesForEditionAsync(editionId)).ToDTO();
 
 		public async Task<CatalogueMatchListDTO>
 				GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId)

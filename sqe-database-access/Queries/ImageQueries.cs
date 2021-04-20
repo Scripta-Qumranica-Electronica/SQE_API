@@ -24,7 +24,10 @@ SELECT image_urls.url AS url,
     ASTEXT(image_to_image_map.region_on_image1) AS region_on_image1,
     ASTEXT(image_to_image_map.region_on_image2) AS region_on_image2,
     NULL AS image_to_image_map_editor_id,
-    image_to_image_map.transform_matrix AS transform_matrix
+	image_to_image_map.scale AS scale,
+	image_to_image_map.rotate AS rotate,
+	image_to_image_map.translate_x as translate_x,
+	image_to_image_map.translate_y as translate_y
 FROM image_catalog_owner
 JOIN edition USING(edition_id)
 JOIN edition_editor USING(edition_id)
@@ -68,14 +71,17 @@ WHERE image_catalog_owner.edition_id = @EditionId
 			public string image_manifest { get; set; }
 
 			//public string TransformMatrix { get; set; }
-			public string institution                  { get; set; }
-			public string catalog_1                    { get; set; }
-			public string catalog_2                    { get; set; }
-			public string object_id                    { get; set; }
-			public uint?  image_to_image_map_editor_id { get; set; }
-			public string region_on_image1             { get; set; }
-			public string region_on_image2             { get; set; }
-			public string transform_matrix             { get; set; }
+			public string  institution                  { get; set; }
+			public string  catalog_1                    { get; set; }
+			public string  catalog_2                    { get; set; }
+			public string  object_id                    { get; set; }
+			public uint?   image_to_image_map_editor_id { get; set; }
+			public string  region_on_image1             { get; set; }
+			public string  region_on_image2             { get; set; }
+			public decimal scale                        { get; set; }
+			public decimal rotate                       { get; set; }
+			public int     translate_x                  { get; set; }
+			public int     translate_y                  { get; set; }
 		}
 	}
 

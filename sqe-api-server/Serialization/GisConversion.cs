@@ -77,25 +77,22 @@ namespace SQE.API.Server.Serialization
 																				=> new
 																						InterpretationRoiDTO
 																						{
-																								artefactId
-																										= sac
+																								artefactId =
+																										sac
 																												.ArtefactId
-																								, interpretationRoiId
-																										=
+																								, interpretationRoiId =
 																										a.SignInterpretationRoiId
-																								, signInterpretationId
-																										= x
-																												.SignInterpretationId
-																								, stanceRotation
-																										= a
-																												.RoiRotate
-																								, translate
-																										= null
+																								, signInterpretationId =
+																										x.SignInterpretationId
+																								, stanceRotation =
+																										a.RoiRotate
+																								, translate =
+																										null
 																								,
 
 																								// Gather all the ROI shapes into a single (multi)polygon
-																								shape
-																										= MergeSignInterpretationRois(
+																								shape =
+																										MergeSignInterpretationRois(
 																												x.Rois)
 																								, // Union applies the CascadedPolygonUnion
 																						})

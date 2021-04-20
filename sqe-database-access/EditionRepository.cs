@@ -134,10 +134,10 @@ namespace SQE.DatabaseAccess
 																			  }
 
 																			  return $@"{
-																						  y.Forename
-																					  } {
-																						  y.Surname
-																					  }".Trim();
+																				  y.Forename
+																			  } {
+																				  y.Surname
+																			  }".Trim();
 																		  }))
 														  : lastEdition.Collaborators);
 									  }
@@ -273,15 +273,15 @@ namespace SQE.DatabaseAccess
 																	  y =>
 																	  {
 																		  if ((y.Forename == null)
-																			  && (y.Surname == null)
-																		  )
+																			  && (y.Surname
+																				  == null))
 																			  return y.EditorEmail;
 
 																		  return $@"{
-																					  y.Forename
-																				  } {
-																					  y.Surname
-																				  }".Trim();
+																			  y.Forename
+																		  } {
+																			  y.Surname
+																		  }".Trim();
 																	  }))
 													  : lastEdition.Collaborators);
 								  }
@@ -1100,8 +1100,8 @@ WHERE edition_id = @EditionId";
 							$@"an edition must have at least one admin.
 Please give admin status to another editor before relinquishing admin status for the current user or deleting the edition.
 An admin may delete the edition for all editors with the request DELETE /v1/editions/{
-										editionUser.EditionId.ToString()
-									}.");
+	editionUser.EditionId.ToString()
+}.");
 				}
 
 				// Perform the update
@@ -1188,10 +1188,10 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 																	  }
 
 																	  return $@"{
-																				  y.Forename
-																			  } {
-																				  y.Surname
-																			  }".Trim();
+																		  y.Forename
+																	  } {
+																		  y.Surname
+																	  }".Trim();
 																  }))
 												  : lastEdition.Collaborators);
 							  }
@@ -1346,8 +1346,8 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 							  if (!(objects[1] is ScriptLine scriptLine))
 								  return null;
 
-							  if (!(objects[2] is ScriptArtefactCharacters scriptArtefactCharacters)
-							  )
+							  if (!(objects[2] is ScriptArtefactCharacters
+									  scriptArtefactCharacters))
 								  return null;
 
 							  if (!(objects[3] is Character character))

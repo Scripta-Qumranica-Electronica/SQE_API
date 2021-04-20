@@ -798,8 +798,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 																					 originalSignInterpretationData
 																							 .Commentaries;
 
-																			 x.SignInterpretationRois
-																					 ??=
+																			 x.SignInterpretationRois ??=
 																					 originalSignInterpretationData
 																							 .SignInterpretationRois;
 
@@ -951,10 +950,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 							{
 								throw new StandardExceptions.InputDataRuleViolationException(
 										$@"Invalid operation; it would result in a cycle between {
-													firstSI
-												} and {
-													secondSI
-												} in the sign stream graph");
+											firstSI
+										} and {
+											secondSI
+										} in the sign stream graph");
 							}
 						}
 					}
@@ -1104,10 +1103,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					{
 						throw new StandardExceptions.InputDataRuleViolationException(
 								$@"Cannot create cycles in the sign stream graph. Linking {
-											firstSI
-										} with {
-											secondSI
-										} would create a cycle in the graph");
+									firstSI
+								} with {
+									secondSI
+								} would create a cycle in the graph");
 					}
 				}
 			}
@@ -2075,8 +2074,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			// I added also the editionId since the same user may have different edition with the sam text.
 			var query = $@"SELECT DISTINCT sign_interpretation_id
                         {
-						TableData.FromQueryPart(table, addPublicEdition: allowPublicEditions)
-					}
+							TableData.FromQueryPart(table, addPublicEdition: allowPublicEditions)
+						}
 						AND edition_editor.edition_id=@EditionId
                         AND attribute_value_id in @Breaks
                         ORDER BY attribute_value_id";
@@ -2617,8 +2616,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								select sign_interpretation_character_id
 								from sign_interpretation_character
 								where sign_interpretation_id = {
-										signInterpretationId
-									}");
+									signInterpretationId
+								}");
 
 					foreach (var characterId in characterIds)
 					{
@@ -2782,14 +2781,14 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 							$@"
 										update sign_interpretation_character_owner
 										set priority = {
-										priority
-									}
+											priority
+										}
 										where sign_interpretation_character_id = {
-										writeResults.First().NewId
-									}
+											writeResults.First().NewId
+										}
 										and edition_id={
-										editionUser.EditionId
-									}");
+											editionUser.EditionId
+										}");
 				}
 
 				return writeResults.First().NewId.Value;

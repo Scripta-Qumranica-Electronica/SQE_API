@@ -518,16 +518,16 @@ WHERE scribal_font_glyph_metrics_owner.edition_id = @EditionId
 			{
 				var sql = $@"
 SELECT {
-							tableName
-						}_id
+	tableName
+}_id
 FROM {
-							tableName
-						}_owner
+	tableName
+}_owner
 JOIN {
-							tableName
-						} USING({
-							tableName
-						}_id)
+	tableName
+} USING({
+	tableName
+}_id)
 WHERE edition_id = @EditionId
 	AND scribal_font_id = @ScribalFontId";
 

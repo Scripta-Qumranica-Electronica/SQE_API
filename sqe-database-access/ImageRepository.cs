@@ -106,7 +106,10 @@ namespace SQE.DatabaseAccess
 					, Master = image.master
 					, RegionInMaster = image.region_on_image1
 					, RegionOfMaster = image.region_on_image2
-					, TransformMatrix = image.transform_matrix
+					, Scale = image.scale
+					, Rotate = image.rotate
+					, TranslateX = image.translate_x
+					, TranslateY = image.translate_y
 					,
 			};
 
