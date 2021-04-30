@@ -376,5 +376,42 @@ namespace SQE.API.Server.RealtimeHubs
 												: null)));
 			}
 		}
+
+		/// <summary>
+		///  Alter the text between two sign interpretation ids.
+		///  The system will try as best it can to figure out
+		///  how the next text aligns with any text already
+		///  existing at that location in the edition.
+		/// </summary>
+		/// <param name="editionId">Id of the edition to be updated</param>
+		/// <param name="replaceRequest">Details of the text replacement request</param>
+		/// <returns>
+		///  Information about all sign interpretations that were
+		///  created, updated, and deleted as a result of the operation.
+		/// </returns>
+		[Authorize]
+		public async Task<DiffReplaceResponseDTO> PutV1EditionsEditionIdDiffReplaceText(
+				uint                    editionId
+				, DiffReplaceRequestDTO replaceRequest)
+
+		{
+			try
+			{
+				return await _textService.DiffReplaceText(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, replaceRequest);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 	}
 }

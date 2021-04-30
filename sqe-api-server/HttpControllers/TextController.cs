@@ -190,5 +190,25 @@ namespace SQE.API.Server.HttpControllers
 				await _userService.GetCurrentUserObjectAsync(editionId, true)
 				, textFragmentId
 				, lineData);
+
+		/// <summary>
+		///  Alter the text between two sign interpretation ids.
+		///  The system will try as best it can to figure out
+		///  how the next text aligns with any text already
+		///  existing at that location in the edition.
+		/// </summary>
+		/// <param name="editionId">Id of the edition to be updated</param>
+		/// <param name="replaceRequest">Details of the text replacement request</param>
+		/// <returns>
+		///  Information about all sign interpretations that were
+		///  created, updated, and deleted as a result of the operation.
+		/// </returns>
+		[HttpPut("v1/editions/{editionId}/diff-replace-text")]
+		public async Task<ActionResult<DiffReplaceResponseDTO>> DiffReplaceText(
+				[FromRoute]  uint                  editionId
+				, [FromBody] DiffReplaceRequestDTO replaceRequest)
+			=> await _textService.DiffReplaceText(
+					await _userService.GetCurrentUserObjectAsync(editionId, true)
+					, replaceRequest);
 	}
 }

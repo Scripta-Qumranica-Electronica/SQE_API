@@ -26,8 +26,8 @@ namespace SQE.DatabaseAccess
 				UserInfo user
 				, uint   signInterpretationId
 				, string character
-				, byte   priority
-				, uint   attributeValueId);
+				, byte?  priority         = null
+				, uint?  attributeValueId = null);
 	}
 
 	public class SignInterpretationRepository : DbConnectionBase
@@ -155,8 +155,8 @@ namespace SQE.DatabaseAccess
 				UserInfo user
 				, uint   signInterpretationId
 				, string character
-				, byte   priority
-				, uint   attributeValueId)
+				, byte?  priority         = null
+				, uint?  attributeValueId = null)
 		{
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -217,7 +217,8 @@ namespace SQE.DatabaseAccess
 										, signInterpretationId);
 
 				// Check if the correct attribute value is already set
-				if (signInterpretationAttribute.Any(x => x.AttributeValueId == attributeValueId))
+				if (!attributeValueId.HasValue
+					|| signInterpretationAttribute.Any(x => x.AttributeValueId == attributeValueId))
 				{
 					transactionScope.Complete();
 

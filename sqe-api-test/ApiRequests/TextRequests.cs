@@ -556,5 +556,98 @@ namespace SQE.ApiTest.ApiRequests
 				public ListenerMethods UpdatedLine = ListenerMethods.UpdatedLine;
 			}
 		}
+
+		public class V1_Editions_EditionId_DiffReplaceText :
+				RequestObject<DiffReplaceRequestDTO, DiffReplaceResponseDTO>
+		{
+			private readonly uint                  _editionId;
+			private readonly DiffReplaceRequestDTO _payload;
+
+			/// <summary>
+			///  Alter the text between two sign interpretation ids.
+			///  The system will try as best it can to figure out
+			///  how the next text aligns with any text already
+			///  existing at that location in the edition.
+			/// </summary>
+			/// <param name="editionId">Id of the edition to be updated</param>
+			/// <param name="replaceRequest">Details of the text replacement request</param>
+			/// <returns>
+			///  Information about all sign interpretations that were
+			///  created, updated, and deleted as a result of the operation.
+			/// </returns>
+			public V1_Editions_EditionId_DiffReplaceText(
+					uint                    editionId
+					, DiffReplaceRequestDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_payload = payload;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.CreatedSignInterpretation
+						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
+
+				_listenerDict.Add(
+						ListenerMethods.DeletedSignInterpretation
+						, (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretations
+						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public SignInterpretationListDTO CreatedSignInterpretation  { get; private set; }
+			public DeleteIntIdDTO            DeletedSignInterpretation  { get; private set; }
+			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
+
+			private void CreatedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"CreatedSignInterpretation"
+						, receivedData => CreatedSignInterpretation = receivedData);
+
+			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+
+			private void DeletedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<DeleteIntIdDTO>(
+						"DeletedSignInterpretation"
+						, receivedData => DeletedSignInterpretation = receivedData);
+
+			private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
+
+			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"UpdatedSignInterpretations"
+						, receivedData => UpdatedSignInterpretations = receivedData);
+
+			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
+
+			protected override string HttpPath() => RequestPath.Replace(
+					"/edition-id"
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods CreatedSignInterpretation =
+						ListenerMethods.CreatedSignInterpretation;
+
+				public ListenerMethods DeletedSignInterpretation =
+						ListenerMethods.DeletedSignInterpretation;
+
+				public ListenerMethods UpdatedSignInterpretations =
+						ListenerMethods.UpdatedSignInterpretations;
+			}
+		}
 	}
 }

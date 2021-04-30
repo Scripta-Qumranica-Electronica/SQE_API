@@ -185,6 +185,111 @@ ORDER BY sign_interpretation_ids.sequence,
 ";
 	}
 
+	public static class GetBasicTextChunk
+	{
+		/// <summary>
+		///  Retrieves all textual data for a chunk of text
+		///  @startId is the Id of the first sign
+		///  @endId is the Id of the last sign
+		///  @editionId is the Id of the edition the text is to be taken from
+		/// </summary>
+		public const string GetQuery = @"
+WITH RECURSIVE sign_interpretation_ids
+	AS (
+		SELECT 	position_in_stream.position_in_stream_id,
+				position_in_stream.sign_interpretation_id AS signInterpretationId,
+				position_in_stream.next_sign_interpretation_id,
+				position_in_stream_owner.is_main,
+				position_in_stream_owner.edition_id,
+				1 AS sequence
+		FROM position_in_stream
+			JOIN position_in_stream_owner
+				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
+					AND position_in_stream_owner.edition_id = @EditionId
+		WHERE position_in_stream.sign_interpretation_id = @StartId
+
+      UNION
+
+		SELECT 	position_in_stream.position_in_stream_id,
+				position_in_stream.sign_interpretation_id AS signInterpretationId,
+				position_in_stream.next_sign_interpretation_id,
+				position_in_stream_owner.is_main,
+				sign_interpretation_ids.edition_id,
+				sequence + 1 AS sequence
+		FROM  sign_interpretation_ids
+			JOIN position_in_stream
+				ON position_in_stream.sign_interpretation_id = sign_interpretation_ids.next_sign_interpretation_id
+				AND signInterpretationId != @EndId
+			JOIN position_in_stream_owner
+				ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
+					AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
+	)
+
+SELECT distinctrow 	
+		text_fragment_to_line.text_fragment_id AS textFragmentId,
+		text_fragment_to_line.line_id AS lineId,
+
+		sign_interpretation.sign_id AS signId,
+		sign_interpretation_ids.next_sign_interpretation_id AS nextSignInterpretationId,
+
+		signInterpretationId,
+		sign_interpretation_character.`character` AS `character`,
+		sign_interpretation_character_owner.priority AS IsVariant,
+
+		attribute_value.attribute_id AS AttributeId,
+		sign_interpretation_attribute.attribute_value_id AS AttributeValueId
+
+FROM sign_interpretation_ids
+	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
+	JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = signInterpretationId
+	JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
+		AND sign_interpretation_character_owner.edition_id = sign_interpretation_ids.edition_id
+	JOIN sign_interpretation_attribute ON sign_interpretation_attribute.sign_interpretation_id = signInterpretationId
+	JOIN sign_interpretation_attribute_owner
+		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
+		AND sign_interpretation_attribute_owner.edition_id = sign_interpretation_ids.edition_id
+	JOIN attribute_value USING(attribute_value_id)
+
+	JOIN line_to_sign ON line_to_sign.sign_id = sign_interpretation.sign_id
+	JOIN line_data USING (line_id)
+	JOIN line_data_owner ON line_data_owner.line_data_id = line_data.line_data_id
+	  AND line_data_owner.edition_id = sign_interpretation_ids.edition_id
+
+	JOIN text_fragment_to_line USING (line_id)
+	JOIN text_fragment_data USING (text_fragment_id)
+	JOIN text_fragment_data_owner
+		ON text_fragment_data_owner.text_fragment_data_id = text_fragment_data.text_fragment_data_id
+			AND text_fragment_data_owner.edition_id = sign_interpretation_ids.edition_id
+
+	JOIN manuscript_to_text_fragment USING (text_fragment_id)
+	JOIN manuscript_data USING (manuscript_id)
+	JOIN manuscript_data_owner ON manuscript_data_owner.manuscript_data_id = manuscript_data.manuscript_data_id
+		AND manuscript_data_owner.edition_id = sign_interpretation_ids.edition_id
+
+	JOIN edition ON edition.edition_id = sign_interpretation_ids.edition_id
+
+ORDER BY sign_interpretation_ids.sequence,
+	line_to_sign.sign_id,
+	sign_interpretation_ids.is_main,
+	sign_interpretation_character_owner.priority desc,
+	sign_interpretation_ids.signInterpretationId,
+	nextSignInterpretationId
+";
+
+		public class Model
+		{
+			public uint   textFragmentId           { get; set; }
+			public uint   lineId                   { get; set; }
+			public uint   signId                   { get; set; }
+			public uint   signInterpretationId     { get; set; }
+			public uint   nextSignInterpretationId { get; set; }
+			public string character                { get; set; }
+			public byte   IsVariant                { get; set; }
+			public uint   AttributeId              { get; set; }
+			public uint   AttributeValueId         { get; set; }
+		}
+	}
+
 	internal static class GetAllEditionSigns
 	{
 		/// <summary>
@@ -244,8 +349,6 @@ SELECT distinctrow 	manuscript_data.manuscript_id AS manuscriptId,
 
 		sign_stream_section.sign_stream_section_id AS SectionId,
 		sign_stream_section_to_qwb_word.qwb_word_id AS QwbWordId
-
-
 
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId

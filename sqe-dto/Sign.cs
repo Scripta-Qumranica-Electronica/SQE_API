@@ -227,4 +227,22 @@ namespace SQE.API.DTO
 		[Required]
 		public AttributeDTO[] attributes { get; set; }
 	}
+
+	public class DiffReplaceRequestDTO
+	{
+		[Required]
+		public uint priorSignInterpretationId { get; set; }
+
+		[Required]
+		public uint followingSignInterpretationId { get; set; }
+
+		public string newText { get; set; }
+	}
+
+	public class DiffReplaceResponseDTO
+	{
+		public SignInterpretationListDTO created { get; set; }
+		public SignInterpretationListDTO updated { get; set; }
+		public DeleteIntIdDTO            deleted { get; set; }
+	}
 }

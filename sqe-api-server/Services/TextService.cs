@@ -53,22 +53,30 @@ namespace SQE.API.Server.Services
 				, uint                  textFragmentId
 				, UpdateTextFragmentDTO updatedFragment
 				, string                clientId = null);
+
+		Task<DiffReplaceResponseDTO> DiffReplaceText(
+				UserInfo                editionUser
+				, DiffReplaceRequestDTO newTextData
+				, string                clientId = null);
 	}
 
 	public class TextService : ITextService
 	{
 		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+		private readonly ISignInterpretationService       _signIntService;
 		private readonly ITextRepository                  _textRepo;
 		private readonly IUserRepository                  _userRepo;
 
 		public TextService(
 				ITextRepository                    textRepo
 				, IUserRepository                  userRepo
+				, ISignInterpretationService       signIntService
 				, IHubContext<MainHub, ISQEClient> hubContext)
 		{
 			_textRepo = textRepo;
 			_userRepo = userRepo;
 			_hubContext = hubContext;
+			_signIntService = signIntService;
 		}
 
 		public async Task<LineTextDTO> GetLineByIdAsync(UserInfo editionUser, uint lineId)
@@ -362,6 +370,72 @@ namespace SQE.API.Server.Services
 							 .CreatedTextFragment(newTextFragmentData);
 
 			return newTextFragmentData;
+		}
+
+		public async Task<DiffReplaceResponseDTO> DiffReplaceText(
+				UserInfo                editionUser
+				, DiffReplaceRequestDTO newTextData
+				, string                clientId = null)
+		{
+			// Request the update
+			var (created, updated, deleted) = await _textRepo.DiffReplaceText(
+					editionUser
+					, newTextData.priorSignInterpretationId
+					, newTextData.followingSignInterpretationId
+					, newTextData.newText);
+
+			// Collect all data on the operations that were carried out
+			var deletedData = new DeleteIntIdDTO
+			{
+					entity = EditionEntities.signInterpretation
+					, ids = deleted
+					,
+			};
+
+			var updatedData = new List<SignInterpretationDTO>();
+
+			foreach (var update in updated)
+			{
+				updatedData.Add(
+						await _signIntService.GetEditionSignInterpretationAsync(
+								editionUser
+								, update));
+			}
+
+			var createdData = new List<SignInterpretationDTO>();
+
+			foreach (var create in created)
+			{
+				createdData.Add(
+						await _signIntService.GetEditionSignInterpretationAsync(
+								editionUser
+								, create));
+			}
+
+			var createdResults =
+					new SignInterpretationListDTO { signInterpretations = createdData.ToArray() };
+
+			var updatedResults =
+					new SignInterpretationListDTO { signInterpretations = updatedData.ToArray() };
+
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .CreatedSignInterpretation(createdResults);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .DeletedSignInterpretation(deletedData);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretations(updatedResults);
+
+			return new DiffReplaceResponseDTO
+			{
+					created = createdResults
+					, updated = updatedResults
+					, deleted = deletedData
+					,
+			};
 		}
 
 		// TODO: rewrite this and the following method to use a ToDTO() serialization method instead.

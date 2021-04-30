@@ -643,6 +643,18 @@ export interface AttributeListDTO {
     attributes: Array<AttributeDTO>;
 }
 
+export interface DiffReplaceRequestDTO {
+    priorSignInterpretationId: number;
+    followingSignInterpretationId: number;
+    newText?: string;
+}
+
+export interface DiffReplaceResponseDTO {
+    created?: SignInterpretationListDTO;
+    updated?: SignInterpretationListDTO;
+    deleted?: DeleteIntIdDTO;
+}
+
 export interface EditionScriptCollectionDTO {
     letters: Array<CharacterShapeDTO>;
 }

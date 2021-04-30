@@ -117,6 +117,8 @@ import {
 	UpdateAttributeDTO,
 	AttributeDTO,
 	AttributeListDTO,
+	DiffReplaceRequestDTO,
+	DiffReplaceResponseDTO,
 	EditionScriptCollectionDTO,
 	EditionScriptLinesDTO,
 	CharacterShapeDTO,
@@ -1225,6 +1227,23 @@ export class SignalRUtilities {
 	 */
     public async postV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number, lineData: CreateLineDTO): Promise<LineDataDTO> {
         return await this._connection.invoke('PostV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId, lineData);
+    }
+
+    /**
+	 * Alter the text between two sign interpretation ids.
+	 *		 The system will try as best it can to figure out
+	 *		 how the next text aligns with any text already
+	 *		 existing at that location in the edition.
+	 *
+	 * @param editionId - Id of the edition to be updated
+	 * @param replaceRequest - Details of the text replacement request
+	 * @returns - 
+	 *		  Information about all sign interpretations that were
+	 *		  created, updated, and deleted as a result of the operation.
+	 *		 
+	 */
+    public async putV1EditionsEditionIdDiffReplaceText(editionId: number, replaceRequest: DiffReplaceRequestDTO): Promise<DiffReplaceResponseDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdDiffReplaceText', editionId, replaceRequest);
     }
 
     /**
