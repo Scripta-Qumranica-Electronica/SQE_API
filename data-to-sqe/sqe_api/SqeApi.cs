@@ -82,7 +82,7 @@ namespace sqe_api
 
 		public void SetEditionId(uint editionId)
 		{
-			await _userInfo.SetEditionId(editionId);
+			_userInfo.SetEditionId(editionId);
 		}
 
 		/// <summary>
@@ -109,13 +109,13 @@ namespace sqe_api
 		public void DeleteSign(uint signId)
 		{
 			Console.WriteLine(signId);
-			await TextRep.RemoveSignAsync(_userInfo, signId);
+			TextRep.RemoveSignAsync(_userInfo, signId);
 		}
 
 		public uint CreateArtefact(SourceFileInfo fileInfo)
 		{
 			var oldArteFactId = GetArtefactId(fileInfo.SqeImageId, fileInfo.FileName);
-			await _artefactRep.DeleteArtefactAsync(_userInfo, oldArteFactId);
+			_artefactRep.DeleteArtefactAsync(_userInfo, oldArteFactId);
 
 			var data = TextRep.GetConnection()
 							  .QueryFirst<ImageData>(
@@ -286,7 +286,7 @@ namespace sqe_api
 		{
 			foreach (var siData in signInterpretations)
 			{
-				await TextRep.RemoveSignInterpretationAsync(
+				TextRep.RemoveSignInterpretationAsync(
 						_userInfo
 						, siData.SignInterpretationId.GetValueOrDefault()
 						, false
@@ -296,7 +296,7 @@ namespace sqe_api
 
 		public void UpdateSignInterpretationsData(SignInterpretationData signInterpretationData)
 		{
-			awaitTextRep.UpdateSignInterpretationDataAsync(_userInfo, signInterpretationData);
+			TextRep.UpdateSignInterpretationDataAsync(_userInfo, signInterpretationData);
 		}
 
 		public void PrependLine(uint fragmentId, LineData lineData)

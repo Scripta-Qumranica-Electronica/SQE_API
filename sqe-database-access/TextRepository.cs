@@ -2118,7 +2118,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				{
 						2
 						, 3
-						, 4,
+						, 4
+						,
 				};
 
 				var charactersWithValue = new List<uint> { 1 };

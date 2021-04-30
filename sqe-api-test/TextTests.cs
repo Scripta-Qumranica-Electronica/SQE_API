@@ -1718,7 +1718,8 @@ namespace SQE.ApiTest
 						{
 								diffRequest.AvailableListeners.CreatedSignInterpretation
 								, diffRequest.AvailableListeners.DeletedSignInterpretation
-								, diffRequest.AvailableListeners.UpdatedSignInterpretations,
+								, diffRequest.AvailableListeners.UpdatedSignInterpretations
+								,
 						}
 						, realtime
 								? null
@@ -1769,7 +1770,8 @@ namespace SQE.ApiTest
 				{
 						2
 						, 3
-						, 4,
+						, 4
+						,
 				};
 
 				foreach (var sign in updatedText.textFragments.First()
