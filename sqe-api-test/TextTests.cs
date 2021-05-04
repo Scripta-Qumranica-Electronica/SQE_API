@@ -1651,18 +1651,13 @@ namespace SQE.ApiTest
 					: linesRequest.HttpResponseObject;
 		}
 
-		// [Theory]
-		// [InlineData(true, "לא אבה ללכת")]
-		// [InlineData(false, "לא אבה ללכת")]
-		// [InlineData(true, "")]
-		// [InlineData(false, "")]
-		[Fact]
-		public async Task CanUpdateTextChunk()
+		[Theory]
+		[InlineData(true, "לא אבה ללכת")]
+		[InlineData(true, "")]
+		[InlineData(false, "לא אבה ללכת")]
+		[InlineData(false, "")]
+		public async Task CanUpdateTextChunk(bool realtime, string replacementString)
 		{
-			// bool realtime, string replacementString
-			var realtime = false;
-			var replacementString = "לא אבה ללכת";
-
 			using (var editionCreator =
 					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 			{
@@ -1758,8 +1753,8 @@ namespace SQE.ApiTest
 						, requestRealtime: realtime);
 
 				var updatedText = realtime
-						? textRequest.SignalrResponseObject
-						: textRequest.HttpResponseObject;
+						? updatedTextRequest.SignalrResponseObject
+						: updatedTextRequest.HttpResponseObject;
 
 				Assert.False(updatedText.IsDeepEqual(text));
 

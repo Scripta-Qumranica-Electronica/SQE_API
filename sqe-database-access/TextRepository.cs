@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
+using DiffPlex;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -2094,11 +2095,6 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			using (var transaction = new TransactionScope())
 			using (var conn = OpenConnection())
 			{
-				// Instantiate return data lists
-				var createdSignInterpretations = new HashSet<uint>();
-				var updatedSignInterpretations = new HashSet<uint>();
-				var deletedSignInterpretations = new HashSet<uint>();
-
 				var primaryStream = await conn.QueryAsync<GetBasicTextChunk.Model>(
 						GetBasicTextChunk.GetQuery
 						, new
@@ -2110,8 +2106,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						});
 
 				primaryStream = primaryStream.Where(
-						x => x.signInterpretationId != priorSignInterpretationId
-							 && x.signInterpretationId != followingSignInterpretationId);
+													 x
+															 => x.signInterpretationId
+																!= priorSignInterpretationId
+																&& x.signInterpretationId
+																!= followingSignInterpretationId)
+											 .ToList();
 
 				// Make sure we start with the fist non-character control character
 				var spaceCharacters = new List<uint>
@@ -2126,49 +2126,80 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				charactersWithValue.AddRange(spaceCharacters);
 				var lastLinkedSign = priorSignInterpretationId;
 
-				foreach (var entry in primaryStream)
+				var groupedPrimaryStream = primaryStream.GroupBy(
+						p => p.signInterpretationId
+						, p => p.AttributeValueId
+						, (key, g) => new
+						{
+								signInterpretationId = key
+								, AttributeValueIds = g.ToList()
+								,
+						});
+
+				foreach (var entry in groupedPrimaryStream)
 				{
-					if (charactersWithValue.Contains(entry.AttributeValueId))
+					if (charactersWithValue.Any(x => entry.AttributeValueIds.Any(y => y == x)))
 						break;
 
 					lastLinkedSign = entry.signInterpretationId;
+
+					primaryStream = primaryStream.Where(
+														 x
+																 => x.signInterpretationId
+																	!= entry.signInterpretationId)
+												 .ToList();
 				}
 
 				priorSignInterpretationId = lastLinkedSign;
 
 				// make sure we end at the earliest ending non-control character
-				foreach (var entry in primaryStream.Reverse())
+				foreach (var entry in groupedPrimaryStream.Reverse())
 				{
-					if (charactersWithValue.Contains(entry.AttributeValueId))
+					if (charactersWithValue.Any(x => entry.AttributeValueIds.Any(y => y == x)))
 						break;
 
 					followingSignInterpretationId = entry.signInterpretationId;
+
+					primaryStream = primaryStream.Where(
+														 x
+																 => x.signInterpretationId
+																	!= entry.signInterpretationId)
+												 .ToList();
 				}
 
 				// If the string is empty, delete everything between priorSignInterpretationId
 				// and followingSignInterpretationId, then return early.
 				if (string.IsNullOrEmpty(replacementText))
 				{
+					var deleted = new HashSet<uint>();
+					var updated = new HashSet<uint>();
+
 					// Just delete everything between the first and last sign interpretation Ids
-					foreach (var entry in primaryStream.Where(
-							(x => x.signInterpretationId != priorSignInterpretationId
-								  && x.signInterpretationId != followingSignInterpretationId)))
+					var deleteSignInterpretationIds = primaryStream
+													  .Where(
+															  (x => x.signInterpretationId
+																	!= priorSignInterpretationId
+																	&& x.signInterpretationId
+																	!= followingSignInterpretationId))
+													  .Select(x => x.signInterpretationId)
+													  .Distinct();
+
+					foreach (var deleteSignInterpretationId in deleteSignInterpretationIds)
 					{
 						await RemoveSignInterpretationAsync(
 								user
-								, entry.signInterpretationId
+								, deleteSignInterpretationId
 								, true
 								, true
 								, false);
 
-						deletedSignInterpretations.Add(entry.signInterpretationId);
+						deleted.Add(deleteSignInterpretationId);
 					}
 
-					updatedSignInterpretations.Add(priorSignInterpretationId);
+					updated.Add(priorSignInterpretationId);
 					transaction.Complete();
 
-					return (createdSignInterpretations.ToList(), updatedSignInterpretations.ToList()
-							, deletedSignInterpretations.ToList());
+					return (new List<uint>(), updated.ToList(), deleted.ToList());
 				}
 
 				// Build the string of the original text for diffing
@@ -2199,94 +2230,110 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					}
 				}
 
-				var textAlignment = Align.AlignTexts(
-						originalString.ToString()
-						, replacementText
-						, 6
-						, 3);
-
-				var visitedOriginalIdx = new HashSet<int>();
-				var visitedNewIdx = new HashSet<int>();
-				var nextLinkedSign = followingSignInterpretationId;
 				var currentLineId = originalStringLineIdKey.First();
 
 				originalStringIdKey.Add(followingSignInterpretationId);
 
-				foreach (var pair in textAlignment)
+				// var nextLinkedSign = originalStringIdKey.First();
+				var differ = new Differ();
+
+				var diff = differ.CreateCharacterDiffs(
+						originalString.ToString()
+						, replacementText
+						, false);
+
+				var deleteSignIntIds = new List<uint>();
+				var addSignIntIds = new Dictionary<uint, List<string>>();
+				var alterSignIntIds = new Dictionary<uint, string>();
+
+				var replacementTextList =
+						replacementText.ToList().Select(x => x.ToString()).ToList();
+
+				foreach (var block in diff.DiffBlocks)
 				{
-					var newChar = replacementText[pair.str2Idx].ToString();
+					var anchorSignInterpretationId = block.DeleteStartA > 0
+							? originalStringIdKey[block.DeleteStartA - 1]
+							: priorSignInterpretationId;
 
-					var newAttributeId = newChar == " "
-							? 2u
-							: 1u;
+					deleteSignIntIds.AddRange(
+							originalStringIdKey.GetRange(block.DeleteStartA, block.DeleteCountA));
 
-					// Cases:
+					var transferLength = block.DeleteCountA > block.InsertCountB
+							? block.InsertCountB
+							: block.DeleteCountA;
 
-					// not yet visited idx in original or in new: perform update char of original sign interpretation
-					if (!visitedOriginalIdx.Contains(pair.str1Idx)
-						&& !visitedNewIdx.Contains(pair.str2Idx))
+					for (var i = 0; i < transferLength; i++)
 					{
-						await _signInterpretationRepository.UpdateSignInterpretationCharacterById(
-								user
-								, originalStringIdKey[pair.str1Idx]
-								, newChar
-								, null
-								, newChar == " "
-										? 2u
-										: 1u);
+						var replaceSiId =
+								deleteSignIntIds[deleteSignIntIds.Count - transferLength + i];
 
-						if ((pair.str1Idx - 1 >= 0
-							 && originalStringIdKey[pair.str1Idx - 1] != lastLinkedSign)
-							|| (priorSignInterpretationId == lastLinkedSign))
-						{
-							var lastSignIntId = pair.str1Idx - 1 >= 0
-									? originalStringIdKey[pair.str1Idx - 1]
-									: lastLinkedSign;
+						alterSignIntIds.Add(
+								replaceSiId
+								, replacementTextList[block.InsertStartB + i]);
 
-							var posreq = await PositionDataRequestFactory.CreateInstanceAsync(
-									conn
-									, StreamType.SignInterpretationStream
-									, user.EditionId.Value);
-
-							posreq.AddAnchorBefore(lastSignIntId);
-							posreq.AddAnchorAfter(originalStringIdKey[pair.str1Idx]);
-							posreq.AddAction(PositionAction.DisconnectNeighbouringAnchors);
-							var request = await posreq.CreateRequestsAsync();
-							await _databaseWriter.WriteToDatabaseAsync(user, request);
-
-							await LinkSignInterpretationsAsync(
-									user
-									, lastLinkedSign
-									, originalStringIdKey[pair.str1Idx]);
-						}
-
-						lastLinkedSign = originalStringIdKey[pair.str1Idx];
-
-						nextLinkedSign = pair.str1Idx + 1 < originalStringIdKey.Count()
-								? originalStringIdKey[pair.str1Idx + 1]
-								: followingSignInterpretationId;
-
-						currentLineId = originalStringLineIdKey[pair.str1Idx];
-						updatedSignInterpretations.Add(originalStringIdKey[pair.str1Idx]);
-						visitedOriginalIdx.Add(pair.str1Idx);
-						visitedNewIdx.Add(pair.str2Idx);
+						anchorSignInterpretationId = replaceSiId;
 					}
 
-					// already visited idx in original, but not in new: add new sign interpretation between last and next sIDs
-					else if (visitedOriginalIdx.Contains(pair.str1Idx)
-							 && !visitedNewIdx.Contains(pair.str2Idx))
+					if (block.InsertCountB - transferLength > 0)
+						addSignIntIds.Add(
+								anchorSignInterpretationId
+								, replacementTextList.GetRange(
+										block.InsertStartB + transferLength
+										, block.InsertCountB - transferLength));
+				}
+
+				deleteSignIntIds = deleteSignIntIds.Where(x => !alterSignIntIds.ContainsKey(x))
+												   .ToList();
+
+				foreach (var deleteSignIntId in deleteSignIntIds)
+				{
+					await RemoveSignInterpretationAsync(
+							user
+							, deleteSignIntId
+							, true
+							, true
+							, false);
+				}
+
+				var deletedSignInterpretations = new HashSet<uint>(deleteSignIntIds);
+
+				foreach (var alterSignIntId in alterSignIntIds)
+				{
+					var spaceCharacter = alterSignIntId.Value == " ";
+
+					await _signInterpretationRepository.UpdateSignInterpretationCharacterById(
+							user
+							, alterSignIntId.Key
+							, spaceCharacter
+									? ""
+									: alterSignIntId.Value
+							, null
+							, spaceCharacter
+									? 2u
+									: 1u);
+				}
+
+				var updatedSignInterpretations = new HashSet<uint>(alterSignIntIds.Keys);
+
+				var createdSignInterpretations = new HashSet<uint>();
+
+				foreach (var addSignIntId in addSignIntIds)
+				{
+					var lastSiId = addSignIntId.Key;
+
+					foreach (var character in addSignIntId.Value)
 					{
+						var newAttributeId = character == " "
+								? 2u
+								: 1u;
+
 						var newSign = new SignData
 						{
 								SignInterpretations = new List<SignInterpretationData>
 								{
 										new SignInterpretationData
 										{
-												Character =
-														replacementText[
-																		pair
-																				.str2Idx]
-																.ToString()
+												Character = character
 												, Attributes =
 														new List<
 																		SignInterpretationAttributeData>
@@ -2316,10 +2363,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								user
 								, currentLineId
 								, newSign
-								, new List<uint>()
+								, new List<uint> { lastSiId }
 								, new List<uint>()
 								, null
-								, false
+								, true
 								, false);
 
 						var newSignInterpretationIds = newSigns
@@ -2327,56 +2374,179 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 													   .Where(x => x.SignInterpretationId.HasValue)
 													   .Select(x => x.SignInterpretationId.Value);
 
-						var posreq = await PositionDataRequestFactory.CreateInstanceAsync(
-								conn
-								, StreamType.SignInterpretationStream
-								, user.EditionId.Value);
+						lastSiId = newSignInterpretationIds.First();
+						createdSignInterpretations.Add(lastSiId);
 
-						posreq.AddAnchorBefore(lastLinkedSign);
-						posreq.AddAnchorAfter(nextLinkedSign);
-						posreq.AddAction(PositionAction.DisconnectNeighbouringAnchors);
-						var request = await posreq.CreateRequestsAsync();
-						await _databaseWriter.WriteToDatabaseAsync(user, request);
-
-						await LinkSignInterpretationsAsync(
-								user
-								, lastLinkedSign
-								, newSignInterpretationIds.Last());
-
-						foreach (var alteredSign in alteredSigns)
-							updatedSignInterpretations.Add(alteredSign);
-
-						foreach (var newSignInterpretationId in newSignInterpretationIds)
-							createdSignInterpretations.Add(newSignInterpretationId);
-
-						lastLinkedSign = newSignInterpretationIds.Last();
-						visitedNewIdx.Add(pair.str2Idx);
+						updatedSignInterpretations.UnionWith(
+								alteredSigns.Where(x => !createdSignInterpretations.Contains(x)));
 					}
-
-					// already visited idx in new, but not in original: delete original sign interpretation
-					else if (!visitedOriginalIdx.Contains(pair.str1Idx)
-							 && visitedNewIdx.Contains(pair.str2Idx))
-					{
-						await RemoveSignInterpretationAsync(
-								user
-								, originalStringIdKey[pair.str1Idx]
-								, true
-								, false
-								, false);
-
-						deletedSignInterpretations.Add(originalStringIdKey[pair.str1Idx]);
-						visitedOriginalIdx.Add(pair.str1Idx);
-					}
-
-					// already visited idx in original and in new: this should not happen (error?)
-					else
-						continue;
 				}
 
 				transaction.Complete();
 
 				return (createdSignInterpretations.ToList(), updatedSignInterpretations.ToList()
 						, deletedSignInterpretations.ToList());
+
+				// foreach (var block in diff.DiffBlocks)
+				//             {
+				//                 var currentOriginalIdx = block.DeleteStartA;
+				//                 var currentReplacementIdx = block.InsertStartB;
+				//                 if (block.DeleteCountA > block.InsertCountB)
+				//                 {
+				//                     while (currentOriginalIdx - block.DeleteStartA < block.DeleteCountA  - block.InsertCountB)
+				// 		{
+				// 			await RemoveSignInterpretationAsync(
+				// 				user
+				// 				, originalStringIdKey[currentOriginalIdx]
+				// 				, true
+				// 				, false
+				// 				, false);
+				//
+				// 			deletedSignInterpretations.Add(originalStringIdKey[currentOriginalIdx]);
+				// 			currentOriginalIdx++;
+				// 		}
+				//                 }
+				//
+				//                 while (currentOriginalIdx < block.DeleteStartA + block.DeleteCountA && currentReplacementIdx < block.InsertStartB + block.InsertCountB)
+				//                 {
+				// 		var newChar = replacementText[currentReplacementIdx].ToString();
+				//                     await _signInterpretationRepository.UpdateSignInterpretationCharacterById(
+				// 				user
+				// 				, originalStringIdKey[currentOriginalIdx]
+				// 				, newChar
+				// 				, null
+				// 				, newChar == " "
+				// 						? 2u
+				// 						: 1u);
+				//
+				// 		if ((currentOriginalIdx - 1 >= 0
+				// 			 && originalStringIdKey[currentOriginalIdx - 1] != lastLinkedSign)
+				// 			|| (priorSignInterpretationId == lastLinkedSign))
+				// 		{
+				// 			var lastSignIntId = currentOriginalIdx - 1 >= 0
+				// 					? originalStringIdKey[currentOriginalIdx - 1]
+				// 					: lastLinkedSign;
+				//
+				// 			var posreq = await PositionDataRequestFactory.CreateInstanceAsync(
+				// 					conn
+				// 					, StreamType.SignInterpretationStream
+				// 					, user.EditionId.Value);
+				//
+				// 			posreq.AddAnchorBefore(lastSignIntId);
+				// 			posreq.AddAnchorAfter(originalStringIdKey[currentOriginalIdx]);
+				// 			posreq.AddAction(PositionAction.DisconnectNeighbouringAnchors);
+				// 			var request = await posreq.CreateRequestsAsync();
+				// 			await _databaseWriter.WriteToDatabaseAsync(user, request);
+				//
+				// 			await LinkSignInterpretationsAsync(
+				// 					user
+				// 					, lastLinkedSign
+				// 					, originalStringIdKey[currentOriginalIdx]);
+				// 		}
+				//
+				// 		lastLinkedSign = originalStringIdKey[currentOriginalIdx];
+				//
+				// 		nextLinkedSign = currentOriginalIdx + 1 < originalStringIdKey.Count()
+				// 				? originalStringIdKey[currentOriginalIdx + 1]
+				// 				: followingSignInterpretationId;
+				//
+				// 		currentLineId = originalStringLineIdKey[currentOriginalIdx];
+				// 		updatedSignInterpretations.Add(originalStringIdKey[currentOriginalIdx]);
+				//
+				//                     currentOriginalIdx++;
+				//                     currentReplacementIdx++;
+				//                 }
+				//
+				//                 while (currentReplacementIdx < block.InsertStartB + block.InsertCountB)
+				// 	{
+				// 		var newChar = replacementText[currentReplacementIdx].ToString();
+				// 		var newAttributeId = newChar == " " ? 2u : 1u;
+				// 		var newSign = new SignData
+				// 		{
+				// 			SignInterpretations = new List<SignInterpretationData>
+				// 			{
+				// 				new SignInterpretationData
+				// 				{
+				// 					Character = newChar
+				// 					, Attributes =
+				// 							new List<
+				// 											SignInterpretationAttributeData>
+				// 									{
+				// 											new
+				// 													SignInterpretationAttributeData
+				// 													{
+				// 															AttributeValueId =
+				// 																	newAttributeId
+				// 															, AttributeId =
+				// 																	1
+				// 															,
+				// 													}
+				// 											,
+				// 									}
+				// 					, NextSignInterpretations =
+				// 							new List<
+				// 									NextSignInterpretation>()
+				// 					,
+				// 				}
+				// 				,
+				// 			}
+				// 			,
+				// 		};
+				//
+				// 		var (newSigns, alteredSigns) = await CreateSignWithSignInterpretationAsync(
+				// 				user
+				// 				, currentLineId
+				// 				, newSign
+				// 				, new List<uint>()
+				// 				, new List<uint>()
+				// 				, null
+				// 				, false
+				// 				, false);
+				//
+				// 		var newSignInterpretationIds = newSigns
+				// 									   .SelectMany(x => x.SignInterpretations)
+				// 									   .Where(x => x.SignInterpretationId.HasValue)
+				// 									   .Select(x => x.SignInterpretationId.Value);
+				//
+				// 		var posreq = await PositionDataRequestFactory.CreateInstanceAsync(
+				// 				conn
+				// 				, StreamType.SignInterpretationStream
+				// 				, user.EditionId.Value);
+				//
+				// 		posreq.AddAnchorBefore(lastLinkedSign);
+				// 		if (lastLinkedSign != nextLinkedSign)
+				// 			posreq.AddAnchorAfter(nextLinkedSign);
+				// 		posreq.AddAction(PositionAction.DisconnectNeighbouringAnchors);
+				// 		var request = await posreq.CreateRequestsAsync();
+				// 		await _databaseWriter.WriteToDatabaseAsync(user, request);
+				//
+				// 		await LinkSignInterpretationsAsync(
+				// 				user
+				// 				, lastLinkedSign
+				// 				, newSignInterpretationIds.Last());
+				//
+				// 		foreach (var alteredSign in alteredSigns)
+				// 			updatedSignInterpretations.Add(alteredSign);
+				//
+				// 		foreach (var newSignInterpretationId in newSignInterpretationIds)
+				// 			createdSignInterpretations.Add(newSignInterpretationId);
+				//
+				// 		lastLinkedSign = newSignInterpretationIds.Last();
+				//
+				// 		currentReplacementIdx++;
+				// 	}
+				//
+				// 	// Make sure that the stream continues to preexisting characters
+				// 	if (!originalStringIdKey.Contains(lastLinkedSign))
+				// 	{
+				// 		var nextSignInterpretationId = currentOriginalIdx < originalStringIdKey.Count ? originalStringIdKey[currentOriginalIdx] : followingSignInterpretationId;
+				// 		await LinkSignInterpretationsAsync(
+				// 			user
+				// 			, lastLinkedSign
+				// 			, nextSignInterpretationId);
+				// 		lastLinkedSign = nextSignInterpretationId;
+				// 	}
+				//             }
 			}
 		}
 
@@ -2939,13 +3109,21 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			{
 				using (var connection = OpenConnection())
 				{
+					const string getCharIdsSQL = @"
+								SELECT sign_interpretation_character_id
+								FROM sign_interpretation_character
+								JOIN sign_interpretation_character_owner USING(sign_interpretation_character_id)
+								WHERE sign_interpretation_id = @SignInterpretationId
+									AND edition_id = @EditionId";
+
 					var characterIds = await connection.QueryAsync<uint>(
-							$@"
-								select sign_interpretation_character_id
-								from sign_interpretation_character
-								where sign_interpretation_id = {
-									signInterpretationId
-								}");
+							getCharIdsSQL
+							, new
+							{
+									SignInterpretationId = signInterpretationId
+									, EditionId = editionUser.EditionId.Value
+									,
+							});
 
 					foreach (var characterId in characterIds)
 					{

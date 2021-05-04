@@ -225,7 +225,7 @@ WITH RECURSIVE sign_interpretation_ids
 					AND position_in_stream_owner.edition_id = sign_interpretation_ids.edition_id
 	)
 
-SELECT distinctrow 	
+SELECT distinctrow
 		text_fragment_to_line.text_fragment_id AS textFragmentId,
 		text_fragment_to_line.line_id AS lineId,
 
@@ -273,6 +273,7 @@ ORDER BY sign_interpretation_ids.sequence,
 	sign_interpretation_ids.is_main,
 	sign_interpretation_character_owner.priority desc,
 	sign_interpretation_ids.signInterpretationId,
+	sign_interpretation_attribute.attribute_value_id,
 	nextSignInterpretationId
 ";
 
