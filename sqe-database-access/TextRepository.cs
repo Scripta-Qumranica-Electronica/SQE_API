@@ -2275,11 +2275,13 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					}
 
 					if (block.InsertCountB - transferLength > 0)
+					{
 						addSignIntIds.Add(
 								anchorSignInterpretationId
 								, replacementTextList.GetRange(
 										block.InsertStartB + transferLength
 										, block.InsertCountB - transferLength));
+					}
 				}
 
 				deleteSignIntIds = deleteSignIntIds.Where(x => !alterSignIntIds.ContainsKey(x))
@@ -2345,6 +2347,15 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 																								newAttributeId
 																						, AttributeId =
 																								1
+																						,
+																				}
+																		, new
+																				SignInterpretationAttributeData
+																				{
+																						AttributeValueId =
+																								20
+																						, AttributeId =
+																								6
 																						,
 																				}
 																		,
