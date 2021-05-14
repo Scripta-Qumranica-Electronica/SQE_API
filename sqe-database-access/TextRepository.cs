@@ -141,6 +141,12 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signId);
 
+		Task<Terminators> GetTerminators(
+				UserInfo          editionUser
+				, TableData.Table table
+				, uint            elementId
+				, bool            allowPublicEditions = false);
+
 		// Task<bool> IsCycleAsync(
 		// 		uint   editionId
 		// 		, uint startSignInterpretation
@@ -182,10 +188,12 @@ namespace SQE.DatabaseAccess
 				, uint?  nextFragmentId);
 
 		Task<(List<uint> Created, List<uint> Updated, List<uint> Deleted)> DiffReplaceText(
-				UserInfo user
-				, uint   priorSignInterpretationId
-				, uint   followingSignInterpretationId
-				, string replacementText);
+				UserInfo                             user
+				, uint?                              priorSignInterpretationId
+				, uint?                              followingSignInterpretationId
+				, string                             replacementText
+				, Dictionary<uint, ReconstructedRoi> reconstructedRois
+				, ArtefactModel                      artefact = null);
 
 		#endregion
 	}
@@ -202,7 +210,8 @@ namespace SQE.DatabaseAccess
 
 		private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
 
-		private readonly IRoiRepository _roiRepository;
+		private readonly IRoiRepository      _roiRepository;
+		private readonly IArtefactRepository _artefactRepository;
 
 		private readonly ISignStreamMaterializationRepository _materializationRepository;
 
@@ -224,6 +233,7 @@ namespace SQE.DatabaseAccess
 				, ISignInterpretationRepository           signInterpretationRepository
 				, ISignInterpretationCommentaryRepository commentaryRepository
 				, IRoiRepository                          roiRepository
+				, IArtefactRepository                     artefactRepository
 				, ISignStreamMaterializationRepository    materializationRepository) : base(config)
 		{
 			_databaseWriter = databaseWriter;
@@ -235,6 +245,7 @@ namespace SQE.DatabaseAccess
 			_signInterpretationRepository = signInterpretationRepository;
 			_commentaryRepository = commentaryRepository;
 			_roiRepository = roiRepository;
+			_artefactRepository = artefactRepository;
 			_materializationRepository = materializationRepository;
 		}
 
@@ -323,7 +334,7 @@ namespace SQE.DatabaseAccess
 		/// <returns>A detailed text object</returns>
 		public async Task<TextEdition> GetLineByIdAsync(UserInfo editionUser, uint lineId)
 		{
-			var terminators = _getTerminators(
+			var terminators = await GetTerminators(
 					editionUser
 					, TableData.Table.line
 					, lineId
@@ -491,11 +502,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				, uint?    subsequentLineId = null)
 		{
 			var subsequentSignId = (subsequentLineId.HasValue
-							? _getTerminators(
+							? await GetTerminators(
 									editionUser
 									, TableData.Table.line
 									, subsequentLineId.Value)
-							: _getTerminators(
+							: await GetTerminators(
 									editionUser
 									, TableData.Table.text_fragment
 									, fragmentId))
@@ -573,11 +584,15 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		{
 			// Get the SignInterpretationId of the of the end break of the previous line
 			var anchorBefore = (previousLineId.HasValue
-					? _getTerminators(editionUser, TableData.Table.line, previousLineId.Value)
-					: _getTerminators(
-							editionUser
-							, TableData.Table.text_fragment
-							, fragmentId)).EndId;
+							? await GetTerminators(
+									editionUser
+									, TableData.Table.line
+									, previousLineId.Value)
+							: await GetTerminators(
+									editionUser
+									, TableData.Table.text_fragment
+									, fragmentId))
+					.EndId;
 
 			// Try to get the SignInterpretationId of the start break of the next line
 			var anchorsAfter = await _getNextSignInterpretationIds(
@@ -1893,7 +1908,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				UserInfo editionUser
 				, uint   textFragmentId)
 		{
-			var terminators = _getTerminators(
+			var terminators = await GetTerminators(
 					editionUser
 					, TableData.Table.text_fragment
 					, textFragmentId
@@ -2087,14 +2102,65 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		/// </returns>
 		public async Task<(List<uint> Created, List<uint> Updated, List<uint> Deleted)>
 				DiffReplaceText(
-						UserInfo user
-						, uint   priorSignInterpretationId
-						, uint   followingSignInterpretationId
-						, string replacementText)
+						UserInfo                             user
+						, uint?                              priorSignInterpretationId
+						, uint?                              followingSignInterpretationId
+						, string                             replacementText
+						, Dictionary<uint, ReconstructedRoi> reconstructedRois
+						, ArtefactModel                      artefact = null)
 		{
 			using (var transaction = new TransactionScope())
 			using (var conn = OpenConnection())
 			{
+				// Get the priorsignId and followingSignId if an artefactId is submitted
+				// also update the artefact.
+				if (artefact != null)
+				{
+					var textFragmentIds =
+							await _artefactRepository.ArtefactTextFragmentsAsync(
+									user
+									, artefact.ArtefactId);
+
+					if (textFragmentIds.Count() != 1
+						|| !textFragmentIds.First().TextFragmentId.HasValue)
+						throw new StandardExceptions.InputDataRuleViolationException(
+								$"The submitted artefact must be associated by one and only one text fragment, the submitted artefact is associated with {textFragmentIds.Count()} text fragments.");
+
+					var textFragment = await GetTerminators(
+							user
+							, TableData.Table.text_fragment
+							, textFragmentIds.First().TextFragmentId.Value);
+
+					priorSignInterpretationId ??= textFragment.StartId;
+					followingSignInterpretationId ??= textFragment.EndId;
+
+					if (!string.IsNullOrEmpty(artefact.Mask))
+						await _artefactRepository.UpdateArtefactShapeAsync(
+								user
+								, artefact.ArtefactId
+								, artefact.Mask);
+
+					if (artefact.Scale.HasValue
+						|| artefact.Rotate.HasValue
+						|| artefact.TranslateX.HasValue
+						|| artefact.TranslateY.HasValue
+						|| artefact.ZIndex.HasValue)
+						await _artefactRepository.UpdateArtefactPositionAsync(
+								user
+								, artefact.ArtefactId
+								, artefact.Scale
+								, artefact.Rotate
+								, artefact.TranslateX
+								, artefact.TranslateY
+								, artefact.ZIndex
+								, artefact.Mirror ?? false);
+				}
+
+				// Reject if we have reconstruct ROIs but no artefactID
+				else if (!reconstructedRois.Any())
+					throw new StandardExceptions.InputDataRuleViolationException(
+							"An artefact id must be submitted along with the ROIs.");
+
 				var primaryStream = await conn.QueryAsync<GetBasicTextChunk.Model>(
 						GetBasicTextChunk.GetQuery
 						, new
@@ -2196,7 +2262,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						deleted.Add(deleteSignInterpretationId);
 					}
 
-					updated.Add(priorSignInterpretationId);
+					updated.Add(priorSignInterpretationId.Value);
 					transaction.Complete();
 
 					return (new List<uint>(), updated.ToList(), deleted.ToList());
@@ -2232,7 +2298,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 				var currentLineId = originalStringLineIdKey.First();
 
-				originalStringIdKey.Add(followingSignInterpretationId);
+				originalStringIdKey.Add(followingSignInterpretationId.Value);
 
 				// var nextLinkedSign = originalStringIdKey.First();
 				var differ = new Differ();
@@ -2243,8 +2309,14 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						, false);
 
 				var deleteSignIntIds = new List<uint>();
-				var addSignIntIds = new Dictionary<uint, List<string>>();
+
+				var addSignIntIds =
+						new Dictionary<uint,
+								List<(string letter, (string shape, int x, int y)? roi)>>();
+
 				var alterSignIntIds = new Dictionary<uint, string>();
+				var alteredRois = new List<(uint signInterpretionId, string shape, int x, int y)>();
+				var createdRois = new List<(uint signInterpretionId, string shape, int x, int y)>();
 
 				var replacementTextList =
 						replacementText.ToList().Select(x => x.ToString()).ToList();
@@ -2271,16 +2343,37 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								replaceSiId
 								, replacementTextList[block.InsertStartB + i]);
 
+						if (reconstructedRois.TryGetValue(
+								(uint) (block.InsertStartB + i)
+								, out var roi))
+							alteredRois.Add(
+									(replaceSiId, roi.Shape, roi.TranslateX, roi.TranslateY));
+
 						anchorSignInterpretationId = replaceSiId;
 					}
 
 					if (block.InsertCountB - transferLength > 0)
 					{
 						addSignIntIds.Add(
-								anchorSignInterpretationId
-								, replacementTextList.GetRange(
-										block.InsertStartB + transferLength
-										, block.InsertCountB - transferLength));
+								anchorSignInterpretationId.Value
+								, Enumerable
+								  .Range(
+										  block.InsertStartB + transferLength
+										  , block.InsertCountB - transferLength)
+								  .Select<int, (string, (string shape, int x, int y)?)>(
+										  x =>
+										  {
+											  if (reconstructedRois.TryGetValue(
+													  (uint) x
+													  , out var roi))
+												  return (replacementTextList[x]
+														  , (
+																  roi.Shape, roi.TranslateX
+																  , roi.TranslateY));
+
+											  return (replacementTextList[x], null);
+										  })
+								  .ToList());
 					}
 				}
 
@@ -2325,7 +2418,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 					foreach (var character in addSignIntId.Value)
 					{
-						var newAttributeId = character == " "
+						var newAttributeId = character.letter == " "
 								? 2u
 								: 1u;
 
@@ -2335,7 +2428,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								{
 										new SignInterpretationData
 										{
-												Character = character
+												Character = character.letter
 												, Attributes =
 														new List<
 																		SignInterpretationAttributeData>
@@ -2388,176 +2481,49 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						lastSiId = newSignInterpretationIds.First();
 						createdSignInterpretations.Add(lastSiId);
 
+						if (character.roi.HasValue)
+							createdRois.Add(
+									(lastSiId, character.roi.Value.shape, character.roi.Value.x
+									 , character.roi.Value.y));
+
 						updatedSignInterpretations.UnionWith(
 								alteredSigns.Where(x => !createdSignInterpretations.Contains(x)));
 					}
 				}
 
+				// Write the new and updated rois
+				await _roiRepository.CreateRoisAsync(
+						user
+						, createdRois.Select(
+											 x => new SignInterpretationRoiData
+											 {
+													 SignInterpretationId = x.signInterpretionId
+													 , Shape = x.shape
+													 , TranslateX = x.x
+													 , TranslateY = x.y
+													 , ArtefactId = artefact.ArtefactId
+													 ,
+											 })
+									 .ToList());
+
+				await _roiRepository.UpdateRoisAsync(
+						user
+						, alteredRois.Select(
+											 x => new SignInterpretationRoiData
+											 {
+													 SignInterpretationId = x.signInterpretionId
+													 , Shape = x.shape
+													 , TranslateX = x.x
+													 , TranslateY = x.y
+													 , ArtefactId = artefact.ArtefactId
+													 ,
+											 })
+									 .ToList());
+
 				transaction.Complete();
 
 				return (createdSignInterpretations.ToList(), updatedSignInterpretations.ToList()
 						, deletedSignInterpretations.ToList());
-
-				// foreach (var block in diff.DiffBlocks)
-				//             {
-				//                 var currentOriginalIdx = block.DeleteStartA;
-				//                 var currentReplacementIdx = block.InsertStartB;
-				//                 if (block.DeleteCountA > block.InsertCountB)
-				//                 {
-				//                     while (currentOriginalIdx - block.DeleteStartA < block.DeleteCountA  - block.InsertCountB)
-				// 		{
-				// 			await RemoveSignInterpretationAsync(
-				// 				user
-				// 				, originalStringIdKey[currentOriginalIdx]
-				// 				, true
-				// 				, false
-				// 				, false);
-				//
-				// 			deletedSignInterpretations.Add(originalStringIdKey[currentOriginalIdx]);
-				// 			currentOriginalIdx++;
-				// 		}
-				//                 }
-				//
-				//                 while (currentOriginalIdx < block.DeleteStartA + block.DeleteCountA && currentReplacementIdx < block.InsertStartB + block.InsertCountB)
-				//                 {
-				// 		var newChar = replacementText[currentReplacementIdx].ToString();
-				//                     await _signInterpretationRepository.UpdateSignInterpretationCharacterById(
-				// 				user
-				// 				, originalStringIdKey[currentOriginalIdx]
-				// 				, newChar
-				// 				, null
-				// 				, newChar == " "
-				// 						? 2u
-				// 						: 1u);
-				//
-				// 		if ((currentOriginalIdx - 1 >= 0
-				// 			 && originalStringIdKey[currentOriginalIdx - 1] != lastLinkedSign)
-				// 			|| (priorSignInterpretationId == lastLinkedSign))
-				// 		{
-				// 			var lastSignIntId = currentOriginalIdx - 1 >= 0
-				// 					? originalStringIdKey[currentOriginalIdx - 1]
-				// 					: lastLinkedSign;
-				//
-				// 			var posreq = await PositionDataRequestFactory.CreateInstanceAsync(
-				// 					conn
-				// 					, StreamType.SignInterpretationStream
-				// 					, user.EditionId.Value);
-				//
-				// 			posreq.AddAnchorBefore(lastSignIntId);
-				// 			posreq.AddAnchorAfter(originalStringIdKey[currentOriginalIdx]);
-				// 			posreq.AddAction(PositionAction.DisconnectNeighbouringAnchors);
-				// 			var request = await posreq.CreateRequestsAsync();
-				// 			await _databaseWriter.WriteToDatabaseAsync(user, request);
-				//
-				// 			await LinkSignInterpretationsAsync(
-				// 					user
-				// 					, lastLinkedSign
-				// 					, originalStringIdKey[currentOriginalIdx]);
-				// 		}
-				//
-				// 		lastLinkedSign = originalStringIdKey[currentOriginalIdx];
-				//
-				// 		nextLinkedSign = currentOriginalIdx + 1 < originalStringIdKey.Count()
-				// 				? originalStringIdKey[currentOriginalIdx + 1]
-				// 				: followingSignInterpretationId;
-				//
-				// 		currentLineId = originalStringLineIdKey[currentOriginalIdx];
-				// 		updatedSignInterpretations.Add(originalStringIdKey[currentOriginalIdx]);
-				//
-				//                     currentOriginalIdx++;
-				//                     currentReplacementIdx++;
-				//                 }
-				//
-				//                 while (currentReplacementIdx < block.InsertStartB + block.InsertCountB)
-				// 	{
-				// 		var newChar = replacementText[currentReplacementIdx].ToString();
-				// 		var newAttributeId = newChar == " " ? 2u : 1u;
-				// 		var newSign = new SignData
-				// 		{
-				// 			SignInterpretations = new List<SignInterpretationData>
-				// 			{
-				// 				new SignInterpretationData
-				// 				{
-				// 					Character = newChar
-				// 					, Attributes =
-				// 							new List<
-				// 											SignInterpretationAttributeData>
-				// 									{
-				// 											new
-				// 													SignInterpretationAttributeData
-				// 													{
-				// 															AttributeValueId =
-				// 																	newAttributeId
-				// 															, AttributeId =
-				// 																	1
-				// 															,
-				// 													}
-				// 											,
-				// 									}
-				// 					, NextSignInterpretations =
-				// 							new List<
-				// 									NextSignInterpretation>()
-				// 					,
-				// 				}
-				// 				,
-				// 			}
-				// 			,
-				// 		};
-				//
-				// 		var (newSigns, alteredSigns) = await CreateSignWithSignInterpretationAsync(
-				// 				user
-				// 				, currentLineId
-				// 				, newSign
-				// 				, new List<uint>()
-				// 				, new List<uint>()
-				// 				, null
-				// 				, false
-				// 				, false);
-				//
-				// 		var newSignInterpretationIds = newSigns
-				// 									   .SelectMany(x => x.SignInterpretations)
-				// 									   .Where(x => x.SignInterpretationId.HasValue)
-				// 									   .Select(x => x.SignInterpretationId.Value);
-				//
-				// 		var posreq = await PositionDataRequestFactory.CreateInstanceAsync(
-				// 				conn
-				// 				, StreamType.SignInterpretationStream
-				// 				, user.EditionId.Value);
-				//
-				// 		posreq.AddAnchorBefore(lastLinkedSign);
-				// 		if (lastLinkedSign != nextLinkedSign)
-				// 			posreq.AddAnchorAfter(nextLinkedSign);
-				// 		posreq.AddAction(PositionAction.DisconnectNeighbouringAnchors);
-				// 		var request = await posreq.CreateRequestsAsync();
-				// 		await _databaseWriter.WriteToDatabaseAsync(user, request);
-				//
-				// 		await LinkSignInterpretationsAsync(
-				// 				user
-				// 				, lastLinkedSign
-				// 				, newSignInterpretationIds.Last());
-				//
-				// 		foreach (var alteredSign in alteredSigns)
-				// 			updatedSignInterpretations.Add(alteredSign);
-				//
-				// 		foreach (var newSignInterpretationId in newSignInterpretationIds)
-				// 			createdSignInterpretations.Add(newSignInterpretationId);
-				//
-				// 		lastLinkedSign = newSignInterpretationIds.Last();
-				//
-				// 		currentReplacementIdx++;
-				// 	}
-				//
-				// 	// Make sure that the stream continues to preexisting characters
-				// 	if (!originalStringIdKey.Contains(lastLinkedSign))
-				// 	{
-				// 		var nextSignInterpretationId = currentOriginalIdx < originalStringIdKey.Count ? originalStringIdKey[currentOriginalIdx] : followingSignInterpretationId;
-				// 		await LinkSignInterpretationsAsync(
-				// 			user
-				// 			, lastLinkedSign
-				// 			, nextSignInterpretationId);
-				// 		lastLinkedSign = nextSignInterpretationId;
-				// 	}
-				//             }
 			}
 		}
 
@@ -2569,7 +2535,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 		#region Common helpers
 
-		private Terminators _getTerminators(
+		public async Task<Terminators> GetTerminators(
 				UserInfo          editionUser
 				, TableData.Table table
 				, uint            elementId
@@ -2592,17 +2558,16 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			using (var connection = OpenConnection())
 			{
 				return new Terminators(
-						connection.Query<uint>(
-										  query
-										  , new
-										  {
-												  ElementId = elementId
-												  , UserId = editionUser.userId
-												  , Breaks = TableData.Terminators(table)
-												  , editionUser.EditionId
-												  ,
-										  })
-								  .ToArray());
+						(await connection.QueryAsync<uint>(
+								query
+								, new
+								{
+										ElementId = elementId
+										, UserId = editionUser.userId
+										, Breaks = TableData.Terminators(table)
+										, editionUser.EditionId
+										,
+								})).ToArray());
 			}
 		}
 

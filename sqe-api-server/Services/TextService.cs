@@ -58,10 +58,17 @@ namespace SQE.API.Server.Services
 				UserInfo                editionUser
 				, DiffReplaceRequestDTO newTextData
 				, string                clientId = null);
+
+		Task<DiffReconstructedResponseDTO> DiffReplaceReconstructedText(
+				UserInfo                              editionUser
+				, uint                                artefactId
+				, DiffReplaceReconstructionRequestDTO replacement
+				, string                              clientId = null);
 	}
 
 	public class TextService : ITextService
 	{
+		private readonly IArtefactRepository              _artefactRepo;
 		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 		private readonly ISignInterpretationService       _signIntService;
 		private readonly ITextRepository                  _textRepo;
@@ -71,10 +78,12 @@ namespace SQE.API.Server.Services
 				ITextRepository                    textRepo
 				, IUserRepository                  userRepo
 				, ISignInterpretationService       signIntService
+				, IArtefactRepository              artefactRepo
 				, IHubContext<MainHub, ISQEClient> hubContext)
 		{
 			_textRepo = textRepo;
 			_userRepo = userRepo;
+			_artefactRepo = artefactRepo;
 			_hubContext = hubContext;
 			_signIntService = signIntService;
 		}
@@ -375,14 +384,59 @@ namespace SQE.API.Server.Services
 		public async Task<DiffReplaceResponseDTO> DiffReplaceText(
 				UserInfo                editionUser
 				, DiffReplaceRequestDTO newTextData
-				, string                clientId = null)
+				, string                clientId = null) => await _diffReplaceText(
+				editionUser
+				, newTextData.newText
+				, clientId
+				, newTextData.priorSignInterpretationId
+				, newTextData.followingSignInterpretationId);
+
+		public async Task<DiffReconstructedResponseDTO> DiffReplaceReconstructedText(
+				UserInfo                              editionUser
+				, uint                                artefactId
+				, DiffReplaceReconstructionRequestDTO replacement
+				, string                              clientId = null) => await _diffReplaceText(
+				editionUser
+				, replacement.newText
+				, clientId
+				, artefactId: artefactId
+				, textRois: replacement.textRois
+				, virtualArtefactShape: replacement.virtualArtefactShape
+				, virtualArtefactPlacement: replacement.virtualArtefactPlacement);
+
+		private async Task<DiffReconstructedResponseDTO> _diffReplaceText(
+				UserInfo editionUser
+				, string newText
+				, string clientId
+				, uint? priorSignInterpretationId = null
+				, uint? followingSignInterpretationId = null
+				, uint? artefactId = null
+				, Dictionary<uint, SetReconstructedInterpretationRoiDTO> textRois = null
+				, string virtualArtefactShape = null
+				, PlacementDTO virtualArtefactPlacement = null)
 		{
+			if (textRois == null)
+				textRois = new Dictionary<uint, SetReconstructedInterpretationRoiDTO>();
+
 			// Request the update
 			var (created, updated, deleted) = await _textRepo.DiffReplaceText(
 					editionUser
-					, newTextData.priorSignInterpretationId
-					, newTextData.followingSignInterpretationId
-					, newTextData.newText);
+					, priorSignInterpretationId
+					, followingSignInterpretationId
+					, newText
+					, textRois.toModel()
+					, artefactId.HasValue
+							? new ArtefactModel
+							{
+									ArtefactId = artefactId.Value
+									, Scale = virtualArtefactPlacement.scale
+									, Rotate = virtualArtefactPlacement.rotate
+									, TranslateX = virtualArtefactPlacement.translate.x
+									, TranslateY = virtualArtefactPlacement.translate.y
+									, ZIndex = virtualArtefactPlacement.zIndex
+									, Mirror = virtualArtefactPlacement.mirrored,
+							}
+							: null);
 
 			// Collect all data on the operations that were carried out
 			var deletedData = new DeleteIntIdDTO
@@ -429,7 +483,7 @@ namespace SQE.API.Server.Services
 			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
 							 .UpdatedSignInterpretations(updatedResults);
 
-			return new DiffReplaceResponseDTO
+			return new DiffReconstructedResponseDTO
 			{
 					created = createdResults
 					, updated = updatedResults

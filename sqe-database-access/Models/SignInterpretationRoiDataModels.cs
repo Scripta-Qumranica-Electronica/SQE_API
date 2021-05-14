@@ -3,6 +3,13 @@ using System.Collections.Generic;
 // ReSharper disable ArrangeRedundantParentheses
 namespace SQE.DatabaseAccess.Models
 {
+	public class ReconstructedRoi
+	{
+		public string Shape      { get; set; }
+		public int    TranslateX { get; set; }
+		public int    TranslateY { get; set; }
+	}
+
 	public class SignInterpretationRoiData
 	{
 		public uint? SignInterpretationRoiId        { get; set; }

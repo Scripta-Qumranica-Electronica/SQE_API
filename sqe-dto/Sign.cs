@@ -228,15 +228,38 @@ namespace SQE.API.DTO
 		public AttributeDTO[] attributes { get; set; }
 	}
 
-	public class DiffReplaceRequestDTO
+	public class BasicDiffReplaceRequestDTO
+	{
+		[Required]
+		public string newText { get; set; }
+	}
+
+	public class DiffReplaceRequestDTO : BasicDiffReplaceRequestDTO
 	{
 		[Required]
 		public uint priorSignInterpretationId { get; set; }
 
 		[Required]
 		public uint followingSignInterpretationId { get; set; }
+	}
 
-		public string newText { get; set; }
+	public class DiffReplaceReconstructionRequestDTO : BasicDiffReplaceRequestDTO
+	{
+		/// <summary>
+		///  The key of this dictionary should be the index of the letter in the
+		///  string to which the SetReconstructedInterpretationRoiDTO corresponds.
+		///  It is not necessary for every character in the string to have a
+		///  corresponding entry in textRois (for instance, a space character will
+		///  probably have no associated ROI).
+		/// </summary>
+		[Required]
+		public Dictionary<uint, SetReconstructedInterpretationRoiDTO> textRois { get; set; }
+
+		[Required]
+		public string virtualArtefactShape { get; set; }
+
+		[Required]
+		public PlacementDTO virtualArtefactPlacement { get; set; }
 	}
 
 	public class DiffReplaceResponseDTO
@@ -244,5 +267,10 @@ namespace SQE.API.DTO
 		public SignInterpretationListDTO created { get; set; }
 		public SignInterpretationListDTO updated { get; set; }
 		public DeleteIntIdDTO            deleted { get; set; }
+	}
+
+	public class DiffReconstructedResponseDTO : DiffReplaceResponseDTO
+	{
+		public UpdateArtefactDTO virtualArtefact { get; set; }
 	}
 }

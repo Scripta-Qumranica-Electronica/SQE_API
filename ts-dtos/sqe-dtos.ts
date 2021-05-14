@@ -362,11 +362,14 @@ export interface QwbBibliographyEntryDTO {
     entry?: string;
 }
 
-export interface SetInterpretationRoiDTO {
-    artefactId: number;
-    signInterpretationId: number;
+export interface SetReconstructedInterpretationRoiDTO {
     shape: string;
     translate: TranslateDTO;
+}
+
+export interface SetInterpretationRoiDTO extends SetReconstructedInterpretationRoiDTO {
+    artefactId: number;
+    signInterpretationId: number;
     stanceRotation: number;
     exceptional: boolean;
     valuesSet: boolean;
@@ -643,16 +646,29 @@ export interface AttributeListDTO {
     attributes: Array<AttributeDTO>;
 }
 
-export interface DiffReplaceRequestDTO {
+export interface BasicDiffReplaceRequestDTO {
+    newText: string;
+}
+
+export interface DiffReplaceRequestDTO extends BasicDiffReplaceRequestDTO {
     priorSignInterpretationId: number;
     followingSignInterpretationId: number;
-    newText?: string;
+}
+
+export interface DiffReplaceReconstructionRequestDTO extends BasicDiffReplaceRequestDTO {
+    textRois: { [key: number] : SetReconstructedInterpretationRoiDTO };
+    virtualArtefactShape: string;
+    virtualArtefactPlacement: PlacementDTO;
 }
 
 export interface DiffReplaceResponseDTO {
     created?: SignInterpretationListDTO;
     updated?: SignInterpretationListDTO;
     deleted?: DeleteIntIdDTO;
+}
+
+export interface DiffReconstructedResponseDTO extends DiffReplaceResponseDTO {
+    virtualArtefact?: UpdateArtefactDTO;
 }
 
 export interface EditionScriptCollectionDTO {

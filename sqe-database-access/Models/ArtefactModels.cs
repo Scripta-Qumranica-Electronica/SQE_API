@@ -25,6 +25,7 @@ namespace SQE.DatabaseAccess.Models
 		public decimal? Rotate               { get; set; }
 		public int?     TranslateX           { get; set; }
 		public int?     TranslateY           { get; set; }
+		public bool?    Mirror               { get; set; }
 		public uint     PositionEditorId     { get; set; }
 		public int?     ZIndex               { get; set; }
 		public byte     CatalogSide          { get; set; }

@@ -131,5 +131,16 @@ namespace SQE.API.Server.Serialization
 					, stanceRotation = x.stanceRotation
 					,
 			};
+
+		public static Dictionary<uint, ReconstructedRoi> toModel(
+				this Dictionary<uint, SetReconstructedInterpretationRoiDTO> dict)
+			=> dict.ToDictionary(
+					x => x.Key
+					, x => new ReconstructedRoi
+					{
+							Shape = x.Value.shape
+							, TranslateX = x.Value.translate.x
+							, TranslateY = x.Value.translate.y,
+					});
 	}
 }

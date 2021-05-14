@@ -30,6 +30,7 @@ namespace SQE.API.Server.RealtimeHubs
 		public MainHub(
 				IArtefactService             artefactService
 				, IRoiService                roiService
+				, ITextService               textService
 				, IUserService               userService
 				, ICatalogService            catalogueService
 				, IEditionService            editionService
@@ -39,11 +40,11 @@ namespace SQE.API.Server.RealtimeHubs
 				, IScriptService             scriptService
 				, ISearchService             searchService
 				, ISignInterpretationService signInterpretationService
-				, ITextService               textService
 				, IUtilService               utilService)
 		{
 			_artefactService = artefactService;
 			_roiService = roiService;
+			_textService = textService;
 			_userService = userService;
 			_catalogueService = catalogueService;
 			_editionService = editionService;
@@ -53,7 +54,6 @@ namespace SQE.API.Server.RealtimeHubs
 			_scriptService = scriptService;
 			_searchService = searchService;
 			_signInterpretationService = signInterpretationService;
-			_textService = textService;
 			_utilService = utilService;
 		}
 	}

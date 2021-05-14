@@ -444,5 +444,44 @@ namespace SQE.API.Server.RealtimeHubs
 												: null)));
 			}
 		}
+
+		/// <summary>
+		///  Replace the current transcription in the virtual artefact with the submitted
+		///  transcription and the related ROIs. The dictionary in textRois should map the
+		///  index of each character in the new transcription string to its corresponding
+		///  ROI shape/positional data. Some characters, like a space, need not have a
+		///  corresponding ROI shape/position.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="artefactId">Unique Id of the desired artefact (must be a virtual artefact)</param>
+		/// <param name="replacement">Details of the replacement transcription</param>
+		/// <returns>Details concerning all changed data in the edition</returns>
+		[Authorize]
+		public async Task<DiffReconstructedResponseDTO>
+				PutV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription(
+						uint                                  editionId
+						, uint                                artefactId
+						, DiffReplaceReconstructionRequestDTO replacement)
+
+		{
+			try
+			{
+				return await _textService.DiffReplaceReconstructedText(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, artefactId
+						, replacement);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 	}
 }

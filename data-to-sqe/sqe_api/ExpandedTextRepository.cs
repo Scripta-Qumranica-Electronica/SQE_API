@@ -14,6 +14,7 @@ namespace sqe_api
 				, ISignInterpretationRepository           signInterpretationRepository
 				, ISignInterpretationCommentaryRepository commentaryRepository
 				, IRoiRepository                          roiRepository
+				, IArtefactRepository                     artefactRepository
 				, ISignStreamMaterializationRepository    materializationRepository) : base(
 				config
 				, databaseWriter
@@ -21,6 +22,7 @@ namespace sqe_api
 				, signInterpretationRepository
 				, commentaryRepository
 				, roiRepository
+				, artefactRepository
 				, materializationRepository) { }
 
 		public IDbConnection GetConnection() => OpenConnection();

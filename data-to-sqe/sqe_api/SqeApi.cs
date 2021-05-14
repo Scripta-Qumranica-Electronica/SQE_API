@@ -71,6 +71,7 @@ namespace sqe_api
 					, signIntRep
 					, commRep
 					, roiRep
+					, _artefactRep
 					, matRepository);
 
 			_userRep = new UserRepository(sqeConfiguration);

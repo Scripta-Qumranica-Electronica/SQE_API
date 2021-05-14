@@ -416,9 +416,7 @@ The Scripta Qumranica Electronica team</body></html>";
 							   .Replace("$WebServer", webServer)
 							   .Replace("$Token", newUserToken.Token.ToString())
 							   .Replace("$EditionName", edition.name)
-							   .Replace(
-									   "$ExpirationPeriod"
-									   , _appSettings.EmailTokenDaysValid.ToString()));
+							   .Replace("$ExpirationPeriod", _appSettings.EmailTokenDaysValid));
 
 			// Broadcast the request to the potential editor.
 			var editorBroadcastObject = new EditorInvitationDTO
