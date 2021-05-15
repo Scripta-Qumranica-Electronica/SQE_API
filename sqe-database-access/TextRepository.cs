@@ -2123,8 +2123,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 					if (textFragmentIds.Count() != 1
 						|| !textFragmentIds.First().TextFragmentId.HasValue)
+					{
 						throw new StandardExceptions.InputDataRuleViolationException(
 								$"The submitted artefact must be associated by one and only one text fragment, the submitted artefact is associated with {textFragmentIds.Count()} text fragments.");
+					}
 
 					var textFragment = await GetTerminators(
 							user
@@ -2135,16 +2137,19 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					followingSignInterpretationId ??= textFragment.EndId;
 
 					if (!string.IsNullOrEmpty(artefact.Mask))
+					{
 						await _artefactRepository.UpdateArtefactShapeAsync(
 								user
 								, artefact.ArtefactId
 								, artefact.Mask);
+					}
 
 					if (artefact.Scale.HasValue
 						|| artefact.Rotate.HasValue
 						|| artefact.TranslateX.HasValue
 						|| artefact.TranslateY.HasValue
 						|| artefact.ZIndex.HasValue)
+					{
 						await _artefactRepository.UpdateArtefactPositionAsync(
 								user
 								, artefact.ArtefactId
@@ -2154,12 +2159,15 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								, artefact.TranslateY
 								, artefact.ZIndex
 								, artefact.Mirror ?? false);
+					}
 				}
 
 				// Reject if we have reconstruct ROIs but no artefactID
-				else if (!reconstructedRois.Any())
+				else if (reconstructedRois.Any())
+				{
 					throw new StandardExceptions.InputDataRuleViolationException(
 							"An artefact id must be submitted along with the ROIs.");
+				}
 
 				var primaryStream = await conn.QueryAsync<GetBasicTextChunk.Model>(
 						GetBasicTextChunk.GetQuery
@@ -2346,8 +2354,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						if (reconstructedRois.TryGetValue(
 								(uint) (block.InsertStartB + i)
 								, out var roi))
+						{
 							alteredRois.Add(
 									(replaceSiId, roi.Shape, roi.TranslateX, roi.TranslateY));
+						}
 
 						anchorSignInterpretationId = replaceSiId;
 					}
@@ -2366,10 +2376,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 											  if (reconstructedRois.TryGetValue(
 													  (uint) x
 													  , out var roi))
+											  {
 												  return (replacementTextList[x]
 														  , (
 																  roi.Shape, roi.TranslateX
 																  , roi.TranslateY));
+											  }
 
 											  return (replacementTextList[x], null);
 										  })
@@ -2482,9 +2494,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						createdSignInterpretations.Add(lastSiId);
 
 						if (character.roi.HasValue)
+						{
 							createdRois.Add(
 									(lastSiId, character.roi.Value.shape, character.roi.Value.x
 									 , character.roi.Value.y));
+						}
 
 						updatedSignInterpretations.UnionWith(
 								alteredSigns.Where(x => !createdSignInterpretations.Contains(x)));

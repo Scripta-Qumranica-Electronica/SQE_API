@@ -230,7 +230,7 @@ namespace SQE.API.DTO
 
 	public class BasicDiffReplaceRequestDTO
 	{
-		[Required]
+		[Required(AllowEmptyStrings = true)]
 		public string newText { get; set; }
 	}
 

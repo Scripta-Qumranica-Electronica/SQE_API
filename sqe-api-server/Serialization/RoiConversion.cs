@@ -140,7 +140,8 @@ namespace SQE.API.Server.Serialization
 					{
 							Shape = x.Value.shape
 							, TranslateX = x.Value.translate.x
-							, TranslateY = x.Value.translate.y,
+							, TranslateY = x.Value.translate.y
+							,
 					});
 	}
 }

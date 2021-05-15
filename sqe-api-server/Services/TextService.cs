@@ -384,25 +384,59 @@ namespace SQE.API.Server.Services
 		public async Task<DiffReplaceResponseDTO> DiffReplaceText(
 				UserInfo                editionUser
 				, DiffReplaceRequestDTO newTextData
-				, string                clientId = null) => await _diffReplaceText(
-				editionUser
-				, newTextData.newText
-				, clientId
-				, newTextData.priorSignInterpretationId
-				, newTextData.followingSignInterpretationId);
+				, string                clientId = null)
+		{
+			var response = await _diffReplaceText(
+					editionUser
+					, newTextData.newText
+					, clientId
+					, newTextData.priorSignInterpretationId
+					, newTextData.followingSignInterpretationId);
+
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .CreatedSignInterpretation(response.created);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .DeletedSignInterpretation(response.deleted);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretations(response.updated);
+
+			return response;
+		}
 
 		public async Task<DiffReconstructedResponseDTO> DiffReplaceReconstructedText(
 				UserInfo                              editionUser
 				, uint                                artefactId
 				, DiffReplaceReconstructionRequestDTO replacement
-				, string                              clientId = null) => await _diffReplaceText(
-				editionUser
-				, replacement.newText
-				, clientId
-				, artefactId: artefactId
-				, textRois: replacement.textRois
-				, virtualArtefactShape: replacement.virtualArtefactShape
-				, virtualArtefactPlacement: replacement.virtualArtefactPlacement);
+				, string                              clientId = null)
+		{
+			var response = await _diffReplaceText(
+					editionUser
+					, replacement.newText
+					, clientId
+					, artefactId: artefactId
+					, textRois: replacement.textRois
+					, virtualArtefactShape: replacement
+							.virtualArtefactShape
+					, virtualArtefactPlacement: replacement
+							.virtualArtefactPlacement);
+
+			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+			// made the request, that client directly received the response.
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .CreatedSignInterpretation(response.created);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .DeletedSignInterpretation(response.deleted);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .UpdatedSignInterpretations(response.updated);
+
+			return response;
+		}
 
 		private async Task<DiffReconstructedResponseDTO> _diffReplaceText(
 				UserInfo editionUser
@@ -415,8 +449,7 @@ namespace SQE.API.Server.Services
 				, string virtualArtefactShape = null
 				, PlacementDTO virtualArtefactPlacement = null)
 		{
-			if (textRois == null)
-				textRois = new Dictionary<uint, SetReconstructedInterpretationRoiDTO>();
+			textRois ??= new Dictionary<uint, SetReconstructedInterpretationRoiDTO>();
 
 			// Request the update
 			var (created, updated, deleted) = await _textRepo.DiffReplaceText(
@@ -434,7 +467,8 @@ namespace SQE.API.Server.Services
 									, TranslateX = virtualArtefactPlacement.translate.x
 									, TranslateY = virtualArtefactPlacement.translate.y
 									, ZIndex = virtualArtefactPlacement.zIndex
-									, Mirror = virtualArtefactPlacement.mirrored,
+									, Mirror = virtualArtefactPlacement.mirrored
+									,
 							}
 							: null);
 
@@ -471,17 +505,6 @@ namespace SQE.API.Server.Services
 
 			var updatedResults =
 					new SignInterpretationListDTO { signInterpretations = updatedData.ToArray() };
-
-			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-			// made the request, that client directly received the response.
-			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-							 .CreatedSignInterpretation(createdResults);
-
-			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-							 .DeletedSignInterpretation(deletedData);
-
-			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-							 .UpdatedSignInterpretations(updatedResults);
 
 			return new DiffReconstructedResponseDTO
 			{

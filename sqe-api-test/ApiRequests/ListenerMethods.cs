@@ -14,6 +14,9 @@ namespace SQE.ApiTest.ApiRequests
 		, DeletedArtefact
 		, DeletedArtefactGroup
 		, UpdatedArtefactGroup
+		, CreatedSignInterpretation
+		, DeletedSignInterpretation
+		, UpdatedSignInterpretations
 		, RequestedEditor
 		, CreatedEditor
 		, CreatedEdition
@@ -33,11 +36,8 @@ namespace SQE.ApiTest.ApiRequests
 		, DeletedScribalFontKerningPair
 		, DeletedScribalFontGlyph
 		, CreatedAttribute
-		, CreatedSignInterpretation
-		, UpdatedSignInterpretations
 		, UpdatedSignInterpretation
 		, DeletedAttribute
-		, DeletedSignInterpretation
 		, UpdatedAttribute
 		, CreatedTextFragment
 		, CreatedLine

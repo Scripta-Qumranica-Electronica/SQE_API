@@ -288,6 +288,7 @@ ORDER BY sign_interpretation_ids.sequence,
 			public byte   IsVariant                { get; set; }
 			public uint   AttributeId              { get; set; }
 			public uint   AttributeValueId         { get; set; }
+			public uint   ArtefactId               { get; set; }
 		}
 	}
 
