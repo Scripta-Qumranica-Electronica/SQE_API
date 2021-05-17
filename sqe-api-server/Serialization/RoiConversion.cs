@@ -143,5 +143,9 @@ namespace SQE.API.Server.Serialization
 							, TranslateY = x.Value.translate.y
 							,
 					});
+
+		public static Dictionary<uint, SetReconstructedInterpretationRoiDTO> FromDTO(
+				this IEnumerable<IndexedReplacementTextRoi> rois)
+			=> rois.ToDictionary(x => x.index, x => x.roi);
 	}
 }

@@ -228,14 +228,11 @@ namespace SQE.API.DTO
 		public AttributeDTO[] attributes { get; set; }
 	}
 
-	public class BasicDiffReplaceRequestDTO
+	public class DiffReplaceRequestDTO
 	{
 		[Required(AllowEmptyStrings = true)]
 		public string newText { get; set; }
-	}
 
-	public class DiffReplaceRequestDTO : BasicDiffReplaceRequestDTO
-	{
 		[Required]
 		public uint priorSignInterpretationId { get; set; }
 
@@ -243,7 +240,7 @@ namespace SQE.API.DTO
 		public uint followingSignInterpretationId { get; set; }
 	}
 
-	public class DiffReplaceReconstructionRequestDTO : BasicDiffReplaceRequestDTO
+	public class DiffReplaceReconstructionRequestDTO
 	{
 		/// <summary>
 		///  The key of this dictionary should be the index of the letter in the
@@ -252,14 +249,26 @@ namespace SQE.API.DTO
 		///  corresponding entry in textRois (for instance, a space character will
 		///  probably have no associated ROI).
 		/// </summary>
+		/// This dict uses a string for its key because unlike Newtonsoft
+		/// the new System.Text.JSON cannot work with dictionaries that
+		/// have a key type other than string: see https://github.com/TheBuzzSaw/KellySharp/tree/master/KellySharp/DictionaryJsonConverter
 		[Required]
-		public Dictionary<uint, SetReconstructedInterpretationRoiDTO> textRois { get; set; }
+		public List<IndexedReplacementTextRoi> textRois { get; set; }
+
+		[Required(AllowEmptyStrings = true)]
+		public string newText { get; set; }
 
 		[Required]
 		public string virtualArtefactShape { get; set; }
 
 		[Required]
 		public PlacementDTO virtualArtefactPlacement { get; set; }
+	}
+
+	public class IndexedReplacementTextRoi
+	{
+		public uint                                 index { get; set; }
+		public SetReconstructedInterpretationRoiDTO roi   { get; set; }
 	}
 
 	public class DiffReplaceResponseDTO
@@ -271,6 +280,6 @@ namespace SQE.API.DTO
 
 	public class DiffReconstructedResponseDTO : DiffReplaceResponseDTO
 	{
-		public UpdateArtefactDTO virtualArtefact { get; set; }
+		public ArtefactDTO virtualArtefact { get; set; }
 	}
 }

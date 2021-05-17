@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -1783,6 +1784,182 @@ namespace SQE.ApiTest
 						replacementString
 						, updatedString.Substring(0, replacementString.Length));
 			}
+		}
+
+		[Theory]
+		[InlineData(true, "לא אבה ללכת")]
+		[InlineData(true, "")]
+		[InlineData(false, "לא אבה ללכת")]
+		[InlineData(false, "")]
+		public async Task CanUpdateVirtualArtefactTextChunk(bool realtime, string replacementString)
+		{
+			const uint startingEditionId = 899;
+			const uint artefactId = 27991;
+			const uint textFragmentId = 10166;
+
+			using (var editionCreator = new EditionHelpers.EditionCreator(
+					_client
+					, StartConnectionAsync
+					, startingEditionId))
+			{
+				// Arrange
+				var editionId = await editionCreator.CreateEdition();
+
+				var textRequest =
+						new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+								editionId
+								, textFragmentId);
+
+				await textRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var text = realtime
+						? textRequest.SignalrResponseObject
+						: textRequest.HttpResponseObject;
+
+				var textRois = new List<IndexedReplacementTextRoi>();
+
+				for (var i = 0; i < replacementString.Length; i++)
+				{
+					if (replacementString[i] == ' ')
+						continue;
+
+					var roi = new SetReconstructedInterpretationRoiDTO
+					{
+							shape = "POLYGON((0 0,10 0,10 10,0 10,0 0))"
+							, translate = new TranslateDTO
+							{
+									x = 604 - (i * 10) - 10
+									, y = 10
+									,
+							}
+							,
+					};
+
+					textRois.Add(new IndexedReplacementTextRoi { index = (uint) i, roi = roi });
+				}
+
+				var requestObject = new DiffReplaceReconstructionRequestDTO
+				{
+						virtualArtefactShape = "POLYGON((0 0,604 0,604 200,0 200,0 0))"
+						, virtualArtefactPlacement = new PlacementDTO
+						{
+								mirrored = false
+								, scale = 1
+								, rotate = 0
+								, zIndex = 0
+								, translate = new TranslateDTO
+								{
+										x = 42644
+										, y = 400
+										,
+								}
+								,
+						}
+						, newText = replacementString
+						, textRois = textRois
+						,
+				};
+
+				// Act
+				var diffRequest =
+						new Put.V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription(
+								editionId
+								, artefactId
+								, requestObject);
+
+				await diffRequest.SendAsync(
+						new List<ListenerMethods>
+						{
+								diffRequest.AvailableListeners.CreatedSignInterpretation
+								, diffRequest.AvailableListeners.DeletedSignInterpretation
+								, diffRequest.AvailableListeners.UpdatedSignInterpretations
+								,
+						}
+						, realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var diffResponse = realtime
+						? diffRequest.SignalrResponseObject
+						: diffRequest.HttpResponseObject;
+
+				// Assert
+				diffResponse.created.ShouldDeepEqual(diffRequest.CreatedSignInterpretation);
+				diffResponse.updated.ShouldDeepEqual(diffRequest.UpdatedSignInterpretations);
+				diffResponse.deleted.ShouldDeepEqual(diffRequest.DeletedSignInterpretation);
+
+				Assert.True(
+						diffResponse.created.signInterpretations.Any()
+						|| diffResponse.updated.signInterpretations.Any()
+						|| diffResponse.deleted.ids.Any());
+
+				Assert.Equal(EditionEntities.signInterpretation, diffResponse.deleted.entity);
+
+				var updatedTextRequest =
+						new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+								editionId
+								, textFragmentId);
+
+				await updatedTextRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var updatedText = realtime
+						? updatedTextRequest.SignalrResponseObject
+						: updatedTextRequest.HttpResponseObject;
+
+				Assert.False(updatedText.IsDeepEqual(text));
+
+				// Build the returned text string for comparison
+				var updatedString = "";
+
+				var spacingAttributes = new List<uint>
+				{
+						2
+						, 3
+						, 4
+						,
+				};
+
+				foreach (var sign in updatedText.textFragments.First()
+												.lines.SelectMany(x => x.signs)
+												.SelectMany(x => x.signInterpretations))
+				{
+					updatedString += sign.character;
+
+					if (sign.attributes.Any(x => spacingAttributes.Contains(x.attributeValueId)))
+						updatedString += " ";
+				}
+
+				Assert.Contains(replacementString, updatedString);
+			}
+		}
+
+		private IList<ValidationResult> ValidateModel(object model)
+		{
+			var validationResults = new List<ValidationResult>();
+			var ctx = new ValidationContext(model, null, null);
+
+			Validator.TryValidateObject(
+					model
+					, ctx
+					, validationResults
+					, true);
+
+			return validationResults;
 		}
 
 		// TODO: Ingo changed the logic so two text fragments with the same name are allowed, so probably remove this test.

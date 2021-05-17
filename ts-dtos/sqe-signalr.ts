@@ -118,9 +118,9 @@ import {
 	UpdateAttributeDTO,
 	AttributeDTO,
 	AttributeListDTO,
-	BasicDiffReplaceRequestDTO,
 	DiffReplaceRequestDTO,
 	DiffReplaceReconstructionRequestDTO,
+	IndexedReplacementTextRoi,
 	DiffReplaceResponseDTO,
 	DiffReconstructedResponseDTO,
 	EditionScriptCollectionDTO,
@@ -351,11 +351,11 @@ export class SignalRUtilities {
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param artefactId - Unique Id of the desired artefact (must be a virtual artefact)
-	 * @param replacement - Details of the replacement transcription
+	 * @param payload - Details of the replacement transcription
 	 * @returns - Details concerning all changed data in the edition
 	 */
-    public async putV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription(editionId: number, artefactId: number, replacement: DiffReplaceReconstructionRequestDTO): Promise<DiffReconstructedResponseDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription', editionId, artefactId, replacement);
+    public async putV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription(editionId: number, artefactId: number, payload: DiffReplaceReconstructionRequestDTO): Promise<DiffReconstructedResponseDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription', editionId, artefactId, payload);
     }
 
     /**
@@ -1256,14 +1256,14 @@ export class SignalRUtilities {
 	 *		 existing at that location in the edition.
 	 *
 	 * @param editionId - Id of the edition to be updated
-	 * @param replaceRequest - Details of the text replacement request
+	 * @param payload - Details of the text replacement request
 	 * @returns - 
 	 *		  Information about all sign interpretations that were
 	 *		  created, updated, and deleted as a result of the operation.
 	 *		 
 	 */
-    public async putV1EditionsEditionIdDiffReplaceText(editionId: number, replaceRequest: DiffReplaceRequestDTO): Promise<DiffReplaceResponseDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdDiffReplaceText', editionId, replaceRequest);
+    public async putV1EditionsEditionIdDiffReplaceText(editionId: number, payload: DiffReplaceRequestDTO): Promise<DiffReplaceResponseDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdDiffReplaceText', editionId, payload);
     }
 
     /**

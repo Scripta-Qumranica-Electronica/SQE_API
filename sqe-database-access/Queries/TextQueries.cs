@@ -237,7 +237,9 @@ SELECT distinctrow
 		sign_interpretation_character_owner.priority AS IsVariant,
 
 		attribute_value.attribute_id AS AttributeId,
-		sign_interpretation_attribute.attribute_value_id AS AttributeValueId
+		sign_interpretation_attribute.attribute_value_id AS AttributeValueId,
+
+		roi.artefact_id AS ArtefactId
 
 FROM sign_interpretation_ids
 	JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = signInterpretationId
@@ -249,6 +251,19 @@ FROM sign_interpretation_ids
 		ON sign_interpretation_attribute_owner.sign_interpretation_attribute_id = sign_interpretation_attribute.sign_interpretation_attribute_id
 		AND sign_interpretation_attribute_owner.edition_id = sign_interpretation_ids.edition_id
 	JOIN attribute_value USING(attribute_value_id)
+	LEFT JOIN sign_interpretation_roi_owner ON sign_interpretation_roi_owner.edition_id = sign_interpretation_ids.edition_id
+	LEFT JOIN sign_interpretation_roi ON sign_interpretation_roi.sign_interpretation_roi_id = sign_interpretation_roi_owner.sign_interpretation_roi_id
+		AND sign_interpretation_roi.sign_interpretation_id = signInterpretationId
+
+	LEFT JOIN (
+		SELECT  artefact_id,
+				sign_interpretation_id,
+				edition_id
+		FROM sign_interpretation_roi
+		JOIN sign_interpretation_roi_owner USING(sign_interpretation_roi_id)
+		JOIN roi_position USING(roi_position_id)
+	) AS roi ON roi.sign_interpretation_id = signInterpretationId
+		AND roi.edition_id = sign_interpretation_ids.edition_id
 
 	JOIN line_to_sign ON line_to_sign.sign_id = sign_interpretation.sign_id
 	JOIN line_data USING (line_id)
@@ -288,7 +303,7 @@ ORDER BY sign_interpretation_ids.sequence,
 			public byte   IsVariant                { get; set; }
 			public uint   AttributeId              { get; set; }
 			public uint   AttributeValueId         { get; set; }
-			public uint   ArtefactId               { get; set; }
+			public uint?  ArtefactId               { get; set; }
 		}
 	}
 

@@ -2169,7 +2169,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 							"An artefact id must be submitted along with the ROIs.");
 				}
 
-				var primaryStream = await conn.QueryAsync<GetBasicTextChunk.Model>(
+				var primaryStream = (await conn.QueryAsync<GetBasicTextChunk.Model>(
 						GetBasicTextChunk.GetQuery
 						, new
 						{
@@ -2177,14 +2177,53 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								, StartId = priorSignInterpretationId
 								, EndId = followingSignInterpretationId
 								,
-						});
+						})).ToList();
+
+				// If an artefact_id was submitted make sure we only have ROIs connected to
+				// that artefact, and the immediate predecessor and successor.
+				if (artefact != null
+					&& primaryStream.Count() > 1)
+				{
+					uint? firstId = null;
+					uint? secondId = null;
+
+					for (int i = 0
+							 , j = 1
+						 ; j < primaryStream.Count
+						 ; i++, j++)
+					{
+						var first = primaryStream[i];
+						var second = primaryStream[j];
+
+						// Grab the id of the first sign before one associated with the artefact
+						// Or in the case that the first sign is already associated with the
+						// artefact, then start with that.
+						if (!firstId.HasValue
+							&& (first.ArtefactId == artefact.ArtefactId
+								|| second.ArtefactId == artefact.ArtefactId))
+							firstId = first.signInterpretationId;
+
+						// Once a first sign in the artefact has been found,
+						// grab the first sign that is beyond that artefact.
+						if (!firstId.HasValue
+							|| second.ArtefactId == artefact.ArtefactId)
+							continue;
+
+						secondId = second.signInterpretationId;
+
+						break;
+					}
+
+					priorSignInterpretationId = firstId ?? priorSignInterpretationId;
+					followingSignInterpretationId = secondId ?? followingSignInterpretationId;
+				}
 
 				primaryStream = primaryStream.Where(
 													 x
 															 => x.signInterpretationId
-																!= priorSignInterpretationId
+																> priorSignInterpretationId
 																&& x.signInterpretationId
-																!= followingSignInterpretationId)
+																< followingSignInterpretationId)
 											 .ToList();
 
 				// Make sure we start with the fist non-character control character
@@ -2493,7 +2532,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						lastSiId = newSignInterpretationIds.First();
 						createdSignInterpretations.Add(lastSiId);
 
-						if (character.roi.HasValue)
+						if (character.roi != null)
 						{
 							createdRois.Add(
 									(lastSiId, character.roi.Value.shape, character.roi.Value.x
@@ -2506,33 +2545,39 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				}
 
 				// Write the new and updated rois
-				await _roiRepository.CreateRoisAsync(
-						user
-						, createdRois.Select(
-											 x => new SignInterpretationRoiData
-											 {
-													 SignInterpretationId = x.signInterpretionId
-													 , Shape = x.shape
-													 , TranslateX = x.x
-													 , TranslateY = x.y
-													 , ArtefactId = artefact.ArtefactId
-													 ,
-											 })
-									 .ToList());
+				if (createdRois.Any())
+				{
+					await _roiRepository.CreateRoisAsync(
+							user
+							, createdRois.Select(
+												 x => new SignInterpretationRoiData
+												 {
+														 SignInterpretationId = x.signInterpretionId
+														 , Shape = x.shape
+														 , TranslateX = x.x
+														 , TranslateY = x.y
+														 , ArtefactId = artefact.ArtefactId
+														 ,
+												 })
+										 .ToList());
+				}
 
-				await _roiRepository.UpdateRoisAsync(
-						user
-						, alteredRois.Select(
-											 x => new SignInterpretationRoiData
-											 {
-													 SignInterpretationId = x.signInterpretionId
-													 , Shape = x.shape
-													 , TranslateX = x.x
-													 , TranslateY = x.y
-													 , ArtefactId = artefact.ArtefactId
-													 ,
-											 })
-									 .ToList());
+				if (alteredRois.Any())
+				{
+					await _roiRepository.UpdateRoisAsync(
+							user
+							, alteredRois.Select(
+												 x => new SignInterpretationRoiData
+												 {
+														 SignInterpretationId = x.signInterpretionId
+														 , Shape = x.shape
+														 , TranslateX = x.x
+														 , TranslateY = x.y
+														 , ArtefactId = artefact.ArtefactId
+														 ,
+												 })
+										 .ToList());
+				}
 
 				transaction.Complete();
 

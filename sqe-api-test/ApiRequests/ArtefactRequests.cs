@@ -708,7 +708,7 @@ namespace SQE.ApiTest.ApiRequests
 			/// </summary>
 			/// <param name="editionId">Unique Id of the desired edition</param>
 			/// <param name="artefactId">Unique Id of the desired artefact (must be a virtual artefact)</param>
-			/// <param name="replacement">Details of the replacement transcription</param>
+			/// <param name="payload">Details of the replacement transcription</param>
 			/// <returns>Details concerning all changed data in the edition</returns>
 			public V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription(
 					uint                                  editionId
@@ -731,6 +731,10 @@ namespace SQE.ApiTest.ApiRequests
 				_listenerDict.Add(
 						ListenerMethods.UpdatedSignInterpretations
 						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedArtefact
+						, (UpdatedArtefactIsNull, UpdatedArtefactListener));
 			}
 
 			public Listeners AvailableListeners { get; }
@@ -738,6 +742,7 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationListDTO CreatedSignInterpretation  { get; private set; }
 			public DeleteIntIdDTO            DeletedSignInterpretation  { get; private set; }
 			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
+			public ArtefactDTO               UpdatedArtefact            { get; private set; }
 
 			private void CreatedSignInterpretationListener(HubConnection signalrListener)
 				=> signalrListener.On<SignInterpretationListDTO>(
@@ -759,6 +764,13 @@ namespace SQE.ApiTest.ApiRequests
 						, receivedData => UpdatedSignInterpretations = receivedData);
 
 			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
+
+			private void UpdatedArtefactListener(HubConnection signalrListener)
+				=> signalrListener.On<ArtefactDTO>(
+						"UpdatedArtefact"
+						, receivedData => UpdatedArtefact = receivedData);
+
+			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
@@ -786,6 +798,8 @@ namespace SQE.ApiTest.ApiRequests
 
 				public ListenerMethods DeletedSignInterpretation =
 						ListenerMethods.DeletedSignInterpretation;
+
+				public ListenerMethods UpdatedArtefact = ListenerMethods.UpdatedArtefact;
 
 				public ListenerMethods UpdatedSignInterpretations =
 						ListenerMethods.UpdatedSignInterpretations;

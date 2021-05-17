@@ -155,9 +155,20 @@ namespace SQE.DatabaseAccess
 
 				foreach (var (updateRoi, index) in updateRois.Select((x, idx) => (x, idx)))
 				{
+					if (!updateRoi.SignInterpretationRoiId.HasValue)
+					{
+						var updatedRois = await CreateRoisAsync(
+								editionUser
+								, new List<SignInterpretationRoiData> { updateRoi });
+
+						response[index] = updatedRois.FirstOrDefault();
+
+						continue;
+					}
+
 					var originalSignRoiInterpretation = await GetSignInterpretationRoiByIdAsync(
 							editionUser
-							, updateRoi.SignInterpretationRoiId.GetValueOrDefault());
+							, updateRoi.SignInterpretationRoiId.Value);
 
 					// TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
 					var roiShapeId = originalSignRoiInterpretation.Shape == updateRoi.Shape

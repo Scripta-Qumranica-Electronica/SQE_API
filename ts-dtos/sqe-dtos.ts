@@ -646,19 +646,22 @@ export interface AttributeListDTO {
     attributes: Array<AttributeDTO>;
 }
 
-export interface BasicDiffReplaceRequestDTO {
+export interface DiffReplaceRequestDTO {
     newText: string;
-}
-
-export interface DiffReplaceRequestDTO extends BasicDiffReplaceRequestDTO {
     priorSignInterpretationId: number;
     followingSignInterpretationId: number;
 }
 
-export interface DiffReplaceReconstructionRequestDTO extends BasicDiffReplaceRequestDTO {
-    textRois: { [key: number] : SetReconstructedInterpretationRoiDTO };
+export interface DiffReplaceReconstructionRequestDTO {
+    textRois: Array<IndexedReplacementTextRoi>;
+    newText: string;
     virtualArtefactShape: string;
     virtualArtefactPlacement: PlacementDTO;
+}
+
+export interface IndexedReplacementTextRoi {
+    index: number;
+    roi?: SetReconstructedInterpretationRoiDTO;
 }
 
 export interface DiffReplaceResponseDTO {
@@ -668,7 +671,7 @@ export interface DiffReplaceResponseDTO {
 }
 
 export interface DiffReconstructedResponseDTO extends DiffReplaceResponseDTO {
-    virtualArtefact?: UpdateArtefactDTO;
+    virtualArtefact?: ArtefactDTO;
 }
 
 export interface EditionScriptCollectionDTO {

@@ -384,7 +384,7 @@ namespace SQE.API.Server.RealtimeHubs
 		///  existing at that location in the edition.
 		/// </summary>
 		/// <param name="editionId">Id of the edition to be updated</param>
-		/// <param name="replaceRequest">Details of the text replacement request</param>
+		/// <param name="payload">Details of the text replacement request</param>
 		/// <returns>
 		///  Information about all sign interpretations that were
 		///  created, updated, and deleted as a result of the operation.
@@ -392,14 +392,14 @@ namespace SQE.API.Server.RealtimeHubs
 		[Authorize]
 		public async Task<DiffReplaceResponseDTO> PutV1EditionsEditionIdDiffReplaceText(
 				uint                    editionId
-				, DiffReplaceRequestDTO replaceRequest)
+				, DiffReplaceRequestDTO payload)
 
 		{
 			try
 			{
 				return await _textService.DiffReplaceText(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, replaceRequest);
+						, payload);
 			}
 			catch (ApiException err)
 			{

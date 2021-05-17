@@ -454,14 +454,14 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="artefactId">Unique Id of the desired artefact (must be a virtual artefact)</param>
-		/// <param name="replacement">Details of the replacement transcription</param>
+		/// <param name="payload">Details of the replacement transcription</param>
 		/// <returns>Details concerning all changed data in the edition</returns>
 		[Authorize]
 		public async Task<DiffReconstructedResponseDTO>
 				PutV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription(
 						uint                                  editionId
 						, uint                                artefactId
-						, DiffReplaceReconstructionRequestDTO replacement)
+						, DiffReplaceReconstructionRequestDTO payload)
 
 		{
 			try
@@ -469,7 +469,7 @@ namespace SQE.API.Server.RealtimeHubs
 				return await _textService.DiffReplaceReconstructedText(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
 						, artefactId
-						, replacement);
+						, payload);
 			}
 			catch (ApiException err)
 			{

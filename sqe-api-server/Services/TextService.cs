@@ -68,7 +68,7 @@ namespace SQE.API.Server.Services
 
 	public class TextService : ITextService
 	{
-		private readonly IArtefactRepository              _artefactRepo;
+		private readonly IArtefactService                 _artefactService;
 		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 		private readonly ISignInterpretationService       _signIntService;
 		private readonly ITextRepository                  _textRepo;
@@ -78,12 +78,12 @@ namespace SQE.API.Server.Services
 				ITextRepository                    textRepo
 				, IUserRepository                  userRepo
 				, ISignInterpretationService       signIntService
-				, IArtefactRepository              artefactRepo
+				, IArtefactService                 artefactService
 				, IHubContext<MainHub, ISQEClient> hubContext)
 		{
 			_textRepo = textRepo;
 			_userRepo = userRepo;
-			_artefactRepo = artefactRepo;
+			_artefactService = artefactService;
 			_hubContext = hubContext;
 			_signIntService = signIntService;
 		}
@@ -389,7 +389,6 @@ namespace SQE.API.Server.Services
 			var response = await _diffReplaceText(
 					editionUser
 					, newTextData.newText
-					, clientId
 					, newTextData.priorSignInterpretationId
 					, newTextData.followingSignInterpretationId);
 
@@ -416,13 +415,15 @@ namespace SQE.API.Server.Services
 			var response = await _diffReplaceText(
 					editionUser
 					, replacement.newText
-					, clientId
 					, artefactId: artefactId
-					, textRois: replacement.textRois
-					, virtualArtefactShape: replacement
-							.virtualArtefactShape
-					, virtualArtefactPlacement: replacement
-							.virtualArtefactPlacement);
+					, textRois: replacement.textRois.FromDTO()
+					, virtualArtefactShape: replacement.virtualArtefactShape
+					, virtualArtefactPlacement: replacement.virtualArtefactPlacement);
+
+			response.virtualArtefact = await _artefactService.GetEditionArtefactAsync(
+					editionUser
+					, artefactId
+					, new List<string> { "masks" });
 
 			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 			// made the request, that client directly received the response.
@@ -435,13 +436,15 @@ namespace SQE.API.Server.Services
 			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
 							 .UpdatedSignInterpretations(response.updated);
 
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .UpdatedArtefact(response.virtualArtefact);
+
 			return response;
 		}
 
 		private async Task<DiffReconstructedResponseDTO> _diffReplaceText(
 				UserInfo editionUser
 				, string newText
-				, string clientId
 				, uint? priorSignInterpretationId = null
 				, uint? followingSignInterpretationId = null
 				, uint? artefactId = null
@@ -462,6 +465,7 @@ namespace SQE.API.Server.Services
 							? new ArtefactModel
 							{
 									ArtefactId = artefactId.Value
+									, Mask = virtualArtefactShape
 									, Scale = virtualArtefactPlacement.scale
 									, Rotate = virtualArtefactPlacement.rotate
 									, TranslateX = virtualArtefactPlacement.translate.x

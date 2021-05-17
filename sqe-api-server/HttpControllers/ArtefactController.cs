@@ -247,17 +247,17 @@ namespace SQE.API.Server.HttpControllers
 		/// </summary>
 		/// <param name="editionId">Unique Id of the desired edition</param>
 		/// <param name="artefactId">Unique Id of the desired artefact (must be a virtual artefact)</param>
-		/// <param name="replacement">Details of the replacement transcription</param>
+		/// <param name="payload">Details of the replacement transcription</param>
 		/// <returns>Details concerning all changed data in the edition</returns>
 		[HttpPut("v1/editions/{editionId}/[controller]s/{artefactId}/diff-replace-transcription")]
 		public async Task<ActionResult<DiffReconstructedResponseDTO>>
 				UpdateReconstructedTranscription(
 						[FromRoute]   uint                                editionId
 						, [FromRoute] uint                                artefactId
-						, [FromBody]  DiffReplaceReconstructionRequestDTO replacement)
+						, [FromBody]  DiffReplaceReconstructionRequestDTO payload)
 			=> await _textService.DiffReplaceReconstructedText(
 					await _userService.GetCurrentUserObjectAsync(editionId, true)
 					, artefactId
-					, replacement);
+					, payload);
 	}
 }

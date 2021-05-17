@@ -198,7 +198,7 @@ namespace SQE.API.Server.HttpControllers
 		///  existing at that location in the edition.
 		/// </summary>
 		/// <param name="editionId">Id of the edition to be updated</param>
-		/// <param name="replaceRequest">Details of the text replacement request</param>
+		/// <param name="payload">Details of the text replacement request</param>
 		/// <returns>
 		///  Information about all sign interpretations that were
 		///  created, updated, and deleted as a result of the operation.
@@ -206,9 +206,8 @@ namespace SQE.API.Server.HttpControllers
 		[HttpPut("v1/editions/{editionId}/diff-replace-text")]
 		public async Task<ActionResult<DiffReplaceResponseDTO>> DiffReplaceText(
 				[FromRoute]  uint                  editionId
-				, [FromBody] DiffReplaceRequestDTO replaceRequest)
-			=> await _textService.DiffReplaceText(
-					await _userService.GetCurrentUserObjectAsync(editionId, true)
-					, replaceRequest);
+				, [FromBody] DiffReplaceRequestDTO payload) => await _textService.DiffReplaceText(
+				await _userService.GetCurrentUserObjectAsync(editionId, true)
+				, payload);
 	}
 }

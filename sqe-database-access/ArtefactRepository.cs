@@ -1078,30 +1078,20 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 			}
 		}
 
-		private async Task<uint> GetArtefactShapeSqeImageIdAsync(
+		private async Task<uint?> GetArtefactShapeSqeImageIdAsync(
 				UserInfo editionUser
 				, uint   artefactId)
 		{
 			using (var connection = OpenConnection())
 			{
-				try
-				{
-					return await connection.QuerySingleAsync<uint>(
-							FindArtefactShapeSqeImageId.GetQuery
-							, new
-							{
-									editionUser.EditionId
-									, ArtefactId = artefactId
-									,
-							});
-				}
-				catch (InvalidOperationException)
-				{
-					throw new StandardExceptions.DataNotFoundException(
-							"SQE_image"
-							, artefactId
-							, "artefact_id");
-				}
+				return await connection.QueryFirstOrDefaultAsync<uint?>(
+						FindArtefactShapeSqeImageId.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, ArtefactId = artefactId
+								,
+						});
 			}
 		}
 
