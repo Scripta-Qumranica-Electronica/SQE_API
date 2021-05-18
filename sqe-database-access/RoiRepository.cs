@@ -392,7 +392,7 @@ namespace SQE.DatabaseAccess
 			{
 				await connection.ExecuteAsync(CreateRoiShapeQuery.GetQuery, new { Path = path });
 
-				return await connection.QuerySingleAsync<uint>(
+				return await connection.QueryFirstAsync<uint>(
 						GetRoiShapeIdQuery.GetQuery
 						, new { Path = path });
 			}
