@@ -2187,6 +2187,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					uint? firstId = null;
 					uint? secondId = null;
 
+					// Get the first sign before the artefact starts
 					for (int i = 0
 							 , j = 1
 						 ; j < primaryStream.Count
@@ -2195,36 +2196,56 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						var first = primaryStream[i];
 						var second = primaryStream[j];
 
-						// Grab the id of the first sign before one associated with the artefact
-						// Or in the case that the first sign is already associated with the
-						// artefact, then start with that.
-						if (!firstId.HasValue
-							&& (first.ArtefactId == artefact.ArtefactId
-								|| second.ArtefactId == artefact.ArtefactId))
+						if (second.ArtefactId == artefact.ArtefactId)
+						{
 							firstId = first.signInterpretationId;
 
-						// Once a first sign in the artefact has been found,
-						// grab the first sign that is beyond that artefact.
-						if (!firstId.HasValue
-							|| second.ArtefactId == artefact.ArtefactId)
-							continue;
+							break;
+						}
+					}
 
-						secondId = second.signInterpretationId;
+					// Go backwards and get the first sign after the artefact ends
+					for (int i = primaryStream.Count - 1
+							 , j = primaryStream.Count - 2
+						 ; j >= 0
+						 ; i--, j--)
+					{
+						var first = primaryStream[i];
+						var second = primaryStream[j];
 
-						break;
+						if (second.ArtefactId == artefact.ArtefactId)
+						{
+							secondId = first.signInterpretationId;
+
+							break;
+						}
 					}
 
 					priorSignInterpretationId = firstId ?? priorSignInterpretationId;
 					followingSignInterpretationId = secondId ?? followingSignInterpretationId;
 				}
 
-				primaryStream = primaryStream.Where(
-													 x
-															 => x.signInterpretationId
-																> priorSignInterpretationId
-																&& x.signInterpretationId
-																< followingSignInterpretationId)
-											 .ToList();
+				// Chop the text to the letters between priorSignInterpretationId and followingSignInterpretationId
+				var hitBeginning = false;
+				var updatedStream = new List<GetBasicTextChunk.Model>();
+
+				foreach (var entry in primaryStream)
+				{
+					if (entry.signInterpretationId == followingSignInterpretationId)
+						break;
+
+					if (entry.signInterpretationId == priorSignInterpretationId)
+					{
+						hitBeginning = true;
+
+						continue;
+					}
+
+					if (hitBeginning && (entry.signInterpretationId != priorSignInterpretationId))
+						updatedStream.Add(entry);
+				}
+
+				primaryStream = updatedStream;
 
 				// Make sure we start with the fist non-character control character
 				var spaceCharacters = new List<uint>

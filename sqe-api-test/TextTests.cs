@@ -1787,16 +1787,43 @@ namespace SQE.ApiTest
 		}
 
 		[Theory]
-		[InlineData(true, "לא אבה ללכת")]
-		[InlineData(true, "")]
-		[InlineData(false, "לא אבה ללכת")]
-		[InlineData(false, "")]
-		public async Task CanUpdateVirtualArtefactTextChunk(bool realtime, string replacementString)
+		[InlineData(
+				true
+				, 899
+				, 27991
+				, 10166
+				, "לא אבה ללכת")]
+		[InlineData(
+				true
+				, 899
+				, 27991
+				, 10166
+				, "")]
+		[InlineData(
+				false
+				, 899
+				, 27991
+				, 10166
+				, "לא אבה ללכת")]
+		[InlineData(
+				false
+				, 899
+				, 27991
+				, 10166
+				, "")]
+		[InlineData(
+				false
+				, 899
+				, 28039
+				, 10172
+				, "נו ישרל")]
+		public async Task CanUpdateVirtualArtefactTextChunk(
+				bool     realtime
+				, uint   startingEditionId
+				, uint   artefactId
+				, uint   textFragmentId
+				, string replacementString)
 		{
-			const uint startingEditionId = 899;
-			const uint artefactId = 27991;
-			const uint textFragmentId = 10166;
-
 			using (var editionCreator = new EditionHelpers.EditionCreator(
 					_client
 					, StartConnectionAsync
