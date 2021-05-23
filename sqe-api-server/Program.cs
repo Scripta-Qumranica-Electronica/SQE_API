@@ -49,16 +49,13 @@ namespace SQE.API.Server
 							   {
 								   webBuilder.UseStartup<Startup>()
 											 .UseSerilog()
-											 .UseUrls(urls: "http://*:5000");
+											 .UseUrls(
+													 urls: Environment.GetEnvironmentVariable(
+																   "ASPNETCORE_ENVIRONMENT")
+														   == Environments.Development
+															 ? "http://*:5000"
+															 : "http://*:80");
 							   });
 		}
-
-		// return WebHost.CreateDefaultBuilder(args)
-		//     .UseStartup<Startup>()
-		//     .UseSerilog()
-		//     .UseUrls(urls: "http://*:5000");
 	}
-
-	// public static IHostBuilder CreateHostBuilder(string[] args) => Host.CreateDefaultBuilder(args)
-	//     .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
 }
