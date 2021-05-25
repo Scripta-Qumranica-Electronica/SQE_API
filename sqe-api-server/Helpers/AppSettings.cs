@@ -6,5 +6,7 @@
 		public string UseRedis            { get; set; }
 		public string HttpServer          { get; set; }
 		public string EmailTokenDaysValid { get; set; }
+		public string ApiVersion          { get; set; }
+		public string ApiUpdateDate       { get; set; }
 	}
 }

@@ -874,6 +874,15 @@ export interface UserDataStoreDTO {
     data: string;
 }
 
+export interface DatabaseVersionDTO {
+    version?: string;
+    lastUpdated?: string;
+}
+
+export interface APIVersionDTO extends DatabaseVersionDTO {
+    
+}
+
 export type SideDesignation = 
     'recto' |
     'verso'

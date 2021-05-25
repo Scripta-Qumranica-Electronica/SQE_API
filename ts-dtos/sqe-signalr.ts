@@ -161,6 +161,8 @@ import {
 	DetailedUserTokenDTO,
 	EditorDTO,
 	UserDataStoreDTO,
+	DatabaseVersionDTO,
+	APIVersionDTO,
 } from "@/dtos/sqe-dtos"
 
 import { HubConnection } from '@microsoft/signalr'; 
@@ -1405,6 +1407,28 @@ export class SignalRUtilities {
 	 */
     public async postV1UtilsRepairWktPolygon(payload: WktPolygonDTO): Promise<WktPolygonDTO> {
         return await this._connection.invoke('PostV1UtilsRepairWktPolygon', payload);
+    }
+
+    /**
+	 * Provides the current version designation of the database along with
+	 *		 the date it was updated to that version.
+	 *
+	 *
+	 *
+	 */
+    public async getV1UtilsDatabaseVersion(): Promise<DatabaseVersionDTO> {
+        return await this._connection.invoke('GetV1UtilsDatabaseVersion');
+    }
+
+    /**
+	 * Provides the current version designation of the API server along with
+	 *		 the date it was updated to that version.
+	 *
+	 *
+	 *
+	 */
+    public async getV1UtilsApiVersion(): Promise<APIVersionDTO> {
+        return await this._connection.invoke('GetV1UtilsApiVersion');
     }
 
     /**

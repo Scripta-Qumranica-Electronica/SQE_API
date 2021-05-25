@@ -56,8 +56,9 @@ namespace SQE.DatabaseAccess
 
 		Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password);
 
-		Task<string> GetUserDataStoreAsync(uint userId);
-		Task         SetUserDataStoreAsync(uint userId, string data);
+		Task<string>          GetUserDataStoreAsync(uint userId);
+		Task                  SetUserDataStoreAsync(uint userId, string data);
+		Task<DatabaseVersion> GetDatabaseVersion();
 	}
 
 	public class UserRepository : DbConnectionBase
@@ -758,6 +759,18 @@ namespace SQE.DatabaseAccess
 						GetEditorInfo.GetQuery
 						, new { EditionId = editionId })).ToList();
 			}
+		}
+
+		public async Task<DatabaseVersion> GetDatabaseVersion()
+		{
+			const string databaseVersionQuery = @"
+SELECT Version, completed AS Date
+FROM db_version
+ORDER BY completed DESC
+LIMIT 1";
+
+			using (var conn = OpenConnection())
+				return await conn.QuerySingleAsync<DatabaseVersion>(databaseVersionQuery);
 		}
 
 		/// <summary>

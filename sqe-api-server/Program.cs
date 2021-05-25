@@ -54,7 +54,7 @@ namespace SQE.API.Server
 																   "ASPNETCORE_ENVIRONMENT")
 														   == Environments.Development
 															 ? "http://*:5000"
-															 : "http://*:80");
+															 : "http://*:5000");
 							   });
 		}
 	}

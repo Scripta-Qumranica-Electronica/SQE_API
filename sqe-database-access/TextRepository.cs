@@ -2389,6 +2389,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				var replacementTextList =
 						replacementText.ToList().Select(x => x.ToString()).ToList();
 
+				var unchangedSignsWithRois = reconstructedRois.Select(x => x.Key).ToList();
+
 				foreach (var block in diff.DiffBlocks)
 				{
 					var anchorSignInterpretationId = block.DeleteStartA > 0
@@ -2417,6 +2419,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						{
 							alteredRois.Add(
 									(replaceSiId, roi.Shape, roi.TranslateX, roi.TranslateY));
+
+							unchangedSignsWithRois.Remove((uint) (block.InsertStartB + i));
 						}
 
 						anchorSignInterpretationId = replaceSiId;
@@ -2437,6 +2441,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 													  (uint) x
 													  , out var roi))
 											  {
+												  unchangedSignsWithRois.Remove((uint) x);
+
 												  return (replacementTextList[x]
 														  , (
 																  roi.Shape, roi.TranslateX
@@ -2478,6 +2484,29 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 							, spaceCharacter
 									? 2u
 									: 1u);
+				}
+
+				// Some characters may have been left untouched, but still require an updated ROI
+				var remainingOriginalSignInterpretations = originalStringIdKey
+														   .Take(originalStringIdKey.Count - 1)
+														   .Select((val, idx) => (val, idx))
+														   .Where(
+																   x => !deletedSignInterpretations
+																				.Contains(x.val)
+																		&& !alterSignIntIds
+																				.ContainsKey(
+																						x.val)
+																		&& originalString[x.idx]
+																		!= ' ')
+														   .ToList();
+
+				foreach (var (unchangedSignWithRoi, idx) in unchangedSignsWithRois.Select(
+						(item, idx) => (item, idx)))
+				{
+					if (reconstructedRois.TryGetValue(unchangedSignWithRoi, out var roi))
+						alteredRois.Add(
+								(remainingOriginalSignInterpretations[idx].val, roi.Shape
+								 , roi.TranslateX, roi.TranslateY));
 				}
 
 				var updatedSignInterpretations = new HashSet<uint>(alterSignIntIds.Keys);

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SQE.API.DTO;
@@ -22,5 +23,25 @@ namespace SQE.API.Server.HttpControllers
 		[HttpPost("v1/[controller]s/repair-wkt-polygon")]
 		public ActionResult<WktPolygonDTO> RepairWktPolygon([FromBody] WktPolygonDTO payload)
 			=> _utilService.RepairWktPolygonAsync(payload.wktPolygon);
+
+		/// <summary>
+		///  Provides the current version designation of the database along with
+		///  the date it was updated to that version.
+		/// </summary>
+		/// <returns></returns>
+		[AllowAnonymous]
+		[HttpGet("v1/[controller]s/database-version")]
+		public async Task<ActionResult<DatabaseVersionDTO>> GetDatabaseVersion()
+			=> await _utilService.GetDatabaseVersion();
+
+		/// <summary>
+		///  Provides the current version designation of the API server along with
+		///  the date it was updated to that version.
+		/// </summary>
+		/// <returns></returns>
+		[AllowAnonymous]
+		[HttpGet("v1/[controller]s/api-version")]
+		public async Task<ActionResult<APIVersionDTO>> GetAPIVersion()
+			=> await _utilService.GetAPIVersion();
 	}
 }

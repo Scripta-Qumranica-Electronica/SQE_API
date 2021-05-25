@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
@@ -221,4 +222,12 @@ namespace SQE.API.DTO
 	}
 
 	#endregion Response DTO's
+
+	public class DatabaseVersionDTO
+	{
+		public string   version     { get; set; }
+		public DateTime lastUpdated { get; set; }
+	}
+
+	public class APIVersionDTO : DatabaseVersionDTO { }
 }

@@ -7,6 +7,7 @@
  */
 
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
@@ -30,6 +31,58 @@ namespace SQE.API.Server.RealtimeHubs
 			try
 			{
 				return _utilService.RepairWktPolygonAsync(payload.wktPolygon);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
+		///  Provides the current version designation of the database along with
+		///  the date it was updated to that version.
+		/// </summary>
+		/// <returns></returns>
+		[AllowAnonymous]
+		public async Task<DatabaseVersionDTO> GetV1UtilsDatabaseVersion()
+
+		{
+			try
+			{
+				return await _utilService.GetDatabaseVersion();
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
+		/// <summary>
+		///  Provides the current version designation of the API server along with
+		///  the date it was updated to that version.
+		/// </summary>
+		/// <returns></returns>
+		[AllowAnonymous]
+		public async Task<APIVersionDTO> GetV1UtilsApiVersion()
+
+		{
+			try
+			{
+				return await _utilService.GetAPIVersion();
 			}
 			catch (ApiException err)
 			{

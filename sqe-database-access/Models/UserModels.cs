@@ -144,4 +144,10 @@ namespace SQE.DatabaseAccess.Models
 
 		public bool IsAdmin { get; set; }
 	}
+
+	public class DatabaseVersion
+	{
+		public string   Version { get; set; }
+		public DateTime Date    { get; set; }
+	}
 }
