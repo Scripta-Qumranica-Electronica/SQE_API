@@ -67,6 +67,7 @@ services:
 
             ## Server options
             - Http_Server=true # Run the API HTTP server
+            - API_PORT=5000
         depends_on:
             - sqe-database
         volumes:

@@ -2504,9 +2504,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						(item, idx) => (item, idx)))
 				{
 					if (reconstructedRois.TryGetValue(unchangedSignWithRoi, out var roi))
+					{
 						alteredRois.Add(
 								(remainingOriginalSignInterpretations[idx].val, roi.Shape
 								 , roi.TranslateX, roi.TranslateY));
+					}
 				}
 
 				var updatedSignInterpretations = new HashSet<uint>(alterSignIntIds.Keys);

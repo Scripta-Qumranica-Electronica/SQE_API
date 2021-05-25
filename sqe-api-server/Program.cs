@@ -43,18 +43,26 @@ namespace SQE.API.Server
 
 		public static IHostBuilder CreateHostBuilder(string[] args)
 		{
+			// Try reading the port from an environment variable
+			var port = Environment.GetEnvironmentVariable("API_PORT");
+			int portNumber;
+
+			try
+			{
+				portNumber = int.Parse(port);
+			}
+			catch (Exception)
+			{
+				portNumber = 5000;
+			}
+
 			return Host.CreateDefaultBuilder(args)
 					   .ConfigureWebHostDefaults(
 							   webBuilder =>
 							   {
 								   webBuilder.UseStartup<Startup>()
 											 .UseSerilog()
-											 .UseUrls(
-													 urls: Environment.GetEnvironmentVariable(
-																   "ASPNETCORE_ENVIRONMENT")
-														   == Environments.Development
-															 ? "http://*:5000"
-															 : "http://*:5000");
+											 .UseUrls($"http://*:{portNumber}");
 							   });
 		}
 	}

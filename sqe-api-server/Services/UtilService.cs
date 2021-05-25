@@ -58,7 +58,8 @@ namespace SQE.API.Server.Services
 			return new APIVersionDTO
 			{
 					version = appSettings.ApiVersion
-					, lastUpdated = DateTime.Parse(appSettings.ApiUpdateDate),
+					, lastUpdated = DateTime.Parse(appSettings.ApiUpdateDate)
+					,
 			};
 		}
 	}
