@@ -2616,7 +2616,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 				if (alteredRois.Any())
 				{
-					await _roiRepository.UpdateRoisAsync(
+					await _roiRepository.ReplaceSignInterpretationRoisAsync(
 							user
 							, alteredRois.Select(
 												 x => new SignInterpretationRoiData
