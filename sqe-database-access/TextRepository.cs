@@ -130,16 +130,16 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signId);
 
-		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignInterpretationAsync(
-				UserInfo editionUser
-				, uint   signInterpretationId
-				, bool   deleteVariants
-				, bool   closePath
-				, bool   materializeSignStream = true);
+		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated, IEnumerable<uint> DeletedRois)>
+				RemoveSignInterpretationAsync(
+						UserInfo editionUser
+						, uint   signInterpretationId
+						, bool   deleteVariants
+						, bool   closePath
+						, bool   materializeSignStream = true);
 
-		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignAsync(
-				UserInfo editionUser
-				, uint   signId);
+		Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated, IEnumerable<uint> DeletedRois)>
+				RemoveSignAsync(UserInfo editionUser, uint signId);
 
 		Task<Terminators> GetTerminators(
 				UserInfo          editionUser
@@ -187,7 +187,8 @@ namespace SQE.DatabaseAccess
 				, uint?  previousFragmentId
 				, uint?  nextFragmentId);
 
-		Task<(List<uint> Created, List<uint> Updated, List<uint> Deleted)> DiffReplaceText(
+		Task<(List<uint> Created, List<uint> Updated, List<uint> Deleted, List<UpdateEntity>
+				UpdatedRois, List<uint> DeletedRois)> DiffReplaceText(
 				UserInfo                             user
 				, uint?                              priorSignInterpretationId
 				, uint?                              followingSignInterpretationId
@@ -1605,8 +1606,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		/// <param name="editionUser">Edition user object</param>
 		/// <param name="signInterpretationId">Id of sign interpretation</param>
 		/// <returns>Id of the sign interpretation</returns>
-		public async Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)>
-				RemoveSignInterpretationAsync(
+		public async
+				Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated, IEnumerable<uint>
+						DeletedRois)> RemoveSignInterpretationAsync(
 						UserInfo editionUser
 						, uint   signInterpretationId
 						, bool   deleteVariants
@@ -1615,6 +1617,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		{
 			var alteredSignInterpretations = new List<uint>();
 			var deletedSignInterpretations = new List<uint>();
+			var deletedRois = new List<uint>();
 
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -1627,9 +1630,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								SignInterpretationSignIdQuery.GetQuery
 								, new { SignInterpretationId = signInterpretationId });
 
-						var (deleted, updated) = await RemoveSignAsync(editionUser, signId);
+						var (deleted, updated, currentDeletedRois) =
+								await RemoveSignAsync(editionUser, signId);
+
 						alteredSignInterpretations.AddRange(updated);
 						deletedSignInterpretations.AddRange(deleted);
+						deletedRois.AddRange(currentDeletedRois);
 					}
 				}
 				else
@@ -1646,7 +1652,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 							, signInterpretationId);
 
 					// Remove all ROIs
-					await _roiRepository.DeleteAllRoisForSignInterpretationAsync(
+					deletedRois = await _roiRepository.DeleteAllRoisForSignInterpretationAsync(
 							editionUser
 							, signInterpretationId);
 
@@ -1718,7 +1724,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			}
 
 			if (!materializeSignStream)
-				return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations);
+				return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations
+						, DeletedRois: deletedRois);
 
 			// if (alteredSignInterpretations.Any())
 			// { // Rebuild any affected materialized sign streams
@@ -1737,7 +1744,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			// 	_materializationRepository.RequestMaterializationAsync(editionUser.EditionId.Value);
 			// }
 
-			return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations);
+			return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations
+					, DeletedRois: deletedRois);
 		}
 
 		/// <summary>
@@ -1746,27 +1754,30 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		/// <param name="editionUser"></param>
 		/// <param name="signId">Id of sign</param>
 		/// <returns>Ids of all altered sign interpretations</returns>
-		public async Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated)> RemoveSignAsync(
-				UserInfo editionUser
-				, uint   signId)
+		public async
+				Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated, IEnumerable<uint>
+						DeletedRois)> RemoveSignAsync(UserInfo editionUser, uint signId)
 		{
 			var alteredSignInterpretations = new List<uint>();
+			var deletedRois = new List<uint>();
 
 			var signInterpretationIds =
 					await GetAllSignInterpretationIdsForSignIdAsync(editionUser, signId);
 
 			foreach (var signInterpretationId in signInterpretationIds)
 			{
-				var (_, updates) = await RemoveSignInterpretationAsync(
+				var (_, updates, currentDeletedRois) = await RemoveSignInterpretationAsync(
 						editionUser
 						, signInterpretationId
 						, false
 						, true);
 
 				alteredSignInterpretations.AddRange(updates);
+				deletedRois.AddRange(currentDeletedRois);
 			}
 
-			return (Deleted: signInterpretationIds, Updated: alteredSignInterpretations);
+			return (Deleted: signInterpretationIds, Updated: alteredSignInterpretations
+					, DeletedRois: deletedRois);
 		}
 
 		// public async Task<bool> IsCycleAsync(
@@ -2100,8 +2111,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		///  Lists of the ids for any sign interpretations that were added,
 		///  updated, or deleted
 		/// </returns>
-		public async Task<(List<uint> Created, List<uint> Updated, List<uint> Deleted)>
-				DiffReplaceText(
+		public async
+				Task<(List<uint> Created, List<uint> Updated, List<uint> Deleted, List<UpdateEntity>
+						UpdatedRois, List<uint> DeletedRois)> DiffReplaceText(
 						UserInfo                             user
 						, uint?                              priorSignInterpretationId
 						, uint?                              followingSignInterpretationId
@@ -2318,9 +2330,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 													  .Select(x => x.signInterpretationId)
 													  .Distinct();
 
+					var earlyDeletedRois = new List<uint>();
+
 					foreach (var deleteSignInterpretationId in deleteSignInterpretationIds)
 					{
-						await RemoveSignInterpretationAsync(
+						var (_, _, currentDeletedRois) = await RemoveSignInterpretationAsync(
 								user
 								, deleteSignInterpretationId
 								, true
@@ -2328,12 +2342,14 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								, false);
 
 						deleted.Add(deleteSignInterpretationId);
+						earlyDeletedRois.AddRange(currentDeletedRois);
 					}
 
 					updated.Add(priorSignInterpretationId.Value);
 					transaction.Complete();
 
-					return (new List<uint>(), updated.ToList(), deleted.ToList());
+					return (new List<uint>(), updated.ToList(), deleted.ToList()
+							, new List<UpdateEntity>(), earlyDeletedRois);
 				}
 
 				// Build the string of the original text for diffing
@@ -2458,14 +2474,18 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				deleteSignIntIds = deleteSignIntIds.Where(x => !alterSignIntIds.ContainsKey(x))
 												   .ToList();
 
+				var deletedRois = new List<uint>();
+
 				foreach (var deleteSignIntId in deleteSignIntIds)
 				{
-					await RemoveSignInterpretationAsync(
+					var (_, _, currentDeletedRois) = await RemoveSignInterpretationAsync(
 							user
 							, deleteSignIntId
 							, true
 							, true
 							, false);
+
+					deletedRois.AddRange(currentDeletedRois);
 				}
 
 				var deletedSignInterpretations = new HashSet<uint>(deleteSignIntIds);
@@ -2614,27 +2634,47 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 										 .ToList());
 				}
 
+				var replaceRoisResults = new List<SignInterpretationRoiData>();
+
 				if (alteredRois.Any())
 				{
-					await _roiRepository.ReplaceSignInterpretationRoisAsync(
-							user
-							, alteredRois.Select(
-												 x => new SignInterpretationRoiData
-												 {
-														 SignInterpretationId = x.signInterpretionId
-														 , Shape = x.shape
-														 , TranslateX = x.x
-														 , TranslateY = x.y
-														 , ArtefactId = artefact.ArtefactId
-														 ,
-												 })
-										 .ToList());
+					var (currentCreatedRois, currentDeletedRois) =
+							await _roiRepository.ReplaceSignInterpretationRoisAsync(
+									user
+									, alteredRois.Select(
+														 x => new SignInterpretationRoiData
+														 {
+																 SignInterpretationId =
+																		 x.signInterpretionId
+																 , Shape = x.shape
+																 , TranslateX = x.x
+																 , TranslateY = x.y
+																 , ArtefactId = artefact.ArtefactId
+																 ,
+														 })
+												 .ToList());
+
+					foreach (var currentCreatedRoi in currentCreatedRois)
+					{
+						currentCreatedRoi.OldSignInterpretationRoiId =
+								currentDeletedRois.FirstOrDefault();
+					}
+
+					replaceRoisResults.AddRange(currentCreatedRois);
+					deletedRois.AddRange(deletedRois);
 				}
 
 				transaction.Complete();
 
+				var roiReplacements = replaceRoisResults.Select(
+																x => new UpdateEntity(
+																		x.OldSignInterpretationRoiId
+																		, x.SignInterpretationRoiId
+																		   .Value))
+														.ToList();
+
 				return (createdSignInterpretations.ToList(), updatedSignInterpretations.ToList()
-						, deletedSignInterpretations.ToList());
+						, deletedSignInterpretations.ToList(), roiReplacements, deletedRois);
 			}
 		}
 

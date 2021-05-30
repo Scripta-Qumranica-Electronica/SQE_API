@@ -109,4 +109,16 @@ namespace SQE.DatabaseAccess.Models
 			licence = Licence.printLicence(copyrightHolder, collab);
 		}
 	}
+
+	public class UpdateEntity
+	{
+		public UpdateEntity(uint oldId, uint newId)
+		{
+			this.oldId = oldId;
+			this.newId = newId;
+		}
+
+		public uint oldId { get; set; }
+		public uint newId { get; set; }
+	}
 }

@@ -58,7 +58,7 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signInterpretationId);
 
-		Task<List<SignInterpretationRoiData>> ReplaceSignInterpretationRoisAsync(
+		Task<(List<SignInterpretationRoiData>, List<uint>)> ReplaceSignInterpretationRoisAsync(
 				UserInfo                          editionUser
 				, List<SignInterpretationRoiData> rois);
 	}
@@ -344,19 +344,23 @@ namespace SQE.DatabaseAccess
 			return await GetSignInterpretationRoiIdsByDataAsync(editionUser, searchData);
 		}
 
-		public async Task<List<SignInterpretationRoiData>> ReplaceSignInterpretationRoisAsync(
-				UserInfo                          editionUser
-				, List<SignInterpretationRoiData> rois)
+		public async Task<(List<SignInterpretationRoiData>, List<uint>)>
+				ReplaceSignInterpretationRoisAsync(
+						UserInfo                          editionUser
+						, List<SignInterpretationRoiData> rois)
 		{
+			var deletedRois = new List<uint>();
+
 			foreach (var signInterpretationId in
 					rois.Select(r => r.SignInterpretationId).Distinct())
 			{
-				await DeleteAllRoisForSignInterpretationAsync(
-						editionUser
-						, signInterpretationId.GetValueOrDefault());
+				deletedRois.AddRange(
+						await DeleteAllRoisForSignInterpretationAsync(
+								editionUser
+								, signInterpretationId.GetValueOrDefault()));
 			}
 
-			return await CreateRoisAsync(editionUser, rois);
+			return (await CreateRoisAsync(editionUser, rois), deletedRois);
 		}
 
 		/// <summary>

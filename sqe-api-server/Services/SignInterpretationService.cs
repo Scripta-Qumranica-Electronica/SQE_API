@@ -430,7 +430,7 @@ namespace SQE.API.Server.Services
 		{
 			//Ingo I added the false to prevent clothing the path if only one signInterpretstionId
 			// is deleted. If delete-all-variants is true, the path will be closed.
-			var (deleted, updated) = await _textRepository.RemoveSignInterpretationAsync(
+			var (deleted, updated, _) = await _textRepository.RemoveSignInterpretationAsync(
 					user
 					, signInterpretationId
 					, optional.Contains("delete-all-variants")

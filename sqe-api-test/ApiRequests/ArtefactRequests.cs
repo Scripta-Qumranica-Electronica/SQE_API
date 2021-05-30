@@ -735,14 +735,29 @@ namespace SQE.ApiTest.ApiRequests
 				_listenerDict.Add(
 						ListenerMethods.UpdatedArtefact
 						, (UpdatedArtefactIsNull, UpdatedArtefactListener));
+
+				_listenerDict.Add(
+						ListenerMethods.CreatedRoisBatch
+						, (CreatedRoisBatchIsNull, CreatedRoisBatchListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedRoisBatch
+						, (UpdatedRoisBatchIsNull, UpdatedRoisBatchListener));
+
+				_listenerDict.Add(
+						ListenerMethods.DeletedRoi
+						, (DeletedRoiIsNull, DeletedRoiListener));
 			}
 
 			public Listeners AvailableListeners { get; }
 
-			public SignInterpretationListDTO CreatedSignInterpretation  { get; private set; }
-			public DeleteIntIdDTO            DeletedSignInterpretation  { get; private set; }
-			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
-			public ArtefactDTO               UpdatedArtefact            { get; private set; }
+			public SignInterpretationListDTO       CreatedSignInterpretation  { get; private set; }
+			public DeleteIntIdDTO                  DeletedSignInterpretation  { get; private set; }
+			public SignInterpretationListDTO       UpdatedSignInterpretations { get; private set; }
+			public ArtefactDTO                     UpdatedArtefact            { get; private set; }
+			public InterpretationRoiDTOList        CreatedRoisBatch           { get; private set; }
+			public UpdatedInterpretationRoiDTOList UpdatedRoisBatch           { get; private set; }
+			public DeleteIntIdDTO                  DeletedRoi                 { get; private set; }
 
 			private void CreatedSignInterpretationListener(HubConnection signalrListener)
 				=> signalrListener.On<SignInterpretationListDTO>(
@@ -772,6 +787,27 @@ namespace SQE.ApiTest.ApiRequests
 
 			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
 
+			private void CreatedRoisBatchListener(HubConnection signalrListener)
+				=> signalrListener.On<InterpretationRoiDTOList>(
+						"CreatedRoisBatch"
+						, receivedData => CreatedRoisBatch = receivedData);
+
+			private bool CreatedRoisBatchIsNull() => CreatedRoisBatch == null;
+
+			private void UpdatedRoisBatchListener(HubConnection signalrListener)
+				=> signalrListener.On<UpdatedInterpretationRoiDTOList>(
+						"UpdatedRoisBatch"
+						, receivedData => UpdatedRoisBatch = receivedData);
+
+			private bool UpdatedRoisBatchIsNull() => UpdatedRoisBatch == null;
+
+			private void DeletedRoiListener(HubConnection signalrListener)
+				=> signalrListener.On<DeleteIntIdDTO>(
+						"DeletedRoi"
+						, receivedData => DeletedRoi = receivedData);
+
+			private bool DeletedRoiIsNull() => DeletedRoi == null;
+
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
@@ -793,13 +829,18 @@ namespace SQE.ApiTest.ApiRequests
 
 			public class Listeners
 			{
+				public ListenerMethods CreatedRoisBatch = ListenerMethods.CreatedRoisBatch;
+
 				public ListenerMethods CreatedSignInterpretation =
 						ListenerMethods.CreatedSignInterpretation;
+
+				public ListenerMethods DeletedRoi = ListenerMethods.DeletedRoi;
 
 				public ListenerMethods DeletedSignInterpretation =
 						ListenerMethods.DeletedSignInterpretation;
 
-				public ListenerMethods UpdatedArtefact = ListenerMethods.UpdatedArtefact;
+				public ListenerMethods UpdatedArtefact  = ListenerMethods.UpdatedArtefact;
+				public ListenerMethods UpdatedRoisBatch = ListenerMethods.UpdatedRoisBatch;
 
 				public ListenerMethods UpdatedSignInterpretations =
 						ListenerMethods.UpdatedSignInterpretations;

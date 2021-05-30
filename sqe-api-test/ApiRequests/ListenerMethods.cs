@@ -17,6 +17,9 @@ namespace SQE.ApiTest.ApiRequests
 		, CreatedSignInterpretation
 		, DeletedSignInterpretation
 		, UpdatedSignInterpretations
+		, CreatedRoisBatch
+		, UpdatedRoisBatch
+		, DeletedRoi
 		, RequestedEditor
 		, CreatedEditor
 		, CreatedEdition
@@ -24,10 +27,7 @@ namespace SQE.ApiTest.ApiRequests
 		, DeletedEdition
 		, CreatedImagedObject
 		, DeletedImagedObject
-		, CreatedRoisBatch
 		, EditedRoisBatch
-		, UpdatedRoisBatch
-		, DeletedRoi
 		, CreatedScribalFontInfo
 		, CreatedScribalFontKerningPair
 		, CreatedScribalFontGlyph

@@ -386,7 +386,7 @@ namespace SQE.API.Server.Services
 				, DiffReplaceRequestDTO newTextData
 				, string                clientId = null)
 		{
-			var response = await _diffReplaceText(
+			var (response, _, _) = await _diffReplaceText(
 					editionUser
 					, newTextData.newText
 					, newTextData.priorSignInterpretationId
@@ -412,7 +412,7 @@ namespace SQE.API.Server.Services
 				, DiffReplaceReconstructionRequestDTO replacement
 				, string                              clientId = null)
 		{
-			var response = await _diffReplaceText(
+			var (response, updatedRoisList, deletedRoisList) = await _diffReplaceText(
 					editionUser
 					, replacement.newText
 					, artefactId: artefactId
@@ -424,6 +424,46 @@ namespace SQE.API.Server.Services
 					editionUser
 					, artefactId
 					, new List<string> { "masks" });
+
+			// Unpack the ROIs for separate messages, since they need to come to the Frontend in their own message
+			var createdRois = new InterpretationRoiDTOList
+			{
+					rois = response.created.signInterpretations.SelectMany(x => x.rois)
+								   .ToList()
+					,
+			};
+
+			var updatedRois = new UpdatedInterpretationRoiDTOList
+			{
+					rois = response.updated.signInterpretations.SelectMany(
+										   x => x.rois.Select(
+												   y => new UpdatedInterpretationRoiDTO
+												   {
+														   artefactId = artefactId
+														   , exceptional = y.exceptional
+														   , creatorId = y.creatorId
+														   , editorId = y.editorId
+														   , interpretationRoiId =
+																   y.interpretationRoiId
+														   , shape = y.shape
+														   , signInterpretationId =
+																   y.signInterpretationId
+														   , translate = y.translate
+														   , stanceRotation = y.stanceRotation
+														   , valuesSet = y.valuesSet
+														   , oldInterpretationRoiId =
+																   updatedRoisList
+																		   .Where(
+																				   z => z.newId
+																						== y
+																								.interpretationRoiId)
+																		   .Select(z => z.oldId)
+																		   .FirstOrDefault()
+														   ,
+												   }))
+								   .ToList()
+					,
+			};
 
 			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 			// made the request, that client directly received the response.
@@ -439,42 +479,56 @@ namespace SQE.API.Server.Services
 			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
 							 .UpdatedArtefact(response.virtualArtefact);
 
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .CreatedRoisBatch(createdRois);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .UpdatedRoisBatch(updatedRois);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .DeletedRoi(new DeleteIntIdDTO(EditionEntities.roi, deletedRoisList));
+
 			return response;
 		}
 
-		private async Task<DiffReconstructedResponseDTO> _diffReplaceText(
-				UserInfo editionUser
-				, string newText
-				, uint? priorSignInterpretationId = null
-				, uint? followingSignInterpretationId = null
-				, uint? artefactId = null
-				, Dictionary<uint, SetReconstructedInterpretationRoiDTO> textRois = null
-				, string virtualArtefactShape = null
-				, PlacementDTO virtualArtefactPlacement = null)
+		private async
+				Task<(DiffReconstructedResponseDTO reconstruction, List<UpdateEntity> updatedRois,
+						List<uint> deletedRois)> _diffReplaceText(
+						UserInfo editionUser
+						, string newText
+						, uint? priorSignInterpretationId = null
+						, uint? followingSignInterpretationId = null
+						, uint? artefactId = null
+						, Dictionary<uint, SetReconstructedInterpretationRoiDTO> textRois = null
+						, string virtualArtefactShape = null
+						, PlacementDTO virtualArtefactPlacement = null)
 		{
 			textRois ??= new Dictionary<uint, SetReconstructedInterpretationRoiDTO>();
 
 			// Request the update
-			var (created, updated, deleted) = await _textRepo.DiffReplaceText(
-					editionUser
-					, priorSignInterpretationId
-					, followingSignInterpretationId
-					, newText
-					, textRois.toModel()
-					, artefactId.HasValue
-							? new ArtefactModel
-							{
-									ArtefactId = artefactId.Value
-									, Mask = virtualArtefactShape
-									, Scale = virtualArtefactPlacement.scale
-									, Rotate = virtualArtefactPlacement.rotate
-									, TranslateX = virtualArtefactPlacement.translate.x
-									, TranslateY = virtualArtefactPlacement.translate.y
-									, ZIndex = virtualArtefactPlacement.zIndex
-									, Mirror = virtualArtefactPlacement.mirrored
-									,
-							}
-							: null);
+			var (created, updated, deleted, updatedRois, deletedRois) =
+					await _textRepo.DiffReplaceText(
+							editionUser
+							, priorSignInterpretationId
+							, followingSignInterpretationId
+							, newText
+							, textRois.toModel()
+							, artefactId.HasValue
+									? new ArtefactModel
+									{
+											ArtefactId = artefactId.Value
+											, Mask = virtualArtefactShape
+											, Scale = virtualArtefactPlacement.scale
+											, Rotate = virtualArtefactPlacement.rotate
+											, TranslateX =
+													virtualArtefactPlacement.translate.x
+											, TranslateY =
+													virtualArtefactPlacement.translate.y
+											, ZIndex = virtualArtefactPlacement.zIndex
+											, Mirror = virtualArtefactPlacement.mirrored
+											,
+									}
+									: null);
 
 			// Collect all data on the operations that were carried out
 			var deletedData = new DeleteIntIdDTO
@@ -510,13 +564,14 @@ namespace SQE.API.Server.Services
 			var updatedResults =
 					new SignInterpretationListDTO { signInterpretations = updatedData.ToArray() };
 
-			return new DiffReconstructedResponseDTO
-			{
-					created = createdResults
-					, updated = updatedResults
-					, deleted = deletedData
-					,
-			};
+			return (
+					new DiffReconstructedResponseDTO
+					{
+							created = createdResults
+							, updated = updatedResults
+							, deleted = deletedData
+							,
+					}, updatedRois, deletedRois);
 		}
 
 		// TODO: rewrite this and the following method to use a ToDTO() serialization method instead.
