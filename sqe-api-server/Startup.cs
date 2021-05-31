@@ -294,10 +294,10 @@ namespace SQE.API.Server
 				var redisConn =
 						$"{redisHost}:{redisPort},password={redisPassword},ssl=False,abortConnect=False";
 
-				services.AddSignalR().AddRedis(redisConn);
+				services.AddSignalR(o => o.EnableDetailedErrors = true).AddRedis(redisConn);
 			}
 			else
-				services.AddSignalR();
+				services.AddSignalR(o => o.EnableDetailedErrors = true);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

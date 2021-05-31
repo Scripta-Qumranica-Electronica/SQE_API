@@ -1724,8 +1724,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			}
 
 			if (!materializeSignStream)
+			{
 				return (Deleted: deletedSignInterpretations, Updated: alteredSignInterpretations
 						, DeletedRois: deletedRois);
+			}
 
 			// if (alteredSignInterpretations.Any())
 			// { // Rebuild any affected materialized sign streams
