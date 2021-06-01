@@ -6,6 +6,7 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -30,7 +31,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				return await _imagedObjectService.GetImagedObjectImagesAsync(imagedObjectId);
+				return await _imagedObjectService.GetImagedObjectImagesAsync(
+						Uri.UnescapeDataString(imagedObjectId));
 			}
 			catch (ApiException err)
 			{
@@ -63,7 +65,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				return await _imagedObjectService.GetImagedObjectAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId)
-						, imagedObjectId
+						, Uri.UnescapeDataString(imagedObjectId)
 						, optional);
 			}
 			catch (ApiException err)
@@ -94,7 +96,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				return await _imagedObjectService.AddImagedObjectToEditionAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, imagedObjectId);
+						, Uri.UnescapeDataString(imagedObjectId));
 			}
 			catch (ApiException err)
 			{
@@ -125,7 +127,7 @@ namespace SQE.API.Server.RealtimeHubs
 			{
 				await _imagedObjectService.RemoveImagedObjectFromEditionAsync(
 						await _userService.GetCurrentUserObjectAsync(editionId, true)
-						, imagedObjectId);
+						, Uri.UnescapeDataString(imagedObjectId));
 			}
 			catch (ApiException err)
 			{
@@ -233,7 +235,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				return await _imageService.GetImageTextFragmentsAsync(imagedObjectId);
+				return await _imageService.GetImageTextFragmentsAsync(
+						Uri.UnescapeDataString(imagedObjectId));
 			}
 			catch (ApiException err)
 			{

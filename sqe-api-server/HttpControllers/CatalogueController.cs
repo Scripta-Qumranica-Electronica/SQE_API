@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +36,8 @@ namespace SQE.API.Server.HttpControllers
 		[HttpGet("v1/catalogue/imaged-objects/{imagedObjectId}/text-fragments")]
 		public async Task<ActionResult<CatalogueMatchListDTO>> GetTextFragmentsOfImagedObject(
 				[FromRoute] string imagedObjectId)
-			=> await _catalogueService.GetTextFragmentsOfImagedObject(imagedObjectId);
+			=> await _catalogueService.GetTextFragmentsOfImagedObject(
+					Uri.UnescapeDataString(imagedObjectId));
 
 		/// <summary>
 		///  Get a listing of all imaged objects that matches that correspond to a transcribed text fragment

@@ -38,7 +38,7 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, string imagedObjectId)
 		{
-			var sql = EditionImagedObjectQueries.GetQuery(imagedObjectId != null);
+			var sql = EditionImagedObjectQueries.GetQuery(!string.IsNullOrEmpty(imagedObjectId));
 
 			using (var connection = OpenConnection())
 			{

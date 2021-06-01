@@ -6,6 +6,7 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
+using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -53,7 +54,8 @@ namespace SQE.API.Server.RealtimeHubs
 		{
 			try
 			{
-				return await _catalogueService.GetTextFragmentsOfImagedObject(imagedObjectId);
+				return await _catalogueService.GetTextFragmentsOfImagedObject(
+						Uri.UnescapeDataString(imagedObjectId));
 			}
 			catch (ApiException err)
 			{
