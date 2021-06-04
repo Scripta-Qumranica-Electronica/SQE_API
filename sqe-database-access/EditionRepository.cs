@@ -1163,7 +1163,7 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 				Edition lastEdition;
 
 				await conn.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
-						EditionListQuery.GetQuery(userId.HasValue, false)
+						EditionListQuery.GetQuery(userId.HasValue, false, searchByManuscript: true)
 						, (editionGroup, editor) =>
 						  {
 							  // Set the copyrights for the previous, and now complete, edition before making the new one
