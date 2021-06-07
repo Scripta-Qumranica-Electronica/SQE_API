@@ -1357,16 +1357,6 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Creates a new user with the submitted data.
-	 *
-	 * @param payload - A JSON object with all data necessary to create a new user account
-	 * @returns - Returns a UserDTO for the newly created account
-	 */
-    public async postV1Users(payload: NewUserRequestDTO): Promise<UserDTO> {
-        return await this._connection.invoke('PostV1Users', payload);
-    }
-
-    /**
 	 * Sends a new activation email for the user's account. This will not work if the user account associated with the
 	 *		 email address has already been activated.
 	 *
