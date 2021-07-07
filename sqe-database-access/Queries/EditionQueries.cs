@@ -688,6 +688,7 @@ SELECT sign_interpretation_roi.sign_interpretation_id AS Id,
        roi_position.stance_rotation AS LetterRotation,
        COALESCE(art_pos.rotate, 0) AS ImageRotation,
        CONCAT_WS('', image_urls.proxy, image_urls.url, SQE_image.filename) AS ImageURL,
+       CONCAT_WS('', image_urls.proxy, image_urls.url, ir_image.filename) AS IrImageURL,
        image_urls.suffix AS ImageSuffix
 FROM sign_interpretation_roi_owner
     JOIN sign_interpretation_roi USING(sign_interpretation_roi_id)
@@ -705,6 +706,8 @@ FROM sign_interpretation_roi_owner
     JOIN artefact_shape_owner ON artefact_shape_owner.artefact_shape_id = artefact_shape.artefact_shape_id
         AND artefact_shape_owner.edition_id = sign_interpretation_roi_owner.edition_id
     JOIN SQE_image USING(sqe_image_id)
+    LEFT JOIN SQE_image ir_image ON ir_image.image_catalog_id = SQE_image.image_catalog_id
+        AND ir_image.is_recto = SQE_image.is_recto AND ir_image.type = 2
     JOIN image_urls USING(image_urls_id)
     JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
     JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id

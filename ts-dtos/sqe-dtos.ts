@@ -687,6 +687,7 @@ export interface CharacterShapeDTO {
     character: string;
     polygon: string;
     imageURL: string;
+    irImageURL?: string;
     rotation: number;
     attributes: Array<string>;
 }

@@ -525,7 +525,7 @@ namespace SQE.DatabaseAccess
 						});
 
 				// Get all Activate tokens for this user
-				var tokens = await connection.QueryAsync<Guid>(
+				var tokens = await connection.QueryAsync<string>(
 						GetTokensQuery.GetQuery
 						, new
 						{

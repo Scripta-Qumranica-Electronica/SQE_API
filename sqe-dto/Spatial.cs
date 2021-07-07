@@ -29,6 +29,8 @@ namespace SQE.API.DTO
 		[Required]
 		public string imageURL { get; set; }
 
+		public string irImageURL { get; set; }
+
 		public float rotation { get; set; }
 
 		// In the next iteration use something more reliable for attributes, either the uint

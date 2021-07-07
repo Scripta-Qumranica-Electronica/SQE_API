@@ -683,6 +683,7 @@ The Scripta Qumranica Electronica team</body></html>";
 																	   x.First().ImageURL
 																	   + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/full/0/"
 																	   + x.First().ImageSuffix
+															   , irImageURL = x.First().IrImageURL
 															   , polygon = polys.Any()
 																	   ? wkw.Write(combinedPoly)
 																	   : null
