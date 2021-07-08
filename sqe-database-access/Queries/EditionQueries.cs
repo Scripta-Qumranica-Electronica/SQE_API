@@ -707,7 +707,7 @@ FROM sign_interpretation_roi_owner
         AND artefact_shape_owner.edition_id = sign_interpretation_roi_owner.edition_id
     JOIN SQE_image USING(sqe_image_id)
     LEFT JOIN SQE_image ir_image ON ir_image.image_catalog_id = SQE_image.image_catalog_id
-        AND ir_image.is_recto = SQE_image.is_recto AND ir_image.type = 2
+        AND ir_image.is_recto = SQE_image.is_recto AND ir_image.type = 1
     JOIN image_urls ON image_urls.image_urls_id = SQE_image.image_urls_id
     JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
     JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
