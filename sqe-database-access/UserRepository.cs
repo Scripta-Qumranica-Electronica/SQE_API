@@ -140,7 +140,7 @@ namespace SQE.DatabaseAccess
 				{
 					return await connection.QuerySingleAsync<DetailedUser>(
 							UserByTokenQuery.GetQuery
-							, new { Token = token });
+							, new { Token = Guid.Parse(token) });
 				}
 				catch (InvalidOperationException)
 				{
@@ -167,7 +167,7 @@ namespace SQE.DatabaseAccess
 						, new
 						{
 								Email = email
-								, Token = token
+								, Token = Guid.Parse(token)
 								, Type = CreateUserEmailTokenQuery.Activate
 								,
 						});
@@ -199,7 +199,7 @@ namespace SQE.DatabaseAccess
 							{
 									Email = email
 									, Activated = 0
-									, Token = token
+									, Token = Guid.Parse(token)
 									,
 							});
 				}
@@ -503,7 +503,7 @@ namespace SQE.DatabaseAccess
 			{
 				var confirmRegistration = await connection.ExecuteAsync(
 						ConfirmNewUserAccount.GetQuery
-						, new { Token = token });
+						, new { Token = Guid.Parse(token) });
 
 				if (confirmRegistration != 1)
 				{
@@ -519,7 +519,7 @@ namespace SQE.DatabaseAccess
 						CreateUserDataStoreEntry.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, Data = "{}"
 								,
 						});
@@ -529,7 +529,7 @@ namespace SQE.DatabaseAccess
 						GetTokensQuery.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, Type = CreateUserEmailTokenQuery.Activate
 								,
 						});
@@ -686,7 +686,7 @@ namespace SQE.DatabaseAccess
 						UpdatePasswordByToken.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, Password = password
 								,
 						});
@@ -699,7 +699,7 @@ namespace SQE.DatabaseAccess
 						GetTokensQuery.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, Type = CreateUserEmailTokenQuery.ResetPassword
 								,
 						});
@@ -789,7 +789,7 @@ LIMIT 1";
 						SetUserSystemRole.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, SystemRole = "REGISTERED_USER"
 								,
 						});
