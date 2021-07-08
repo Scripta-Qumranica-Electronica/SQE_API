@@ -684,6 +684,9 @@ The Scripta Qumranica Electronica team</body></html>";
 																	   + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/full/0/"
 																	   + x.First().ImageSuffix
 															   , irImageURL = x.First().IrImageURL
+																			  + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/full/0/"
+																			  + x.First()
+																				 .ImageSuffix
 															   , polygon = polys.Any()
 																	   ? wkw.Write(combinedPoly)
 																	   : null
