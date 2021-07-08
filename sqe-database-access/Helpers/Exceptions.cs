@@ -36,6 +36,13 @@ namespace SQE.DatabaseAccess.Helpers
 
 	#region Exception Main Subclasses
 
+	public abstract class ForbiddenException : ApiException
+	{
+		private const HttpStatusCode httpStatusCode = HttpStatusCode.Forbidden;
+
+		protected ForbiddenException() : base(httpStatusCode) { }
+	}
+
 	public abstract class ForbiddenDataAccessException : ApiException
 	{
 		private const HttpStatusCode httpStatusCode = HttpStatusCode.Forbidden;
@@ -105,6 +112,14 @@ namespace SQE.DatabaseAccess.Helpers
 		#endregion System errors
 
 		#region Permissions errors
+
+		public class ForbiddenRequestException : ForbiddenException
+		{
+			private const string customMsg =
+					"This request is forbidden, there is nothing the caller can do to get access.";
+
+			public ForbiddenRequestException() => Error = customMsg;
+		}
 
 		public class NoAuthorizationException : ForbiddenDataAccessException
 		{

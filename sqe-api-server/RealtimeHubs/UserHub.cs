@@ -236,17 +236,31 @@ namespace SQE.API.Server.RealtimeHubs
 			}
 		}
 
-		// TODO: this is commented out during the alpha testing phase, enable in or after beta.
-		// /// <summary>
-		// ///  Creates a new user with the submitted data.
-		// /// </summary>
-		// /// <param name="payload">A JSON object with all data necessary to create a new user account</param>
-		// /// <returns>Returns a UserDTO for the newly created account</returns>
-		// [AllowAnonymous]
-		// [HttpPost("v1/[controller]s")]
-		// public async Task<ActionResult<UserDTO>> NewUserRequest(
-		// 		[FromBody] NewUserRequestDTO payload)
-		// 	=> await _userService.CreateNewUserAsync(payload);
+		/// <summary>
+		///  Creates a new user with the submitted data.
+		/// </summary>
+		/// <param name="payload">A JSON object with all data necessary to create a new user account</param>
+		/// <returns>Returns a UserDTO for the newly created account</returns>
+		[AllowAnonymous]
+		public async Task<UserDTO> PostV1Users(NewUserRequestDTO payload)
+
+		{
+			try
+			{
+				return await _userService.CreateNewUserAsync(payload);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
 		/// <summary>
 		///  Sends a new activation email for the user's account. This will not work if the user account associated with the

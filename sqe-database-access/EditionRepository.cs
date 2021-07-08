@@ -845,7 +845,7 @@ WHERE edition_id = @EditionId";
 					editorInfo = editorInfoSearch.FirstOrDefault();
 
 					// Check for existing request
-					var existingRequestToken = (await connection.QueryAsync<Guid>(
+					var existingRequestToken = (await connection.QueryAsync<string>(
 							FindEditionEditorRequestByEditorEdition.GetQuery
 							, new
 							{
@@ -857,11 +857,11 @@ WHERE edition_id = @EditionId";
 
 					// Add a GUID for this transaction (Reuse any pre-existing ones)
 					if (existingRequestToken.Any())
-						editorInfo.Token = existingRequestToken.FirstOrDefault();
+						editorInfo.Token = Guid.Parse(existingRequestToken.FirstOrDefault());
 					else
 					{
 						editorInfo.Token = existingRequestToken.Any()
-								? existingRequestToken.FirstOrDefault()
+								? Guid.Parse(existingRequestToken.FirstOrDefault())
 								: Guid.NewGuid();
 
 						// Write the GUID token to the database

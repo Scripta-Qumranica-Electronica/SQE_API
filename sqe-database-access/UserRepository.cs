@@ -525,7 +525,7 @@ namespace SQE.DatabaseAccess
 						});
 
 				// Get all Activate tokens for this user
-				var tokens = await connection.QueryAsync<string>(
+				var tokens = await connection.QueryAsync<Guid>(
 						GetTokensQuery.GetQuery
 						, new
 						{
@@ -746,7 +746,7 @@ namespace SQE.DatabaseAccess
 				if (insertData != 1)
 				{
 					throw new StandardExceptions.DataNotWrittenException(
-							"insert into user data store");
+							"INSERT INTO user data store");
 				}
 			}
 		}
