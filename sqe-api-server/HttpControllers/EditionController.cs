@@ -166,6 +166,19 @@ namespace SQE.API.Server.HttpControllers
 			=> await _editionService.GetEditionScriptLines(
 					await _userService.GetCurrentUserObjectAsync(editionId));
 
+		/// <summary>
+		///  Retrieve extra institutional metadata concerning the edition
+		///  manuscript if available.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <returns></returns>
+		[HttpGet("v1/[controller]s/{editionId}/metadata")]
+		[AllowAnonymous]
+		public async Task<ActionResult<EditionManuscriptMetadataDTO>>
+				GetEditionMetadata([FromRoute] uint editionId)
+			=> await _editionService.GetEditionMetadata(
+					await _userService.GetCurrentUserObjectAsync(editionId));
+
 		[HttpGet("v1/manuscripts/{manuscriptId}/[controller]s")]
 		[AllowAnonymous]
 		public async Task<EditionListDTO> GetManuscriptEditions([FromRoute] uint manuscriptId)

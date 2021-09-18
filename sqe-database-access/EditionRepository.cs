@@ -79,6 +79,7 @@ namespace SQE.DatabaseAccess
 		Task<List<LetterShape>> GetEditionScriptCollectionAsync(UserInfo editonUser);
 
 		Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser);
+		Task<EditionMetadata>          GetEditionMetadata(UserInfo    editionUser);
 	}
 
 	public class EditionRepository : DbConnectionBase
@@ -1443,6 +1444,25 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 						"LineId,ArtefactId,SignInterpretationId,SignInterpretationRoiId,SignInterpretationAttributeId,PositionInStreamId");
 
 				return scriptLines.Where(x => x != null).ToList();
+			}
+		}
+
+		public async Task<EditionMetadata> GetEditionMetadata(UserInfo editionUser)
+		{
+			using (var conn = OpenConnection())
+			{
+				try
+				{
+					var metadata = await conn.QueryFirstAsync<EditionMetadata>(
+							GetManuscriptMetadataQuery.GetQuery
+							, new { editionUser.EditionId });
+
+					return metadata;
+				}
+
+				catch (InvalidOperationException) { }
+
+				return new EditionMetadata();
 			}
 		}
 

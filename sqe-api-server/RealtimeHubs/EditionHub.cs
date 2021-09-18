@@ -367,6 +367,35 @@ namespace SQE.API.Server.RealtimeHubs
 			}
 		}
 
+		/// <summary>
+		///  Retrieve extra institutional metadata concerning the edition
+		///  manuscript if available.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <returns></returns>
+		[AllowAnonymous]
+		public async Task<EditionManuscriptMetadataDTO> GetV1EditionsEditionIdMetadata(
+				uint editionId)
+
+		{
+			try
+			{
+				return await _editionService.GetEditionMetadata(
+						await _userService.GetCurrentUserObjectAsync(editionId));
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
+
 		[AllowAnonymous]
 		public async Task<EditionListDTO> GetV1ManuscriptsManuscriptIdEditions(uint manuscriptId)
 

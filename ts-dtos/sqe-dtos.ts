@@ -884,6 +884,25 @@ export interface APIVersionDTO extends DatabaseVersionDTO {
     
 }
 
+export interface EditionManuscriptMetadataDTO {
+    material: string;
+    publicationNumber: string;
+    plate?: string;
+    frag: string;
+    site: string;
+    period: string;
+    composition: string;
+    copy: string;
+    manuscript: string;
+    otherIdentifications: string;
+    abbreviation: string;
+    manuscriptType: string;
+    compositionType: string;
+    language: string;
+    script: string;
+    publication: string;
+}
+
 export type SideDesignation = 
     'recto' |
     'verso'

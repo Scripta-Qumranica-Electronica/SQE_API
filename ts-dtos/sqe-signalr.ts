@@ -163,6 +163,7 @@ import {
 	UserDataStoreDTO,
 	DatabaseVersionDTO,
 	APIVersionDTO,
+	EditionManuscriptMetadataDTO,
 } from "@/dtos/sqe-dtos"
 
 import { HubConnection } from '@microsoft/signalr'; 
@@ -569,6 +570,17 @@ export class SignalRUtilities {
 	 */
     public async getV1EditionsEditionIdScriptLines(editionId: number): Promise<EditionScriptLinesDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdScriptLines', editionId);
+    }
+
+    /**
+	 * Retrieve extra institutional metadata concerning the edition
+	 *		 manuscript if available.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 *
+	 */
+    public async getV1EditionsEditionIdMetadata(editionId: number): Promise<EditionManuscriptMetadataDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdMetadata', editionId);
     }
 
     

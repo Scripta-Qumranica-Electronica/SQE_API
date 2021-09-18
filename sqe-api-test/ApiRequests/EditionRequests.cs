@@ -216,6 +216,31 @@ namespace SQE.ApiTest.ApiRequests
 			public override uint? GetEditionId() => _editionId;
 		}
 
+		public class V1_Editions_EditionId_Metadata :
+				RequestObject<EmptyInput, EditionManuscriptMetadataDTO>
+		{
+			private readonly uint _editionId;
+
+			/// <summary>
+			///  Retrieve extra institutional metadata concerning the edition
+			///  manuscript if available.
+			/// </summary>
+			/// <param name="editionId">Unique Id of the desired edition</param>
+			/// <returns></returns>
+			public V1_Editions_EditionId_Metadata(uint editionId) => _editionId = editionId;
+
+			protected override string HttpPath() => RequestPath.Replace(
+					"/edition-id"
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+		}
+
 		public class V1_Manuscripts_ManuscriptId_Editions :
 				RequestObject<EmptyInput, EditionListDTO>
 		{

@@ -75,7 +75,8 @@ namespace SQE.API.Server.Services
 
 		Task<EditionScriptCollectionDTO> GetEditionScriptCollection(UserInfo editionUser);
 
-		Task<EditionScriptLinesDTO> GetEditionScriptLines(UserInfo editionUser);
+		Task<EditionScriptLinesDTO>        GetEditionScriptLines(UserInfo editionUser);
+		Task<EditionManuscriptMetadataDTO> GetEditionMetadata(UserInfo    editionUser);
 	}
 
 	public class EditionService : IEditionService
@@ -711,6 +712,13 @@ The Scripta Qumranica Electronica team</body></html>";
 			{
 					textFragments = results.Select(a => a.ToDTO()).ToList(),
 			};
+		}
+
+		public async Task<EditionManuscriptMetadataDTO> GetEditionMetadata(UserInfo editionUser)
+		{
+			var results = await _editionRepo.GetEditionMetadata(editionUser);
+
+			return results.ToDTO();
 		}
 
 		private static DetailedEditorRightsDTO _permissionsToEditorRightsDTO(

@@ -83,5 +83,27 @@ namespace SQE.API.Server.Serialization
 		{
 				textFragments = tfsl.Select(x => x.ToDTO()).ToList(),
 		};
+
+		public static EditionManuscriptMetadataDTO ToDTO(this EditionMetadata em)
+			=> new EditionManuscriptMetadataDTO
+			{
+					abbreviation = em.Abbreviation
+					, composition = em.Composition
+					, compositionType = em.CompositionType
+					, copy = em.Copy
+					, frag = em.Frag
+					, language = em.Language
+					, manuscript = em.Manuscript
+					, manuscriptType = em.ManuscriptType
+					, material = em.Material
+					, otherIdentifications = em.OtherIdentifications
+					, publicationNumber = em.PublicationNumber
+					, plate = em.Plate
+					, site = em.Site
+					, period = em.Period
+					, script = em.Script
+					, publication = em.Publication
+					,
+			};
 	}
 }

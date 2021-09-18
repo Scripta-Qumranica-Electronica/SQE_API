@@ -121,4 +121,24 @@ namespace SQE.DatabaseAccess.Models
 		public uint oldId { get; set; }
 		public uint newId { get; set; }
 	}
+
+	public class EditionMetadata
+	{
+		public string Material             { get; set; } = "";
+		public string PublicationNumber    { get; set; } = "";
+		public string Plate                { get; set; } = "";
+		public string Frag                 { get; set; } = "";
+		public string Site                 { get; set; } = "";
+		public string Period               { get; set; } = "";
+		public string Composition          { get; set; } = "";
+		public string Copy                 { get; set; } = "";
+		public string Manuscript           { get; set; } = "";
+		public string OtherIdentifications { get; set; } = "";
+		public string Abbreviation         { get; set; } = "";
+		public string ManuscriptType       { get; set; } = "";
+		public string CompositionType      { get; set; } = "";
+		public string Language             { get; set; } = "";
+		public string Script               { get; set; } = "";
+		public string Publication          { get; set; } = "";
+	}
 }
