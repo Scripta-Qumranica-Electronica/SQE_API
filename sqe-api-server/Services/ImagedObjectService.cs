@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
@@ -207,7 +207,7 @@ namespace SQE.API.Server.Services
 				, string clientId = null)
 		{
 			await _repo.CreateEditionImagedObjectsAsync(editionUser, imagedObjectId);
-
+			
 			var newImagedObject =
 					(await GetEditionImagedObjectsAsync(editionUser, imagedObjectId)).imagedObjects
 																					 .FirstOrDefault(
@@ -215,7 +215,7 @@ namespace SQE.API.Server.Services
 																									 => x
 																												.id
 																										== imagedObjectId);
-
+			
 			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
 							 .CreatedImagedObject(newImagedObject);
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -24,6 +24,10 @@ namespace SQE.DatabaseAccess
 
 		Task<IEnumerable<ImagedObjectImage>> GetImagedObjectImagesAsync(string imagedObjectId);
 		Task<IEnumerable<uint>> GetImagedObjectEditionsAsync(uint? userId, string imagedObjectId);
+
+		Task<IEnumerable<AlteredRecord>> CreateEditionImagedObjectsByCatalogIdAsync(
+				UserInfo editionUser
+				, uint imageCatalogId)
 	}
 
 	public class ImagedObjectRepository : DbConnectionBase
@@ -118,12 +122,47 @@ WHERE image_catalog.object_id = @ImagedObjectId
 									, x);
 						});
 
-				await _databaseWriter.WriteToDatabaseAsync(editionUser, createRequests.AsList());
+				var a = await _databaseWriter.WriteToDatabaseAsync(editionUser, createRequests.AsList());
 				transaction.Complete();
 			}
 
 			return (await GetEditionImagedObjectsAsync(editionUser, imagedObjectId))
 					.FirstOrDefault();
+		}
+
+		public async Task<IEnumerable<AlteredRecord>> CreateEditionImagedObjectsByCatalogIdAsync(
+				UserInfo editionUser
+				, uint imageCatalogId)
+		{
+			using (var transaction = new TransactionScope())
+			{
+				var imageCatalogueIds = await _getRelatedImageCatalogIds(imageCatalogId);
+
+				if (!imageCatalogueIds.Any())
+				{
+					throw new StandardExceptions.DataNotFoundException(
+							"imaged object"
+							, imageCatalogId);
+				}
+
+				var createRequests = imageCatalogueIds.Select(
+						x =>
+						{
+							var parameters = new DynamicParameters();
+							parameters.Add("image_catalog_id", x);
+
+							return new MutationRequest(
+									MutateType.Create
+									, parameters
+									, "image_catalog"
+									, x);
+						});
+
+				var result = await _databaseWriter.WriteToDatabaseAsync(editionUser, createRequests.AsList());
+				transaction.Complete();
+
+				return result;
+			}			
 		}
 
 		public async Task DeleteEditionImagedObjectsAsync(
@@ -160,6 +199,18 @@ WHERE image_catalog.object_id = @ImagedObjectId
 
 			using (var conn = OpenConnection())
 				return conn.QueryAsync<uint>(sql, new { ObjectId = imagedObjectId });
+		}
+
+		private Task<IEnumerable<uint>> _getRelatedImageCatalogIds(uint imageCatalogId)
+		{
+			const string sql = @"select im2.image_catalog_id 
+				from image_catalog 
+				join image_catalog im2 
+				on image_catalog.object_id = im2.object_id 
+				where image_catalog.image_catalog_id = @ImageCatalogId";
+
+			using (var conn = OpenConnection())
+				return conn.QueryAsync<uint>(sql, new { ImageCatalogId = imageCatalogId });
 		}
 	}
 }
