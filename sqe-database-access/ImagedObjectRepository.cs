@@ -27,7 +27,7 @@ namespace SQE.DatabaseAccess
 
 		Task<IEnumerable<AlteredRecord>> CreateEditionImagedObjectsByCatalogIdAsync(
 				UserInfo editionUser
-				, uint imageCatalogId)
+				, uint imageCatalogId);
 	}
 
 	public class ImagedObjectRepository : DbConnectionBase
