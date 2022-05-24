@@ -6,108 +6,144 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using SQE.API.DTO;
-using SQE.API.Server.Services;
 using Microsoft.AspNetCore.SignalR;
-
-using SQE.DatabaseAccess.Helpers;
-
-using System.Text.Json;
-
+using SQE.API.DTO;
 using SQE.API.Server.Helpers;
+using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub
-    {
-/// <summary>
+	public partial class MainHub
+	{
+		/// <summary>
 		///  Get the details of the scribal font for an edition that
 		///  are needed to generate reconstructed text layout.
 		/// </summary>
 		/// <param name="editionId">Edition for which to get the scribal font information</param>
 		/// <returns></returns>
-[AllowAnonymous]
-public async Task<ScriptDataListDTO> GetV1EditionsEditionIdScribalFonts(uint editionId)
+		[AllowAnonymous]
+		public async Task<ScriptDataListDTO> GetV1EditionsEditionIdScribalFonts(uint editionId)
 
-    {
-        try
-        {
-             return  await _scriptService.GetEditionScribalFontData(await _userService.GetCurrentUserObjectAsync(editionId));
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _scriptService.GetEditionScribalFontData(
+						await _userService.GetCurrentUserObjectAsync(editionId));
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Creates a new scribal font for the edition
 		/// </summary>
 		/// <param name="editionId">Edition for which to create the new scribal font</param>
 		/// <param name="scriptData">Basic information about the new scribal font</param>
 		/// <returns></returns>
-[Authorize]
-public async Task<ScriptDataDTO> PostV1EditionsEditionIdScribalFonts(uint editionId, CreateScriptDataDTO scriptData)
+		[Authorize]
+		public async Task<ScriptDataDTO> PostV1EditionsEditionIdScribalFonts(
+				uint                  editionId
+				, CreateScriptDataDTO scriptData)
 
-    {
-        try
-        {
-             return  await _scriptService.CreateEditionScribalFontData(await _userService.GetCurrentUserObjectAsync(editionId, true), scriptData);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _scriptService.CreateEditionScribalFontData(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, scriptData);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Updates the basic information about a scribal font
 		/// </summary>
 		/// <param name="editionId">Edition for which to update the scribal font</param>
 		/// <param name="scribalFontId">The scribal font to be updated</param>
 		/// <param name="scriptData">The updated scribal font information</param>
 		/// <returns></returns>
-[Authorize]
-public async Task<ScriptDataDTO> PutV1EditionsEditionIdScribalFontsScribalFontIdScribalFontData(uint editionId, uint scribalFontId, CreateScriptDataDTO scriptData)
+		[Authorize]
+		public async Task<ScriptDataDTO>
+				PutV1EditionsEditionIdScribalFontsScribalFontIdScribalFontData(
+						uint                  editionId
+						, uint                scribalFontId
+						, CreateScriptDataDTO scriptData)
 
-    {
-        try
-        {
-             return  await _scriptService.UpdateEditionScribalFontData(await _userService.GetCurrentUserObjectAsync(editionId, true), scribalFontId, scriptData);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _scriptService.UpdateEditionScribalFontData(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, scribalFontId
+						, scriptData);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Deletes a scribal font
 		/// </summary>
 		/// <param name="editionId">Edition from which to delete the scribal font</param>
 		/// <param name="scribalFontId">The scribal font to be deleted</param>
 		/// <returns></returns>
-[Authorize]
-public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontId(uint editionId, uint scribalFontId)
+		[Authorize]
+		public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontId(
+				uint   editionId
+				, uint scribalFontId)
 
-    {
-        try
-        {
-              await _scriptService.DeleteScribalFont(await _userService.GetCurrentUserObjectAsync(editionId, true), scribalFontId);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				await _scriptService.DeleteScribalFont(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, scribalFontId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Creates or updates a kerning pair for the scribal font.
 		///  If the kern pair does not yet exists, it is created.
 		///  If the kern pair already exists, it is updated.
@@ -116,22 +152,34 @@ public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontId(uint editio
 		/// <param name="scribalFontId">The scribal font the kerning pair belongs to</param>
 		/// <param name="kernPair">The kerning information</param>
 		/// <returns></returns>
-[Authorize]
-public async Task<KernPairDTO> PostV1EditionsEditionIdScribalFontsScribalFontIdKerningPairs(uint editionId, uint scribalFontId, CreateKernPairDTO kernPair)
+		[Authorize]
+		public async Task<KernPairDTO> PostV1EditionsEditionIdScribalFontsScribalFontIdKerningPairs(
+				uint                editionId
+				, uint              scribalFontId
+				, CreateKernPairDTO kernPair)
 
-    {
-        try
-        {
-             return  await _scriptService.SetEditionScribalFontKerningPair(await _userService.GetCurrentUserObjectAsync(editionId, true), scribalFontId, kernPair);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _scriptService.SetEditionScribalFontKerningPair(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, scribalFontId
+						, kernPair);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Deletes a kerning pair from a scribal font
 		/// </summary>
 		/// <param name="editionId">Edition from which to delete the kerning pair</param>
@@ -139,22 +187,37 @@ public async Task<KernPairDTO> PostV1EditionsEditionIdScribalFontsScribalFontIdK
 		/// <param name="firstCharacter">The first character of the kerning pair</param>
 		/// <param name="secondCharacter">The second character of the kerning pair</param>
 		/// <returns></returns>
-[Authorize]
-public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter(uint editionId, uint scribalFontId, string firstCharacter, string secondCharacter)
+		[Authorize]
+		public async Task
+				DeleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter(
+						uint     editionId
+						, uint   scribalFontId
+						, string firstCharacter
+						, string secondCharacter)
 
-    {
-        try
-        {
-              await _scriptService.DeleteEditionScribalFontKerningPair(await _userService.GetCurrentUserObjectAsync(editionId, true), scribalFontId, firstCharacter, secondCharacter);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				await _scriptService.DeleteEditionScribalFontKerningPair(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, scribalFontId
+						, firstCharacter
+						, secondCharacter);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Creates or updates information about a scribal font glyph.
 		///  If information for the glyph does not yet exist, a new glyph is created.
 		///  If information for the glyph already exists, that glyph information is updated.
@@ -163,42 +226,65 @@ public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairs
 		/// <param name="scribalFontId">Scribal font in which the glyph is created or updated</param>
 		/// <param name="glyph">Information about the glyph</param>
 		/// <returns></returns>
-[Authorize]
-public async Task<GlyphDataDTO> PostV1EditionsEditionIdScribalFontsScribalFontIdGlyphs(uint editionId, uint scribalFontId, CreateGlyphDataDTO glyph)
+		[Authorize]
+		public async Task<GlyphDataDTO> PostV1EditionsEditionIdScribalFontsScribalFontIdGlyphs(
+				uint                 editionId
+				, uint               scribalFontId
+				, CreateGlyphDataDTO glyph)
 
-    {
-        try
-        {
-             return  await _scriptService.SetEditionScribalFontGlyph(await _userService.GetCurrentUserObjectAsync(editionId, true), scribalFontId, glyph);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _scriptService.SetEditionScribalFontGlyph(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, scribalFontId
+						, glyph);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Deletes glyph information from a scribal font
 		/// </summary>
 		/// <param name="editionId">Edition from which the glyph is deleted</param>
 		/// <param name="scribalFontId">Scribal font from which the glyph is deleted</param>
 		/// <param name="glyphCharacter">The glyph to be deleted</param>
 		/// <returns></returns>
-[Authorize]
-public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter(uint editionId, uint scribalFontId, string glyphCharacter)
+		[Authorize]
+		public async Task DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter(
+				uint     editionId
+				, uint   scribalFontId
+				, string glyphCharacter)
 
-    {
-        try
-        {
-              await _scriptService.DeleteEditionScribalFontGlyph(await _userService.GetCurrentUserObjectAsync(editionId, true), scribalFontId, glyphCharacter);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
-
-
+		{
+			try
+			{
+				await _scriptService.DeleteEditionScribalFontGlyph(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, scribalFontId
+						, glyphCharacter);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 	}
 }

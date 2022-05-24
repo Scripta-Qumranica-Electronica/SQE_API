@@ -6,162 +6,227 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using SQE.API.DTO;
-using SQE.API.Server.Services;
 using Microsoft.AspNetCore.SignalR;
-
-using SQE.DatabaseAccess.Helpers;
-
-using System.Text.Json;
-
+using SQE.API.DTO;
 using SQE.API.Server.Helpers;
+using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub
-    {
-/// <summary>
+	public partial class MainHub
+	{
+		/// <summary>
 		///  Get the details for a ROI in the given edition of a scroll
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="roiId">A JSON object with the new ROI to be created</param>
-[AllowAnonymous]
-public async Task<InterpretationRoiDTO> GetV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId)
+		[AllowAnonymous]
+		public async Task<InterpretationRoiDTO> GetV1EditionsEditionIdRoisRoiId(
+				uint   editionId
+				, uint roiId)
 
-    {
-        try
-        {
-             return  await _roiService.GetRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId), roiId);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _roiService.GetRoiAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId)
+						, roiId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Creates new sign ROI in the given edition of a scroll
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="newRoi">A JSON object with the new ROI to be created</param>
-[Authorize]
-public async Task<InterpretationRoiDTO> PostV1EditionsEditionIdRois(uint editionId, SetInterpretationRoiDTO newRoi)
+		[Authorize]
+		public async Task<InterpretationRoiDTO> PostV1EditionsEditionIdRois(
+				uint                      editionId
+				, SetInterpretationRoiDTO newRoi)
 
-    {
-        try
-        {
-             return  await _roiService.CreateRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newRoi);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _roiService.CreateRoiAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, newRoi);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Creates new sign ROI's in the given edition of a scroll
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="newRois">A JSON object with an array of the new ROI's to be created</param>
-[Authorize]
-public async Task<InterpretationRoiDTOList> PostV1EditionsEditionIdRoisBatch(uint editionId, SetInterpretationRoiDTOList newRois)
+		[Authorize]
+		public async Task<InterpretationRoiDTOList> PostV1EditionsEditionIdRoisBatch(
+				uint                          editionId
+				, SetInterpretationRoiDTOList newRois)
 
-    {
-        try
-        {
-             return  await _roiService.CreateRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), newRois);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _roiService.CreateRoisAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, newRois);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Processes a series of create/update/delete ROI requests in the given edition of a scroll
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="rois">A JSON object with all the roi edits to be performed</param>
-[Authorize]
-public async Task<BatchEditRoiResponseDTO> PostV1EditionsEditionIdRoisBatchEdit(uint editionId, BatchEditRoiDTO rois)
+		[Authorize]
+		public async Task<BatchEditRoiResponseDTO> PostV1EditionsEditionIdRoisBatchEdit(
+				uint              editionId
+				, BatchEditRoiDTO rois)
 
-    {
-        try
-        {
-             return  await _roiService.BatchEditRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), rois);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _roiService.BatchEditRoisAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, rois);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Update an existing sign ROI in the given edition of a scroll
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="roiId">Id of the ROI to be updated</param>
 		/// <param name="updateRoi">A JSON object with the updated ROI details</param>
-[Authorize]
-public async Task<UpdatedInterpretationRoiDTO> PutV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId, SetInterpretationRoiDTO updateRoi)
+		[Authorize]
+		public async Task<UpdatedInterpretationRoiDTO> PutV1EditionsEditionIdRoisRoiId(
+				uint                      editionId
+				, uint                    roiId
+				, SetInterpretationRoiDTO updateRoi)
 
-    {
-        try
-        {
-             return  await _roiService.UpdateRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), roiId, updateRoi);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _roiService.UpdateRoiAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, roiId
+						, updateRoi);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Update existing sign ROI's in the given edition of a scroll
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="updateRois">A JSON object with an array of the updated ROI details</param>
-[Authorize]
-public async Task<UpdatedInterpretationRoiDTOList> PutV1EditionsEditionIdRoisBatch(uint editionId, UpdateInterpretationRoiDTOList updateRois)
+		[Authorize]
+		public async Task<UpdatedInterpretationRoiDTOList> PutV1EditionsEditionIdRoisBatch(
+				uint                             editionId
+				, UpdateInterpretationRoiDTOList updateRois)
 
-    {
-        try
-        {
-             return  await _roiService.UpdateRoisAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), updateRois);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _roiService.UpdateRoisAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, updateRois);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Deletes a sign ROI from the given edition of a scroll
 		/// </summary>
 		/// <param name="roiId">Id of the ROI to be deleted</param>
 		/// <param name="editionId">Id of the edition</param>
-[Authorize]
-public async Task DeleteV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId)
+		[Authorize]
+		public async Task DeleteV1EditionsEditionIdRoisRoiId(uint editionId, uint roiId)
 
-    {
-        try
-        {
-              await _roiService.DeleteRoiAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), roiId);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
-
-
+		{
+			try
+			{
+				await _roiService.DeleteRoiAsync(
+						await _userService.GetCurrentUserObjectAsync(editionId, true)
+						, roiId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 	}
 }

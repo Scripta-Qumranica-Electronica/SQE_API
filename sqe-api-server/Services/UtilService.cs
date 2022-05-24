@@ -1,29 +1,26 @@
 using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
 using SQE.DatabaseAccess;
-using System.Diagnostics;
-using System.Net;
-using Newtonsoft.Json;
-using System.IO;
-using System.Net.Security;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 
 namespace SQE.API.Server.Services
-{	
+{
 	public interface IUtilService
 	{
 		WktPolygonDTO            RepairWktPolygonAsync(string wktPolygon, string clientId = null);
 		Task<DatabaseVersionDTO> GetDatabaseVersion();
 		Task<APIVersionDTO>      GetAPIVersion();
-		Task<NoContentResult>	 ReportGithubIssueRequestAsync(string title, string body);
+		Task<NoContentResult>    ReportGithubIssueRequestAsync(string title, string body);
 	}
 
 	public class UtilService : IUtilService
@@ -31,7 +28,7 @@ namespace SQE.API.Server.Services
 		private readonly IConfiguration                   _config;
 		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 		private readonly IUserRepository                  _userRepo;
-		
+
 		public UtilService(
 				IHubContext<MainHub, ISQEClient> hubContext
 				, IUserRepository                userRepo
@@ -80,7 +77,7 @@ namespace SQE.API.Server.Services
 			//var token = "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";
 			//var url = $"https://api.github.com/repos/{user}/{repo}/issues";//Paste ur url here
 			var token = _config.GetConnectionString("GitToken");
-			var url   = _config.GetConnectionString("GitURL");
+			var url = _config.GetConnectionString("GitURL");
 
 			Debug.WriteLine("");
 			Debug.WriteLine(url);
@@ -88,11 +85,15 @@ namespace SQE.API.Server.Services
 			var httpClient = new HttpClient();
 			httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 			httpClient.DefaultRequestHeaders.Add("User-Agent", "request");
-			httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", token); //token123 is replaced by my token of course
+
+			httpClient.DefaultRequestHeaders.Authorization =
+					new AuthenticationHeaderValue(
+							"Token"
+							, token); //token123 is replaced by my token of course
 
 			Debug.WriteLine(httpClient.DefaultRequestHeaders);
 
-			var json = JsonConvert.SerializeObject(new { title=title, body=body });
+			var json = JsonConvert.SerializeObject(new { title, body });
 			var data = new StringContent(json, Encoding.UTF8, "application/json");
 
 			var response = await httpClient.PostAsync(url, data);

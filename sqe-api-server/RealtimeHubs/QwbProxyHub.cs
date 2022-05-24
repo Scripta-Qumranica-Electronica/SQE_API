@@ -6,105 +6,135 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using SQE.API.DTO;
-using SQE.API.Server.Services;
 using Microsoft.AspNetCore.SignalR;
-
-using SQE.DatabaseAccess.Helpers;
-
-using System.Text.Json;
-
+using SQE.API.DTO;
 using SQE.API.Server.Helpers;
+using SQE.DatabaseAccess.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-    public partial class MainHub
-    {
-/// <summary>
+	public partial class MainHub
+	{
+		/// <summary>
 		///  Search QWB (via proxy) for any variant readings for the word that contains the submitted sign
 		///  interpretation id.
 		/// </summary>
 		/// <param name="editionId">Edition in which the sign interpretation id is found</param>
 		/// <param name="signInterpretationId">Id of the sign interpretation to search</param>
 		/// <returns></returns>
-[AllowAnonymous]
-public async Task<QwbWordVariantListDTO> GetV1EditionsEditionIdSignInterpretationsSignInterpretationIdWordVariants(uint editionId, uint signInterpretationId)
+		[AllowAnonymous]
+		public async Task<QwbWordVariantListDTO>
+				GetV1EditionsEditionIdSignInterpretationsSignInterpretationIdWordVariants(
+						uint   editionId
+						, uint signInterpretationId)
 
-    {
-        try
-        {
-             return  await _wordService.GetQwbWordVariantForSignInterpretationId(await _userService.GetCurrentUserObjectAsync(editionId), editionId, signInterpretationId);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _wordService.GetQwbWordVariantForSignInterpretationId(
+						await _userService.GetCurrentUserObjectAsync(editionId)
+						, editionId
+						, signInterpretationId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Search QWB (via proxy) for any variant readings for the word that contains the submitted
 		///  QWB word id.
 		/// </summary>
 		/// <param name="qwbWordId">QWB word Id</param>
 		/// <returns></returns>
-[AllowAnonymous]
-public async Task<QwbWordVariantListDTO> GetV1QwbProxyWordsQwbWordIdWordVariants(uint qwbWordId)
+		[AllowAnonymous]
+		public async Task<QwbWordVariantListDTO> GetV1QwbProxyWordsQwbWordIdWordVariants(
+				uint qwbWordId)
 
-    {
-        try
-        {
-             return  await _wordService.GetQwbWordVariantForQwbWordId(qwbWordId);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _wordService.GetQwbWordVariantForQwbWordId(qwbWordId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Search QWB (via proxy) for any parallel text.
 		/// </summary>
 		/// <param name="qwbStartWordId">QWB word Id for the beginning of the text selection</param>
 		/// <param name="qwbEndWordId">QWB word Id for the end of the text selection</param>
 		/// <returns></returns>
-[AllowAnonymous]
-public async Task<QwbParallelListDTO> GetV1QwbProxyParallelsStartWordQwbStartWordIdEndWordQwbEndWordId(uint qwbStartWordId, uint qwbEndWordId)
+		[AllowAnonymous]
+		public async Task<QwbParallelListDTO>
+				GetV1QwbProxyParallelsStartWordQwbStartWordIdEndWordQwbEndWordId(
+						uint   qwbStartWordId
+						, uint qwbEndWordId)
 
-    {
-        try
-        {
-             return  await _wordService.GetQwbParallel(qwbStartWordId, qwbEndWordId);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
+		{
+			try
+			{
+				return await _wordService.GetQwbParallel(qwbStartWordId, qwbEndWordId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 
-
-/// <summary>
+		/// <summary>
 		///  Get full bibliographic entry from QWB (via proxy).
 		/// </summary>
 		/// <param name="qwbBibliographyId">ID of the qwb bibliographical item to be retrieved</param>
 		/// <returns></returns>
-[AllowAnonymous]
-public async Task<QwbBibliographyEntryDTO> GetV1QwbProxyBibliographyQwbBibliographyId(uint qwbBibliographyId)
+		[AllowAnonymous]
+		public async Task<QwbBibliographyEntryDTO> GetV1QwbProxyBibliographyQwbBibliographyId(
+				uint qwbBibliographyId)
 
-    {
-        try
-        {
-             return  await _wordService.GetQwbBibliography(qwbBibliographyId);
-        }
-        catch (ApiException err)
-        {
-            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
-        }
-    }
-
-
+		{
+			try
+			{
+				return await _wordService.GetQwbBibliography(qwbBibliographyId);
+			}
+			catch (ApiException err)
+			{
+				throw new HubException(
+						JsonSerializer.Serialize(
+								new HttpExceptionMiddleware.ApiExceptionError(
+										nameof(err)
+										, err.Error
+										, err is IExceptionWithData exceptionWithData
+												? exceptionWithData.CustomReturnedData
+												: null)));
+			}
+		}
 	}
 }

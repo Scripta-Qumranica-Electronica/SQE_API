@@ -50,7 +50,8 @@ namespace SQE.API.Server.HttpControllers
 		/// <returns></returns>
 		[AllowAnonymous]
 		[HttpPost("v1/[controller]s/report-github-issue")]
-		public async Task<ActionResult> ReportGithubIssueRequest([FromBody] GithubIssueReportDTO payload)
-			=> await _utilService.ReportGithubIssueRequestAsync(payload.title, payload.body);		
+		public async Task<ActionResult> ReportGithubIssueRequest(
+				[FromBody] GithubIssueReportDTO payload)
+			=> await _utilService.ReportGithubIssueRequestAsync(payload.title, payload.body);
 	}
 }

@@ -79,13 +79,13 @@ namespace SQE.API.Server.Services
 
 	public class ArtefactService : IArtefactService
 	{
-		private readonly IImagedObjectRepository _imagedObjectRepository;
 		private readonly IArtefactRepository              _artefactRepository;
 		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+		private readonly IImagedObjectRepository          _imagedObjectRepository;
 
 		public ArtefactService(
-			IImagedObjectRepository imagedObjectRepository,
-				IArtefactRepository                artefactRepository
+				IImagedObjectRepository            imagedObjectRepository
+				, IArtefactRepository              artefactRepository
 				, IHubContext<MainHub, ISQEClient> hubContext)
 		{
 			_imagedObjectRepository = imagedObjectRepository;
@@ -284,9 +284,11 @@ namespace SQE.API.Server.Services
 		{
 			if (createArtefact.masterImageId.HasValue)
 			{
-				var _ = await _imagedObjectRepository.CreateEditionImagedObjectsByCatalogIdAsync(editionUser, createArtefact.masterImageId.Value);
+				var _ = await _imagedObjectRepository.CreateEditionImagedObjectsBySqeImageIdAsync(
+						editionUser
+						, createArtefact.masterImageId.Value);
 			}
-			
+
 			var cleanedPoly = string.IsNullOrEmpty(createArtefact.mask)
 					? null
 					: GeometryValidation.ValidatePolygon(createArtefact.mask, "artefact");

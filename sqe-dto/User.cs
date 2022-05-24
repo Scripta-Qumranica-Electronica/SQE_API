@@ -245,7 +245,8 @@ namespace SQE.API.DTO
 		[StringLength(
 				1000
 				, MinimumLength = 3
-				, ErrorMessage = "The submitted message body may not be larger than 1000 characters")]
+				, ErrorMessage =
+						"The submitted message body may not be larger than 1000 characters")]
 		public string body { get; set; }
 	}
 }
