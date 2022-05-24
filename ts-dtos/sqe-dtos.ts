@@ -884,6 +884,11 @@ export interface APIVersionDTO extends DatabaseVersionDTO {
     
 }
 
+export interface GithubIssueReportDTO {
+    title: string;
+    body: string;
+}
+
 export type SideDesignation = 
     'recto' |
     'verso'

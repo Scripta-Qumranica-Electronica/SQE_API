@@ -6,95 +6,101 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
-using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
-using SQE.API.Server.Helpers;
+using SQE.API.Server.Services;
+using Microsoft.AspNetCore.SignalR;
+
 using SQE.DatabaseAccess.Helpers;
+
+using System.Text.Json;
+
+using SQE.API.Server.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-	public partial class MainHub
-	{
-		/// <summary>
+    public partial class MainHub
+    {
+/// <summary>
 		///  Checks a WKT polygon to ensure validity. If the polygon is invalid,
 		///  it attempts to construct a valid polygon that matches the original
 		///  as closely as possible.
 		/// </summary>
 		/// <param name="payload">JSON object with the WKT polygon to validate</param>
-		[Authorize]
-		public WktPolygonDTO PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
+[Authorize]
+public WktPolygonDTO PostV1UtilsRepairWktPolygon(WktPolygonDTO payload)
 
-		{
-			try
-			{
-				return _utilService.RepairWktPolygonAsync(payload.wktPolygon);
-			}
-			catch (ApiException err)
-			{
-				throw new HubException(
-						JsonSerializer.Serialize(
-								new HttpExceptionMiddleware.ApiExceptionError(
-										nameof(err)
-										, err.Error
-										, err is IExceptionWithData exceptionWithData
-												? exceptionWithData.CustomReturnedData
-												: null)));
-			}
-		}
+    {
+        try
+        {
+             return  _utilService.RepairWktPolygonAsync(payload.wktPolygon);
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
 
-		/// <summary>
+
+/// <summary>
 		///  Provides the current version designation of the database along with
 		///  the date it was updated to that version.
 		/// </summary>
 		/// <returns></returns>
-		[AllowAnonymous]
-		public async Task<DatabaseVersionDTO> GetV1UtilsDatabaseVersion()
+[AllowAnonymous]
+public async Task<DatabaseVersionDTO> GetV1UtilsDatabaseVersion()
 
-		{
-			try
-			{
-				return await _utilService.GetDatabaseVersion();
-			}
-			catch (ApiException err)
-			{
-				throw new HubException(
-						JsonSerializer.Serialize(
-								new HttpExceptionMiddleware.ApiExceptionError(
-										nameof(err)
-										, err.Error
-										, err is IExceptionWithData exceptionWithData
-												? exceptionWithData.CustomReturnedData
-												: null)));
-			}
-		}
+    {
+        try
+        {
+             return  await _utilService.GetDatabaseVersion();
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
 
-		/// <summary>
+
+/// <summary>
 		///  Provides the current version designation of the API server along with
 		///  the date it was updated to that version.
 		/// </summary>
 		/// <returns></returns>
-		[AllowAnonymous]
-		public async Task<APIVersionDTO> GetV1UtilsApiVersion()
+[AllowAnonymous]
+public async Task<APIVersionDTO> GetV1UtilsApiVersion()
 
-		{
-			try
-			{
-				return await _utilService.GetAPIVersion();
-			}
-			catch (ApiException err)
-			{
-				throw new HubException(
-						JsonSerializer.Serialize(
-								new HttpExceptionMiddleware.ApiExceptionError(
-										nameof(err)
-										, err.Error
-										, err is IExceptionWithData exceptionWithData
-												? exceptionWithData.CustomReturnedData
-												: null)));
-			}
-		}
+    {
+        try
+        {
+             return  await _utilService.GetAPIVersion();
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
+
+
+/// <summary>
+		///  Adds a new entry in Github issues
+		/// </summary>
+		/// <returns></returns>
+[AllowAnonymous]
+public async Task PostV1UtilsReportGithubIssue(GithubIssueReportDTO payload)
+
+    {
+        try
+        {
+              await _utilService.ReportGithubIssueRequestAsync(payload.title, payload.body);
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
+
+
 	}
 }

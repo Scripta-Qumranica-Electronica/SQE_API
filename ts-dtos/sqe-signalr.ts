@@ -163,6 +163,7 @@ import {
 	UserDataStoreDTO,
 	DatabaseVersionDTO,
 	APIVersionDTO,
+	GithubIssueReportDTO,
 } from "@/dtos/sqe-dtos"
 
 import { HubConnection } from '@microsoft/signalr'; 
@@ -1112,6 +1113,48 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Override the default OnConnectedAsync to add the connection to the user's user_id
+	 * group if the user is authenticated. The user_id group is used for messages that
+	 * are above the level of a single edition.
+	 *
+	 *
+	 *
+	 */
+    public async onConnectedAsync(): Promise<void> {
+        return await this._connection.invoke('OnConnectedAsync');
+    }
+
+    /**
+	 * The client subscribes to all changes for the specified editionId.
+	 *
+	 * @param editionId - The ID of the edition to receive updates
+	 *
+	 */
+    public async subscribeToEdition(editionId: number): Promise<void> {
+        return await this._connection.invoke('SubscribeToEdition', editionId);
+    }
+
+    /**
+	 * The client unsubscribes to all changes for the specified editionId.
+	 *
+	 * @param editionId - The ID of the edition to stop receiving updates
+	 *
+	 */
+    public async unsubscribeToEdition(editionId: number): Promise<void> {
+        return await this._connection.invoke('UnsubscribeToEdition', editionId);
+    }
+
+    /**
+	 * Get a list of all editions the client is currently subscribed to.
+	 *
+	 *
+	 * @returns - A list of every editionId for which the client receives update
+	 */
+    public async listEditionSubscriptions(): Promise<number[]> {
+        return await this._connection.invoke('ListEditionSubscriptions');
+    }
+
+    /**
 	 * Creates a new text fragment in the given edition of a scroll
 	 *
 	 * @param createFragment - A JSON object with the details of the new text fragment to be created
@@ -1432,45 +1475,13 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Override the default OnConnectedAsync to add the connection to the user's user_id
-	 *		 group if the user is authenticated. The user_id group is used for messages that
-	 *		 are above the level of a single edition.
+	 * Adds a new entry in Github issues
 	 *
 	 *
 	 *
 	 */
-    public async onConnectedAsync(): Promise<void> {
-        return await this._connection.invoke('OnConnectedAsync');
-    }
-
-    /**
-	 * The client subscribes to all changes for the specified editionId.
-	 *
-	 * @param editionId - The ID of the edition to receive updates
-	 *
-	 */
-    public async subscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection.invoke('SubscribeToEdition', editionId);
-    }
-
-    /**
-	 * The client unsubscribes to all changes for the specified editionId.
-	 *
-	 * @param editionId - The ID of the edition to stop receiving updates
-	 *
-	 */
-    public async unsubscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection.invoke('UnsubscribeToEdition', editionId);
-    }
-
-    /**
-	 * Get a list of all editions the client is currently subscribed to.
-	 *
-	 *
-	 * @returns - A list of every editionId for which the client receives update
-	 */
-    public async listEditionSubscriptions(): Promise<number[]> {
-        return await this._connection.invoke('ListEditionSubscriptions');
+    public async postV1UtilsReportGithubIssue(payload: GithubIssueReportDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UtilsReportGithubIssue', payload);
     }
 
     /*

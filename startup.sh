@@ -36,6 +36,10 @@ declare -A SETTINGS=(
     
     ## Server protocol support options
     [HttpServer]=${HTTP_SERVER}
+
+	## Github stuff
+	[GitURL]=${GIT_URL}
+	[GitToken]=${GIT_TOKEN}
 )
 
 ## Iterate over each setting and update appsettings.json if the environment variable has a value

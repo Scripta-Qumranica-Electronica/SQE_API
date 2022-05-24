@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
@@ -230,4 +230,22 @@ namespace SQE.API.DTO
 	}
 
 	public class APIVersionDTO : DatabaseVersionDTO { }
+
+	// When user reports a problem in the app, a Github issue is created
+	public class GithubIssueReportDTO
+	{
+		[Required]
+		[StringLength(
+				100
+				, MinimumLength = 3
+				, ErrorMessage = "The submitted title may not be larger than 100 characters")]
+		public string title { get; set; }
+
+		[Required]
+		[StringLength(
+				1000
+				, MinimumLength = 3
+				, ErrorMessage = "The submitted message body may not be larger than 1000 characters")]
+		public string body { get; set; }
+	}
 }

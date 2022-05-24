@@ -43,5 +43,14 @@ namespace SQE.API.Server.HttpControllers
 		[HttpGet("v1/[controller]s/api-version")]
 		public async Task<ActionResult<APIVersionDTO>> GetAPIVersion()
 			=> await _utilService.GetAPIVersion();
+
+		/// <summary>
+		///  Adds a new entry in Github issues
+		/// </summary>
+		/// <returns></returns>
+		[AllowAnonymous]
+		[HttpPost("v1/[controller]s/report-github-issue")]
+		public async Task<ActionResult> ReportGithubIssueRequest([FromBody] GithubIssueReportDTO payload)
+			=> await _utilService.ReportGithubIssueRequestAsync(payload.title, payload.body);		
 	}
 }
