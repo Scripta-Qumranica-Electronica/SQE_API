@@ -442,6 +442,142 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Adds an editor to the specified edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param payload - JSON object with the attributes of the new editor
+	 *
+	 */
+    public async postV1EditionsEditionIdAddEditorRequest(editionId: number, payload: InviteEditorDTO): Promise<void> {
+        return await this._connection.invoke('PostV1EditionsEditionIdAddEditorRequest', editionId, payload);
+    }
+
+    /**
+	 * Get a list of requests issued by the current user for other users
+	 *		 to become editors of a shared edition
+	 *
+	 *
+	 *
+	 */
+    public async getV1EditionsAdminShareRequests(): Promise<AdminEditorRequestListDTO> {
+        return await this._connection.invoke('GetV1EditionsAdminShareRequests');
+    }
+
+    /**
+	 * Get a list of invitations issued to the current user to become an editor of a shared edition
+	 *
+	 *
+	 *
+	 */
+    public async getV1EditionsEditorInvitations(): Promise<EditorInvitationListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditorInvitations');
+    }
+
+    /**
+	 * Confirm addition of an editor to the specified edition
+	 *
+	 * @param token - JWT for verifying the request confirmation
+	 *
+	 */
+    public async postV1EditionsConfirmEditorshipToken(token: string): Promise<DetailedEditorRightsDTO> {
+        return await this._connection.invoke('PostV1EditionsConfirmEditorshipToken', token);
+    }
+
+    /**
+	 * Changes the rights for an editor of the specified edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param editorEmailId - Email address of the editor whose permissions are being changed
+	 * @param payload - JSON object with the attributes of the new editor
+	 *
+	 */
+    public async putV1EditionsEditionIdEditorsEditorEmailId(editionId: number, editorEmailId: string, payload: UpdateEditorRightsDTO): Promise<DetailedEditorRightsDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdEditorsEditorEmailId', editionId, editorEmailId, payload);
+    }
+
+    /**
+	 * Creates a copy of the specified edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param request - JSON object with the attributes to be changed in the copied edition
+	 *
+	 */
+    public async postV1EditionsEditionId(editionId: number, request: EditionCopyDTO): Promise<EditionDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionId', editionId, request);
+    }
+
+    /**
+	 * Archives an edition so that in no longer appears in user data and searches. An admin
+	 *		 may use the archiveForAllEditors optional parameter in order to archive the edition
+	 *		 for all editors (must be confirmed with an archive token).
+	 *
+	 * @param editionId - Unique Id of the desired edition to be archived
+	 * @param optional - Optional parameters: 'archiveForAllEditors'
+	 * @param token - token required when using optional 'archiveForAllEditors'
+	 *
+	 */
+    public async deleteV1EditionsEditionId(editionId: number, optional: string[], token: string): Promise<ArchiveTokenDTO> {
+        return await this._connection.invoke('DeleteV1EditionsEditionId', editionId, optional, token);
+    }
+
+    /**
+	 * Provides details about the specified edition and all accessible alternate editions
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 *
+	 */
+    public async getV1EditionsEditionId(editionId: number): Promise<EditionGroupDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionId', editionId);
+    }
+
+    /**
+	 * Provides a listing of all editions accessible to the current user
+	 *
+	 *
+	 *
+	 */
+    public async getV1Editions(published: bool?, personal: bool?): Promise<EditionListDTO> {
+        return await this._connection.invoke('GetV1Editions', published, personal);
+    }
+
+    /**
+	 * Updates data for the specified edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param request - JSON object with the attributes to be updated
+	 *
+	 */
+    public async putV1EditionsEditionId(editionId: number, request: EditionUpdateRequestDTO): Promise<EditionDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionId', editionId, request);
+    }
+
+    /**
+	 * Provides spatial data for all letters in the edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 *
+	 */
+    public async getV1EditionsEditionIdScriptCollection(editionId: number): Promise<EditionScriptCollectionDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdScriptCollection', editionId);
+    }
+
+    /**
+	 * Provides spatial data for all letters in the edition organized and oriented
+	 *		 by lines.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 *
+	 */
+    public async getV1EditionsEditionIdScriptLines(editionId: number): Promise<EditionScriptLinesDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdScriptLines', editionId);
+    }
+
+    
+    public async getV1ManuscriptsManuscriptIdEditions(manuscriptId: number): Promise<EditionListDTO> {
+        return await this._connection.invoke('GetV1ManuscriptsManuscriptIdEditions', manuscriptId);
+    }
+
+    /**
 	 * Provides information for the specified imaged object.
 	 *
 	 * @param imagedObjectId - Unique Id of the desired object from the imaging Institution
@@ -977,6 +1113,48 @@ export class SignalRUtilities {
     }
 
     /**
+	 * Override the default OnConnectedAsync to add the connection to the user's user_id
+	 * group if the user is authenticated. The user_id group is used for messages that
+	 * are above the level of a single edition.
+	 *
+	 *
+	 *
+	 */
+    public async onConnectedAsync(): Promise<void> {
+        return await this._connection.invoke('OnConnectedAsync');
+    }
+
+    /**
+	 * The client subscribes to all changes for the specified editionId.
+	 *
+	 * @param editionId - The ID of the edition to receive updates
+	 *
+	 */
+    public async subscribeToEdition(editionId: number): Promise<void> {
+        return await this._connection.invoke('SubscribeToEdition', editionId);
+    }
+
+    /**
+	 * The client unsubscribes to all changes for the specified editionId.
+	 *
+	 * @param editionId - The ID of the edition to stop receiving updates
+	 *
+	 */
+    public async unsubscribeToEdition(editionId: number): Promise<void> {
+        return await this._connection.invoke('UnsubscribeToEdition', editionId);
+    }
+
+    /**
+	 * Get a list of all editions the client is currently subscribed to.
+	 *
+	 *
+	 * @returns - A list of every editionId for which the client receives update
+	 */
+    public async listEditionSubscriptions(): Promise<number[]> {
+        return await this._connection.invoke('ListEditionSubscriptions');
+    }
+
+    /**
 	 * Creates a new text fragment in the given edition of a scroll
 	 *
 	 * @param createFragment - A JSON object with the details of the new text fragment to be created
@@ -1263,142 +1441,6 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Adds an editor to the specified edition
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param payload - JSON object with the attributes of the new editor
-	 *
-	 */
-    public async postV1EditionsEditionIdAddEditorRequest(editionId: number, payload: InviteEditorDTO): Promise<void> {
-        return await this._connection.invoke('PostV1EditionsEditionIdAddEditorRequest', editionId, payload);
-    }
-
-    /**
-	 * Get a list of requests issued by the current user for other users
-	 *		 to become editors of a shared edition
-	 *
-	 *
-	 *
-	 */
-    public async getV1EditionsAdminShareRequests(): Promise<AdminEditorRequestListDTO> {
-        return await this._connection.invoke('GetV1EditionsAdminShareRequests');
-    }
-
-    /**
-	 * Get a list of invitations issued to the current user to become an editor of a shared edition
-	 *
-	 *
-	 *
-	 */
-    public async getV1EditionsEditorInvitations(): Promise<EditorInvitationListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditorInvitations');
-    }
-
-    /**
-	 * Confirm addition of an editor to the specified edition
-	 *
-	 * @param token - JWT for verifying the request confirmation
-	 *
-	 */
-    public async postV1EditionsConfirmEditorshipToken(token: string): Promise<DetailedEditorRightsDTO> {
-        return await this._connection.invoke('PostV1EditionsConfirmEditorshipToken', token);
-    }
-
-    /**
-	 * Changes the rights for an editor of the specified edition
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param editorEmailId - Email address of the editor whose permissions are being changed
-	 * @param payload - JSON object with the attributes of the new editor
-	 *
-	 */
-    public async putV1EditionsEditionIdEditorsEditorEmailId(editionId: number, editorEmailId: string, payload: UpdateEditorRightsDTO): Promise<DetailedEditorRightsDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdEditorsEditorEmailId', editionId, editorEmailId, payload);
-    }
-
-    /**
-	 * Creates a copy of the specified edition
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param request - JSON object with the attributes to be changed in the copied edition
-	 *
-	 */
-    public async postV1EditionsEditionId(editionId: number, request: EditionCopyDTO): Promise<EditionDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionId', editionId, request);
-    }
-
-    /**
-	 * Archives an edition so that in no longer appears in user data and searches. An admin
-	 *		 may use the archiveForAllEditors optional parameter in order to archive the edition
-	 *		 for all editors (must be confirmed with an archive token).
-	 *
-	 * @param editionId - Unique Id of the desired edition to be archived
-	 * @param optional - Optional parameters: 'archiveForAllEditors'
-	 * @param token - token required when using optional 'archiveForAllEditors'
-	 *
-	 */
-    public async deleteV1EditionsEditionId(editionId: number, optional: string[], token: string): Promise<ArchiveTokenDTO> {
-        return await this._connection.invoke('DeleteV1EditionsEditionId', editionId, optional, token);
-    }
-
-    /**
-	 * Provides details about the specified edition and all accessible alternate editions
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 *
-	 */
-    public async getV1EditionsEditionId(editionId: number): Promise<EditionGroupDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionId', editionId);
-    }
-
-    /**
-	 * Provides a listing of all editions accessible to the current user
-	 *
-	 *
-	 *
-	 */
-    public async getV1Editions(published: bool?, personal: bool?): Promise<EditionListDTO> {
-        return await this._connection.invoke('GetV1Editions', published, personal);
-    }
-
-    /**
-	 * Updates data for the specified edition
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param request - JSON object with the attributes to be updated
-	 *
-	 */
-    public async putV1EditionsEditionId(editionId: number, request: EditionUpdateRequestDTO): Promise<EditionDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionId', editionId, request);
-    }
-
-    /**
-	 * Provides spatial data for all letters in the edition
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 *
-	 */
-    public async getV1EditionsEditionIdScriptCollection(editionId: number): Promise<EditionScriptCollectionDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdScriptCollection', editionId);
-    }
-
-    /**
-	 * Provides spatial data for all letters in the edition organized and oriented
-	 *		 by lines.
-	 *
-	 * @param editionId - Unique Id of the desired edition
-	 *
-	 */
-    public async getV1EditionsEditionIdScriptLines(editionId: number): Promise<EditionScriptLinesDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdScriptLines', editionId);
-    }
-
-    
-    public async getV1ManuscriptsManuscriptIdEditions(manuscriptId: number): Promise<EditionListDTO> {
-        return await this._connection.invoke('GetV1ManuscriptsManuscriptIdEditions', manuscriptId);
-    }
-
-    /**
 	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
 	 *		 it attempts to construct a valid polygon that matches the original
 	 *		 as closely as possible.
@@ -1440,48 +1482,6 @@ export class SignalRUtilities {
 	 */
     public async postV1UtilsReportGithubIssue(payload: GithubIssueReportDTO): Promise<void> {
         return await this._connection.invoke('PostV1UtilsReportGithubIssue', payload);
-    }
-
-    /**
-	 * Override the default OnConnectedAsync to add the connection to the user's user_id
-	 *		 group if the user is authenticated. The user_id group is used for messages that
-	 *		 are above the level of a single edition.
-	 *
-	 *
-	 *
-	 */
-    public async onConnectedAsync(): Promise<void> {
-        return await this._connection.invoke('OnConnectedAsync');
-    }
-
-    /**
-	 * The client subscribes to all changes for the specified editionId.
-	 *
-	 * @param editionId - The ID of the edition to receive updates
-	 *
-	 */
-    public async subscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection.invoke('SubscribeToEdition', editionId);
-    }
-
-    /**
-	 * The client unsubscribes to all changes for the specified editionId.
-	 *
-	 * @param editionId - The ID of the edition to stop receiving updates
-	 *
-	 */
-    public async unsubscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection.invoke('UnsubscribeToEdition', editionId);
-    }
-
-    /**
-	 * Get a list of all editions the client is currently subscribed to.
-	 *
-	 *
-	 * @returns - A list of every editionId for which the client receives update
-	 */
-    public async listEditionSubscriptions(): Promise<number[]> {
-        return await this._connection.invoke('ListEditionSubscriptions');
     }
 
     /*

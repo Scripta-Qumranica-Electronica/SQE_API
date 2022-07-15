@@ -70,8 +70,8 @@ services:
             - API_PORT=5000
 
 			## Github stuff
-			#- GIT_URL=
-			#- GIT_TOKEN=
+			- GITHUB_URL=
+			- GITHUB_API_TOKEN=
         depends_on:
             - sqe-database
         volumes:

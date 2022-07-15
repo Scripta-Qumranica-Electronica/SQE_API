@@ -238,15 +238,27 @@ namespace SQE.API.DTO
 		[StringLength(
 				100
 				, MinimumLength = 3
-				, ErrorMessage = "The submitted title may not be larger than 100 characters")]
+				, ErrorMessage = "The submitted title may not be less than 4 or larger than 100 characters")]
 		public string title { get; set; }
 
 		[Required]
 		[StringLength(
 				1000
 				, MinimumLength = 3
-				, ErrorMessage =
-						"The submitted message body may not be larger than 1000 characters")]
-		public string body { get; set; }
+				, ErrorMessage = "The submitted title may not be less than 4 or larger than 1000 characters")]
+		public string comment { get; set; }
+
+		[Required]
+		[StringLength(
+				1000
+				, MinimumLength = 3
+				, ErrorMessage = "The submitted title may not be less than 4 or larger than 1009 characters")]
+		public string url { get; set; }
+
+		[StringLength(
+				100
+				, MinimumLength = 3
+				, ErrorMessage = "The submitted title may not be less than 4 or larger than 100 characters")]
+		public string username { get; set; }
 	}
 }

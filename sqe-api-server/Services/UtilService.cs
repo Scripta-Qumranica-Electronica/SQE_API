@@ -20,7 +20,7 @@ namespace SQE.API.Server.Services
 		WktPolygonDTO            RepairWktPolygonAsync(string wktPolygon, string clientId = null);
 		Task<DatabaseVersionDTO> GetDatabaseVersion();
 		Task<APIVersionDTO>      GetAPIVersion();
-		Task<NoContentResult>    ReportGithubIssueRequestAsync(string title, string body);
+		Task<NoContentResult>	 ReportGithubIssueRequestAsync(GithubIssueReportDTO payload);
 	}
 
 	public class UtilService : IUtilService
@@ -70,14 +70,10 @@ namespace SQE.API.Server.Services
 			};
 		}
 
-		public async Task<NoContentResult> ReportGithubIssueRequestAsync(string title, string body)
-		{
-			//var user  = "RidgeBatty";
-			//var repo  = "Testing";
-			//var token = "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";
-			//var url = $"https://api.github.com/repos/{user}/{repo}/issues";//Paste ur url here
-			var token = _config.GetConnectionString("GitToken");
-			var url = _config.GetConnectionString("GitURL");
+		public async Task<NoContentResult> ReportGithubIssueRequestAsync(GithubIssueReportDTO payload)
+		{			
+			var token = _config.GetConnectionString("GitHubAPIToken");
+			var url   = _config.GetConnectionString("GitHubUrl");
 
 			Debug.WriteLine("");
 			Debug.WriteLine(url);
@@ -93,7 +89,7 @@ namespace SQE.API.Server.Services
 
 			Debug.WriteLine(httpClient.DefaultRequestHeaders);
 
-			var json = JsonConvert.SerializeObject(new { title, body });
+			var json = JsonConvert.SerializeObject(new { title=payload.title, body=$"url: {payload.url}\nUser: {payload.username}\n Report: {payload.comment}" });
 			var data = new StringContent(json, Encoding.UTF8, "application/json");
 
 			var response = await httpClient.PostAsync(url, data);

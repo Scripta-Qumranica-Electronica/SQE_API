@@ -886,7 +886,9 @@ export interface APIVersionDTO extends DatabaseVersionDTO {
 
 export interface GithubIssueReportDTO {
     title: string;
-    body: string;
+    comment: string;
+    url: string;
+    username?: string;
 }
 
 export type SideDesignation = 

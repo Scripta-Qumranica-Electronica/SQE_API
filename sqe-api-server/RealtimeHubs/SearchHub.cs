@@ -6,46 +6,42 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
-using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
-using SQE.API.Server.Helpers;
+using SQE.API.Server.Services;
+using Microsoft.AspNetCore.SignalR;
+
 using SQE.DatabaseAccess.Helpers;
+
+using System.Text.Json;
+
+using SQE.API.Server.Helpers;
 
 namespace SQE.API.Server.RealtimeHubs
 {
-	public partial class MainHub
-	{
-		/// <summary>
+    public partial class MainHub
+    {
+/// <summary>
 		///  Basic searching of the Qumranica database. Results are truncated
 		///  to 100 results per search category.
 		/// </summary>
 		/// <param name="searchParameters">The parameters of the search</param>
 		/// <returns></returns>
-		[AllowAnonymous]
-		public async Task<DetailedSearchResponseDTO> PostV1Search(
-				DetailedSearchRequestDTO searchParameters)
+[AllowAnonymous]
+public async Task<DetailedSearchResponseDTO> PostV1Search(DetailedSearchRequestDTO searchParameters)
 
-		{
-			try
-			{
-				return await _searchService.PerformDetailedSearchAsync(
-						_userService.GetCurrentUserId()
-						, searchParameters);
-			}
-			catch (ApiException err)
-			{
-				throw new HubException(
-						JsonSerializer.Serialize(
-								new HttpExceptionMiddleware.ApiExceptionError(
-										nameof(err)
-										, err.Error
-										, err is IExceptionWithData exceptionWithData
-												? exceptionWithData.CustomReturnedData
-												: null)));
-			}
-		}
+    {
+        try
+        {
+             return  await _searchService.PerformDetailedSearchAsync(_userService.GetCurrentUserId(), searchParameters);
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
+
+
 	}
 }
