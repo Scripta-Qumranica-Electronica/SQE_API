@@ -79,70 +79,6 @@ namespace SQE.API.Server.Services
 
 	public class ArtefactService : IArtefactService
 	{
-		Task<ArtefactDTO> GetEditionArtefactAsync(
-				UserInfo       editionUser
-				, uint         artefactId
-				, List<string> optional);
-
-		Task<ArtefactListDTO> GetEditionArtefactListingsAsync(
-				UserInfo       editionUser
-				, List<string> optional);
-
-		Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(
-				UserInfo editionUser
-				, bool   withMask = false);
-
-		Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(
-				UserInfo                          editionUser
-				, BatchUpdateArtefactPlacementDTO updates
-				, string                          clientId = null);
-
-		Task<ArtefactDTO> UpdateArtefactAsync(
-				UserInfo            editionUser
-				, uint              artefactId
-				, UpdateArtefactDTO updateArtefact
-				, string            clientId = null);
-
-		Task<ArtefactDTO> CreateArtefactAsync(
-				UserInfo            editionUser
-				, CreateArtefactDTO createArtefact
-				, string            clientId = null);
-
-		Task<NoContentResult> DeleteArtefactAsync(
-				UserInfo editionUser
-				, uint   artefactId
-				, string clientId = null);
-
-		Task<ArtefactTextFragmentMatchListDTO> ArtefactTextFragmentsAsync(
-				UserInfo       editionUser
-				, uint         artefactId
-				, List<string> optional);
-
-		Task<ArtefactGroupListDTO> ArtefactGroupsOfEditionAsync(UserInfo editionUser);
-
-		Task<ArtefactGroupDTO> GetArtefactGroupDataAsync(
-				UserInfo editionUser
-				, uint   artefactGroupId);
-
-		Task<ArtefactGroupDTO> CreateArtefactGroupAsync(
-				UserInfo                 editionUser
-				, CreateArtefactGroupDTO artefactGroup
-				, string                 clientId = null);
-
-		Task<ArtefactGroupDTO> UpdateArtefactGroupAsync(
-				UserInfo                 editionUser
-				, uint                   artefactGroupId
-				, UpdateArtefactGroupDTO artefactGroup
-				, string                 clientId = null);
-
-		Task<DeleteIntIdDTO> DeleteArtefactGroupAsync(
-				UserInfo editionUser
-				, uint   artefactGroupId
-				, string clientId = null);
-	}
-
-	public class ArtefactService : IArtefactService
-	{
 		private readonly IArtefactRepository              _artefactRepository;
 		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 		private readonly IImagedObjectRepository          _imagedObjectRepository;
@@ -151,16 +87,6 @@ namespace SQE.API.Server.Services
 				IImagedObjectRepository            imagedObjectRepository
 				, IArtefactRepository              artefactRepository
 				, IHubContext<MainHub, ISQEClient> hubContext)
-		{
-			_imagedObjectRepository = imagedObjectRepository;
-			_artefactRepository = artefactRepository;
-			_hubContext = hubContext;
-		}
-
-		public async Task<ArtefactDTO> GetEditionArtefactAsync(
-				UserInfo       editionUser
-				, uint         artefactId
-				, List<string> optional)
 		{
 			_imagedObjectRepository = imagedObjectRepository;
 			_artefactRepository = artefactRepository;
