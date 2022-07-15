@@ -34,7 +34,7 @@ public async Task PostV1EditionsEditionIdAddEditorRequest(uint editionId, Invite
     {
         try
         {
-              await _editionService.RequestNewEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), payload);
+              await _editionService.RequestNewEditionEditor(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), payload);
         }
         catch (ApiException err)
         {
@@ -113,7 +113,7 @@ public async Task<DetailedEditorRightsDTO> PutV1EditionsEditionIdEditorsEditorEm
     {
         try
         {
-             return  await _editionService.ChangeEditionEditorRights(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), editorEmailId, payload);
+             return  await _editionService.ChangeEditionEditorRights(await _userService.GetCurrentUserObjectAsync(editionId, admin: true), editorEmailId, payload);
         }
         catch (ApiException err)
         {
@@ -133,7 +133,7 @@ public async Task<EditionDTO> PostV1EditionsEditionId(uint editionId, EditionCop
     {
         try
         {
-             return  await _editionService.CopyEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId), request);
+             return  await _editionService.CopyEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId), request);
         }
         catch (ApiException err)
         {
@@ -156,7 +156,7 @@ public async Task<ArchiveTokenDTO> DeleteV1EditionsEditionId(uint editionId, Lis
     {
         try
         {
-             return  await _editionService.ArchiveEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), token, optional);
+             return  await _editionService.ArchiveEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), token, optional);
         }
         catch (ApiException err)
         {
@@ -175,7 +175,7 @@ public async Task<EditionGroupDTO> GetV1EditionsEditionId(uint editionId)
     {
         try
         {
-             return  await _editionService.GetEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
+             return  await _editionService.GetEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId));
         }
         catch (ApiException err)
         {
@@ -193,7 +193,7 @@ public async Task<EditionListDTO> GetV1Editions(bool? published, bool? personal)
     {
         try
         {
-             return  await _editionService.ListEditionsAsync(_userService.GetCurrentUserId(), published, personal);
+             return  await _editionService.ListEditionsAsync(_userService.GetCurrentUserId(), published, personal);
         }
         catch (ApiException err)
         {
@@ -213,7 +213,7 @@ public async Task<EditionDTO> PutV1EditionsEditionId(uint editionId, EditionUpda
     {
         try
         {
-             return  await _editionService.UpdateEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), request);
+             return  await _editionService.UpdateEditionAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), request);
         }
         catch (ApiException err)
         {
@@ -233,7 +233,7 @@ public async Task<EditionScriptCollectionDTO> GetV1EditionsEditionIdScriptCollec
     {
         try
         {
-             return  await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));
+             return  await _editionService.GetEditionScriptCollection(await _userService.GetCurrentUserObjectAsync(editionId));
         }
         catch (ApiException err)
         {
@@ -254,7 +254,28 @@ public async Task<EditionScriptLinesDTO> GetV1EditionsEditionIdScriptLines(uint 
     {
         try
         {
-             return  await _editionService.GetEditionScriptLines(await _userService.GetCurrentUserObjectAsync(editionId));
+             return  await _editionService.GetEditionScriptLines(await _userService.GetCurrentUserObjectAsync(editionId));
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
+
+
+/// <summary>
+		///  Retrieve extra institutional metadata concerning the edition
+		///  manuscript if available.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <returns></returns>
+[AllowAnonymous]
+public async Task<EditionManuscriptMetadataDTO> GetV1EditionsEditionIdMetadata(uint editionId)
+
+    {
+        try
+        {
+             return  await _editionService.GetEditionMetadata(await _userService.GetCurrentUserObjectAsync(editionId));
         }
         catch (ApiException err)
         {
@@ -269,7 +290,7 @@ public async Task<EditionListDTO> GetV1ManuscriptsManuscriptIdEditions(uint manu
     {
         try
         {
-             return  await _editionService.GetManuscriptEditionsAsync(_userService.GetCurrentUserId(), manuscriptId);
+             return  await _editionService.GetManuscriptEditionsAsync(_userService.GetCurrentUserId(), manuscriptId);
         }
         catch (ApiException err)
         {
