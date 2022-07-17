@@ -28,4 +28,4 @@ jobs:
 
     #   - name: Push image to DockerHub
     #     run: docker push -t qumranica/sqe-http=api:${VERSION}
-	# 	# Note: We do not push the latest version, this version will need to be set manually
+
