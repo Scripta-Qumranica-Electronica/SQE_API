@@ -12,20 +12,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set env
-        env:
-          REF: ${{ github.ref }}
-        run: export VERSION="${REF##*/v}"
-
-      - name: Build docker image
-        run: docker build --no-cache -t qumranica/sqe-http-api:${VERSION} -f ./docker/Dockerfile .
-
     #   - name: Login to DockerHub
     #     uses: docker/login-action@v2
     #     with:
     #       username: ${{ secrets.DOCKERHUB_USERNAME }}
     #       password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    #   - name: Push image to DockerHub
-    #     run: docker push -t qumranica/sqe-http=api:${VERSION}
+      - name: Build docker image
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          export VERSION="${REF##*/v}"
+          docker build --no-cache -t qumranica/sqe-http-api:${VERSION} -f ./docker/Dockerfile .
+          # docker push -t qumranica/sqe-http=api:${VERSION}
 
