@@ -12,11 +12,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-    #   - name: Login to DockerHub
-    #     uses: docker/login-action@v2
-    #     with:
-    #       username: ${{ secrets.DOCKERHUB_USERNAME }}
-    #       password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build docker image
         env:
@@ -24,5 +24,4 @@ jobs:
         run: |
           export VERSION="${REF##*/v}"
           docker build --no-cache -t qumranica/sqe-http-api:${VERSION} -f ./docker/Dockerfile .
-          # docker push -t qumranica/sqe-http=api:${VERSION}
-
+          docker push -t qumranica/sqe-http=api:${VERSION}
