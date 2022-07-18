@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
@@ -44,24 +45,22 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedArtefact { get; private set; }
+			public DeleteIntIdDTO DeletedArtefact { get; private set; }
 
 			private void DeletedArtefactListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedArtefact"
 						, receivedData => DeletedArtefact = receivedData);
-			}
 
 			private bool DeletedArtefactIsNull() => DeletedArtefact == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-id"
-															, $"/{_artefactId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -80,7 +79,7 @@ namespace SQE.ApiTest.ApiRequests
 		}
 
 		public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId :
-				RequestObject<EmptyInput, DeleteDTO>
+				RequestObject<EmptyInput, DeleteIntIdDTO>
 		{
 			private readonly uint _artefactGroupId;
 			private readonly uint _editionId;
@@ -107,24 +106,22 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedArtefactGroup { get; private set; }
+			public DeleteIntIdDTO DeletedArtefactGroup { get; private set; }
 
 			private void DeletedArtefactGroupListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedArtefactGroup"
 						, receivedData => DeletedArtefactGroup = receivedData);
-			}
 
 			private bool DeletedArtefactGroupIsNull() => DeletedArtefactGroup == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-group-id"
-															, $"/{_artefactGroupId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -172,10 +169,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-id"
-															, $"/{_artefactId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}")
 													+ (_optional != null
 															? $"?optional={string.Join("&optional=", _optional)}"
 															: "");
@@ -213,10 +210,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-id"
-															, $"/{_artefactId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -246,11 +243,12 @@ namespace SQE.ApiTest.ApiRequests
 				_optional = optional;
 			}
 
-			protected override string HttpPath()
-				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-				   + (_optional != null
-						   ? $"?optional={string.Join("&optional=", _optional)}"
-						   : "");
+			protected override string HttpPath() => RequestPath.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -292,10 +290,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-id"
-															, $"/{_artefactId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}")
 													+ (_optional != null
 															? $"?optional={string.Join("&optional=", _optional)}"
 															: "");
@@ -326,7 +324,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -360,10 +358,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-group-id"
-															, $"/{_artefactGroupId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -411,17 +409,15 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactDTO CreatedArtefact { get; private set; }
 
 			private void CreatedArtefactListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactDTO>(
+				=> signalrListener.On<ArtefactDTO>(
 						"CreatedArtefact"
 						, receivedData => CreatedArtefact = receivedData);
-			}
 
 			private bool CreatedArtefactIsNull() => CreatedArtefact == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -469,17 +465,15 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactDTO UpdatedArtefact { get; private set; }
 
 			private void UpdatedArtefactListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactDTO>(
+				=> signalrListener.On<ArtefactDTO>(
 						"UpdatedArtefact"
 						, receivedData => UpdatedArtefact = receivedData);
-			}
 
 			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -497,8 +491,8 @@ namespace SQE.ApiTest.ApiRequests
 			}
 		}
 
-		public class V1_Editions_EditionId_ArtefactGroups : RequestObject<
-				CreateArtefactGroupDTO, ArtefactGroupDTO>
+		public class V1_Editions_EditionId_ArtefactGroups :
+				RequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO>
 		{
 			private readonly uint                   _editionId;
 			private readonly CreateArtefactGroupDTO _payload;
@@ -529,17 +523,15 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactGroupDTO CreatedArtefactGroup { get; private set; }
 
 			private void CreatedArtefactGroupListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactGroupDTO>(
+				=> signalrListener.On<ArtefactGroupDTO>(
 						"CreatedArtefactGroup"
 						, receivedData => CreatedArtefactGroup = receivedData);
-			}
 
 			private bool CreatedArtefactGroupIsNull() => CreatedArtefactGroup == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -602,21 +594,19 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactDTO UpdatedArtefact { get; private set; }
 
 			private void UpdatedArtefactListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactDTO>(
+				=> signalrListener.On<ArtefactDTO>(
 						"UpdatedArtefact"
 						, receivedData => UpdatedArtefact = receivedData);
-			}
 
 			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-id"
-															, $"/{_artefactId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -671,21 +661,19 @@ namespace SQE.ApiTest.ApiRequests
 			public ArtefactGroupDTO UpdatedArtefactGroup { get; private set; }
 
 			private void UpdatedArtefactGroupListener(HubConnection signalrListener)
-			{
-				signalrListener.On<ArtefactGroupDTO>(
+				=> signalrListener.On<ArtefactGroupDTO>(
 						"UpdatedArtefactGroup"
 						, receivedData => UpdatedArtefactGroup = receivedData);
-			}
 
 			private bool UpdatedArtefactGroupIsNull() => UpdatedArtefactGroup == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/artefact-group-id"
-															, $"/{_artefactGroupId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -701,6 +689,161 @@ namespace SQE.ApiTest.ApiRequests
 			public class Listeners
 			{
 				public ListenerMethods UpdatedArtefactGroup = ListenerMethods.UpdatedArtefactGroup;
+			}
+		}
+
+		public class V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription :
+				RequestObject<DiffReplaceReconstructionRequestDTO, DiffReconstructedResponseDTO>
+		{
+			private readonly uint                                _artefactId;
+			private readonly uint                                _editionId;
+			private readonly DiffReplaceReconstructionRequestDTO _payload;
+
+			/// <summary>
+			///  Replace the current transcription in the virtual artefact with the submitted
+			///  transcription and the related ROIs. The dictionary in textRois should map the
+			///  index of each character in the new transcription string to its corresponding
+			///  ROI shape/positional data. Some characters, like a space, need not have a
+			///  corresponding ROI shape/position.
+			/// </summary>
+			/// <param name="editionId">Unique Id of the desired edition</param>
+			/// <param name="artefactId">Unique Id of the desired artefact (must be a virtual artefact)</param>
+			/// <param name="payload">Details of the replacement transcription</param>
+			/// <returns>Details concerning all changed data in the edition</returns>
+			public V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription(
+					uint                                  editionId
+					, uint                                artefactId
+					, DiffReplaceReconstructionRequestDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_artefactId = artefactId;
+				_payload = payload;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.CreatedSignInterpretation
+						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
+
+				_listenerDict.Add(
+						ListenerMethods.DeletedSignInterpretation
+						, (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretations
+						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedArtefact
+						, (UpdatedArtefactIsNull, UpdatedArtefactListener));
+
+				_listenerDict.Add(
+						ListenerMethods.CreatedRoisBatch
+						, (CreatedRoisBatchIsNull, CreatedRoisBatchListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedRoisBatch
+						, (UpdatedRoisBatchIsNull, UpdatedRoisBatchListener));
+
+				_listenerDict.Add(
+						ListenerMethods.DeletedRoi
+						, (DeletedRoiIsNull, DeletedRoiListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public SignInterpretationListDTO       CreatedSignInterpretation  { get; private set; }
+			public DeleteIntIdDTO                  DeletedSignInterpretation  { get; private set; }
+			public SignInterpretationListDTO       UpdatedSignInterpretations { get; private set; }
+			public ArtefactDTO                     UpdatedArtefact            { get; private set; }
+			public InterpretationRoiDTOList        CreatedRoisBatch           { get; private set; }
+			public UpdatedInterpretationRoiDTOList UpdatedRoisBatch           { get; private set; }
+			public DeleteIntIdDTO                  DeletedRoi                 { get; private set; }
+
+			private void CreatedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"CreatedSignInterpretation"
+						, receivedData => CreatedSignInterpretation = receivedData);
+
+			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+
+			private void DeletedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<DeleteIntIdDTO>(
+						"DeletedSignInterpretation"
+						, receivedData => DeletedSignInterpretation = receivedData);
+
+			private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
+
+			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"UpdatedSignInterpretations"
+						, receivedData => UpdatedSignInterpretations = receivedData);
+
+			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
+
+			private void UpdatedArtefactListener(HubConnection signalrListener)
+				=> signalrListener.On<ArtefactDTO>(
+						"UpdatedArtefact"
+						, receivedData => UpdatedArtefact = receivedData);
+
+			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
+
+			private void CreatedRoisBatchListener(HubConnection signalrListener)
+				=> signalrListener.On<InterpretationRoiDTOList>(
+						"CreatedRoisBatch"
+						, receivedData => CreatedRoisBatch = receivedData);
+
+			private bool CreatedRoisBatchIsNull() => CreatedRoisBatch == null;
+
+			private void UpdatedRoisBatchListener(HubConnection signalrListener)
+				=> signalrListener.On<UpdatedInterpretationRoiDTOList>(
+						"UpdatedRoisBatch"
+						, receivedData => UpdatedRoisBatch = receivedData);
+
+			private bool UpdatedRoisBatchIsNull() => UpdatedRoisBatch == null;
+
+			private void DeletedRoiListener(HubConnection signalrListener)
+				=> signalrListener.On<DeleteIntIdDTO>(
+						"DeletedRoi"
+						, receivedData => DeletedRoi = receivedData);
+
+			private bool DeletedRoiIsNull() => DeletedRoi == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/artefact-id"
+															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _artefactId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods CreatedRoisBatch = ListenerMethods.CreatedRoisBatch;
+
+				public ListenerMethods CreatedSignInterpretation =
+						ListenerMethods.CreatedSignInterpretation;
+
+				public ListenerMethods DeletedRoi = ListenerMethods.DeletedRoi;
+
+				public ListenerMethods DeletedSignInterpretation =
+						ListenerMethods.DeletedSignInterpretation;
+
+				public ListenerMethods UpdatedArtefact  = ListenerMethods.UpdatedArtefact;
+				public ListenerMethods UpdatedRoisBatch = ListenerMethods.UpdatedRoisBatch;
+
+				public ListenerMethods UpdatedSignInterpretations =
+						ListenerMethods.UpdatedSignInterpretations;
 			}
 		}
 	}

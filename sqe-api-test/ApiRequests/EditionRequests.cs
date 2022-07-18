@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
@@ -19,18 +20,20 @@ namespace SQE.ApiTest.ApiRequests
 {
 	public static partial class Delete
 	{
-		public class V1_Editions_EditionId : RequestObject<EmptyInput, DeleteTokenDTO>
+		public class V1_Editions_EditionId : RequestObject<EmptyInput, ArchiveTokenDTO>
 		{
 			private readonly uint         _editionId;
 			private readonly List<string> _optional;
 			private readonly string       _token;
 
 			/// <summary>
-			///  Provides details about the specified edition and all accessible alternate editions
+			///  Archives an edition so that in no longer appears in user data and searches. An admin
+			///  may use the archiveForAllEditors optional parameter in order to archive the edition
+			///  for all editors (must be confirmed with an archive token).
 			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
-			/// <param name="token">token required when using optional 'deleteForAllEditors'</param>
+			/// <param name="editionId">Unique Id of the desired edition to be archived</param>
+			/// <param name="optional">Optional parameters: 'archiveForAllEditors'</param>
+			/// <param name="token">token required when using optional 'archiveForAllEditors'</param>
 			public V1_Editions_EditionId(
 					uint           editionId
 					, List<string> optional = null
@@ -49,25 +52,24 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteTokenDTO DeletedEdition { get; private set; }
+			public ArchiveTokenDTO DeletedEdition { get; private set; }
 
 			private void DeletedEditionListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteTokenDTO>(
+				=> signalrListener.On<ArchiveTokenDTO>(
 						"DeletedEdition"
 						, receivedData => DeletedEdition = receivedData);
-			}
 
 			private bool DeletedEditionIsNull() => DeletedEdition == null;
 
-			protected override string HttpPath()
-				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-				   + (_optional != null
-						   ? $"?optional={string.Join("&optional=", _optional)}"
-						   : "")
-				   + (_token != null
-						   ? $"&token={_token}"
-						   : "");
+			protected override string HttpPath() => RequestPath.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "")
+													+ (_token != null
+															? $"&token={_token}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -123,7 +125,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -135,11 +137,33 @@ namespace SQE.ApiTest.ApiRequests
 
 		public class V1_Editions : RequestObject<EmptyInput, EditionListDTO>
 		{
-			protected override string HttpPath() => RequestPath;
+			private readonly bool? _personal;
+			private readonly bool? _published;
+
+			/// <summary>
+			///  Provides a listing of all editions accessible to the current user
+			/// </summary>
+			public V1_Editions(bool? published = null, bool? personal = null)
+
+			{
+				_published = published;
+				_personal = personal;
+			}
+
+			protected override string HttpPath() => RequestPath
+													+ (_published != null
+															? $"?published={_published}"
+															: "")
+													+ (_personal != null
+															? $"&personal={_personal}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _published
+							   , _personal);
 			}
 		}
 
@@ -157,7 +181,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -182,7 +206,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -190,6 +214,49 @@ namespace SQE.ApiTest.ApiRequests
 			}
 
 			public override uint? GetEditionId() => _editionId;
+		}
+
+		public class V1_Editions_EditionId_Metadata :
+				RequestObject<EmptyInput, EditionManuscriptMetadataDTO>
+		{
+			private readonly uint _editionId;
+
+			/// <summary>
+			///  Retrieve extra institutional metadata concerning the edition
+			///  manuscript if available.
+			/// </summary>
+			/// <param name="editionId">Unique Id of the desired edition</param>
+			/// <returns></returns>
+			public V1_Editions_EditionId_Metadata(uint editionId) => _editionId = editionId;
+
+			protected override string HttpPath() => RequestPath.Replace(
+					"/edition-id"
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+		}
+
+		public class V1_Manuscripts_ManuscriptId_Editions :
+				RequestObject<EmptyInput, EditionListDTO>
+		{
+			private readonly uint _manuscriptId;
+
+			public V1_Manuscripts_ManuscriptId_Editions(uint manuscriptId)
+				=> _manuscriptId = manuscriptId;
+
+			protected override string HttpPath() => RequestPath.Replace(
+					"/manuscript-id"
+					, $"/{HttpUtility.UrlEncode(_manuscriptId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _manuscriptId);
+			}
 		}
 	}
 
@@ -223,17 +290,15 @@ namespace SQE.ApiTest.ApiRequests
 			public EditorInvitationDTO RequestedEditor { get; private set; }
 
 			private void RequestedEditorListener(HubConnection signalrListener)
-			{
-				signalrListener.On<EditorInvitationDTO>(
+				=> signalrListener.On<EditorInvitationDTO>(
 						"RequestedEditor"
 						, receivedData => RequestedEditor = receivedData);
-			}
 
 			private bool RequestedEditorIsNull() => RequestedEditor == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -276,15 +341,15 @@ namespace SQE.ApiTest.ApiRequests
 			public DetailedEditorRightsDTO CreatedEditor { get; private set; }
 
 			private void CreatedEditorListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DetailedEditorRightsDTO>(
+				=> signalrListener.On<DetailedEditorRightsDTO>(
 						"CreatedEditor"
 						, receivedData => CreatedEditor = receivedData);
-			}
 
 			private bool CreatedEditorIsNull() => CreatedEditor == null;
 
-			protected override string HttpPath() => RequestPath.Replace("/token", $"/{_token}");
+			protected override string HttpPath() => RequestPath.Replace(
+					"/token"
+					, $"/{HttpUtility.UrlEncode(_token)}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -323,17 +388,15 @@ namespace SQE.ApiTest.ApiRequests
 			public EditionDTO CreatedEdition { get; private set; }
 
 			private void CreatedEditionListener(HubConnection signalrListener)
-			{
-				signalrListener.On<EditionDTO>(
+				=> signalrListener.On<EditionDTO>(
 						"CreatedEdition"
 						, receivedData => CreatedEdition = receivedData);
-			}
 
 			private bool CreatedEditionIsNull() => CreatedEdition == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -354,8 +417,8 @@ namespace SQE.ApiTest.ApiRequests
 
 	public static partial class Put
 	{
-		public class V1_Editions_EditionId_Editors_EditorEmailId : RequestObject
-				<UpdateEditorRightsDTO, DetailedEditorRightsDTO>
+		public class V1_Editions_EditionId_Editors_EditorEmailId :
+				RequestObject<UpdateEditorRightsDTO, DetailedEditorRightsDTO>
 		{
 			private readonly uint                  _editionId;
 			private readonly string                _editorEmailId;
@@ -387,21 +450,19 @@ namespace SQE.ApiTest.ApiRequests
 			public DetailedEditorRightsDTO CreatedEditor { get; private set; }
 
 			private void CreatedEditorListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DetailedEditorRightsDTO>(
+				=> signalrListener.On<DetailedEditorRightsDTO>(
 						"CreatedEditor"
 						, receivedData => CreatedEditor = receivedData);
-			}
 
 			private bool CreatedEditorIsNull() => CreatedEditor == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/editor-email-id"
-															, $"/{_editorEmailId}");
+															, $"/{HttpUtility.UrlEncode(_editorEmailId)}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -447,17 +508,15 @@ namespace SQE.ApiTest.ApiRequests
 			public EditionDTO UpdatedEdition { get; private set; }
 
 			private void UpdatedEditionListener(HubConnection signalrListener)
-			{
-				signalrListener.On<EditionDTO>(
+				=> signalrListener.On<EditionDTO>(
 						"UpdatedEdition"
 						, receivedData => UpdatedEdition = receivedData);
-			}
 
 			private bool UpdatedEditionIsNull() => UpdatedEdition == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{

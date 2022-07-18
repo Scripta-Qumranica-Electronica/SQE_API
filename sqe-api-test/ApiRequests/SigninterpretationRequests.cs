@@ -11,6 +11,7 @@
 
 using System;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
@@ -30,7 +31,6 @@ namespace SQE.ApiTest.ApiRequests
 			/// <param name="editionId">The ID of the edition being edited</param>
 			/// <param name="attributeId">The ID of the attribute to delete</param>
 			/// <returns></returns>
-			/// <exception cref="NotImplementedException"></exception>
 			public V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(
 					uint   editionId
 					, uint attributeId)
@@ -47,24 +47,22 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedAttribute { get; private set; }
+			public DeleteIntIdDTO DeletedAttribute { get; private set; }
 
 			private void DeletedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedAttribute"
 						, receivedData => DeletedAttribute = receivedData);
-			}
 
 			private bool DeletedAttributeIsNull() => DeletedAttribute == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/attribute-id"
-															, $"/{_attributeId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_attributeId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -83,26 +81,42 @@ namespace SQE.ApiTest.ApiRequests
 		}
 
 		public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId :
-				RequestObject<EmptyInput, EmptyOutput>
+				RequestObject<EmptyInput, SignInterpretationDeleteDTO>
 		{
-			private readonly uint _editionId;
-			private readonly uint _signInterpretationId;
+			private readonly uint     _editionId;
+			private readonly string[] _optional;
+			private readonly uint     _signInterpretationId;
 
 			/// <summary>
-			///  Deletes the sign interpretation in the route. The endpoint automatically manages the sign stream
-			///  by connecting all the deleted sign's next and previous nodes.
+			///  Deletes the sign interpretation in the route. The endpoint automatically manages the
+			///  sign stream by connecting all the deleted sign's next and previous nodes.  Adding
+			///  "delete-all-variants" to the optional query parameter will cause all variant sign
+			///  interpretations to be deleted as well.
 			/// </summary>
 			/// <param name="editionId">ID of the edition being changed</param>
 			/// <param name="signInterpretationId">ID of the sign interpretation being deleted</param>
-			/// <returns>Ok or Error</returns>
+			/// <param name="optional">
+			///  If the string "delete-all-variants" is submitted here, then
+			///  all variant readings to the submitted sign interpretation id will be deleted as well
+			/// </param>
+			/// <returns>
+			///  A list of all the sign interpretations that were deleted and changed as a result of
+			///  the deletion operation
+			/// </returns>
 			public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
-					uint   editionId
-					, uint signInterpretationId)
+					uint       editionId
+					, uint     signInterpretationId
+					, string[] optional = null)
 
 			{
 				_editionId = editionId;
 				_signInterpretationId = signInterpretationId;
+				_optional = optional;
 				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretations
+						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
 
 				_listenerDict.Add(
 						ListenerMethods.DeletedSignInterpretation
@@ -111,31 +125,41 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public DeleteDTO DeletedSignInterpretation { get; private set; }
+			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
+			public DeleteIntIdDTO            DeletedSignInterpretation  { get; private set; }
+
+			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"UpdatedSignInterpretations"
+						, receivedData => UpdatedSignInterpretations = receivedData);
+
+			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
 
 			private void DeletedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedSignInterpretation"
 						, receivedData => DeletedSignInterpretation = receivedData);
-			}
 
 			private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{_signInterpretationId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
 				return signalR => signalR.InvokeAsync<T>(
 							   SignalrRequestString()
 							   , _editionId
-							   , _signInterpretationId);
+							   , _signInterpretationId
+							   , _optional);
 			}
 
 			public override uint? GetEditionId() => _editionId;
@@ -144,6 +168,9 @@ namespace SQE.ApiTest.ApiRequests
 			{
 				public ListenerMethods DeletedSignInterpretation =
 						ListenerMethods.DeletedSignInterpretation;
+
+				public ListenerMethods UpdatedSignInterpretations =
+						ListenerMethods.UpdatedSignInterpretations;
 			}
 		}
 
@@ -184,24 +211,22 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{_signInterpretationId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}")
 													.Replace(
 															"/attribute-value-id"
-															, $"/{_attributeValueId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_attributeValueId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -239,7 +264,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -273,10 +298,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{_signInterpretationId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -322,17 +347,15 @@ namespace SQE.ApiTest.ApiRequests
 			public AttributeDTO CreatedAttribute { get; private set; }
 
 			private void CreatedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<AttributeDTO>(
+				=> signalrListener.On<AttributeDTO>(
 						"CreatedAttribute"
 						, receivedData => CreatedAttribute = receivedData);
-			}
 
 			private bool CreatedAttributeIsNull() => CreatedAttribute == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -351,13 +374,15 @@ namespace SQE.ApiTest.ApiRequests
 		}
 
 		public class V1_Editions_EditionId_SignInterpretations : RequestObject<
-				SignInterpretationCreateDTO, SignInterpretationListDTO>
+				SignInterpretationCreateDTO, SignInterpretationCreatedDTO>
 		{
 			private readonly uint                        _editionId;
 			private readonly SignInterpretationCreateDTO _payload;
 
 			/// <summary>
-			///  Creates a new sign interpretation
+			///  Creates a new sign interpretation.  This creates a new sign entity for the submitted
+			///  interpretation. This also takes care of inserting the sign interpretation into the
+			///  sign stream following the specifications in the newSignInterpretation.
 			/// </summary>
 			/// <param name="editionId">ID of the edition being changed</param>
 			/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
@@ -373,24 +398,34 @@ namespace SQE.ApiTest.ApiRequests
 				_listenerDict.Add(
 						ListenerMethods.CreatedSignInterpretation
 						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretations
+						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
 			}
 
 			public Listeners AvailableListeners { get; }
 
-			public SignInterpretationListDTO CreatedSignInterpretation { get; private set; }
+			public SignInterpretationListDTO CreatedSignInterpretation  { get; private set; }
+			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
 
 			private void CreatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationListDTO>(
+				=> signalrListener.On<SignInterpretationListDTO>(
 						"CreatedSignInterpretation"
 						, receivedData => CreatedSignInterpretation = receivedData);
-			}
 
 			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
 
+			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"UpdatedSignInterpretations"
+						, receivedData => UpdatedSignInterpretations = receivedData);
+
+			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
+
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -406,7 +441,60 @@ namespace SQE.ApiTest.ApiRequests
 			{
 				public ListenerMethods CreatedSignInterpretation =
 						ListenerMethods.CreatedSignInterpretation;
+
+				public ListenerMethods UpdatedSignInterpretations =
+						ListenerMethods.UpdatedSignInterpretations;
 			}
+		}
+
+		public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId : RequestObject<
+				SignInterpretationVariantDTO, SignInterpretationCreatedDTO>
+		{
+			private readonly uint                         _editionId;
+			private readonly SignInterpretationVariantDTO _payload;
+			private readonly uint                         _signInterpretationId;
+
+			/// <summary>
+			///  Creates a variant sign interpretation to the submitted sign interpretation id using
+			///  the character and attribute settings of the newSignInterpretation payload. It will
+			///  copy the ROIs from the original sign interpretation to the new one, but it will not
+			///  copy the attributes (or any commentaries associated with the attributes).
+			/// </summary>
+			/// <param name="editionId">ID of the edition being changed</param>
+			/// <param name="signInterpretationId">
+			///  Id of the sign interpretation for which this variant
+			///  will be created
+			/// </param>
+			/// <param name="newSignInterpretation">New sign interpretation data to be added</param>
+			/// <returns>The new sign interpretation</returns>
+			public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
+					uint                           editionId
+					, uint                         signInterpretationId
+					, SignInterpretationVariantDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_signInterpretationId = signInterpretationId;
+				_payload = payload;
+			}
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/sign-interpretation-id"
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _signInterpretationId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
 		}
 
 		public class
@@ -418,7 +506,7 @@ namespace SQE.ApiTest.ApiRequests
 			private readonly uint _signInterpretationId;
 
 			/// <summary>
-			///  Links two sign interpretations in the edition's sign stream
+			///  Links two sign interpretations together in the edition's sign stream
 			/// </summary>
 			/// <param name="editionId">ID of the edition being changed</param>
 			/// <param name="signInterpretationId">The sign interpretation to be linked to the nextSignInterpretationId</param>
@@ -446,24 +534,22 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{_signInterpretationId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}")
 													.Replace(
 															"/next-sign-interpretation-id"
-															, $"/{_nextSignInterpretationId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_nextSignInterpretationId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -520,24 +606,22 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{_signInterpretationId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}")
 													.Replace(
 															"/next-sign-interpretation-id"
-															, $"/{_nextSignInterpretationId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_nextSignInterpretationId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -591,21 +675,19 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{_signInterpretationId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -622,6 +704,36 @@ namespace SQE.ApiTest.ApiRequests
 			{
 				public ListenerMethods UpdatedSignInterpretation =
 						ListenerMethods.UpdatedSignInterpretation;
+			}
+		}
+
+		public class V1_MaterializeSignStreams :
+				RequestObject<RequestMaterializationDTO, EmptyOutput>
+		{
+			private readonly RequestMaterializationDTO _payload;
+
+			/// <summary>
+			///  This is an admin endpoint used to trigger the generation of materialized sign streams.
+			///  These streams are generated on demand by the API, but it can happen that some do not
+			///  complete (a record in the database exists when a materialization was started but
+			///  never finished).
+			/// </summary>
+			/// <param name="requestedEditions">
+			///  A list of edition IDs for which to generate materialized
+			///  sign streams.  If the list is empty, then the system will look for any unfinished
+			///  jobs and complete those.
+			/// </param>
+			/// <returns></returns>
+
+			//[ApiExplorerSettings(IgnoreApi = true)]
+			public V1_MaterializeSignStreams(RequestMaterializationDTO payload) : base(payload)
+				=> _payload = payload;
+
+			protected override string HttpPath() => RequestPath;
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
 			}
 		}
 	}
@@ -642,7 +754,6 @@ namespace SQE.ApiTest.ApiRequests
 			/// <param name="attributeId">The ID of the attribute to update</param>
 			/// <param name="updatedAttribute">The details of the updated attribute</param>
 			/// <returns></returns>
-			/// <exception cref="NotImplementedException"></exception>
 			public V1_Editions_EditionId_SignInterpretationsAttributes_AttributeId(
 					uint                 editionId
 					, uint               attributeId
@@ -668,44 +779,38 @@ namespace SQE.ApiTest.ApiRequests
 
 			public Listeners AvailableListeners { get; }
 
-			public AttributeDTO CreatedAttribute { get; private set; }
-			public DeleteDTO    DeletedAttribute { get; private set; }
-			public AttributeDTO UpdatedAttribute { get; private set; }
+			public AttributeDTO   CreatedAttribute { get; private set; }
+			public DeleteIntIdDTO DeletedAttribute { get; private set; }
+			public AttributeDTO   UpdatedAttribute { get; private set; }
 
 			private void CreatedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<AttributeDTO>(
+				=> signalrListener.On<AttributeDTO>(
 						"CreatedAttribute"
 						, receivedData => CreatedAttribute = receivedData);
-			}
 
 			private bool CreatedAttributeIsNull() => CreatedAttribute == null;
 
 			private void DeletedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<DeleteDTO>(
+				=> signalrListener.On<DeleteIntIdDTO>(
 						"DeletedAttribute"
 						, receivedData => DeletedAttribute = receivedData);
-			}
 
 			private bool DeletedAttributeIsNull() => DeletedAttribute == null;
 
 			private void UpdatedAttributeListener(HubConnection signalrListener)
-			{
-				signalrListener.On<AttributeDTO>(
+				=> signalrListener.On<AttributeDTO>(
 						"UpdatedAttribute"
 						, receivedData => UpdatedAttribute = receivedData);
-			}
 
 			private bool UpdatedAttributeIsNull() => UpdatedAttribute == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/attribute-id"
-															, $"/{_attributeId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_attributeId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -721,10 +826,80 @@ namespace SQE.ApiTest.ApiRequests
 			public class Listeners
 			{
 				public ListenerMethods CreatedAttribute = ListenerMethods.CreatedAttribute;
-
 				public ListenerMethods DeletedAttribute = ListenerMethods.DeletedAttribute;
-
 				public ListenerMethods UpdatedAttribute = ListenerMethods.UpdatedAttribute;
+			}
+		}
+
+		public class V1_Editions_EditionId_SignInterpretations_SignInterpretationId : RequestObject<
+				SignInterpretationCharacterUpdateDTO, SignInterpretationDTO>
+		{
+			private readonly uint                                 _editionId;
+			private readonly SignInterpretationCharacterUpdateDTO _payload;
+			private readonly uint                                 _signInterpretationId;
+
+			/// <summary>
+			///  Creates a variant sign interpretation to the submitted sign interpretation id using
+			///  the character and attribute settings of the newSignInterpretation payload. It will
+			///  copy the ROIs from the original sign interpretation to the new one, but it will not
+			///  copy the attributes (or any commentaries associated with the attributes).
+			/// </summary>
+			/// <param name="editionId">ID of the edition being changed</param>
+			/// <param name="signInterpretationId">
+			///  Id of the sign interpretation for which this variant
+			///  will be created
+			/// </param>
+			/// <param name="newSignInterpretationCharacter">New sign interpretation data to be added</param>
+			/// <returns>The new sign interpretation</returns>
+			public V1_Editions_EditionId_SignInterpretations_SignInterpretationId(
+					uint                                   editionId
+					, uint                                 signInterpretationId
+					, SignInterpretationCharacterUpdateDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_signInterpretationId = signInterpretationId;
+				_payload = payload;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretation
+						, (UpdatedSignInterpretationIsNull, UpdatedSignInterpretationListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
+
+			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationDTO>(
+						"UpdatedSignInterpretation"
+						, receivedData => UpdatedSignInterpretation = receivedData);
+
+			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/sign-interpretation-id"
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _signInterpretationId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods UpdatedSignInterpretation =
+						ListenerMethods.UpdatedSignInterpretation;
 			}
 		}
 
@@ -762,21 +937,19 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{_signInterpretationId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -837,24 +1010,22 @@ namespace SQE.ApiTest.ApiRequests
 			public SignInterpretationDTO UpdatedSignInterpretation { get; private set; }
 
 			private void UpdatedSignInterpretationListener(HubConnection signalrListener)
-			{
-				signalrListener.On<SignInterpretationDTO>(
+				=> signalrListener.On<SignInterpretationDTO>(
 						"UpdatedSignInterpretation"
 						, receivedData => UpdatedSignInterpretation = receivedData);
-			}
 
 			private bool UpdatedSignInterpretationIsNull() => UpdatedSignInterpretation == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/sign-interpretation-id"
-															, $"/{_signInterpretationId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_signInterpretationId.ToString())}")
 													.Replace(
 															"/attribute-value-id"
-															, $"/{_attributeValueId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_attributeValueId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{

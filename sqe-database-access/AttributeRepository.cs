@@ -9,6 +9,8 @@ using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.DatabaseAccess
 {
 	public interface IAttributeRepository
@@ -286,15 +288,12 @@ namespace SQE.DatabaseAccess
 																				 x => new
 																						 SignInterpretationAttributeValueInput
 																						 {
-																								 AttributeStringValue
-																										 = x
-																												 .AttributeStringValue
-																								 , AttributeStringValueDescription
-																										 = x
-																												 .AttributeStringValueDescription
-																								 , Css
-																										 = x
-																												 .Css
+																								 AttributeStringValue =
+																										 x.AttributeStringValue
+																								 , AttributeStringValueDescription =
+																										 x.AttributeStringValueDescription
+																								 , Css =
+																										 x.Css
 																								 ,
 																						 }));
 				}
@@ -493,7 +492,10 @@ namespace SQE.DatabaseAccess
 			var attributes =
 					await GetSignInterpretationAttributeIdsByDataAsync(editionUser, searchData);
 
-			return await DeleteSignInterpretationAttributesAsync(editionUser, attributes);
+			return await DeleteSignInterpretationAttributesAsync(
+					editionUser
+					, attributes
+					, signInterpretationId);
 		}
 
 		/// <summary>
@@ -511,7 +513,10 @@ namespace SQE.DatabaseAccess
 							editionUser
 							, signInterpretationId);
 
-			return await DeleteSignInterpretationAttributesAsync(editionUser, attributes);
+			return await DeleteSignInterpretationAttributesAsync(
+					editionUser
+					, attributes
+					, signInterpretationId);
 		}
 
 		/// <summary>
@@ -708,17 +713,27 @@ namespace SQE.DatabaseAccess
 		/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 		public async Task<List<uint>> DeleteSignInterpretationAttributesAsync(
 				UserInfo     editionUser
-				, List<uint> deleteAttributeIds)
+				, List<uint> deleteAttributeIds
+				, uint       signInterpretationId)
 		{
 			if (deleteAttributeIds == null)
 				return new List<uint>();
 
 			var requests = deleteAttributeIds.Select(
-													 id => new MutationRequest(
-															 MutateType.Delete
-															 , new DynamicParameters()
-															 , "sign_interpretation_attribute"
-															 , id))
+													 id =>
+													 {
+														 var parameters = new DynamicParameters();
+
+														 parameters.Add(
+																 "@sign_interpretation_id"
+																 , signInterpretationId);
+
+														 return new MutationRequest(
+																 MutateType.Delete
+																 , parameters
+																 , "sign_interpretation_attribute"
+																 , id);
+													 })
 											 .ToList();
 
 			var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
@@ -869,13 +884,41 @@ namespace SQE.DatabaseAccess
 						$"{actionName} sign interpretation attribute");
 			}
 
-			// Now set the new Ids
-			for (var i = 0; i < attributes.Count; i++)
+			// A quick hack to ensure that an attribute and it's value has the edition set as owner
+			using (var connection = OpenConnection())
 			{
-				var newId = writeResults[i].NewId;
+				// Now set the new Ids
+				for (var i = 0; i < attributes.Count; i++)
+				{
+					var newId = writeResults[i].NewId;
 
-				if (newId.HasValue)
-					attributes[i].SignInterpretationAttributeId = newId.Value;
+					if (newId.HasValue)
+						attributes[i].SignInterpretationAttributeId = newId.Value;
+
+					connection.Execute(
+							@"insert ignore into attribute_value_owner
+					(attribute_value_id, edition_editor_id, edition_id)
+					values (@AttributeValueId, @EditionEditorId, @EditionId)"
+							, new
+							{
+									attributes[i].AttributeValueId
+									, editionUser.EditionEditorId
+									, editionUser.EditionId
+									,
+							});
+
+					connection.Execute(
+							@"insert ignore into attribute_owner
+					(attribute_id, edition_editor_id, edition_id)
+					values (@AttributeId, @EditionEditorId, @EditionId)"
+							, new
+							{
+									attributes[i].AttributeId
+									, editionUser.EditionEditorId
+									, editionUser.EditionId
+									,
+							});
+				}
 			}
 
 			// Now return the list of new attributes which now also contains the the new ids.

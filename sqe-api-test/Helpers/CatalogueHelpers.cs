@@ -8,6 +8,8 @@ using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using Xunit;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.ApiTest.Helpers
 {
 	public static class CatalogueHelpers
@@ -90,6 +92,7 @@ namespace SQE.ApiTest.Helpers
 				, string                            comment
 				, uint                              textFragmentId
 				, uint                              editionId
+				, string                            manuscriptName
 				, HttpClient                        client
 				, Func<string, Task<HubConnection>> signalr
 				, bool                              realtime  = false
@@ -109,6 +112,7 @@ namespace SQE.ApiTest.Helpers
 					, textFragmentId = textFragmentId
 					, editionId = editionId
 					, confirmed = confirmed
+					, manuscriptName = manuscriptName
 					,
 			};
 

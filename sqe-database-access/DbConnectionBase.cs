@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Polly;
@@ -42,7 +43,13 @@ namespace SQE.DatabaseAccess
 		// the transient database errors where MariaDB says the transaction should be retried and pauses all attemtps
 		// to get a connection from the database when it errors out more that 5 times trying to get a connection.
 		protected IDbConnection OpenConnection()
-			=> new ReliableMySqlConnection(ConnectionString, _circuitBreakPolicy);
+		{
+			// Dapper automatically times out at 30 seconds, but the MariaDB
+			// database has a timeout of 60 seconds. Set Dapper here to match that.
+			SqlMapper.Settings.CommandTimeout = 60;
+
+			return new ReliableMySqlConnection(ConnectionString, _circuitBreakPolicy);
+		}
 	}
 
 	// https://sergeyakopov.com/reliable-database-connections-and-commands-with-polly/ provided many tips
@@ -74,13 +81,13 @@ namespace SQE.DatabaseAccess
 		};
 
 		private static readonly AsyncPolicy _retryPolicyAsync = Policy
-																.Handle<MySqlException
-																		>(
-																				exception
-																						=> _retrySqlExceptions
-																								.Contains(
-																										exception
-																												.Code))
+																.Handle<
+																		MySqlException>(
+																		exception
+																				=> _retrySqlExceptions
+																						.Contains(
+																								exception
+																										.Code))
 																.WaitAndRetryAsync(
 																		RetryCount
 																		, attempt
@@ -94,8 +101,7 @@ namespace SQE.DatabaseAccess
 																				  , _) =>
 																		  {
 																			  Log.ForContext<
-																								 DbConnectionBase
-																						 >()
+																						 DbConnectionBase>()
 																				 .Warning(
 																						 "Exception encountered, retry {retryCount} in {delay} seconds. {@exception}"
 																						 , retryCount
@@ -104,13 +110,10 @@ namespace SQE.DatabaseAccess
 																		  });
 
 		private static readonly Policy _retryPolicy = Policy
-													  .Handle<MySqlException
-															  >(
-																	  exception
-																			  => _retrySqlExceptions
-																					  .Contains(
-																							  exception
-																									  .Code))
+													  .Handle<
+															  MySqlException>(
+															  exception => _retrySqlExceptions
+																	  .Contains(exception.Code))
 													  .WaitAndRetry(
 															  RetryCount
 															  , attempt
@@ -123,8 +126,8 @@ namespace SQE.DatabaseAccess
 																		, retryCount
 																		, _) =>
 																{
-																	Log.ForContext<DbConnectionBase
-																			   >()
+																	Log.ForContext<
+																			   DbConnectionBase>()
 																	   .Warning(
 																			   "Exception encountered, retry {retryCount} in {delay} seconds. {@exception}"
 																			   , retryCount
@@ -174,11 +177,10 @@ namespace SQE.DatabaseAccess
 		public DatabaseCommunicationCircuitBreakPolicy()
 		{
 			_circuitBreakerRetryPolicyAsync = Policy
-											  .Handle<MySqlException
-													  >(
-															  exception
-																	  => _pauseExceptions.Contains(
-																			  exception.Code))
+											  .Handle<
+													  MySqlException>(
+													  exception => _pauseExceptions.Contains(
+															  exception.Code))
 											  .WaitAndRetryAsync(
 													  RetryCount
 													  , attempt => TimeSpan.FromMilliseconds(
@@ -198,10 +200,10 @@ namespace SQE.DatabaseAccess
 														});
 
 			_circuitBreakerRetryPolicy = Policy
-										 .Handle<MySqlException
-												 >(
-														 exception => _pauseExceptions.Contains(
-																 exception.Code))
+										 .Handle<
+												 MySqlException>(
+												 exception => _pauseExceptions.Contains(
+														 exception.Code))
 										 .WaitAndRetry(
 												 RetryCount
 												 , attempt => TimeSpan.FromMilliseconds(

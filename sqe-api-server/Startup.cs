@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -24,6 +26,8 @@ using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Services;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
+
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server
 {
@@ -46,6 +50,21 @@ namespace SQE.API.Server
 		{
 			services.AddCors();
 
+			services.AddHttpClient<IWordService, WordService>(Options.DefaultName)
+					.ConfigurePrimaryHttpMessageHandler(
+							() => new HttpClientHandler
+							{
+									ClientCertificateOptions =
+											ClientCertificateOption.Manual
+									, ServerCertificateCustomValidationCallback =
+									(
+											httpRequestMessage
+											, cert
+											, certChain
+											, policyErrors) => true
+									,
+							});
+
 			// configure DI for application services
 			services.AddScoped<IUserService, UserService>();
 			services.AddScoped<IEditionService, EditionService>();
@@ -56,29 +75,38 @@ namespace SQE.API.Server
 			services.AddScoped<IRoiService, RoiService>();
 			services.AddScoped<IUtilService, UtilService>();
 			services.AddScoped<ICatalogService, CatalogService>();
-
+			services.AddScoped<ISearchService, SearchService>();
+			services.AddScoped<IScriptService, ScriptService>();
 			services.AddScoped<ISignInterpretationService, SignInterpretationService>();
+			services.AddTransient<IWordService, WordService>();
 
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-			services.AddScoped<IUserRepository, UserRepository>();
-			services.AddScoped<IEditionRepository, EditionRepository>();
+			services.AddTransient<IUserRepository, UserRepository>();
+			services.AddTransient<IEditionRepository, EditionRepository>();
 
-			services.AddScoped<IImagedObjectRepository, ImagedObjectRepository>();
+			services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();
 
-			services.AddScoped<IImageRepository, ImageRepository>();
-			services.AddScoped<IArtefactRepository, ArtefactRepository>();
-			services.AddScoped<IDatabaseWriter, DatabaseWriter>();
-			services.AddScoped<ITextRepository, TextRepository>();
-			services.AddScoped<IRoiRepository, RoiRepository>();
+			services.AddTransient<IImageRepository, ImageRepository>();
+			services.AddTransient<IArtefactRepository, ArtefactRepository>();
+			services.AddTransient<IDatabaseWriter, DatabaseWriter>();
+			services.AddTransient<ITextRepository, TextRepository>();
+			services.AddTransient<IRoiRepository, RoiRepository>();
 
-			services.AddScoped<ISignInterpretationRepository, SignInterpretationRepository>();
+			services.AddTransient<ISignInterpretationRepository, SignInterpretationRepository>();
 
 			services
-					.AddScoped<ISignInterpretationCommentaryRepository,
+					.AddTransient<ISignInterpretationCommentaryRepository,
 							SignInterpretationCommentaryRepository>();
 
-			services.AddScoped<IAttributeRepository, AttributeRepository>();
-			services.AddScoped<ICatalogueRepository, CatalogueRepository>();
+			services.AddTransient<IAttributeRepository, AttributeRepository>();
+			services.AddTransient<ICatalogueRepository, CatalogueRepository>();
+
+			services
+					.AddTransient<ISignStreamMaterializationRepository,
+							SignStreamMaterializationRepository>();
+
+			services.AddTransient<ISearchRepository, SearchRepository>();
+			services.AddTransient<IScriptRepository, ScriptRepository>();
 
 			services.AddResponseCompression();
 
@@ -266,15 +294,17 @@ namespace SQE.API.Server
 				var redisConn =
 						$"{redisHost}:{redisPort},password={redisPassword},ssl=False,abortConnect=False";
 
-				services.AddSignalR().AddRedis(redisConn);
+				services.AddSignalR(o => o.EnableDetailedErrors = true).AddRedis(redisConn);
 			}
 			else
-				services.AddSignalR();
+				services.AddSignalR(o => o.EnableDetailedErrors = true);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app)
 		{
+			app.UseMiddleware<RequestDiagnosticsMiddleware>();
+
 			if (Environment.IsDevelopment())
 				app.UseDeveloperExceptionPage();
 
@@ -319,6 +349,22 @@ namespace SQE.API.Server
 						if (appSettings.HttpServer.ToLower() == "true")
 							endpoints.MapControllers();
 					});
+		}
+	}
+
+	public class RequestDiagnosticsMiddleware
+	{
+		private readonly RequestDelegate _next;
+
+		public RequestDiagnosticsMiddleware(RequestDelegate next) => _next = next;
+
+		public async Task InvokeAsync(HttpContext context)
+		{
+			// I don't yet called Controller/Action.
+			//log the essential parts of the request here
+
+			// Call the next delegate/middleware in the pipeline
+			await _next(context);
 		}
 	}
 }

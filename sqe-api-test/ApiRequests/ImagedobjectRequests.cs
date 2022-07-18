@@ -12,11 +12,76 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+	public static partial class Delete
+	{
+		public class V1_Editions_EditionId_ImagedObjects_ImagedObjectId :
+				RequestObject<EmptyInput, EmptyOutput>
+		{
+			private readonly uint   _editionId;
+			private readonly string _imagedObjectId;
+
+			/// <summary>
+			///  Remove an imaged object from an edition. All artefacts must first be removed from the
+			///  imaged object.
+			/// </summary>
+			/// <param name="editionId">Unique Id of the desired edition</param>
+			/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+			public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(
+					uint     editionId
+					, string imagedObjectId)
+
+			{
+				_editionId = editionId;
+				_imagedObjectId = imagedObjectId;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.DeletedImagedObject
+						, (DeletedImagedObjectIsNull, DeletedImagedObjectListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public DeleteStringIdDTO DeletedImagedObject { get; private set; }
+
+			private void DeletedImagedObjectListener(HubConnection signalrListener)
+				=> signalrListener.On<DeleteStringIdDTO>(
+						"DeletedImagedObject"
+						, receivedData => DeletedImagedObject = receivedData);
+
+			private bool DeletedImagedObjectIsNull() => DeletedImagedObject == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/imaged-object-id"
+															, $"/{HttpUtility.UrlEncode(_imagedObjectId)}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _imagedObjectId);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods DeletedImagedObject = ListenerMethods.DeletedImagedObject;
+			}
+		}
+	}
+
 	public static partial class Get
 	{
 		public class V1_ImagedObjects_ImagedObjectId : RequestObject<EmptyInput, SimpleImageListDTO>
@@ -32,7 +97,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/imaged-object-id"
-					, $"/{_imagedObjectId}");
+					, $"/{HttpUtility.UrlEncode(_imagedObjectId)}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -68,10 +133,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/imaged-object-id"
-															, $"/{_imagedObjectId}")
+															, $"/{HttpUtility.UrlEncode(_imagedObjectId)}")
 													+ (_optional != null
 															? $"?optional={string.Join("&optional=", _optional)}"
 															: "");
@@ -107,11 +172,12 @@ namespace SQE.ApiTest.ApiRequests
 				_optional = optional;
 			}
 
-			protected override string HttpPath()
-				=> RequestPath.Replace("/edition-id", $"/{_editionId.ToString()}")
-				   + (_optional != null
-						   ? $"?optional={string.Join("&optional=", _optional)}"
-						   : "");
+			protected override string HttpPath() => RequestPath.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													+ (_optional != null
+															? $"?optional={string.Join("&optional=", _optional)}"
+															: "");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -148,7 +214,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/institution-name"
-					, $"/{_institutionName}");
+					, $"/{HttpUtility.UrlEncode(_institutionName)}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -171,11 +237,74 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/imaged-object-id"
-					, $"/{_imagedObjectId}");
+					, $"/{HttpUtility.UrlEncode(_imagedObjectId)}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
 				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _imagedObjectId);
+			}
+		}
+	}
+
+	public static partial class Post
+	{
+		public class V1_Editions_EditionId_ImagedObjects_ImagedObjectId :
+				RequestObject<EmptyInput, ImagedObjectDTO>
+		{
+			private readonly uint   _editionId;
+			private readonly string _imagedObjectId;
+
+			/// <summary>
+			///  Add an imaged object to an edition.
+			/// </summary>
+			/// <param name="editionId">Unique Id of the desired edition</param>
+			/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+			public V1_Editions_EditionId_ImagedObjects_ImagedObjectId(
+					uint     editionId
+					, string imagedObjectId)
+
+			{
+				_editionId = editionId;
+				_imagedObjectId = imagedObjectId;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.CreatedImagedObject
+						, (CreatedImagedObjectIsNull, CreatedImagedObjectListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public ImagedObjectDTO CreatedImagedObject { get; private set; }
+
+			private void CreatedImagedObjectListener(HubConnection signalrListener)
+				=> signalrListener.On<ImagedObjectDTO>(
+						"CreatedImagedObject"
+						, receivedData => CreatedImagedObject = receivedData);
+
+			private bool CreatedImagedObjectIsNull() => CreatedImagedObject == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/imaged-object-id"
+															, $"/{HttpUtility.UrlEncode(_imagedObjectId)}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _imagedObjectId);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods CreatedImagedObject = ListenerMethods.CreatedImagedObject;
 			}
 		}
 	}

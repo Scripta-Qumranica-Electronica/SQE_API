@@ -137,21 +137,16 @@ namespace SQE.API.DTO
 		public List<LineDTO> lines { get; set; }
 	}
 
-	public class LineDataDTO
+	public class LineDataDTO : UpdateLineDTO
 	{
-		public LineDataDTO(uint lineId, string lineName)
-		{
-			this.lineId = lineId;
-			this.lineName = lineName;
-		}
+		public LineDataDTO(uint lineId, string lineName) : base(lineName) => this.lineId = lineId;
 
 		public LineDataDTO() : this(uint.MinValue, string.Empty) { }
 
 		[Required]
 		public uint lineId { get; set; }
 
-		[Required]
-		public string lineName { get; set; }
+		public uint editorId { get; set; }
 	}
 
 	public class LineDataListDTO
@@ -207,6 +202,43 @@ namespace SQE.API.DTO
 				, MinimumLength = 1
 				, ErrorMessage = "Text fragment names must be between 1 and 255 characters")]
 		public override string name { get; set; }
+	}
+
+	public class UpdateLineDTO
+	{
+		public UpdateLineDTO(string lineName) => this.lineName = lineName;
+
+		public UpdateLineDTO() : this(string.Empty) { }
+
+		[Required]
+		[StringLength(
+				255
+				, MinimumLength = 1
+				, ErrorMessage = "Line names must be between 1 and 255 characters")]
+		public string lineName { get; set; }
+	}
+
+	public class CreateLineDTO : UpdateLineDTO
+	{
+		public CreateLineDTO(
+				string  lineName
+				, uint? previousLineId   = null
+				, uint? subsequentLineId = null) : base(lineName)
+		{
+			this.previousLineId = previousLineId;
+			this.subsequentLineId = subsequentLineId;
+		}
+
+		public CreateLineDTO() : this(string.Empty) { }
+
+		public uint? previousLineId   { get; set; }
+		public uint? subsequentLineId { get; set; }
+	}
+
+	public class RequestMaterializationDTO
+	{
+		[Required]
+		public uint[] editionIds { get; set; }
 	}
 
 	#endregion

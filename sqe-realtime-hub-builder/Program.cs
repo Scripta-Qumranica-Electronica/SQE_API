@@ -24,6 +24,8 @@ using CaseExtensions;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace sqe_realtime_hub_builder
 {
 	internal static class Program
@@ -408,6 +410,9 @@ namespace sqe_realtime_hub_builder
 
 			foreach (var attribute in attributes)
 			{
+				if (attribute.Name.ToString() == "ApiExplorerSettings")
+					continue;
+
 				if (attribute.Name.ToString() == "AllowAnonymous")
 					anonymousAllowed = true;
 				else

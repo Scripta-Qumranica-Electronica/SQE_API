@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 # We check here that private settings have not accidentally been left in appsettings.json,
 # or in docker-compose.yml.

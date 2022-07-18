@@ -60,7 +60,9 @@ namespace SQE.API.Server.Serialization
 					, characters = sac.Characters.Select(
 											  x => new SignInterpretationDTO
 											  {
-													  signInterpretationId = x.SignInterpretationId
+													  signId = x.SignId
+													  , signInterpretationId =
+															  x.SignInterpretationId
 													  , character = x.SignInterpretationCharacter
 																	 .ToString()
 													  , attributes = x.Attributes
@@ -75,25 +77,22 @@ namespace SQE.API.Server.Serialization
 																				=> new
 																						InterpretationRoiDTO
 																						{
-																								artefactId
-																										= sac
+																								artefactId =
+																										sac
 																												.ArtefactId
-																								, interpretationRoiId
-																										=
+																								, interpretationRoiId =
 																										a.SignInterpretationRoiId
-																								, signInterpretationId
-																										= x
-																												.SignInterpretationId
-																								, stanceRotation
-																										= a
-																												.RoiRotate
-																								, translate
-																										= null
+																								, signInterpretationId =
+																										x.SignInterpretationId
+																								, stanceRotation =
+																										a.RoiRotate
+																								, translate =
+																										null
 																								,
 
 																								// Gather all the ROI shapes into a single (multi)polygon
-																								shape
-																										= MergeSignInterpretationRois(
+																								shape =
+																										MergeSignInterpretationRois(
 																												x.Rois)
 																								, // Union applies the CascadedPolygonUnion
 																						})
@@ -206,5 +205,34 @@ namespace SQE.API.Server.Serialization
 			{
 					nextSignInterpretationId = csp.NextSignInterpretationId,
 			};
+
+		public static List<GlyphDataDTO> ToDTO(this IEnumerable<Glyph> glyphs)
+			=> glyphs.Select(x => x.ToDTO()).ToList();
+
+		public static GlyphDataDTO ToDTO(this Glyph glyph) => new GlyphDataDTO
+		{
+				character = glyph.Character
+				, creatorId = glyph.CreatorId
+				, editorId = glyph.EditorId
+				, shape = glyph.Shape
+				, yOffset = glyph.YOffset
+				, scribalFontId = glyph.ScribalFontId
+				,
+		};
+
+		public static List<KernPairDTO> ToDTO(this IEnumerable<KerningPair> kerns)
+			=> kerns.Select(x => x.ToDTO()).ToList();
+
+		public static KernPairDTO ToDTO(this KerningPair kern) => new KernPairDTO
+		{
+				creatorId = kern.CreatorId
+				, editorId = kern.EditorId
+				, firstCharacter = kern.FirstCharacter
+				, secondCharacter = kern.SecondCharacter
+				, xKern = kern.XKern
+				, yKern = kern.YKern
+				, scribalFontId = kern.ScribalFontId
+				,
+		};
 	}
 }

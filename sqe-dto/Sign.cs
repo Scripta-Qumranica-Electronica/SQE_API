@@ -31,7 +31,7 @@ namespace SQE.API.DTO
 
 	public class SignInterpretationCreateDTO : SignInterpretationBaseDTO
 	{
-		public uint   lineId                        { get; set; }
+		public uint?  lineId                        { get; set; }
 		public uint[] previousSignInterpretationIds { get; set; }
 		public uint[] nextSignInterpretationIds     { get; set; }
 
@@ -46,8 +46,35 @@ namespace SQE.API.DTO
 		public bool breakPreviousAndNextSignInterpretations { get; set; } = false;
 	}
 
+	public class SignInterpretationVariantDTO : InterpretationAttributeBaseDTO
+	{
+		[Required]
+		[StringLength(
+				1
+				, ErrorMessage =
+						"The character string must not exceed a single character in length.")]
+		public string character { get; set; }
+	}
+
+	public class SignInterpretationCharacterUpdateDTO
+	{
+		[StringLength(
+				1
+				, ErrorMessage =
+						"The character string must not exceed a single character in length.")]
+		public string character { get; set; }
+
+		[Range(1, 9, ErrorMessage = "The attribute value id must be null or a number from 1 to 9")]
+		public uint? attributeValueId { get; set; }
+
+		// Not yet implemented
+		public byte priority { get; set; } = 0;
+	}
+
 	public class SignInterpretationDTO : SignInterpretationBaseDTO
 	{
+		public uint signId { get; set; }
+
 		[Required]
 		public uint signInterpretationId { get; set; }
 
@@ -60,12 +87,26 @@ namespace SQE.API.DTO
 		[Required]
 		public InterpretationRoiDTO[] rois { get; set; }
 
-		public CommentaryDTO commentary { get; set; }
+		public CommentaryDTO commentary           { get; set; }
+		public uint[]        signStreamSectionIds { get; set; }
+		public uint[]        qwbWordIds           { get; set; }
 	}
 
 	public class SignInterpretationListDTO
 	{
 		public SignInterpretationDTO[] signInterpretations { get; set; }
+	}
+
+	public class SignInterpretationCreatedDTO
+	{
+		public SignInterpretationDTO[] created { get; set; }
+		public SignInterpretationDTO[] updated { get; set; }
+	}
+
+	public class SignInterpretationDeleteDTO
+	{
+		public SignInterpretationListDTO updates { get; set; }
+		public uint[]                    deletes { get; set; }
 	}
 
 	public class InterpretationAttributeBaseDTO
@@ -185,5 +226,60 @@ namespace SQE.API.DTO
 	{
 		[Required]
 		public AttributeDTO[] attributes { get; set; }
+	}
+
+	public class DiffReplaceRequestDTO
+	{
+		[Required(AllowEmptyStrings = true)]
+		public string newText { get; set; }
+
+		[Required]
+		public uint priorSignInterpretationId { get; set; }
+
+		[Required]
+		public uint followingSignInterpretationId { get; set; }
+	}
+
+	public class DiffReplaceReconstructionRequestDTO
+	{
+		/// <summary>
+		///  The key of this dictionary should be the index of the letter in the
+		///  string to which the SetReconstructedInterpretationRoiDTO corresponds.
+		///  It is not necessary for every character in the string to have a
+		///  corresponding entry in textRois (for instance, a space character will
+		///  probably have no associated ROI).
+		/// </summary>
+		/// This dict uses a string for its key because unlike Newtonsoft
+		/// the new System.Text.JSON cannot work with dictionaries that
+		/// have a key type other than string: see https://github.com/TheBuzzSaw/KellySharp/tree/master/KellySharp/DictionaryJsonConverter
+		[Required]
+		public List<IndexedReplacementTextRoi> textRois { get; set; }
+
+		[Required(AllowEmptyStrings = true)]
+		public string newText { get; set; }
+
+		[Required]
+		public string virtualArtefactShape { get; set; }
+
+		[Required]
+		public PlacementDTO virtualArtefactPlacement { get; set; }
+	}
+
+	public class IndexedReplacementTextRoi
+	{
+		public uint                                 index { get; set; }
+		public SetReconstructedInterpretationRoiDTO roi   { get; set; }
+	}
+
+	public class DiffReplaceResponseDTO
+	{
+		public SignInterpretationListDTO created { get; set; }
+		public SignInterpretationListDTO updated { get; set; }
+		public DeleteIntIdDTO            deleted { get; set; }
+	}
+
+	public class DiffReconstructedResponseDTO : DiffReplaceResponseDTO
+	{
+		public ArtefactDTO virtualArtefact { get; set; }
 	}
 }

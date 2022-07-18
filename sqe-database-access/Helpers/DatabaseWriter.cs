@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.DatabaseAccess.Helpers
 {
 	/// <summary>
@@ -49,7 +51,7 @@ namespace SQE.DatabaseAccess.Helpers
 				, uint?             tablePkId = null)
 		{
 			Action = action;
-			Parameters = parameters;
+			Parameters = parameters ?? new DynamicParameters();
 			TableName = tableName;
 			TablePkId = tablePkId;
 
@@ -73,12 +75,9 @@ namespace SQE.DatabaseAccess.Helpers
 
 		public MutateType Action { get; }
 
-		public List<string>
-				ColumnNames
-		{
-			get;
-		} // Itay, we still need this, since we add more to the SQL parameters than
+		public List<string> ColumnNames { get; }
 
+		// Itay, we still need this, since we add more to the SQL parameters than
 		// just the column names after this mutation request is created (e.g.
 		// @EditionId and maybe @OwnedTableId).  But now this is computed
 		// automatically from the Parameters in the constructor. So we no longer
@@ -102,6 +101,7 @@ namespace SQE.DatabaseAccess.Helpers
 				, "point_on_image1point_to_point_map"
 				, "point_on_image2point_to_point_map"
 				, "pathroi_shape"
+				, "shapescribal_font_glyph_metrics"
 				,
 		};
 	}
@@ -228,6 +228,7 @@ namespace SQE.DatabaseAccess.Helpers
 									, mutationRequest
 									, editionUser.userId.Value);
 
+							//	System.Threading.Thread.Sleep(1000);
 							alteredRecords.Add(createdRecord);
 
 							break;
@@ -263,6 +264,40 @@ namespace SQE.DatabaseAccess.Helpers
 							throw new ArgumentOutOfRangeException();
 					}
 				}
+
+				// Check if any operation here would invalidate a cached text transcription,
+				// if so, invalidate the cached transcription. First gather all referenced
+				// text fragments, then Union the results so there are no doubles.
+				var lineIds = (await Task.WhenAll(
+						mutationRequests.Where(x => x.Parameters.ParameterNames.Contains("line_id"))
+										.Select(x => x.Parameters.Get<uint>("line_id"))
+										.Select(
+												async x => await _textEditionByLineId(
+														editionUser
+														, x)))).SelectMany(x => x);
+
+				var signInterpretationIds = (await Task.WhenAll(
+						mutationRequests
+								.Where(
+										x => x.Parameters.ParameterNames.Contains(
+												"sign_interpretation_id"))
+								.Select(x => x.Parameters.Get<uint>("sign_interpretation_id"))
+								.Select(
+										async x => await _textEditionBySignInterpretationId(
+												editionUser
+												, x)))).SelectMany(x => x);
+
+				var textFragmentIds = mutationRequests
+									  .Where(
+											  x => x.Parameters.ParameterNames.Contains(
+													  "text_fragment_id"))
+									  .Select(x => x.Parameters.Get<uint>("text_fragment_id"))
+									  .Distinct()
+									  .Union(lineIds)
+									  .Union(signInterpretationIds);
+
+				foreach (var textFragmentId in textFragmentIds)
+					await _invalidateCachedTextEdition(editionUser, textFragmentId);
 			}
 
 			return alteredRecords;
@@ -329,15 +364,13 @@ namespace SQE.DatabaseAccess.Helpers
 				, MutationRequest mutationRequest
 				, uint            userId)
 		{
-			// Format query
-			var hasNulls = mutationRequest.Parameters.ParameterNames.Any(
-					x => ((SqlMapper.IParameterLookup) mutationRequest.Parameters)[x] == null);
-
 			var query = OwnedTableInsertQuery.GetQuery();
 
 			query = query.Replace("$TableName", mutationRequest.TableName);
 
-			query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
+			query = query.Replace(
+					"$Columns"
+					, string.Join(",", mutationRequest.ColumnNames.Select(x => $"`{x}`")));
 
 			query = query.Replace(
 					"$Values"
@@ -355,7 +388,7 @@ namespace SQE.DatabaseAccess.Helpers
 					, string.Join(
 							" AND "
 							, mutationRequest.ColumnNames.Select(
-									x => $"{x} <=> "
+									x => $"`{x}` <=> "
 										 + (GeometryColumns.columns.IndexOf(
 													x + mutationRequest.TableName)
 											> -1
@@ -369,15 +402,18 @@ namespace SQE.DatabaseAccess.Helpers
 
 			uint insertId;
 
-			if (alteredRecords == 0
-			) // Nothing was inserted because the exact record already existed.
+			if (
+					alteredRecords
+					== 0) // Nothing was inserted because the exact record already existed.
 			{
 				// Get id of new record (or the record matching the unique constraints of this request).
 				query = OwnedTableIdQuery.GetQuery();
 
 				query = query.Replace("$TableName", mutationRequest.TableName);
 
-				query = query.Replace("$Columns", string.Join(",", mutationRequest.ColumnNames));
+				query = query.Replace(
+						"$Columns"
+						, string.Join(",", mutationRequest.ColumnNames.Select(x => $"`{x}`")));
 
 				query = query.Replace(
 						"$Values"
@@ -395,7 +431,7 @@ namespace SQE.DatabaseAccess.Helpers
 						, string.Join(
 								" AND "
 								, mutationRequest.ColumnNames.Select(
-										x => $"{x} <=> "
+										x => $"`{x}` <=> "
 											 + (GeometryColumns.columns.IndexOf(
 														x + mutationRequest.TableName)
 												> -1
@@ -440,7 +476,16 @@ namespace SQE.DatabaseAccess.Helpers
 			mutationRequest.Parameters.Add("@OwnedTableId", insertId);
 
 			// Execute query
-			await connection.ExecuteAsync(query, mutationRequest.Parameters);
+			var result = await connection.ExecuteAsync(query, mutationRequest.Parameters);
+
+			if (mutationRequest.TableName.Equals("position_in_stream"))
+			{
+				var r = connection.Query<uint>(
+						$@"
+select position_in_stream_id from position_in_stream_owner where position_in_stream_id={
+	insertId
+};");
+			}
 		}
 
 		/// <summary>
@@ -527,6 +572,50 @@ namespace SQE.DatabaseAccess.Helpers
 
 			// Execute query
 			await connection.ExecuteAsync(query, mutationRequest.Parameters);
+		}
+
+		private async Task _invalidateCachedTextEdition(UserInfo editionUser, uint textFragmentId)
+		{
+			using (var conn = OpenConnection())
+			{
+				await conn.ExecuteAsync(
+						RemoveCachedTextFragment.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, TextFragmentId = textFragmentId
+								,
+						});
+			}
+		}
+
+		private async Task<IEnumerable<uint>> _textEditionByLineId(
+				UserInfo editionUser
+				, uint   lineId)
+		{
+			using (var conn = OpenConnection())
+			{
+				return await conn.QueryAsync<uint>(
+						GetTextFragmentIdFromLineId.GetQuery
+						, new { editionUser.EditionId, LineId = lineId });
+			}
+		}
+
+		public async Task<IEnumerable<uint>> _textEditionBySignInterpretationId(
+				UserInfo editionUser
+				, uint   signInterpretationId)
+		{
+			using (var conn = OpenConnection())
+			{
+				return await conn.QueryAsync<uint>(
+						GetTextFragmentIdFromSingInterpretationId.GetQuery
+						, new
+						{
+								editionUser.EditionId
+								, SignInterpretationId = signInterpretationId
+								,
+						});
+			}
 		}
 
 		/// <summary>

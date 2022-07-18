@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
@@ -18,7 +19,8 @@ namespace SQE.API.Server.Services
 
 		Task<ImagedObjectListDTO> GetEditionImagedObjectsAsync(
 				UserInfo       editionUser
-				, List<string> optional = null);
+				, string       imagedObjectId = null
+				, List<string> optional       = null);
 
 		Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(
 				UserInfo editionUser
@@ -28,6 +30,18 @@ namespace SQE.API.Server.Services
 				UserInfo       editionUser
 				, string       imagedObjectId
 				, List<string> optional = null);
+
+		//TODO: add imaged object to edition (using the new owner table)
+
+		Task<ImagedObjectDTO> AddImagedObjectToEditionAsync(
+				UserInfo editionUser
+				, string imagedObjectId
+				, string clientId = null);
+
+		Task<NoContentResult> RemoveImagedObjectFromEditionAsync(
+				UserInfo editionUser
+				, string imagedObjectId
+				, string clientId = null);
 	}
 
 	public class ImagedObjectService : IImagedObjectService
@@ -59,14 +73,16 @@ namespace SQE.API.Server.Services
 		// TODO: Fix this and GetImagedObjectsWithArtefactsAsync up to be more DRY and efficient.
 		public async Task<ImagedObjectListDTO> GetEditionImagedObjectsAsync(
 				UserInfo       editionUser
-				, List<string> optional = null)
+				, string       imagedObjectId = null
+				, List<string> optional       = null)
 		{
 			ParseOptionals(optional, out var artefacts, out var masks);
 
 			if (artefacts)
 				return await GetImagedObjectsWithArtefactsAsync(editionUser, masks);
 
-			var imagedObjects = await _repo.GetImagedObjectsAsync(editionUser, null);
+			var imagedObjects =
+					await _repo.GetEditionImagedObjectsAsync(editionUser, imagedObjectId);
 
 			if (imagedObjects == null)
 			{
@@ -81,7 +97,7 @@ namespace SQE.API.Server.Services
 			var images =
 					await _imageRepo.GetImagesAsync(
 							editionUser
-							, null); //send imagedFragment from here
+							, imagedObjectId); //send imagedFragment from here
 
 			var imageDict = new Dictionary<string, List<ImageDTO>>();
 
@@ -158,8 +174,12 @@ namespace SQE.API.Server.Services
 			ParseOptionals(optional, out var artefacts, out var masks);
 
 			var result =
-					(await GetEditionImagedObjectsAsync(editionUser)).imagedObjects.First(
-							x => x.id == imagedObjectId);
+					(await GetEditionImagedObjectsAsync(editionUser, imagedObjectId)).imagedObjects
+																					 .FirstOrDefault(
+																							 x
+																									 => x
+																												.id
+																										== imagedObjectId);
 
 			if (artefacts)
 			{
@@ -179,6 +199,44 @@ namespace SQE.API.Server.Services
 			}
 
 			return result;
+		}
+
+		public async Task<ImagedObjectDTO> AddImagedObjectToEditionAsync(
+				UserInfo editionUser
+				, string imagedObjectId
+				, string clientId = null)
+		{
+			await _repo.CreateEditionImagedObjectsAsync(editionUser, imagedObjectId);
+
+			var newImagedObject =
+					(await GetEditionImagedObjectsAsync(editionUser, imagedObjectId)).imagedObjects
+																					 .FirstOrDefault(
+																							 x
+																									 => x
+																												.id
+																										== imagedObjectId);
+
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .CreatedImagedObject(newImagedObject);
+
+			return newImagedObject;
+		}
+
+		public async Task<NoContentResult> RemoveImagedObjectFromEditionAsync(
+				UserInfo editionUser
+				, string imagedObjectId
+				, string clientId = null)
+		{
+			await _repo.DeleteEditionImagedObjectsAsync(editionUser, imagedObjectId);
+
+			// Report the change to edition editors
+			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+							 .DeletedImagedObject(
+									 new DeleteStringIdDTO(
+											 EditionEntities.imagedObject
+											 , imagedObjectId));
+
+			return new NoContentResult();
 		}
 
 		private static ImagedObjectDTO ImagedObjectModelToDTO(

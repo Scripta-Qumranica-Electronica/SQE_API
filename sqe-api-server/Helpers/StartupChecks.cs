@@ -23,6 +23,8 @@ namespace SQE.API.Server.Helpers
 			// Only test the emailer in production
 			if (env.IsProduction())
 				Emailer(configuration);
+
+			// TO-DO add check for github credentials
 		}
 
 		private static void Emailer(IConfiguration configuration)

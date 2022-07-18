@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -8,6 +9,8 @@ using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
+
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.ApiTest
 {
@@ -203,6 +206,8 @@ namespace SQE.ApiTest
 			foreach (var sign in msg.signs)
 			foreach (var signInterpretation in sign.signInterpretations)
 			{
+				Assert.NotEqual(0u, signInterpretation.signId);
+
 				foreach (var attr in signInterpretation.attributes)
 				{
 					if (!msg.editors.ContainsKey(attr.editorId.ToString()))
@@ -310,6 +315,8 @@ namespace SQE.ApiTest
 					foreach (var sign in line.signs)
 					foreach (var signInterpretation in sign.signInterpretations)
 					{
+						Assert.NotEqual(0u, signInterpretation.signId);
+
 						foreach (var attr in signInterpretation.attributes)
 						{
 							if (!msg.editors.ContainsKey(attr.editorId.ToString()))
@@ -613,6 +620,66 @@ namespace SQE.ApiTest
 					textFragments.textFragments[i]
 								 .ShouldDeepEqual(updatedTextFragments.textFragments[i]);
 				}
+			}
+		}
+
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
+		[Trait("Category", "Text")]
+		public async Task CanGetEditionFullText(bool realtime)
+		{
+			// Arrange
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, _) = await _createEditionWithTextFragments(editionCreator);
+
+				// Act
+				var textRequest1 = new Get.V1_Editions_EditionId_FullText(editionId);
+
+				await textRequest1.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				// Assert
+				if (!realtime)
+					textRequest1.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var resp1 = realtime
+						? textRequest1.SignalrResponseObject
+						: textRequest1.HttpResponseObject;
+
+				Assert.NotEmpty(resp1.textFragments);
+				Assert.False(resp1.textFragments.Count == 1);
+
+				_verifyTextEditionDTO(resp1);
+
+				// Act (check that cached data is valid)
+				var textRequest2 = new Get.V1_Editions_EditionId_FullText(editionId);
+
+				await textRequest2.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				// Assert
+				if (!realtime)
+					textRequest2.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var resp2 = realtime
+						? textRequest2.SignalrResponseObject
+						: textRequest2.HttpResponseObject;
+
+				resp2.IsDeepEqual(resp1);
 			}
 		}
 
@@ -1292,6 +1359,634 @@ namespace SQE.ApiTest
 
 				textFragments.ShouldDeepEqual(updatedTextFragments);
 			}
+		}
+
+		[Theory]
+		[Trait("Category", "Text")]
+		[InlineData(true)]
+		[InlineData(false)]
+		public async Task CanRenameLine(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var lines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragments.textFragments.First().id
+						, realtime
+						, true);
+
+				var firstLine = lines.lines.First();
+
+				var firstLineId = firstLine.lineId;
+				const string newLineName = "2aα";
+				var newLine = new UpdateLineDTO { lineName = newLineName };
+
+				// Act
+				var changeLineName =
+						new Put.V1_Editions_EditionId_Lines_LineId(editionId, firstLineId, newLine);
+
+				await changeLineName.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: changeLineName.AvailableListeners.UpdatedLine);
+
+				// Assert
+				if (!realtime)
+					changeLineName.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var response = realtime
+						? changeLineName.SignalrResponseObject
+						: changeLineName.HttpResponseObject;
+
+				Assert.NotEqual(firstLine.lineName, response.lineName);
+				Assert.Equal(newLineName, response.lineName);
+
+				var updatedLines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragments.textFragments.First().id
+						, realtime
+						, true);
+
+				Assert.Equal(response.lineName, updatedLines.lines.First().lineName);
+				Assert.Equal(response.editorId, updatedLines.lines.First().editorId);
+				Assert.Equal(response.lineId, updatedLines.lines.First().lineId);
+			}
+		}
+
+		[Theory]
+		[Trait("Category", "Text")]
+		[InlineData(true)]
+		[InlineData(false)]
+		public async Task CanPrependLine(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var textFragmentId = textFragments.textFragments.First().id;
+
+				var lines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var firstLine = lines.lines.First();
+
+				var firstLineId = firstLine.lineId;
+				const string newLineName = "5643";
+				var newLine = new CreateLineDTO(newLineName, null, firstLineId);
+
+				// Act
+				var createLine =
+						new Post.V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+								editionId
+								, textFragmentId
+								, newLine);
+
+				await createLine.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: createLine.AvailableListeners.CreatedLine);
+
+				// Assert
+				if (!realtime)
+					createLine.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var response = realtime
+						? createLine.SignalrResponseObject
+						: createLine.HttpResponseObject;
+
+				Assert.Equal(newLineName, response.lineName);
+
+				var updatedLines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var newFirstLine = updatedLines.lines.First();
+
+				// The old first line should now be second
+				lines.lines[0].ShouldDeepEqual(updatedLines.lines[1]);
+				Assert.NotEqual(firstLine.lineId, newFirstLine.lineId);
+
+				// The new first line should match the newly created line
+				Assert.Equal(response.lineId, newFirstLine.lineId);
+				Assert.Equal(response.lineName, newFirstLine.lineName);
+				Assert.Equal(response.editorId, newFirstLine.editorId);
+			}
+		}
+
+		[Theory]
+		[Trait("Category", "Text")]
+		[InlineData(true)]
+		[InlineData(false)]
+		public async Task CanAppendLine(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var textFragmentId = textFragments.textFragments.First().id;
+
+				var lines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var lastLine = lines.lines.Last();
+
+				var lastLineId = lastLine.lineId;
+				const string newLineName = "klo";
+				var newLine = new CreateLineDTO(newLineName, lastLineId);
+
+				// Act
+				var createLine =
+						new Post.V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+								editionId
+								, textFragmentId
+								, newLine);
+
+				await createLine.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: createLine.AvailableListeners.CreatedLine);
+
+				// Assert
+				if (!realtime)
+					createLine.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				var response = realtime
+						? createLine.SignalrResponseObject
+						: createLine.HttpResponseObject;
+
+				Assert.Equal(newLineName, response.lineName);
+
+				var updatedLines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var newLastLine = updatedLines.lines.Last();
+
+				// The old first line should now be second
+				lines.lines.Last().ShouldDeepEqual(updatedLines.lines[^2]);
+				Assert.NotEqual(lastLine.lineId, newLastLine.lineId);
+
+				// The new first line should match the newly created line
+				Assert.Equal(response.lineId, newLastLine.lineId);
+				Assert.Equal(response.lineName, newLastLine.lineName);
+				Assert.Equal(response.editorId, newLastLine.editorId);
+			}
+		}
+
+		[Theory]
+		[Trait("Category", "Text")]
+		[InlineData(true)]
+		[InlineData(false)]
+		public async Task CanDeleteLine(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var textFragmentId = textFragments.textFragments.First().id;
+
+				var lines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				var lastLine = lines.lines.Last();
+
+				var lastLineId = lastLine.lineId;
+
+				// Act
+				var deleteLine =
+						new Delete.V1_Editions_EditionId_Lines_LineId(editionId, lastLineId);
+
+				await deleteLine.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, listeningFor: deleteLine.AvailableListeners.DeletedLine);
+
+				// Assert
+				if (!realtime)
+					deleteLine.HttpResponseMessage.EnsureSuccessStatusCode();
+
+				Assert.NotEmpty(deleteLine.DeletedLine.ids);
+				Assert.Contains(lastLineId, deleteLine.DeletedLine.ids);
+
+				var updatedLines = await _getEditionTextFragmentLines(
+						editionId
+						, textFragmentId
+						, realtime
+						, true);
+
+				Assert.NotEqual(lines.lines.Count, updatedLines.lines.Count);
+				Assert.Equal(lines.lines.Count - 1, updatedLines.lines.Count);
+				Assert.DoesNotContain(updatedLines.lines, x => x.lineId == lastLineId);
+			}
+		}
+
+		private async Task<LineDataListDTO> _getEditionTextFragmentLines(
+				uint   editionId
+				, uint textFragmentId
+				, bool realtime
+				, bool auth          = false
+				, bool shouldSucceed = true)
+		{
+			var linesRequest =
+					new Get.V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+							editionId
+							, textFragmentId);
+
+			await linesRequest.SendAsync(
+					realtime
+							? null
+							: _client
+					, StartConnectionAsync
+					, auth
+					, shouldSucceed: shouldSucceed
+					, requestRealtime: realtime);
+
+			if (!shouldSucceed)
+				return null;
+
+			return realtime
+					? linesRequest.SignalrResponseObject
+					: linesRequest.HttpResponseObject;
+		}
+
+		[Theory]
+		[InlineData(true, "לא אבה ללכת")]
+		[InlineData(true, "")]
+		[InlineData(false, "לא אבה ללכת")]
+		[InlineData(false, "")]
+		public async Task CanUpdateTextChunk(bool realtime, string replacementString)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var (editionId, textFragments) =
+						await _createEditionWithTextFragments(editionCreator);
+
+				var textFragmentId = textFragments.textFragments.First().id;
+
+				var textRequest =
+						new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+								editionId
+								, textFragmentId);
+
+				await textRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var text = realtime
+						? textRequest.SignalrResponseObject
+						: textRequest.HttpResponseObject;
+
+				var firstSignInterpretationId = text.textFragments.First()
+													.lines.First()
+													.signs.First()
+													.signInterpretations.Last()
+													.signInterpretationId;
+
+				var lastSignInterpretationId = text.textFragments.First()
+												   .lines.First()
+												   .signs.Last()
+												   .signInterpretations.First()
+												   .signInterpretationId;
+
+				var requestObject = new DiffReplaceRequestDTO
+				{
+						priorSignInterpretationId = firstSignInterpretationId
+						, followingSignInterpretationId = lastSignInterpretationId
+						, newText = replacementString
+						,
+				};
+
+				// Act
+				var diffRequest =
+						new Put.V1_Editions_EditionId_DiffReplaceText(editionId, requestObject);
+
+				await diffRequest.SendAsync(
+						new List<ListenerMethods>
+						{
+								diffRequest.AvailableListeners.CreatedSignInterpretation
+								, diffRequest.AvailableListeners.DeletedSignInterpretation
+								, diffRequest.AvailableListeners.UpdatedSignInterpretations
+								,
+						}
+						, realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var diffResponse = realtime
+						? diffRequest.SignalrResponseObject
+						: diffRequest.HttpResponseObject;
+
+				// Assert
+				diffResponse.created.ShouldDeepEqual(diffRequest.CreatedSignInterpretation);
+				diffResponse.updated.ShouldDeepEqual(diffRequest.UpdatedSignInterpretations);
+				diffResponse.deleted.ShouldDeepEqual(diffRequest.DeletedSignInterpretation);
+
+				Assert.True(
+						diffResponse.created.signInterpretations.Any()
+						|| diffResponse.updated.signInterpretations.Any()
+						|| diffResponse.deleted.ids.Any());
+
+				Assert.Equal(EditionEntities.signInterpretation, diffResponse.deleted.entity);
+
+				var updatedTextRequest =
+						new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+								editionId
+								, textFragmentId);
+
+				await updatedTextRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var updatedText = realtime
+						? updatedTextRequest.SignalrResponseObject
+						: updatedTextRequest.HttpResponseObject;
+
+				Assert.False(updatedText.IsDeepEqual(text));
+
+				// Build the returned text string for comparison
+				var updatedString = "";
+
+				var spacingAttributes = new List<uint>
+				{
+						2
+						, 3
+						, 4
+						,
+				};
+
+				foreach (var sign in updatedText.textFragments.First()
+												.lines.First()
+												.signs.SelectMany(x => x.signInterpretations))
+				{
+					updatedString += sign.character;
+
+					if (sign.attributes.Any(x => spacingAttributes.Contains(x.attributeValueId)))
+						updatedString += " ";
+				}
+
+				Assert.Equal(
+						replacementString
+						, updatedString.Substring(0, replacementString.Length));
+			}
+		}
+
+		[Theory]
+		[InlineData(
+				true
+				, 899
+				, 27991
+				, 10166
+				, "לא אבה ללכת")]
+		[InlineData(
+				true
+				, 899
+				, 27991
+				, 10166
+				, "")]
+		[InlineData(
+				false
+				, 899
+				, 27991
+				, 10166
+				, "לא אבה ללכת")]
+		[InlineData(
+				false
+				, 899
+				, 27991
+				, 10166
+				, "")]
+		[InlineData(
+				false
+				, 899
+				, 28039
+				, 10172
+				, "נו ישרל")]
+		public async Task CanUpdateVirtualArtefactTextChunk(
+				bool     realtime
+				, uint   startingEditionId
+				, uint   artefactId
+				, uint   textFragmentId
+				, string replacementString)
+		{
+			using (var editionCreator = new EditionHelpers.EditionCreator(
+					_client
+					, StartConnectionAsync
+					, startingEditionId))
+			{
+				// Arrange
+				var editionId = await editionCreator.CreateEdition();
+
+				var textRequest =
+						new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+								editionId
+								, textFragmentId);
+
+				await textRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var text = realtime
+						? textRequest.SignalrResponseObject
+						: textRequest.HttpResponseObject;
+
+				var textRois = new List<IndexedReplacementTextRoi>();
+
+				for (var i = 0; i < replacementString.Length; i++)
+				{
+					if (replacementString[i] == ' ')
+						continue;
+
+					var roi = new SetReconstructedInterpretationRoiDTO
+					{
+							shape = "POLYGON((0 0,10 0,10 10,0 10,0 0))"
+							, translate = new TranslateDTO
+							{
+									x = 604 - (i * 10) - 10
+									, y = 10
+									,
+							}
+							,
+					};
+
+					textRois.Add(new IndexedReplacementTextRoi { index = (uint) i, roi = roi });
+				}
+
+				var requestObject = new DiffReplaceReconstructionRequestDTO
+				{
+						virtualArtefactShape = "POLYGON((0 0,604 0,604 200,0 200,0 0))"
+						, virtualArtefactPlacement = new PlacementDTO
+						{
+								mirrored = false
+								, scale = 1
+								, rotate = 0
+								, zIndex = 0
+								, translate = new TranslateDTO
+								{
+										x = 42644
+										, y = 400
+										,
+								}
+								,
+						}
+						, newText = replacementString
+						, textRois = textRois
+						,
+				};
+
+				// Act
+				var diffRequest =
+						new Put.V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription(
+								editionId
+								, artefactId
+								, requestObject);
+
+				await diffRequest.SendAsync(
+						new List<ListenerMethods>
+						{
+								diffRequest.AvailableListeners.CreatedSignInterpretation
+								, diffRequest.AvailableListeners.DeletedSignInterpretation
+								, diffRequest.AvailableListeners.UpdatedSignInterpretations
+								,
+						}
+						, realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var diffResponse = realtime
+						? diffRequest.SignalrResponseObject
+						: diffRequest.HttpResponseObject;
+
+				// Assert
+				diffResponse.created.ShouldDeepEqual(diffRequest.CreatedSignInterpretation);
+				diffResponse.updated.ShouldDeepEqual(diffRequest.UpdatedSignInterpretations);
+				diffResponse.deleted.ShouldDeepEqual(diffRequest.DeletedSignInterpretation);
+
+				Assert.True(
+						diffResponse.created.signInterpretations.Any()
+						|| diffResponse.updated.signInterpretations.Any()
+						|| diffResponse.deleted.ids.Any());
+
+				Assert.Equal(EditionEntities.signInterpretation, diffResponse.deleted.entity);
+
+				var updatedTextRequest =
+						new Get.V1_Editions_EditionId_TextFragments_TextFragmentId(
+								editionId
+								, textFragmentId);
+
+				await updatedTextRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var updatedText = realtime
+						? updatedTextRequest.SignalrResponseObject
+						: updatedTextRequest.HttpResponseObject;
+
+				Assert.False(updatedText.IsDeepEqual(text));
+
+				// Build the returned text string for comparison
+				var updatedString = "";
+
+				var spacingAttributes = new List<uint>
+				{
+						2
+						, 3
+						, 4
+						,
+				};
+
+				foreach (var sign in updatedText.textFragments.First()
+												.lines.SelectMany(x => x.signs)
+												.SelectMany(x => x.signInterpretations))
+				{
+					updatedString += sign.character;
+
+					if (sign.attributes.Any(x => spacingAttributes.Contains(x.attributeValueId)))
+						updatedString += " ";
+				}
+
+				Assert.Contains(replacementString, updatedString);
+			}
+		}
+
+		private IList<ValidationResult> ValidateModel(object model)
+		{
+			var validationResults = new List<ValidationResult>();
+			var ctx = new ValidationContext(model, null, null);
+
+			Validator.TryValidateObject(
+					model
+					, ctx
+					, validationResults
+					, true);
+
+			return validationResults;
 		}
 
 		// TODO: Ingo changed the logic so two text fragments with the same name are allowed, so probably remove this test.

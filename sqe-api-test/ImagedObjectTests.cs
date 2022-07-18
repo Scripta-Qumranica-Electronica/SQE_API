@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web;
 using DeepEqual.Syntax;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
@@ -54,9 +53,8 @@ namespace SQE.ApiTest
 		[Trait("Category", "Imaged Object")]
 		public async Task CanDecodeImagedObjectIdWithUrlEncodedValue()
 		{
-			// Note: the dotnet HTTP Request system automatically escapes the URL's we submit,
-			// so we need to encode the URL first (remember this!!!).
-			var id = HttpUtility.UrlEncode("IAA-275%2F1-1");
+			// Note: the dotnet HTTP Request system must automatically decode the escaped the URL's we submit.
+			var id = "IAA-275/1-1";
 
 			var textFragRequest = new Get.V1_ImagedObjects_ImagedObjectId_TextFragments(id);
 
@@ -124,6 +122,7 @@ namespace SQE.ApiTest
 
 			// Assert
 			request.HttpResponseMessage.EnsureSuccessStatusCode();
+			Assert.NotNull(request.HttpResponseObject.recto.images.FirstOrDefault().imageManifest);
 
 			if (!optionalArtefacts)
 				Assert.Null(request.HttpResponseObject.artefacts);
@@ -179,6 +178,11 @@ namespace SQE.ApiTest
 			// Assert
 			request.HttpResponseMessage.EnsureSuccessStatusCode();
 			Assert.NotEmpty(request.HttpResponseObject.imagedObjects);
+
+			Assert.NotNull(
+					request.HttpResponseObject.imagedObjects.FirstOrDefault()
+						   .recto.images.FirstOrDefault()
+						   .imageManifest);
 
 			if (!optionalArtefacts)
 			{
@@ -272,6 +276,110 @@ namespace SQE.ApiTest
 			Assert.NotEqual<uint>(0, textFragmentMatches.matches.First().textFragmentId);
 		}
 
+		[Theory]
+		[InlineData("IAA-1094-2", false, true)]
+		[InlineData("IAA-1094-2", true, true)]
+		[InlineData("IAA-1094-1", false, false)]
+		[InlineData("IAA-1094-1", true, false)]
+		[Trait("Category", "Imaged Object")]
+		public async Task CanAddImagedObjectToEdition(
+				string imagedObjectId
+				, bool realtime
+				, bool shouldSucceed)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var newEdition = await editionCreator.CreateEdition();
+
+				// Act
+				var newEditionImage = await _createEditionImagedObject(
+						newEdition
+						, imagedObjectId
+						, _client
+						, StartConnectionAsync
+						, realtime
+						, shouldSucceed);
+
+				// Assert
+				if (!shouldSucceed)
+				{
+					Assert.Null(newEditionImage);
+
+					return;
+				}
+
+				Assert.NotNull(newEditionImage);
+				Assert.Equal(imagedObjectId, newEditionImage.id);
+				Assert.NotEmpty(newEditionImage.recto.images);
+				Assert.NotEmpty(newEditionImage.verso.images);
+			}
+		}
+
+		[Theory]
+		[InlineData("IAA-1094-2", false, true)]
+		[InlineData("IAA-1094-2", true, true)]
+		[InlineData("IAA-1094-2", false, false)]
+		[InlineData("IAA-1094-2", true, false)]
+		[Trait("Category", "Imaged Object")]
+		public async Task CanDeleteImagedObjectFromEdition(
+				string imagedObjectId
+				, bool realtime
+				, bool shouldSucceed)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var newEdition = await editionCreator.CreateEdition();
+
+				if (shouldSucceed)
+				{
+					await _createEditionImagedObject(
+							newEdition
+							, imagedObjectId
+							, _client
+							, StartConnectionAsync
+							, realtime
+							, shouldSucceed);
+				}
+
+				// Act
+				var request =
+						new Delete.V1_Editions_EditionId_ImagedObjects_ImagedObjectId(
+								newEdition
+								, imagedObjectId);
+
+				await request.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime
+						, shouldSucceed: shouldSucceed);
+
+				// Assert
+				var imagedObjectRequest = new Get.V1_Editions_EditionId_ImagedObjects(newEdition);
+
+				await imagedObjectRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var imageObjects = realtime
+						? imagedObjectRequest.SignalrResponseObject
+						: imagedObjectRequest.HttpResponseObject;
+
+				Assert.NotEmpty(imageObjects.imagedObjects);
+				Assert.DoesNotContain(imageObjects.imagedObjects, x => x.id == imagedObjectId);
+			}
+		}
+
 		public static async Task<SimpleImageListDTO> GetSpecificImagedObjectAsync(
 				string                              imagedObjectId
 				, HttpClient                        client
@@ -305,6 +413,41 @@ namespace SQE.ApiTest
 			request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
 
 			return request.HttpResponseObject;
+		}
+
+		private static async Task<ImagedObjectDTO> _createEditionImagedObject(
+				uint                                editionId
+				, string                            imagedObjectId
+				, HttpClient                        client
+				, Func<string, Task<HubConnection>> signalr
+				, bool                              realtime
+				, bool                              shouldSucceed)
+		{
+			var request =
+					new Post.V1_Editions_EditionId_ImagedObjects_ImagedObjectId(
+							editionId
+							, imagedObjectId);
+
+			await request.SendAsync(
+					realtime
+							? null
+							: client
+					, signalr
+					, true
+					, requestRealtime: realtime
+					, shouldSucceed: shouldSucceed
+					, listeningFor: request.AvailableListeners.CreatedImagedObject);
+
+			if (!shouldSucceed)
+				return null;
+
+			var response = realtime
+					? request.SignalrResponseObject
+					: request.HttpResponseObject;
+
+			response.ShouldDeepEqual(request.CreatedImagedObject);
+
+			return response;
 		}
 	}
 }

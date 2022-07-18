@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Models;
+
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.API.Server.Services
 {
@@ -47,9 +50,25 @@ namespace SQE.API.Server.Services
 				, side = model.Side == "recto"
 						? SideDesignation.recto
 						: SideDesignation.verso
-				, transformToMaster = model.TransformMatrix
+				, imageManifest = model.ImageManifest
 				, catalogNumber = model.ImageCatalogId
 				, master = model.Master
+
+				// There is no placement info for a master image, it maps to itself 1:1
+				, placement = model.Master
+						? null
+						: new PlacementDTO
+						{
+								scale = model.Scale
+								, rotate = model.Rotate
+								, translate = new TranslateDTO
+								{
+										x = model.TranslateX
+										, y = model.TranslateY
+										,
+								}
+								,
+						}
 				,
 		};
 
@@ -66,7 +85,7 @@ namespace SQE.API.Server.Services
 		public async Task<ImagedObjectTextFragmentMatchListDTO> GetImageTextFragmentsAsync(
 				string imagedObjectId)
 		{
-			imagedObjectId = imagedObjectId.Replace("%2F", "/").Replace("%20", " ");
+			imagedObjectId = HttpUtility.UrlDecode(imagedObjectId);
 
 			var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
 

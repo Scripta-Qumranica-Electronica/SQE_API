@@ -27,6 +27,8 @@ namespace SQE.API.DTO
 		public int zIndex { get; set; }
 
 		public TranslateDTO translate { get; set; }
+
+		public bool mirrored { get; set; }
 	}
 
 	public class TranslateDTO

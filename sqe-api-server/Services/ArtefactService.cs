@@ -71,7 +71,7 @@ namespace SQE.API.Server.Services
 				, UpdateArtefactGroupDTO artefactGroup
 				, string                 clientId = null);
 
-		Task<DeleteDTO> DeleteArtefactGroupAsync(
+		Task<DeleteIntIdDTO> DeleteArtefactGroupAsync(
 				UserInfo editionUser
 				, uint   artefactGroupId
 				, string clientId = null);
@@ -81,11 +81,14 @@ namespace SQE.API.Server.Services
 	{
 		private readonly IArtefactRepository              _artefactRepository;
 		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+		private readonly IImagedObjectRepository          _imagedObjectRepository;
 
 		public ArtefactService(
-				IArtefactRepository                artefactRepository
+				IImagedObjectRepository            imagedObjectRepository
+				, IArtefactRepository              artefactRepository
 				, IHubContext<MainHub, ISQEClient> hubContext)
 		{
+			_imagedObjectRepository = imagedObjectRepository;
 			_artefactRepository = artefactRepository;
 			_hubContext = hubContext;
 		}
@@ -178,19 +181,15 @@ namespace SQE.API.Server.Services
 																		 => new
 																				 UpdatedArtefactPlacementDTO
 																				 {
-																						 artefactId
-																								 = x
-																										 .id
-																						 , placementEditorId
-																								 =
+																						 artefactId =
+																								 x.id
+																						 , placementEditorId =
 																								 x.artefactPlacementEditorId
 																								 ?? 0
-																						 , isPlaced
-																								 = x
-																										 .isPlaced
-																						 , placement
-																								 = x
-																										 .placement
+																						 , isPlaced =
+																								 x.isPlaced
+																						 , placement =
+																								 x.placement
 																						 ,
 																				 })
 														 .ToList()
@@ -203,7 +202,7 @@ namespace SQE.API.Server.Services
 		// they are only trying to change only the z-Index. Such a situation would result in a lot
 		// of extra bandwidth usage and checking (the system does check to see if the mask has
 		// actually changed). If such is the case, consider breaking up the artefact update
-		// endpoint into several distinct endpoints, for example: one for name, another for 
+		// endpoint into several distinct endpoints, for example: one for name, another for
 		// position, and another for mask.
 		public async Task<ArtefactDTO> UpdateArtefactAsync(
 				UserInfo            editionUser
@@ -248,7 +247,8 @@ namespace SQE.API.Server.Services
 								, updateArtefact.placement.rotate
 								, updateArtefact.placement.translate?.x
 								, updateArtefact.placement.translate?.y
-								, updateArtefact.placement.zIndex));
+								, updateArtefact.placement.zIndex
+								, updateArtefact.placement.mirrored));
 			}
 
 			if (!string.IsNullOrEmpty(updateArtefact.statusMessage))
@@ -282,6 +282,13 @@ namespace SQE.API.Server.Services
 				, CreateArtefactDTO createArtefact
 				, string            clientId = null)
 		{
+			if (createArtefact.masterImageId.HasValue)
+			{
+				var _ = await _imagedObjectRepository.CreateEditionImagedObjectsBySqeImageIdAsync(
+						editionUser
+						, createArtefact.masterImageId.Value);
+			}
+
 			var cleanedPoly = string.IsNullOrEmpty(createArtefact.mask)
 					? null
 					: GeometryValidation.ValidatePolygon(createArtefact.mask, "artefact");
@@ -296,7 +303,8 @@ namespace SQE.API.Server.Services
 					, createArtefact.placement?.translate?.x
 					, createArtefact.placement?.translate?.y
 					, createArtefact.placement?.zIndex
-					, createArtefact.statusMessage);
+					, createArtefact.statusMessage
+					, createArtefact.placement?.mirrored ?? false);
 
 			var optional = string.IsNullOrEmpty(createArtefact.mask)
 					? new List<string>()
@@ -326,7 +334,7 @@ namespace SQE.API.Server.Services
 			// made the request, that client directly received the response.
 			await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
 							 .DeletedArtefact(
-									 new DeleteDTO(
+									 new DeleteIntIdDTO(
 											 EditionEntities.artefact
 											 , new List<uint> { artefactId }));
 
@@ -408,14 +416,14 @@ namespace SQE.API.Server.Services
 			return results;
 		}
 
-		public async Task<DeleteDTO> DeleteArtefactGroupAsync(
+		public async Task<DeleteIntIdDTO> DeleteArtefactGroupAsync(
 				UserInfo editionUser
 				, uint   artefactGroupId
 				, string clientId = null)
 		{
 			await _artefactRepository.DeleteArtefactGroupAsync(editionUser, artefactGroupId);
 
-			var results = new DeleteDTO(EditionEntities.artefactGroup, artefactGroupId);
+			var results = new DeleteIntIdDTO(EditionEntities.artefactGroup, artefactGroupId);
 
 			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 			// made the request, that client directly received the response.

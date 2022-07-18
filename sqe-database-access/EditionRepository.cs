@@ -10,11 +10,19 @@ using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
+// ReSharper disable ArrangeRedundantParentheses
+// ReSharper disable RemoveRedundantBraces
 namespace SQE.DatabaseAccess
 {
 	public interface IEditionRepository
 	{
-		Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId);
+		Task<IEnumerable<Edition>> ListEditionsAsync(
+				uint?   userId
+				, uint? editionId
+				, bool  published = true
+				, bool  personal  = true);
+
+		Task<Edition> GetEditionAsync(uint? userId, uint editionId);
 
 		Task ChangeEditionNameAsync(UserInfo editionUser, string name);
 
@@ -36,9 +44,9 @@ namespace SQE.DatabaseAccess
 				, string copyrightHolder = null
 				, string collaborators   = null);
 
-		Task<string> DeleteAllEditionDataAsync(UserInfo editionUser, string token);
+		Task<string> ArchiveEditionAsync(UserInfo editionUser, string token);
 
-		Task<string> GetDeleteToken(UserInfo editionUser);
+		Task<string> GetArchiveToken(UserInfo editionUser);
 
 		Task<DetailedUserWithToken> RequestAddEditionEditorAsync(
 				UserInfo editionUser
@@ -66,9 +74,12 @@ namespace SQE.DatabaseAccess
 
 		Task<List<uint>> GetEditionEditorUserIdsAsync(UserInfo editionUser);
 
+		Task<IEnumerable<Edition>> GetManuscriptEditions(uint? userId, uint manuscriptId);
+
 		Task<List<LetterShape>> GetEditionScriptCollectionAsync(UserInfo editonUser);
 
 		Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser);
+		Task<EditionMetadata>          GetEditionMetadata(UserInfo    editionUser);
 	}
 
 	public class EditionRepository : DbConnectionBase
@@ -79,55 +90,63 @@ namespace SQE.DatabaseAccess
 		public EditionRepository(IConfiguration config, IDatabaseWriter databaseWriter) :
 				base(config) => _databaseWriter = databaseWriter;
 
-		public async Task<IEnumerable<Edition>> ListEditionsAsync(uint? userId, uint? editionId) //
+		public async Task<IEnumerable<Edition>> ListEditionsAsync(
+				uint?   userId
+				, uint? editionId
+				, bool  published = true
+				, bool  personal  = true)
 		{
 			using (var connection = OpenConnection())
 			{
-				// TODO: check the performance here, I think we may be looping several times, here
-				// and in the calling function.  Maybe it doesn't matter much though.
-				var editionDictionary = new Dictionary<uint, Edition>();
+				var editions = new List<Edition>();
 				Edition lastEdition;
 
 				await connection
-						.QueryAsync<EditionGroupQuery.Result, EditorWithPermissions, Edition>(
-								EditionGroupQuery.GetQuery(userId.HasValue, editionId.HasValue)
+						.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
+								EditionListQuery.GetQuery(
+										userId.HasValue
+										, editionId.HasValue
+										, published
+										, personal)
 								, (editionGroup, editor) =>
 								  {
-									  // Check if we have moved on to a new edition
-									  if (!editionDictionary.TryGetValue(
-											  editionGroup.EditionId
-											  , out lastEdition))
+									  // Set the copyrights for the previous, and now complete, edition before making the new one
+									  if ((editions.LastOrDefault()?.EditionId != null)
+										  && (editions.LastOrDefault()?.EditionId
+											  != editionGroup.EditionId))
 									  {
-										  // Set the copyrights for the previous, and now complete, edition before making the new one
-										  if (lastEdition != null)
-										  {
-											  lastEdition.Copyright = Licence.printLicence(
-													  lastEdition.CopyrightHolder
-													  , string.IsNullOrEmpty(
-															  lastEdition.Collaborators)
-															  ? string.Join(
-																	  ", "
-																	  , lastEdition.Editors.Select(
-																			  y =>
+										  lastEdition = editions.Last();
+
+										  lastEdition.Copyright = Licence.printLicence(
+												  lastEdition.CopyrightHolder
+												  , string.IsNullOrEmpty(lastEdition.Collaborators)
+														  ? string.Join(
+																  ", "
+																  , lastEdition.Editors.Select(
+																		  y =>
+																		  {
+																			  if ((y.Forename
+																				   == null)
+																				  && (y.Surname
+																					  == null))
 																			  {
-																				  if ((y.Forename
-																					   == null)
-																					  && (y.Surname
-																						  == null))
-																				  {
-																					  return y
-																							  .EditorEmail;
-																				  }
+																				  return y
+																						  .EditorEmail;
+																			  }
 
-																				  return $@"{
-																							  y.Forename
-																						  } {
-																							  y.Surname
-																						  }".Trim();
-																			  }))
-															  : lastEdition.Collaborators);
-										  }
+																			  return $@"{
+																				  y.Forename
+																			  } {
+																				  y.Surname
+																			  }".Trim();
+																		  }))
+														  : lastEdition.Collaborators);
+									  }
 
+									  if ((editions.LastOrDefault()?.EditionId == null)
+										  || (editions.LastOrDefault()?.EditionId
+											  != editionGroup.EditionId))
+									  {
 										  // Now start building the new edition
 										  lastEdition = new Edition
 										  {
@@ -182,13 +201,13 @@ namespace SQE.DatabaseAccess
 												  ,
 										  };
 
-										  editionDictionary.Add(lastEdition.EditionId, lastEdition);
+										  editions.Add(lastEdition);
 									  }
 
 									  // Add the new editor to this edition
-									  lastEdition.Editors.Add(editor);
+									  editions.Last().Editors.Add(editor);
 
-									  return lastEdition;
+									  return editions.Last();
 								  }
 								, new
 								{
@@ -198,7 +217,144 @@ namespace SQE.DatabaseAccess
 								}
 								, splitOn: "EditorId");
 
-				return editionDictionary.Values;
+				if (editions.Count <= 0)
+					return editions;
+
+				{
+					lastEdition = editions.Last();
+
+					lastEdition.Copyright = Licence.printLicence(
+							lastEdition.CopyrightHolder
+							, string.IsNullOrEmpty(lastEdition.Collaborators)
+									? string.Join(
+											", "
+											, lastEdition.Editors.Select(
+													y =>
+													{
+														if ((y.Forename == null)
+															&& (y.Surname == null))
+														{
+															return y.EditorEmail;
+														}
+
+														return $@"{y.Forename} {y.Surname}".Trim();
+													}))
+									: lastEdition.Collaborators);
+				}
+
+				return editions;
+			}
+		}
+
+		public async Task<Edition> GetEditionAsync(uint? userId, uint editionId) //
+		{
+			using (var connection = OpenConnection())
+			{
+				var editionDictionary = new Dictionary<uint, Edition>();
+				Edition lastEdition = null;
+
+				await connection.QueryAsync<EditionQuery.Result, EditorWithPermissions, Edition>(
+						EditionQuery.GetQuery(userId.HasValue, true)
+						, (editionGroup, editor) =>
+						  {
+							  // Check if we have moved on to a new edition
+							  if (!editionDictionary.TryGetValue(
+									  editionGroup.EditionId
+									  , out lastEdition))
+							  {
+								  // Set the copyrights for the previous, and now complete, edition before making the new one
+								  if (lastEdition != null)
+								  {
+									  lastEdition.Copyright = Licence.printLicence(
+											  lastEdition.CopyrightHolder
+											  , string.IsNullOrEmpty(lastEdition.Collaborators)
+													  ? string.Join(
+															  ", "
+															  , lastEdition.Editors.Select(
+																	  y =>
+																	  {
+																		  if ((y.Forename == null)
+																			  && (y.Surname
+																				  == null))
+																			  return y.EditorEmail;
+
+																		  return $@"{
+																			  y.Forename
+																		  } {
+																			  y.Surname
+																		  }".Trim();
+																	  }))
+													  : lastEdition.Collaborators);
+								  }
+
+								  // Now start building the new edition
+								  lastEdition = new Edition
+								  {
+										  Name = editionGroup.Name
+										  , Width = editionGroup.Width
+										  , Height = editionGroup.Height
+										  , XOrigin = editionGroup.XOrigin
+										  , YOrigin = editionGroup.YOrigin
+										  , PPI = editionGroup.PPI
+										  , ManuscriptMetricsEditor =
+												  editionGroup.ManuscriptMetricsEditor
+										  , Collaborators = editionGroup.Collaborators
+										  , Copyright = null
+										  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+										  CopyrightHolder = editionGroup.CopyrightHolder
+										  , EditionDataEditorId = editionGroup.EditionDataEditorId
+										  , EditionId = editionGroup.EditionId
+										  , IsPublic = editionGroup.IsPublic
+										  , LastEdit = editionGroup.LastEdit
+										  , Locked = editionGroup.Locked
+										  , Owner =
+												  new User
+												  {
+														  Email = editionGroup.CurrentEmail
+														  , UserId =
+																  editionGroup.CurrentUserId
+														  ,
+												  }
+										  , Permission =
+												  new Permission
+												  {
+														  IsAdmin =
+																  editionGroup
+																		  .CurrentIsAdmin
+														  , MayLock =
+																  editionGroup
+																		  .CurrentMayLock
+														  , MayWrite =
+																  editionGroup
+																		  .CurrentMayWrite
+														  , MayRead =
+																  editionGroup
+																		  .CurrentMayRead
+														  ,
+												  }
+										  , Thumbnail = editionGroup.Thumbnail
+										  , ManuscriptId = editionGroup.ManuscriptId
+										  , Editors = new List<EditorWithPermissions>()
+										  ,
+								  };
+
+								  editionDictionary.Add(lastEdition.EditionId, lastEdition);
+							  }
+
+							  // Add the new editor to this edition
+							  lastEdition.Editors.Add(editor);
+
+							  return lastEdition;
+						  }
+						, new
+						{
+								UserId = userId
+								, EditionId = editionId
+								,
+						}
+						, splitOn: "EditorId");
+
+				return lastEdition ?? new Edition();
 			}
 		}
 
@@ -363,7 +519,7 @@ namespace SQE.DatabaseAccess
 						using (var connection = OpenConnection())
 						{
 							// Create a new edition
-							connection.Execute(
+							await connection.ExecuteAsync(
 									CopyEditionQuery.GetQuery
 									, new
 									{
@@ -383,7 +539,7 @@ namespace SQE.DatabaseAccess
 							}
 
 							// Create new edition_editor
-							connection.Execute(
+							await connection.ExecuteAsync(
 									CreateEditionEditorQuery.GetQuery
 									, new
 									{
@@ -463,6 +619,22 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 												, editionUser.EditionId.Value));
 							}
 
+							//Copy cached transcriptions
+							const string copyCacheQSL = @"
+INSERT INTO cached_text_fragment (edition_id, text_fragment_id, transcription_json, transcription_date)
+SELECT @NewEditionId, text_fragment_id, transcription_json, transcription_date
+FROM cached_text_fragment
+WHERE edition_id = @EditionId";
+
+							await connection.ExecuteAsync(
+									copyCacheQSL
+									, new
+									{
+											EditionId = editionUser.EditionId.Value
+											, NewEditionId = toEditionId
+											,
+									});
+
 							//Cleanup
 							transactionScope.Complete();
 
@@ -505,15 +677,15 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 		}
 
 		/// <summary>
-		///  Delete all data from the edition that the user is currently subscribed to.
+		///  Archive an edition that the user is currently subscribed to.
 		/// </summary>
-		/// <param name="editionUser">User object requesting the delete</param>
+		/// <param name="editionUser">User object requesting the achival</param>
 		/// <param name="token">
-		///  Token required to verify delete. If this is null, one will be created and sent
-		///  to the requester to use a confirmation of the delete.
+		///  Token required to verify archiving. If this is null, one will be created and sent
+		///  to the requester to use a confirmation of the archival process.
 		/// </param>
 		/// <returns>Returns a null string if successful; a string with a confirmation token if no token was provided.</returns>
-		public async Task<string> DeleteAllEditionDataAsync(UserInfo editionUser, string token)
+		public async Task<string> ArchiveEditionAsync(UserInfo editionUser, string token)
 		{
 			// We only allow admins to delete all data in an unlocked edition.
 			if (!editionUser.IsAdmin)
@@ -521,35 +693,12 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 
 			// A token is required to delete an edition (we make sure here that people don't accidentally do it)
 			if (string.IsNullOrEmpty(token))
-				return await GetDeleteToken(editionUser);
+				return await GetArchiveToken(editionUser);
 
-			// Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
-			var editors = await _getEditionEditors(editionUser.EditionId.Value);
-
-			foreach (var editor in editors)
-			{
-				await ChangeEditionEditorRightsAsync(
-						editionUser
-						, editor.Email
-						, editor.MayRead
-						, false
-						, editor.MayLock
-						, editor.IsAdmin);
-			}
-
-			// Note: I had wrapped the following in a transaction, but this has the problem that it can lockup every
-			// *_owner table in the entire database for a significant amount of time (sometimes 1000's of rows will be
-			// deleted from a single table). So I am doing it now without any transaction and with some retry
-			// logic.  What this means is that a delete might be partially carried out and return with an error,
-			// in which case the user will need to try again. This is not too worrisome since an inconsistent state
-			// for a deleted edition is not a cause for user concern (the users only care about the edition
-			// becoming unusable, not whether any data was left behind). It is a concern for those maintaining the
-			// database, and we should discuss what might be done for that.  We could check for this and other things
-			// with some "health check" services.
 			using (var connection = OpenConnection())
 			{
 				// Verify that the token is still valid
-				var deleteToken = await connection.ExecuteAsync(
+				var archiveToken = await connection.ExecuteAsync(
 						DeleteUserEmailTokenQuery.GetTokenQuery
 						, new
 						{
@@ -558,27 +707,31 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 								,
 						});
 
-				if (deleteToken != 1)
+				if (archiveToken != 1)
 				{
 					throw new StandardExceptions.DataNotWrittenException(
 							"verifying the delete request token");
 				}
 
-				// Dynamically get all tables that can be part of an edition, that way we don't worry about
-				// this breaking due to future updates.
-				var dataTables =
-						await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
+				const string archiveSql =
+						"UPDATE edition SET archived = 1 WHERE edition_id = @EditionId";
 
-				// Loop over every table and remove every entry with the requested editionId
-				// Each individual delete can be async and happen concurrently
-				foreach (var dataTable in dataTables)
-					await DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser);
+				var archive = await connection.ExecuteAsync(
+						archiveSql
+						, new { editionUser.EditionId });
+
+				if (archive != 1)
+				{
+					throw new StandardExceptions.DataNotWrittenException(
+							"archive edition"
+							, "unknown reason");
+				}
 
 				return null;
 			}
 		}
 
-		public async Task<string> GetDeleteToken(UserInfo editionUser)
+		public async Task<string> GetArchiveToken(UserInfo editionUser)
 		{
 			// Generate our secret token
 			var token = Guid.NewGuid().ToString();
@@ -693,7 +846,7 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 					editorInfo = editorInfoSearch.FirstOrDefault();
 
 					// Check for existing request
-					var existingRequestToken = (await connection.QueryAsync<Guid>(
+					var existingRequestToken = (await connection.QueryAsync<string>(
 							FindEditionEditorRequestByEditorEdition.GetQuery
 							, new
 							{
@@ -705,11 +858,11 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 
 					// Add a GUID for this transaction (Reuse any pre-existing ones)
 					if (existingRequestToken.Any())
-						editorInfo.Token = existingRequestToken.FirstOrDefault();
+						editorInfo.Token = Guid.Parse(existingRequestToken.FirstOrDefault());
 					else
 					{
 						editorInfo.Token = existingRequestToken.Any()
-								? existingRequestToken.FirstOrDefault()
+								? Guid.Parse(existingRequestToken.FirstOrDefault())
 								: Guid.NewGuid();
 
 						// Write the GUID token to the database
@@ -948,8 +1101,8 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 							$@"an edition must have at least one admin.
 Please give admin status to another editor before relinquishing admin status for the current user or deleting the edition.
 An admin may delete the edition for all editors with the request DELETE /v1/editions/{
-										editionUser.EditionId.ToString()
-									}.");
+	editionUser.EditionId.ToString()
+}.");
 				}
 
 				// Perform the update
@@ -998,6 +1151,149 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 								, UserId = editionUser.userId
 								,
 						})).ToList();
+			}
+		}
+
+		public async Task<IEnumerable<Edition>> GetManuscriptEditions(
+				uint?  userId
+				, uint manuscriptId)
+		{
+			using (var conn = OpenConnection())
+			{
+				var editions = new List<Edition>();
+				Edition lastEdition;
+
+				await conn.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
+						EditionListQuery.GetQuery(userId.HasValue, false, searchByManuscript: true)
+						, (editionGroup, editor) =>
+						  {
+							  // Set the copyrights for the previous, and now complete, edition before making the new one
+							  if ((editions.LastOrDefault()?.EditionId != null)
+								  && (editions.LastOrDefault()?.EditionId
+									  != editionGroup.EditionId))
+							  {
+								  lastEdition = editions.Last();
+
+								  lastEdition.Copyright = Licence.printLicence(
+										  lastEdition.CopyrightHolder
+										  , string.IsNullOrEmpty(lastEdition.Collaborators)
+												  ? string.Join(
+														  ", "
+														  , lastEdition.Editors.Select(
+																  y =>
+																  {
+																	  if ((y.Forename == null)
+																		  && (y.Surname == null))
+																	  {
+																		  return y.EditorEmail;
+																	  }
+
+																	  return $@"{
+																		  y.Forename
+																	  } {
+																		  y.Surname
+																	  }".Trim();
+																  }))
+												  : lastEdition.Collaborators);
+							  }
+
+							  if ((editions.LastOrDefault()?.EditionId == null)
+								  || (editions.LastOrDefault()?.EditionId
+									  != editionGroup.EditionId))
+							  {
+								  // Now start building the new edition
+								  lastEdition = new Edition
+								  {
+										  Name = editionGroup.Name
+										  , Width = editionGroup.Width
+										  , Height = editionGroup.Height
+										  , XOrigin = editionGroup.XOrigin
+										  , YOrigin = editionGroup.YOrigin
+										  , PPI = editionGroup.PPI
+										  , ManuscriptMetricsEditor =
+												  editionGroup.ManuscriptMetricsEditor
+										  , Collaborators = editionGroup.Collaborators
+										  , Copyright = null
+										  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+										  CopyrightHolder = editionGroup.CopyrightHolder
+										  , EditionDataEditorId = editionGroup.EditionDataEditorId
+										  , EditionId = editionGroup.EditionId
+										  , IsPublic = editionGroup.IsPublic
+										  , LastEdit = editionGroup.LastEdit
+										  , Locked = editionGroup.Locked
+										  , Owner =
+												  new User
+												  {
+														  Email = editionGroup.CurrentEmail
+														  , UserId =
+																  editionGroup.CurrentUserId
+														  ,
+												  }
+										  , Permission =
+												  new Permission
+												  {
+														  IsAdmin =
+																  editionGroup
+																		  .CurrentIsAdmin
+														  , MayLock =
+																  editionGroup
+																		  .CurrentMayLock
+														  , MayWrite =
+																  editionGroup
+																		  .CurrentMayWrite
+														  , MayRead =
+																  editionGroup
+																		  .CurrentMayRead
+														  ,
+												  }
+										  , Thumbnail = editionGroup.Thumbnail
+										  , ManuscriptId = editionGroup.ManuscriptId
+										  , Editors = new List<EditorWithPermissions>()
+										  ,
+								  };
+
+								  editions.Add(lastEdition);
+							  }
+
+							  // Add the new editor to this edition
+							  editions.Last().Editors.Add(editor);
+
+							  return editions.Last();
+						  }
+						, new
+						{
+								UserId = userId
+								, ManuscriptId = manuscriptId
+								,
+						}
+						, splitOn: "EditorId");
+
+				if (editions.Count <= 0)
+					return editions;
+
+				{
+					lastEdition = editions.Last();
+
+					lastEdition.Copyright = Licence.printLicence(
+							lastEdition.CopyrightHolder
+							, string.IsNullOrEmpty(lastEdition.Collaborators)
+									? string.Join(
+											", "
+											, lastEdition.Editors.Select(
+													y =>
+													{
+														if ((y.Forename == null)
+															&& (y.Surname == null))
+														{
+															return y.EditorEmail;
+														}
+
+														return $@"{y.Forename} {y.Surname}".Trim();
+													}))
+									: lastEdition.Collaborators);
+				}
+
+				return editions;
 			}
 		}
 
@@ -1051,8 +1347,8 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 							  if (!(objects[1] is ScriptLine scriptLine))
 								  return null;
 
-							  if (!(objects[2] is ScriptArtefactCharacters scriptArtefactCharacters)
-							  )
+							  if (!(objects[2] is ScriptArtefactCharacters
+									  scriptArtefactCharacters))
 								  return null;
 
 							  if (!(objects[3] is Character character))
@@ -1148,6 +1444,71 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 						"LineId,ArtefactId,SignInterpretationId,SignInterpretationRoiId,SignInterpretationAttributeId,PositionInStreamId");
 
 				return scriptLines.Where(x => x != null).ToList();
+			}
+		}
+
+		public async Task<EditionMetadata> GetEditionMetadata(UserInfo editionUser)
+		{
+			using (var conn = OpenConnection())
+			{
+				try
+				{
+					var metadata = await conn.QueryFirstAsync<EditionMetadata>(
+							GetManuscriptMetadataQuery.GetQuery
+							, new { editionUser.EditionId });
+
+					return metadata;
+				}
+
+				catch (InvalidOperationException) { }
+
+				return new EditionMetadata();
+			}
+		}
+
+		/// <summary>
+		///  This method performs a full wipe of an edition's data. The information for the edition
+		///  remains but the association with this edition is deleted. This method is intended
+		///  for system admins to use.
+		/// </summary>
+		/// <param name="editionUser">User details for the edition to be deleted</param>
+		/// <returns></returns>
+		private async Task _fullEditionDelete(UserInfo editionUser)
+		{
+			// Remove write permissions from all editors, so they cannot make any changes while the delete proceeds
+			var editors = await _getEditionEditors(editionUser.EditionId.Value);
+
+			foreach (var editor in editors)
+			{
+				await ChangeEditionEditorRightsAsync(
+						editionUser
+						, editor.Email
+						, editor.MayRead
+						, false
+						, editor.MayLock
+						, editor.IsAdmin);
+			}
+
+			// Note: I had wrapped the following in a transaction, but this has the problem that it can lockup every
+			// *_owner table in the entire database for a significant amount of time (sometimes 1000's of rows will be
+			// deleted from a single table). So I am doing it now without any transaction and with some retry
+			// logic.  What this means is that a delete might be partially carried out and return with an error,
+			// in which case the user will need to try again. This is not too worrisome since an inconsistent state
+			// for a deleted edition is not a cause for user concern (the users only care about the edition
+			// becoming unusable, not whether any data was left behind). It is a concern for those maintaining the
+			// database, and we should discuss what might be done for that.  We could check for this and other things
+			// with some "health check" services.
+			using (var connection = OpenConnection())
+			{
+				// Dynamically get all tables that can be part of an edition, that way we don't worry about
+				// this breaking due to future updates.
+				var dataTables =
+						await connection.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
+
+				// Loop over every table and remove every entry with the requested editionId
+				// Each individual delete can be async and happen concurrently
+				foreach (var dataTable in dataTables)
+					await DeleteDataFromOwnerTable(connection, dataTable.TableName, editionUser);
 			}
 		}
 

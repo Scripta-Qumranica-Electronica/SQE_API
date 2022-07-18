@@ -253,8 +253,9 @@ namespace SQE.ApiTest
 		/// <param name="realtime">Whether or not to use SignalR to make the request</param>
 		/// <returns></returns>
 		private async
-				Task<(HttpResponseMessage httpResponseMessage, DeleteDTO httpResponseBody, DeleteDTO
-						signalrResponse, DeleteDTO listenerResponse)> _deleteArtefactGroupAsync(
+				Task<(HttpResponseMessage httpResponseMessage, DeleteIntIdDTO httpResponseBody,
+						DeleteIntIdDTO signalrResponse, DeleteIntIdDTO listenerResponse)>
+				_deleteArtefactGroupAsync(
 						uint                      editionId
 						, uint                    artefactGroupId
 						, bool                    shouldSucceed = true
@@ -390,7 +391,7 @@ namespace SQE.ApiTest
 					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 			{
 				/**
-				 * Create new edition and a new artefact group 
+				 * Create new edition and a new artefact group
 				 */
 
 				var editionId = await editionCreator.CreateEdition();
@@ -504,7 +505,7 @@ namespace SQE.ApiTest
 					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 			{
 				/**
-				 * Create new edition and a new artefact group 
+				 * Create new edition and a new artefact group
 				 */
 
 				var editionId = await editionCreator.CreateEdition();

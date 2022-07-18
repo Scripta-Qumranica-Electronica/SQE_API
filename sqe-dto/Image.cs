@@ -49,6 +49,9 @@ namespace SQE.API.DTO
 		public uint ppi { get; set; }
 
 		[Required]
+		public string imageManifest { get; set; }
+
+		[Required]
 		public bool master { get; set; }
 
 		[Required]
@@ -57,10 +60,10 @@ namespace SQE.API.DTO
 
 	public class ImageDTO : SimpleImageDTO
 	{
-		public uint?  imageToImageMapEditorId { get; set; }
-		public string regionInMasterImage     { get; set; }
-		public string regionInImage           { get; set; }
-		public string transformToMaster       { get; set; }
+		public uint?        imageToImageMapEditorId { get; set; }
+		public string       regionInMasterImage     { get; set; }
+		public string       regionInImage           { get; set; }
+		public PlacementDTO placement               { get; set; }
 	}
 
 	public class SimpleImageListDTO

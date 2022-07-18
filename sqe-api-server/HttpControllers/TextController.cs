@@ -107,13 +107,27 @@ namespace SQE.API.Server.HttpControllers
 				, textFragmentId);
 
 		/// <summary>
+		///  Retrieves all signs and their data from the entire edition
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <returns>
+		///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+		///  sequence
+		/// </returns>
+		[AllowAnonymous]
+		[HttpGet("v1/editions/{editionId}/full-text")]
+		public async Task<ActionResult<TextEditionDTO>> RetrieveTextFragmentsOfEdition(
+				[FromRoute] uint editionId) => await _textService.GetFragmentsOfEditionAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId));
+
+		/// <summary>
 		///  Retrieves all signs and their data from the given line
 		/// </summary>
 		/// <param name="editionId">Id of the edition</param>
 		/// <param name="lineId">Id of the line</param>
 		/// <returns>
-		///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-		///  sequence
+		///  A manuscript edition object including the fragments and their lines in a
+		///  hierarchical order and in correct sequence
 		/// </returns>
 		[AllowAnonymous]
 		[HttpGet("v1/editions/{editionId}/lines/{lineId}")]
@@ -122,5 +136,78 @@ namespace SQE.API.Server.HttpControllers
 				, [FromRoute] uint lineId) => await _textService.GetLineByIdAsync(
 				await _userService.GetCurrentUserObjectAsync(editionId)
 				, lineId);
+
+		/// <summary>
+		///  Changes the details of the line (currently the lines name)
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="lineId">Id of the line</param>
+		/// <param name="lineData">The updated line data</param>
+		/// <returns>
+		///  The updated details concerning the line sequence
+		/// </returns>
+		[HttpPut("v1/editions/{editionId}/lines/{lineId}")]
+		public async Task<ActionResult<LineDataDTO>> UpdateLineById(
+				[FromRoute]   uint          editionId
+				, [FromRoute] uint          lineId
+				, [FromBody]  UpdateLineDTO lineData) => await _textService.UpdateLineByIdAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true)
+				, lineId
+				, lineData);
+
+		/// <summary>
+		///  Delete a full line from a text fragment
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="lineId">Id of the line to be deleted</param>
+		/// <returns>
+		///  The updated details concerning the line sequence
+		/// </returns>
+		[HttpDelete("v1/editions/{editionId}/lines/{lineId}")]
+		public async Task<ActionResult> DeleteLineById(
+				[FromRoute]   uint editionId
+				, [FromRoute] uint lineId) => await _textService.DeleteLineByIdAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true)
+				, lineId);
+
+		/// <summary>
+		///  Creates a new line before or after another line.
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="textFragmentId">
+		///  Id of the text fragment where the line will be
+		///  added
+		/// </param>
+		/// <param name="lineData">The information about the line to be created</param>
+		/// <returns>
+		///  The details concerning the newly created line
+		/// </returns>
+		[HttpPost("v1/editions/{editionId}/text-fragments/{textFragmentId}/lines")]
+		public async Task<ActionResult<LineDataDTO>> CreateNewLine(
+				[FromRoute]   uint          editionId
+				, [FromRoute] uint          textFragmentId
+				, [FromBody]  CreateLineDTO lineData) => await _textService.CreateLineAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true)
+				, textFragmentId
+				, lineData);
+
+		/// <summary>
+		///  Alter the text between two sign interpretation ids.
+		///  The system will try as best it can to figure out
+		///  how the next text aligns with any text already
+		///  existing at that location in the edition.
+		/// </summary>
+		/// <param name="editionId">Id of the edition to be updated</param>
+		/// <param name="payload">Details of the text replacement request</param>
+		/// <returns>
+		///  Information about all sign interpretations that were
+		///  created, updated, and deleted as a result of the operation.
+		/// </returns>
+		[HttpPut("v1/editions/{editionId}/diff-replace-text")]
+		public async Task<ActionResult<DiffReplaceResponseDTO>> DiffReplaceText(
+				[FromRoute]  uint                  editionId
+				, [FromBody] DiffReplaceRequestDTO payload) => await _textService.DiffReplaceText(
+				await _userService.GetCurrentUserObjectAsync(editionId, true)
+				, payload);
 	}
 }

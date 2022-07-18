@@ -14,6 +14,8 @@ namespace SQE.API.Server.Services
 {
 	public interface ICatalogService
 	{
+		Task<CatalogueMatchListDTO> GetAllMatches();
+
 		Task<CatalogueMatchListDTO> GetImagedObjectsOfTextFragment(uint textFragmentId);
 
 		Task<CatalogueMatchListDTO> GetTextFragmentsOfImagedObject(string imagedObjectId);
@@ -47,6 +49,9 @@ namespace SQE.API.Server.Services
 			_hubContext = hubContext;
 		}
 
+		public async Task<CatalogueMatchListDTO> GetAllMatches()
+			=> (await _catalogueRepo.GetAllMetchesAsync()).ToDTO();
+
 		public async Task<CatalogueMatchListDTO> GetImagedObjectsOfTextFragment(uint textFragmentId)
 			=> (await _catalogueRepo.GetImagedObjectMatchesForTextFragmentAsync(textFragmentId))
 					.ToDTO();
@@ -58,8 +63,8 @@ namespace SQE.API.Server.Services
 
 		public async Task<CatalogueMatchListDTO>
 				GetTextFragmentsAndImagedObjectsOfEdition(uint editionId)
-			=> (await _catalogueRepo.GetImagedObjectAndTextFragmentMatchesForEditionAsync(editionId)
-					).ToDTO();
+			=> (await _catalogueRepo
+					.GetImagedObjectAndTextFragmentMatchesForEditionAsync(editionId)).ToDTO();
 
 		public async Task<CatalogueMatchListDTO>
 				GetTextFragmentsAndImagedObjectsOfManuscript(uint manuscriptId)
@@ -84,7 +89,8 @@ namespace SQE.API.Server.Services
 					, match.editionLocation1
 					, match.editionLocation2
 					, (byte) match.editionSide
-					, match.comment);
+					, match.comment
+					, match.manuscriptName);
 
 			return new NoContentResult();
 		}

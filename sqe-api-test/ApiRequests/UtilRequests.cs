@@ -16,6 +16,29 @@ using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+	public static partial class Get
+	{
+		public class V1_Utils_DatabaseVersion : RequestObject<EmptyInput, DatabaseVersionDTO>
+		{
+			protected override string HttpPath() => RequestPath;
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+			}
+		}
+
+		public class V1_Utils_ApiVersion : RequestObject<EmptyInput, APIVersionDTO>
+		{
+			protected override string HttpPath() => RequestPath;
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+			}
+		}
+	}
+
 	public static partial class Post
 	{
 		public class V1_Utils_RepairWktPolygon : RequestObject<WktPolygonDTO, WktPolygonDTO>

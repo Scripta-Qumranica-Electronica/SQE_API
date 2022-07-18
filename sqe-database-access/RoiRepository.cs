@@ -8,6 +8,8 @@ using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.DatabaseAccess
 {
 	public interface IRoiRepository
@@ -27,7 +29,10 @@ namespace SQE.DatabaseAccess
 						, List<SignInterpretationRoiData> updateRois
 						, List<uint>                      deleteRois);
 
-		Task<List<uint>> DeleteRoisAsync(UserInfo editionUser, List<uint> deleteRoiIds);
+		Task<List<uint>> DeleteRoisAsync(
+				UserInfo     editionUser
+				, List<uint> deleteRoiIds
+				, uint?      signInterpretationId = null);
 
 		Task<List<uint>> DeleteAllRoisForSignInterpretationAsync(
 				UserInfo editionUser
@@ -53,7 +58,7 @@ namespace SQE.DatabaseAccess
 				UserInfo editionUser
 				, uint   signInterpretationId);
 
-		Task<List<SignInterpretationRoiData>> ReplaceSignInterpretationRoisAsync(
+		Task<(List<SignInterpretationRoiData>, List<uint>)> ReplaceSignInterpretationRoisAsync(
 				UserInfo                          editionUser
 				, List<SignInterpretationRoiData> rois);
 	}
@@ -150,9 +155,20 @@ namespace SQE.DatabaseAccess
 
 				foreach (var (updateRoi, index) in updateRois.Select((x, idx) => (x, idx)))
 				{
+					if (!updateRoi.SignInterpretationRoiId.HasValue)
+					{
+						var updatedRois = await CreateRoisAsync(
+								editionUser
+								, new List<SignInterpretationRoiData> { updateRoi });
+
+						response[index] = updatedRois.FirstOrDefault();
+
+						continue;
+					}
+
 					var originalSignRoiInterpretation = await GetSignInterpretationRoiByIdAsync(
 							editionUser
-							, updateRoi.SignInterpretationRoiId.GetValueOrDefault());
+							, updateRoi.SignInterpretationRoiId.Value);
 
 					// TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
 					var roiShapeId = originalSignRoiInterpretation.Shape == updateRoi.Shape
@@ -210,14 +226,23 @@ namespace SQE.DatabaseAccess
 		/// </summary>
 		/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
 		/// <param name="deleteRoiIds">ROI ID's to be deleted'</param>
+		/// <param name="signInterpretationId"></param>
 		/// <returns></returns>
-		public async Task<List<uint>> DeleteRoisAsync(UserInfo editionUser, List<uint> deleteRoiIds)
+		public async Task<List<uint>> DeleteRoisAsync(
+				UserInfo     editionUser
+				, List<uint> deleteRoiIds
+				, uint?      signInterpretationId = null)
 		{
 			if (deleteRoiIds == null)
 				return new List<uint>();
 
 			foreach (var deleteRoiId in deleteRoiIds)
-				await DeleteSignInterpretationRoiAsync(editionUser, deleteRoiId);
+			{
+				await DeleteSignInterpretationRoiAsync(
+						editionUser
+						, deleteRoiId
+						, signInterpretationId);
+			}
 
 			return deleteRoiIds;
 		}
@@ -236,7 +261,7 @@ namespace SQE.DatabaseAccess
 					editionUser
 					, signInterpretationId);
 
-			return await DeleteRoisAsync(editionUser, roiIds);
+			return await DeleteRoisAsync(editionUser, roiIds, signInterpretationId);
 		}
 
 		public async Task<SignInterpretationRoiData> GetSignInterpretationRoiByIdAsync(
@@ -319,19 +344,23 @@ namespace SQE.DatabaseAccess
 			return await GetSignInterpretationRoiIdsByDataAsync(editionUser, searchData);
 		}
 
-		public async Task<List<SignInterpretationRoiData>> ReplaceSignInterpretationRoisAsync(
-				UserInfo                          editionUser
-				, List<SignInterpretationRoiData> rois)
+		public async Task<(List<SignInterpretationRoiData>, List<uint>)>
+				ReplaceSignInterpretationRoisAsync(
+						UserInfo                          editionUser
+						, List<SignInterpretationRoiData> rois)
 		{
-			foreach (var signInterpretationId in rois.Select(r => r.SignInterpretationId).Distinct()
-			)
+			var deletedRois = new List<uint>();
+
+			foreach (var signInterpretationId in
+					rois.Select(r => r.SignInterpretationId).Distinct())
 			{
-				await DeleteAllRoisForSignInterpretationAsync(
-						editionUser
-						, signInterpretationId.GetValueOrDefault());
+				deletedRois.AddRange(
+						await DeleteAllRoisForSignInterpretationAsync(
+								editionUser
+								, signInterpretationId.GetValueOrDefault()));
 			}
 
-			return await CreateRoisAsync(editionUser, rois);
+			return (await CreateRoisAsync(editionUser, rois), deletedRois);
 		}
 
 		/// <summary>
@@ -367,7 +396,7 @@ namespace SQE.DatabaseAccess
 			{
 				await connection.ExecuteAsync(CreateRoiShapeQuery.GetQuery, new { Path = path });
 
-				return await connection.QuerySingleAsync<uint>(
+				return await connection.QueryFirstAsync<uint>(
 						GetRoiShapeIdQuery.GetQuery
 						, new { Path = path });
 			}
@@ -488,11 +517,21 @@ namespace SQE.DatabaseAccess
 
 		private async Task DeleteSignInterpretationRoiAsync(
 				UserInfo editionUser
-				, uint   signInterpretationRoiId)
+				, uint   signInterpretationRoiId
+				, uint?  signInterpretationId = null)
 		{
+			// Make sure we have the sign interpretation id, so the cached transcription will be
+			// rebuilt
+			signInterpretationId ??= await _getSignInterpretationIdForRoi(
+					editionUser
+					, signInterpretationRoiId);
+
+			var parameters = new DynamicParameters();
+			parameters.Add("@sign_interpretation_id", signInterpretationId);
+
 			var signInterpretationRoiRequest = new MutationRequest(
 					MutateType.Delete
-					, new DynamicParameters()
+					, parameters
 					, "sign_interpretation_roi"
 					, signInterpretationRoiId);
 
@@ -504,6 +543,30 @@ namespace SQE.DatabaseAccess
 			{
 				throw new StandardExceptions.DataNotWrittenException(
 						"delete sign interpretation roi");
+			}
+		}
+
+		private async Task<uint> _getSignInterpretationIdForRoi(
+				UserInfo editionUser
+				, uint   signInterpretationRoiId)
+		{
+			using (var conn = OpenConnection())
+			{
+				const string sql = @"
+SELECT sir.sign_interpretation_id
+FROM sign_interpretation_roi_owner
+JOIN sign_interpretation_roi sir ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sir.sign_interpretation_roi_id
+WHERE sign_interpretation_roi_owner.edition_id = @EditionId
+	AND sign_interpretation_roi_owner.sign_interpretation_roi_id = @SignInterpretationRoiId";
+
+				return await conn.QueryFirstAsync<uint>(
+						sql
+						, new
+						{
+								editionUser.EditionId
+								, SignInterpretationRoiId = signInterpretationRoiId
+								,
+						});
 			}
 		}
 

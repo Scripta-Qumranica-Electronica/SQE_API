@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
@@ -221,4 +222,43 @@ namespace SQE.API.DTO
 	}
 
 	#endregion Response DTO's
+
+	public class DatabaseVersionDTO
+	{
+		public string   version     { get; set; }
+		public DateTime lastUpdated { get; set; }
+	}
+
+	public class APIVersionDTO : DatabaseVersionDTO { }
+
+	// When user reports a problem in the app, a Github issue is created
+	public class GithubIssueReportDTO
+	{
+		[Required]
+		[StringLength(
+				100
+				, MinimumLength = 3
+				, ErrorMessage = "The submitted title may not be less than 4 or larger than 100 characters")]
+		public string title { get; set; }
+
+		[Required]
+		[StringLength(
+				1000
+				, MinimumLength = 3
+				, ErrorMessage = "The submitted title may not be less than 4 or larger than 1000 characters")]
+		public string comment { get; set; }
+
+		[Required]
+		[StringLength(
+				1000
+				, MinimumLength = 3
+				, ErrorMessage = "The submitted title may not be less than 4 or larger than 1009 characters")]
+		public string url { get; set; }
+
+		[StringLength(
+				100
+				, MinimumLength = 3
+				, ErrorMessage = "The submitted title may not be less than 4 or larger than 100 characters")]
+		public string username { get; set; }
+	}
 }

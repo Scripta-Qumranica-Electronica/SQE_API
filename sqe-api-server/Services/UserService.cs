@@ -20,6 +20,8 @@ using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.API.Server.Services
 {
 	public interface IUserService
@@ -183,6 +185,10 @@ namespace SQE.API.Server.Services
 				NewUserRequestDTO newUserData
 				, string          clientId = null)
 		{
+			// TODO: this functionality is disabled during the alpha testing phase,delete the next two lines after alpha.
+			if (_accessor.HttpContext.Connection.RemoteIpAddress != null)
+				throw new StandardExceptions.ForbiddenRequestException();
+
 			// Ask the repo to create the new user
 			var createdUser = await _userRepository.CreateNewUserAsync(
 					newUserData.email

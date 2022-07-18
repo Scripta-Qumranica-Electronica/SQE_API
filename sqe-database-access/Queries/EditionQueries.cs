@@ -105,7 +105,7 @@ FROM edition AS ed1
 
     # Get a thumbnail if possible
          LEFT JOIN (
-    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT(proxy, url, SQE_image.filename)) AS thumbnail_url
+    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT_WS('', proxy, url, SQE_image.filename)) AS thumbnail_url
     FROM edition
              JOIN iaa_edition_catalog USING(manuscript_id)
              JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
@@ -115,7 +115,7 @@ FROM edition AS ed1
     GROUP BY manuscript_id
 ) AS im ON im.manuscript_id = ed2.manuscript_id
 
-$Where
+WHERE ed1.archived != 1 $Where
 
 # Add some ordering so sorting makes more sense (adding the ORDER BY surprisingly makes the query faster)
 ORDER BY manuscript_data.manuscript_id, ed2.edition_id
@@ -125,12 +125,14 @@ ORDER BY manuscript_data.manuscript_id, ed2.edition_id
 		{
 			// Build the WHERE clauses
 			var where = limitScrolls
-					? "WHERE ed1.edition_id = @EditionId"
+					? "AND (ed1.edition_id = @EditionId"
 					: "";
 
 			var userFilter = limitUser
-					? "OR (ed2.user_id = @UserId AND ed2.may_read = 1)"
-					: "";
+					? "OR (ed2.user_id = @UserId AND ed2.may_read = 1))"
+					: limitScrolls
+							? ")"
+							: "";
 
 			return _baseQuery.Replace("$Where", where).Replace("$UserFilter", userFilter);
 		}
@@ -147,7 +149,309 @@ ORDER BY manuscript_data.manuscript_id, ed2.edition_id
 			public int       YOrigin                 { get; set; }
 			public uint      PPI                     { get; set; }
 			public uint      ManuscriptMetricsEditor { get; set; }
-			public string    ManuscriptId            { get; set; }
+			public uint      ManuscriptId            { get; set; }
+			public string    Thumbnail               { get; set; }
+			public bool      Locked                  { get; set; }
+			public bool      CurrentMayLock          { get; set; }
+			public bool      CurrentMayWrite         { get; set; }
+			public bool      CurrentMayRead          { get; set; }
+			public DateTime? LastEdit                { get; set; }
+			public uint      CurrentUserId           { get; set; }
+			public string    CurrentEmail            { get; set; }
+			public string    Collaborators           { get; set; }
+			public string    CopyrightHolder         { get; set; }
+			public bool      IsPublic                { get; set; }
+		}
+	}
+
+	internal class EditionListQuery
+	{
+		private const string _baseQuery = @"
+SELECT DISTINCTROW edition.edition_id AS EditionId,
+        edition.copyright_holder AS CopyrightHolder,
+        edition.collaborators AS Collaborators,
+
+        edition_editor.user_id AS CurrentUserId,
+        user.email AS CurrentEmail,
+        edition_editor.is_admin AS CurrentIsAdmin,
+        edition_editor.may_lock AS CurrentMayLock,
+        edition_editor.may_write AS CurrentMayWrite,
+        edition_editor.may_read AS CurrentMayRead,
+
+        manuscript_data.name AS Name,
+        manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
+
+        manuscript_metrics.width AS Width,
+        manuscript_metrics.height AS Height,
+        manuscript_metrics.x_origin AS XOrigin,
+        manuscript_metrics.y_origin AS YOrigin,
+        manuscript_metrics.pixels_per_inch AS PPI,
+        manuscript_metrics_owner.edition_editor_id AS ManuscriptMetricsEditor,
+
+        im.thumbnail_url AS Thumbnail,
+
+        edition.manuscript_id AS ManuscriptId,
+        edition.locked AS Locked,
+        edition.public AS IsPublic,
+        edition.manuscript_id AS ScrollId,
+        last.last_edit AS LastEdit,
+
+        other_editors.edition_editor_id EditorId,
+        other_editors.email AS EditorEmail,
+        other_editors.forename AS Forename,
+        other_editors.surname AS Surname,
+        other_editors.organization AS Organization,
+        other_editors.is_admin AS IsAdmin,
+        other_editors.may_lock AS MayLock,
+        other_editors.may_write AS MayWrite,
+        other_editors.may_read AS MayRead
+
+FROM edition
+    LEFT JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
+        #AND edition_editor.user_id = @UserId
+    LEFT JOIN user ON user.user_id = edition_editor.user_id
+
+    # Get the current user details
+         LEFT JOIN (
+    SELECT  user.user_id,
+            user.email,
+            user.forename,
+            user.surname,
+            user.organization,
+            edition_editor.is_admin,
+            edition_editor.may_lock,
+            edition_editor.may_write,
+            edition_editor.may_read,
+            edition_editor.edition_id,
+            edition_editor.edition_editor_id
+    FROM edition_editor
+             JOIN user USING(user_id)
+) AS other_editors ON other_editors.edition_id = edition.edition_id
+
+    # Get the edition manuscript information
+         JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = edition.edition_id
+         JOIN manuscript_data USING(manuscript_data_id)
+
+    # Get the edition manuscript metrics
+        JOIN manuscript_metrics_owner ON manuscript_metrics_owner.edition_id = edition.edition_id
+        JOIN manuscript_metrics USING(manuscript_metrics_id)
+
+    # Get the last edit date/time
+         LEFT JOIN (
+    SELECT edition_id, MAX(time) AS last_edit
+    FROM edition_editor
+             JOIN main_action USING(edition_id)
+    GROUP BY edition_id
+) AS last ON last.edition_id = edition.edition_id
+
+    # Get a thumbnail if possible
+         LEFT JOIN (
+    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT_WS('', proxy, url, SQE_image.filename)) AS thumbnail_url
+    FROM edition
+             JOIN iaa_edition_catalog USING(manuscript_id)
+             JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
+             JOIN SQE_image ON SQE_image.image_catalog_id = image_to_iaa_edition_catalog.image_catalog_id AND SQE_image.type = 0
+             JOIN image_urls USING(image_urls_id)
+    WHERE iaa_edition_catalog.edition_side = 0
+    GROUP BY manuscript_id
+) AS im ON im.manuscript_id = edition.manuscript_id
+
+WHERE edition.archived != 1 $PubPriv
+$Where
+$Manuscript
+
+# Add some ordering so sorting makes more sense (adding the ORDER BY surprisingly makes the query faster)
+ORDER BY manuscript_data.name, edition.edition_id
+";
+
+		public static string GetQuery(
+				bool   limitUser
+				, bool limitScrolls
+				, bool published          = true
+				, bool personal           = true
+				, bool searchByManuscript = false)
+		{
+			var pubPriv = published && personal;
+
+			var userFilter = "";
+
+			if (pubPriv)
+			{
+				userFilter =
+						"AND (edition.public = 1 OR (edition_editor.user_id = @UserId AND edition_editor.may_read = 1))";
+			}
+			else if (published)
+				userFilter = "AND (edition.public = 1)";
+			else if (personal)
+			{
+				userFilter =
+						"AND (edition_editor.user_id = @UserId AND edition_editor.may_read = 1)";
+			}
+
+			// Build the WHERE clauses
+			var where = limitScrolls
+					? "AND (edition.edition_id = @EditionId)"
+					: "";
+
+			var manuscriptFilter = searchByManuscript
+					? "AND edition.manuscript_id = @ManuscriptId"
+					: "";
+
+			return _baseQuery.Replace("$Where", where)
+							 .Replace("$PubPriv", userFilter)
+							 .Replace("$Manuscript", manuscriptFilter);
+		}
+
+		internal class Result
+		{
+			public uint      EditionId               { get; set; }
+			public bool      CurrentIsAdmin          { get; set; }
+			public string    Name                    { get; set; }
+			public uint      EditionDataEditorId     { get; set; }
+			public uint      Width                   { get; set; }
+			public uint      Height                  { get; set; }
+			public int       XOrigin                 { get; set; }
+			public int       YOrigin                 { get; set; }
+			public uint      PPI                     { get; set; }
+			public uint      ManuscriptMetricsEditor { get; set; }
+			public uint      ManuscriptId            { get; set; }
+			public string    Thumbnail               { get; set; }
+			public bool      Locked                  { get; set; }
+			public bool      CurrentMayLock          { get; set; }
+			public bool      CurrentMayWrite         { get; set; }
+			public bool      CurrentMayRead          { get; set; }
+			public DateTime? LastEdit                { get; set; }
+			public uint      CurrentUserId           { get; set; }
+			public string    CurrentEmail            { get; set; }
+			public string    Collaborators           { get; set; }
+			public string    CopyrightHolder         { get; set; }
+			public bool      IsPublic                { get; set; }
+		}
+	}
+
+	internal class EditionQuery
+	{
+		private const string _baseQuery = @"
+SELECT DISTINCTROW ed1.edition_id AS EditionId,
+        ed1.copyright_holder AS CopyrightHolder,
+        ed1.collaborators AS Collaborators,
+
+        user.user_id AS CurrentUserId,
+        user.email AS CurrentEmail,
+        edition_editor.is_admin AS CurrentIsAdmin,
+        edition_editor.may_lock AS CurrentMayLock,
+        edition_editor.may_write AS CurrentMayWrite,
+        edition_editor.may_read AS CurrentMayRead,
+
+        manuscript_data.name AS Name,
+        manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
+
+        manuscript_metrics.width AS Width,
+        manuscript_metrics.height AS Height,
+        manuscript_metrics.x_origin AS XOrigin,
+        manuscript_metrics.y_origin AS YOrigin,
+        manuscript_metrics.pixels_per_inch AS PPI,
+        manuscript_metrics_owner.edition_editor_id AS ManuscriptMetricsEditor,
+
+        im.thumbnail_url AS Thumbnail,
+
+        manuscript_data.manuscript_id AS ManuscriptId,
+        ed1.locked AS Locked,
+        ed1.public AS IsPublic,
+        manuscript_data.manuscript_id AS ScrollId,
+        last.last_edit AS LastEdit,
+
+        other_editors.edition_editor_id EditorId,
+        other_editors.email AS EditorEmail,
+        other_editors.forename AS Forename,
+        other_editors.surname AS Surname,
+        other_editors.organization AS Organization,
+        other_editors.is_admin AS IsAdmin,
+        other_editors.may_lock AS MayLock,
+        other_editors.may_write AS MayWrite,
+        other_editors.may_read AS MayRead
+
+FROM edition AS ed1
+JOIN edition_editor USING(edition_id)
+JOIN user USING(user_id)
+
+# Get the current user details
+LEFT JOIN (
+    SELECT  user.user_id,
+            user.email,
+            user.forename,
+            user.surname,
+            user.organization,
+            edition_editor.is_admin,
+            edition_editor.may_lock,
+            edition_editor.may_write,
+            edition_editor.may_read,
+            edition_editor.edition_id,
+            edition_editor.edition_editor_id
+    FROM edition_editor
+             JOIN user USING(user_id)
+) AS other_editors ON other_editors.edition_id = ed1.edition_id
+
+    # Get the edition manuscript information
+         JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed1.edition_id
+         JOIN manuscript_data USING(manuscript_data_id)
+
+    # Get the edition manuscript metrics
+        JOIN manuscript_metrics_owner ON manuscript_metrics_owner.edition_id = ed1.edition_id
+        JOIN manuscript_metrics USING(manuscript_metrics_id)
+
+    # Get the last edit date/time
+         LEFT JOIN (
+    SELECT edition_id, MAX(time) AS last_edit
+    FROM edition_editor
+             JOIN main_action USING(edition_id)
+    GROUP BY edition_id
+) AS last ON last.edition_id = ed1.edition_id
+
+    # Get a thumbnail if possible
+         LEFT JOIN (
+    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT_WS('', proxy, url, SQE_image.filename)) AS thumbnail_url
+    FROM edition
+             JOIN iaa_edition_catalog USING(manuscript_id)
+             JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
+             JOIN SQE_image ON SQE_image.image_catalog_id = image_to_iaa_edition_catalog.image_catalog_id AND SQE_image.type = 0
+             JOIN image_urls USING(image_urls_id)
+    WHERE iaa_edition_catalog.edition_side = 0
+    GROUP BY manuscript_id
+) AS im ON im.manuscript_id = ed1.manuscript_id
+
+WHERE ed1.archived != 1 $Where
+";
+
+		public static string GetQuery(bool limitUser, bool limitScrolls)
+		{
+			// Build the WHERE clauses
+			var where = limitScrolls
+					? "AND ed1.edition_id = @EditionId AND (ed1.public = 1 $UserFilter"
+					: "";
+
+			var userFilter = limitUser
+					? "OR (edition_editor.user_id = @UserId AND edition_editor.may_read = 1))"
+					: limitScrolls
+							? ")"
+							: "";
+
+			return _baseQuery.Replace("$Where", where).Replace("$UserFilter", userFilter);
+		}
+
+		internal class Result
+		{
+			public uint      EditionId               { get; set; }
+			public bool      CurrentIsAdmin          { get; set; }
+			public string    Name                    { get; set; }
+			public uint      EditionDataEditorId     { get; set; }
+			public uint      Width                   { get; set; }
+			public uint      Height                  { get; set; }
+			public int       XOrigin                 { get; set; }
+			public int       YOrigin                 { get; set; }
+			public uint      PPI                     { get; set; }
+			public uint      ManuscriptMetricsEditor { get; set; }
+			public uint      ManuscriptId            { get; set; }
 			public string    Thumbnail               { get; set; }
 			public bool      Locked                  { get; set; }
 			public bool      CurrentMayLock          { get; set; }
@@ -376,14 +680,15 @@ WHERE $Table.edition_id = @EditionId AND edition_editor.is_admin = 1
 	{
 		internal const string GetQuery = @"
 SELECT sign_interpretation_roi.sign_interpretation_id AS Id,
-       sign_interpretation.character AS Letter,
-       GROUP_CONCAT(DISTINCT CONCAT(attr.name, '_', attr.string_value)) AS Attributes,
+       sign_interpretation_character.character AS Letter,
+       GROUP_CONCAT(DISTINCT CONCAT_WS('', attr.name, '_', attr.string_value)) AS Attributes,
        AsWKB(roi_shape.path) AS Polygon,
        roi_position.translate_x AS TranslateX,
        roi_position.translate_y AS TranslateY,
        roi_position.stance_rotation AS LetterRotation,
        COALESCE(art_pos.rotate, 0) AS ImageRotation,
-       CONCAT(image_urls.proxy, image_urls.url, SQE_image.filename) AS ImageURL,
+       CONCAT_WS('', image_urls.proxy, image_urls.url, SQE_image.filename) AS ImageURL,
+       CONCAT_WS('', image_urls.proxy, image_urls.url, ir_image.filename) AS IrImageURL,
        image_urls.suffix AS ImageSuffix
 FROM sign_interpretation_roi_owner
     JOIN sign_interpretation_roi USING(sign_interpretation_roi_id)
@@ -391,16 +696,23 @@ FROM sign_interpretation_roi_owner
     JOIN roi_shape USING(roi_shape_id)
     LEFT JOIN (
         SELECT artefact_position.rotate,
-            artefact_position_owner.edition_id
+               artefact_position.artefact_id,
+               artefact_position_owner.edition_id
         FROM artefact_position
         JOIN artefact_position_owner USING(artefact_position_id)
     ) AS art_pos ON art_pos.edition_id = sign_interpretation_roi_owner.edition_id
-    JOIN artefact_shape USING(artefact_id)
+    	AND art_pos.artefact_id = roi_position.artefact_id
+    JOIN artefact_shape ON artefact_shape.artefact_id = roi_position.artefact_id
     JOIN artefact_shape_owner ON artefact_shape_owner.artefact_shape_id = artefact_shape.artefact_shape_id
         AND artefact_shape_owner.edition_id = sign_interpretation_roi_owner.edition_id
     JOIN SQE_image USING(sqe_image_id)
-    JOIN image_urls USING(image_urls_id)
+    LEFT JOIN SQE_image ir_image ON ir_image.image_catalog_id = SQE_image.image_catalog_id
+        AND ir_image.is_recto = SQE_image.is_recto AND ir_image.type = 1
+    JOIN image_urls ON image_urls.image_urls_id = SQE_image.image_urls_id
     JOIN sign_interpretation ON sign_interpretation.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
+    JOIN sign_interpretation_character ON sign_interpretation_character.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
+    JOIN sign_interpretation_character_owner ON sign_interpretation_character_owner.sign_interpretation_character_id = sign_interpretation_character.sign_interpretation_character_id
+    	AND sign_interpretation_character_owner.edition_id = sign_interpretation_roi_owner.edition_id
     JOIN position_in_stream ON position_in_stream.sign_interpretation_id = sign_interpretation_roi.sign_interpretation_id
     JOIN position_in_stream_owner ON position_in_stream_owner.position_in_stream_id = position_in_stream.position_in_stream_id
         AND position_in_stream_owner.edition_id = sign_interpretation_roi_owner.edition_id

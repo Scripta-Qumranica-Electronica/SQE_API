@@ -3,19 +3,22 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SQE.API.DTO
 {
-	public class SetInterpretationRoiDTO
+	public class SetReconstructedInterpretationRoiDTO
+	{
+		[Required]
+		public string shape { get; set; }
+
+		[Required]
+		public TranslateDTO translate { get; set; }
+	}
+
+	public class SetInterpretationRoiDTO : SetReconstructedInterpretationRoiDTO
 	{
 		[Required]
 		public uint artefactId { get; set; }
 
 		[Required]
 		public uint signInterpretationId { get; set; }
-
-		[Required]
-		public string shape { get; set; }
-
-		[Required]
-		public TranslateDTO translate { get; set; }
 
 		public ushort stanceRotation { get; set; }
 

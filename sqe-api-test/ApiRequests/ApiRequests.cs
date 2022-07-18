@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.SignalR.Client;
 using SQE.ApiTest.Helpers;
 using Xunit;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.ApiTest.ApiRequests
 {
 	/// <summary>
@@ -129,8 +131,8 @@ namespace SQE.ApiTest.ApiRequests
 	public abstract class RequestObject<TInput, TOutput> : IRequestObject
 	{
 		protected readonly
-				Dictionary<ListenerMethods, (Func<bool> IsNull, Action<HubConnection> StartListener)
-				> _listenerDict;
+				Dictionary<ListenerMethods, (Func<bool> IsNull, Action<HubConnection> StartListener
+						)> _listenerDict;
 
 		private readonly   TInput     _payload;
 		private readonly   HttpMethod _requestVerb;

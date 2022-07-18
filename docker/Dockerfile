@@ -34,3 +34,4 @@ COPY --from=publish /app .
 # into appsettings.json before the program runs.
 COPY ./startup.sh .
 ENTRYPOINT ["/app/startup.sh", "dotnet", "sqe-api-server.dll"]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]

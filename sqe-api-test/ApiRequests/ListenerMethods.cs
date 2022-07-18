@@ -14,22 +14,35 @@ namespace SQE.ApiTest.ApiRequests
 		, DeletedArtefact
 		, DeletedArtefactGroup
 		, UpdatedArtefactGroup
+		, CreatedSignInterpretation
+		, DeletedSignInterpretation
+		, UpdatedSignInterpretations
+		, CreatedRoisBatch
+		, UpdatedRoisBatch
+		, DeletedRoi
 		, RequestedEditor
 		, CreatedEditor
 		, CreatedEdition
 		, UpdatedEdition
 		, DeletedEdition
-		, CreatedRoisBatch
+		, CreatedImagedObject
+		, DeletedImagedObject
 		, EditedRoisBatch
-		, UpdatedRoisBatch
-		, DeletedRoi
+		, CreatedScribalFontInfo
+		, CreatedScribalFontKerningPair
+		, CreatedScribalFontGlyph
+		, UpdatedScribalFontInfo
+		, DeletedScribalFont
+		, DeletedScribalFontKerningPair
+		, DeletedScribalFontGlyph
 		, CreatedAttribute
-		, CreatedSignInterpretation
 		, UpdatedSignInterpretation
 		, DeletedAttribute
-		, DeletedSignInterpretation
 		, UpdatedAttribute
 		, CreatedTextFragment
+		, CreatedLine
+		, UpdatedLine
+		, DeletedLine
 		,
 	}
 }

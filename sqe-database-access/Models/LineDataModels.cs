@@ -20,6 +20,7 @@ namespace SQE.DatabaseAccess.Models
 		public uint   TranslateY     { get; set; }
 		public ushort LetterRotation { get; set; }
 		public string ImageURL       { get; set; }
+		public string IrImageURL     { get; set; }
 		public string ImageSuffix    { get; set; }
 		public float  ImageRotation  { get; set; }
 		public string Attributes     { get; set; }

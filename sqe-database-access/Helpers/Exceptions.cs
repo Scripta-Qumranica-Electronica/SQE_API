@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Net;
 using SQE.DatabaseAccess.Models;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.DatabaseAccess.Helpers
 {
 	public interface IExceptionWithData
@@ -33,6 +35,13 @@ namespace SQE.DatabaseAccess.Helpers
 	#endregion Exception Base Class
 
 	#region Exception Main Subclasses
+
+	public abstract class ForbiddenException : ApiException
+	{
+		private const HttpStatusCode httpStatusCode = HttpStatusCode.Forbidden;
+
+		protected ForbiddenException() : base(httpStatusCode) { }
+	}
 
 	public abstract class ForbiddenDataAccessException : ApiException
 	{
@@ -103,6 +112,14 @@ namespace SQE.DatabaseAccess.Helpers
 		#endregion System errors
 
 		#region Permissions errors
+
+		public class ForbiddenRequestException : ForbiddenException
+		{
+			private const string customMsg =
+					"This request is forbidden, there is nothing the caller can do to get access.";
+
+			public ForbiddenRequestException() => Error = customMsg;
+		}
 
 		public class NoAuthorizationException : ForbiddenDataAccessException
 		{

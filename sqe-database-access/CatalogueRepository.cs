@@ -12,6 +12,8 @@ namespace SQE.DatabaseAccess
 {
 	public interface ICatalogueRepository
 	{
+		Task<IEnumerable<CatalogueMatch>> GetAllMetchesAsync();
+
 		Task<IEnumerable<CatalogueMatch>> GetTextFragmentMatchesForImagedObjectAsync(
 				string imagedObjectId);
 
@@ -35,7 +37,8 @@ namespace SQE.DatabaseAccess
 				, string canonicalEditionLoc1
 				, string canonicalEditionLoc2
 				, byte   canonicalEditionSide
-				, string comment);
+				, string comment
+				, string manuscriptName);
 
 		Task ConfirmImagedObjectTextFragmentMatchAsync(
 				uint   userId
@@ -47,6 +50,12 @@ namespace SQE.DatabaseAccess
 									   , ICatalogueRepository
 	{
 		public CatalogueRepository(IConfiguration config) : base(config) { }
+
+		public async Task<IEnumerable<CatalogueMatch>> GetAllMetchesAsync()
+		{
+			using (var connection = OpenConnection())
+				return await connection.QueryAsync<CatalogueMatch>(FullCatalogueQuery.GetQuery);
+		}
 
 		public async Task<IEnumerable<CatalogueMatch>> GetTextFragmentMatchesForImagedObjectAsync(
 				string imagedObjectId)
@@ -103,7 +112,8 @@ namespace SQE.DatabaseAccess
 				, string canonicalEditionLoc1
 				, string canonicalEditionLoc2
 				, byte   canonicalEditionSide
-				, string comment)
+				, string comment
+				, string manuscriptName)
 		{
 			using (var transactionScope =
 					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -112,13 +122,13 @@ namespace SQE.DatabaseAccess
 				var existingEditionCats = (await connection.QueryAsync<EditionCatalogueEntry>(
 						EditionCatalogueQuery.GetQuery(
 								false
-								, false
-								, string.IsNullOrEmpty(canonicalEditionName)
-								, string.IsNullOrEmpty(canonicalEditionVolume)
-								, string.IsNullOrEmpty(canonicalEditionLoc1)
-								, string.IsNullOrEmpty(canonicalEditionLoc2)
+								, !string.IsNullOrEmpty(manuscriptName)
+								, !string.IsNullOrEmpty(canonicalEditionName)
+								, !string.IsNullOrEmpty(canonicalEditionVolume)
+								, !string.IsNullOrEmpty(canonicalEditionLoc1)
+								, !string.IsNullOrEmpty(canonicalEditionLoc2)
 								, true
-								, string.IsNullOrEmpty(comment)
+								, !string.IsNullOrEmpty(comment)
 								, false
 								, true)
 						, new
@@ -131,9 +141,11 @@ namespace SQE.DatabaseAccess
 								, Comment = comment
 								, EditionId = editionId
 								, UserId = userId
+								, Manuscript = manuscriptName
 								,
 						})).AsList();
 
+				// TODO: if we get a match , make sure the comments match, if not then update the comment.
 				var editionCatalogueId = existingEditionCats.Any()
 						? existingEditionCats.First().IaaEditionCatalogId
 						: (uint?) null;
@@ -152,6 +164,7 @@ namespace SQE.DatabaseAccess
 									, Comment = comment
 									, EditionId = editionId
 									, UserId = userId
+									, Manuscript = manuscriptName
 									,
 							});
 

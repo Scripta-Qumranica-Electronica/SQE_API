@@ -48,10 +48,22 @@ namespace SQE.API.DTO
 		public string statusMessage { get; set; }
 	}
 
+	public class ExtendedArtefactDTO : ArtefactDTO
+	{
+		public string url { get; set; }
+		public uint   ppi { get; set; }
+	}
+
 	public class ArtefactListDTO
 	{
 		[Required]
 		public List<ArtefactDTO> artefacts { get; set; }
+	}
+
+	public class ExtendedArtefactListDTO
+	{
+		[Required]
+		public List<ExtendedArtefactDTO> artefacts { get; set; }
 	}
 
 	public class ArtefactDataListDTO
@@ -74,8 +86,8 @@ namespace SQE.API.DTO
 
 	public class UpdateArtefactDTO
 	{
-		public virtual string       mask      { get; set; }
-		public         PlacementDTO placement { get; set; }
+		public string       mask      { get; set; }
+		public PlacementDTO placement { get; set; }
 
 		[StringLength(
 				255
@@ -122,15 +134,14 @@ namespace SQE.API.DTO
 
 	public class CreateArtefactDTO : UpdateArtefactDTO
 	{
-		[Required]
-		public uint masterImageId { get; set; }
+		public uint? masterImageId { get; set; }
 
 		// Run a quick regex to make sure we have a the valid text for a WKT polygon (does not check polygon validity)
-		[RegularExpression(
-				@"^\s*[Pp][Oo][Ll][Yy][Gg][Oo][Nn]\s*\(\s*\(.*\)\s*\)\s*$"
-				, ErrorMessage = "The mask must be a valid WKT POLYGON description.")]
-		[Required]
-		public override string mask { get; set; }
+		// [RegularExpression(
+		// 		@"^\s*[Pp][Oo][Ll][Yy][Gg][Oo][Nn]\s*\(\s*\(.*\)\s*\)\s*$"
+		// 		, ErrorMessage = "The mask must be a valid WKT POLYGON description.")]
+		// [Required]
+		// public override string mask { get; set; }
 	}
 
 	public class UpdateArtefactGroupDTO

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -33,7 +34,8 @@ namespace SQE.API.Server.HttpControllers
 		[HttpGet("v1/imaged-objects/{imagedObjectId}")]
 		public async Task<ActionResult<SimpleImageListDTO>> GetImagedObject(
 				[FromRoute] string imagedObjectId)
-			=> await _imagedObjectService.GetImagedObjectImagesAsync(imagedObjectId);
+			=> await _imagedObjectService.GetImagedObjectImagesAsync(
+					Uri.UnescapeDataString(imagedObjectId));
 
 		/// <summary>
 		///  Provides information for the specified imaged object related to the specified edition, can include images and also
@@ -50,8 +52,35 @@ namespace SQE.API.Server.HttpControllers
 				, [FromQuery] List<string> optional)
 			=> await _imagedObjectService.GetImagedObjectAsync(
 					await _userService.GetCurrentUserObjectAsync(editionId)
-					, imagedObjectId
+					, Uri.UnescapeDataString(imagedObjectId)
 					, optional);
+
+		/// <summary>
+		///  Add an imaged object to an edition.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+		[HttpPost("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
+		public async Task<ActionResult<ImagedObjectDTO>> CreateEditionImagedObject(
+				[FromRoute]   uint   editionId
+				, [FromRoute] string imagedObjectId)
+			=> await _imagedObjectService.AddImagedObjectToEditionAsync(
+					await _userService.GetCurrentUserObjectAsync(editionId, true)
+					, Uri.UnescapeDataString(imagedObjectId));
+
+		/// <summary>
+		///  Remove an imaged object from an edition. All artefacts must first be removed from the
+		///  imaged object.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+		[HttpDelete("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
+		public async Task<ActionResult> DeleteEditionImagedObject(
+				[FromRoute]   uint   editionId
+				, [FromRoute] string imagedObjectId)
+			=> await _imagedObjectService.RemoveImagedObjectFromEditionAsync(
+					await _userService.GetCurrentUserObjectAsync(editionId, true)
+					, Uri.UnescapeDataString(imagedObjectId));
 
 		/// <summary>
 		///  Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
@@ -66,6 +95,7 @@ namespace SQE.API.Server.HttpControllers
 				, [FromQuery] List<string> optional)
 			=> await _imagedObjectService.GetEditionImagedObjectsAsync(
 					await _userService.GetCurrentUserObjectAsync(editionId)
+					, null
 					, optional);
 
 		/// <summary>
@@ -94,6 +124,7 @@ namespace SQE.API.Server.HttpControllers
 		[HttpGet("v1/imaged-objects/{imagedObjectId}/text-fragments")]
 		public async Task<ActionResult<ImagedObjectTextFragmentMatchListDTO>>
 				ListImageTextFragments([FromRoute] string imagedObjectId)
-			=> await _imageService.GetImageTextFragmentsAsync(imagedObjectId);
+			=> await _imageService.GetImageTextFragmentsAsync(
+					Uri.UnescapeDataString(imagedObjectId));
 	}
 }

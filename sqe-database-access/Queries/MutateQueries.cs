@@ -13,7 +13,7 @@ namespace SQE.DatabaseAccess.Queries
 	// mutation from the other (we do not use ReadUncommitted).
 	// Note that the NULL-safe equal to operator must be used here if we try to insert any null values, because we don't
 	// want duplicate entries due to null values (also, this overcomes the limitations of the unique constraints, since
-	// nulls are not unique). This must be checked upon usage of this query. You will have severe performance problems 
+	// nulls are not unique). This must be checked upon usage of this query. You will have severe performance problems
 	// if you have tables with geometry and nullable items. Don't do that!
 
 	// The SQL was just updated here for performance reasons. It turns out the the previous approach,
@@ -41,7 +41,7 @@ WHERE NOT EXISTS
 	// So the cost for not trusting ON DUPLICATE KEY UPDATE is two extra queries (the subquery above and this one here).
 	// Note that the NULL-safe equal to operator must be used here if we try to insert any null values, because we don't
 	// want duplicate entries due to null values (also, this overcomes the limitations of the unique constraints, since
-	// nulls are not unique). This must be checked upon usage of this query. You will have severe performance problems 
+	// nulls are not unique). This must be checked upon usage of this query. You will have severe performance problems
 	// if you have tables with geometry and nullable items. Don't do that!
 
 	// The SQL was just updated here for performance reasons. It turns out the the previous approach,
@@ -76,7 +76,7 @@ WHERE NOT EXISTS (
 	internal static class OwnerTableDeleteQuery
 	{
 		public const string GetQuery = @"
-DELETE FROM $OwnerTableName 
+DELETE FROM $OwnerTableName
 WHERE $OwnedTablePkName = @OwnedTableId
   AND edition_id = @EditionId";
 	}
@@ -84,14 +84,14 @@ WHERE $OwnedTablePkName = @OwnedTableId
 	internal static class MainActionInsertQuery
 	{
 		public const string GetQuery = @"
-          INSERT INTO main_action (edition_id, edition_editor_id) 
+          INSERT INTO main_action (edition_id, edition_editor_id)
           VALUES(@EditionId, @EditionEditorId)";
 	}
 
 	internal static class SingleActionInsertQuery
 	{
 		public static string GetQuery { get; } = @"
-INSERT INTO single_action (`main_action_id`, `action`, `table`, `id_in_table`) 
+INSERT INTO single_action (`main_action_id`, `action`, `table`, `id_in_table`)
 VALUES(@MainActionId, @Action, @TableName, @OwnedTableId)";
 	}
 }

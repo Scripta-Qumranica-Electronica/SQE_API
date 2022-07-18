@@ -9,6 +9,8 @@ using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using Xunit;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.ApiTest.Helpers
 {
 	public static class EditionHelpers
@@ -458,7 +460,7 @@ HAVING COUNT(DISTINCT manuscript_to_text_fragment_id) > 3 AND COUNT(DISTINCT art
 
 			var deleteResponse1 = new Delete.V1_Editions_EditionId(
 					editionId
-					, new List<string> { "deleteForAllEditors" });
+					, new List<string> { "archiveForAllEditors" });
 
 			await deleteResponse1.SendAsync(
 					client
@@ -479,7 +481,7 @@ HAVING COUNT(DISTINCT manuscript_to_text_fragment_id) > 3 AND COUNT(DISTINCT art
 
 				var deleteResponse2 = new Delete.V1_Editions_EditionId(
 						editionId
-						, new List<string> { "deleteForAllEditors" }
+						, new List<string> { "archiveForAllEditors" }
 						, msg.token);
 
 				await deleteResponse2.SendAsync(

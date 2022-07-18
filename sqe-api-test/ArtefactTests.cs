@@ -80,7 +80,7 @@ namespace SQE.ApiTest
 
 			// Assert
 			Assert.NotEmpty(artefacts);
-			var artefact = artefacts.First();
+			var artefact = artefacts.First(x => !string.IsNullOrEmpty(x.imagedObjectId));
 			Assert.True(artefact.editionId > 0);
 			Assert.True(artefact.id > 0);
 			Assert.NotNull(artefact.imagedObjectId);
@@ -132,13 +132,11 @@ namespace SQE.ApiTest
 																								 => new
 																										 UpdateArtefactPlacementDTO
 																										 {
-																												 artefactId
-																														 = x
-																																 .id
-																												 , isPlaced
-																														 = true
-																												 , placement
-																														 =
+																												 artefactId =
+																														 x.id
+																												 , isPlaced =
+																														 true
+																												 , placement =
 																														 placement
 																												 ,
 																										 })
@@ -184,13 +182,11 @@ namespace SQE.ApiTest
 																								 => new
 																										 UpdateArtefactPlacementDTO
 																										 {
-																												 artefactId
-																														 = x
-																																 .id
-																												 , isPlaced
-																														 = false
-																												 , placement
-																														 =
+																												 artefactId =
+																														 x.id
+																												 , isPlaced =
+																														 false
+																												 , placement =
 																														 placement
 																												 ,
 																										 })
@@ -226,13 +222,12 @@ namespace SQE.ApiTest
 																								 => new
 																										 UpdateArtefactPlacementDTO
 																										 {
-																												 artefactId
-																														 = x
-																																 .id
-																												 , isPlaced
-																														 = false
-																												 , placement
-																														 = null
+																												 artefactId =
+																														 x.id
+																												 , isPlaced =
+																														 false
+																												 , placement =
+																														 null
 																												 ,
 																										 })
 																				 .ToList()
@@ -374,6 +369,66 @@ namespace SQE.ApiTest
 				Assert.Equal(newTranslateY, writtenArtefact.placement.translate.y);
 
 				Assert.Equal("", writtenArtefact.name);
+			}
+		}
+
+		/// <summary>
+		///  Ensure that a new artefact can be created (and then deleted).
+		/// </summary>
+		/// <returns></returns>
+		[Fact]
+		[Trait("Category", "Artefact")]
+		public async Task CanCreateArtefactsWithoutMask()
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var newEdition = await editionCreator.CreateEdition(); // Clone new edition
+
+				const string newName = "CanCreateArtefacts.artefact א";
+
+				const string masterImageSQL =
+						"SELECT sqe_image_id FROM SQE_image WHERE type = 0 ORDER BY RAND() LIMIT 1";
+
+				var masterImageId = await _db.RunQuerySingleAsync<uint>(masterImageSQL, null);
+
+				var newArtefact = new CreateArtefactDTO
+				{
+						mask = null
+						, placement = null
+						, name = newName
+						, masterImageId = masterImageId
+						, statusMessage = null
+						,
+				};
+
+				const string defaultStatusMessage = "New";
+
+				// Act
+				var (response, writtenArtefact) =
+						await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
+								_client
+								, HttpMethod.Post
+								, $"/v1/editions/{newEdition}/artefacts"
+								, newArtefact
+								, await Request.GetJwtViaHttpAsync(_client));
+
+				// Assert
+				response.EnsureSuccessStatusCode();
+				Assert.Equal(newEdition, writtenArtefact.editionId);
+				Assert.Equal("", writtenArtefact.mask);
+				Assert.Equal(0, writtenArtefact.placement.rotate);
+				Assert.Equal(1, writtenArtefact.placement.scale);
+				Assert.Equal(0, writtenArtefact.placement.zIndex);
+				Assert.Null(writtenArtefact.placement.translate);
+
+				Assert.Equal(newArtefact.name, writtenArtefact.name);
+
+				Assert.Equal(defaultStatusMessage, writtenArtefact.statusMessage);
+
+				// Cleanup
+				await DeleteArtefact(newEdition, writtenArtefact.id);
 			}
 		}
 
@@ -747,47 +802,7 @@ namespace SQE.ApiTest
 
 				Assert.Contains("The rotate must be between 0 and 360", resp);
 
-				// Cannot create an artefact without a mask
-				// Arrange
-				newName = "CannotCreateArtefacts.artefact ב";
-
-				newArtefact = new CreateArtefactDTO
-				{
-						mask = null
-						, placement = new PlacementDTO
-						{
-								scale = newScale
-								, rotate = newRotate
-								, translate = new TranslateDTO
-								{
-										x = newTranslateX
-										, y = newTranslateY
-										,
-								}
-								,
-						}
-						, name = newName
-						, masterImageId = masterImageId
-						,
-				};
-
-				// Act
-				(artefactResponse, _) =
-						await Request.SendHttpRequestAsync<CreateArtefactDTO, ArtefactDTO>(
-								_client
-								, HttpMethod.Post
-								, $"/v1/editions/{newEdition}/artefacts"
-								, newArtefact
-								, await Request.GetJwtViaHttpAsync(_client));
-
-				// Assert
-				Assert.Equal(HttpStatusCode.BadRequest, artefactResponse.StatusCode);
-
-				resp = await artefactResponse.Content.ReadAsStringAsync();
-
-				Assert.Contains("The mask field is required.", resp);
-
-				// Cannot create an artefact without a mask
+				// Cannot create an artefact with an invalid mask
 				// Arrange
 				newName = "CannotCreateArtefacts.artefact ב";
 
@@ -825,7 +840,7 @@ namespace SQE.ApiTest
 
 				resp = await artefactResponse.Content.ReadAsStringAsync();
 
-				Assert.Contains("The mask must be a valid WKT POLYGON description.", resp);
+				Assert.Contains("The submitted WKT POLYGON is invalid", resp);
 			}
 		}
 
@@ -914,7 +929,7 @@ namespace SQE.ApiTest
 
 				var allArtefacts = (await GetEditionArtefacts(newEdition)).artefacts;
 
-				var artefact = allArtefacts.First();
+				var artefact = allArtefacts.First(x => !string.IsNullOrEmpty(x.imagedObjectId));
 
 				const string newArtefactName = "CanUpdateArtefacts.artefact +%%$^";
 
@@ -972,7 +987,7 @@ namespace SQE.ApiTest
 								, $"/v1/editions/{newEdition}/artefacts/{artefact.id}"
 								, new UpdateArtefactDTO
 								{
-										mask = null
+										mask = "POLYGON((0 0,0 10,10 10,10 0,0 0))"
 										, placement = new PlacementDTO
 										{
 												scale = newScale

@@ -1,10 +1,13 @@
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
+
+// ReSharper disable ArrangeRedundantParentheses
 
 namespace SQE.DatabaseAccess
 {
@@ -13,12 +16,25 @@ namespace SQE.DatabaseAccess
 		Task<SignInterpretationData> GetSignInterpretationById(
 				UserInfo user
 				, uint   signInterpretationId);
+
+		Task<uint> GetQwbWordIfForSignInterpretationId(
+				UserInfo user
+				, uint   editionId
+				, uint   signInterpretationId);
+
+		Task UpdateSignInterpretationCharacterById(
+				UserInfo user
+				, uint   signInterpretationId
+				, string character
+				, byte?  priority         = null
+				, uint?  attributeValueId = null);
 	}
 
 	public class SignInterpretationRepository : DbConnectionBase
 												, ISignInterpretationRepository
 	{
 		private readonly IAttributeRepository _attributeRepository;
+		private readonly IDatabaseWriter      _databaseWriter;
 
 		private readonly ISignInterpretationCommentaryRepository
 				_interpretationCommentaryRepository;
@@ -29,13 +45,15 @@ namespace SQE.DatabaseAccess
 				IConfiguration                            config
 				, IAttributeRepository                    attributeRepository
 				, ISignInterpretationCommentaryRepository interpretationCommentaryRepository
-				, IRoiRepository                          roiRepository) : base(config)
+				, IRoiRepository                          roiRepository
+				, IDatabaseWriter                         databaseWriter) : base(config)
 		{
 			_attributeRepository = attributeRepository;
 
 			_interpretationCommentaryRepository = interpretationCommentaryRepository;
 
 			_roiRepository = roiRepository;
+			_databaseWriter = databaseWriter;
 		}
 
 		public async Task<SignInterpretationData> GetSignInterpretationById(
@@ -130,6 +148,138 @@ namespace SQE.DatabaseAccess
 				transactionScope.Complete();
 
 				return returnSignInterpretation;
+			}
+		}
+
+		public async Task UpdateSignInterpretationCharacterById(
+				UserInfo user
+				, uint   signInterpretationId
+				, string character
+				, byte?  priority         = null
+				, uint?  attributeValueId = null)
+		{
+			using (var transactionScope =
+					new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+			using (var conn = OpenConnection())
+			{
+				var signInterpretationCharacterIds = await conn.QueryAsync<uint>(
+						FindSignInterpretationCharacterId.GetQuery
+						, new
+						{
+								user.EditionId
+								, SignInterpretationId = signInterpretationId
+								,
+						});
+
+				if (!signInterpretationCharacterIds.Any())
+				{
+					throw new StandardExceptions.DataNotFoundException(
+							"character"
+							, signInterpretationId.ToString()
+							, "sign_interpretation_character");
+				}
+
+				var signInterpretationCharacterId = signInterpretationCharacterIds.First();
+				var signInterpretationCharacterParameters = new DynamicParameters();
+
+				signInterpretationCharacterParameters.Add(
+						"@sign_interpretation_id"
+						, signInterpretationId);
+
+				signInterpretationCharacterParameters.Add("@character", character);
+
+				//signInterpretationCharacterParameters.Add("@priority", priority);
+				// TODO: Add support to write the "priority" to the owner table
+
+				var signInterpretationCharacterRequest = new MutationRequest(
+						MutateType.Update
+						, signInterpretationCharacterParameters
+						, "sign_interpretation_character"
+						, signInterpretationCharacterId);
+
+				var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+						user
+						, signInterpretationCharacterRequest);
+
+				// Check whether the request was processed.
+				// If so return the new signInterpretationCharacterId.
+				if ((writeResults.Count < 1)
+					|| !writeResults.First().NewId.HasValue)
+				{
+					throw new StandardExceptions.DataNotWrittenException(
+							"update sign interpretation character");
+				}
+
+				var signInterpretationAttribute =
+						await _attributeRepository
+								.GetSignInterpretationAttributesByInterpretationId(
+										user
+										, signInterpretationId);
+
+				// Check if the correct attribute value is already set
+				if (!attributeValueId.HasValue
+					|| signInterpretationAttribute.Any(x => x.AttributeValueId == attributeValueId))
+				{
+					transactionScope.Complete();
+
+					return;
+				}
+
+				// if not the old one must be deleted and the new one set
+				var deleteAttribute = signInterpretationAttribute.First(x => x.AttributeId == 1);
+
+				// delete the old attribute
+				await _attributeRepository.DeleteAttributeFromSignInterpretationAsync(
+						user
+						, signInterpretationId
+						, deleteAttribute.AttributeValueId.Value);
+
+				// update to the current attribute
+				deleteAttribute.AttributeValueId = attributeValueId;
+
+				await _attributeRepository.CreateSignInterpretationAttributesAsync(
+						user
+						, signInterpretationId
+						, deleteAttribute);
+
+				transactionScope.Complete();
+			}
+		}
+
+		public async Task<uint> GetQwbWordIfForSignInterpretationId(
+				UserInfo user
+				, uint   editionId
+				, uint   signInterpretationId)
+		{
+			const string sql = @"
+SELECT sign_stream_section_to_qwb_word.qwb_word_id
+FROM position_in_stream
+JOIN position_in_stream_owner USING(position_in_stream_id)
+JOIN position_in_stream_to_section_rel USING(position_in_stream_id)
+JOIN sign_stream_section_to_qwb_word USING(sign_stream_section_id)
+JOIN sign_stream_section_owner ON sign_stream_section_owner.sign_stream_section_id = position_in_stream_to_section_rel.sign_stream_section_id
+    AND sign_stream_section_owner.edition_id = position_in_stream_owner.edition_id
+JOIN edition ON edition.edition_id = position_in_stream_owner.edition_id
+JOIN edition_editor ON edition_editor.edition_id = position_in_stream_owner.edition_id
+WHERE (edition.public = 1 OR edition_editor.user_id = @UserId)
+    AND position_in_stream_owner.edition_id = @EditionId
+    AND position_in_stream.sign_interpretation_id = @SignInterpretationId";
+
+			using (var conn = OpenConnection())
+			{
+				var wordIds = await conn.QueryAsync<uint>(
+						sql
+						, new
+						{
+								EditionId = editionId
+								, SignInterpretationId = signInterpretationId
+								, UserId = user.userId
+								,
+						});
+
+				return wordIds.Any()
+						? wordIds.First()
+						: 0;
 			}
 		}
 	}

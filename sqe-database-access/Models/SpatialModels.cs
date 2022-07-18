@@ -30,6 +30,7 @@ namespace SQE.DatabaseAccess.Models
 
 	public class Character
 	{
+		public uint                          SignId                      { get; set; }
 		public uint                          SignInterpretationId        { get; set; }
 		public char                          SignInterpretationCharacter { get; set; }
 		public List<SpatialRoi>              Rois                        { get; set; }
@@ -57,5 +58,35 @@ namespace SQE.DatabaseAccess.Models
 	{
 		public uint PositionInStreamId       { get; set; }
 		public uint NextSignInterpretationId { get; set; }
+	}
+
+	public class Glyph
+	{
+		public string Character     { get; set; }
+		public uint   CreatorId     { get; set; }
+		public uint   EditorId      { get; set; }
+		public string Shape         { get; set; }
+		public short  YOffset       { get; set; }
+		public uint   ScribalFontId { get; set; }
+	}
+
+	public class KerningPair
+	{
+		public string FirstCharacter  { get; set; }
+		public string SecondCharacter { get; set; }
+		public uint   CreatorId       { get; set; }
+		public uint   EditorId        { get; set; }
+		public short  XKern           { get; set; }
+		public short  YKern           { get; set; }
+		public uint   ScribalFontId   { get; set; }
+	}
+
+	public class FontInfo
+	{
+		public uint   CreatorId     { get; set; }
+		public uint   EditorId      { get; set; }
+		public ushort SpaceSize     { get; set; }
+		public ushort LineSpaceSize { get; set; }
+		public uint   ScribalFontId { get; set; }
 	}
 }

@@ -2,6 +2,14 @@
 
 namespace SQE.DatabaseAccess.Models
 {
+	public class EditionArtefact
+	{
+		public uint   EditionId     { get; set; }
+		public uint   ArtefactId    { get; set; }
+		public uint   PixelsPerInch { get; set; }
+		public string Url           { get; set; }
+	}
+
 	public class ArtefactDataModel
 	{
 		public uint   ArtefactId { get; set; }
@@ -17,6 +25,7 @@ namespace SQE.DatabaseAccess.Models
 		public decimal? Rotate               { get; set; }
 		public int?     TranslateX           { get; set; }
 		public int?     TranslateY           { get; set; }
+		public bool?    Mirror               { get; set; }
 		public uint     PositionEditorId     { get; set; }
 		public int?     ZIndex               { get; set; }
 		public byte     CatalogSide          { get; set; }

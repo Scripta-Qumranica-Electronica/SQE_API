@@ -16,6 +16,7 @@ SELECT image_urls.url AS url,
     SQE_image.is_master AS master,
     SQE_image.wavelength_start AS wave_start,
     SQE_image.wavelength_end AS wave_end,
+    SQE_image.manifest AS image_manifest,
     image_catalog.Institution AS Institution,
     image_catalog.catalog_number_1 AS catalog_1,
     image_catalog.catalog_number_2 AS catalog_2,
@@ -23,19 +24,21 @@ SELECT image_urls.url AS url,
     ASTEXT(image_to_image_map.region_on_image1) AS region_on_image1,
     ASTEXT(image_to_image_map.region_on_image2) AS region_on_image2,
     NULL AS image_to_image_map_editor_id,
-    image_to_image_map.transform_matrix AS transform_matrix
-FROM iaa_edition_catalog
-JOIN edition USING(manuscript_id)
+	image_to_image_map.scale AS scale,
+	image_to_image_map.rotate AS rotate,
+	image_to_image_map.translate_x as translate_x,
+	image_to_image_map.translate_y as translate_y
+FROM image_catalog_owner
+JOIN edition USING(edition_id)
 JOIN edition_editor USING(edition_id)
-JOIN image_to_iaa_edition_catalog USING(iaa_edition_catalog_id)
-JOIN image_catalog USING(image_catalog_id)
-JOIN SQE_image USING(image_catalog_id)
-JOIN SQE_image AS master_image ON image_catalog.image_catalog_id = master_image.image_catalog_id 
+JOIN image_catalog ON image_catalog.image_catalog_id = image_catalog_owner.image_catalog_id
+JOIN SQE_image AS master_image ON master_image.image_catalog_id = image_catalog.image_catalog_id
     AND master_image.is_master = 1
+JOIN SQE_image ON image_catalog.image_catalog_id = SQE_image.image_catalog_id
 LEFT JOIN image_to_image_map ON SQE_image.sqe_image_id = image_to_image_map.image2_id
-    AND image_to_image_map.image1_id = master_image.sqe_image_id 
+    AND image_to_image_map.image1_id = master_image.sqe_image_id
 JOIN image_urls ON SQE_image.image_urls_id = image_urls.image_urls_id
-WHERE edition.edition_id = @EditionId
+WHERE image_catalog_owner.edition_id = @EditionId
     AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
 
@@ -65,15 +68,20 @@ WHERE edition.edition_id = @EditionId
 
 			public ushort wave_end { get; set; }
 
+			public string image_manifest { get; set; }
+
 			//public string TransformMatrix { get; set; }
-			public string institution                  { get; set; }
-			public string catalog_1                    { get; set; }
-			public string catalog_2                    { get; set; }
-			public string object_id                    { get; set; }
-			public uint?  image_to_image_map_editor_id { get; set; }
-			public string region_on_image1             { get; set; }
-			public string region_on_image2             { get; set; }
-			public string transform_matrix             { get; set; }
+			public string  institution                  { get; set; }
+			public string  catalog_1                    { get; set; }
+			public string  catalog_2                    { get; set; }
+			public string  object_id                    { get; set; }
+			public uint?   image_to_image_map_editor_id { get; set; }
+			public string  region_on_image1             { get; set; }
+			public string  region_on_image2             { get; set; }
+			public decimal scale                        { get; set; }
+			public decimal rotate                       { get; set; }
+			public int     translate_x                  { get; set; }
+			public int     translate_y                  { get; set; }
 		}
 	}
 
@@ -91,6 +99,7 @@ SELECT image_urls.url AS url,
     SQE_image.is_master AS master,
     SQE_image.wavelength_start AS wave_start,
     SQE_image.wavelength_end AS wave_end,
+    SQE_image.manifest AS image_manifest,
     image_catalog.Institution AS Institution,
     image_catalog.catalog_number_1 AS catalog_1,
     image_catalog.catalog_number_2 AS catalog_2,
@@ -106,10 +115,10 @@ WHERE image_catalog.object_id = @ImagedObjectId
 	//     internal class ImageGroupQuery
 	//     {
 	//         private const string _baseQuery = @"
-	// SELECT  image_catalog.image_catalog_id, 
-	//         image_catalog.Institution, 
-	//         image_catalog.catalog_number_1, 
-	//         image_catalog.catalog_number_2, 
+	// SELECT  image_catalog.image_catalog_id,
+	//         image_catalog.Institution,
+	//         image_catalog.catalog_number_1,
+	//         image_catalog.catalog_number_2,
 	//         image_catalog.catalog_side
 	// FROM image_catalog
 	// ";
@@ -149,8 +158,8 @@ WHERE image_catalog.object_id = @ImagedObjectId
 	internal static class InstitutionImagesQuery
 	{
 		public const string GetQuery = @"
-SELECT image_catalog.object_id AS Name, 
-       CONCAT(image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS Thumbnail,
+SELECT image_catalog.object_id AS Name,
+       CONCAT_WS('', image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS Thumbnail,
        image_urls.license AS License
 FROM image_catalog
 JOIN SQE_image USING(image_catalog_id)
@@ -162,9 +171,9 @@ WHERE image_catalog.institution = @Institution
 	internal static class ImagedObjectTextFragmentsQuery
 	{
 		public static string GetQuery = @"
-SELECT manuscript_data.name AS ManuscriptName, 
-       text_fragment_data.name AS TextFragmentName, 
-       manuscript_data_owner.edition_id AS EditionId, 
+SELECT manuscript_data.name AS ManuscriptName,
+       text_fragment_data.name AS TextFragmentName,
+       manuscript_data_owner.edition_id AS EditionId,
        iaa_edition_catalog_to_text_fragment.text_fragment_id AS TextFragmentId,
        min(image_catalog.catalog_side) AS Side
 FROM image_catalog

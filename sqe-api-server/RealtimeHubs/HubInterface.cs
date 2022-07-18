@@ -25,6 +25,27 @@ namespace SQE.API.Server.RealtimeHubs
 		Task UpdatedTextFragment(TextFragmentDataDTO returnedData);
 
 		/// <summary>
+		///  broadcasts a new text fragment has been created
+		/// </summary>
+		/// <param name="returnedData">Details of the newly created text fragment</param>
+		/// <returns></returns>
+		Task CreatedLine(LineDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts a text fragment has been updated
+		/// </summary>
+		/// <param name="returnedData">Details of the updated text fragment</param>
+		/// <returns></returns>
+		Task UpdatedLine(LineDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts a text fragment has been updated
+		/// </summary>
+		/// <param name="returnedData">Details of the updated text fragment</param>
+		/// <returns></returns>
+		Task DeletedLine(DeleteIntIdDTO returnedData);
+
+		/// <summary>
 		///  broadcasts a editor has been requested for the edition
 		/// </summary>
 		/// <param name="returnedData">Details of the new editor</param>
@@ -57,7 +78,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData">Details of the deleted edition</param>
 		/// <returns></returns>
-		Task DeletedEdition(DeleteTokenDTO returnedData);
+		Task DeletedEdition(ArchiveTokenDTO returnedData);
 
 		/// <summary>
 		///  broadcasts an edition's details have been updated
@@ -92,7 +113,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData">Details of the deleted ROI</param>
 		/// <returns></returns>
-		Task DeletedRoi(DeleteDTO returnedData);
+		Task DeletedRoi(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts an artefact has been created
@@ -106,7 +127,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData">Details of the deleted artefact</param>
 		/// <returns></returns>
-		Task DeletedArtefact(DeleteDTO returnedData);
+		Task DeletedArtefact(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts an artefact has been updated
@@ -134,7 +155,7 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData">Delete DTO with the id of the deleted artefact group</param>
 		/// <returns></returns>
-		Task DeletedArtefactGroup(DeleteDTO returnedData);
+		Task DeletedArtefactGroup(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts the transform details for a batch of artefacts has been updated
@@ -158,11 +179,18 @@ namespace SQE.API.Server.RealtimeHubs
 		Task UpdatedSignInterpretation(SignInterpretationDTO returnedData);
 
 		/// <summary>
+		///  broadcasts the update of a sign interpretation
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task UpdatedSignInterpretations(SignInterpretationListDTO returnedData);
+
+		/// <summary>
 		///  broadcasts the delete of a sign interpretation
 		/// </summary>
 		/// <param name="returnedData"></param>
 		/// <returns></returns>
-		Task DeletedSignInterpretation(DeleteDTO returnedData);
+		Task DeletedSignInterpretation(DeleteIntIdDTO returnedData);
 
 		/// <summary>
 		///  broadcasts the creation of an attribute
@@ -183,6 +211,83 @@ namespace SQE.API.Server.RealtimeHubs
 		/// </summary>
 		/// <param name="returnedData"></param>
 		/// <returns></returns>
-		Task DeletedAttribute(DeleteDTO returnedData);
+		Task DeletedAttribute(DeleteIntIdDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the creation of scribal font information
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task CreatedScribalFontInfo(ScriptDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the update of scribal font information
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task UpdatedScribalFontInfo(ScriptDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the creation of scribal font kerning pair
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task CreatedScribalFontKerningPair(KernPairDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the update of scribal font kerning pair
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task UpdatedScribalFontKerningPair(KernPairDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the deletion of scribal font kerning pair
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task DeletedScribalFontKerningPair(DeleteKernPairDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the creation of scribal font glyph
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task CreatedScribalFontGlyph(GlyphDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the update of scribal font glyph
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task UpdatedScribalFontGlyph(GlyphDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the deletion of scribal font glyph
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task DeletedScribalFontGlyph(DeleteGlyphDataDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the deletion of a scribal font
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task DeletedScribalFont(DeleteScribalFontDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the addition of an imaged object to an edition
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task CreatedImagedObject(ImagedObjectDTO returnedData);
+
+		/// <summary>
+		///  broadcasts the removal of an imaged object from an edition
+		/// </summary>
+		/// <param name="returnedData"></param>
+		/// <returns></returns>
+		Task DeletedImagedObject(DeleteStringIdDTO returnedData);
 	}
 }

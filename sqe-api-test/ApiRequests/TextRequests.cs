@@ -11,11 +11,75 @@
 
 using System;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
 namespace SQE.ApiTest.ApiRequests
 {
+	public static partial class Delete
+	{
+		public class V1_Editions_EditionId_Lines_LineId : RequestObject<EmptyInput, EmptyOutput>
+		{
+			private readonly uint _editionId;
+			private readonly uint _lineId;
+
+			/// <summary>
+			///  Delete a full line from a text fragment
+			/// </summary>
+			/// <param name="editionId">Id of the edition</param>
+			/// <param name="lineId">Id of the line to be deleted</param>
+			/// <returns>
+			///  The updated details concerning the line sequence
+			/// </returns>
+			public V1_Editions_EditionId_Lines_LineId(uint editionId, uint lineId)
+
+			{
+				_editionId = editionId;
+				_lineId = lineId;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.DeletedLine
+						, (DeletedLineIsNull, DeletedLineListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public DeleteIntIdDTO DeletedLine { get; private set; }
+
+			private void DeletedLineListener(HubConnection signalrListener)
+				=> signalrListener.On<DeleteIntIdDTO>(
+						"DeletedLine"
+						, receivedData => DeletedLine = receivedData);
+
+			private bool DeletedLineIsNull() => DeletedLine == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/line-id"
+															, $"/{HttpUtility.UrlEncode(_lineId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _lineId);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods DeletedLine = ListenerMethods.DeletedLine;
+			}
+		}
+	}
+
 	public static partial class Get
 	{
 		public class V1_Editions_EditionId_TextFragments :
@@ -32,7 +96,7 @@ namespace SQE.ApiTest.ApiRequests
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -66,10 +130,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/text-fragment-id"
-															, $"/{_textFragmentId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -106,10 +170,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/text-fragment-id"
-															, $"/{_textFragmentId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -149,10 +213,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/text-fragment-id"
-															, $"/{_textFragmentId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -160,6 +224,32 @@ namespace SQE.ApiTest.ApiRequests
 							   SignalrRequestString()
 							   , _editionId
 							   , _textFragmentId);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+		}
+
+		public class V1_Editions_EditionId_FullText : RequestObject<EmptyInput, TextEditionDTO>
+		{
+			private readonly uint _editionId;
+
+			/// <summary>
+			///  Retrieves all signs and their data from the entire edition
+			/// </summary>
+			/// <param name="editionId">Id of the edition</param>
+			/// <returns>
+			///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+			///  sequence
+			/// </returns>
+			public V1_Editions_EditionId_FullText(uint editionId) => _editionId = editionId;
+
+			protected override string HttpPath() => RequestPath.Replace(
+					"/edition-id"
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
 			}
 
 			public override uint? GetEditionId() => _editionId;
@@ -176,8 +266,8 @@ namespace SQE.ApiTest.ApiRequests
 			/// <param name="editionId">Id of the edition</param>
 			/// <param name="lineId">Id of the line</param>
 			/// <returns>
-			///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-			///  sequence
+			///  A manuscript edition object including the fragments and their lines in a
+			///  hierarchical order and in correct sequence
 			/// </returns>
 			public V1_Editions_EditionId_Lines_LineId(uint editionId, uint lineId)
 
@@ -189,8 +279,10 @@ namespace SQE.ApiTest.ApiRequests
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
-													.Replace("/line-id", $"/{_lineId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/line-id"
+															, $"/{HttpUtility.UrlEncode(_lineId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -206,8 +298,8 @@ namespace SQE.ApiTest.ApiRequests
 
 	public static partial class Post
 	{
-		public class V1_Editions_EditionId_TextFragments : RequestObject<
-				CreateTextFragmentDTO, TextFragmentDataDTO>
+		public class V1_Editions_EditionId_TextFragments :
+				RequestObject<CreateTextFragmentDTO, TextFragmentDataDTO>
 		{
 			private readonly uint                  _editionId;
 			private readonly CreateTextFragmentDTO _payload;
@@ -235,17 +327,15 @@ namespace SQE.ApiTest.ApiRequests
 			public TextFragmentDataDTO CreatedTextFragment { get; private set; }
 
 			private void CreatedTextFragmentListener(HubConnection signalrListener)
-			{
-				signalrListener.On<TextFragmentDataDTO>(
+				=> signalrListener.On<TextFragmentDataDTO>(
 						"CreatedTextFragment"
 						, receivedData => CreatedTextFragment = receivedData);
-			}
 
 			private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
 
 			protected override string HttpPath() => RequestPath.Replace(
 					"/edition-id"
-					, $"/{_editionId.ToString()}");
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -260,6 +350,76 @@ namespace SQE.ApiTest.ApiRequests
 			public class Listeners
 			{
 				public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
+			}
+		}
+
+		public class V1_Editions_EditionId_TextFragments_TextFragmentId_Lines :
+				RequestObject<CreateLineDTO, LineDataDTO>
+		{
+			private readonly uint          _editionId;
+			private readonly CreateLineDTO _payload;
+			private readonly uint          _textFragmentId;
+
+			/// <summary>
+			///  Creates a new line before or after another line.
+			/// </summary>
+			/// <param name="editionId">Id of the edition</param>
+			/// <param name="textFragmentId">
+			///  Id of the text fragment where the line will be
+			///  added
+			/// </param>
+			/// <param name="lineData">The information about the line to be created</param>
+			/// <returns>
+			///  The details concerning the newly created line
+			/// </returns>
+			public V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+					uint            editionId
+					, uint          textFragmentId
+					, CreateLineDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_textFragmentId = textFragmentId;
+				_payload = payload;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.CreatedLine
+						, (CreatedLineIsNull, CreatedLineListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public LineDataDTO CreatedLine { get; private set; }
+
+			private void CreatedLineListener(HubConnection signalrListener)
+				=> signalrListener.On<LineDataDTO>(
+						"CreatedLine"
+						, receivedData => CreatedLine = receivedData);
+
+			private bool CreatedLineIsNull() => CreatedLine == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/text-fragment-id"
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _textFragmentId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods CreatedLine = ListenerMethods.CreatedLine;
 			}
 		}
 	}
@@ -300,21 +460,19 @@ namespace SQE.ApiTest.ApiRequests
 			public TextFragmentDataDTO CreatedTextFragment { get; private set; }
 
 			private void CreatedTextFragmentListener(HubConnection signalrListener)
-			{
-				signalrListener.On<TextFragmentDataDTO>(
+				=> signalrListener.On<TextFragmentDataDTO>(
 						"CreatedTextFragment"
 						, receivedData => CreatedTextFragment = receivedData);
-			}
 
 			private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
 
 			protected override string HttpPath() => RequestPath
 													.Replace(
 															"/edition-id"
-															, $"/{_editionId.ToString()}")
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
 													.Replace(
 															"/text-fragment-id"
-															, $"/{_textFragmentId.ToString()}");
+															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
 
 			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 			{
@@ -330,6 +488,165 @@ namespace SQE.ApiTest.ApiRequests
 			public class Listeners
 			{
 				public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
+			}
+		}
+
+		public class V1_Editions_EditionId_Lines_LineId : RequestObject<UpdateLineDTO, LineDataDTO>
+		{
+			private readonly uint          _editionId;
+			private readonly uint          _lineId;
+			private readonly UpdateLineDTO _payload;
+
+			/// <summary>
+			///  Changes the details of the line (currently the lines name)
+			/// </summary>
+			/// <param name="editionId">Id of the edition</param>
+			/// <param name="lineId">Id of the line</param>
+			/// <param name="lineData">The updated line data</param>
+			/// <returns>
+			///  The updated details concerning the line sequence
+			/// </returns>
+			public V1_Editions_EditionId_Lines_LineId(
+					uint            editionId
+					, uint          lineId
+					, UpdateLineDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_lineId = lineId;
+				_payload = payload;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedLine
+						, (UpdatedLineIsNull, UpdatedLineListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public LineDataDTO UpdatedLine { get; private set; }
+
+			private void UpdatedLineListener(HubConnection signalrListener)
+				=> signalrListener.On<LineDataDTO>(
+						"UpdatedLine"
+						, receivedData => UpdatedLine = receivedData);
+
+			private bool UpdatedLineIsNull() => UpdatedLine == null;
+
+			protected override string HttpPath() => RequestPath
+													.Replace(
+															"/edition-id"
+															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
+													.Replace(
+															"/line-id"
+															, $"/{HttpUtility.UrlEncode(_lineId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _lineId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods UpdatedLine = ListenerMethods.UpdatedLine;
+			}
+		}
+
+		public class V1_Editions_EditionId_DiffReplaceText :
+				RequestObject<DiffReplaceRequestDTO, DiffReplaceResponseDTO>
+		{
+			private readonly uint                  _editionId;
+			private readonly DiffReplaceRequestDTO _payload;
+
+			/// <summary>
+			///  Alter the text between two sign interpretation ids.
+			///  The system will try as best it can to figure out
+			///  how the next text aligns with any text already
+			///  existing at that location in the edition.
+			/// </summary>
+			/// <param name="editionId">Id of the edition to be updated</param>
+			/// <param name="payload">Details of the text replacement request</param>
+			/// <returns>
+			///  Information about all sign interpretations that were
+			///  created, updated, and deleted as a result of the operation.
+			/// </returns>
+			public V1_Editions_EditionId_DiffReplaceText(
+					uint                    editionId
+					, DiffReplaceRequestDTO payload) : base(payload)
+			{
+				_editionId = editionId;
+				_payload = payload;
+				AvailableListeners = new Listeners();
+
+				_listenerDict.Add(
+						ListenerMethods.CreatedSignInterpretation
+						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
+
+				_listenerDict.Add(
+						ListenerMethods.DeletedSignInterpretation
+						, (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
+
+				_listenerDict.Add(
+						ListenerMethods.UpdatedSignInterpretations
+						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
+			}
+
+			public Listeners AvailableListeners { get; }
+
+			public SignInterpretationListDTO CreatedSignInterpretation  { get; private set; }
+			public DeleteIntIdDTO            DeletedSignInterpretation  { get; private set; }
+			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
+
+			private void CreatedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"CreatedSignInterpretation"
+						, receivedData => CreatedSignInterpretation = receivedData);
+
+			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+
+			private void DeletedSignInterpretationListener(HubConnection signalrListener)
+				=> signalrListener.On<DeleteIntIdDTO>(
+						"DeletedSignInterpretation"
+						, receivedData => DeletedSignInterpretation = receivedData);
+
+			private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
+
+			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+				=> signalrListener.On<SignInterpretationListDTO>(
+						"UpdatedSignInterpretations"
+						, receivedData => UpdatedSignInterpretations = receivedData);
+
+			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
+
+			protected override string HttpPath() => RequestPath.Replace(
+					"/edition-id"
+					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+			{
+				return signalR => signalR.InvokeAsync<T>(
+							   SignalrRequestString()
+							   , _editionId
+							   , _payload);
+			}
+
+			public override uint? GetEditionId() => _editionId;
+
+			public class Listeners
+			{
+				public ListenerMethods CreatedSignInterpretation =
+						ListenerMethods.CreatedSignInterpretation;
+
+				public ListenerMethods DeletedSignInterpretation =
+						ListenerMethods.DeletedSignInterpretation;
+
+				public ListenerMethods UpdatedSignInterpretations =
+						ListenerMethods.UpdatedSignInterpretations;
 			}
 		}
 	}

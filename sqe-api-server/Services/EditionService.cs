@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using NaturalSort.Extension;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Utilities;
 using NetTopologySuite.IO;
@@ -19,6 +20,8 @@ using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace SQE.API.Server.Services
 {
 	public interface IEditionService
@@ -28,7 +31,12 @@ namespace SQE.API.Server.Services
 				, bool   artefacts = false
 				, bool   fragments = false);
 
-		Task<EditionListDTO> ListEditionsAsync(uint? userId);
+		Task<EditionListDTO> ListEditionsAsync(
+				uint?   userId
+				, bool? published = null
+				, bool? personal  = null);
+
+		Task<EditionListDTO> GetManuscriptEditionsAsync(uint? userId, uint manuscriptId);
 
 		Task<EditionDTO> UpdateEditionAsync(
 				UserInfo                  editionUser
@@ -40,7 +48,7 @@ namespace SQE.API.Server.Services
 				, EditionCopyDTO editionInfo
 				, string         clientId = null);
 
-		Task<DeleteTokenDTO> DeleteEditionAsync(
+		Task<ArchiveTokenDTO> ArchiveEditionAsync(
 				UserInfo       editionUser
 				, string       token
 				, List<string> optional
@@ -67,7 +75,8 @@ namespace SQE.API.Server.Services
 
 		Task<EditionScriptCollectionDTO> GetEditionScriptCollection(UserInfo editionUser);
 
-		Task<EditionScriptLinesDTO> GetEditionScriptLines(UserInfo editionUser);
+		Task<EditionScriptLinesDTO>        GetEditionScriptLines(UserInfo editionUser);
+		Task<EditionManuscriptMetadataDTO> GetEditionMetadata(UserInfo    editionUser);
 	}
 
 	public class EditionService : IEditionService
@@ -118,28 +127,55 @@ namespace SQE.API.Server.Services
 
 			var editionGroup = new EditionGroupDTO
 			{
-					primary = EditionModelToDTO(primaryModel)
-					, others = otherModels.Select(EditionModelToDTO)
+					primary = primaryModel.ToDTO()
+					, others = otherModels.Select(x => x.ToDTO())
 					,
 			};
 
 			return editionGroup;
 		}
 
-		public async Task<EditionListDTO> ListEditionsAsync(uint? userId)
+		public async Task<EditionListDTO> ListEditionsAsync(
+				uint?   userId
+				, bool? published = null
+				, bool? personal  = null)
+		{
+			// Check if both published and personal are null (if so assume true)
+			if (!published.HasValue
+				&& !personal.HasValue)
+			{
+				published = true;
+				personal = true;
+			}
+
+			// If either published or personal are null assume false
+			published ??= false;
+			personal ??= false;
+
+			return new EditionListDTO
+			{
+					editions = (await _editionRepo.ListEditionsAsync(
+									   userId
+									   , null
+									   , published.Value
+									   , personal.Value))
+							   .OrderBy(
+									   x => x.Name
+									   , StringComparison.OrdinalIgnoreCase.WithNaturalSort())
+							   .Select(x => new List<EditionDTO> { x.ToDTO() })
+							   .ToList()
+					, // Convert the list of groups from IEnumerable to List so we now have List<List<EditionDTO>>
+			};
+		}
+
+		public async Task<EditionListDTO> GetManuscriptEditionsAsync(
+				uint?  userId
+				, uint manuscriptId)
 		{
 			return new EditionListDTO
 			{
-					editions = (await _editionRepo.ListEditionsAsync(userId, null))
-							   .GroupBy(
-									   x => x
-											   .ManuscriptId) // Group the edition listings by scroll_id
-							   .Select(
-									   x => x.Select(
-											   EditionModelToDTO)) // Format each entry as an EditionDTO
-							   .Select(
-									   x => x
-											   .ToList()) // Convert the groups from IEnumerable to List
+					editions = (await _editionRepo.GetManuscriptEditions(userId, manuscriptId))
+							   .Select(x => new List<EditionDTO> { x.ToDTO() })
 							   .ToList()
 					, // Convert the list of groups from IEnumerable to List so we now have List<List<EditionDTO>>
 			};
@@ -187,8 +223,7 @@ namespace SQE.API.Server.Services
 							editionUser.userId
 							, editionUser.EditionId); //get wanted edition by edition Id
 
-			var updatedEdition = EditionModelToDTO(
-					editions.First(x => x.EditionId == editionUser.EditionId));
+			var updatedEdition = editions.First(x => x.EditionId == editionUser.EditionId).ToDTO();
 
 			// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 			// made the request, that client directly received the response.
@@ -240,7 +275,7 @@ namespace SQE.API.Server.Services
 						, editionUser.EditionId.Value);
 			}
 
-			edition = EditionModelToDTO(unformattedEdition);
+			edition = unformattedEdition.ToDTO();
 
 			// Broadcast edition creation notification to all connections of this user
 			await _hubContext.Clients.GroupExcept($"user-{editionUser.userId.ToString()}", clientId)
@@ -250,23 +285,23 @@ namespace SQE.API.Server.Services
 		}
 
 		/// <summary>
-		///  Delete all data from the edition that the user is currently subscribed to. The user must be admin and
-		///  provide a valid delete token.
+		///  Archive an edition that the user is currently subscribed to. The user must be admin and
+		///  provide a valid archive token to archive the edition for all editors.
 		/// </summary>
-		/// <param name="editionUser">User object requesting the delete</param>
-		/// <param name="token">token required for optional "deleteForAllEditors"</param>
-		/// <param name="optional">optional parameters: "deleteForAllEditors"</param>
+		/// <param name="editionUser">User object requesting the archive</param>
+		/// <param name="token">token required for optional "archiveForAllEditors"</param>
+		/// <param name="optional">optional parameters: "archiveForAllEditors"</param>
 		/// <param name="clientId"></param>
 		/// <returns></returns>
-		public async Task<DeleteTokenDTO> DeleteEditionAsync(
+		public async Task<ArchiveTokenDTO> ArchiveEditionAsync(
 				UserInfo       editionUser
 				, string       token
 				, List<string> optional
 				, string       clientId = null)
 		{
-			_parseOptional(optional, out var deleteForAllEditors);
+			_parseOptional(optional, out var archiveForAllEditors);
 
-			var deleteResponse = new DeleteTokenDTO
+			var archiveResponse = new ArchiveTokenDTO
 			{
 					editionId = editionUser.EditionId.Value
 					, token = null
@@ -274,12 +309,12 @@ namespace SQE.API.Server.Services
 			};
 
 			// Check if the edition should be deleted for all users
-			if (deleteForAllEditors)
+			if (archiveForAllEditors && editionUser.IsAdmin)
 			{
 				var editionUsers = await _editionRepo.GetEditionEditorUserIdsAsync(editionUser);
 
 				// Try to delete the edition fully for all editors
-				var newToken = await _editionRepo.DeleteAllEditionDataAsync(editionUser, token);
+				var newToken = await _editionRepo.ArchiveEditionAsync(editionUser, token);
 
 				// End the request with null for successful delete or a proper token for requests without a confirmation token
 				if (string.IsNullOrEmpty(newToken))
@@ -289,18 +324,20 @@ namespace SQE.API.Server.Services
 					foreach (var userId in editionUsers)
 					{
 						await _hubContext.Clients.GroupExcept($"user-{userId.ToString()}", clientId)
-										 .DeletedEdition(deleteResponse);
+										 .DeletedEdition(archiveResponse);
 					}
 
 					return null;
 				}
 
-				deleteResponse.token = newToken;
+				// Return the token that an admin can use to confirm the archive request
+				// and complete it
+				archiveResponse.token = newToken;
 
-				return deleteResponse;
+				return archiveResponse;
 			}
 
-			// The edition should only be made inaccessible for the current user
+			// The edition should only be made inaccessible only for the current user
 			var userInfo = await _userRepo.GetDetailedUserByIdAsync(editionUser.userId);
 
 			// Setting all permission to false is how we delete a user's access to an edition.
@@ -314,9 +351,9 @@ namespace SQE.API.Server.Services
 
 			// Broadcast edition deletion notification to all connections of this user
 			await _hubContext.Clients.GroupExcept($"user-{editionUser.userId.ToString()}", clientId)
-							 .DeletedEdition(deleteResponse);
+							 .DeletedEdition(archiveResponse);
 
-			return deleteResponse;
+			return archiveResponse;
 		}
 
 		/// <summary>
@@ -348,8 +385,7 @@ namespace SQE.API.Server.Services
 							editionUser.userId
 							, editionUser.EditionId); //get wanted edition by edition Id
 
-			var edition = EditionModelToDTO(
-					editions.First(x => x.EditionId == editionUser.EditionId));
+			var edition = editions.First(x => x.EditionId == editionUser.EditionId).ToDTO();
 
 			const string emailBody = @"
 <html><body>Dear $User,<br>
@@ -381,9 +417,7 @@ The Scripta Qumranica Electronica team</body></html>";
 							   .Replace("$WebServer", webServer)
 							   .Replace("$Token", newUserToken.Token.ToString())
 							   .Replace("$EditionName", edition.name)
-							   .Replace(
-									   "$ExpirationPeriod"
-									   , _appSettings.EmailTokenDaysValid.ToString()));
+							   .Replace("$ExpirationPeriod", _appSettings.EmailTokenDaysValid));
 
 			// Broadcast the request to the potential editor.
 			var editorBroadcastObject = new EditorInvitationDTO
@@ -650,6 +684,10 @@ The Scripta Qumranica Electronica team</body></html>";
 																	   x.First().ImageURL
 																	   + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/full/0/"
 																	   + x.First().ImageSuffix
+															   , irImageURL = x.First().IrImageURL
+																			  + $"/{envelope.MinX},{envelope.MinY},{envelope.Width},{envelope.Height}/full/0/"
+																			  + x.First()
+																				 .ImageSuffix
 															   , polygon = polys.Any()
 																	   ? wkw.Write(combinedPoly)
 																	   : null
@@ -676,59 +714,12 @@ The Scripta Qumranica Electronica team</body></html>";
 			};
 		}
 
-		private static EditionDTO EditionModelToDTO(Edition model)
+		public async Task<EditionManuscriptMetadataDTO> GetEditionMetadata(UserInfo editionUser)
 		{
-			return new EditionDTO
-			{
-					id = model.EditionId
-					, name = model.Name
-					, editionDataEditorId = model.EditionDataEditorId
-					, metrics =
-							new EditionManuscriptMetricsDTO
-							{
-									editorId = model.ManuscriptMetricsEditor
-									, height = model.Height
-									, width = model.Width
-									, ppi = model.PPI
-									, xOrigin = model.XOrigin
-									, yOrigin = model.YOrigin
-									,
-							}
-					, permission = PermissionModelToDTO(model.Permission)
-					, owner = UserService.UserModelToDto(model.Owner)
-					, thumbnailUrl = model.Thumbnail
-					, locked = model.Locked
-					, isPublic = model.IsPublic
-					, lastEdit = model.LastEdit
-					, copyright =
-							model.Copyright
-							?? Licence.printLicence(
-									model.CopyrightHolder
-									, model.Collaborators
-									, model.Editors)
-					, shares = model.Editors.Select(
-											x => new DetailedEditorRightsDTO
-											{
-													email = x.EditorEmail
-													, editionId = model.EditionId
-													, isAdmin = x.IsAdmin
-													, mayLock = x.MayLock
-													, mayRead = x.MayRead
-													, mayWrite = x.MayWrite
-													,
-											})
-									.ToList()
-					,
-			};
-		}
+			var results = await _editionRepo.GetEditionMetadata(editionUser);
 
-		private static PermissionDTO PermissionModelToDTO(Permission model) => new PermissionDTO
-		{
-				isAdmin = model.IsAdmin
-				, mayWrite = model.MayWrite
-				, mayRead = model.MayRead
-				,
-		};
+			return results.ToDTO();
+		}
 
 		private static DetailedEditorRightsDTO _permissionsToEditorRightsDTO(
 				string editorEmail
@@ -747,9 +738,11 @@ The Scripta Qumranica Electronica team</body></html>";
 				,
 		};
 
-		private static void _parseOptional(List<string> optional, out bool deleteForAllEditors)
+		private static void _parseOptional(
+				ICollection<string> optional
+				, out bool          deleteForAllEditors)
 		{
-			deleteForAllEditors = optional.Contains("deleteForAllEditors");
+			deleteForAllEditors = optional.Contains("archiveForAllEditors");
 		}
 	}
 }

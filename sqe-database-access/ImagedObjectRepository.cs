@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
@@ -10,27 +12,41 @@ namespace SQE.DatabaseAccess
 {
 	public interface IImagedObjectRepository
 	{
-		Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(
+		Task<IEnumerable<ImagedObject>> GetEditionImagedObjectsAsync(
 				UserInfo editionUser
 				, string imagedObjectId);
 
+		Task<ImagedObject> CreateEditionImagedObjectsAsync(
+				UserInfo editionUser
+				, string imagedObjectId);
+
+		Task DeleteEditionImagedObjectsAsync(UserInfo editionUser, string imagedObjectId);
+
 		Task<IEnumerable<ImagedObjectImage>> GetImagedObjectImagesAsync(string imagedObjectId);
+		Task<IEnumerable<uint>> GetImagedObjectEditionsAsync(uint? userId, string imagedObjectId);
+
+		Task<IEnumerable<AlteredRecord>> CreateEditionImagedObjectsBySqeImageIdAsync(
+				UserInfo editionUser
+				, uint   sqeImageId);
 	}
 
 	public class ImagedObjectRepository : DbConnectionBase
 										  , IImagedObjectRepository
 	{
-		public ImagedObjectRepository(IConfiguration config) : base(config) { }
+		private readonly IDatabaseWriter _databaseWriter;
 
-		public async Task<IEnumerable<ImagedObject>> GetImagedObjectsAsync(
+		public ImagedObjectRepository(IConfiguration config, IDatabaseWriter databaseWriter) :
+				base(config) => _databaseWriter = databaseWriter;
+
+		public async Task<IEnumerable<ImagedObject>> GetEditionImagedObjectsAsync(
 				UserInfo editionUser
 				, string imagedObjectId)
 		{
-			var sql = ImagedObjectQueries.GetQuery(imagedObjectId != null);
+			var sql = EditionImagedObjectQueries.GetQuery(!string.IsNullOrEmpty(imagedObjectId));
 
 			using (var connection = OpenConnection())
 			{
-				var results = await connection.QueryAsync<ImagedObjectQueries.Result>(
+				var results = await connection.QueryAsync<ImagedObject>(
 						sql
 						, new
 						{
@@ -40,9 +56,7 @@ namespace SQE.DatabaseAccess
 								,
 						});
 
-				var models = results.Select(CreateImagedObject);
-
-				return models;
+				return results;
 			}
 		}
 
@@ -57,18 +71,157 @@ namespace SQE.DatabaseAccess
 			}
 		}
 
-		private static ImagedObject CreateImagedObject(ImagedObjectQueries.Result imagedFragment)
+		public Task<IEnumerable<uint>> GetImagedObjectEditionsAsync(
+				uint?    userId
+				, string imagedObjectId)
 		{
-			var model = new ImagedObject
+			using (var conn = OpenConnection())
 			{
-					Id = imagedFragment.object_id
-					, Institution = imagedFragment.Institution
-					, Catalog1 = imagedFragment.catalog_1
-					, Catalog2 = imagedFragment.catalog_2
-					,
-			};
+				const string sql = @"
+SELECT DISTINCT edition_editor.edition_id
+FROM image_catalog
+JOIN SQE_image USING(image_catalog_id)
+JOIN artefact_shape USING(SQE_image_id)
+JOIN artefact_shape_owner USING(artefact_shape_id)
+JOIN edition USING(edition_id)
+JOIN edition_editor USING(edition_id)
+WHERE image_catalog.object_id = @ImagedObjectId
+	AND (edition.public = 1 OR edition_editor.user_id = @UserId)";
 
-			return model;
+				return conn.QueryAsync<uint>(
+						sql
+						, new { ImagedObjectId = imagedObjectId, UserId = userId ?? 0 });
+			}
+		}
+
+		public async Task<ImagedObject> CreateEditionImagedObjectsAsync(
+				UserInfo editionUser
+				, string imagedObjectId)
+		{
+			using (var transaction = new TransactionScope())
+			{
+				var imageCatalogueIds = await _getImageCatalogId(imagedObjectId);
+
+				if (!imageCatalogueIds.Any())
+				{
+					throw new StandardExceptions.DataNotFoundException(
+							"imaged object"
+							, imagedObjectId);
+				}
+
+				var createRequests = imageCatalogueIds.Select(
+						x =>
+						{
+							var parameters = new DynamicParameters();
+							parameters.Add("image_catalog_id", x);
+
+							return new MutationRequest(
+									MutateType.Create
+									, parameters
+									, "image_catalog"
+									, x);
+						});
+
+				var a = await _databaseWriter.WriteToDatabaseAsync(
+						editionUser
+						, createRequests.AsList());
+
+				transaction.Complete();
+			}
+
+			return (await GetEditionImagedObjectsAsync(editionUser, imagedObjectId))
+					.FirstOrDefault();
+		}
+
+		public async Task<IEnumerable<AlteredRecord>> CreateEditionImagedObjectsBySqeImageIdAsync(
+				UserInfo editionUser
+				, uint   sqeImageId)
+		{
+			var result = new List<AlteredRecord>();
+
+			using (var transaction = new TransactionScope())
+			{
+				var imageCatalogueIds = await _getRelatedImageCatalogIdsForSqeImage(sqeImageId);
+
+				// if (!imageCatalogueIds.Any())
+				// {
+				// 	throw new StandardExceptions.DataNotFoundException(
+				// 			"imaged object from SQE image"
+				// 			, sqeImageId);
+				// }
+
+				var createRequests = imageCatalogueIds.Select(
+						x =>
+						{
+							var parameters = new DynamicParameters();
+							parameters.Add("image_catalog_id", x);
+
+							return new MutationRequest(
+									MutateType.Create
+									, parameters
+									, "image_catalog"
+									, x);
+						});
+
+				result = await _databaseWriter.WriteToDatabaseAsync(
+						editionUser
+						, createRequests.AsList());
+
+				transaction.Complete();
+			}
+
+			return result;
+		}
+
+		public async Task DeleteEditionImagedObjectsAsync(
+				UserInfo editionUser
+				, string imagedObjectId)
+		{
+			using (var transaction = new TransactionScope())
+			{
+				var imageCatalogueIds = await _getImageCatalogId(imagedObjectId);
+
+				if (!imageCatalogueIds.Any())
+				{
+					throw new StandardExceptions.DataNotFoundException(
+							"imaged object"
+							, imagedObjectId);
+				}
+
+				var deleteRequests = imageCatalogueIds.Select(
+						x => new MutationRequest(
+								MutateType.Delete
+								, new DynamicParameters()
+								, "image_catalog"
+								, x));
+
+				await _databaseWriter.WriteToDatabaseAsync(editionUser, deleteRequests.AsList());
+				transaction.Complete();
+			}
+		}
+
+		private Task<IEnumerable<uint>> _getImageCatalogId(string imagedObjectId)
+		{
+			const string sql =
+					"SELECT image_catalog_id FROM image_catalog WHERE object_id = @ObjectId";
+
+			using (var conn = OpenConnection())
+				return conn.QueryAsync<uint>(sql, new { ObjectId = imagedObjectId });
+		}
+
+		private Task<IEnumerable<uint>> _getRelatedImageCatalogIdsForSqeImage(uint sqeImageId)
+		{
+			const string sql = @"
+select im2.image_catalog_id
+from SQE_image
+join image_catalog
+	on SQE_image.image_catalog_id = image_catalog.image_catalog_id
+join image_catalog im2
+	on image_catalog.object_id = im2.object_id
+where SQE_image.sqe_image_id = @SqeImageId";
+
+			using (var conn = OpenConnection())
+				return conn.QueryAsync<uint>(sql, new { SqeImageId = sqeImageId });
 		}
 	}
 }

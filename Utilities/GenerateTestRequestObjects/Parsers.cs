@@ -10,6 +10,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 
+// ReSharper disable ArrangeRedundantParentheses
+
 namespace GenerateTestRequestObjects
 {
 	public static class Parsers
@@ -67,6 +69,9 @@ namespace GenerateTestRequestObjects
 					anonymousAllowed = true;
 				else
 				{
+					if (attribute.Name.ToString() == "ApiExplorerSettings")
+						continue;
+
 					var attributeName = attribute.Name.ToString();
 
 					if (!validPathAttrs.Contains(
@@ -147,6 +152,7 @@ namespace GenerateTestRequestObjects
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
@@ -168,8 +174,8 @@ namespace SQE.ApiTest.ApiRequests
 							, method
 							, controllerName);
 
-					if (!parsedControllerMethods.requests.ContainsKey(methodDescription.RequestType)
-					)
+					if (!parsedControllerMethods.requests.ContainsKey(
+							methodDescription.RequestType))
 					{
 						parsedControllerMethods.requests.Add(
 								methodDescription.RequestType
@@ -372,13 +378,13 @@ namespace SQE.ApiTest.ApiRequests
 			{
 				throw new Exception(
 						$@"Could not find a method declaration for {
-									invokedMethod.ToString()
-								},
+							invokedMethod.ToString()
+						},
 called in method {
-									method.ToString()
-								} of class {
-									node.ToString()
-								}");
+	method.ToString()
+} of class {
+	node.ToString()
+}");
 			}
 
 			return methodDescription;
@@ -407,16 +413,15 @@ called in method {
 																	  x =>
 																	  {
 																		  NamespaceDeclarationSyntax
-																				  namespaceDeclarationSyntax
-																						  = null;
+																				  namespaceDeclarationSyntax =
+																						  null;
 
 																		  if (!Helpers
 																			   .SyntaxNodeHelper
 																			   .TryGetParentSyntax(
 																					   x
 																					   , out
-																					   namespaceDeclarationSyntax)
-																		  )
+																					   namespaceDeclarationSyntax))
 																			  return false;
 
 																		  return namespaces

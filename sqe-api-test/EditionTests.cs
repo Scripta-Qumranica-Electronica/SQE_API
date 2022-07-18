@@ -4,10 +4,13 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
+using MoreLinq;
 using SQE.API.DTO;
 using SQE.ApiTest.ApiRequests;
 using SQE.ApiTest.Helpers;
 using Xunit;
+
+// ReSharper disable ArrangeRedundantParentheses
 
 // TODO: all the tests for sharing have been commented out, since I updated the sharing system in
 // accordance with the team wishes.  They simply should be updated to reflect the new API endpoints
@@ -142,7 +145,7 @@ namespace SQE.ApiTest
 			try
 			{
 				// Act
-				// Send in the editor request 
+				// Send in the editor request
 				var (_, listenerResponse) = await ShareEdition(
 						newEdition
 						, Request.DefaultUsers.User1
@@ -246,7 +249,7 @@ namespace SQE.ApiTest
 						, Request.DefaultUsers.User2
 						, Request.DefaultUsers.User1);
 
-				// Act 
+				// Act
 				// Check permissions for edition info request
 				var get1 = new Get.V1_Editions_EditionId(newEdition);
 
@@ -294,7 +297,7 @@ namespace SQE.ApiTest
 				Assert.False(share2Msg.mayLock);
 				Assert.True(share2Msg.isAdmin);
 
-				// Act 
+				// Act
 				// Check permissions for edition info request
 				await get1.SendAsync(
 						_client
@@ -481,7 +484,7 @@ namespace SQE.ApiTest
 						, Request.DefaultUsers.User2
 						, Request.DefaultUsers.User1);
 
-				// Act 
+				// Act
 				// Check permissions for edition info request
 				var get1 = new Get.V1_Editions_EditionId(newEdition);
 
@@ -604,7 +607,7 @@ namespace SQE.ApiTest
 						, Request.DefaultUsers.User2
 						, Request.DefaultUsers.User1);
 
-				// Act 
+				// Act
 				// Check permissions for edition info request
 				var get1 = new Get.V1_Editions_EditionId(newEdition);
 
@@ -788,10 +791,11 @@ namespace SQE.ApiTest
 												,
 										}));
 
-				if (user1Resp2.StatusCode == HttpStatusCode.NoContent)
+				Assert.Equal(user1Resp2.StatusCode, HttpStatusCode.Forbidden);
+
+				if (user1Resp2.StatusCode == HttpStatusCode.Forbidden)
 					notDeleted = false;
 
-				user1Resp2.EnsureSuccessStatusCode();
 				Assert.Null(user1Msg2);
 			}
 			finally
@@ -820,7 +824,7 @@ namespace SQE.ApiTest
 			try
 			{
 				// Act
-				// Send in the editor request 
+				// Send in the editor request
 				var (_, listenerResponse) = await ShareEdition(
 						newEdition
 						, Request.DefaultUsers.User1
@@ -885,7 +889,7 @@ namespace SQE.ApiTest
 			try
 			{
 				// Act
-				// Send in the editor request 
+				// Send in the editor request
 				var (httpResponse, listenerResponse) = await ShareEdition(
 						newEdition
 						, Request.DefaultUsers.User1
@@ -1167,9 +1171,7 @@ namespace SQE.ApiTest
 			const uint editionId = 1;
 
 			const string necessaryCCLicenseText =
-					@"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. 
-To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/4.0/legalcode 
-or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.";
+					@"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.";
 
 			// Act
 			var editionRequest = new Get.V1_Editions_EditionId(editionId);
@@ -1350,6 +1352,138 @@ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 			Assert.Equal(metrics.yOrigin, msg2.metrics.yOrigin);
 
 			await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId);
+		}
+
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public async Task CanGetFilteredEditions(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var newEdition = await editionCreator.CreateEdition();
+				var editionRequestNull = new Get.V1_Editions();
+
+				// Act
+				await editionRequestNull.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionReqNullData = realtime
+						? editionRequestNull.SignalrResponseObject
+						: editionRequestNull.HttpResponseObject;
+
+				var editionRequestPubPriv = new Get.V1_Editions(true, true);
+
+				await editionRequestPubPriv.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionReqPubPrivData = realtime
+						? editionRequestPubPriv.SignalrResponseObject
+						: editionRequestPubPriv.HttpResponseObject;
+
+				var editionRequestPub = new Get.V1_Editions(true, false);
+
+				await editionRequestPub.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionReqPubData = realtime
+						? editionRequestPub.SignalrResponseObject
+						: editionRequestPub.HttpResponseObject;
+
+				var editionRequestPriv = new Get.V1_Editions(false, true);
+
+				await editionRequestPriv.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionReqPrivData = realtime
+						? editionRequestPriv.SignalrResponseObject
+						: editionRequestPriv.HttpResponseObject;
+
+				// Assert
+				editionReqNullData.IsDeepEqual(editionReqPubPrivData);
+
+				Assert.Contains(editionReqPrivData.editions, x => x.First().id == newEdition);
+				Assert.Contains(editionReqPubPrivData.editions, x => x.First().id == newEdition);
+				Assert.DoesNotContain(editionReqPubData.editions, x => x.First().id == newEdition);
+
+				Assert.True(editionReqPrivData.editions.Count < editionReqPubData.editions.Count);
+
+				Assert.Equal(
+						editionReqPubPrivData.editions.Count
+						, editionReqPrivData.editions.Count + editionReqPubData.editions.Count);
+			}
+		}
+
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public async Task CanGetEditionsByManuscript(bool realtime)
+		{
+			using (var editionCreator =
+					new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+			{
+				// Arrange
+				var newEdition = await editionCreator.CreateEdition();
+				var editionRequest = new Get.V1_Editions_EditionId(newEdition);
+
+				await editionRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var editionData = realtime
+						? editionRequest.SignalrResponseObject
+						: editionRequest.HttpResponseObject;
+
+				// Act
+				var manuscriptRequest =
+						new Get.V1_Manuscripts_ManuscriptId_Editions(
+								editionData.primary.manuscriptId);
+
+				await manuscriptRequest.SendAsync(
+						realtime
+								? null
+								: _client
+						, StartConnectionAsync
+						, true
+						, requestRealtime: realtime);
+
+				var manuscriptData = realtime
+						? manuscriptRequest.SignalrResponseObject
+						: manuscriptRequest.HttpResponseObject;
+
+				// Assert
+				Assert.True(1 < manuscriptData.editions.Count);
+
+				Assert.Contains(
+						manuscriptData.editions.Flatten()
+						, x => x.IsDeepEqual(editionData.primary));
+			}
 		}
 
 		[Fact]

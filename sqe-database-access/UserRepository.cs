@@ -56,8 +56,9 @@ namespace SQE.DatabaseAccess
 
 		Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password);
 
-		Task<string> GetUserDataStoreAsync(uint userId);
-		Task         SetUserDataStoreAsync(uint userId, string data);
+		Task<string>          GetUserDataStoreAsync(uint userId);
+		Task                  SetUserDataStoreAsync(uint userId, string data);
+		Task<DatabaseVersion> GetDatabaseVersion();
 	}
 
 	public class UserRepository : DbConnectionBase
@@ -139,7 +140,7 @@ namespace SQE.DatabaseAccess
 				{
 					return await connection.QuerySingleAsync<DetailedUser>(
 							UserByTokenQuery.GetQuery
-							, new { Token = token });
+							, new { Token = Guid.Parse(token) });
 				}
 				catch (InvalidOperationException)
 				{
@@ -166,7 +167,7 @@ namespace SQE.DatabaseAccess
 						, new
 						{
 								Email = email
-								, Token = token
+								, Token = Guid.Parse(token)
 								, Type = CreateUserEmailTokenQuery.Activate
 								,
 						});
@@ -198,7 +199,7 @@ namespace SQE.DatabaseAccess
 							{
 									Email = email
 									, Activated = 0
-									, Token = token
+									, Token = Guid.Parse(token)
 									,
 							});
 				}
@@ -370,8 +371,8 @@ namespace SQE.DatabaseAccess
 				{
 					foreach (var record in existingUser)
 					{
-						if (record.Activated
-						) // If this user record has been authenticated throw a conflict error
+						if (record
+								.Activated) // If this user record has been authenticated throw a conflict error
 							throw new StandardExceptions.ConflictingDataException("email");
 
 						await connection.ExecuteAsync(
@@ -502,7 +503,7 @@ namespace SQE.DatabaseAccess
 			{
 				var confirmRegistration = await connection.ExecuteAsync(
 						ConfirmNewUserAccount.GetQuery
-						, new { Token = token });
+						, new { Token = Guid.Parse(token) });
 
 				if (confirmRegistration != 1)
 				{
@@ -518,7 +519,7 @@ namespace SQE.DatabaseAccess
 						CreateUserDataStoreEntry.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, Data = "{}"
 								,
 						});
@@ -528,7 +529,7 @@ namespace SQE.DatabaseAccess
 						GetTokensQuery.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, Type = CreateUserEmailTokenQuery.Activate
 								,
 						});
@@ -685,7 +686,7 @@ namespace SQE.DatabaseAccess
 						UpdatePasswordByToken.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, Password = password
 								,
 						});
@@ -698,7 +699,7 @@ namespace SQE.DatabaseAccess
 						GetTokensQuery.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, Type = CreateUserEmailTokenQuery.ResetPassword
 								,
 						});
@@ -745,7 +746,7 @@ namespace SQE.DatabaseAccess
 				if (insertData != 1)
 				{
 					throw new StandardExceptions.DataNotWrittenException(
-							"insert into user data store");
+							"INSERT INTO user data store");
 				}
 			}
 		}
@@ -758,6 +759,18 @@ namespace SQE.DatabaseAccess
 						GetEditorInfo.GetQuery
 						, new { EditionId = editionId })).ToList();
 			}
+		}
+
+		public async Task<DatabaseVersion> GetDatabaseVersion()
+		{
+			const string databaseVersionQuery = @"
+SELECT Version, completed AS Date
+FROM db_version
+ORDER BY completed DESC
+LIMIT 1";
+
+			using (var conn = OpenConnection())
+				return await conn.QuerySingleAsync<DatabaseVersion>(databaseVersionQuery);
 		}
 
 		/// <summary>
@@ -776,7 +789,7 @@ namespace SQE.DatabaseAccess
 						SetUserSystemRole.GetQuery
 						, new
 						{
-								Token = token
+								Token = Guid.Parse(token)
 								, SystemRole = "REGISTERED_USER"
 								,
 						});

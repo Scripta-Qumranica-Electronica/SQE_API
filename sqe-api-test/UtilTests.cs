@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using NetTopologySuite.IO;
@@ -93,6 +94,50 @@ namespace SQE.ApiTest
 			Assert.True(
 					wkr.Read(goodPolygon.wktPolygon)
 					   .EqualsTopologically(wkr.Read(rtValidation.wktPolygon)));
+		}
+
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public async Task CanGetDatabaseVersion(bool realtime)
+		{
+			var dbVersionRequest = new Get.V1_Utils_DatabaseVersion();
+
+			await dbVersionRequest.SendAsync(
+					_client
+					, StartConnectionAsync
+					, false
+					, requestRealtime: realtime);
+
+			// Assert
+			var response = realtime
+					? dbVersionRequest.SignalrResponseObject
+					: dbVersionRequest.HttpResponseObject;
+
+			Assert.False(string.IsNullOrEmpty(response.version));
+			Assert.True(response.lastUpdated < DateTime.Now);
+		}
+
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public async Task CanGetApiVersion(bool realtime)
+		{
+			var dbVersionRequest = new Get.V1_Utils_ApiVersion();
+
+			await dbVersionRequest.SendAsync(
+					_client
+					, StartConnectionAsync
+					, false
+					, requestRealtime: realtime);
+
+			// Assert
+			var response = realtime
+					? dbVersionRequest.SignalrResponseObject
+					: dbVersionRequest.HttpResponseObject;
+
+			Assert.False(string.IsNullOrEmpty(response.version));
+			Assert.True(response.lastUpdated < DateTime.Now);
 		}
 	}
 }

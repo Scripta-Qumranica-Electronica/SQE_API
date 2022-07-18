@@ -55,11 +55,11 @@ WHERE $Where";
 	{
 		public const string GetQuery = @"
 SELECT user.user_id AS UserId,
-       edition_editor_id AS EditionEditionEditorId, 
-       COALESCE(may_write, FALSE) AS MayWrite, 
-       COALESCE(may_lock, FALSE) AS MayLock, 
-       COALESCE(may_read, public) AS MayRead, 
-       COALESCE(is_admin, FALSE) AS IsAdmin,
+       edition_editor_id AS EditionEditionEditorId,
+       IF(edition.archived = 1, False, COALESCE(may_write, FALSE)) AS MayWrite,
+       IF(edition.archived = 1, False, COALESCE(may_lock, FALSE)) AS MayLock,
+       IF(edition.archived = 1, False, COALESCE(may_read, public)) AS MayRead,
+       IF(edition.archived = 1, False, COALESCE(is_admin, FALSE)) AS IsAdmin,
        locked AS Locked
 FROM edition
 LEFT JOIN user ON user.user_id = @UserId
@@ -124,8 +124,8 @@ WHERE user_id = @UserId
 UPDATE user
 JOIN user_email_token USING(user_id)
 SET activated = 1
-WHERE user_email_token.token = @Token 
-    AND user_email_token.type = 'ACTIVATE_ACCOUNT' 
+WHERE user_email_token.token = @Token
+    AND user_email_token.type = 'ACTIVATE_ACCOUNT'
     AND user.activated = 0 ## Only new users can activate an account
 ";
 	}
@@ -135,7 +135,7 @@ WHERE user_email_token.token = @Token
 		public const string GetQuery = @"
 SELECT all_tokens.token AS token
 FROM SQE.user_email_token
-JOIN SQE.user_email_token AS all_tokens 
+JOIN SQE.user_email_token AS all_tokens
   ON all_tokens.user_id = SQE.user_email_token.user_id
   AND all_tokens.type = @Type
 WHERE user_email_token.token = @Token
@@ -213,8 +213,8 @@ WHERE user_email_token.token = @Token
 UPDATE user
 JOIN user_email_token USING(user_id)
 SET user.pw = SHA2(@Password, 224)
-WHERE user_email_token.token = @Token 
-    AND user_email_token.type = 'RESET_PASSWORD' 
+WHERE user_email_token.token = @Token
+    AND user_email_token.type = 'RESET_PASSWORD'
     AND user.activated = 1 ## Only activated users can reset their password
 ";
 	}

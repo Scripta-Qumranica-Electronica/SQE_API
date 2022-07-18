@@ -88,16 +88,18 @@ namespace SQE.API.Server.HttpControllers
 				, request);
 
 		/// <summary>
-		///  Provides details about the specified edition and all accessible alternate editions
+		///  Archives an edition so that in no longer appears in user data and searches. An admin
+		///  may use the archiveForAllEditors optional parameter in order to archive the edition
+		///  for all editors (must be confirmed with an archive token).
 		/// </summary>
-		/// <param name="editionId">Unique Id of the desired edition</param>
-		/// <param name="optional">Optional parameters: 'deleteForAllEditors'</param>
-		/// <param name="token">token required when using optional 'deleteForAllEditors'</param>
+		/// <param name="editionId">Unique Id of the desired edition to be archived</param>
+		/// <param name="optional">Optional parameters: 'archiveForAllEditors'</param>
+		/// <param name="token">token required when using optional 'archiveForAllEditors'</param>
 		[HttpDelete("v1/[controller]s/{editionId}")]
-		public async Task<ActionResult<DeleteTokenDTO>> DeleteEdition(
+		public async Task<ActionResult<ArchiveTokenDTO>> ArchiveEdition(
 				[FromRoute]   uint         editionId
 				, [FromQuery] List<string> optional
-				, [FromQuery] string       token) => await _editionService.DeleteEditionAsync(
+				, [FromQuery] string       token) => await _editionService.ArchiveEditionAsync(
 				await _userService.GetCurrentUserObjectAsync(editionId, true)
 				, token
 				, optional);
@@ -117,8 +119,14 @@ namespace SQE.API.Server.HttpControllers
 		/// </summary>
 		[AllowAnonymous]
 		[HttpGet("v1/[controller]s")]
-		public async Task<ActionResult<EditionListDTO>> ListEditions()
-			=> await _editionService.ListEditionsAsync(_userService.GetCurrentUserId());
+		public async Task<ActionResult<EditionListDTO>> ListEditions(
+				[FromQuery(Name = "published")]
+				bool? published
+				, [FromQuery(Name = "personal")]
+				bool? personal) => await _editionService.ListEditionsAsync(
+				_userService.GetCurrentUserId()
+				, published
+				, personal);
 
 		/// <summary>
 		///  Updates data for the specified edition
@@ -157,5 +165,25 @@ namespace SQE.API.Server.HttpControllers
 				GetEditionScriptLines([FromRoute] uint editionId)
 			=> await _editionService.GetEditionScriptLines(
 					await _userService.GetCurrentUserObjectAsync(editionId));
+
+		/// <summary>
+		///  Retrieve extra institutional metadata concerning the edition
+		///  manuscript if available.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <returns></returns>
+		[HttpGet("v1/[controller]s/{editionId}/metadata")]
+		[AllowAnonymous]
+		public async Task<ActionResult<EditionManuscriptMetadataDTO>>
+				GetEditionMetadata([FromRoute] uint editionId)
+			=> await _editionService.GetEditionMetadata(
+					await _userService.GetCurrentUserObjectAsync(editionId));
+
+		[HttpGet("v1/manuscripts/{manuscriptId}/[controller]s")]
+		[AllowAnonymous]
+		public async Task<EditionListDTO> GetManuscriptEditions([FromRoute] uint manuscriptId)
+			=> await _editionService.GetManuscriptEditionsAsync(
+					_userService.GetCurrentUserId()
+					, manuscriptId);
 	}
 }
