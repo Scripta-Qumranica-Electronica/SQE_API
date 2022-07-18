@@ -24,4 +24,4 @@ jobs:
         run: |
           export VERSION="${REF##*/v}"
           docker build --no-cache -t qumranica/sqe-http-api:${VERSION} -f ./docker/Dockerfile .
-          docker push -t qumranica/sqe-http=api:${VERSION}
+          docker push qumranica/sqe-http=api:${VERSION}
