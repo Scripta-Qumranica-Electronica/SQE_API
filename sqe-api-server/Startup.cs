@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -37,6 +37,15 @@ namespace SQE.API.Server
 		{
 			Configuration = configuration;
 			Environment = env;
+
+			// Serilog is configured in Main - where the runtime environment is unknown yet, and the
+			// environment specific appsettings.{env}.json file is not consulted.
+			// We want to reconfigure the logger here, from the new configuration
+
+			Log.CloseAndFlush();  // Close the old logger
+			Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration)
+												  .CreateLogger();  // Create a new logger from the full configuration
+
 
 			// Run the startup checks to ensure all necessary external services are available.
 			StartupChecks.RunAllChecks(configuration, env);

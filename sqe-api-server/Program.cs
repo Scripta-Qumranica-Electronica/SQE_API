@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +11,7 @@ namespace SQE.API.Server
 	{
 		public static int Main(string[] args)
 		{
+			// Temporary configuration for Serilog
 			var configuration = new ConfigurationBuilder()
 								.SetBasePath(Directory.GetCurrentDirectory())
 
@@ -21,6 +22,8 @@ namespace SQE.API.Server
 
 			Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration)
 												  .CreateLogger();
+			// The logger is configured now, but not with the full configuration (appsettings.{env}.json is not consulted, and neither are
+			// environment variables). The logger will be reinitializaed in the Startup object constructor, with the full configuration.
 
 			try
 			{
