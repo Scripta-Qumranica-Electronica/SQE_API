@@ -31,6 +31,7 @@ SELECT DISTINCTROW ed2.edition_id AS EditionId,
         ed2.manuscript_id AS ManuscriptId,
         ed2.locked AS Locked,
         ed2.public AS IsPublic,
+		ed2.publication_date AS PublicationDate,
         ed2.manuscript_id AS ScrollId,
         last.last_edit AS LastEdit,
 
@@ -161,6 +162,11 @@ ORDER BY manuscript_data.manuscript_id, ed2.edition_id
 			public string    Collaborators           { get; set; }
 			public string    CopyrightHolder         { get; set; }
 			public bool      IsPublic                { get; set; }
+		
+			public DateTime?      PublicationDate                { get; set; }
+
+		
+		
 		}
 	}
 
@@ -193,6 +199,7 @@ SELECT DISTINCTROW edition.edition_id AS EditionId,
         edition.manuscript_id AS ManuscriptId,
         edition.locked AS Locked,
         edition.public AS IsPublic,
+		edition.publication_date AS PublicationDate,
         edition.manuscript_id AS ScrollId,
         last.last_edit AS LastEdit,
 
@@ -326,6 +333,7 @@ ORDER BY manuscript_data.name, edition.edition_id
 			public string    Collaborators           { get; set; }
 			public string    CopyrightHolder         { get; set; }
 			public bool      IsPublic                { get; set; }
+			public DateTime?      PublicationDate    { get; set; }
 		}
 	}
 
@@ -358,6 +366,7 @@ SELECT DISTINCTROW ed1.edition_id AS EditionId,
         manuscript_data.manuscript_id AS ManuscriptId,
         ed1.locked AS Locked,
         ed1.public AS IsPublic,
+		ed1.publication_date AS PublicationDate,
         manuscript_data.manuscript_id AS ScrollId,
         last.last_edit AS LastEdit,
 
@@ -463,6 +472,8 @@ WHERE ed1.archived != 1 $Where
 			public string    Collaborators           { get; set; }
 			public string    CopyrightHolder         { get; set; }
 			public bool      IsPublic                { get; set; }
+			public DateTime?      PublicationDate                { get; set; }
+
 		}
 	}
 

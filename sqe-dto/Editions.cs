@@ -40,6 +40,8 @@ namespace SQE.API.DTO
 		[Required]
 		public bool isPublic { get; set; }
 
+		public DateTime? publicationDate {get; set;}
+
 		public DateTime? lastEdit { set; get; }
 
 		[Required]

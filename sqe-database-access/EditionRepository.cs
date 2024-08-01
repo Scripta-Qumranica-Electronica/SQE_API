@@ -165,7 +165,8 @@ namespace SQE.DatabaseAccess
 												  , EditionDataEditorId =
 														  editionGroup.EditionDataEditorId
 												  , EditionId = editionGroup.EditionId
-												  , IsPublic = editionGroup.IsPublic
+												  , IsPublic = editionGroup.IsPublic,
+												   PublicationDate = editionGroup.PublicationDate
 												  , LastEdit = editionGroup.LastEdit
 												  , Locked = editionGroup.Locked
 												  , Owner =
@@ -304,7 +305,8 @@ namespace SQE.DatabaseAccess
 										  CopyrightHolder = editionGroup.CopyrightHolder
 										  , EditionDataEditorId = editionGroup.EditionDataEditorId
 										  , EditionId = editionGroup.EditionId
-										  , IsPublic = editionGroup.IsPublic
+										  , IsPublic = editionGroup.IsPublic,
+										  PublicationDate = editionGroup.PublicationDate
 										  , LastEdit = editionGroup.LastEdit
 										  , Locked = editionGroup.Locked
 										  , Owner =
@@ -1218,7 +1220,8 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 										  CopyrightHolder = editionGroup.CopyrightHolder
 										  , EditionDataEditorId = editionGroup.EditionDataEditorId
 										  , EditionId = editionGroup.EditionId
-										  , IsPublic = editionGroup.IsPublic
+										  , IsPublic = editionGroup.IsPublic,
+										  	PublicationDate = editionGroup.PublicationDate
 										  , LastEdit = editionGroup.LastEdit
 										  , Locked = editionGroup.Locked
 										  , Owner =

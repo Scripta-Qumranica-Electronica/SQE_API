@@ -21,6 +21,7 @@ namespace SQE.DatabaseAccess.Models
 		public string                      Thumbnail               { get; set; }
 		public bool                        Locked                  { get; set; }
 		public bool                        IsPublic                { get; set; }
+		public DateTime?                   PublicationDate         { get; set; }   
 		public DateTime?                   LastEdit                { get; set; }
 		public User                        Owner                   { get; set; }
 		public string                      Copyright               { get; set; }

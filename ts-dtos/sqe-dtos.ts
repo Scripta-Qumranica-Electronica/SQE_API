@@ -143,6 +143,7 @@ export interface EditionDTO {
     metrics: EditionManuscriptMetricsDTO;
     locked: boolean;
     isPublic: boolean;
+    publicationDate? :string;
     lastEdit?: string;
     copyright: string;
 }

@@ -36,6 +36,7 @@ namespace SQE.API.Server.Serialization
 					, thumbnailUrl = model.Thumbnail
 					, locked = model.Locked
 					, isPublic = model.IsPublic
+					, publicationDate = model.PublicationDate
 					, lastEdit = model.LastEdit
 					, copyright =
 							model.Copyright
