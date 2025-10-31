@@ -1,9 +1,9 @@
-namespace SQE.DatabaseAccess.Queries
+namespace SQE.DatabaseAccess.Queries;
+
+internal static class GetManuscriptMetadataQuery
 {
-	internal static class GetManuscriptMetadataQuery
-	{
-		// Added here an ad-hoc uniqueness constraint, we may need an index on `path` for better performance
-		public const string GetQuery = @"
+	// Added here an ad-hoc uniqueness constraint, we may need an index on `path` for better performance
+	public const string GetQuery = @"
 SELECT 	material,
 				publication_number AS publicationNumber,
 				plate,
@@ -24,5 +24,4 @@ FROM  edition_iaa_manifest
 WHERE edition_id = @EditionId
 LIMIT 1
 ";
-	}
 }

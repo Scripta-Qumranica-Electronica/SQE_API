@@ -14,294 +14,290 @@ using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
-namespace SQE.API.Server.Services
+namespace SQE.API.Server.Services;
+
+public interface IScriptService
 {
-	public interface IScriptService
+	Task<ScriptDataListDTO> GetEditionScribalFontData(UserInfo user);
+
+	Task<ScriptDataDTO> CreateEditionScribalFontData(
+			UserInfo              user
+			, CreateScriptDataDTO data
+			, string              clientId = null);
+
+	Task<ScriptDataDTO> UpdateEditionScribalFontData(
+			UserInfo              user
+			, uint                scribalFontId
+			, CreateScriptDataDTO data
+			, string              clientId = null);
+
+	Task<NoContentResult> DeleteScribalFont(
+			UserInfo user
+			, uint   scribalFontId
+			, string clientId = null);
+
+	Task<KernPairDTO> SetEditionScribalFontKerningPair(
+			UserInfo            user
+			, uint              scribalFontId
+			, CreateKernPairDTO kernPair
+			, string            clientId = null);
+
+	Task<NoContentResult> DeleteEditionScribalFontKerningPair(
+			UserInfo user
+			, uint   scribalFontId
+			, string firstCharacter
+			, string secondCharacter
+			, string clientId = null);
+
+	Task<GlyphDataDTO> SetEditionScribalFontGlyph(
+			UserInfo             user
+			, uint               scribalFontId
+			, CreateGlyphDataDTO glyph
+			, string             clientId = null);
+
+	Task<NoContentResult> DeleteEditionScribalFontGlyph(
+			UserInfo user
+			, uint   scribalFontId
+			, string glyph
+			, string clientId = null);
+}
+
+public class ScriptService : IScriptService
+{
+	private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+	private readonly IScriptRepository                _scriptRepository;
+
+	public ScriptService(
+			IHubContext<MainHub, ISQEClient> hubContext
+			, IScriptRepository              scriptRepository)
 	{
-		Task<ScriptDataListDTO> GetEditionScribalFontData(UserInfo user);
-
-		Task<ScriptDataDTO> CreateEditionScribalFontData(
-				UserInfo              user
-				, CreateScriptDataDTO data
-				, string              clientId = null);
-
-		Task<ScriptDataDTO> UpdateEditionScribalFontData(
-				UserInfo              user
-				, uint                scribalFontId
-				, CreateScriptDataDTO data
-				, string              clientId = null);
-
-		Task<NoContentResult> DeleteScribalFont(
-				UserInfo user
-				, uint   scribalFontId
-				, string clientId = null);
-
-		Task<KernPairDTO> SetEditionScribalFontKerningPair(
-				UserInfo            user
-				, uint              scribalFontId
-				, CreateKernPairDTO kernPair
-				, string            clientId = null);
-
-		Task<NoContentResult> DeleteEditionScribalFontKerningPair(
-				UserInfo user
-				, uint   scribalFontId
-				, string firstCharacter
-				, string secondCharacter
-				, string clientId = null);
-
-		Task<GlyphDataDTO> SetEditionScribalFontGlyph(
-				UserInfo             user
-				, uint               scribalFontId
-				, CreateGlyphDataDTO glyph
-				, string             clientId = null);
-
-		Task<NoContentResult> DeleteEditionScribalFontGlyph(
-				UserInfo user
-				, uint   scribalFontId
-				, string glyph
-				, string clientId = null);
+		_hubContext = hubContext;
+		_scriptRepository = scriptRepository;
 	}
 
-	public class ScriptService : IScriptService
+	public async Task<ScriptDataListDTO> GetEditionScribalFontData(UserInfo user)
 	{
-		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
-		private readonly IScriptRepository                _scriptRepository;
+		var scribalFontIds = await _scriptRepository.GetEditionScribalFontIds(user);
+		var scribalFonts = new List<ScriptDataDTO>();
 
-		public ScriptService(
-				IHubContext<MainHub, ISQEClient> hubContext
-				, IScriptRepository              scriptRepository)
+		foreach (var scribalFontId in scribalFontIds)
 		{
-			_hubContext = hubContext;
-			_scriptRepository = scriptRepository;
+			var kernPairs =
+					await _scriptRepository.GetEditionScribalFontKernPairs(user, scribalFontId);
+
+			var glyphs = await _scriptRepository.GetEditionScribalFontGlyphs(user, scribalFontId);
+
+			var fontInfo = await _scriptRepository.GetEditionScribalFontInfo(user, scribalFontId);
+
+			scribalFonts.Add(
+					new ScriptDataDTO
+					{
+							glyphs = glyphs.ToDTO()
+							, kerningPairs = kernPairs.ToDTO()
+							, lineSpace = fontInfo?.LineSpaceSize ?? 0
+							, wordSpace = fontInfo?.SpaceSize ?? 0
+							, creatorId = fontInfo?.CreatorId ?? 0
+							, editorId = fontInfo?.EditorId ?? 0
+							, scribalFontId = scribalFontId
+							,
+					});
 		}
 
-		public async Task<ScriptDataListDTO> GetEditionScribalFontData(UserInfo user)
-		{
-			var scribalFontIds = await _scriptRepository.GetEditionScribalFontIds(user);
-			var scribalFonts = new List<ScriptDataDTO>();
+		return new ScriptDataListDTO { scripts = scribalFonts };
+	}
 
-			foreach (var scribalFontId in scribalFontIds)
-			{
-				var kernPairs =
-						await _scriptRepository.GetEditionScribalFontKernPairs(user, scribalFontId);
+	public async Task<ScriptDataDTO> CreateEditionScribalFontData(
+			UserInfo              user
+			, CreateScriptDataDTO data
+			, string              clientId = null)
+	{
+		var scribalFontId = await _scriptRepository.CreateNewScribalFontId(user);
 
-				var glyphs =
-						await _scriptRepository.GetEditionScribalFontGlyphs(user, scribalFontId);
+		var newScribalFont = await _setEditionScriptData(user, scribalFontId, data);
 
-				var fontInfo =
-						await _scriptRepository.GetEditionScribalFontInfo(user, scribalFontId);
+		// Broadcast the update
+		await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+						 .CreatedScribalFontInfo(newScribalFont);
 
-				scribalFonts.Add(
-						new ScriptDataDTO
-						{
-								glyphs = glyphs.ToDTO()
-								, kerningPairs = kernPairs.ToDTO()
-								, lineSpace = fontInfo?.LineSpaceSize ?? 0
-								, wordSpace = fontInfo?.SpaceSize ?? 0
-								, creatorId = fontInfo?.CreatorId ?? 0
-								, editorId = fontInfo?.EditorId ?? 0
-								, scribalFontId = scribalFontId
-								,
-						});
-			}
+		return newScribalFont;
+	}
 
-			return new ScriptDataListDTO { scripts = scribalFonts };
-		}
+	public async Task<ScriptDataDTO> UpdateEditionScribalFontData(
+			UserInfo              user
+			, uint                scribalFontId
+			, CreateScriptDataDTO data
+			, string              clientId = null)
+	{
+		var updatedScribalFont = await _setEditionScriptData(user, scribalFontId, data);
 
-		public async Task<ScriptDataDTO> CreateEditionScribalFontData(
-				UserInfo              user
-				, CreateScriptDataDTO data
-				, string              clientId = null)
-		{
-			var scribalFontId = await _scriptRepository.CreateNewScribalFontId(user);
+		// Broadcast the update
+		await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+						 .UpdatedScribalFontInfo(updatedScribalFont);
 
-			var newScribalFont = await _setEditionScriptData(user, scribalFontId, data);
+		return updatedScribalFont;
+	}
 
-			// Broadcast the update
-			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-							 .CreatedScribalFontInfo(newScribalFont);
+	public async Task<NoContentResult> DeleteScribalFont(
+			UserInfo user
+			, uint   scribalFontId
+			, string clientId = null)
+	{
+		await _scriptRepository.DeleteScribalFont(user, scribalFontId);
 
-			return newScribalFont;
-		}
+		// Broadcast the deletion
+		await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+						 .DeletedScribalFont(
+								 new DeleteScribalFontDTO
+								 {
+										 editionEditorId = user.EditionEditorId.Value
+										 , scribalFontId = scribalFontId
+										 ,
+								 });
 
-		public async Task<ScriptDataDTO> UpdateEditionScribalFontData(
-				UserInfo              user
-				, uint                scribalFontId
-				, CreateScriptDataDTO data
-				, string              clientId = null)
-		{
-			var updatedScribalFont = await _setEditionScriptData(user, scribalFontId, data);
+		return new NoContentResult();
+	}
 
-			// Broadcast the update
-			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-							 .UpdatedScribalFontInfo(updatedScribalFont);
+	public async Task<KernPairDTO> SetEditionScribalFontKerningPair(
+			UserInfo            user
+			, uint              scribalFontId
+			, CreateKernPairDTO kernPair
+			, string            clientId = null)
+	{
+		await _scriptRepository.SetScribalFontKern(
+				user
+				, scribalFontId
+				, kernPair.firstCharacter
+				, kernPair.secondCharacter
+				, kernPair.xKern
+				, kernPair.yKern);
 
-			return updatedScribalFont;
-		}
+		// Get the updated information
+		var scriptKern = await GetEditionScribalFontData(user);
 
-		public async Task<NoContentResult> DeleteScribalFont(
-				UserInfo user
-				, uint   scribalFontId
-				, string clientId = null)
-		{
-			await _scriptRepository.DeleteScribalFont(user, scribalFontId);
+		var updatedScriptKern = scriptKern.scripts.First(x => x.scribalFontId == scribalFontId)
+										  .kerningPairs
+										  .First(x => x.firstCharacter == kernPair.firstCharacter
+													  && x.secondCharacter
+													  == kernPair.secondCharacter);
 
-			// Broadcast the deletion
-			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-							 .DeletedScribalFont(
-									 new DeleteScribalFontDTO
-									 {
-											 editionEditorId = user.EditionEditorId.Value
-											 , scribalFontId = scribalFontId
-											 ,
-									 });
+		// Broadcast update as well
+		await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+						 .CreatedScribalFontKerningPair(updatedScriptKern);
 
-			return new NoContentResult();
-		}
+		return updatedScriptKern;
+	}
 
-		public async Task<KernPairDTO> SetEditionScribalFontKerningPair(
-				UserInfo            user
-				, uint              scribalFontId
-				, CreateKernPairDTO kernPair
-				, string            clientId = null)
-		{
-			await _scriptRepository.SetScribalFontKern(
-					user
-					, scribalFontId
-					, kernPair.firstCharacter
-					, kernPair.secondCharacter
-					, kernPair.xKern
-					, kernPair.yKern);
+	public async Task<NoContentResult> DeleteEditionScribalFontKerningPair(
+			UserInfo user
+			, uint   scribalFontId
+			, string firstCharacter
+			, string secondCharacter
+			, string clientId = null)
+	{
+		firstCharacter = HttpUtility.HtmlDecode(firstCharacter);
+		secondCharacter = HttpUtility.HtmlDecode(secondCharacter);
 
-			// Get the updated information
-			var scriptKern = await GetEditionScribalFontData(user);
+		if (firstCharacter.Length != 1)
+			throw new StandardExceptions.ImproperInputDataException("first character");
 
-			var updatedScriptKern = scriptKern.scripts.First(x => x.scribalFontId == scribalFontId)
-											  .kerningPairs.First(
-													  x => x.firstCharacter
-														   == kernPair.firstCharacter
-														   && x.secondCharacter
-														   == kernPair.secondCharacter);
+		if (secondCharacter.Length != 1)
+			throw new StandardExceptions.ImproperInputDataException("second character");
 
-			// Broadcast update as well
-			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-							 .CreatedScribalFontKerningPair(updatedScriptKern);
+		await _scriptRepository.DeleteScribalFontKern(
+				user
+				, scribalFontId
+				, firstCharacter
+				, secondCharacter);
 
-			return updatedScriptKern;
-		}
+		// Broadcast update
+		await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+						 .DeletedScribalFontKerningPair(
+								 new DeleteKernPairDTO
+								 {
+										 editorId =
+												 user.EditionEditorId
+													 .Value // The value will exist because the user already passed the test of having write access
+										 , firstCharacter = firstCharacter
+										 , secondCharacter = secondCharacter
+										 , scribalFontId = scribalFontId
+										 ,
+								 });
 
-		public async Task<NoContentResult> DeleteEditionScribalFontKerningPair(
-				UserInfo user
-				, uint   scribalFontId
-				, string firstCharacter
-				, string secondCharacter
-				, string clientId = null)
-		{
-			firstCharacter = HttpUtility.HtmlDecode(firstCharacter);
-			secondCharacter = HttpUtility.HtmlDecode(secondCharacter);
+		return new NoContentResult();
+	}
 
-			if (firstCharacter.Length != 1)
-				throw new StandardExceptions.ImproperInputDataException("first character");
+	public async Task<GlyphDataDTO> SetEditionScribalFontGlyph(
+			UserInfo             user
+			, uint               scribalFontId
+			, CreateGlyphDataDTO glyph
+			, string             clientId = null)
+	{
+		// First verify that the shape is valid!
 
-			if (secondCharacter.Length != 1)
-				throw new StandardExceptions.ImproperInputDataException("second character");
+		await _scriptRepository.SetScribalFontGlyph(
+				user
+				, scribalFontId
+				, glyph.character
+				, glyph.shape
+				, glyph.yOffset);
 
-			await _scriptRepository.DeleteScribalFontKern(
-					user
-					, scribalFontId
-					, firstCharacter
-					, secondCharacter);
+		// Get the updated information
+		var scriptInfo = await GetEditionScribalFontData(user);
 
-			// Broadcast update
-			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-							 .DeletedScribalFontKerningPair(
-									 new DeleteKernPairDTO
-									 {
-											 editorId =
-													 user.EditionEditorId
-														 .Value // The value will exist because the user already passed the test of having write access
-											 , firstCharacter = firstCharacter
-											 , secondCharacter = secondCharacter
-											 , scribalFontId = scribalFontId
-											 ,
-									 });
+		var updatedScriptGlyph = scriptInfo.scripts.First(x => x.scribalFontId == scribalFontId)
+										   .glyphs.First(x => x.character == glyph.character);
 
-			return new NoContentResult();
-		}
+		// Broadcast update as well
+		await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+						 .CreatedScribalFontGlyph(updatedScriptGlyph);
 
-		public async Task<GlyphDataDTO> SetEditionScribalFontGlyph(
-				UserInfo             user
-				, uint               scribalFontId
-				, CreateGlyphDataDTO glyph
-				, string             clientId = null)
-		{
-			// First verify that the shape is valid!
+		return updatedScriptGlyph;
+	}
 
-			await _scriptRepository.SetScribalFontGlyph(
-					user
-					, scribalFontId
-					, glyph.character
-					, glyph.shape
-					, glyph.yOffset);
+	public async Task<NoContentResult> DeleteEditionScribalFontGlyph(
+			UserInfo user
+			, uint   scribalFontId
+			, string glyph
+			, string clientId = null)
+	{
+		glyph = HttpUtility.HtmlDecode(glyph);
 
-			// Get the updated information
-			var scriptInfo = await GetEditionScribalFontData(user);
+		if (glyph.Length != 1)
+			throw new StandardExceptions.ImproperInputDataException("glyph character");
 
-			var updatedScriptGlyph = scriptInfo.scripts.First(x => x.scribalFontId == scribalFontId)
-											   .glyphs.First(x => x.character == glyph.character);
+		await _scriptRepository.DeleteScribalFontGlyph(user, scribalFontId, glyph);
 
-			// Broadcast update as well
-			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-							 .CreatedScribalFontGlyph(updatedScriptGlyph);
+		// Broadcast update
+		await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
+						 .DeletedScribalFontGlyph(
+								 new DeleteGlyphDataDTO
+								 {
+										 character = glyph
+										 , editorId =
+												 user.EditionEditorId
+													 .Value // The value will exist because the user already passed the test of having write access
+										 , scribalFontId = scribalFontId
+										 ,
+								 });
 
-			return updatedScriptGlyph;
-		}
+		return new NoContentResult();
+	}
 
-		public async Task<NoContentResult> DeleteEditionScribalFontGlyph(
-				UserInfo user
-				, uint   scribalFontId
-				, string glyph
-				, string clientId = null)
-		{
-			glyph = HttpUtility.HtmlDecode(glyph);
+	private async Task<ScriptDataDTO> _setEditionScriptData(
+			UserInfo              user
+			, uint                scribalFontId
+			, CreateScriptDataDTO data)
+	{
+		await _scriptRepository.SetScribalFontInfo(
+				user
+				, scribalFontId
+				, data.wordSpace
+				, data.lineSpace);
 
-			if (glyph.Length != 1)
-				throw new StandardExceptions.ImproperInputDataException("glyph character");
+		var scriptData = await GetEditionScribalFontData(user);
 
-			await _scriptRepository.DeleteScribalFontGlyph(user, scribalFontId, glyph);
+		var updatedScriptData = scriptData.scripts.First(x => x.scribalFontId == scribalFontId);
 
-			// Broadcast update
-			await _hubContext.Clients.GroupExcept(user.EditionId.ToString(), clientId)
-							 .DeletedScribalFontGlyph(
-									 new DeleteGlyphDataDTO
-									 {
-											 character = glyph
-											 , editorId =
-													 user.EditionEditorId
-														 .Value // The value will exist because the user already passed the test of having write access
-											 , scribalFontId = scribalFontId
-											 ,
-									 });
-
-			return new NoContentResult();
-		}
-
-		private async Task<ScriptDataDTO> _setEditionScriptData(
-				UserInfo              user
-				, uint                scribalFontId
-				, CreateScriptDataDTO data)
-		{
-			await _scriptRepository.SetScribalFontInfo(
-					user
-					, scribalFontId
-					, data.wordSpace
-					, data.lineSpace);
-
-			var scriptData = await GetEditionScribalFontData(user);
-
-			var updatedScriptData = scriptData.scripts.First(x => x.scribalFontId == scribalFontId);
-
-			return updatedScriptData;
-		}
+		return updatedScriptData;
 	}
 }

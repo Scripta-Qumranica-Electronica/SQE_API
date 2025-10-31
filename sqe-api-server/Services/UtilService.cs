@@ -1,112 +1,128 @@
 using System;
-using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
+using Serilog;
 using SQE.API.DTO;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
 using SQE.DatabaseAccess;
-using Serilog;
 
-namespace SQE.API.Server.Services
+namespace SQE.API.Server.Services;
+
+public interface IUtilService
 {
-	public interface IUtilService
+	WktPolygonDTO            RepairWktPolygonAsync(string wktPolygon, string clientId = null);
+	Task<DatabaseVersionDTO> GetDatabaseVersion();
+	Task<APIVersionDTO>      GetAPIVersion();
+	Task<NoContentResult>    ReportGithubIssueRequestAsync(GithubIssueReportDTO payload);
+}
+
+public class UtilService : IUtilService
+{
+	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
-		WktPolygonDTO            RepairWktPolygonAsync(string wktPolygon, string clientId = null);
-		Task<DatabaseVersionDTO> GetDatabaseVersion();
-		Task<APIVersionDTO>      GetAPIVersion();
-		Task<NoContentResult>	 ReportGithubIssueRequestAsync(GithubIssueReportDTO payload);
+			// This is the key change for UTF-8 output
+			Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+			, PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+			, // Optional: for GitHub's style
+	};
+
+	private readonly IConfiguration                   _config;
+	private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+	private readonly IUserRepository                  _userRepo;
+
+	public UtilService(
+			IHubContext<MainHub, ISQEClient> hubContext
+			, IUserRepository                userRepo
+			, IConfiguration                 config)
+	{
+		_hubContext = hubContext;
+		_userRepo = userRepo;
+		_config = config;
 	}
 
-	public class UtilService : IUtilService
+	public WktPolygonDTO RepairWktPolygonAsync(string wktPolygon, string clientId = null)
 	{
-		private readonly IConfiguration                   _config;
-		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
-		private readonly IUserRepository                  _userRepo;
+		var repaired = GeometryValidation.ValidatePolygon(wktPolygon, "polygon", true);
 
-		public UtilService(
-				IHubContext<MainHub, ISQEClient> hubContext
-				, IUserRepository                userRepo
-				, IConfiguration                 config)
+		return new WktPolygonDTO { wktPolygon = repaired };
+	}
+
+	public async Task<DatabaseVersionDTO> GetDatabaseVersion()
+	{
+		var versionInfo = await _userRepo.GetDatabaseVersion();
+
+		return new DatabaseVersionDTO
 		{
-			_hubContext = hubContext;
-			_userRepo = userRepo;
-			_config = config;
-		}
+				version = versionInfo.Version
+				, lastUpdated = versionInfo.Date
+				,
+		};
+	}
 
-		public WktPolygonDTO RepairWktPolygonAsync(string wktPolygon, string clientId = null)
+	public async Task<APIVersionDTO> GetAPIVersion()
+	{
+		var appSettings = _config.GetSection("AppSettings").Get<AppSettings>();
+
+		return new APIVersionDTO
 		{
-			var repaired = GeometryValidation.ValidatePolygon(wktPolygon, "polygon", true);
+				version = appSettings.ApiVersion
+				, lastUpdated = DateTime.Parse(appSettings.ApiUpdateDate)
+				,
+		};
+	}
 
-			return new WktPolygonDTO { wktPolygon = repaired };
-		}
+	public async Task<NoContentResult> ReportGithubIssueRequestAsync(GithubIssueReportDTO payload)
+	{
+		var log = Log.ForContext<UtilService>();
+		var token = _config.GetConnectionString("GitHubAPIToken");
+		var url = _config.GetConnectionString("GitHubUrl");
 
-		public async Task<DatabaseVersionDTO> GetDatabaseVersion()
+		log.Debug("Reporting issue to github");
+		log.Verbose("URL: {url}", url);
+
+		var httpClient = new HttpClient();
+		httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
+		httpClient.DefaultRequestHeaders.Add("User-Agent", "request");
+
+		httpClient.DefaultRequestHeaders.Authorization =
+				new AuthenticationHeaderValue(
+						"Token"
+						, token); //token123 is replaced by my token of course
+
+		var jsonData = new
 		{
-			var versionInfo = await _userRepo.GetDatabaseVersion();
+				payload.title
+				, body = $"url: {
+					payload.url
+				}\nUser: {
+					payload.username
+				}\n Report: {
+					payload.comment
+				}"
+				,
+		};
 
-			return new DatabaseVersionDTO
-			{
-					version = versionInfo.Version
-					, lastUpdated = versionInfo.Date
-					,
-			};
-		}
+		var json = JsonSerializer.Serialize(jsonData, JsonOptions);
+		log.Verbose("Payload: {json}", json);
 
-		public async Task<APIVersionDTO> GetAPIVersion()
-		{
-			var appSettings = _config.GetSection("AppSettings").Get<AppSettings>();
+		var data = new StringContent(json, Encoding.UTF8, "application/json");
 
-			return new APIVersionDTO
-			{
-					version = appSettings.ApiVersion
-					, lastUpdated = DateTime.Parse(appSettings.ApiUpdateDate)
-					,
-			};
-		}
+		var response = await httpClient.PostAsync(url, data);
+		var result = response.Content.ReadAsStringAsync().Result;
 
-		public async Task<NoContentResult> ReportGithubIssueRequestAsync(GithubIssueReportDTO payload)
-		{
-			var log = Log.ForContext<UtilService>();
-			var token = _config.GetConnectionString("GitHubAPIToken");
-			var url   = _config.GetConnectionString("GitHubUrl");
+		if (!response.IsSuccessStatusCode)
+			log.Warning("Error returned from github: {result}", result);
+		else
+			log.Information("Issue reported to github");
 
-			log.Debug("Reporting issue to github");
-			log.Verbose("URL: {url}", url);
-
-			var httpClient = new HttpClient();
-			httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
-			httpClient.DefaultRequestHeaders.Add("User-Agent", "request");
-
-			httpClient.DefaultRequestHeaders.Authorization =
-					new AuthenticationHeaderValue(
-							"Token"
-							, token); //token123 is replaced by my token of course
-
-			var json = JsonConvert.SerializeObject(new { title=payload.title, body=$"url: {payload.url}\nUser: {payload.username}\n Report: {payload.comment}" });
-			log.Verbose("Payload: {json}", json);
-
-			var data = new StringContent(json, Encoding.UTF8, "application/json");
-
-			var response = await httpClient.PostAsync(url, data);
-			var result = response.Content.ReadAsStringAsync().Result;
-
-			if (!response.IsSuccessStatusCode)
-			{
-				log.Warning("Error returned from github: {result}", result);
-			}
-			else
-			{
-				log.Information("Issue reported to github");
-			}
-
-			return new NoContentResult(); // We do not notify the user when there's a problem - for now
-		}
+		return new NoContentResult(); // We do not notify the user when there's a problem - for now
 	}
 }

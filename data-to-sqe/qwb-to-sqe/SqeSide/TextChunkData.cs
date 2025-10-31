@@ -1,8 +1,7 @@
-namespace SQE.DatabaseAccess.Models
+namespace SQE.DatabaseAccess.Models;
+
+public class TextChunkData
 {
-	public class TextChunkData
-	{
-		public TextEdition Text        { get; set; }
-		public Terminators Terminators { get; set; }
-	}
+	public TextEdition Text        { get; set; }
+	public Terminators Terminators { get; set; }
 }

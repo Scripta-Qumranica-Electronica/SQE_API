@@ -16,835 +16,881 @@ using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
-namespace SQE.ApiTest.ApiRequests
+namespace SQE.ApiTest.ApiRequests;
+
+public static partial class Delete
 {
-	public static partial class Delete
+	public class V1_Editions_EditionId_Artefacts_ArtefactId : RequestObject<EmptyInput, EmptyOutput>
 	{
-		public class V1_Editions_EditionId_Artefacts_ArtefactId :
-				RequestObject<EmptyInput, EmptyOutput>
+		private readonly uint _artefactId;
+		private readonly uint _editionId;
+
+		/// <summary>
+		///  Deletes the specified artefact
+		/// </summary>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId)
+
 		{
-			private readonly uint _artefactId;
-			private readonly uint _editionId;
+			_editionId = editionId;
+			_artefactId = artefactId;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Deletes the specified artefact
-			/// </summary>
-			/// <param name="artefactId">Unique Id of the desired artefact</param>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			public V1_Editions_EditionId_Artefacts_ArtefactId(uint editionId, uint artefactId)
-
-			{
-				_editionId = editionId;
-				_artefactId = artefactId;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.DeletedArtefact
-						, (DeletedArtefactIsNull, DeletedArtefactListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public DeleteIntIdDTO DeletedArtefact { get; private set; }
-
-			private void DeletedArtefactListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteIntIdDTO>(
-						"DeletedArtefact"
-						, receivedData => DeletedArtefact = receivedData);
-
-			private bool DeletedArtefactIsNull() => DeletedArtefact == null;
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-id"
-															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods DeletedArtefact = ListenerMethods.DeletedArtefact;
-			}
+			_listenerDict.Add(
+					ListenerMethods.DeletedArtefact
+					, (DeletedArtefactIsNull, DeletedArtefactListener));
 		}
 
-		public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId :
-				RequestObject<EmptyInput, DeleteIntIdDTO>
+		public Listeners AvailableListeners { get; }
+
+		public DeleteIntIdDTO DeletedArtefact { get; private set; }
+
+		private void DeletedArtefactListener(HubConnection signalrListener)
+			=> signalrListener.On<DeleteIntIdDTO>(
+					"DeletedArtefact"
+					, receivedData => DeletedArtefact = receivedData);
+
+		private bool DeletedArtefactIsNull() => DeletedArtefact == null;
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint _artefactGroupId;
-			private readonly uint _editionId;
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactId);
+		}
 
-			/// <summary>
-			///  Deletes the specified artefact group.
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="artefactGroupId">Unique Id of the artefact group to be deleted</param>
-			/// <returns></returns>
-			public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(
-					uint   editionId
-					, uint artefactGroupId)
+		public override uint? GetEditionId() => _editionId;
 
-			{
-				_editionId = editionId;
-				_artefactGroupId = artefactGroupId;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.DeletedArtefactGroup
-						, (DeletedArtefactGroupIsNull, DeletedArtefactGroupListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public DeleteIntIdDTO DeletedArtefactGroup { get; private set; }
-
-			private void DeletedArtefactGroupListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteIntIdDTO>(
-						"DeletedArtefactGroup"
-						, receivedData => DeletedArtefactGroup = receivedData);
-
-			private bool DeletedArtefactGroupIsNull() => DeletedArtefactGroup == null;
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-group-id"
-															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactGroupId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods DeletedArtefactGroup = ListenerMethods.DeletedArtefactGroup;
-			}
+		public class Listeners
+		{
+			public ListenerMethods DeletedArtefact = ListenerMethods.DeletedArtefact;
 		}
 	}
 
-	public static partial class Get
+	public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId :
+			RequestObject<EmptyInput, DeleteIntIdDTO>
 	{
-		public class V1_Editions_EditionId_Artefacts_ArtefactId :
-				RequestObject<EmptyInput, ArtefactDTO>
+		private readonly uint _artefactGroupId;
+		private readonly uint _editionId;
+
+		/// <summary>
+		///  Deletes the specified artefact group.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="artefactGroupId">Unique Id of the artefact group to be deleted</param>
+		/// <returns></returns>
+		public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(
+				uint   editionId
+				, uint artefactGroupId)
+
 		{
-			private readonly uint         _artefactId;
-			private readonly uint         _editionId;
-			private readonly List<string> _optional;
+			_editionId = editionId;
+			_artefactGroupId = artefactGroupId;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Provides a listing of all artefacts that are part of the specified edition
-			/// </summary>
-			/// <param name="artefactId">Unique Id of the desired artefact</param>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
-			public V1_Editions_EditionId_Artefacts_ArtefactId(
-					uint           editionId
-					, uint         artefactId
-					, List<string> optional = null)
-
-			{
-				_editionId = editionId;
-				_artefactId = artefactId;
-				_optional = optional;
-			}
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-id"
-															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}")
-													+ (_optional != null
-															? $"?optional={string.Join("&optional=", _optional)}"
-															: "");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactId
-							   , _optional);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			_listenerDict.Add(
+					ListenerMethods.DeletedArtefactGroup
+					, (DeletedArtefactGroupIsNull, DeletedArtefactGroupListener));
 		}
 
-		public class V1_Editions_EditionId_Artefacts_ArtefactId_Rois :
-				RequestObject<EmptyInput, InterpretationRoiDTOList>
+		public Listeners AvailableListeners { get; }
+
+		public DeleteIntIdDTO DeletedArtefactGroup { get; private set; }
+
+		private void DeletedArtefactGroupListener(HubConnection signalrListener)
+			=> signalrListener.On<DeleteIntIdDTO>(
+					"DeletedArtefactGroup"
+					, receivedData => DeletedArtefactGroup = receivedData);
+
+		private bool DeletedArtefactGroupIsNull() => DeletedArtefactGroup == null;
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-group-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactGroupId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint _artefactId;
-			private readonly uint _editionId;
-
-			/// <summary>
-			///  Provides a listing of all rois belonging to an artefact in the specified edition
-			/// </summary>
-			/// <param name="artefactId">Unique Id of the desired artefact</param>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			public V1_Editions_EditionId_Artefacts_ArtefactId_Rois(uint editionId, uint artefactId)
-
-			{
-				_editionId = editionId;
-				_artefactId = artefactId;
-			}
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-id"
-															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactGroupId);
 		}
 
-		public class V1_Editions_EditionId_Artefacts : RequestObject<EmptyInput, ArtefactListDTO>
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
 		{
-			private readonly uint         _editionId;
-			private readonly List<string> _optional;
+			public ListenerMethods DeletedArtefactGroup = ListenerMethods.DeletedArtefactGroup;
+		}
+	}
+}
 
-			/// <summary>
-			///  Provides a listing of all artefacts that are part of the specified edition
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
-			public V1_Editions_EditionId_Artefacts(uint editionId, List<string> optional = null)
+public static partial class Get
+{
+	public class V1_Editions_EditionId_Artefacts_ArtefactId : RequestObject<EmptyInput, ArtefactDTO>
+	{
+		private readonly uint         _artefactId;
+		private readonly uint         _editionId;
+		private readonly List<string> _optional;
 
-			{
-				_editionId = editionId;
-				_optional = optional;
-			}
+		/// <summary>
+		///  Provides a listing of all artefacts that are part of the specified edition
+		/// </summary>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
+		public V1_Editions_EditionId_Artefacts_ArtefactId(
+				uint           editionId
+				, uint         artefactId
+				, List<string> optional = null)
 
-			protected override string HttpPath() => RequestPath.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													+ (_optional != null
-															? $"?optional={string.Join("&optional=", _optional)}"
-															: "");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _optional);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+		{
+			_editionId = editionId;
+			_artefactId = artefactId;
+			_optional = optional;
 		}
 
-		public class V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments :
-				RequestObject<EmptyInput, ArtefactTextFragmentMatchListDTO>
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactId.ToString())
+														}")
+												+ (_optional != null
+														? $"?optional={
+															string.Join("&optional=", _optional)
+														}"
+														: "");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint         _artefactId;
-			private readonly uint         _editionId;
-			private readonly List<string> _optional;
-
-			/// <summary>
-			///  Provides a listing of text fragments that have text in the specified artefact.
-			///  With the optional query parameter "suggested", this endpoint will also return
-			///  any text fragment that the system suggests might have text in the artefact.
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="artefactId">Unique Id of the desired artefact</param>
-			/// <param name="optional">Add "suggested" to include possible matches suggested by the system</param>
-			public V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments(
-					uint           editionId
-					, uint         artefactId
-					, List<string> optional = null)
-
-			{
-				_editionId = editionId;
-				_artefactId = artefactId;
-				_optional = optional;
-			}
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-id"
-															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}")
-													+ (_optional != null
-															? $"?optional={string.Join("&optional=", _optional)}"
-															: "");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactId
-							   , _optional);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactId
+						   , _optional);
 		}
 
-		public class V1_Editions_EditionId_ArtefactGroups :
-				RequestObject<EmptyInput, ArtefactGroupListDTO>
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_Artefacts_ArtefactId_Rois :
+			RequestObject<EmptyInput, InterpretationRoiDTOList>
+	{
+		private readonly uint _artefactId;
+		private readonly uint _editionId;
+
+		/// <summary>
+		///  Provides a listing of all rois belonging to an artefact in the specified edition
+		/// </summary>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		public V1_Editions_EditionId_Artefacts_ArtefactId_Rois(uint editionId, uint artefactId)
+
 		{
-			private readonly uint _editionId;
-
-			/// <summary>
-			///  Gets a listing of all artefact groups in the edition
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <returns></returns>
-			public V1_Editions_EditionId_ArtefactGroups(uint editionId) => _editionId = editionId;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			_editionId = editionId;
+			_artefactId = artefactId;
 		}
 
-		public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId :
-				RequestObject<EmptyInput, ArtefactGroupDTO>
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint _artefactGroupId;
-			private readonly uint _editionId;
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactId);
+		}
 
-			/// <summary>
-			///  Gets the details of a specific artefact group in the edition
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="artefactGroupId">Id of the desired artefact group</param>
-			/// <returns></returns>
-			public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(
-					uint   editionId
-					, uint artefactGroupId)
+		public override uint? GetEditionId() => _editionId;
+	}
 
-			{
-				_editionId = editionId;
-				_artefactGroupId = artefactGroupId;
-			}
+	public class V1_Editions_EditionId_Artefacts : RequestObject<EmptyInput, ArtefactListDTO>
+	{
+		private readonly uint         _editionId;
+		private readonly List<string> _optional;
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-group-id"
-															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
+		/// <summary>
+		///  Provides a listing of all artefacts that are part of the specified edition
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
+		public V1_Editions_EditionId_Artefacts(uint editionId, List<string> optional = null)
 
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactGroupId);
-			}
+		{
+			_editionId = editionId;
+			_optional = optional;
+		}
 
-			public override uint? GetEditionId() => _editionId;
+		protected override string HttpPath() => RequestPath.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												+ (_optional != null
+														? $"?optional={
+															string.Join("&optional=", _optional)
+														}"
+														: "");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _optional);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments :
+			RequestObject<EmptyInput, ArtefactTextFragmentMatchListDTO>
+	{
+		private readonly uint         _artefactId;
+		private readonly uint         _editionId;
+		private readonly List<string> _optional;
+
+		/// <summary>
+		///  Provides a listing of text fragments that have text in the specified artefact.
+		///  With the optional query parameter "suggested", this endpoint will also return
+		///  any text fragment that the system suggests might have text in the artefact.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		/// <param name="optional">Add "suggested" to include possible matches suggested by the system</param>
+		public V1_Editions_EditionId_Artefacts_ArtefactId_TextFragments(
+				uint           editionId
+				, uint         artefactId
+				, List<string> optional = null)
+
+		{
+			_editionId = editionId;
+			_artefactId = artefactId;
+			_optional = optional;
+		}
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactId.ToString())
+														}")
+												+ (_optional != null
+														? $"?optional={
+															string.Join("&optional=", _optional)
+														}"
+														: "");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactId
+						   , _optional);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_ArtefactGroups :
+			RequestObject<EmptyInput, ArtefactGroupListDTO>
+	{
+		private readonly uint _editionId;
+
+		/// <summary>
+		///  Gets a listing of all artefact groups in the edition
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <returns></returns>
+		public V1_Editions_EditionId_ArtefactGroups(uint editionId) => _editionId = editionId;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId :
+			RequestObject<EmptyInput, ArtefactGroupDTO>
+	{
+		private readonly uint _artefactGroupId;
+		private readonly uint _editionId;
+
+		/// <summary>
+		///  Gets the details of a specific artefact group in the edition
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="artefactGroupId">Id of the desired artefact group</param>
+		/// <returns></returns>
+		public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(
+				uint   editionId
+				, uint artefactGroupId)
+
+		{
+			_editionId = editionId;
+			_artefactGroupId = artefactGroupId;
+		}
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-group-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactGroupId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactGroupId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+}
+
+public static partial class Post
+{
+	public class V1_Editions_EditionId_Artefacts : RequestObject<CreateArtefactDTO, ArtefactDTO>
+	{
+		private readonly uint              _editionId;
+		private readonly CreateArtefactDTO _payload;
+
+		/// <summary>
+		///  Creates a new artefact with the provided data.
+		///  If no mask is provided, a placeholder mask will be created with the values:
+		///  "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
+		///  every artefact). It is not recommended to leave the mask, name, or work status
+		///  blank or null. It will often be advantageous to leave the transformation null
+		///  when first creating a new artefact.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="payload">A CreateArtefactDTO with the data for the new artefact</param>
+		public V1_Editions_EditionId_Artefacts(uint editionId, CreateArtefactDTO payload) : base(
+				payload)
+		{
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
+
+			_listenerDict.Add(
+					ListenerMethods.CreatedArtefact
+					, (CreatedArtefactIsNull, CreatedArtefactListener));
+		}
+
+		public Listeners AvailableListeners { get; }
+
+		public ArtefactDTO CreatedArtefact { get; private set; }
+
+		private void CreatedArtefactListener(HubConnection signalrListener)
+			=> signalrListener.On<ArtefactDTO>(
+					"CreatedArtefact"
+					, receivedData => CreatedArtefact = receivedData);
+
+		private bool CreatedArtefactIsNull() => CreatedArtefact == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
+		{
+			public ListenerMethods CreatedArtefact = ListenerMethods.CreatedArtefact;
 		}
 	}
 
-	public static partial class Post
+	public class V1_Editions_EditionId_Artefacts_BatchTransformation : RequestObject<
+			BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>
 	{
-		public class V1_Editions_EditionId_Artefacts : RequestObject<CreateArtefactDTO, ArtefactDTO>
+		private readonly uint                            _editionId;
+		private readonly BatchUpdateArtefactPlacementDTO _payload;
+
+		/// <summary>
+		///  Updates the positional data for a batch of artefacts
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="payload">A BatchUpdateArtefactTransformDTO with a list of the desired updates</param>
+		/// <returns></returns>
+		public V1_Editions_EditionId_Artefacts_BatchTransformation(
+				uint                              editionId
+				, BatchUpdateArtefactPlacementDTO payload) : base(payload)
 		{
-			private readonly uint              _editionId;
-			private readonly CreateArtefactDTO _payload;
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Creates a new artefact with the provided data.
-			///  If no mask is provided, a placeholder mask will be created with the values:
-			///  "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
-			///  every artefact). It is not recommended to leave the mask, name, or work status
-			///  blank or null. It will often be advantageous to leave the transformation null
-			///  when first creating a new artefact.
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="payload">A CreateArtefactDTO with the data for the new artefact</param>
-			public V1_Editions_EditionId_Artefacts(uint editionId, CreateArtefactDTO payload) :
-					base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.CreatedArtefact
-						, (CreatedArtefactIsNull, CreatedArtefactListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public ArtefactDTO CreatedArtefact { get; private set; }
-
-			private void CreatedArtefactListener(HubConnection signalrListener)
-				=> signalrListener.On<ArtefactDTO>(
-						"CreatedArtefact"
-						, receivedData => CreatedArtefact = receivedData);
-
-			private bool CreatedArtefactIsNull() => CreatedArtefact == null;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods CreatedArtefact = ListenerMethods.CreatedArtefact;
-			}
+			_listenerDict.Add(
+					ListenerMethods.UpdatedArtefact
+					, (UpdatedArtefactIsNull, UpdatedArtefactListener));
 		}
 
-		public class V1_Editions_EditionId_Artefacts_BatchTransformation : RequestObject<
-				BatchUpdateArtefactPlacementDTO, BatchUpdatedArtefactTransformDTO>
+		public Listeners AvailableListeners { get; }
+
+		public ArtefactDTO UpdatedArtefact { get; private set; }
+
+		private void UpdatedArtefactListener(HubConnection signalrListener)
+			=> signalrListener.On<ArtefactDTO>(
+					"UpdatedArtefact"
+					, receivedData => UpdatedArtefact = receivedData);
+
+		private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint                            _editionId;
-			private readonly BatchUpdateArtefactPlacementDTO _payload;
-
-			/// <summary>
-			///  Updates the positional data for a batch of artefacts
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="payload">A BatchUpdateArtefactTransformDTO with a list of the desired updates</param>
-			/// <returns></returns>
-			public V1_Editions_EditionId_Artefacts_BatchTransformation(
-					uint                              editionId
-					, BatchUpdateArtefactPlacementDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.UpdatedArtefact
-						, (UpdatedArtefactIsNull, UpdatedArtefactListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public ArtefactDTO UpdatedArtefact { get; private set; }
-
-			private void UpdatedArtefactListener(HubConnection signalrListener)
-				=> signalrListener.On<ArtefactDTO>(
-						"UpdatedArtefact"
-						, receivedData => UpdatedArtefact = receivedData);
-
-			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods UpdatedArtefact = ListenerMethods.UpdatedArtefact;
-			}
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
 		}
 
-		public class V1_Editions_EditionId_ArtefactGroups :
-				RequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO>
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
 		{
-			private readonly uint                   _editionId;
-			private readonly CreateArtefactGroupDTO _payload;
-
-			/// <summary>
-			///  Creates a new artefact group with the submitted data.
-			///  The new artefact must have a list of artefacts that belong to the group.
-			///  It is not necessary to give the group a name.
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="payload">Parameters of the new artefact group</param>
-			/// <returns></returns>
-			public V1_Editions_EditionId_ArtefactGroups(
-					uint                     editionId
-					, CreateArtefactGroupDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.CreatedArtefactGroup
-						, (CreatedArtefactGroupIsNull, CreatedArtefactGroupListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public ArtefactGroupDTO CreatedArtefactGroup { get; private set; }
-
-			private void CreatedArtefactGroupListener(HubConnection signalrListener)
-				=> signalrListener.On<ArtefactGroupDTO>(
-						"CreatedArtefactGroup"
-						, receivedData => CreatedArtefactGroup = receivedData);
-
-			private bool CreatedArtefactGroupIsNull() => CreatedArtefactGroup == null;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods CreatedArtefactGroup = ListenerMethods.CreatedArtefactGroup;
-			}
+			public ListenerMethods UpdatedArtefact = ListenerMethods.UpdatedArtefact;
 		}
 	}
 
-	public static partial class Put
+	public class V1_Editions_EditionId_ArtefactGroups :
+			RequestObject<CreateArtefactGroupDTO, ArtefactGroupDTO>
 	{
-		public class V1_Editions_EditionId_Artefacts_ArtefactId :
-				RequestObject<UpdateArtefactDTO, ArtefactDTO>
+		private readonly uint                   _editionId;
+		private readonly CreateArtefactGroupDTO _payload;
+
+		/// <summary>
+		///  Creates a new artefact group with the submitted data.
+		///  The new artefact must have a list of artefacts that belong to the group.
+		///  It is not necessary to give the group a name.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="payload">Parameters of the new artefact group</param>
+		/// <returns></returns>
+		public V1_Editions_EditionId_ArtefactGroups(
+				uint                     editionId
+				, CreateArtefactGroupDTO payload) : base(payload)
 		{
-			private readonly uint              _artefactId;
-			private readonly uint              _editionId;
-			private readonly UpdateArtefactDTO _payload;
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Updates the specified artefact.
-			///  There are many possible attributes that can be changed for
-			///  an artefact.  The caller should only input only those that
-			///  should be changed. Attributes with a null value will be ignored.
-			///  For instance, setting the mask to null or "" will result in
-			///  no changes to the current mask, and no value for the mask will
-			///  be returned (or broadcast). Likewise, the transformation, name,
-			///  or status message may be set to null and no change will be made
-			///  to those entities (though any unchanged values will be returned
-			///  along with the changed values and also broadcast to co-editors).
-			/// </summary>
-			/// <param name="artefactId">Unique Id of the desired artefact</param>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
-			public V1_Editions_EditionId_Artefacts_ArtefactId(
-					uint                editionId
-					, uint              artefactId
-					, UpdateArtefactDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_artefactId = artefactId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.UpdatedArtefact
-						, (UpdatedArtefactIsNull, UpdatedArtefactListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public ArtefactDTO UpdatedArtefact { get; private set; }
-
-			private void UpdatedArtefactListener(HubConnection signalrListener)
-				=> signalrListener.On<ArtefactDTO>(
-						"UpdatedArtefact"
-						, receivedData => UpdatedArtefact = receivedData);
-
-			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-id"
-															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods UpdatedArtefact = ListenerMethods.UpdatedArtefact;
-			}
+			_listenerDict.Add(
+					ListenerMethods.CreatedArtefactGroup
+					, (CreatedArtefactGroupIsNull, CreatedArtefactGroupListener));
 		}
 
-		public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId :
-				RequestObject<UpdateArtefactGroupDTO, ArtefactGroupDTO>
+		public Listeners AvailableListeners { get; }
+
+		public ArtefactGroupDTO CreatedArtefactGroup { get; private set; }
+
+		private void CreatedArtefactGroupListener(HubConnection signalrListener)
+			=> signalrListener.On<ArtefactGroupDTO>(
+					"CreatedArtefactGroup"
+					, receivedData => CreatedArtefactGroup = receivedData);
+
+		private bool CreatedArtefactGroupIsNull() => CreatedArtefactGroup == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint                   _artefactGroupId;
-			private readonly uint                   _editionId;
-			private readonly UpdateArtefactGroupDTO _payload;
-
-			/// <summary>
-			///  Updates the details of an artefact group.
-			///  The artefact group will now only contain the artefacts listed in the JSON payload.
-			///  If the name is null, no change will be made, otherwise the name will also be updated.
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="artefactGroupId">Id of the artefact group to be updated</param>
-			/// <param name="payload">Parameters that the artefact group should be changed to</param>
-			/// <returns></returns>
-			public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(
-					uint                     editionId
-					, uint                   artefactGroupId
-					, UpdateArtefactGroupDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_artefactGroupId = artefactGroupId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.UpdatedArtefactGroup
-						, (UpdatedArtefactGroupIsNull, UpdatedArtefactGroupListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public ArtefactGroupDTO UpdatedArtefactGroup { get; private set; }
-
-			private void UpdatedArtefactGroupListener(HubConnection signalrListener)
-				=> signalrListener.On<ArtefactGroupDTO>(
-						"UpdatedArtefactGroup"
-						, receivedData => UpdatedArtefactGroup = receivedData);
-
-			private bool UpdatedArtefactGroupIsNull() => UpdatedArtefactGroup == null;
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-group-id"
-															, $"/{HttpUtility.UrlEncode(_artefactGroupId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactGroupId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods UpdatedArtefactGroup = ListenerMethods.UpdatedArtefactGroup;
-			}
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
 		}
 
-		public class V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription :
-				RequestObject<DiffReplaceReconstructionRequestDTO, DiffReconstructedResponseDTO>
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
 		{
-			private readonly uint                                _artefactId;
-			private readonly uint                                _editionId;
-			private readonly DiffReplaceReconstructionRequestDTO _payload;
+			public ListenerMethods CreatedArtefactGroup = ListenerMethods.CreatedArtefactGroup;
+		}
+	}
+}
 
-			/// <summary>
-			///  Replace the current transcription in the virtual artefact with the submitted
-			///  transcription and the related ROIs. The dictionary in textRois should map the
-			///  index of each character in the new transcription string to its corresponding
-			///  ROI shape/positional data. Some characters, like a space, need not have a
-			///  corresponding ROI shape/position.
-			/// </summary>
-			/// <param name="editionId">Unique Id of the desired edition</param>
-			/// <param name="artefactId">Unique Id of the desired artefact (must be a virtual artefact)</param>
-			/// <param name="payload">Details of the replacement transcription</param>
-			/// <returns>Details concerning all changed data in the edition</returns>
-			public V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription(
-					uint                                  editionId
-					, uint                                artefactId
-					, DiffReplaceReconstructionRequestDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_artefactId = artefactId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
+public static partial class Put
+{
+	public class V1_Editions_EditionId_Artefacts_ArtefactId :
+			RequestObject<UpdateArtefactDTO, ArtefactDTO>
+	{
+		private readonly uint              _artefactId;
+		private readonly uint              _editionId;
+		private readonly UpdateArtefactDTO _payload;
 
-				_listenerDict.Add(
-						ListenerMethods.CreatedSignInterpretation
-						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
+		/// <summary>
+		///  Updates the specified artefact.
+		///  There are many possible attributes that can be changed for
+		///  an artefact.  The caller should only input only those that
+		///  should be changed. Attributes with a null value will be ignored.
+		///  For instance, setting the mask to null or "" will result in
+		///  no changes to the current mask, and no value for the mask will
+		///  be returned (or broadcast). Likewise, the transformation, name,
+		///  or status message may be set to null and no change will be made
+		///  to those entities (though any unchanged values will be returned
+		///  along with the changed values and also broadcast to co-editors).
+		/// </summary>
+		/// <param name="artefactId">Unique Id of the desired artefact</param>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
+		public V1_Editions_EditionId_Artefacts_ArtefactId(
+				uint                editionId
+				, uint              artefactId
+				, UpdateArtefactDTO payload) : base(payload)
+		{
+			_editionId = editionId;
+			_artefactId = artefactId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-				_listenerDict.Add(
-						ListenerMethods.DeletedSignInterpretation
-						, (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
+			_listenerDict.Add(
+					ListenerMethods.UpdatedArtefact
+					, (UpdatedArtefactIsNull, UpdatedArtefactListener));
+		}
 
-				_listenerDict.Add(
-						ListenerMethods.UpdatedSignInterpretations
-						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
+		public Listeners AvailableListeners { get; }
 
-				_listenerDict.Add(
-						ListenerMethods.UpdatedArtefact
-						, (UpdatedArtefactIsNull, UpdatedArtefactListener));
+		public ArtefactDTO UpdatedArtefact { get; private set; }
 
-				_listenerDict.Add(
-						ListenerMethods.CreatedRoisBatch
-						, (CreatedRoisBatchIsNull, CreatedRoisBatchListener));
+		private void UpdatedArtefactListener(HubConnection signalrListener)
+			=> signalrListener.On<ArtefactDTO>(
+					"UpdatedArtefact"
+					, receivedData => UpdatedArtefact = receivedData);
 
-				_listenerDict.Add(
-						ListenerMethods.UpdatedRoisBatch
-						, (UpdatedRoisBatchIsNull, UpdatedRoisBatchListener));
+		private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
 
-				_listenerDict.Add(
-						ListenerMethods.DeletedRoi
-						, (DeletedRoiIsNull, DeletedRoiListener));
-			}
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactId.ToString())
+														}");
 
-			public Listeners AvailableListeners { get; }
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactId
+						   , _payload);
+		}
 
-			public SignInterpretationListDTO       CreatedSignInterpretation  { get; private set; }
-			public DeleteIntIdDTO                  DeletedSignInterpretation  { get; private set; }
-			public SignInterpretationListDTO       UpdatedSignInterpretations { get; private set; }
-			public ArtefactDTO                     UpdatedArtefact            { get; private set; }
-			public InterpretationRoiDTOList        CreatedRoisBatch           { get; private set; }
-			public UpdatedInterpretationRoiDTOList UpdatedRoisBatch           { get; private set; }
-			public DeleteIntIdDTO                  DeletedRoi                 { get; private set; }
+		public override uint? GetEditionId() => _editionId;
 
-			private void CreatedSignInterpretationListener(HubConnection signalrListener)
-				=> signalrListener.On<SignInterpretationListDTO>(
-						"CreatedSignInterpretation"
-						, receivedData => CreatedSignInterpretation = receivedData);
+		public class Listeners
+		{
+			public ListenerMethods UpdatedArtefact = ListenerMethods.UpdatedArtefact;
+		}
+	}
 
-			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+	public class V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId :
+			RequestObject<UpdateArtefactGroupDTO, ArtefactGroupDTO>
+	{
+		private readonly uint                   _artefactGroupId;
+		private readonly uint                   _editionId;
+		private readonly UpdateArtefactGroupDTO _payload;
 
-			private void DeletedSignInterpretationListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteIntIdDTO>(
-						"DeletedSignInterpretation"
-						, receivedData => DeletedSignInterpretation = receivedData);
+		/// <summary>
+		///  Updates the details of an artefact group.
+		///  The artefact group will now only contain the artefacts listed in the JSON payload.
+		///  If the name is null, no change will be made, otherwise the name will also be updated.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="artefactGroupId">Id of the artefact group to be updated</param>
+		/// <param name="payload">Parameters that the artefact group should be changed to</param>
+		/// <returns></returns>
+		public V1_Editions_EditionId_ArtefactGroups_ArtefactGroupId(
+				uint                     editionId
+				, uint                   artefactGroupId
+				, UpdateArtefactGroupDTO payload) : base(payload)
+		{
+			_editionId = editionId;
+			_artefactGroupId = artefactGroupId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
+			_listenerDict.Add(
+					ListenerMethods.UpdatedArtefactGroup
+					, (UpdatedArtefactGroupIsNull, UpdatedArtefactGroupListener));
+		}
 
-			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
-				=> signalrListener.On<SignInterpretationListDTO>(
-						"UpdatedSignInterpretations"
-						, receivedData => UpdatedSignInterpretations = receivedData);
+		public Listeners AvailableListeners { get; }
 
-			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
+		public ArtefactGroupDTO UpdatedArtefactGroup { get; private set; }
 
-			private void UpdatedArtefactListener(HubConnection signalrListener)
-				=> signalrListener.On<ArtefactDTO>(
-						"UpdatedArtefact"
-						, receivedData => UpdatedArtefact = receivedData);
+		private void UpdatedArtefactGroupListener(HubConnection signalrListener)
+			=> signalrListener.On<ArtefactGroupDTO>(
+					"UpdatedArtefactGroup"
+					, receivedData => UpdatedArtefactGroup = receivedData);
 
-			private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
+		private bool UpdatedArtefactGroupIsNull() => UpdatedArtefactGroup == null;
 
-			private void CreatedRoisBatchListener(HubConnection signalrListener)
-				=> signalrListener.On<InterpretationRoiDTOList>(
-						"CreatedRoisBatch"
-						, receivedData => CreatedRoisBatch = receivedData);
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-group-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactGroupId.ToString())
+														}");
 
-			private bool CreatedRoisBatchIsNull() => CreatedRoisBatch == null;
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactGroupId
+						   , _payload);
+		}
 
-			private void UpdatedRoisBatchListener(HubConnection signalrListener)
-				=> signalrListener.On<UpdatedInterpretationRoiDTOList>(
-						"UpdatedRoisBatch"
-						, receivedData => UpdatedRoisBatch = receivedData);
+		public override uint? GetEditionId() => _editionId;
 
-			private bool UpdatedRoisBatchIsNull() => UpdatedRoisBatch == null;
+		public class Listeners
+		{
+			public ListenerMethods UpdatedArtefactGroup = ListenerMethods.UpdatedArtefactGroup;
+		}
+	}
 
-			private void DeletedRoiListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteIntIdDTO>(
-						"DeletedRoi"
-						, receivedData => DeletedRoi = receivedData);
+	public class V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription : RequestObject
+			<DiffReplaceReconstructionRequestDTO, DiffReconstructedResponseDTO>
+	{
+		private readonly uint                                _artefactId;
+		private readonly uint                                _editionId;
+		private readonly DiffReplaceReconstructionRequestDTO _payload;
 
-			private bool DeletedRoiIsNull() => DeletedRoi == null;
+		/// <summary>
+		///  Replace the current transcription in the virtual artefact with the submitted
+		///  transcription and the related ROIs. The dictionary in textRois should map the
+		///  index of each character in the new transcription string to its corresponding
+		///  ROI shape/positional data. Some characters, like a space, need not have a
+		///  corresponding ROI shape/position.
+		/// </summary>
+		/// <param name="editionId">Unique Id of the desired edition</param>
+		/// <param name="artefactId">Unique Id of the desired artefact (must be a virtual artefact)</param>
+		/// <param name="payload">Details of the replacement transcription</param>
+		/// <returns>Details concerning all changed data in the edition</returns>
+		public V1_Editions_EditionId_Artefacts_ArtefactId_DiffReplaceTranscription(
+				uint                                  editionId
+				, uint                                artefactId
+				, DiffReplaceReconstructionRequestDTO payload) : base(payload)
+		{
+			_editionId = editionId;
+			_artefactId = artefactId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/artefact-id"
-															, $"/{HttpUtility.UrlEncode(_artefactId.ToString())}");
+			_listenerDict.Add(
+					ListenerMethods.CreatedSignInterpretation
+					, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
 
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _artefactId
-							   , _payload);
-			}
+			_listenerDict.Add(
+					ListenerMethods.DeletedSignInterpretation
+					, (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
 
-			public override uint? GetEditionId() => _editionId;
+			_listenerDict.Add(
+					ListenerMethods.UpdatedSignInterpretations
+					, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
 
-			public class Listeners
-			{
-				public ListenerMethods CreatedRoisBatch = ListenerMethods.CreatedRoisBatch;
+			_listenerDict.Add(
+					ListenerMethods.UpdatedArtefact
+					, (UpdatedArtefactIsNull, UpdatedArtefactListener));
 
-				public ListenerMethods CreatedSignInterpretation =
-						ListenerMethods.CreatedSignInterpretation;
+			_listenerDict.Add(
+					ListenerMethods.CreatedRoisBatch
+					, (CreatedRoisBatchIsNull, CreatedRoisBatchListener));
 
-				public ListenerMethods DeletedRoi = ListenerMethods.DeletedRoi;
+			_listenerDict.Add(
+					ListenerMethods.UpdatedRoisBatch
+					, (UpdatedRoisBatchIsNull, UpdatedRoisBatchListener));
 
-				public ListenerMethods DeletedSignInterpretation =
-						ListenerMethods.DeletedSignInterpretation;
+			_listenerDict.Add(ListenerMethods.DeletedRoi, (DeletedRoiIsNull, DeletedRoiListener));
+		}
 
-				public ListenerMethods UpdatedArtefact  = ListenerMethods.UpdatedArtefact;
-				public ListenerMethods UpdatedRoisBatch = ListenerMethods.UpdatedRoisBatch;
+		public Listeners AvailableListeners { get; }
 
-				public ListenerMethods UpdatedSignInterpretations =
-						ListenerMethods.UpdatedSignInterpretations;
-			}
+		public SignInterpretationListDTO       CreatedSignInterpretation  { get; private set; }
+		public DeleteIntIdDTO                  DeletedSignInterpretation  { get; private set; }
+		public SignInterpretationListDTO       UpdatedSignInterpretations { get; private set; }
+		public ArtefactDTO                     UpdatedArtefact            { get; private set; }
+		public InterpretationRoiDTOList        CreatedRoisBatch           { get; private set; }
+		public UpdatedInterpretationRoiDTOList UpdatedRoisBatch           { get; private set; }
+		public DeleteIntIdDTO                  DeletedRoi                 { get; private set; }
+
+		private void CreatedSignInterpretationListener(HubConnection signalrListener)
+			=> signalrListener.On<SignInterpretationListDTO>(
+					"CreatedSignInterpretation"
+					, receivedData => CreatedSignInterpretation = receivedData);
+
+		private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+
+		private void DeletedSignInterpretationListener(HubConnection signalrListener)
+			=> signalrListener.On<DeleteIntIdDTO>(
+					"DeletedSignInterpretation"
+					, receivedData => DeletedSignInterpretation = receivedData);
+
+		private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
+
+		private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+			=> signalrListener.On<SignInterpretationListDTO>(
+					"UpdatedSignInterpretations"
+					, receivedData => UpdatedSignInterpretations = receivedData);
+
+		private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
+
+		private void UpdatedArtefactListener(HubConnection signalrListener)
+			=> signalrListener.On<ArtefactDTO>(
+					"UpdatedArtefact"
+					, receivedData => UpdatedArtefact = receivedData);
+
+		private bool UpdatedArtefactIsNull() => UpdatedArtefact == null;
+
+		private void CreatedRoisBatchListener(HubConnection signalrListener)
+			=> signalrListener.On<InterpretationRoiDTOList>(
+					"CreatedRoisBatch"
+					, receivedData => CreatedRoisBatch = receivedData);
+
+		private bool CreatedRoisBatchIsNull() => CreatedRoisBatch == null;
+
+		private void UpdatedRoisBatchListener(HubConnection signalrListener)
+			=> signalrListener.On<UpdatedInterpretationRoiDTOList>(
+					"UpdatedRoisBatch"
+					, receivedData => UpdatedRoisBatch = receivedData);
+
+		private bool UpdatedRoisBatchIsNull() => UpdatedRoisBatch == null;
+
+		private void DeletedRoiListener(HubConnection signalrListener)
+			=> signalrListener.On<DeleteIntIdDTO>(
+					"DeletedRoi"
+					, receivedData => DeletedRoi = receivedData);
+
+		private bool DeletedRoiIsNull() => DeletedRoi == null;
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/artefact-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_artefactId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _artefactId
+						   , _payload);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
+		{
+			public ListenerMethods CreatedRoisBatch = ListenerMethods.CreatedRoisBatch;
+
+			public ListenerMethods CreatedSignInterpretation =
+					ListenerMethods.CreatedSignInterpretation;
+
+			public ListenerMethods DeletedRoi = ListenerMethods.DeletedRoi;
+
+			public ListenerMethods DeletedSignInterpretation =
+					ListenerMethods.DeletedSignInterpretation;
+
+			public ListenerMethods UpdatedArtefact  = ListenerMethods.UpdatedArtefact;
+			public ListenerMethods UpdatedRoisBatch = ListenerMethods.UpdatedRoisBatch;
+
+			public ListenerMethods UpdatedSignInterpretations =
+					ListenerMethods.UpdatedSignInterpretations;
 		}
 	}
 }

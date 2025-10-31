@@ -1,8 +1,8 @@
-namespace SQE.DatabaseAccess.Queries
+namespace SQE.DatabaseAccess.Queries;
+
+internal static class SignInterpretationQuery
 {
-	internal static class SignInterpretationQuery
-	{
-		public const string GetQuery = @"
+	public const string GetQuery = @"
 SELECT DISTINCT sign_interpretation.sign_interpretation_id AS SignInterpretationId,
                 sign_interpretation_character.`character` AS `Character`,
                 sign_interpretation.sign_id AS SignId,
@@ -43,53 +43,52 @@ WHERE sign_interpretation.sign_interpretation_id = @SignInterpretationId
     AND sign_interpretation_attribute_owner.edition_id = @EditionId
 ORDER BY pos.next_sign_interpretation_id, pos.sign_stream_section_id
 ";
-	}
+}
 
-	internal static class SignInterpretationLineIdQuery
-	{
-		public const string GetQuery = @"
+internal static class SignInterpretationLineIdQuery
+{
+	public const string GetQuery = @"
 SELECT line_id
 FROM sign_interpretation
 JOIN line_to_sign on sign_interpretation.sign_id = line_to_sign.sign_id
 WHERE sign_interpretation.sign_interpretation_id = @SignInterpretationId";
-	}
+}
 
-	internal static class SignInterpretationSignIdQuery
-	{
-		public const string GetQuery = @"
+internal static class SignInterpretationSignIdQuery
+{
+	public const string GetQuery = @"
 SELECT sign_id
 FROM sign_interpretation
 WHERE sign_interpretation.sign_interpretation_id = @SignInterpretationId";
-	}
+}
 
-	internal static class PreviousSignInterpretationsQuery
-	{
-		public const string GetQuery = @"
+internal static class PreviousSignInterpretationsQuery
+{
+	public const string GetQuery = @"
 SELECT DISTINCT position_in_stream.sign_interpretation_id
 FROM position_in_stream
 JOIN position_in_stream_owner USING(position_in_stream_id)
 WHERE position_in_stream_owner.edition_id = @EditionId
     AND position_in_stream.next_sign_interpretation_id = @SignInterpretationId";
-	}
+}
 
-	internal static class NextSignInterpretationsQuery
-	{
-		public const string GetQuery = @"
+internal static class NextSignInterpretationsQuery
+{
+	public const string GetQuery = @"
 SELECT DISTINCT position_in_stream.next_sign_interpretation_id
 FROM position_in_stream
 JOIN position_in_stream_owner USING(position_in_stream_id)
 WHERE position_in_stream_owner.edition_id = @EditionId
     AND position_in_stream.sign_interpretation_id = @SignInterpretationId";
-	}
+}
 
-	internal static class FindSignInterpretationCharacterId
-	{
-		public const string GetQuery = @"
+internal static class FindSignInterpretationCharacterId
+{
+	public const string GetQuery = @"
 SELECT sign_interpretation_character_id
 FROM sign_interpretation_character
 JOIN sign_interpretation_character_owner USING(sign_interpretation_character_id)
 WHERE sign_interpretation_character.sign_interpretation_id = @SignInterpretationId
 	AND sign_interpretation_character_owner.edition_id = @EditionId
 ";
-	}
 }

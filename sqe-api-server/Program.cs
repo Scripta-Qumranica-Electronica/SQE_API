@@ -5,68 +5,65 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace SQE.API.Server
+namespace SQE.API.Server;
+
+public static class Program
 {
-	public static class Program
+	public static int Main(string[] args)
 	{
-		public static int Main(string[] args)
+		// Temporary configuration for Serilog
+		var configuration = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
+
+													  // TODO: when we know the deployment details we will probably need to change the logging settings
+													  .AddJsonFile("appsettings.json", true)
+													  .AddCommandLine(args)
+													  .Build();
+
+		Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
+
+		// The logger is configured now, but not with the full configuration (appsettings.{env}.json is not consulted, and neither are
+		// environment variables). The logger will be reinitializaed in the Startup object constructor, with the full configuration.
+
+		try
 		{
-			// Temporary configuration for Serilog
-			var configuration = new ConfigurationBuilder()
-								.SetBasePath(Directory.GetCurrentDirectory())
+			Log.Information("Starting web host");
+			CreateHostBuilder(args).Build().Run();
 
-								// TODO: when we know the deployment details we will probably need to change the logging settings
-								.AddJsonFile("appsettings.json", true)
-								.AddCommandLine(args)
-								.Build();
+			return 0;
+		}
+		catch (Exception ex)
+		{
+			Log.Fatal(ex, "Host terminated unexpectedly");
 
-			Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration)
-												  .CreateLogger();
-			// The logger is configured now, but not with the full configuration (appsettings.{env}.json is not consulted, and neither are
-			// environment variables). The logger will be reinitializaed in the Startup object constructor, with the full configuration.
+			return 1;
+		}
+		finally
+		{
+			Log.CloseAndFlush();
+		}
+	}
 
-			try
-			{
-				Log.Information("Starting web host");
-				CreateHostBuilder(args).Build().Run();
+	public static IHostBuilder CreateHostBuilder(string[] args)
+	{
+		// Try reading the port from an environment variable
+		var port = Environment.GetEnvironmentVariable("API_PORT");
+		int portNumber;
 
-				return 0;
-			}
-			catch (Exception ex)
-			{
-				Log.Fatal(ex, "Host terminated unexpectedly");
-
-				return 1;
-			}
-			finally
-			{
-				Log.CloseAndFlush();
-			}
+		try
+		{
+			portNumber = int.Parse(port);
+		}
+		catch (Exception)
+		{
+			portNumber = 5000;
 		}
 
-		public static IHostBuilder CreateHostBuilder(string[] args)
-		{
-			// Try reading the port from an environment variable
-			var port = Environment.GetEnvironmentVariable("API_PORT");
-			int portNumber;
-
-			try
-			{
-				portNumber = int.Parse(port);
-			}
-			catch (Exception)
-			{
-				portNumber = 5000;
-			}
-
-			return Host.CreateDefaultBuilder(args)
-					   .ConfigureWebHostDefaults(
-							   webBuilder =>
-							   {
-								   webBuilder.UseStartup<Startup>()
-											 .UseSerilog()
-											 .UseUrls($"http://*:{portNumber}");
-							   });
-		}
+		return Host.CreateDefaultBuilder(args)
+				   .ConfigureWebHostDefaults(webBuilder =>
+											 {
+												 webBuilder.UseStartup<Startup>()
+														   .UseUrls($"http://*:{portNumber}");
+											 })
+				   .UseSerilog();
 	}
 }

@@ -1,10 +1,10 @@
 using System.Text;
 
-namespace SQE.DatabaseAccess.Queries
+namespace SQE.DatabaseAccess.Queries;
+
+internal abstract class EditionImagedObjectQueries
 {
-	internal abstract class EditionImagedObjectQueries
-	{
-		private const string _getFragments = @"
+	private const string _getFragments = @"
 SELECT DISTINCT image_catalog.institution AS Institution,
     image_catalog.catalog_number_1 AS Catalog1,
     image_catalog.catalog_number_2 AS Catalog2,
@@ -15,15 +15,14 @@ USING (image_catalog_id)
 WHERE image_catalog_owner.edition_id = @EditionId
 ";
 
-		public static string GetQuery(bool fragmentId)
-		{
-			if (!fragmentId)
-				return _getFragments;
+	public static string GetQuery(bool fragmentId)
+	{
+		if (!fragmentId)
+			return _getFragments;
 
-			var str = new StringBuilder(_getFragments);
-			str.Append(" AND image_catalog.object_id=@ObjectId");
+		var str = new StringBuilder(_getFragments);
+		str.Append(" AND image_catalog.object_id=@ObjectId");
 
-			return str.ToString();
-		}
+		return str.ToString();
 	}
 }

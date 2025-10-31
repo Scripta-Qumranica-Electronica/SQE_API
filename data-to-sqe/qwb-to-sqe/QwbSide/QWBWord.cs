@@ -5,303 +5,293 @@ using System.Text.RegularExpressions;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
-namespace qwb_to_sqe
+namespace qwb_to_sqe;
+
+public class QWBWord
 {
-	public class QWBWord
+	private const           uint       Destroyed     = 5;
+	private const           uint       Vacat         = 4;
+	private const           uint       SuperScript   = 30;
+	private const           uint       SubScript     = 31;
+	private const           uint       Reconstructed = 20;
+	private const           uint       Deleted       = 33;
+	private const           uint       WrongAddition = 23;
+	private const           uint       Forgotten     = 22;
+	private const           uint       Original      = 41;
+	private const           uint       Inserted      = 43;
+	private const           uint       Corrected     = 42;
+	private const           uint       MarginVariant = 38;
+	private const           uint       Questionable  = 44;
+	private const           uint       Conjecture    = 21;
+	private const           uint       Circellus     = 19;
+	private static readonly List<uint> AttributeIds  = new();
+
+	// Query strings for analysing a word from QWB
+	private static readonly Regex NormalSignsRegex =
+			new("[+\u0591-\u05BD\u05BF-\u05EA\u05F3 ╱∵Α-ω⋺0-9]");
+
+	private static readonly Regex ConjectureRegex = new("\\^!\\^");
+
+	private static readonly Regex DeletedRegex = new("(\\{\\{)|(\\}\\})");
+
+	private static readonly Regex IgnoreRegex = new("([.])|(\\(\\))|(\\[[0-9]+\\])|(\\?\\?\\?)");
+
+	private static readonly Regex OriginalRegex = new("[⟦⟧]");
+
+	private static readonly Regex InsertedRegex = new("(\\+≪)|(≫\\+)");
+
+	private static readonly Regex CorrectedRegex = new("[≪«≫]");
+	private static readonly Regex SubScriptRegex = new("##");
+
+	private static readonly Regex LineNumberRegex = new("^ *\\[[0-9]\\] *$");
+
+	private readonly List<SignData> _signs = new();
+
+	public bool ContainsLineBreak;
+
+	//private int IsVariant = 0;
+
+	public uint QWBWordId;
+	public uint SQEWordId;
+
+	private string _qwbText;
+
+	public string QWBText { get => _qwbText; set => _qwbText = _processQWBWord(value); }
+
+	private string _processQWBWord(string qwbWord)
 	{
-		private const           uint       Destroyed     = 5;
-		private const           uint       Vacat         = 4;
-		private const           uint       SuperScript   = 30;
-		private const           uint       SubScript     = 31;
-		private const           uint       Reconstructed = 20;
-		private const           uint       Deleted       = 33;
-		private const           uint       WrongAddition = 23;
-		private const           uint       Forgotten     = 22;
-		private const           uint       Original      = 41;
-		private const           uint       Inserted      = 43;
-		private const           uint       Corrected     = 42;
-		private const           uint       MarginVariant = 38;
-		private const           uint       Questionable  = 44;
-		private const           uint       Conjecture    = 21;
-		private const           uint       Circellus     = 19;
-		private static readonly List<uint> AttributeIds  = new List<uint>();
+		var word = _normalize(qwbWord);
+		SignData currSign = null;
 
-		// Query strings for analysing a word from QWB
-		private static readonly Regex NormalSignsRegex =
-				new Regex("[+\u0591-\u05BD\u05BF-\u05EA\u05F3 ╱∵Α-ω⋺0-9]");
-
-		private static readonly Regex ConjectureRegex = new Regex("\\^!\\^");
-
-		private static readonly Regex DeletedRegex = new Regex("(\\{\\{)|(\\}\\})");
-
-		private static readonly Regex IgnoreRegex =
-				new Regex("([.])|(\\(\\))|(\\[[0-9]+\\])|(\\?\\?\\?)");
-
-		private static readonly Regex OriginalRegex = new Regex("[⟦⟧]");
-
-		private static readonly Regex InsertedRegex = new Regex("(\\+≪)|(≫\\+)");
-
-		private static readonly Regex CorrectedRegex = new Regex("[≪«≫]");
-		private static readonly Regex SubScriptRegex = new Regex("##");
-
-		private static readonly Regex LineNumberRegex = new Regex("^ *\\[[0-9]\\] *$");
-
-		private readonly List<SignData> _signs = new List<SignData>();
-
-		private string _qwbText;
-
-		public bool ContainsLineBreak;
-
-		//private int IsVariant = 0;
-
-		public uint QWBWordId;
-		public uint SQEWordId;
-
-		public string QWBText { get => _qwbText; set => _qwbText = _processQWBWord(value); }
-
-		private string _processQWBWord(string qwbWord)
+		foreach (var signChar in word.ToCharArray())
 		{
-			var word = _normalize(qwbWord);
-			SignData currSign = null;
-
-			foreach (var signChar in word.ToCharArray())
+			if (NormalSignsRegex.IsMatch(signChar.ToString()))
+				currSign = _newSign(signChar);
+			else
 			{
-				if (NormalSignsRegex.IsMatch(signChar.ToString()))
-					currSign = _newSign(signChar);
-				else
+				switch (signChar)
 				{
-					switch (signChar)
-					{
-						case '\u05AF': // Circellus
-							_addAttribute(currSign, Circellus);
+					case '\u05AF': // Circellus
+						_addAttribute(currSign, Circellus);
 
-							break;
+						break;
 
-						case '\u05BE': // Single destroyed sign
-							if (_lastAttributeIs(currSign, Destroyed) == false)
-								currSign = _newSign(' ', Destroyed, 0);
+					case '\u05BE': // Single destroyed sign
+						if (!_lastAttributeIs(currSign, Destroyed))
+							currSign = _newSign(' ', Destroyed, 0);
 
-							break;
+						break;
 
-						case '_': // Vacat
-							if (_lastAttributeIs(currSign, Vacat) == false)
-							{
-								currSign = SignFactory.CreateVacatSign(0);
-								_handleNewSign(currSign);
-							}
+					case '_': // Vacat
+						if (!_lastAttributeIs(currSign, Vacat))
+						{
+							currSign = SignFactory.CreateVacatSign(0);
+							_handleNewSign(currSign);
+						}
 
-							break;
+						break;
 
-						case '-': // Destroyed area
-							if (_lastAttributeIs(currSign, Destroyed) == false)
-							{
-								currSign = SignFactory.CreateDamageSign(0);
-								_handleNewSign(currSign);
-							}
+					case '-': // Destroyed area
+						if (!_lastAttributeIs(currSign, Destroyed))
+						{
+							currSign = SignFactory.CreateDamageSign(0);
+							_handleNewSign(currSign);
+						}
 
-							break;
+						break;
 
-						case '^': // Switch for superscript
-							_switchAttribute(SuperScript);
+					case '^': // Switch for superscript
+						_switchAttribute(SuperScript);
 
-							break;
+						break;
 
-						case '∇': // Switch for subscript
-							_switchAttribute(SubScript);
+					case '∇': // Switch for subscript
+						_switchAttribute(SubScript);
 
-							break;
+						break;
 
-						case '!': // Switch for conjecture
-							_switchAttribute(Conjecture);
+					case '!': // Switch for conjecture
+						_switchAttribute(Conjecture);
 
-							break;
+						break;
 
-						case '[': // Start of reconstructed
-							AttributeIds.Add(Reconstructed);
+					case '[': // Start of reconstructed
+						AttributeIds.Add(Reconstructed);
 
-							break;
+						break;
 
-						case ']': // End of reconstructed
-							AttributeIds.RemoveAll(id => id == Reconstructed);
+					case ']': // End of reconstructed
+						AttributeIds.RemoveAll(id => id == Reconstructed);
 
-							break;
+						break;
 
-						case '{': // Start of wrongly written additional text
-							AttributeIds.Add(WrongAddition);
+					case '{': // Start of wrongly written additional text
+						AttributeIds.Add(WrongAddition);
 
-							break;
+						break;
 
-						case '}': // End of wrongly written additional text
-							AttributeIds.RemoveAll(id => id == WrongAddition);
+					case '}': // End of wrongly written additional text
+						AttributeIds.RemoveAll(id => id == WrongAddition);
 
-							break;
+						break;
 
-						case '∆': // Switch of erased text
-							_switchAttribute(Deleted);
+					case '∆': // Switch of erased text
+						_switchAttribute(Deleted);
 
-							break;
+						break;
 
-						case '<': // Start of forgotten text
-							AttributeIds.Add(Forgotten);
+					case '<': // Start of forgotten text
+						AttributeIds.Add(Forgotten);
 
-							break;
+						break;
 
-						case '>': // End of forgotten text
-							AttributeIds.RemoveAll(id => id == Forgotten);
+					case '>': // End of forgotten text
+						AttributeIds.RemoveAll(id => id == Forgotten);
 
-							break;
+						break;
 
-						case '‹': // Start of forgotten text
-							AttributeIds.Add(Forgotten);
+					case '‹': // Start of forgotten text
+						AttributeIds.Add(Forgotten);
 
-							break;
+						break;
 
-						case '›': // End of forgotten text
-							AttributeIds.RemoveAll(id => id == Forgotten);
+					case '›': // End of forgotten text
+						AttributeIds.RemoveAll(id => id == Forgotten);
 
-							break;
+						break;
 
-						case '/': // The following sign is a variant reading
-							currSign.SignInterpretations.Add(
-									SignInterpretationFactory.CreateCharacterInterpretation(
-											signChar.ToString()));
+					case '/': // The following sign is a variant reading
+						currSign.SignInterpretations.Add(
+								SignInterpretationFactory.CreateCharacterInterpretation(
+										signChar.ToString()));
 
-							break;
+						break;
 
-						case '∰': // An original sign later corrected into new sign(s)
-							_switchAttribute(Original);
+					case '∰': // An original sign later corrected into new sign(s)
+						_switchAttribute(Original);
 
-							break;
+						break;
 
-						case '∭': // A sign corrected from a different sign
-							_switchAttribute(Corrected);
+					case '∭': // A sign corrected from a different sign
+						_switchAttribute(Corrected);
 
-							break;
+						break;
 
-						case '⊤': // A sign added later
-							_switchAttribute(Inserted);
+					case '⊤': // A sign added later
+						_switchAttribute(Inserted);
 
-							break;
+						break;
 
-						case '@':
-							_switchAttribute(MarginVariant);
+					case '@':
+						_switchAttribute(MarginVariant);
 
-							break;
+						break;
 
-						case '(':
-							AttributeIds.Add(Questionable);
+					case '(':
+						AttributeIds.Add(Questionable);
 
-							break;
+						break;
 
-						case ')':
-							AttributeIds.RemoveAll(id => id == Questionable);
+					case ')':
+						AttributeIds.RemoveAll(id => id == Questionable);
 
-							break;
+						break;
 
-						case '?':
-							_addAttribute(currSign, Questionable);
+					case '?':
+						_addAttribute(currSign, Questionable);
 
-							break;
+						break;
 
-						case '|':
-							currSign = SignFactory.CreateTerminatorSign(
-									TableData.Table.line
-									, TableData.TerminatorType.End);
+					case '|':
+						currSign = SignFactory.CreateTerminatorSign(
+								TableData.Table.line
+								, TableData.TerminatorType.End);
 
-							currSign = SignFactory.CreateTerminatorSign(
-									TableData.Table.line
-									, TableData.TerminatorType.Start);
+						currSign = SignFactory.CreateTerminatorSign(
+								TableData.Table.line
+								, TableData.TerminatorType.Start);
 
-							ContainsLineBreak = true;
+						ContainsLineBreak = true;
 
-							break;
+						break;
 
-						case '┓':
-							currSign = _newSign('┓', 7);
+					case '┓':
+						currSign = _newSign('┓', 7);
 
-							break;
+						break;
 
-						default:
-							Console.WriteLine(
-									signChar
-									+ "="
-									+ QWBWordId
-									+ ": "
-									+ qwbWord
-									+ " = '"
-									+ word
-									+ "'");
+					default:
+						Console.WriteLine(
+								signChar + "=" + QWBWordId + ": " + qwbWord + " = '" + word + "'");
 
-							break;
-					}
+						break;
 				}
 			}
-
-			return qwbWord;
 		}
 
-		private string _normalize(string word)
-		{
-			if (LineNumberRegex.IsMatch(word))
-				return "";
+		return qwbWord;
+	}
 
-			word = ConjectureRegex.Replace(word, "!");
-			word = DeletedRegex.Replace(word, "∆");
-			word = IgnoreRegex.Replace(word, "");
-			word = SubScriptRegex.Replace(word, "∇");
-			word = OriginalRegex.Replace(word, "∰");
-			word = InsertedRegex.Replace(word, "⊤");
-			word = CorrectedRegex.Replace(word, "∭");
+	private string _normalize(string word)
+	{
+		if (LineNumberRegex.IsMatch(word))
+			return "";
 
-			return word;
-		}
+		word = ConjectureRegex.Replace(word, "!");
+		word = DeletedRegex.Replace(word, "∆");
+		word = IgnoreRegex.Replace(word, "");
+		word = SubScriptRegex.Replace(word, "∇");
+		word = OriginalRegex.Replace(word, "∰");
+		word = InsertedRegex.Replace(word, "⊤");
+		word = CorrectedRegex.Replace(word, "∭");
 
-		private SignData _newSign(
-				char    signChar
-				, uint? additionalAttributeId = null
-				, uint? numericValue          = null)
-		{
-			var newSign = SignFactory.CreateSimpleCharacterSign(signChar.ToString());
+		return word;
+	}
 
-			_handleNewSign(newSign, additionalAttributeId, numericValue);
+	private SignData _newSign(
+			char    signChar
+			, uint? additionalAttributeId = null
+			, uint? numericValue          = null)
+	{
+		var newSign = SignFactory.CreateSimpleCharacterSign(signChar.ToString());
 
-			return newSign;
-		}
+		_handleNewSign(newSign, additionalAttributeId, numericValue);
 
-		private void _handleNewSign(
-				SignData sign
-				, uint?  additionalAttributeId = null
-				, uint?  numericValue          = null)
-		{
-			_signs.Add(sign);
+		return newSign;
+	}
 
-			if (additionalAttributeId != null)
-				_addAttribute(sign, additionalAttributeId.Value, numericValue);
+	private void _handleNewSign(
+			SignData sign
+			, uint?  additionalAttributeId = null
+			, uint?  numericValue          = null)
+	{
+		_signs.Add(sign);
 
-			foreach (var id in AttributeIds.Distinct())
-				_addAttribute(sign, id);
-		}
+		if (additionalAttributeId != null)
+			_addAttribute(sign, additionalAttributeId.Value, numericValue);
 
-		private void _switchAttribute(uint id)
-		{
-			if (AttributeIds.Contains(id))
-				AttributeIds.RemoveAll(existingId => existingId == id);
-			else
-				AttributeIds.Add(id);
-		}
+		foreach (var id in AttributeIds.Distinct())
+			_addAttribute(sign, id);
+	}
 
-		private void _addAttribute(SignData sign, uint attributeId, uint? numericValue = null)
-		{
-			sign?.SignInterpretations.Last()
-				.Attributes.Add(
-						new SignInterpretationAttributeData { AttributeValueId = attributeId });
-		}
+	private void _switchAttribute(uint id)
+	{
+		if (AttributeIds.Contains(id))
+			AttributeIds.RemoveAll(existingId => existingId == id);
+		else
+			AttributeIds.Add(id);
+	}
 
-		private bool _lastAttributeIs(SignData sign, uint attributeId)
-		{
-			return sign?.SignInterpretations.Last()
-					   .Attributes.Exists(data => data.AttributeValueId == attributeId)
-				   ?? false;
-		}
+	private void _addAttribute(SignData sign, uint attributeId, uint? numericValue = null)
+	{
+		sign?.SignInterpretations.Last()
+			.Attributes.Add(new SignInterpretationAttributeData { AttributeValueId = attributeId });
+	}
+
+	private bool _lastAttributeIs(SignData sign, uint attributeId)
+	{
+		return sign?.SignInterpretations.Last()
+				   .Attributes.Exists(data => data.AttributeValueId == attributeId)
+			   ?? false;
 	}
 }

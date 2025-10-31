@@ -1,8 +1,7 @@
-namespace comparer
+namespace comparer;
+
+public class ChangeIds
 {
-	public class ChangeIds
-	{
-		public uint? SourceId;
-		public uint? SqeId;
-	}
+	public uint? SourceId;
+	public uint? SqeId;
 }

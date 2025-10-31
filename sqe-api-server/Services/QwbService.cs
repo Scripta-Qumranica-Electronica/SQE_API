@@ -10,184 +10,183 @@ using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
-namespace SQE.API.Server.Services
+namespace SQE.API.Server.Services;
+
+public interface IWordService
 {
-	public interface IWordService
-	{
-		Task<QwbWordVariantListDTO> GetQwbWordVariantForSignInterpretationId(
-				UserInfo user
-				, uint   editionId
-				, uint   signInterpretationId);
+	Task<QwbWordVariantListDTO> GetQwbWordVariantForSignInterpretationId(
+			UserInfo user
+			, uint   editionId
+			, uint   signInterpretationId);
 
-		Task<QwbWordVariantListDTO>   GetQwbWordVariantForQwbWordId(uint qwbWordId);
-		Task<QwbParallelListDTO>      GetQwbParallel(uint qwbStartWordId, uint qwbEndWordId);
-		Task<QwbBibliographyEntryDTO> GetQwbBibliography(uint bibliographyId);
+	Task<QwbWordVariantListDTO>   GetQwbWordVariantForQwbWordId(uint qwbWordId);
+	Task<QwbParallelListDTO>      GetQwbParallel(uint qwbStartWordId, uint qwbEndWordId);
+	Task<QwbBibliographyEntryDTO> GetQwbBibliography(uint bibliographyId);
+}
+
+public class WordService : IWordService
+{
+	private static readonly string _qwbHttpAPIAddress = @"https://qwb.qumran-digital.org/qwbSQE";
+
+	private readonly HttpClient                       _httpClient;
+	private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+
+	private readonly string _qwbBibliographyAddress =
+			$@"{_qwbHttpAPIAddress}/bibliography.xml\?bibId=";
+
+	private readonly string _qwbWordParallelsAddress = $@"{
+		_qwbHttpAPIAddress
+	}/parallels.xml\?startWordId=$StartWordId&endWordId=$EndWordId";
+
+	private readonly string _qwbWordVariantsAddress =
+			$@"{_qwbHttpAPIAddress}/variants.xml\?wortId=";
+
+	private readonly ISignInterpretationRepository _signInterpretationRepository;
+
+	public WordService(
+			IHubContext<MainHub, ISQEClient> hubContext
+			, ISignInterpretationRepository  signInterpretationRepository
+			, HttpClient                     httpClient)
+	{
+		_hubContext = hubContext;
+		_signInterpretationRepository = signInterpretationRepository;
+		_httpClient = httpClient;
 	}
 
-	public class WordService : IWordService
+	public async Task<QwbWordVariantListDTO> GetQwbWordVariantForSignInterpretationId(
+			UserInfo user
+			, uint   editionId
+			, uint   signInterpretationId)
 	{
-		private static readonly string _qwbHttpAPIAddress = @"https://vmext21-116.gwdg.de/qwbSQE";
+		var qwbWordId =
+				await _signInterpretationRepository.GetQwbWordIfForSignInterpretationId(
+						user
+						, editionId
+						, signInterpretationId);
 
-		private readonly HttpClient                       _httpClient;
-		private readonly IHubContext<MainHub, ISQEClient> _hubContext;
-
-		private readonly string _qwbBibliographyAddress =
-				$@"{_qwbHttpAPIAddress}/bibliography.xml\?bibId=";
-
-		private readonly string _qwbWordParallelsAddress = $@"{
-			_qwbHttpAPIAddress
-		}/parallels.xml\?startWordId=$StartWordId&endWordId=$EndWordId";
-
-		private readonly string _qwbWordVariantsAddress =
-				$@"{_qwbHttpAPIAddress}/variants.xml\?wortId=";
-
-		private readonly ISignInterpretationRepository _signInterpretationRepository;
-
-		public WordService(
-				IHubContext<MainHub, ISQEClient> hubContext
-				, ISignInterpretationRepository  signInterpretationRepository
-				, HttpClient                     httpClient)
+		if (qwbWordId == 0)
 		{
-			_hubContext = hubContext;
-			_signInterpretationRepository = signInterpretationRepository;
-			_httpClient = httpClient;
+			throw new StandardExceptions.DataNotFoundException(
+					"QWB word id"
+					, signInterpretationId.ToString()
+					, "sign interpretation to qwb word id");
 		}
 
-		public async Task<QwbWordVariantListDTO> GetQwbWordVariantForSignInterpretationId(
-				UserInfo user
-				, uint   editionId
-				, uint   signInterpretationId)
+		return await GetQwbWordVariantForQwbWordId(qwbWordId);
+	}
+
+	public async Task<QwbWordVariantListDTO> GetQwbWordVariantForQwbWordId(uint qwbWordId)
+	{
+		try
 		{
-			var qwbWordId =
-					await _signInterpretationRepository.GetQwbWordIfForSignInterpretationId(
-							user
-							, editionId
-							, signInterpretationId);
+			var wordVariantString =
+					await _httpClient.GetStringAsync($"{_qwbWordVariantsAddress}{qwbWordId}");
 
-			if (qwbWordId == 0)
-			{
-				throw new StandardExceptions.DataNotFoundException(
-						"QWB word id"
-						, signInterpretationId.ToString()
-						, "sign interpretation to qwb word id");
-			}
+			var variants = JsonSerializer.Deserialize<QwbWordVariants>(wordVariantString);
 
-			return await GetQwbWordVariantForQwbWordId(qwbWordId);
+			return variants.ToDTO();
 		}
-
-		public async Task<QwbWordVariantListDTO> GetQwbWordVariantForQwbWordId(uint qwbWordId)
+		catch
 		{
-			try
-			{
-				var wordVariantString =
-						await _httpClient.GetStringAsync($"{_qwbWordVariantsAddress}{qwbWordId}");
-
-				var variants = JsonSerializer.Deserialize<QwbWordVariants>(wordVariantString);
-
-				return variants.ToDTO();
-			}
-			catch
-			{
-				// TODO: maybe we do better error checking to see why the HTTP request failed.
-				throw new StandardExceptions.DataNotFoundException(
-						"QWB word variants"
-						, qwbWordId.ToString()
-						, "QWB API");
-			}
-		}
-
-		public async Task<QwbParallelListDTO> GetQwbParallel(uint qwbStartWordId, uint qwbEndWordId)
-		{
-			try
-			{
-				var wordVariantString = await _httpClient.GetStringAsync(
-						_qwbWordParallelsAddress.Replace("$StartWordId", qwbStartWordId.ToString())
-												.Replace("$EndWordId", qwbEndWordId.ToString()));
-
-				var variants = JsonSerializer.Deserialize<List<QwbParallel>>(wordVariantString);
-
-				return variants.ToDTO();
-			}
-			catch
-			{
-				// TODO: maybe we do better error checking to see why the HTTP request failed.
-				throw new StandardExceptions.DataNotFoundException(
-						"QWB parallels"
-						, $"{qwbStartWordId} and {qwbEndWordId}"
-						, "QWB API");
-			}
-		}
-
-		public async Task<QwbBibliographyEntryDTO> GetQwbBibliography(uint bibliographyId)
-		{
-			try
-			{
-				var wordVariantString =
-						await _httpClient.GetStringAsync(
-								$"{_qwbBibliographyAddress}{bibliographyId}");
-
-				var entry = JsonSerializer.Deserialize<QwbBibliographyEntry>(wordVariantString);
-
-				return entry.ToDTO();
-			}
-			catch
-			{
-				// TODO: maybe we do better error checking to see why the HTTP request failed.
-				throw new StandardExceptions.DataNotFoundException(
-						"QWB bibliography"
-						, $"{bibliographyId}"
-						, "QWB API");
-			}
+			// TODO: maybe we do better error checking to see why the HTTP request failed.
+			throw new StandardExceptions.DataNotFoundException(
+					"QWB word variants"
+					, qwbWordId.ToString()
+					, "QWB API");
 		}
 	}
 
-	// The following are the classes needed to deserialize JSON from QWB API endpoints
-	public class QwbWordVariants
+	public async Task<QwbParallelListDTO> GetQwbParallel(uint qwbStartWordId, uint qwbEndWordId)
 	{
-		public QwbBibliographyList        noVariants { get; set; }
-		public List<QwbWordVariantObject> variants   { get; set; }
+		try
+		{
+			var wordVariantString = await _httpClient.GetStringAsync(
+					_qwbWordParallelsAddress.Replace("$StartWordId", qwbStartWordId.ToString())
+											.Replace("$EndWordId", qwbEndWordId.ToString()));
+
+			var variants = JsonSerializer.Deserialize<List<QwbParallel>>(wordVariantString);
+
+			return variants.ToDTO();
+		}
+		catch
+		{
+			// TODO: maybe we do better error checking to see why the HTTP request failed.
+			throw new StandardExceptions.DataNotFoundException(
+					"QWB parallels"
+					, $"{qwbStartWordId} and {qwbEndWordId}"
+					, "QWB API");
+		}
 	}
 
-	public class QwbBibliographyList
+	public async Task<QwbBibliographyEntryDTO> GetQwbBibliography(uint bibliographyId)
 	{
-		public List<QwbBiblio> biblio { get; set; }
-	}
+		try
+		{
+			var wordVariantString =
+					await _httpClient.GetStringAsync($"{_qwbBibliographyAddress}{bibliographyId}");
 
-	public class QwbWordVariantObject : QwbBibliographyList
-	{
-		public string type    { get; set; }
-		public string word    { get; set; }
-		public string lemma   { get; set; }
-		public string grammar { get; set; }
-		public string meaning { get; set; }
-	}
+			var entry = JsonSerializer.Deserialize<QwbBibliographyEntry>(
+					wordVariantString.Replace("\n", "").Replace("\r", "\\n"));
 
-	public class QwbBiblio
-	{
-		public uint   id         { get; set; }
-		public string shortTitle { get; set; }
-		public string pageRef    { get; set; }
-		public string commentary { get; set; }
+			return entry.ToDTO();
+		}
+		catch
+		{
+			// TODO: maybe we do better error checking to see why the HTTP request failed.
+			throw new StandardExceptions.DataNotFoundException(
+					"QWB bibliography"
+					, $"{bibliographyId}"
+					, "QWB API");
+		}
 	}
+}
 
-	public class QwbParallelWord
-	{
-		public bool   isVariant       { get; set; }
-		public bool   isReconstructed { get; set; }
-		public uint   wordId          { get; set; }
-		public uint   relatedWordId   { get; set; }
-		public string word            { get; set; }
-	}
+// The following are the classes needed to deserialize JSON from QWB API endpoints
+public class QwbWordVariants
+{
+	public QwbBibliographyList        noVariants { get; set; }
+	public List<QwbWordVariantObject> variants   { get; set; }
+}
 
-	public class QwbParallel
-	{
-		public string                textref { get; set; }
-		public List<QwbParallelWord> words   { get; set; }
-	}
+public class QwbBibliographyList
+{
+	public List<QwbBiblio> biblio { get; set; }
+}
 
-	public class QwbBibliographyEntry
-	{
-		public uint   id    { get; set; }
-		public string title { get; set; }
-	}
+public class QwbWordVariantObject : QwbBibliographyList
+{
+	public string type    { get; set; }
+	public string word    { get; set; }
+	public string lemma   { get; set; }
+	public string grammar { get; set; }
+	public string meaning { get; set; }
+}
+
+public class QwbBiblio
+{
+	public uint   id         { get; set; }
+	public string shortTitle { get; set; }
+	public string pageRef    { get; set; }
+	public string commentary { get; set; }
+}
+
+public class QwbParallelWord
+{
+	public bool   isVariant       { get; set; }
+	public bool   isReconstructed { get; set; }
+	public uint   wordId          { get; set; }
+	public uint   relatedWordId   { get; set; }
+	public string word            { get; set; }
+}
+
+public class QwbParallel
+{
+	public string                textref { get; set; }
+	public List<QwbParallelWord> words   { get; set; }
+}
+
+public class QwbBibliographyEntry
+{
+	public uint   id    { get; set; }
+	public string title { get; set; }
 }

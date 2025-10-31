@@ -1,10 +1,9 @@
-namespace qwb_to_sqe
-{
-	public class SqeManuscript
-	{
-		public int EditionId;
-		public int EditorId;
+namespace qwb_to_sqe;
 
-		public int Id;
-	}
+public class SqeManuscript
+{
+	public int EditionId;
+	public int EditorId;
+
+	public int Id;
 }

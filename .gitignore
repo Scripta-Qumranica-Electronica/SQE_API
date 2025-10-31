@@ -4,6 +4,7 @@ obj/
 .vs/
 .idea
 .vscode
+.tool-versions
 /api-test/Properties/launchSettings.json
 *.user
 /Utilities/GenerateTypescriptDTOs/Properties/launchSettings.json

@@ -15,393 +15,386 @@ using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
-namespace SQE.ApiTest.ApiRequests
+namespace SQE.ApiTest.ApiRequests;
+
+public static partial class Delete
 {
-	public static partial class Delete
+	public class V1_Editions_EditionId_Rois_RoiId : RequestObject<EmptyInput, EmptyOutput>
 	{
-		public class V1_Editions_EditionId_Rois_RoiId : RequestObject<EmptyInput, EmptyOutput>
+		private readonly uint _editionId;
+		private readonly uint _roiId;
+
+		/// <summary>
+		///  Deletes a sign ROI from the given edition of a scroll
+		/// </summary>
+		/// <param name="roiId">Id of the ROI to be deleted</param>
+		/// <param name="editionId">Id of the edition</param>
+		public V1_Editions_EditionId_Rois_RoiId(uint editionId, uint roiId)
+
 		{
-			private readonly uint _editionId;
-			private readonly uint _roiId;
+			_editionId = editionId;
+			_roiId = roiId;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Deletes a sign ROI from the given edition of a scroll
-			/// </summary>
-			/// <param name="roiId">Id of the ROI to be deleted</param>
-			/// <param name="editionId">Id of the edition</param>
-			public V1_Editions_EditionId_Rois_RoiId(uint editionId, uint roiId)
+			_listenerDict.Add(ListenerMethods.DeletedRoi, (DeletedRoiIsNull, DeletedRoiListener));
+		}
 
-			{
-				_editionId = editionId;
-				_roiId = roiId;
-				AvailableListeners = new Listeners();
+		public Listeners AvailableListeners { get; }
 
-				_listenerDict.Add(
-						ListenerMethods.DeletedRoi
-						, (DeletedRoiIsNull, DeletedRoiListener));
-			}
+		public DeleteIntIdDTO DeletedRoi { get; private set; }
 
-			public Listeners AvailableListeners { get; }
+		private void DeletedRoiListener(HubConnection signalrListener)
+			=> signalrListener.On<DeleteIntIdDTO>(
+					"DeletedRoi"
+					, receivedData => DeletedRoi = receivedData);
 
-			public DeleteIntIdDTO DeletedRoi { get; private set; }
+		private bool DeletedRoiIsNull() => DeletedRoi == null;
 
-			private void DeletedRoiListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteIntIdDTO>(
-						"DeletedRoi"
-						, receivedData => DeletedRoi = receivedData);
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/roi-id"
+														, $"/{
+															HttpUtility.UrlEncode(_roiId.ToString())
+														}");
 
-			private bool DeletedRoiIsNull() => DeletedRoi == null;
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _roiId);
+		}
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/roi-id"
-															, $"/{HttpUtility.UrlEncode(_roiId.ToString())}");
+		public override uint? GetEditionId() => _editionId;
 
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _roiId);
-			}
+		public class Listeners
+		{
+			public ListenerMethods DeletedRoi = ListenerMethods.DeletedRoi;
+		}
+	}
+}
 
-			public override uint? GetEditionId() => _editionId;
+public static partial class Get
+{
+	public class V1_Editions_EditionId_Rois_RoiId : RequestObject<EmptyInput, InterpretationRoiDTO>
+	{
+		private readonly uint _editionId;
+		private readonly uint _roiId;
 
-			public class Listeners
-			{
-				public ListenerMethods DeletedRoi = ListenerMethods.DeletedRoi;
-			}
+		/// <summary>
+		///  Get the details for a ROI in the given edition of a scroll
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="roiId">A JSON object with the new ROI to be created</param>
+		public V1_Editions_EditionId_Rois_RoiId(uint editionId, uint roiId)
+
+		{
+			_editionId = editionId;
+			_roiId = roiId;
+		}
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/roi-id"
+														, $"/{
+															HttpUtility.UrlEncode(_roiId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _roiId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+}
+
+public static partial class Post
+{
+	public class V1_Editions_EditionId_Rois :
+			RequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO>
+	{
+		private readonly uint                    _editionId;
+		private readonly SetInterpretationRoiDTO _payload;
+
+		/// <summary>
+		///  Creates new sign ROI in the given edition of a scroll
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="newRoi">A JSON object with the new ROI to be created</param>
+		public V1_Editions_EditionId_Rois(uint editionId, SetInterpretationRoiDTO payload) : base(
+				payload)
+		{
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
+
+			_listenerDict.Add(
+					ListenerMethods.CreatedRoisBatch
+					, (CreatedRoisBatchIsNull, CreatedRoisBatchListener));
+		}
+
+		public Listeners AvailableListeners { get; }
+
+		public InterpretationRoiDTOList CreatedRoisBatch { get; private set; }
+
+		private void CreatedRoisBatchListener(HubConnection signalrListener)
+			=> signalrListener.On<InterpretationRoiDTOList>(
+					"CreatedRoisBatch"
+					, receivedData => CreatedRoisBatch = receivedData);
+
+		private bool CreatedRoisBatchIsNull() => CreatedRoisBatch == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
+		{
+			public ListenerMethods CreatedRoisBatch = ListenerMethods.CreatedRoisBatch;
 		}
 	}
 
-	public static partial class Get
+	public class V1_Editions_EditionId_Rois_Batch :
+			RequestObject<SetInterpretationRoiDTOList, InterpretationRoiDTOList>
 	{
-		public class V1_Editions_EditionId_Rois_RoiId :
-				RequestObject<EmptyInput, InterpretationRoiDTO>
+		private readonly uint                        _editionId;
+		private readonly SetInterpretationRoiDTOList _payload;
+
+		/// <summary>
+		///  Creates new sign ROI's in the given edition of a scroll
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="newRois">A JSON object with an array of the new ROI's to be created</param>
+		public V1_Editions_EditionId_Rois_Batch(
+				uint                          editionId
+				, SetInterpretationRoiDTOList payload) : base(payload)
 		{
-			private readonly uint _editionId;
-			private readonly uint _roiId;
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Get the details for a ROI in the given edition of a scroll
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="roiId">A JSON object with the new ROI to be created</param>
-			public V1_Editions_EditionId_Rois_RoiId(uint editionId, uint roiId)
+			_listenerDict.Add(
+					ListenerMethods.EditedRoisBatch
+					, (EditedRoisBatchIsNull, EditedRoisBatchListener));
+		}
 
-			{
-				_editionId = editionId;
-				_roiId = roiId;
-			}
+		public Listeners AvailableListeners { get; }
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/roi-id"
-															, $"/{HttpUtility.UrlEncode(_roiId.ToString())}");
+		public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
 
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _roiId);
-			}
+		private void EditedRoisBatchListener(HubConnection signalrListener)
+			=> signalrListener.On<BatchEditRoiResponseDTO>(
+					"EditedRoisBatch"
+					, receivedData => EditedRoisBatch = receivedData);
 
-			public override uint? GetEditionId() => _editionId;
+		private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
+		{
+			public ListenerMethods EditedRoisBatch = ListenerMethods.EditedRoisBatch;
 		}
 	}
 
-	public static partial class Post
+	public class V1_Editions_EditionId_Rois_BatchEdit :
+			RequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO>
 	{
-		public class V1_Editions_EditionId_Rois :
-				RequestObject<SetInterpretationRoiDTO, InterpretationRoiDTO>
+		private readonly uint            _editionId;
+		private readonly BatchEditRoiDTO _payload;
+
+		/// <summary>
+		///  Processes a series of create/update/delete ROI requests in the given edition of a scroll
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="rois">A JSON object with all the roi edits to be performed</param>
+		public V1_Editions_EditionId_Rois_BatchEdit(uint editionId, BatchEditRoiDTO payload) : base(
+				payload)
 		{
-			private readonly uint                    _editionId;
-			private readonly SetInterpretationRoiDTO _payload;
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Creates new sign ROI in the given edition of a scroll
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="newRoi">A JSON object with the new ROI to be created</param>
-			public V1_Editions_EditionId_Rois(uint editionId, SetInterpretationRoiDTO payload)
-					: base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.CreatedRoisBatch
-						, (CreatedRoisBatchIsNull, CreatedRoisBatchListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public InterpretationRoiDTOList CreatedRoisBatch { get; private set; }
-
-			private void CreatedRoisBatchListener(HubConnection signalrListener)
-				=> signalrListener.On<InterpretationRoiDTOList>(
-						"CreatedRoisBatch"
-						, receivedData => CreatedRoisBatch = receivedData);
-
-			private bool CreatedRoisBatchIsNull() => CreatedRoisBatch == null;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods CreatedRoisBatch = ListenerMethods.CreatedRoisBatch;
-			}
+			_listenerDict.Add(
+					ListenerMethods.EditedRoisBatch
+					, (EditedRoisBatchIsNull, EditedRoisBatchListener));
 		}
 
-		public class V1_Editions_EditionId_Rois_Batch :
-				RequestObject<SetInterpretationRoiDTOList, InterpretationRoiDTOList>
+		public Listeners AvailableListeners { get; }
+
+		public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
+
+		private void EditedRoisBatchListener(HubConnection signalrListener)
+			=> signalrListener.On<BatchEditRoiResponseDTO>(
+					"EditedRoisBatch"
+					, receivedData => EditedRoisBatch = receivedData);
+
+		private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint                        _editionId;
-			private readonly SetInterpretationRoiDTOList _payload;
-
-			/// <summary>
-			///  Creates new sign ROI's in the given edition of a scroll
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="newRois">A JSON object with an array of the new ROI's to be created</param>
-			public V1_Editions_EditionId_Rois_Batch(
-					uint                          editionId
-					, SetInterpretationRoiDTOList payload) : base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.EditedRoisBatch
-						, (EditedRoisBatchIsNull, EditedRoisBatchListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
-
-			private void EditedRoisBatchListener(HubConnection signalrListener)
-				=> signalrListener.On<BatchEditRoiResponseDTO>(
-						"EditedRoisBatch"
-						, receivedData => EditedRoisBatch = receivedData);
-
-			private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods EditedRoisBatch = ListenerMethods.EditedRoisBatch;
-			}
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
 		}
 
-		public class V1_Editions_EditionId_Rois_BatchEdit :
-				RequestObject<BatchEditRoiDTO, BatchEditRoiResponseDTO>
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
 		{
-			private readonly uint            _editionId;
-			private readonly BatchEditRoiDTO _payload;
+			public ListenerMethods EditedRoisBatch = ListenerMethods.EditedRoisBatch;
+		}
+	}
+}
 
-			/// <summary>
-			///  Processes a series of create/update/delete ROI requests in the given edition of a scroll
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="rois">A JSON object with all the roi edits to be performed</param>
-			public V1_Editions_EditionId_Rois_BatchEdit(uint editionId, BatchEditRoiDTO payload) :
-					base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
+public static partial class Put
+{
+	public class V1_Editions_EditionId_Rois_RoiId :
+			RequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO>
+	{
+		private readonly uint                    _editionId;
+		private readonly SetInterpretationRoiDTO _payload;
+		private readonly uint                    _roiId;
 
-				_listenerDict.Add(
-						ListenerMethods.EditedRoisBatch
-						, (EditedRoisBatchIsNull, EditedRoisBatchListener));
-			}
+		/// <summary>
+		///  Update an existing sign ROI in the given edition of a scroll
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="roiId">Id of the ROI to be updated</param>
+		/// <param name="updateRoi">A JSON object with the updated ROI details</param>
+		public V1_Editions_EditionId_Rois_RoiId(
+				uint                      editionId
+				, uint                    roiId
+				, SetInterpretationRoiDTO payload) : base(payload)
+		{
+			_editionId = editionId;
+			_roiId = roiId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			public Listeners AvailableListeners { get; }
+			_listenerDict.Add(
+					ListenerMethods.EditedRoisBatch
+					, (EditedRoisBatchIsNull, EditedRoisBatchListener));
+		}
 
-			public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
+		public Listeners AvailableListeners { get; }
 
-			private void EditedRoisBatchListener(HubConnection signalrListener)
-				=> signalrListener.On<BatchEditRoiResponseDTO>(
-						"EditedRoisBatch"
-						, receivedData => EditedRoisBatch = receivedData);
+		public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
 
-			private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
+		private void EditedRoisBatchListener(HubConnection signalrListener)
+			=> signalrListener.On<BatchEditRoiResponseDTO>(
+					"EditedRoisBatch"
+					, receivedData => EditedRoisBatch = receivedData);
 
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+		private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
 
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/roi-id"
+														, $"/{
+															HttpUtility.UrlEncode(_roiId.ToString())
+														}");
 
-			public override uint? GetEditionId() => _editionId;
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _roiId
+						   , _payload);
+		}
 
-			public class Listeners
-			{
-				public ListenerMethods EditedRoisBatch = ListenerMethods.EditedRoisBatch;
-			}
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
+		{
+			public ListenerMethods EditedRoisBatch = ListenerMethods.EditedRoisBatch;
 		}
 	}
 
-	public static partial class Put
+	public class V1_Editions_EditionId_Rois_Batch : RequestObject<UpdateInterpretationRoiDTOList,
+			UpdatedInterpretationRoiDTOList>
 	{
-		public class V1_Editions_EditionId_Rois_RoiId :
-				RequestObject<SetInterpretationRoiDTO, UpdatedInterpretationRoiDTO>
+		private readonly uint                           _editionId;
+		private readonly UpdateInterpretationRoiDTOList _payload;
+
+		/// <summary>
+		///  Update existing sign ROI's in the given edition of a scroll
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="updateRois">A JSON object with an array of the updated ROI details</param>
+		public V1_Editions_EditionId_Rois_Batch(
+				uint                             editionId
+				, UpdateInterpretationRoiDTOList payload) : base(payload)
 		{
-			private readonly uint                    _editionId;
-			private readonly SetInterpretationRoiDTO _payload;
-			private readonly uint                    _roiId;
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Update an existing sign ROI in the given edition of a scroll
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="roiId">Id of the ROI to be updated</param>
-			/// <param name="updateRoi">A JSON object with the updated ROI details</param>
-			public V1_Editions_EditionId_Rois_RoiId(
-					uint                      editionId
-					, uint                    roiId
-					, SetInterpretationRoiDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_roiId = roiId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.EditedRoisBatch
-						, (EditedRoisBatchIsNull, EditedRoisBatchListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public BatchEditRoiResponseDTO EditedRoisBatch { get; private set; }
-
-			private void EditedRoisBatchListener(HubConnection signalrListener)
-				=> signalrListener.On<BatchEditRoiResponseDTO>(
-						"EditedRoisBatch"
-						, receivedData => EditedRoisBatch = receivedData);
-
-			private bool EditedRoisBatchIsNull() => EditedRoisBatch == null;
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/roi-id"
-															, $"/{HttpUtility.UrlEncode(_roiId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _roiId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods EditedRoisBatch = ListenerMethods.EditedRoisBatch;
-			}
+			_listenerDict.Add(
+					ListenerMethods.UpdatedRoisBatch
+					, (UpdatedRoisBatchIsNull, UpdatedRoisBatchListener));
 		}
 
-		public class V1_Editions_EditionId_Rois_Batch : RequestObject<UpdateInterpretationRoiDTOList
-				, UpdatedInterpretationRoiDTOList>
+		public Listeners AvailableListeners { get; }
+
+		public UpdatedInterpretationRoiDTOList UpdatedRoisBatch { get; private set; }
+
+		private void UpdatedRoisBatchListener(HubConnection signalrListener)
+			=> signalrListener.On<UpdatedInterpretationRoiDTOList>(
+					"UpdatedRoisBatch"
+					, receivedData => UpdatedRoisBatch = receivedData);
+
+		private bool UpdatedRoisBatchIsNull() => UpdatedRoisBatch == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint                           _editionId;
-			private readonly UpdateInterpretationRoiDTOList _payload;
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
+		}
 
-			/// <summary>
-			///  Update existing sign ROI's in the given edition of a scroll
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="updateRois">A JSON object with an array of the updated ROI details</param>
-			public V1_Editions_EditionId_Rois_Batch(
-					uint                             editionId
-					, UpdateInterpretationRoiDTOList payload) : base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
+		public override uint? GetEditionId() => _editionId;
 
-				_listenerDict.Add(
-						ListenerMethods.UpdatedRoisBatch
-						, (UpdatedRoisBatchIsNull, UpdatedRoisBatchListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public UpdatedInterpretationRoiDTOList UpdatedRoisBatch { get; private set; }
-
-			private void UpdatedRoisBatchListener(HubConnection signalrListener)
-				=> signalrListener.On<UpdatedInterpretationRoiDTOList>(
-						"UpdatedRoisBatch"
-						, receivedData => UpdatedRoisBatch = receivedData);
-
-			private bool UpdatedRoisBatchIsNull() => UpdatedRoisBatch == null;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods UpdatedRoisBatch = ListenerMethods.UpdatedRoisBatch;
-			}
+		public class Listeners
+		{
+			public ListenerMethods UpdatedRoisBatch = ListenerMethods.UpdatedRoisBatch;
 		}
 	}
 }

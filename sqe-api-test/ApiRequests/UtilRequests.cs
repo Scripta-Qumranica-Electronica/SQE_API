@@ -14,52 +14,51 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
-namespace SQE.ApiTest.ApiRequests
+namespace SQE.ApiTest.ApiRequests;
+
+public static partial class Get
 {
-	public static partial class Get
+	public class V1_Utils_DatabaseVersion : RequestObject<EmptyInput, DatabaseVersionDTO>
 	{
-		public class V1_Utils_DatabaseVersion : RequestObject<EmptyInput, DatabaseVersionDTO>
+		protected override string HttpPath() => RequestPath;
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			protected override string HttpPath() => RequestPath;
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
-			}
-		}
-
-		public class V1_Utils_ApiVersion : RequestObject<EmptyInput, APIVersionDTO>
-		{
-			protected override string HttpPath() => RequestPath;
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
-			}
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
 		}
 	}
 
-	public static partial class Post
+	public class V1_Utils_ApiVersion : RequestObject<EmptyInput, APIVersionDTO>
 	{
-		public class V1_Utils_RepairWktPolygon : RequestObject<WktPolygonDTO, WktPolygonDTO>
+		protected override string HttpPath() => RequestPath;
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly WktPolygonDTO _payload;
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString());
+		}
+	}
+}
 
-			/// <summary>
-			///  Checks a WKT polygon to ensure validity. If the polygon is invalid,
-			///  it attempts to construct a valid polygon that matches the original
-			///  as closely as possible.
-			/// </summary>
-			/// <param name="payload">JSON object with the WKT polygon to validate</param>
-			public V1_Utils_RepairWktPolygon(WktPolygonDTO payload) : base(payload)
-				=> _payload = payload;
+public static partial class Post
+{
+	public class V1_Utils_RepairWktPolygon : RequestObject<WktPolygonDTO, WktPolygonDTO>
+	{
+		private readonly WktPolygonDTO _payload;
 
-			protected override string HttpPath() => RequestPath;
+		/// <summary>
+		///  Checks a WKT polygon to ensure validity. If the polygon is invalid,
+		///  it attempts to construct a valid polygon that matches the original
+		///  as closely as possible.
+		/// </summary>
+		/// <param name="payload">JSON object with the WKT polygon to validate</param>
+		public V1_Utils_RepairWktPolygon(WktPolygonDTO payload) : base(payload)
+			=> _payload = payload;
 
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
-			}
+		protected override string HttpPath() => RequestPath;
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
 		}
 	}
 }

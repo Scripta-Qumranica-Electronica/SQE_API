@@ -2,263 +2,234 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using MoreLinq;
+using NetTopologySuite.Algorithm;
+using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using NetTopologySuite.Simplify;
 using SQE.DatabaseAccess.Helpers;
+using static SqeUtils.GeoRepairPolygonMethods;
 
 // ReSharper disable ArrangeRedundantParentheses
 
-namespace SQE.API.Server.Helpers
+namespace SQE.API.Server.Helpers;
+
+public static class GeometryValidation
 {
-	public static class GeometryValidation
+	/// <summary>
+	///  Validate that the wkt polygon is indeed correct. If it is not, the method will
+	///  throw an error. When the fix parameter is set to true, it will try to repair it and
+	///  send the repaired version of the polygon back with the error.  If the polygon cannot be
+	///  repaired at all, then a descriptive error about the polygon is thrown.
+	/// </summary>
+	/// <param name="wktPolygon">A wkt polygon</param>
+	/// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
+	/// <param name="fix">
+	///  Invalid polygons always throw an error, this flag determines whether to try to return a repaired
+	///  version of the polygon with that error
+	/// </param>
+	/// <returns>A WKT string with the cleaned polygon</returns>
+	public static string ValidatePolygon(string wktPolygon, string entityName, bool fix = false) =>
+
+			// Previously we wrapped the private validation method in a Task so we can asynchronously call this non-trivial method
+			// But see the docs: https://docs.microsoft.com/en-us/aspnet/core/performance/performance-best-practices?view=aspnetcore-3.1
+			// Those docs explicitly warn against doing `await Task.Run`, so this is now synchronous.
+			_validatePolygon(wktPolygon, entityName, fix);
+
+	private static bool _hasValidDirection(Geometry geom)
 	{
-		// You must DllImport before each external function imported (beware the paths)
-		// [DllImport(
-		// 		"geo_repair_polygon"
-		// 		, CharSet = CharSet.Ansi
-		// 		, CallingConvention = CallingConvention.Cdecl)]
-		// private static extern BinaryData repair_wkb(IntPtr data, UIntPtr len);
-		//
-		// [DllImport(
-		// 		"geo_repair_polygon"
-		// 		, CharSet = CharSet.Ansi
-		// 		, CallingConvention = CallingConvention.Cdecl)]
-		// private static extern void c_bin_data_free(BinaryData bin_data);
+		var isPolygon = geom.OgcGeometryType == OgcGeometryType.Polygon;
+		var isMultiPolygon = geom.OgcGeometryType == OgcGeometryType.MultiPolygon;
 
-		[DllImport(
-				"geo_repair_polygon"
-				, CharSet = CharSet.Ansi
-				, CallingConvention = CallingConvention.Cdecl)]
-		private static extern IntPtr repair_wkt(IntPtr wkt);
+		if (!isPolygon
+			&& !isMultiPolygon)
+			return false;
 
-		[DllImport(
-				"geo_repair_polygon"
-				, CharSet = CharSet.Ansi
-				, CallingConvention = CallingConvention.Cdecl)]
-		private static extern void c_char_free(IntPtr ptr);
+		return isMultiPolygon
+				? _multiPolygonHasValidDirection((MultiPolygon)geom)
+				: _polygonHasValidDirection((Polygon)geom);
+	}
 
-		/// <summary>
-		///  Validate that the wkt polygon is indeed correct. If it is not, the method will
-		///  throw an error. When the fix parameter is set to true, it will try to repair it and
-		///  send the repaired version of the polygon back with the error.  If the polygon cannot be
-		///  repaired at all, then a descriptive error about the polygon is thrown.
-		/// </summary>
-		/// <param name="wktPolygon">A wkt polygon</param>
-		/// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
-		/// <param name="fix">
-		///  Invalid polygons always throw an error, this flag determines whether to try to return a repaired
-		///  version of the polygon with that error
-		/// </param>
-		/// <returns>A WKT string with the cleaned polygon</returns>
-		public static string ValidatePolygon(string wktPolygon, string entityName, bool fix = false)
-			=>
+	private static bool _multiPolygonHasValidDirection(MultiPolygon geom)
+	{
+		return geom.Geometries.All(x => _polygonHasValidDirection((Polygon)x));
+	}
 
-					// Previously we wrapped the private validation method in a Task so we can asynchronously call this non-trivial method
-					// But see the docs: https://docs.microsoft.com/en-us/aspnet/core/performance/performance-best-practices?view=aspnetcore-3.1
-					// Those docs explicitly warn against doing `await Task.Run`, so this is now synchronous.
-					_validatePolygon(wktPolygon, entityName, fix);
+	private static bool _polygonHasValidDirection(Polygon polygon)
+	{
+		// Exterior ring should be CCW
+		return Orientation.IsCCW(polygon.ExteriorRing.Coordinates)
+			   &&
 
-		/// <summary>
-		///  Private method to validate that the wkt polygon is indeed correct. If it is not, the method will
-		///  throw an error. When the fix parameter is set to true, it will try to repair it and
-		///  send the repaired version of the polygon back with the error.  If the polygon cannot be
-		///  repaired at all, then a descriptive error about the polygon is thrown.
-		/// </summary>
-		/// <param name="wktPolygon">A wkt polygon</param>
-		/// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
-		/// <param name="fix">
-		///  Invalid polygons always throw an error, this flag determines whether to try to return a repaired
-		///  version of the polygon with that error
-		/// </param>
-		/// <returns>A WKT string with the cleaned polygon</returns>
-		/// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
-		private static string _validatePolygon(string wktPolygon, string entityName, bool fix)
+			   // Interior rings (holes) should be CW (i.e., NOT CCW)
+			   polygon.InteriorRings.All(innerRing => !Orientation.IsCCW(innerRing.Coordinates));
+	}
+
+	private static Geometry _normalizeGeometry(Geometry geom)
+	{
+		var isPolygon = geom.OgcGeometryType == OgcGeometryType.Polygon;
+		var isMultiPolygon = geom.OgcGeometryType == OgcGeometryType.MultiPolygon;
+
+		if (!isPolygon
+			&& !isMultiPolygon)
+			return geom;
+
+		if (isMultiPolygon)
+			return _normalizeMultiPolygon((MultiPolygon)geom);
+
+		return _normalizePolygon((Polygon)geom);
+	}
+
+	private static MultiPolygon _normalizeMultiPolygon(MultiPolygon mp)
+	{
+		var factory = mp.Factory;
+		var polygons = new Polygon[mp.NumGeometries];
+		polygons.Zip(mp).ForEach(x => x.First = _normalizePolygon((Polygon)x.Second));
+
+		return factory.CreateMultiPolygon(polygons);
+	}
+
+	private static Polygon _normalizePolygon(Polygon polygon)
+	{
+		var factory = polygon.Factory;
+
+		// Fix exterior ring - should be CCW
+		var exteriorRing = polygon.ExteriorRing;
+
+		if (!Orientation.IsCCW(exteriorRing.Coordinates))
+			exteriorRing = (LinearRing)exteriorRing.Reverse();
+
+		// Fix interior rings (holes) - should be CW (i.e., NOT CCW)
+		var interiorRings = new LinearRing[polygon.NumInteriorRings];
+
+		interiorRings.Zip(polygon.InteriorRings)
+					 .ForEach(x => x.First = Orientation.IsCCW(x.Second.Coordinates)
+									  ? (LinearRing)x.Second.Reverse()
+									  : (LinearRing)x.Second);
+
+		// Create a new polygon with corrected rings
+		return factory.CreatePolygon((LinearRing)exteriorRing, interiorRings);
+	}
+
+	/// <summary>
+	///  Private method to validate that the wkt polygon is indeed correct. If it is not, the method will
+	///  throw an error. When the fix parameter is set to true, it will try to repair it and
+	///  send the repaired version of the polygon back with the error.  If the polygon cannot be
+	///  repaired at all, then a descriptive error about the polygon is thrown.
+	/// </summary>
+	/// <param name="wktPolygon">A wkt polygon</param>
+	/// <param name="entityName">The type of object being validated (used in formulating useful exception error messages)</param>
+	/// <param name="fix">
+	///  Invalid polygons always throw an error, this flag determines whether to try to return a repaired
+	///  version of the polygon with that error
+	/// </param>
+	/// <returns>A WKT string with the cleaned polygon</returns>
+	/// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
+	private static string _validatePolygon(string wktPolygon, string entityName, bool fix)
+	{
+		var wkr = new WKTReader();
+
+		// Bail immediately on null/blank input
+		if (string.IsNullOrEmpty(wktPolygon))
 		{
-			var wkr = new WKTReader();
-
-			// Bail immediately on null/blank input
-			if (string.IsNullOrEmpty(wktPolygon))
-			{
-				throw new StandardExceptions.InputDataRuleViolationException(
-						"The submitted WKT POLYGON is empty");
-			}
-
-			// Try loading the polygon
-			try
-			{
-				var polygon = wkr.Read(wktPolygon);
-
-				// If it is valid, return it
-				if (polygon.IsValid)
-				{
-					// Remove any completely unnecessary points
-					var simplifier =
-							new DouglasPeuckerSimplifier(polygon) { DistanceTolerance = 0 };
-
-					return simplifier.GetResultGeometry().ToString();
-				}
-
-				// It is invalid, but could be repaired as a binary representation
-				// Throw an error if no request to fix it has been made
-				if (!fix)
-				{
-					throw new StandardExceptions.InputDataRuleViolationException(
-							"The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
-				}
-
-				// TODO: repairing via binary data is not working, just use the WKT for now
-				// // Try repairing the binary version of the polygon
-				// var wkb_in = polygon.AsBinary(); // Get the binary data
-				//
-				// // Instantiate the variable to process the response from the FFI
-				// var bin = new BinaryData();
-				//
-				// try
-				// {
-				// 	var pinnedArray = GCHandle.Alloc(wkb_in, GCHandleType.Pinned);
-				//
-				// 	var unmanagedWkbIn = pinnedArray.AddrOfPinnedObject();
-				// 	bin = repair_wkb(unmanagedWkbIn, (UIntPtr) wkb_in.Length);
-				// 	pinnedArray.Free();
-				//
-				// 	// The FFI function repair_wkb returns a null pointer with a 0 length if it could not repair the poly.
-				// 	// For safety throw on either.  In fact, check for a length less than 21, because 21 bytes is the
-				// 	// length of the smallest possible valid WKB (a POINT geometry).
-				// 	// ReSharper disable once ArrangeRedundantParentheses
-				// 	if (((int)(ulong) bin.len < 21)
-				//
-				// 		// ReSharper disable once ArrangeRedundantParentheses
-				// 		|| (bin.data == IntPtr.Zero))
-				// 	{
-				// 		throw new StandardExceptions.InputDataRuleViolationException(
-				// 				"The submitted WKT POLYGON is invalid and cannot be repaired");
-				// 	}
-				//
-				// 	// Parse the returned binary data
-				// 	var wkbData = new byte[(int)(ulong) bin.len];
-				//
-				// 	Marshal.Copy(
-				// 			bin.data
-				// 			, wkbData
-				// 			, 0
-				// 			, (int)(ulong) bin.len);
-				//
-				// 	// Dear possible future reader, we have decided to do this marshalling the safe way.
-				// 	// Should you find that this is causing unacceptable memory pressure and/or latency, then
-				// 	// the returned binary data can be read directly in an unsafe way.
-				// 	// The procedure is as follows
-				// 	/*
-				// 	// Map the response of the FFI into a Span
-				// 	Span<byte> wkbData;
-				// 	unsafe
-				// 	{
-				// 	    wkbData = new Span<byte>(bin.data.ToPointer(), (int)bin.len);
-				// 	}
-				// 	// You will then need to cast the Span<byte> to a byte[] to read it as WKB data.
-				// 	*/
-				//
-				// 	// Read the binary data into a Net Topology geometry and get the WKT representation
-				// 	var wkbReader = new WKBReader();
-				//
-				// 	// Completely unnecessary points
-				// 	var simplifier =
-				// 			new DouglasPeuckerSimplifier(wkbReader.Read(wkbData))
-				// 			{
-				// 					DistanceTolerance = 0,
-				// 			};
-				//
-				// 	// Free the data allocated by Rust (we do it this way since we do not know the length of the response,
-				// 	// so it would be just a guess if we passed Rust memory managed by C#)
-				// 	c_bin_data_free(bin);
-				//
-				// 	return simplifier.GetResultGeometry().ToString();
-				// }
-				// catch
-				// {
-				// 	throw new StandardExceptions.InputDataRuleViolationException(
-				// 			"The submitted WKT POLYGON is invalid and cannot be repaired");
-				// }
-			}
-			catch
-			{
-				// Throw an error if no request to fix it has been made.
-				if (!fix)
-				{
-					throw new StandardExceptions.InputDataRuleViolationException(
-							"The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
-				}
-			}
-
-			// Try repairing as a WKT (there may have been some text formatting errors)
-			var repairedWkt = repair_wkt(Marshal.StringToHGlobalAnsi(_repairPolygon(wktPolygon)));
-
-			var returnPoly = Marshal.PtrToStringAnsi(repairedWkt);
-
-			c_char_free(repairedWkt); // We need to let Rust free the memory it was using
-
-			if (string.IsNullOrEmpty(returnPoly)
-				|| (returnPoly == "INVALIDGEOMETRY"))
-			{
-				throw new StandardExceptions.InputDataRuleViolationException(
-						"The submitted WKT POLYGON is invalid and cannot be repaired");
-			}
-
-			// Remove any completely unnecessary points
-			var simplified =
-					new DouglasPeuckerSimplifier(wkr.Read(returnPoly)) { DistanceTolerance = 0 };
-
-			return simplified.GetResultGeometry().ToString();
+			throw new StandardExceptions.InputDataRuleViolationException(
+					"The submitted WKT POLYGON is empty");
 		}
 
-		/// <summary>
-		///  This makes a quick pass of the geometry and fixes unclosed polygons as well
-		///  as trying to fix any simple text formatting errors.
-		/// </summary>
-		/// <param name="wkt">A Wkt Polygon string</param>
-		/// <returns></returns>
-		/// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
-		private static string _repairPolygon(string wkt)
+		// Try loading the polygon
+		try
 		{
-			var asymmetricNesting = new Regex(@"\),\s(?!\()");
-			var wktSplit = new Regex(@"\)\s?,\s?\(");
+			var polygon = wkr.Read(wktPolygon);
 
-			// Check for errors with the nesting of parentheses in the polygon geometry, we don't really know how to fix those
-			if (asymmetricNesting.Matches(wkt).Count > 0)
+			// If it is valid, return it
+			if (polygon.IsValid)
 			{
-				throw new StandardExceptions.InputDataRuleViolationException(
-						"The submitted POLYGON has an improperly nested ring");
+				// Remove any completely unnecessary points
+				var simplifier = new DouglasPeuckerSimplifier(polygon) { DistanceTolerance = 0 };
+
+				var simplifiedPolygon = simplifier.GetResultGeometry();
+
+				return _hasValidDirection(simplifiedPolygon)
+						? simplifiedPolygon.ToString()
+						: _normalizeGeometry(simplifiedPolygon).ToString();
 			}
 
-			// We break the string into the individual paths the loop over them, repairing each path as we go.
-			var polyStrings = wktSplit.Split(wkt)
-									  .Select(
-											  z =>
-											  {
-												  // Strip extraneous characters
-												  var saniString = z.Replace("POLYGON", "")
-																	.Replace("MULTI", "")
-																	.Replace("(", "")
-																	.Replace(")", "");
-
-												  var coords = saniString.Split(",").ToList();
-
-												  // Make sure the path is explicitly closed
-												  if (coords.First() != coords.Last())
-													  coords.Add(coords.First());
-
-												  return $"({string.Join(",", coords)})";
-											  })
-									  .ToList();
-
-			return $"POLYGON({string.Join(",", polyStrings)})";
+			// It is invalid, but could be repaired as a binary representation
+			// Throw an error if no request to fix it has been made
+			if (!fix)
+			{
+				throw new StandardExceptions.InputDataRuleViolationException(
+						"The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
+			}
 		}
-
-		// You must declare the layout of your C struct (this is for any array)
-		[StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
-		public struct BinaryData
+		catch
 		{
-			public UIntPtr len;
-			public IntPtr  data;
+			// Throw an error if no request to fix it has been made.
+			if (!fix)
+			{
+				throw new StandardExceptions.InputDataRuleViolationException(
+						"The submitted WKT POLYGON is invalid, try using the API's repair-wkt-polygon endpoint to fix it");
+			}
 		}
+
+		try
+		{
+			return RepairWkt(wktPolygon);
+		}
+		catch
+		{
+			throw new StandardExceptions.InputDataRuleViolationException(
+					"The submitted WKT POLYGON is invalid and cannot be repaired");
+		}
+	}
+
+	/// <summary>
+	///  This makes a quick pass of the geometry and fixes unclosed polygons as well
+	///  as trying to fix any simple text formatting errors.
+	/// </summary>
+	/// <param name="wkt">A Wkt Polygon string</param>
+	/// <returns></returns>
+	/// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
+	private static string _repairPolygon(string wkt)
+	{
+		var asymmetricNesting = new Regex(@"\),\s(?!\()");
+		var wktSplit = new Regex(@"\)\s?,\s?\(");
+
+		// Check for errors with the nesting of parentheses in the polygon geometry, we don't really know how to fix those
+		if (asymmetricNesting.Matches(wkt).Count > 0)
+		{
+			throw new StandardExceptions.InputDataRuleViolationException(
+					"The submitted POLYGON has an improperly nested ring");
+		}
+
+		// We break the string into the individual paths the loop over them, repairing each path as we go.
+		var polyStrings = wktSplit.Split(wkt)
+								  .Select(z =>
+										  {
+											  // Strip extraneous characters
+											  var saniString = z.Replace("POLYGON", "")
+																.Replace("MULTI", "")
+																.Replace("(", "")
+																.Replace(")", "");
+
+											  var coords = saniString.Split(",").ToList();
+
+											  // Make sure the path is explicitly closed
+											  if (coords.First() != coords.Last())
+												  coords.Add(coords.First());
+
+											  return $"({string.Join(",", coords)})";
+										  })
+								  .ToList();
+
+		return $"POLYGON({string.Join(",", polyStrings)})";
+	}
+
+	// You must declare the layout of your C struct (this is for any array)
+	[StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
+	public struct BinaryData
+	{
+		public UIntPtr len;
+		public IntPtr  data;
 	}
 }

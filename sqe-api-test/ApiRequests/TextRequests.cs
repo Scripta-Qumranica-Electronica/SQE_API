@@ -15,639 +15,672 @@ using System.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
-namespace SQE.ApiTest.ApiRequests
+namespace SQE.ApiTest.ApiRequests;
+
+public static partial class Delete
 {
-	public static partial class Delete
+	public class V1_Editions_EditionId_Lines_LineId : RequestObject<EmptyInput, EmptyOutput>
 	{
-		public class V1_Editions_EditionId_Lines_LineId : RequestObject<EmptyInput, EmptyOutput>
+		private readonly uint _editionId;
+		private readonly uint _lineId;
+
+		/// <summary>
+		///  Delete a full line from a text fragment
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="lineId">Id of the line to be deleted</param>
+		/// <returns>
+		///  The updated details concerning the line sequence
+		/// </returns>
+		public V1_Editions_EditionId_Lines_LineId(uint editionId, uint lineId)
+
 		{
-			private readonly uint _editionId;
-			private readonly uint _lineId;
+			_editionId = editionId;
+			_lineId = lineId;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Delete a full line from a text fragment
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="lineId">Id of the line to be deleted</param>
-			/// <returns>
-			///  The updated details concerning the line sequence
-			/// </returns>
-			public V1_Editions_EditionId_Lines_LineId(uint editionId, uint lineId)
+			_listenerDict.Add(
+					ListenerMethods.DeletedLine
+					, (DeletedLineIsNull, DeletedLineListener));
+		}
 
-			{
-				_editionId = editionId;
-				_lineId = lineId;
-				AvailableListeners = new Listeners();
+		public Listeners AvailableListeners { get; }
 
-				_listenerDict.Add(
-						ListenerMethods.DeletedLine
-						, (DeletedLineIsNull, DeletedLineListener));
-			}
+		public DeleteIntIdDTO DeletedLine { get; private set; }
 
-			public Listeners AvailableListeners { get; }
+		private void DeletedLineListener(HubConnection signalrListener)
+			=> signalrListener.On<DeleteIntIdDTO>(
+					"DeletedLine"
+					, receivedData => DeletedLine = receivedData);
 
-			public DeleteIntIdDTO DeletedLine { get; private set; }
+		private bool DeletedLineIsNull() => DeletedLine == null;
 
-			private void DeletedLineListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteIntIdDTO>(
-						"DeletedLine"
-						, receivedData => DeletedLine = receivedData);
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/line-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_lineId.ToString())
+														}");
 
-			private bool DeletedLineIsNull() => DeletedLine == null;
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _lineId);
+		}
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/line-id"
-															, $"/{HttpUtility.UrlEncode(_lineId.ToString())}");
+		public override uint? GetEditionId() => _editionId;
 
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _lineId);
-			}
+		public class Listeners
+		{
+			public ListenerMethods DeletedLine = ListenerMethods.DeletedLine;
+		}
+	}
+}
 
-			public override uint? GetEditionId() => _editionId;
+public static partial class Get
+{
+	public class V1_Editions_EditionId_TextFragments :
+			RequestObject<EmptyInput, TextFragmentDataListDTO>
+	{
+		private readonly uint _editionId;
 
-			public class Listeners
-			{
-				public ListenerMethods DeletedLine = ListenerMethods.DeletedLine;
-			}
+		/// <summary>
+		///  Retrieves the ids of all Fragments of all fragments in the given edition of a scroll
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <returns>An array of the text fragment ids in correct sequence</returns>
+		public V1_Editions_EditionId_TextFragments(uint editionId) => _editionId = editionId;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_TextFragments_TextFragmentId_Artefacts :
+			RequestObject<EmptyInput, ArtefactDataListDTO>
+	{
+		private readonly uint _editionId;
+		private readonly uint _textFragmentId;
+
+		/// <summary>
+		///  Retrieves the ids of all Artefacts in the given textFragmentName
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="textFragmentId">Id of the text fragment</param>
+		/// <returns>An array of the line ids in the proper sequence</returns>
+		public V1_Editions_EditionId_TextFragments_TextFragmentId_Artefacts(
+				uint   editionId
+				, uint textFragmentId)
+
+		{
+			_editionId = editionId;
+			_textFragmentId = textFragmentId;
+		}
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/text-fragment-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_textFragmentId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _textFragmentId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_TextFragments_TextFragmentId_Lines :
+			RequestObject<EmptyInput, LineDataListDTO>
+	{
+		private readonly uint _editionId;
+		private readonly uint _textFragmentId;
+
+		/// <summary>
+		///  Retrieves the ids of all lines in the given textFragmentName
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="textFragmentId">Id of the text fragment</param>
+		/// <returns>An array of the line ids in the proper sequence</returns>
+		public V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+				uint   editionId
+				, uint textFragmentId)
+
+		{
+			_editionId = editionId;
+			_textFragmentId = textFragmentId;
+		}
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/text-fragment-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_textFragmentId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _textFragmentId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_TextFragments_TextFragmentId :
+			RequestObject<EmptyInput, TextEditionDTO>
+	{
+		private readonly uint _editionId;
+		private readonly uint _textFragmentId;
+
+		/// <summary>
+		///  Retrieves all signs and their data from the given textFragmentName
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="textFragmentId">Id of the text fragment</param>
+		/// <returns>
+		///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+		///  sequence
+		/// </returns>
+		public V1_Editions_EditionId_TextFragments_TextFragmentId(
+				uint   editionId
+				, uint textFragmentId)
+
+		{
+			_editionId = editionId;
+			_textFragmentId = textFragmentId;
+		}
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/text-fragment-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_textFragmentId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _textFragmentId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_FullText : RequestObject<EmptyInput, TextEditionDTO>
+	{
+		private readonly uint _editionId;
+
+		/// <summary>
+		///  Retrieves all signs and their data from the entire edition
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <returns>
+		///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+		///  sequence
+		/// </returns>
+		public V1_Editions_EditionId_FullText(uint editionId) => _editionId = editionId;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+
+	public class V1_Editions_EditionId_Lines_LineId : RequestObject<EmptyInput, LineTextDTO>
+	{
+		private readonly uint _editionId;
+		private readonly uint _lineId;
+
+		/// <summary>
+		///  Retrieves all signs and their data from the given line
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="lineId">Id of the line</param>
+		/// <returns>
+		///  A manuscript edition object including the fragments and their lines in a
+		///  hierarchical order and in correct sequence
+		/// </returns>
+		public V1_Editions_EditionId_Lines_LineId(uint editionId, uint lineId)
+
+		{
+			_editionId = editionId;
+			_lineId = lineId;
+		}
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/line-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_lineId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _lineId);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+	}
+}
+
+public static partial class Post
+{
+	public class V1_Editions_EditionId_TextFragments :
+			RequestObject<CreateTextFragmentDTO, TextFragmentDataDTO>
+	{
+		private readonly uint                  _editionId;
+		private readonly CreateTextFragmentDTO _payload;
+
+		/// <summary>
+		///  Creates a new text fragment in the given edition of a scroll
+		/// </summary>
+		/// <param name="createFragment">A JSON object with the details of the new text fragment to be created</param>
+		/// <param name="editionId">Id of the edition</param>
+		public V1_Editions_EditionId_TextFragments(uint editionId, CreateTextFragmentDTO payload) :
+				base(payload)
+		{
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
+
+			_listenerDict.Add(
+					ListenerMethods.CreatedTextFragment
+					, (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
+		}
+
+		public Listeners AvailableListeners { get; }
+
+		public TextFragmentDataDTO CreatedTextFragment { get; private set; }
+
+		private void CreatedTextFragmentListener(HubConnection signalrListener)
+			=> signalrListener.On<TextFragmentDataDTO>(
+					"CreatedTextFragment"
+					, receivedData => CreatedTextFragment = receivedData);
+
+		private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
+		{
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
+		}
+
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
+		{
+			public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
 		}
 	}
 
-	public static partial class Get
+	public class V1_Editions_EditionId_TextFragments_TextFragmentId_Lines :
+			RequestObject<CreateLineDTO, LineDataDTO>
 	{
-		public class V1_Editions_EditionId_TextFragments :
-				RequestObject<EmptyInput, TextFragmentDataListDTO>
+		private readonly uint          _editionId;
+		private readonly CreateLineDTO _payload;
+		private readonly uint          _textFragmentId;
+
+		/// <summary>
+		///  Creates a new line before or after another line.
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="textFragmentId">
+		///  Id of the text fragment where the line will be
+		///  added
+		/// </param>
+		/// <param name="lineData">The information about the line to be created</param>
+		/// <returns>
+		///  The details concerning the newly created line
+		/// </returns>
+		public V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
+				uint            editionId
+				, uint          textFragmentId
+				, CreateLineDTO payload) : base(payload)
 		{
-			private readonly uint _editionId;
+			_editionId = editionId;
+			_textFragmentId = textFragmentId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Retrieves the ids of all Fragments of all fragments in the given edition of a scroll
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <returns>An array of the text fragment ids in correct sequence</returns>
-			public V1_Editions_EditionId_TextFragments(uint editionId) => _editionId = editionId;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			_listenerDict.Add(
+					ListenerMethods.CreatedLine
+					, (CreatedLineIsNull, CreatedLineListener));
 		}
 
-		public class V1_Editions_EditionId_TextFragments_TextFragmentId_Artefacts :
-				RequestObject<EmptyInput, ArtefactDataListDTO>
+		public Listeners AvailableListeners { get; }
+
+		public LineDataDTO CreatedLine { get; private set; }
+
+		private void CreatedLineListener(HubConnection signalrListener)
+			=> signalrListener.On<LineDataDTO>(
+					"CreatedLine"
+					, receivedData => CreatedLine = receivedData);
+
+		private bool CreatedLineIsNull() => CreatedLine == null;
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/text-fragment-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_textFragmentId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint _editionId;
-			private readonly uint _textFragmentId;
-
-			/// <summary>
-			///  Retrieves the ids of all Artefacts in the given textFragmentName
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="textFragmentId">Id of the text fragment</param>
-			/// <returns>An array of the line ids in the proper sequence</returns>
-			public V1_Editions_EditionId_TextFragments_TextFragmentId_Artefacts(
-					uint   editionId
-					, uint textFragmentId)
-
-			{
-				_editionId = editionId;
-				_textFragmentId = textFragmentId;
-			}
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/text-fragment-id"
-															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _textFragmentId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _textFragmentId
+						   , _payload);
 		}
 
-		public class V1_Editions_EditionId_TextFragments_TextFragmentId_Lines :
-				RequestObject<EmptyInput, LineDataListDTO>
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
 		{
-			private readonly uint _editionId;
-			private readonly uint _textFragmentId;
+			public ListenerMethods CreatedLine = ListenerMethods.CreatedLine;
+		}
+	}
+}
 
-			/// <summary>
-			///  Retrieves the ids of all lines in the given textFragmentName
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="textFragmentId">Id of the text fragment</param>
-			/// <returns>An array of the line ids in the proper sequence</returns>
-			public V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
-					uint   editionId
-					, uint textFragmentId)
+public static partial class Put
+{
+	public class V1_Editions_EditionId_TextFragments_TextFragmentId :
+			RequestObject<UpdateTextFragmentDTO, TextFragmentDataDTO>
+	{
+		private readonly uint                  _editionId;
+		private readonly UpdateTextFragmentDTO _payload;
+		private readonly uint                  _textFragmentId;
 
-			{
-				_editionId = editionId;
-				_textFragmentId = textFragmentId;
-			}
+		/// <summary>
+		///  Updates the specified text fragment with the submitted properties
+		/// </summary>
+		/// <param name="editionId">Edition of the text fragment being updates</param>
+		/// <param name="textFragmentId">Id of the text fragment being updates</param>
+		/// <param name="updatedTextFragment">Details of the updated text fragment</param>
+		/// <returns>The details of the updated text fragment</returns>
+		public V1_Editions_EditionId_TextFragments_TextFragmentId(
+				uint                    editionId
+				, uint                  textFragmentId
+				, UpdateTextFragmentDTO payload) : base(payload)
+		{
+			_editionId = editionId;
+			_textFragmentId = textFragmentId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/text-fragment-id"
-															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _textFragmentId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			_listenerDict.Add(
+					ListenerMethods.CreatedTextFragment
+					, (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
 		}
 
-		public class V1_Editions_EditionId_TextFragments_TextFragmentId :
-				RequestObject<EmptyInput, TextEditionDTO>
+		public Listeners AvailableListeners { get; }
+
+		public TextFragmentDataDTO CreatedTextFragment { get; private set; }
+
+		private void CreatedTextFragmentListener(HubConnection signalrListener)
+			=> signalrListener.On<TextFragmentDataDTO>(
+					"CreatedTextFragment"
+					, receivedData => CreatedTextFragment = receivedData);
+
+		private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/text-fragment-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_textFragmentId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint _editionId;
-			private readonly uint _textFragmentId;
-
-			/// <summary>
-			///  Retrieves all signs and their data from the given textFragmentName
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="textFragmentId">Id of the text fragment</param>
-			/// <returns>
-			///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-			///  sequence
-			/// </returns>
-			public V1_Editions_EditionId_TextFragments_TextFragmentId(
-					uint   editionId
-					, uint textFragmentId)
-
-			{
-				_editionId = editionId;
-				_textFragmentId = textFragmentId;
-			}
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/text-fragment-id"
-															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _textFragmentId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _textFragmentId
+						   , _payload);
 		}
 
-		public class V1_Editions_EditionId_FullText : RequestObject<EmptyInput, TextEditionDTO>
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
 		{
-			private readonly uint _editionId;
-
-			/// <summary>
-			///  Retrieves all signs and their data from the entire edition
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <returns>
-			///  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-			///  sequence
-			/// </returns>
-			public V1_Editions_EditionId_FullText(uint editionId) => _editionId = editionId;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-		}
-
-		public class V1_Editions_EditionId_Lines_LineId : RequestObject<EmptyInput, LineTextDTO>
-		{
-			private readonly uint _editionId;
-			private readonly uint _lineId;
-
-			/// <summary>
-			///  Retrieves all signs and their data from the given line
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="lineId">Id of the line</param>
-			/// <returns>
-			///  A manuscript edition object including the fragments and their lines in a
-			///  hierarchical order and in correct sequence
-			/// </returns>
-			public V1_Editions_EditionId_Lines_LineId(uint editionId, uint lineId)
-
-			{
-				_editionId = editionId;
-				_lineId = lineId;
-			}
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/line-id"
-															, $"/{HttpUtility.UrlEncode(_lineId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _lineId);
-			}
-
-			public override uint? GetEditionId() => _editionId;
+			public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
 		}
 	}
 
-	public static partial class Post
+	public class V1_Editions_EditionId_Lines_LineId : RequestObject<UpdateLineDTO, LineDataDTO>
 	{
-		public class V1_Editions_EditionId_TextFragments :
-				RequestObject<CreateTextFragmentDTO, TextFragmentDataDTO>
+		private readonly uint          _editionId;
+		private readonly uint          _lineId;
+		private readonly UpdateLineDTO _payload;
+
+		/// <summary>
+		///  Changes the details of the line (currently the lines name)
+		/// </summary>
+		/// <param name="editionId">Id of the edition</param>
+		/// <param name="lineId">Id of the line</param>
+		/// <param name="lineData">The updated line data</param>
+		/// <returns>
+		///  The updated details concerning the line sequence
+		/// </returns>
+		public V1_Editions_EditionId_Lines_LineId(
+				uint            editionId
+				, uint          lineId
+				, UpdateLineDTO payload) : base(payload)
 		{
-			private readonly uint                  _editionId;
-			private readonly CreateTextFragmentDTO _payload;
+			_editionId = editionId;
+			_lineId = lineId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Creates a new text fragment in the given edition of a scroll
-			/// </summary>
-			/// <param name="createFragment">A JSON object with the details of the new text fragment to be created</param>
-			/// <param name="editionId">Id of the edition</param>
-			public V1_Editions_EditionId_TextFragments(
-					uint                    editionId
-					, CreateTextFragmentDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.CreatedTextFragment
-						, (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public TextFragmentDataDTO CreatedTextFragment { get; private set; }
-
-			private void CreatedTextFragmentListener(HubConnection signalrListener)
-				=> signalrListener.On<TextFragmentDataDTO>(
-						"CreatedTextFragment"
-						, receivedData => CreatedTextFragment = receivedData);
-
-			private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
-			}
+			_listenerDict.Add(
+					ListenerMethods.UpdatedLine
+					, (UpdatedLineIsNull, UpdatedLineListener));
 		}
 
-		public class V1_Editions_EditionId_TextFragments_TextFragmentId_Lines :
-				RequestObject<CreateLineDTO, LineDataDTO>
+		public Listeners AvailableListeners { get; }
+
+		public LineDataDTO UpdatedLine { get; private set; }
+
+		private void UpdatedLineListener(HubConnection signalrListener)
+			=> signalrListener.On<LineDataDTO>(
+					"UpdatedLine"
+					, receivedData => UpdatedLine = receivedData);
+
+		private bool UpdatedLineIsNull() => UpdatedLine == null;
+
+		protected override string HttpPath() => RequestPath
+												.Replace(
+														"/edition-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_editionId.ToString())
+														}")
+												.Replace(
+														"/line-id"
+														, $"/{
+															HttpUtility.UrlEncode(
+																	_lineId.ToString())
+														}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint          _editionId;
-			private readonly CreateLineDTO _payload;
-			private readonly uint          _textFragmentId;
+			return signalR => signalR.InvokeAsync<T>(
+						   SignalrRequestString()
+						   , _editionId
+						   , _lineId
+						   , _payload);
+		}
 
-			/// <summary>
-			///  Creates a new line before or after another line.
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="textFragmentId">
-			///  Id of the text fragment where the line will be
-			///  added
-			/// </param>
-			/// <param name="lineData">The information about the line to be created</param>
-			/// <returns>
-			///  The details concerning the newly created line
-			/// </returns>
-			public V1_Editions_EditionId_TextFragments_TextFragmentId_Lines(
-					uint            editionId
-					, uint          textFragmentId
-					, CreateLineDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_textFragmentId = textFragmentId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
+		public override uint? GetEditionId() => _editionId;
 
-				_listenerDict.Add(
-						ListenerMethods.CreatedLine
-						, (CreatedLineIsNull, CreatedLineListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public LineDataDTO CreatedLine { get; private set; }
-
-			private void CreatedLineListener(HubConnection signalrListener)
-				=> signalrListener.On<LineDataDTO>(
-						"CreatedLine"
-						, receivedData => CreatedLine = receivedData);
-
-			private bool CreatedLineIsNull() => CreatedLine == null;
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/text-fragment-id"
-															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _textFragmentId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods CreatedLine = ListenerMethods.CreatedLine;
-			}
+		public class Listeners
+		{
+			public ListenerMethods UpdatedLine = ListenerMethods.UpdatedLine;
 		}
 	}
 
-	public static partial class Put
+	public class V1_Editions_EditionId_DiffReplaceText :
+			RequestObject<DiffReplaceRequestDTO, DiffReplaceResponseDTO>
 	{
-		public class V1_Editions_EditionId_TextFragments_TextFragmentId :
-				RequestObject<UpdateTextFragmentDTO, TextFragmentDataDTO>
+		private readonly uint                  _editionId;
+		private readonly DiffReplaceRequestDTO _payload;
+
+		/// <summary>
+		///  Alter the text between two sign interpretation ids.
+		///  The system will try as best it can to figure out
+		///  how the next text aligns with any text already
+		///  existing at that location in the edition.
+		/// </summary>
+		/// <param name="editionId">Id of the edition to be updated</param>
+		/// <param name="payload">Details of the text replacement request</param>
+		/// <returns>
+		///  Information about all sign interpretations that were
+		///  created, updated, and deleted as a result of the operation.
+		/// </returns>
+		public V1_Editions_EditionId_DiffReplaceText(uint editionId, DiffReplaceRequestDTO payload)
+				: base(payload)
 		{
-			private readonly uint                  _editionId;
-			private readonly UpdateTextFragmentDTO _payload;
-			private readonly uint                  _textFragmentId;
+			_editionId = editionId;
+			_payload = payload;
+			AvailableListeners = new Listeners();
 
-			/// <summary>
-			///  Updates the specified text fragment with the submitted properties
-			/// </summary>
-			/// <param name="editionId">Edition of the text fragment being updates</param>
-			/// <param name="textFragmentId">Id of the text fragment being updates</param>
-			/// <param name="updatedTextFragment">Details of the updated text fragment</param>
-			/// <returns>The details of the updated text fragment</returns>
-			public V1_Editions_EditionId_TextFragments_TextFragmentId(
-					uint                    editionId
-					, uint                  textFragmentId
-					, UpdateTextFragmentDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_textFragmentId = textFragmentId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
+			_listenerDict.Add(
+					ListenerMethods.CreatedSignInterpretation
+					, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
 
-				_listenerDict.Add(
-						ListenerMethods.CreatedTextFragment
-						, (CreatedTextFragmentIsNull, CreatedTextFragmentListener));
-			}
+			_listenerDict.Add(
+					ListenerMethods.DeletedSignInterpretation
+					, (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
 
-			public Listeners AvailableListeners { get; }
-
-			public TextFragmentDataDTO CreatedTextFragment { get; private set; }
-
-			private void CreatedTextFragmentListener(HubConnection signalrListener)
-				=> signalrListener.On<TextFragmentDataDTO>(
-						"CreatedTextFragment"
-						, receivedData => CreatedTextFragment = receivedData);
-
-			private bool CreatedTextFragmentIsNull() => CreatedTextFragment == null;
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/text-fragment-id"
-															, $"/{HttpUtility.UrlEncode(_textFragmentId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _textFragmentId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods CreatedTextFragment = ListenerMethods.CreatedTextFragment;
-			}
+			_listenerDict.Add(
+					ListenerMethods.UpdatedSignInterpretations
+					, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
 		}
 
-		public class V1_Editions_EditionId_Lines_LineId : RequestObject<UpdateLineDTO, LineDataDTO>
+		public Listeners AvailableListeners { get; }
+
+		public SignInterpretationListDTO CreatedSignInterpretation  { get; private set; }
+		public DeleteIntIdDTO            DeletedSignInterpretation  { get; private set; }
+		public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
+
+		private void CreatedSignInterpretationListener(HubConnection signalrListener)
+			=> signalrListener.On<SignInterpretationListDTO>(
+					"CreatedSignInterpretation"
+					, receivedData => CreatedSignInterpretation = receivedData);
+
+		private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
+
+		private void DeletedSignInterpretationListener(HubConnection signalrListener)
+			=> signalrListener.On<DeleteIntIdDTO>(
+					"DeletedSignInterpretation"
+					, receivedData => DeletedSignInterpretation = receivedData);
+
+		private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
+
+		private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
+			=> signalrListener.On<SignInterpretationListDTO>(
+					"UpdatedSignInterpretations"
+					, receivedData => UpdatedSignInterpretations = receivedData);
+
+		private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
+
+		protected override string HttpPath() => RequestPath.Replace(
+				"/edition-id"
+				, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly uint          _editionId;
-			private readonly uint          _lineId;
-			private readonly UpdateLineDTO _payload;
-
-			/// <summary>
-			///  Changes the details of the line (currently the lines name)
-			/// </summary>
-			/// <param name="editionId">Id of the edition</param>
-			/// <param name="lineId">Id of the line</param>
-			/// <param name="lineData">The updated line data</param>
-			/// <returns>
-			///  The updated details concerning the line sequence
-			/// </returns>
-			public V1_Editions_EditionId_Lines_LineId(
-					uint            editionId
-					, uint          lineId
-					, UpdateLineDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_lineId = lineId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
-
-				_listenerDict.Add(
-						ListenerMethods.UpdatedLine
-						, (UpdatedLineIsNull, UpdatedLineListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public LineDataDTO UpdatedLine { get; private set; }
-
-			private void UpdatedLineListener(HubConnection signalrListener)
-				=> signalrListener.On<LineDataDTO>(
-						"UpdatedLine"
-						, receivedData => UpdatedLine = receivedData);
-
-			private bool UpdatedLineIsNull() => UpdatedLine == null;
-
-			protected override string HttpPath() => RequestPath
-													.Replace(
-															"/edition-id"
-															, $"/{HttpUtility.UrlEncode(_editionId.ToString())}")
-													.Replace(
-															"/line-id"
-															, $"/{HttpUtility.UrlEncode(_lineId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _lineId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods UpdatedLine = ListenerMethods.UpdatedLine;
-			}
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _editionId, _payload);
 		}
 
-		public class V1_Editions_EditionId_DiffReplaceText :
-				RequestObject<DiffReplaceRequestDTO, DiffReplaceResponseDTO>
+		public override uint? GetEditionId() => _editionId;
+
+		public class Listeners
 		{
-			private readonly uint                  _editionId;
-			private readonly DiffReplaceRequestDTO _payload;
+			public ListenerMethods CreatedSignInterpretation =
+					ListenerMethods.CreatedSignInterpretation;
 
-			/// <summary>
-			///  Alter the text between two sign interpretation ids.
-			///  The system will try as best it can to figure out
-			///  how the next text aligns with any text already
-			///  existing at that location in the edition.
-			/// </summary>
-			/// <param name="editionId">Id of the edition to be updated</param>
-			/// <param name="payload">Details of the text replacement request</param>
-			/// <returns>
-			///  Information about all sign interpretations that were
-			///  created, updated, and deleted as a result of the operation.
-			/// </returns>
-			public V1_Editions_EditionId_DiffReplaceText(
-					uint                    editionId
-					, DiffReplaceRequestDTO payload) : base(payload)
-			{
-				_editionId = editionId;
-				_payload = payload;
-				AvailableListeners = new Listeners();
+			public ListenerMethods DeletedSignInterpretation =
+					ListenerMethods.DeletedSignInterpretation;
 
-				_listenerDict.Add(
-						ListenerMethods.CreatedSignInterpretation
-						, (CreatedSignInterpretationIsNull, CreatedSignInterpretationListener));
-
-				_listenerDict.Add(
-						ListenerMethods.DeletedSignInterpretation
-						, (DeletedSignInterpretationIsNull, DeletedSignInterpretationListener));
-
-				_listenerDict.Add(
-						ListenerMethods.UpdatedSignInterpretations
-						, (UpdatedSignInterpretationsIsNull, UpdatedSignInterpretationsListener));
-			}
-
-			public Listeners AvailableListeners { get; }
-
-			public SignInterpretationListDTO CreatedSignInterpretation  { get; private set; }
-			public DeleteIntIdDTO            DeletedSignInterpretation  { get; private set; }
-			public SignInterpretationListDTO UpdatedSignInterpretations { get; private set; }
-
-			private void CreatedSignInterpretationListener(HubConnection signalrListener)
-				=> signalrListener.On<SignInterpretationListDTO>(
-						"CreatedSignInterpretation"
-						, receivedData => CreatedSignInterpretation = receivedData);
-
-			private bool CreatedSignInterpretationIsNull() => CreatedSignInterpretation == null;
-
-			private void DeletedSignInterpretationListener(HubConnection signalrListener)
-				=> signalrListener.On<DeleteIntIdDTO>(
-						"DeletedSignInterpretation"
-						, receivedData => DeletedSignInterpretation = receivedData);
-
-			private bool DeletedSignInterpretationIsNull() => DeletedSignInterpretation == null;
-
-			private void UpdatedSignInterpretationsListener(HubConnection signalrListener)
-				=> signalrListener.On<SignInterpretationListDTO>(
-						"UpdatedSignInterpretations"
-						, receivedData => UpdatedSignInterpretations = receivedData);
-
-			private bool UpdatedSignInterpretationsIsNull() => UpdatedSignInterpretations == null;
-
-			protected override string HttpPath() => RequestPath.Replace(
-					"/edition-id"
-					, $"/{HttpUtility.UrlEncode(_editionId.ToString())}");
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(
-							   SignalrRequestString()
-							   , _editionId
-							   , _payload);
-			}
-
-			public override uint? GetEditionId() => _editionId;
-
-			public class Listeners
-			{
-				public ListenerMethods CreatedSignInterpretation =
-						ListenerMethods.CreatedSignInterpretation;
-
-				public ListenerMethods DeletedSignInterpretation =
-						ListenerMethods.DeletedSignInterpretation;
-
-				public ListenerMethods UpdatedSignInterpretations =
-						ListenerMethods.UpdatedSignInterpretations;
-			}
+			public ListenerMethods UpdatedSignInterpretations =
+					ListenerMethods.UpdatedSignInterpretations;
 		}
 	}
 }

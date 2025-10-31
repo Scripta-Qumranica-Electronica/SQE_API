@@ -5,42 +5,37 @@ using Dapper;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Models;
 
-namespace SQE.DatabaseAccess
+namespace SQE.DatabaseAccess;
+
+public interface ISearchRepository
 {
-	public interface ISearchRepository
+	Task<IEnumerable<uint>> SearchEditions(uint userId, string editionName, bool exact);
+
+	Task<List<TextFragmentSearch>> SearchTextFragments(
+			uint                userId
+			, string            textFragmentName
+			, IEnumerable<uint> editionIds
+			, bool              exact);
+
+	Task<List<EditionArtefact>> SearchArtefacts(
+			uint                userId
+			, string            artefactName
+			, IEnumerable<uint> editionIds
+			, bool              exact);
+
+	Task<IEnumerable<SearchImagedObject>> SearchImagedObjects(string imagedObjectName, bool exact);
+}
+
+public class SearchRepository : DbConnectionBase
+								, ISearchRepository
+{
+	public SearchRepository(IConfiguration config) : base(config) { }
+
+	public async Task<IEnumerable<uint>> SearchEditions(uint userId, string editionName, bool exact)
 	{
-		Task<IEnumerable<uint>> SearchEditions(uint userId, string editionName, bool exact);
-
-		Task<List<TextFragmentSearch>> SearchTextFragments(
-				uint                userId
-				, string            textFragmentName
-				, IEnumerable<uint> editionIds
-				, bool              exact);
-
-		Task<List<EditionArtefact>> SearchArtefacts(
-				uint                userId
-				, string            artefactName
-				, IEnumerable<uint> editionIds
-				, bool              exact);
-
-		Task<IEnumerable<SearchImagedObject>> SearchImagedObjects(
-				string imagedObjectName
-				, bool exact);
-	}
-
-	public class SearchRepository : DbConnectionBase
-									, ISearchRepository
-	{
-		public SearchRepository(IConfiguration config) : base(config) { }
-
-		public async Task<IEnumerable<uint>> SearchEditions(
-				uint     userId
-				, string editionName
-				, bool   exact)
+		using (var conn = OpenConnection())
 		{
-			using (var conn = OpenConnection())
-			{
-				var sql = @"
+			var sql = @"
 SELECT manuscript_data_owner.edition_id
 FROM manuscript_data
 JOIN manuscript_data_owner USING(manuscript_data_id)
@@ -51,27 +46,27 @@ WHERE manuscript_data.name $Match
 LIMIT 100
 ";
 
-				sql = sql.Replace(
-						"$Match"
-						, exact
-								? "= @ManuscriptName"
-								: "LIKE CONCAT('%', @ManuscriptName, '%')");
+			sql = sql.Replace(
+					"$Match"
+					, exact
+							? "= @ManuscriptName"
+							: "LIKE CONCAT('%', @ManuscriptName, '%')");
 
-				return await conn.QueryAsync<uint>(
-						sql
-						, new { ManuscriptName = editionName, UserId = userId });
-			}
+			return await conn.QueryAsync<uint>(
+					sql
+					, new { ManuscriptName = editionName, UserId = userId });
 		}
+	}
 
-		public async Task<List<TextFragmentSearch>> SearchTextFragments(
-				uint                userId
-				, string            textFragmentName
-				, IEnumerable<uint> editionIds
-				, bool              exact)
+	public async Task<List<TextFragmentSearch>> SearchTextFragments(
+			uint                userId
+			, string            textFragmentName
+			, IEnumerable<uint> editionIds
+			, bool              exact)
+	{
+		using (var conn = OpenConnection())
 		{
-			using (var conn = OpenConnection())
-			{
-				var sql = @"
+			var sql = @"
 SELECT text_fragment_data_owner.edition_id AS EditionId,
        manuscript_data.name AS EditionName,
        text_fragment_data.text_fragment_id AS TextFragmentId,
@@ -94,38 +89,38 @@ $Where
 GROUP BY text_fragment_data.text_fragment_id
 LIMIT 100";
 
-				sql = sql.Replace(
-								 "$Where"
-								 , editionIds.Any()
-										 ? "AND edition_id in @EditionIds"
-										 : "")
-						 .Replace(
-								 "$Match"
-								 , exact
-										 ? "= @TextFragmentName"
-										 : "LIKE CONCAT('%', @TextFragmentName, '%')");
+			sql = sql.Replace(
+							 "$Where"
+							 , editionIds.Any()
+									 ? "AND edition_id in @EditionIds"
+									 : "")
+					 .Replace(
+							 "$Match"
+							 , exact
+									 ? "= @TextFragmentName"
+									 : "LIKE CONCAT('%', @TextFragmentName, '%')");
 
-				return (await conn.QueryAsync<TextFragmentSearch>(
-						sql
-						, new
-						{
-								TextFragmentName = textFragmentName
-								, UserId = userId
-								, EditionIds = editionIds
-								,
-						})).AsList();
-			}
+			return (await conn.QueryAsync<TextFragmentSearch>(
+					sql
+					, new
+					{
+							TextFragmentName = textFragmentName
+							, UserId = userId
+							, EditionIds = editionIds
+							,
+					})).AsList();
 		}
+	}
 
-		public async Task<List<EditionArtefact>> SearchArtefacts(
-				uint                userId
-				, string            artefactName
-				, IEnumerable<uint> editionIds
-				, bool              exact)
+	public async Task<List<EditionArtefact>> SearchArtefacts(
+			uint                userId
+			, string            artefactName
+			, IEnumerable<uint> editionIds
+			, bool              exact)
+	{
+		using (var conn = OpenConnection())
 		{
-			using (var conn = OpenConnection())
-			{
-				var sql = @"
+			var sql = @"
 SELECT DISTINCT edition.edition_id AS EditionId,
                 artefact_data.artefact_id AS ArtefactId,
                 manuscript_metrics.pixels_per_inch AS PixelsPerInch,
@@ -151,36 +146,36 @@ WHERE artefact_data.name $Match
 $Where
 LIMIT 100";
 
-				sql = sql.Replace(
-								 "$Where"
-								 , editionIds.Any()
-										 ? "AND edition.edition_id in @EditionIds"
-										 : "")
-						 .Replace(
-								 "$Match"
-								 , exact
-										 ? "= @ArtefactName"
-										 : "LIKE CONCAT('%', @ArtefactName, '%')");
+			sql = sql.Replace(
+							 "$Where"
+							 , editionIds.Any()
+									 ? "AND edition.edition_id in @EditionIds"
+									 : "")
+					 .Replace(
+							 "$Match"
+							 , exact
+									 ? "= @ArtefactName"
+									 : "LIKE CONCAT('%', @ArtefactName, '%')");
 
-				return (await conn.QueryAsync<EditionArtefact>(
-						sql
-						, new
-						{
-								ArtefactName = artefactName
-								, UserId = userId
-								, EditionIds = editionIds
-								,
-						})).AsList();
-			}
+			return (await conn.QueryAsync<EditionArtefact>(
+					sql
+					, new
+					{
+							ArtefactName = artefactName
+							, UserId = userId
+							, EditionIds = editionIds
+							,
+					})).AsList();
 		}
+	}
 
-		public async Task<IEnumerable<SearchImagedObject>> SearchImagedObjects(
-				string imagedObjectName
-				, bool exact)
+	public async Task<IEnumerable<SearchImagedObject>> SearchImagedObjects(
+			string imagedObjectName
+			, bool exact)
+	{
+		using (var conn = OpenConnection())
 		{
-			using (var conn = OpenConnection())
-			{
-				var sql = @"
+			var sql = @"
 SELECT DISTINCT image_catalog.object_id AS Id,
                 CONCAT_WS('', image_urls.proxy, image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS RectoThumbnail,
 				CONCAT_WS('', vers_urls.proxy, vers_urls.url, vers_image.filename, '/full/150,/0/', vers_urls.suffix) AS VersoThumbnail
@@ -197,16 +192,15 @@ WHERE image_catalog.object_id $Match
 	AND image_catalog.catalog_side = 0
 LIMIT 100";
 
-				sql = sql.Replace(
-						"$Match"
-						, exact
-								? "= @ImagedObjectName"
-								: "LIKE CONCAT('%', @ImagedObjectName, '%')");
+			sql = sql.Replace(
+					"$Match"
+					, exact
+							? "= @ImagedObjectName"
+							: "LIKE CONCAT('%', @ImagedObjectName, '%')");
 
-				return await conn.QueryAsync<SearchImagedObject>(
-						sql
-						, new { ImagedObjectName = imagedObjectName });
-			}
+			return await conn.QueryAsync<SearchImagedObject>(
+					sql
+					, new { ImagedObjectName = imagedObjectName });
 		}
 	}
 }

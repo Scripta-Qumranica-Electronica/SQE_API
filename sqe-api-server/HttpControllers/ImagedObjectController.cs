@@ -6,125 +6,122 @@ using Microsoft.AspNetCore.Mvc;
 using SQE.API.DTO;
 using SQE.API.Server.Services;
 
-namespace SQE.API.Server.HttpControllers
+namespace SQE.API.Server.HttpControllers;
+
+[Authorize]
+[ApiController]
+public class ImagedObjectController : ControllerBase
 {
-	[Authorize]
-	[ApiController]
-	public class ImagedObjectController : ControllerBase
+	private readonly IImageService        _imageService;
+	private readonly IImagedObjectService _imagedObjectService;
+	private readonly IUserService         _userService;
+
+	public ImagedObjectController(
+			IImagedObjectService imagedObjectService
+			, IImageService      imageService
+			, IUserService       userService)
 	{
-		private readonly IImagedObjectService _imagedObjectService;
-		private readonly IImageService        _imageService;
-		private readonly IUserService         _userService;
-
-		public ImagedObjectController(
-				IImagedObjectService imagedObjectService
-				, IImageService      imageService
-				, IUserService       userService)
-		{
-			_imagedObjectService = imagedObjectService;
-			_imageService = imageService;
-			_userService = userService;
-		}
-
-		/// <summary>
-		///  Provides information for the specified imaged object.
-		/// </summary>
-		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-		[AllowAnonymous]
-		[HttpGet("v1/imaged-objects/{imagedObjectId}")]
-		public async Task<ActionResult<SimpleImageListDTO>> GetImagedObject(
-				[FromRoute] string imagedObjectId)
-			=> await _imagedObjectService.GetImagedObjectImagesAsync(
-					Uri.UnescapeDataString(imagedObjectId));
-
-		/// <summary>
-		///  Provides information for the specified imaged object related to the specified edition, can include images and also
-		///  their masks with optional.
-		/// </summary>
-		/// <param name="editionId">Unique Id of the desired edition</param>
-		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-		/// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
-		[AllowAnonymous]
-		[HttpGet("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
-		public async Task<ActionResult<ImagedObjectDTO>> GetEditionImagedObject(
-				[FromRoute]   uint         editionId
-				, [FromRoute] string       imagedObjectId
-				, [FromQuery] List<string> optional)
-			=> await _imagedObjectService.GetImagedObjectAsync(
-					await _userService.GetCurrentUserObjectAsync(editionId)
-					, Uri.UnescapeDataString(imagedObjectId)
-					, optional);
-
-		/// <summary>
-		///  Add an imaged object to an edition.
-		/// </summary>
-		/// <param name="editionId">Unique Id of the desired edition</param>
-		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-		[HttpPost("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
-		public async Task<ActionResult<ImagedObjectDTO>> CreateEditionImagedObject(
-				[FromRoute]   uint   editionId
-				, [FromRoute] string imagedObjectId)
-			=> await _imagedObjectService.AddImagedObjectToEditionAsync(
-					await _userService.GetCurrentUserObjectAsync(editionId, true)
-					, Uri.UnescapeDataString(imagedObjectId));
-
-		/// <summary>
-		///  Remove an imaged object from an edition. All artefacts must first be removed from the
-		///  imaged object.
-		/// </summary>
-		/// <param name="editionId">Unique Id of the desired edition</param>
-		/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
-		[HttpDelete("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
-		public async Task<ActionResult> DeleteEditionImagedObject(
-				[FromRoute]   uint   editionId
-				, [FromRoute] string imagedObjectId)
-			=> await _imagedObjectService.RemoveImagedObjectFromEditionAsync(
-					await _userService.GetCurrentUserObjectAsync(editionId, true)
-					, Uri.UnescapeDataString(imagedObjectId));
-
-		/// <summary>
-		///  Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
-		///  optional.
-		/// </summary>
-		/// <param name="editionId">Unique Id of the desired edition</param>
-		/// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
-		[AllowAnonymous]
-		[HttpGet("v1/editions/{editionId}/imaged-objects")]
-		public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjects(
-				[FromRoute]   uint         editionId
-				, [FromQuery] List<string> optional)
-			=> await _imagedObjectService.GetEditionImagedObjectsAsync(
-					await _userService.GetCurrentUserObjectAsync(editionId)
-					, null
-					, optional);
-
-		/// <summary>
-		///  Provides a list of all institutional image providers.
-		/// </summary>
-		[AllowAnonymous]
-		[HttpGet("v1/imaged-objects/institutions")]
-		public async Task<ActionResult<ImageInstitutionListDTO>> ListImageInstitutions()
-			=> await _imageService.GetImageInstitutionsAsync();
-
-		/// <summary>
-		///  Provides a list of all institutional image providers.
-		/// </summary>
-		[AllowAnonymous]
-		[HttpGet("v1/imaged-objects/institutions/{institutionName}")]
-		public async Task<ActionResult<InstitutionalImageListDTO>> ListInstitutionImages(
-				[FromRoute] string institutionName)
-			=> await _imageService.GetInstitutionImagesAsync(institutionName);
-
-		/// <summary>
-		///  Provides a list of all text fragments that should correspond to the imaged object.
-		/// </summary>
-		/// <param name="imagedObjectId">Id of the imaged object</param>
-		/// <returns></returns>
-		[AllowAnonymous]
-		[HttpGet("v1/imaged-objects/{imagedObjectId}/text-fragments")]
-		public async Task<ActionResult<ImagedObjectTextFragmentMatchListDTO>>
-				ListImageTextFragments([FromRoute] string imagedObjectId)
-			=> await _imageService.GetImageTextFragmentsAsync(
-					Uri.UnescapeDataString(imagedObjectId));
+		_imagedObjectService = imagedObjectService;
+		_imageService = imageService;
+		_userService = userService;
 	}
+
+	/// <summary>
+	///  Provides information for the specified imaged object.
+	/// </summary>
+	/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+	[AllowAnonymous]
+	[HttpGet("v1/imaged-objects/{imagedObjectId}")]
+	public async Task<ActionResult<SimpleImageListDTO>> GetImagedObject(
+			[FromRoute] string imagedObjectId)
+		=> await _imagedObjectService.GetImagedObjectImagesAsync(
+				Uri.UnescapeDataString(imagedObjectId));
+
+	/// <summary>
+	///  Provides information for the specified imaged object related to the specified edition, can include images and also
+	///  their masks with optional.
+	/// </summary>
+	/// <param name="editionId">Unique Id of the desired edition</param>
+	/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+	/// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
+	[AllowAnonymous]
+	[HttpGet("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
+	public async Task<ActionResult<ImagedObjectDTO>> GetEditionImagedObject(
+			[FromRoute]   uint         editionId
+			, [FromRoute] string       imagedObjectId
+			, [FromQuery] List<string> optional) => await _imagedObjectService.GetImagedObjectAsync(
+			await _userService.GetCurrentUserObjectAsync(editionId)
+			, Uri.UnescapeDataString(imagedObjectId)
+			, optional);
+
+	/// <summary>
+	///  Add an imaged object to an edition.
+	/// </summary>
+	/// <param name="editionId">Unique Id of the desired edition</param>
+	/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+	[HttpPost("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
+	public async Task<ActionResult<ImagedObjectDTO>> CreateEditionImagedObject(
+			[FromRoute]   uint   editionId
+			, [FromRoute] string imagedObjectId)
+		=> await _imagedObjectService.AddImagedObjectToEditionAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true)
+				, Uri.UnescapeDataString(imagedObjectId));
+
+	/// <summary>
+	///  Remove an imaged object from an edition. All artefacts must first be removed from the
+	///  imaged object.
+	/// </summary>
+	/// <param name="editionId">Unique Id of the desired edition</param>
+	/// <param name="imagedObjectId">Unique Id of the desired object from the imaging Institution</param>
+	[HttpDelete("v1/editions/{editionId}/imaged-objects/{imagedObjectId}")]
+	public async Task<ActionResult> DeleteEditionImagedObject(
+			[FromRoute]   uint   editionId
+			, [FromRoute] string imagedObjectId)
+		=> await _imagedObjectService.RemoveImagedObjectFromEditionAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId, true)
+				, Uri.UnescapeDataString(imagedObjectId));
+
+	/// <summary>
+	///  Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
+	///  optional.
+	/// </summary>
+	/// <param name="editionId">Unique Id of the desired edition</param>
+	/// <param name="optional">Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks</param>
+	[AllowAnonymous]
+	[HttpGet("v1/editions/{editionId}/imaged-objects")]
+	public async Task<ActionResult<ImagedObjectListDTO>> GetImagedObjects(
+			[FromRoute]   uint         editionId
+			, [FromQuery] List<string> optional)
+		=> await _imagedObjectService.GetEditionImagedObjectsAsync(
+				await _userService.GetCurrentUserObjectAsync(editionId)
+				, null
+				, optional);
+
+	/// <summary>
+	///  Provides a list of all institutional image providers.
+	/// </summary>
+	[AllowAnonymous]
+	[HttpGet("v1/imaged-objects/institutions")]
+	public async Task<ActionResult<ImageInstitutionListDTO>> ListImageInstitutions()
+		=> await _imageService.GetImageInstitutionsAsync();
+
+	/// <summary>
+	///  Provides a list of all institutional image providers.
+	/// </summary>
+	[AllowAnonymous]
+	[HttpGet("v1/imaged-objects/institutions/{institutionName}")]
+	public async Task<ActionResult<InstitutionalImageListDTO>> ListInstitutionImages(
+			[FromRoute] string institutionName)
+		=> await _imageService.GetInstitutionImagesAsync(institutionName);
+
+	/// <summary>
+	///  Provides a list of all text fragments that should correspond to the imaged object.
+	/// </summary>
+	/// <param name="imagedObjectId">Id of the imaged object</param>
+	/// <returns></returns>
+	[AllowAnonymous]
+	[HttpGet("v1/imaged-objects/{imagedObjectId}/text-fragments")]
+	public async Task<ActionResult<ImagedObjectTextFragmentMatchListDTO>> ListImageTextFragments(
+			[FromRoute] string imagedObjectId)
+		=> await _imageService.GetImageTextFragmentsAsync(Uri.UnescapeDataString(imagedObjectId));
 }

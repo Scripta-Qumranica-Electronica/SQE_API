@@ -14,29 +14,27 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SQE.API.DTO;
 
-namespace SQE.ApiTest.ApiRequests
+namespace SQE.ApiTest.ApiRequests;
+
+public static partial class Post
 {
-	public static partial class Post
+	public class V1_Search : RequestObject<DetailedSearchRequestDTO, DetailedSearchResponseDTO>
 	{
-		public class V1_Search : RequestObject<DetailedSearchRequestDTO, DetailedSearchResponseDTO>
+		private readonly DetailedSearchRequestDTO _payload;
+
+		/// <summary>
+		///  Basic searching of the Qumranica database. Results are truncated
+		///  to 100 results per search category.
+		/// </summary>
+		/// <param name="searchParameters">The parameters of the search</param>
+		/// <returns></returns>
+		public V1_Search(DetailedSearchRequestDTO payload) : base(payload) => _payload = payload;
+
+		protected override string HttpPath() => RequestPath;
+
+		public override Func<HubConnection, Task<T>> SignalrRequest<T>()
 		{
-			private readonly DetailedSearchRequestDTO _payload;
-
-			/// <summary>
-			///  Basic searching of the Qumranica database. Results are truncated
-			///  to 100 results per search category.
-			/// </summary>
-			/// <param name="searchParameters">The parameters of the search</param>
-			/// <returns></returns>
-			public V1_Search(DetailedSearchRequestDTO payload) : base(payload)
-				=> _payload = payload;
-
-			protected override string HttpPath() => RequestPath;
-
-			public override Func<HubConnection, Task<T>> SignalrRequest<T>()
-			{
-				return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
-			}
+			return signalR => signalR.InvokeAsync<T>(SignalrRequestString(), _payload);
 		}
 	}
 }

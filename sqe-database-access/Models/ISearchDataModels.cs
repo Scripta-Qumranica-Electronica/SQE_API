@@ -1,8 +1,7 @@
-namespace SQE.DatabaseAccess.Models
+namespace SQE.DatabaseAccess.Models;
+
+public interface ISearchData
 {
-	public interface ISearchData
-	{
-		string getSearchParameterString();
-		string getJoinsString();
-	}
+	string getSearchParameterString();
+	string getJoinsString();
 }

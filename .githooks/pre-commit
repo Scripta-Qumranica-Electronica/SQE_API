@@ -51,7 +51,7 @@ check_appsettings_vars "MailerEmailSmtpPort"
 ## We generate the ts definitions for the C# DTOs before pushing
 generate_realtime_hubs () {
     dotnet build sqe-realtime-hub-builder
-    dotnet sqe-realtime-hub-builder/bin/Debug/netcoreapp3.1/sqe-realtime-hub-builder.dll
+    dotnet sqe-realtime-hub-builder/bin/Debug/net10.0/sqe-realtime-hub-builder.dll
         if test "$?" -ne 0; then
         printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
@@ -81,7 +81,7 @@ cleanup_code
 generate_ts_from_dtos () {
     dotnet build Utilities/GenerateTypescriptDTOs
     dotnet build sqe-dto
-    dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/netcoreapp3.1/GenerateTypescriptDTOs.dll
+    dotnet Utilities/GenerateTypescriptDTOs/bin/Debug/net10.0/GenerateTypescriptDTOs.dll
     if test "$?" -ne 0; then
         printf "\e[31mThere was an error generating the SQE typescript DTO definitions.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"
@@ -96,7 +96,7 @@ generate_ts_from_dtos
 ## We generate the ts signals interface for the C# signal methods before pushing
 generate_ts_interfaces () {
     dotnet build Utilities/GenerateTypescriptInterfaces
-    dotnet Utilities/GenerateTypescriptInterfaces/bin/Debug/netcoreapp3.1/GenerateTypescriptInterfaces.dll
+    dotnet Utilities/GenerateTypescriptInterfaces/bin/Debug/net10.0/GenerateTypescriptInterfaces.dll
     if test "$?" -ne 0; then
         printf "\e[31mThere was an error generating the SQE typescript SignalR interface.\n"
         printf "Please fix these errors before continuing to commit your changes.\e[0m\n"

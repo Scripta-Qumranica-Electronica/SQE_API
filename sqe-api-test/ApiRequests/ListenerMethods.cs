@@ -4,45 +4,44 @@
  * its contents may be overwritten at any point.
  */
 
-namespace SQE.ApiTest.ApiRequests
+namespace SQE.ApiTest.ApiRequests;
+
+public enum ListenerMethods
 {
-	public enum ListenerMethods
-	{
-		CreatedArtefact
-		, UpdatedArtefact
-		, CreatedArtefactGroup
-		, DeletedArtefact
-		, DeletedArtefactGroup
-		, UpdatedArtefactGroup
-		, CreatedSignInterpretation
-		, DeletedSignInterpretation
-		, UpdatedSignInterpretations
-		, CreatedRoisBatch
-		, UpdatedRoisBatch
-		, DeletedRoi
-		, RequestedEditor
-		, CreatedEditor
-		, CreatedEdition
-		, UpdatedEdition
-		, DeletedEdition
-		, CreatedImagedObject
-		, DeletedImagedObject
-		, EditedRoisBatch
-		, CreatedScribalFontInfo
-		, CreatedScribalFontKerningPair
-		, CreatedScribalFontGlyph
-		, UpdatedScribalFontInfo
-		, DeletedScribalFont
-		, DeletedScribalFontKerningPair
-		, DeletedScribalFontGlyph
-		, CreatedAttribute
-		, UpdatedSignInterpretation
-		, DeletedAttribute
-		, UpdatedAttribute
-		, CreatedTextFragment
-		, CreatedLine
-		, UpdatedLine
-		, DeletedLine
-		,
-	}
+	CreatedArtefact
+	, UpdatedArtefact
+	, CreatedArtefactGroup
+	, DeletedArtefact
+	, DeletedArtefactGroup
+	, UpdatedArtefactGroup
+	, CreatedSignInterpretation
+	, DeletedSignInterpretation
+	, UpdatedSignInterpretations
+	, CreatedRoisBatch
+	, UpdatedRoisBatch
+	, DeletedRoi
+	, RequestedEditor
+	, CreatedEditor
+	, CreatedEdition
+	, UpdatedEdition
+	, DeletedEdition
+	, CreatedImagedObject
+	, DeletedImagedObject
+	, EditedRoisBatch
+	, CreatedScribalFontInfo
+	, CreatedScribalFontKerningPair
+	, CreatedScribalFontGlyph
+	, UpdatedScribalFontInfo
+	, DeletedScribalFont
+	, DeletedScribalFontKerningPair
+	, DeletedScribalFontGlyph
+	, CreatedAttribute
+	, UpdatedSignInterpretation
+	, DeletedAttribute
+	, UpdatedAttribute
+	, CreatedTextFragment
+	, CreatedLine
+	, UpdatedLine
+	, DeletedLine
+	,
 }

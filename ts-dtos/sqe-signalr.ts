@@ -9,6 +9,67 @@
  */
 
 import { 
+	WktPolygonDTO,
+	QwbWordVariantListDTO,
+	QwbWordVariantDTO,
+	QwbBibliographyDTO,
+	QwbParallelWordDTO,
+	QwbParallelDTO,
+	QwbParallelListDTO,
+	QwbBibliographyEntryDTO,
+	TextFragmentDataDTO,
+	ArtefactTextFragmentMatchDTO,
+	ImagedObjectTextFragmentMatchDTO,
+	ImagedObjectTextFragmentMatchListDTO,
+	TextFragmentDataListDTO,
+	ArtefactTextFragmentMatchListDTO,
+	TextFragmentDTO,
+	LineDataDTO,
+	LineDataListDTO,
+	LineDTO,
+	LineTextDTO,
+	UpdateTextFragmentDTO,
+	CreateTextFragmentDTO,
+	UpdateLineDTO,
+	CreateLineDTO,
+	RequestMaterializationDTO,
+	EditionScriptCollectionDTO,
+	EditionScriptLinesDTO,
+	CharacterShapeDTO,
+	ScriptTextFragmentDTO,
+	ScriptLineDTO,
+	ScriptArtefactCharactersDTO,
+	PlacementDTO,
+	TranslateDTO,
+	LoginRequestDTO,
+	UserUpdateRequestDTO,
+	NewUserRequestDTO,
+	AccountActivationRequestDTO,
+	ResendUserAccountActivationRequestDTO,
+	UnactivatedEmailUpdateRequestDTO,
+	ResetUserPasswordRequestDTO,
+	ResetForgottenUserPasswordRequestDTO,
+	ResetLoggedInUserPasswordRequestDTO,
+	UserDTO,
+	DetailedUserDTO,
+	DetailedUserTokenDTO,
+	EditorDTO,
+	UserDataStoreDTO,
+	DatabaseVersionDTO,
+	APIVersionDTO,
+	GithubIssueReportDTO,
+	SetReconstructedInterpretationRoiDTO,
+	SetInterpretationRoiDTO,
+	UpdateInterpretationRoiDTO,
+	InterpretationRoiDTO,
+	UpdatedInterpretationRoiDTO,
+	SetInterpretationRoiDTOList,
+	InterpretationRoiDTOList,
+	UpdateInterpretationRoiDTOList,
+	UpdatedInterpretationRoiDTOList,
+	BatchEditRoiDTO,
+	BatchEditRoiResponseDTO,
+	EditionManuscriptMetadataDTO,
 	ArtefactDataDTO,
 	ArtefactDTO,
 	ExtendedArtefactDTO,
@@ -25,63 +86,6 @@ import {
 	CreateArtefactDTO,
 	UpdateArtefactGroupDTO,
 	CreateArtefactGroupDTO,
-	CatalogueMatchInputDTO,
-	CatalogueMatchDTO,
-	CatalogueMatchListDTO,
-	EditionDTO,
-	EditionGroupDTO,
-	EditionListDTO,
-	FlatEditionListDTO,
-	PermissionDTO,
-	UpdateEditorRightsDTO,
-	InviteEditorDTO,
-	DetailedEditorRightsDTO,
-	DetailedUpdateEditorRightsDTO,
-	AdminEditorRequestDTO,
-	EditorInvitationDTO,
-	EditorInvitationListDTO,
-	AdminEditorRequestListDTO,
-	TextEditionDTO,
-	ArchiveTokenDTO,
-	CommentaryCreateDTO,
-	CommentaryDTO,
-	DeleteDTO,
-	DeleteIntIdDTO,
-	DeleteStringIdDTO,
-	EditionUpdateRequestDTO,
-	EditionCopyDTO,
-	UpdateEditionManuscriptMetricsDTO,
-	EditionManuscriptMetricsDTO,
-	SimpleImageDTO,
-	ImageDTO,
-	SimpleImageListDTO,
-	ImageInstitutionDTO,
-	ImageInstitutionListDTO,
-	InstitutionalImageDTO,
-	InstitutionalImageListDTO,
-	ImageStackDTO,
-	ImagedObjectDTO,
-	ImagedObjectListDTO,
-	EditionManuscriptMetadataDTO,
-	WktPolygonDTO,
-	QwbWordVariantListDTO,
-	QwbWordVariantDTO,
-	QwbBibliographyDTO,
-	QwbParallelWordDTO,
-	QwbParallelDTO,
-	QwbParallelListDTO,
-	QwbBibliographyEntryDTO,
-	SetReconstructedInterpretationRoiDTO,
-	SetInterpretationRoiDTO,
-	UpdateInterpretationRoiDTO,
-	InterpretationRoiDTO,
-	UpdatedInterpretationRoiDTO,
-	SetInterpretationRoiDTOList,
-	InterpretationRoiDTOList,
-	UpdateInterpretationRoiDTOList,
-	UpdatedInterpretationRoiDTOList,
-	BatchEditRoiDTO,
-	BatchEditRoiResponseDTO,
 	CreateScriptDataDTO,
 	ScriptDataDTO,
 	ScriptDataListDTO,
@@ -92,12 +96,6 @@ import {
 	GlyphDataDTO,
 	DeleteGlyphDataDTO,
 	DeleteScribalFontDTO,
-	DetailedSearchRequestDTO,
-	DetailedSearchResponseDTO,
-	TextFragmentSearchResponseListDTO,
-	TextFragmentSearchResponseDTO,
-	ImageSearchResponseListDTO,
-	ImageSearchResponseDTO,
 	SignDTO,
 	NextSignInterpretationDTO,
 	SignInterpretationBaseDTO,
@@ -124,47 +122,49 @@ import {
 	IndexedReplacementTextRoi,
 	DiffReplaceResponseDTO,
 	DiffReconstructedResponseDTO,
-	EditionScriptCollectionDTO,
-	EditionScriptLinesDTO,
-	CharacterShapeDTO,
-	ScriptTextFragmentDTO,
-	ScriptLineDTO,
-	ScriptArtefactCharactersDTO,
-	TextFragmentDataDTO,
-	ArtefactTextFragmentMatchDTO,
-	ImagedObjectTextFragmentMatchDTO,
-	ImagedObjectTextFragmentMatchListDTO,
-	TextFragmentDataListDTO,
-	ArtefactTextFragmentMatchListDTO,
-	TextFragmentDTO,
-	LineDataDTO,
-	LineDataListDTO,
-	LineDTO,
-	LineTextDTO,
-	UpdateTextFragmentDTO,
-	CreateTextFragmentDTO,
-	UpdateLineDTO,
-	CreateLineDTO,
-	RequestMaterializationDTO,
-	PlacementDTO,
-	TranslateDTO,
-	LoginRequestDTO,
-	UserUpdateRequestDTO,
-	NewUserRequestDTO,
-	AccountActivationRequestDTO,
-	ResendUserAccountActivationRequestDTO,
-	UnactivatedEmailUpdateRequestDTO,
-	ResetUserPasswordRequestDTO,
-	ResetForgottenUserPasswordRequestDTO,
-	ResetLoggedInUserPasswordRequestDTO,
-	UserDTO,
-	DetailedUserDTO,
-	DetailedUserTokenDTO,
-	EditorDTO,
-	UserDataStoreDTO,
-	DatabaseVersionDTO,
-	APIVersionDTO,
-	GithubIssueReportDTO,
+	SimpleImageDTO,
+	ImageDTO,
+	SimpleImageListDTO,
+	ImageInstitutionDTO,
+	ImageInstitutionListDTO,
+	InstitutionalImageDTO,
+	InstitutionalImageListDTO,
+	CatalogueMatchInputDTO,
+	CatalogueMatchDTO,
+	CatalogueMatchListDTO,
+	ImageStackDTO,
+	ImagedObjectDTO,
+	ImagedObjectListDTO,
+	EditionDTO,
+	EditionGroupDTO,
+	EditionListDTO,
+	FlatEditionListDTO,
+	PermissionDTO,
+	UpdateEditorRightsDTO,
+	InviteEditorDTO,
+	DetailedEditorRightsDTO,
+	DetailedUpdateEditorRightsDTO,
+	AdminEditorRequestDTO,
+	EditorInvitationDTO,
+	EditorInvitationListDTO,
+	AdminEditorRequestListDTO,
+	TextEditionDTO,
+	ArchiveTokenDTO,
+	CommentaryCreateDTO,
+	CommentaryDTO,
+	DeleteDTO,
+	DeleteIntIdDTO,
+	DeleteStringIdDTO,
+	EditionUpdateRequestDTO,
+	EditionCopyDTO,
+	UpdateEditionManuscriptMetricsDTO,
+	EditionManuscriptMetricsDTO,
+	DetailedSearchRequestDTO,
+	DetailedSearchResponseDTO,
+	TextFragmentSearchResponseListDTO,
+	TextFragmentSearchResponseDTO,
+	ImageSearchResponseListDTO,
+	ImageSearchResponseDTO,
 } from "@/dtos/sqe-dtos"
 
 import { HubConnection } from '@microsoft/signalr'; 
@@ -181,185 +181,279 @@ export class SignalRUtilities {
      */
 
     /**
-	 * Creates a new artefact with the provided data.
-	 *		 If no mask is provided, a placeholder mask will be created with the values:
-	 *		 "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
-	 *		 every artefact). It is not recommended to leave the mask, name, or work status
-	 *		 blank or null. It will often be advantageous to leave the transformation null
-	 *		 when first creating a new artefact.
+	 * Adds an editor to the specified edition
 	 *
 	 * @param editionId - Unique Id of the desired edition
-	 * @param payload - A CreateArtefactDTO with the data for the new artefact
+	 * @param payload - JSON object with the attributes of the new editor
 	 *
 	 */
-    public async postV1EditionsEditionIdArtefacts(editionId: number, payload: CreateArtefactDTO): Promise<ArtefactDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdArtefacts', editionId, payload);
+    public async postV1EditionsEditionIdAddEditorRequest(editionId: number, payload: InviteEditorDTO): Promise<void> {
+        return await this._connection.invoke('PostV1EditionsEditionIdAddEditorRequest', editionId, payload);
     }
 
     /**
-	 * Deletes the specified artefact
+	 * Get a list of requests issued by the current user for other users
+	 *	 to become editors of a shared edition
 	 *
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param editionId - Unique Id of the desired edition
+	 *
 	 *
 	 */
-    public async deleteV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId);
+    public async getV1EditionsAdminShareRequests(): Promise<AdminEditorRequestListDTO> {
+        return await this._connection.invoke('GetV1EditionsAdminShareRequests');
     }
 
     /**
-	 * Provides a listing of all artefacts that are part of the specified edition
+	 * Get a list of invitations issued to the current user to become an editor of a shared edition
 	 *
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param editionId - Unique Id of the desired edition
-	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
+	 *
 	 *
 	 */
-    public async getV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, optional);
+    public async getV1EditionsEditorInvitations(): Promise<EditorInvitationListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditorInvitations');
     }
 
     /**
-	 * Provides a listing of all rois belonging to an artefact in the specified edition
+	 * Confirm addition of an editor to the specified edition
 	 *
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param editionId - Unique Id of the desired edition
+	 * @param token - JWT for verifying the request confirmation
 	 *
 	 */
-    public async getV1EditionsEditionIdArtefactsArtefactIdRois(editionId: number, artefactId: number): Promise<InterpretationRoiDTOList> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdRois', editionId, artefactId);
+    public async postV1EditionsConfirmEditorshipToken(token: string): Promise<DetailedEditorRightsDTO> {
+        return await this._connection.invoke('PostV1EditionsConfirmEditorshipToken', token);
     }
 
     /**
-	 * Provides a listing of all artefacts that are part of the specified edition
+	 * Changes the rights for an editor of the specified edition
 	 *
 	 * @param editionId - Unique Id of the desired edition
-	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
+	 * @param editorEmailId - Email address of the editor whose permissions are being changed
+	 * @param payload - JSON object with the attributes of the new editor
 	 *
 	 */
-    public async getV1EditionsEditionIdArtefacts(editionId: number, optional: string[]): Promise<ArtefactListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefacts', editionId, optional);
+    public async putV1EditionsEditionIdEditorsEditorEmailId(editionId: number, editorEmailId: string, payload: UpdateEditorRightsDTO): Promise<DetailedEditorRightsDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdEditorsEditorEmailId', editionId, editorEmailId, payload);
     }
 
     /**
-	 * Provides a listing of text fragments that have text in the specified artefact.
-	 *		 With the optional query parameter "suggested", this endpoint will also return
-	 *		 any text fragment that the system suggests might have text in the artefact.
+	 * Creates a copy of the specified edition
 	 *
 	 * @param editionId - Unique Id of the desired edition
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param optional - Add "suggested" to include possible matches suggested by the system
+	 * @param request - JSON object with the attributes to be changed in the copied edition
 	 *
 	 */
-    public async getV1EditionsEditionIdArtefactsArtefactIdTextFragments(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactTextFragmentMatchListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdTextFragments', editionId, artefactId, optional);
+    public async postV1EditionsEditionId(editionId: number, request: EditionCopyDTO): Promise<EditionDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionId', editionId, request);
     }
 
     /**
-	 * Updates the specified artefact.
-	 *		 There are many possible attributes that can be changed for
-	 *		 an artefact. The caller should only input only those that
-	 *		 should be changed. Attributes with a null value will be ignored.
-	 *		 For instance, setting the mask to null or "" will result in
-	 *		 no changes to the current mask, and no value for the mask will
-	 *		 be returned (or broadcast). Likewise, the transformation, name,
-	 *		 or status message may be set to null and no change will be made
-	 *		 to those entities (though any unchanged values will be returned
-	 *		 along with the changed values and also broadcast to co-editors).
+	 * Archives an edition so that in no longer appears in user data and searches. An admin
+	 *	 may use the archiveForAllEditors optional parameter in order to archive the edition
+	 *	 for all editors (must be confirmed with an archive token).
 	 *
-	 * @param artefactId - Unique Id of the desired artefact
-	 * @param editionId - Unique Id of the desired edition
-	 * @param payload - An UpdateArtefactDTO with the desired alterations to the artefact
+	 * @param editionId - Unique Id of the desired edition to be archived
+	 * @param optional - Optional parameters: 'archiveForAllEditors'
+	 * @param token - token required when using optional 'archiveForAllEditors'
 	 *
 	 */
-    public async putV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, payload: UpdateArtefactDTO): Promise<ArtefactDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload);
+    public async deleteV1EditionsEditionId(editionId: number, optional: string[], token: string): Promise<ArchiveTokenDTO> {
+        return await this._connection.invoke('DeleteV1EditionsEditionId', editionId, optional, token);
     }
 
     /**
-	 * Updates the positional data for a batch of artefacts
+	 * Provides details about the specified edition and all accessible alternate editions
 	 *
 	 * @param editionId - Unique Id of the desired edition
-	 * @param payload - A BatchUpdateArtefactTransformDTO with a list of the desired updates
 	 *
 	 */
-    public async postV1EditionsEditionIdArtefactsBatchTransformation(editionId: number, payload: BatchUpdateArtefactPlacementDTO): Promise<BatchUpdatedArtefactTransformDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdArtefactsBatchTransformation', editionId, payload);
+    public async getV1EditionsEditionId(editionId: number): Promise<EditionGroupDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionId', editionId);
     }
 
     /**
-	 * Gets a listing of all artefact groups in the edition
+	 * Provides a listing of all editions accessible to the current user
 	 *
-	 * @param editionId - Unique Id of the desired edition
+	 *
 	 *
 	 */
-    public async getV1EditionsEditionIdArtefactGroups(editionId: number): Promise<ArtefactGroupListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefactGroups', editionId);
+    public async getV1Editions(published: bool?, personal: bool?): Promise<EditionListDTO> {
+        return await this._connection.invoke('GetV1Editions', published, personal);
     }
 
     /**
-	 * Gets the details of a specific artefact group in the edition
+	 * Updates data for the specified edition
 	 *
 	 * @param editionId - Unique Id of the desired edition
-	 * @param artefactGroupId - Id of the desired artefact group
+	 * @param request - JSON object with the attributes to be updated
 	 *
 	 */
-    public async getV1EditionsEditionIdArtefactGroupsArtefactGroupId(editionId: number, artefactGroupId: number): Promise<ArtefactGroupDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdArtefactGroupsArtefactGroupId', editionId, artefactGroupId);
+    public async putV1EditionsEditionId(editionId: number, request: EditionUpdateRequestDTO): Promise<EditionDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionId', editionId, request);
     }
 
     /**
-	 * Creates a new artefact group with the submitted data.
-	 *		 The new artefact must have a list of artefacts that belong to the group.
-	 *		 It is not necessary to give the group a name.
+	 * Provides spatial data for all letters in the edition
 	 *
 	 * @param editionId - Unique Id of the desired edition
-	 * @param payload - Parameters of the new artefact group
 	 *
 	 */
-    public async postV1EditionsEditionIdArtefactGroups(editionId: number, payload: CreateArtefactGroupDTO): Promise<ArtefactGroupDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdArtefactGroups', editionId, payload);
+    public async getV1EditionsEditionIdScriptCollection(editionId: number): Promise<EditionScriptCollectionDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdScriptCollection', editionId);
     }
 
     /**
-	 * Updates the details of an artefact group.
-	 *		 The artefact group will now only contain the artefacts listed in the JSON payload.
-	 *		 If the name is null, no change will be made, otherwise the name will also be updated.
+	 * Provides spatial data for all letters in the edition organized and oriented
+	 *	 by lines.
 	 *
 	 * @param editionId - Unique Id of the desired edition
-	 * @param artefactGroupId - Id of the artefact group to be updated
-	 * @param payload - Parameters that the artefact group should be changed to
 	 *
 	 */
-    public async putV1EditionsEditionIdArtefactGroupsArtefactGroupId(editionId: number, artefactGroupId: number, payload: UpdateArtefactGroupDTO): Promise<ArtefactGroupDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdArtefactGroupsArtefactGroupId', editionId, artefactGroupId, payload);
+    public async getV1EditionsEditionIdScriptLines(editionId: number): Promise<EditionScriptLinesDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdScriptLines', editionId);
     }
 
     /**
-	 * Deletes the specified artefact group.
+	 * Retrieve extra institutional metadata concerning the edition
+	 *	 manuscript if available.
 	 *
 	 * @param editionId - Unique Id of the desired edition
-	 * @param artefactGroupId - Unique Id of the artefact group to be deleted
 	 *
 	 */
-    public async deleteV1EditionsEditionIdArtefactGroupsArtefactGroupId(editionId: number, artefactGroupId: number): Promise<DeleteIntIdDTO> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdArtefactGroupsArtefactGroupId', editionId, artefactGroupId);
+    public async getV1EditionsEditionIdMetadata(editionId: number): Promise<EditionManuscriptMetadataDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdMetadata', editionId);
+    }
+
+    
+    public async getV1ManuscriptsManuscriptIdEditions(manuscriptId: number): Promise<EditionListDTO> {
+        return await this._connection.invoke('GetV1ManuscriptsManuscriptIdEditions', manuscriptId);
     }
 
     /**
-	 * Replace the current transcription in the virtual artefact with the submitted
-	 *		 transcription and the related ROIs. The dictionary in textRois should map the
-	 *		 index of each character in the new transcription string to its corresponding
-	 *		 ROI shape/positional data. Some characters, like a space, need not have a
-	 *		 corresponding ROI shape/position.
+	 * Provides a JWT bearer token for valid email and password
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param artefactId - Unique Id of the desired artefact (must be a virtual artefact)
-	 * @param payload - Details of the replacement transcription
-	 * @returns - Details concerning all changed data in the edition
+	 * @param payload - JSON object with an email and password parameter
+	 * @returns - 
+	 *	  A DetailedUserTokenDTO with a JWT for activated user accounts, or the email address of an unactivated user
+	 *	  account
+	 *	 
 	 */
-    public async putV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription(editionId: number, artefactId: number, payload: DiffReplaceReconstructionRequestDTO): Promise<DiffReconstructedResponseDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription', editionId, artefactId, payload);
+    public async postV1UsersLogin(payload: LoginRequestDTO): Promise<DetailedUserTokenDTO> {
+        return await this._connection.invoke('PostV1UsersLogin', payload);
+    }
+
+    /**
+	 * Allows a user who has not yet activated their account to change their email address. This will not work if the user
+	 *	 account associated with the email address has already been activated
+	 *
+	 * @param payload - JSON object with the current email address and the new desired email address
+	 *
+	 */
+    public async postV1UsersChangeUnactivatedEmail(payload: UnactivatedEmailUpdateRequestDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UsersChangeUnactivatedEmail', payload);
+    }
+
+    /**
+	 * Uses the secret token from /users/forgot-password to validate a reset of the user's password
+	 *
+	 * @param payload - A JSON object with the secret token and the new password
+	 *
+	 */
+    public async postV1UsersChangeForgottenPassword(payload: ResetForgottenUserPasswordRequestDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UsersChangeForgottenPassword', payload);
+    }
+
+    /**
+	 * Changes the password for the currently logged in user
+	 *
+	 * @param payload - A JSON object with the old password and the new password
+	 *
+	 */
+    public async postV1UsersChangePassword(payload: ResetLoggedInUserPasswordRequestDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UsersChangePassword', payload);
+    }
+
+    /**
+	 * Updates a user's registration details. Note that the if the email address has changed, the account will be set to
+	 *	 inactive until the account is activated with the secret token.
+	 *
+	 * @param payload - 
+	 *	  A JSON object with all data necessary to update a user account.  Null fields (but not empty
+	 *	  strings!) will be populated with existing user data
+	 *	 
+	 * @returns - Returns a DetailedUserDTO with the updated user account details
+	 */
+    public async putV1Users(payload: UserUpdateRequestDTO): Promise<DetailedUserDTO> {
+        return await this._connection.invoke('PutV1Users', payload);
+    }
+
+    /**
+	 * Confirms registration of new user account.
+	 *
+	 * @param payload - JSON object with token from user registration email
+	 * @returns - Returns a DetailedUserDTO for the confirmed account
+	 */
+    public async postV1UsersConfirmRegistration(payload: AccountActivationRequestDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UsersConfirmRegistration', payload);
+    }
+
+    /**
+	 * Sends a secret token to the user's email to allow password reset.
+	 *
+	 * @param payload - JSON object with the email address for the user who wants to reset a lost password
+	 *
+	 */
+    public async postV1UsersForgotPassword(payload: ResetUserPasswordRequestDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UsersForgotPassword', payload);
+    }
+
+    /**
+	 * Provides the user details for a user with valid JWT in the Authorize header
+	 *
+	 *
+	 * @returns - A UserDTO for user account.
+	 */
+    public async getV1Users(): Promise<UserDTO> {
+        return await this._connection.invoke('GetV1Users');
+    }
+
+    /**
+	 * Creates a new user with the submitted data.
+	 *
+	 * @param payload - A JSON object with all data necessary to create a new user account
+	 * @returns - Returns a UserDTO for the newly created account
+	 */
+    public async postV1Users(payload: NewUserRequestDTO): Promise<UserDTO> {
+        return await this._connection.invoke('PostV1Users', payload);
+    }
+
+    /**
+	 * Sends a new activation email for the user's account. This will not work if the user account associated with the
+	 *	 email address has already been activated.
+	 *
+	 * @param payload - JSON object with the current email address and the new desired email address
+	 *
+	 */
+    public async postV1UsersResendActivationEmail(payload: ResendUserAccountActivationRequestDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UsersResendActivationEmail', payload);
+    }
+
+    /**
+	 * Retrieve the information in the user's personal data store
+	 *
+	 *
+	 *
+	 */
+    public async getV1UsersDataStore(): Promise<UserDataStoreDTO> {
+        return await this._connection.invoke('GetV1UsersDataStore');
+    }
+
+    /**
+	 * Update the information in the user's personal data store
+	 *
+	 * @param data - A JSON object with the data to store for the user
+	 *
+	 */
+    public async putV1UsersDataStore(data: UserDataStoreDTO): Promise<void> {
+        return await this._connection.invoke('PutV1UsersDataStore', data);
     }
 
     /**
@@ -443,150 +537,257 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Adds an editor to the specified edition
+	 * Basic searching of the Qumranica database. Results are truncated
+	 *	 to 100 results per search category.
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param payload - JSON object with the attributes of the new editor
+	 * @param searchParameters - The parameters of the search
 	 *
 	 */
-    public async postV1EditionsEditionIdAddEditorRequest(editionId: number, payload: InviteEditorDTO): Promise<void> {
-        return await this._connection.invoke('PostV1EditionsEditionIdAddEditorRequest', editionId, payload);
+    public async postV1Search(searchParameters: DetailedSearchRequestDTO): Promise<DetailedSearchResponseDTO> {
+        return await this._connection.invoke('PostV1Search', searchParameters);
     }
 
     /**
-	 * Get a list of requests issued by the current user for other users
-	 *		 to become editors of a shared edition
+	 * Creates a new text fragment in the given edition of a scroll
 	 *
-	 *
+	 * @param createFragment - A JSON object with the details of the new text fragment to be created
+	 * @param editionId - Id of the edition
 	 *
 	 */
-    public async getV1EditionsAdminShareRequests(): Promise<AdminEditorRequestListDTO> {
-        return await this._connection.invoke('GetV1EditionsAdminShareRequests');
+    public async postV1EditionsEditionIdTextFragments(editionId: number, createFragment: CreateTextFragmentDTO): Promise<TextFragmentDataDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdTextFragments', editionId, createFragment);
     }
 
     /**
-	 * Get a list of invitations issued to the current user to become an editor of a shared edition
+	 * Updates the specified text fragment with the submitted properties
 	 *
-	 *
-	 *
+	 * @param editionId - Edition of the text fragment being updates
+	 * @param textFragmentId - Id of the text fragment being updates
+	 * @param updatedTextFragment - Details of the updated text fragment
+	 * @returns - The details of the updated text fragment
 	 */
-    public async getV1EditionsEditorInvitations(): Promise<EditorInvitationListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditorInvitations');
+    public async putV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number, updatedTextFragment: UpdateTextFragmentDTO): Promise<TextFragmentDataDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId, updatedTextFragment);
     }
 
     /**
-	 * Confirm addition of an editor to the specified edition
+	 * Retrieves the ids of all Fragments of all fragments in the given edition of a scroll
 	 *
-	 * @param token - JWT for verifying the request confirmation
-	 *
+	 * @param editionId - Id of the edition
+	 * @returns - An array of the text fragment ids in correct sequence
 	 */
-    public async postV1EditionsConfirmEditorshipToken(token: string): Promise<DetailedEditorRightsDTO> {
-        return await this._connection.invoke('PostV1EditionsConfirmEditorshipToken', token);
+    public async getV1EditionsEditionIdTextFragments(editionId: number): Promise<TextFragmentDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragments', editionId);
     }
 
     /**
-	 * Changes the rights for an editor of the specified edition
+	 * Retrieves the ids of all Artefacts in the given textFragmentName
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param editorEmailId - Email address of the editor whose permissions are being changed
-	 * @param payload - JSON object with the attributes of the new editor
-	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - An array of the line ids in the proper sequence
 	 */
-    public async putV1EditionsEditionIdEditorsEditorEmailId(editionId: number, editorEmailId: string, payload: UpdateEditorRightsDTO): Promise<DetailedEditorRightsDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdEditorsEditorEmailId', editionId, editorEmailId, payload);
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(editionId: number, textFragmentId: number): Promise<ArtefactDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts', editionId, textFragmentId);
     }
 
     /**
-	 * Creates a copy of the specified edition
+	 * Retrieves the ids of all lines in the given textFragmentName
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param request - JSON object with the attributes to be changed in the copied edition
-	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - An array of the line ids in the proper sequence
 	 */
-    public async postV1EditionsEditionId(editionId: number, request: EditionCopyDTO): Promise<EditionDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionId', editionId, request);
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number): Promise<LineDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId);
     }
 
     /**
-	 * Archives an edition so that in no longer appears in user data and searches. An admin
-	 *		 may use the archiveForAllEditors optional parameter in order to archive the edition
-	 *		 for all editors (must be confirmed with an archive token).
+	 * Retrieves all signs and their data from the given textFragmentName
 	 *
-	 * @param editionId - Unique Id of the desired edition to be archived
-	 * @param optional - Optional parameters: 'archiveForAllEditors'
-	 * @param token - token required when using optional 'archiveForAllEditors'
-	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - Id of the text fragment
+	 * @returns - 
+	 *	  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *	  sequence
+	 *	 
 	 */
-    public async deleteV1EditionsEditionId(editionId: number, optional: string[], token: string): Promise<ArchiveTokenDTO> {
-        return await this._connection.invoke('DeleteV1EditionsEditionId', editionId, optional, token);
+    public async getV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number): Promise<TextEditionDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
     }
 
     /**
-	 * Provides details about the specified edition and all accessible alternate editions
+	 * Retrieves all signs and their data from the entire edition
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 *
+	 * @param editionId - Id of the edition
+	 * @returns - 
+	 *	  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
+	 *	  sequence
+	 *	 
 	 */
-    public async getV1EditionsEditionId(editionId: number): Promise<EditionGroupDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionId', editionId);
+    public async getV1EditionsEditionIdFullText(editionId: number): Promise<TextEditionDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdFullText', editionId);
     }
 
     /**
-	 * Provides a listing of all editions accessible to the current user
+	 * Retrieves all signs and their data from the given line
 	 *
-	 *
-	 *
+	 * @param editionId - Id of the edition
+	 * @param lineId - Id of the line
+	 * @returns - 
+	 *	  A manuscript edition object including the fragments and their lines in a
+	 *	  hierarchical order and in correct sequence
+	 *	 
 	 */
-    public async getV1Editions(published: bool?, personal: bool?): Promise<EditionListDTO> {
-        return await this._connection.invoke('GetV1Editions', published, personal);
+    public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
     }
 
     /**
-	 * Updates data for the specified edition
+	 * Changes the details of the line (currently the lines name)
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 * @param request - JSON object with the attributes to be updated
-	 *
+	 * @param editionId - Id of the edition
+	 * @param lineId - Id of the line
+	 * @param lineData - The updated line data
+	 * @returns - 
+	 *	  The updated details concerning the line sequence
+	 *	 
 	 */
-    public async putV1EditionsEditionId(editionId: number, request: EditionUpdateRequestDTO): Promise<EditionDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionId', editionId, request);
+    public async putV1EditionsEditionIdLinesLineId(editionId: number, lineId: number, lineData: UpdateLineDTO): Promise<LineDataDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdLinesLineId', editionId, lineId, lineData);
     }
 
     /**
-	 * Provides spatial data for all letters in the edition
+	 * Delete a full line from a text fragment
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 *
+	 * @param editionId - Id of the edition
+	 * @param lineId - Id of the line to be deleted
+	 * @returns - 
+	 *	  The updated details concerning the line sequence
+	 *	 
 	 */
-    public async getV1EditionsEditionIdScriptCollection(editionId: number): Promise<EditionScriptCollectionDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdScriptCollection', editionId);
+    public async deleteV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdLinesLineId', editionId, lineId);
     }
 
     /**
-	 * Provides spatial data for all letters in the edition organized and oriented
-	 *		 by lines.
+	 * Creates a new line before or after another line.
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 *
+	 * @param editionId - Id of the edition
+	 * @param textFragmentId - 
+	 *	  Id of the text fragment where the line will be
+	 *	  added
+	 *	 
+	 * @param lineData - The information about the line to be created
+	 * @returns - 
+	 *	  The details concerning the newly created line
+	 *	 
 	 */
-    public async getV1EditionsEditionIdScriptLines(editionId: number): Promise<EditionScriptLinesDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdScriptLines', editionId);
+    public async postV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number, lineData: CreateLineDTO): Promise<LineDataDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId, lineData);
     }
 
     /**
-	 * Retrieve extra institutional metadata concerning the edition
-	 *		 manuscript if available.
+	 * Alter the text between two sign interpretation ids.
+	 *	 The system will try as best it can to figure out
+	 *	 how the next text aligns with any text already
+	 *	 existing at that location in the edition.
 	 *
-	 * @param editionId - Unique Id of the desired edition
-	 *
+	 * @param editionId - Id of the edition to be updated
+	 * @param payload - Details of the text replacement request
+	 * @returns - 
+	 *	  Information about all sign interpretations that were
+	 *	  created, updated, and deleted as a result of the operation.
+	 *	 
 	 */
-    public async getV1EditionsEditionIdMetadata(editionId: number): Promise<EditionManuscriptMetadataDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdMetadata', editionId);
+    public async putV1EditionsEditionIdDiffReplaceText(editionId: number, payload: DiffReplaceRequestDTO): Promise<DiffReplaceResponseDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdDiffReplaceText', editionId, payload);
     }
 
-    
-    public async getV1ManuscriptsManuscriptIdEditions(manuscriptId: number): Promise<EditionListDTO> {
-        return await this._connection.invoke('GetV1ManuscriptsManuscriptIdEditions', manuscriptId);
+    /**
+	 * Search QWB (via proxy) for any variant readings for the word that contains the submitted sign
+	 *	 interpretation id.
+	 *
+	 * @param editionId - Edition in which the sign interpretation id is found
+	 * @param signInterpretationId - Id of the sign interpretation to search
+	 *
+	 */
+    public async getV1EditionsEditionIdSignInterpretationsSignInterpretationIdWordVariants(editionId: number, signInterpretationId: number): Promise<QwbWordVariantListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdSignInterpretationsSignInterpretationIdWordVariants', editionId, signInterpretationId);
+    }
+
+    /**
+	 * Search QWB (via proxy) for any variant readings for the word that contains the submitted
+	 *	 QWB word id.
+	 *
+	 * @param qwbWordId - QWB word Id
+	 *
+	 */
+    public async getV1QwbProxyWordsQwbWordIdWordVariants(qwbWordId: number): Promise<QwbWordVariantListDTO> {
+        return await this._connection.invoke('GetV1QwbProxyWordsQwbWordIdWordVariants', qwbWordId);
+    }
+
+    /**
+	 * Search QWB (via proxy) for any parallel text.
+	 *
+	 * @param qwbStartWordId - QWB word Id for the beginning of the text selection
+	 * @param qwbEndWordId - QWB word Id for the end of the text selection
+	 *
+	 */
+    public async getV1QwbProxyParallelsStartWordQwbStartWordIdEndWordQwbEndWordId(qwbStartWordId: number, qwbEndWordId: number): Promise<QwbParallelListDTO> {
+        return await this._connection.invoke('GetV1QwbProxyParallelsStartWordQwbStartWordIdEndWordQwbEndWordId', qwbStartWordId, qwbEndWordId);
+    }
+
+    /**
+	 * Get full bibliographic entry from QWB (via proxy).
+	 *
+	 * @param qwbBibliographyId - ID of the qwb bibliographical item to be retrieved
+	 *
+	 */
+    public async getV1QwbProxyBibliographyQwbBibliographyId(qwbBibliographyId: number): Promise<QwbBibliographyEntryDTO> {
+        return await this._connection.invoke('GetV1QwbProxyBibliographyQwbBibliographyId', qwbBibliographyId);
+    }
+
+    /**
+	 * Override the default OnConnectedAsync to add the connection to the user's user_id
+	 *	 group if the user is authenticated. The user_id group is used for messages that
+	 *	 are above the level of a single edition.
+	 *
+	 *
+	 *
+	 */
+    public async onConnectedAsync(): Promise<void> {
+        return await this._connection.invoke('OnConnectedAsync');
+    }
+
+    /**
+	 * The client subscribes to all changes for the specified editionId.
+	 *
+	 * @param editionId - The ID of the edition to receive updates
+	 *
+	 */
+    public async subscribeToEdition(editionId: number): Promise<void> {
+        return await this._connection.invoke('SubscribeToEdition', editionId);
+    }
+
+    /**
+	 * The client unsubscribes to all changes for the specified editionId.
+	 *
+	 * @param editionId - The ID of the edition to stop receiving updates
+	 *
+	 */
+    public async unsubscribeToEdition(editionId: number): Promise<void> {
+        return await this._connection.invoke('UnsubscribeToEdition', editionId);
+    }
+
+    /**
+	 * Get a list of all editions the client is currently subscribed to.
+	 *
+	 *
+	 * @returns - A list of every editionId for which the client receives update
+	 */
+    public async listEditionSubscriptions(): Promise<number[]> {
+        return await this._connection.invoke('ListEditionSubscriptions');
     }
 
     /**
@@ -601,7 +802,7 @@ export class SignalRUtilities {
 
     /**
 	 * Provides information for the specified imaged object related to the specified edition, can include images and also
-	 *		 their masks with optional.
+	 *	 their masks with optional.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param imagedObjectId - Unique Id of the desired object from the imaging Institution
@@ -625,7 +826,7 @@ export class SignalRUtilities {
 
     /**
 	 * Remove an imaged object from an edition. All artefacts must first be removed from the
-	 *		 imaged object.
+	 *	 imaged object.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param imagedObjectId - Unique Id of the desired object from the imaging Institution
@@ -637,7 +838,7 @@ export class SignalRUtilities {
 
     /**
 	 * Provides a listing of imaged objects related to the specified edition, can include images and also their masks with
-	 *		 optional.
+	 *	 optional.
 	 *
 	 * @param editionId - Unique Id of the desired edition
 	 * @param optional - Set 'artefacts' to receive related artefact data and 'masks' to include the artefact masks
@@ -678,47 +879,145 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Search QWB (via proxy) for any variant readings for the word that contains the submitted sign
-	 *		 interpretation id.
+	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
+	 *	 it attempts to construct a valid polygon that matches the original
+	 *	 as closely as possible.
 	 *
-	 * @param editionId - Edition in which the sign interpretation id is found
-	 * @param signInterpretationId - Id of the sign interpretation to search
+	 * @param payload - JSON object with the WKT polygon to validate
 	 *
 	 */
-    public async getV1EditionsEditionIdSignInterpretationsSignInterpretationIdWordVariants(editionId: number, signInterpretationId: number): Promise<QwbWordVariantListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdSignInterpretationsSignInterpretationIdWordVariants', editionId, signInterpretationId);
+    public async postV1UtilsRepairWktPolygon(payload: WktPolygonDTO): Promise<WktPolygonDTO> {
+        return await this._connection.invoke('PostV1UtilsRepairWktPolygon', payload);
     }
 
     /**
-	 * Search QWB (via proxy) for any variant readings for the word that contains the submitted
-	 *		 QWB word id.
+	 * Provides the current version designation of the database along with
+	 *	 the date it was updated to that version.
 	 *
-	 * @param qwbWordId - QWB word Id
+	 *
 	 *
 	 */
-    public async getV1QwbProxyWordsQwbWordIdWordVariants(qwbWordId: number): Promise<QwbWordVariantListDTO> {
-        return await this._connection.invoke('GetV1QwbProxyWordsQwbWordIdWordVariants', qwbWordId);
+    public async getV1UtilsDatabaseVersion(): Promise<DatabaseVersionDTO> {
+        return await this._connection.invoke('GetV1UtilsDatabaseVersion');
     }
 
     /**
-	 * Search QWB (via proxy) for any parallel text.
+	 * Provides the current version designation of the API server along with
+	 *	 the date it was updated to that version.
 	 *
-	 * @param qwbStartWordId - QWB word Id for the beginning of the text selection
-	 * @param qwbEndWordId - QWB word Id for the end of the text selection
+	 *
 	 *
 	 */
-    public async getV1QwbProxyParallelsStartWordQwbStartWordIdEndWordQwbEndWordId(qwbStartWordId: number, qwbEndWordId: number): Promise<QwbParallelListDTO> {
-        return await this._connection.invoke('GetV1QwbProxyParallelsStartWordQwbStartWordIdEndWordQwbEndWordId', qwbStartWordId, qwbEndWordId);
+    public async getV1UtilsApiVersion(): Promise<APIVersionDTO> {
+        return await this._connection.invoke('GetV1UtilsApiVersion');
     }
 
     /**
-	 * Get full bibliographic entry from QWB (via proxy).
+	 * Adds a new entry in Github issues
 	 *
-	 * @param qwbBibliographyId - ID of the qwb bibliographical item to be retrieved
+	 *
 	 *
 	 */
-    public async getV1QwbProxyBibliographyQwbBibliographyId(qwbBibliographyId: number): Promise<QwbBibliographyEntryDTO> {
-        return await this._connection.invoke('GetV1QwbProxyBibliographyQwbBibliographyId', qwbBibliographyId);
+    public async postV1UtilsReportGithubIssue(payload: GithubIssueReportDTO): Promise<void> {
+        return await this._connection.invoke('PostV1UtilsReportGithubIssue', payload);
+    }
+
+    /**
+	 * Get the details of the scribal font for an edition that
+	 *	 are needed to generate reconstructed text layout.
+	 *
+	 * @param editionId - Edition for which to get the scribal font information
+	 *
+	 */
+    public async getV1EditionsEditionIdScribalFonts(editionId: number): Promise<ScriptDataListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdScribalFonts', editionId);
+    }
+
+    /**
+	 * Creates a new scribal font for the edition
+	 *
+	 * @param editionId - Edition for which to create the new scribal font
+	 * @param scriptData - Basic information about the new scribal font
+	 *
+	 */
+    public async postV1EditionsEditionIdScribalFonts(editionId: number, scriptData: CreateScriptDataDTO): Promise<ScriptDataDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdScribalFonts', editionId, scriptData);
+    }
+
+    /**
+	 * Updates the basic information about a scribal font
+	 *
+	 * @param editionId - Edition for which to update the scribal font
+	 * @param scribalFontId - The scribal font to be updated
+	 * @param scriptData - The updated scribal font information
+	 *
+	 */
+    public async putV1EditionsEditionIdScribalFontsScribalFontIdScribalFontData(editionId: number, scribalFontId: number, scriptData: CreateScriptDataDTO): Promise<ScriptDataDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdScribalFontsScribalFontIdScribalFontData', editionId, scribalFontId, scriptData);
+    }
+
+    /**
+	 * Deletes a scribal font
+	 *
+	 * @param editionId - Edition from which to delete the scribal font
+	 * @param scribalFontId - The scribal font to be deleted
+	 *
+	 */
+    public async deleteV1EditionsEditionIdScribalFontsScribalFontId(editionId: number, scribalFontId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontId', editionId, scribalFontId);
+    }
+
+    /**
+	 * Creates or updates a kerning pair for the scribal font.
+	 *	 If the kern pair does not yet exists, it is created.
+	 *	 If the kern pair already exists, it is updated.
+	 *
+	 * @param editionId - Edition for which to create or update the kerning pair
+	 * @param scribalFontId - The scribal font the kerning pair belongs to
+	 * @param kernPair - The kerning information
+	 *
+	 */
+    public async postV1EditionsEditionIdScribalFontsScribalFontIdKerningPairs(editionId: number, scribalFontId: number, kernPair: CreateKernPairDTO): Promise<KernPairDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdScribalFontsScribalFontIdKerningPairs', editionId, scribalFontId, kernPair);
+    }
+
+    /**
+	 * Deletes a kerning pair from a scribal font
+	 *
+	 * @param editionId - Edition from which to delete the kerning pair
+	 * @param scribalFontId - Scribal font from which to delete the kerning pair
+	 * @param firstCharacter - The first character of the kerning pair
+	 * @param secondCharacter - The second character of the kerning pair
+	 *
+	 */
+    public async deleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter(editionId: number, scribalFontId: number, firstCharacter: string, secondCharacter: string): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter', editionId, scribalFontId, firstCharacter, secondCharacter);
+    }
+
+    /**
+	 * Creates or updates information about a scribal font glyph.
+	 *	 If information for the glyph does not yet exist, a new glyph is created.
+	 *	 If information for the glyph already exists, that glyph information is updated.
+	 *
+	 * @param editionId - Edition in which the glyph is created or updated
+	 * @param scribalFontId - Scribal font in which the glyph is created or updated
+	 * @param glyph - Information about the glyph
+	 *
+	 */
+    public async postV1EditionsEditionIdScribalFontsScribalFontIdGlyphs(editionId: number, scribalFontId: number, glyph: CreateGlyphDataDTO): Promise<GlyphDataDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdScribalFontsScribalFontIdGlyphs', editionId, scribalFontId, glyph);
+    }
+
+    /**
+	 * Deletes glyph information from a scribal font
+	 *
+	 * @param editionId - Edition from which the glyph is deleted
+	 * @param scribalFontId - Scribal font from which the glyph is deleted
+	 * @param glyphCharacter - The glyph to be deleted
+	 *
+	 */
+    public async deleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter(editionId: number, scribalFontId: number, glyphCharacter: string): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter', editionId, scribalFontId, glyphCharacter);
     }
 
     /**
@@ -800,112 +1099,185 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Get the details of the scribal font for an edition that
-	 *		 are needed to generate reconstructed text layout.
+	 * Creates a new artefact with the provided data.
+	 *	 If no mask is provided, a placeholder mask will be created with the values:
+	 *	 "POLYGON((0 0,1 1,1 0,0 0))" (the system requires a valid WKT polygon mask for
+	 *	 every artefact). It is not recommended to leave the mask, name, or work status
+	 *	 blank or null. It will often be advantageous to leave the transformation null
+	 *	 when first creating a new artefact.
 	 *
-	 * @param editionId - Edition for which to get the scribal font information
+	 * @param editionId - Unique Id of the desired edition
+	 * @param payload - A CreateArtefactDTO with the data for the new artefact
 	 *
 	 */
-    public async getV1EditionsEditionIdScribalFonts(editionId: number): Promise<ScriptDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdScribalFonts', editionId);
+    public async postV1EditionsEditionIdArtefacts(editionId: number, payload: CreateArtefactDTO): Promise<ArtefactDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdArtefacts', editionId, payload);
     }
 
     /**
-	 * Creates a new scribal font for the edition
+	 * Deletes the specified artefact
 	 *
-	 * @param editionId - Edition for which to create the new scribal font
-	 * @param scriptData - Basic information about the new scribal font
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param editionId - Unique Id of the desired edition
 	 *
 	 */
-    public async postV1EditionsEditionIdScribalFonts(editionId: number, scriptData: CreateScriptDataDTO): Promise<ScriptDataDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdScribalFonts', editionId, scriptData);
+    public async deleteV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number): Promise<void> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId);
     }
 
     /**
-	 * Updates the basic information about a scribal font
+	 * Provides a listing of all artefacts that are part of the specified edition
 	 *
-	 * @param editionId - Edition for which to update the scribal font
-	 * @param scribalFontId - The scribal font to be updated
-	 * @param scriptData - The updated scribal font information
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param editionId - Unique Id of the desired edition
+	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
 	 *
 	 */
-    public async putV1EditionsEditionIdScribalFontsScribalFontIdScribalFontData(editionId: number, scribalFontId: number, scriptData: CreateScriptDataDTO): Promise<ScriptDataDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdScribalFontsScribalFontIdScribalFontData', editionId, scribalFontId, scriptData);
+    public async getV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, optional);
     }
 
     /**
-	 * Deletes a scribal font
+	 * Provides a listing of all rois belonging to an artefact in the specified edition
 	 *
-	 * @param editionId - Edition from which to delete the scribal font
-	 * @param scribalFontId - The scribal font to be deleted
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param editionId - Unique Id of the desired edition
 	 *
 	 */
-    public async deleteV1EditionsEditionIdScribalFontsScribalFontId(editionId: number, scribalFontId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontId', editionId, scribalFontId);
+    public async getV1EditionsEditionIdArtefactsArtefactIdRois(editionId: number, artefactId: number): Promise<InterpretationRoiDTOList> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdRois', editionId, artefactId);
     }
 
     /**
-	 * Creates or updates a kerning pair for the scribal font.
-	 *		 If the kern pair does not yet exists, it is created.
-	 *		 If the kern pair already exists, it is updated.
+	 * Provides a listing of all artefacts that are part of the specified edition
 	 *
-	 * @param editionId - Edition for which to create or update the kerning pair
-	 * @param scribalFontId - The scribal font the kerning pair belongs to
-	 * @param kernPair - The kerning information
+	 * @param editionId - Unique Id of the desired edition
+	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
 	 *
 	 */
-    public async postV1EditionsEditionIdScribalFontsScribalFontIdKerningPairs(editionId: number, scribalFontId: number, kernPair: CreateKernPairDTO): Promise<KernPairDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdScribalFontsScribalFontIdKerningPairs', editionId, scribalFontId, kernPair);
+    public async getV1EditionsEditionIdArtefacts(editionId: number, optional: string[]): Promise<ArtefactListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefacts', editionId, optional);
     }
 
     /**
-	 * Deletes a kerning pair from a scribal font
+	 * Provides a listing of text fragments that have text in the specified artefact.
+	 *	 With the optional query parameter "suggested", this endpoint will also return
+	 *	 any text fragment that the system suggests might have text in the artefact.
 	 *
-	 * @param editionId - Edition from which to delete the kerning pair
-	 * @param scribalFontId - Scribal font from which to delete the kerning pair
-	 * @param firstCharacter - The first character of the kerning pair
-	 * @param secondCharacter - The second character of the kerning pair
+	 * @param editionId - Unique Id of the desired edition
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param optional - Add "suggested" to include possible matches suggested by the system
 	 *
 	 */
-    public async deleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter(editionId: number, scribalFontId: number, firstCharacter: string, secondCharacter: string): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontIdKerningPairsFirstCharacterSecondCharacter', editionId, scribalFontId, firstCharacter, secondCharacter);
+    public async getV1EditionsEditionIdArtefactsArtefactIdTextFragments(editionId: number, artefactId: number, optional: string[]): Promise<ArtefactTextFragmentMatchListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactsArtefactIdTextFragments', editionId, artefactId, optional);
     }
 
     /**
-	 * Creates or updates information about a scribal font glyph.
-	 *		 If information for the glyph does not yet exist, a new glyph is created.
-	 *		 If information for the glyph already exists, that glyph information is updated.
+	 * Updates the specified artefact.
+	 *	 There are many possible attributes that can be changed for
+	 *	 an artefact. The caller should only input only those that
+	 *	 should be changed. Attributes with a null value will be ignored.
+	 *	 For instance, setting the mask to null or "" will result in
+	 *	 no changes to the current mask, and no value for the mask will
+	 *	 be returned (or broadcast). Likewise, the transformation, name,
+	 *	 or status message may be set to null and no change will be made
+	 *	 to those entities (though any unchanged values will be returned
+	 *	 along with the changed values and also broadcast to co-editors).
 	 *
-	 * @param editionId - Edition in which the glyph is created or updated
-	 * @param scribalFontId - Scribal font in which the glyph is created or updated
-	 * @param glyph - Information about the glyph
+	 * @param artefactId - Unique Id of the desired artefact
+	 * @param editionId - Unique Id of the desired edition
+	 * @param payload - An UpdateArtefactDTO with the desired alterations to the artefact
 	 *
 	 */
-    public async postV1EditionsEditionIdScribalFontsScribalFontIdGlyphs(editionId: number, scribalFontId: number, glyph: CreateGlyphDataDTO): Promise<GlyphDataDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdScribalFontsScribalFontIdGlyphs', editionId, scribalFontId, glyph);
+    public async putV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, payload: UpdateArtefactDTO): Promise<ArtefactDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload);
     }
 
     /**
-	 * Deletes glyph information from a scribal font
+	 * Updates the positional data for a batch of artefacts
 	 *
-	 * @param editionId - Edition from which the glyph is deleted
-	 * @param scribalFontId - Scribal font from which the glyph is deleted
-	 * @param glyphCharacter - The glyph to be deleted
+	 * @param editionId - Unique Id of the desired edition
+	 * @param payload - A BatchUpdateArtefactTransformDTO with a list of the desired updates
 	 *
 	 */
-    public async deleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter(editionId: number, scribalFontId: number, glyphCharacter: string): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdScribalFontsScribalFontIdGlyphsGlyphCharacter', editionId, scribalFontId, glyphCharacter);
+    public async postV1EditionsEditionIdArtefactsBatchTransformation(editionId: number, payload: BatchUpdateArtefactPlacementDTO): Promise<BatchUpdatedArtefactTransformDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdArtefactsBatchTransformation', editionId, payload);
     }
 
     /**
-	 * Basic searching of the Qumranica database. Results are truncated
-	 *		 to 100 results per search category.
+	 * Gets a listing of all artefact groups in the edition
 	 *
-	 * @param searchParameters - The parameters of the search
+	 * @param editionId - Unique Id of the desired edition
 	 *
 	 */
-    public async postV1Search(searchParameters: DetailedSearchRequestDTO): Promise<DetailedSearchResponseDTO> {
-        return await this._connection.invoke('PostV1Search', searchParameters);
+    public async getV1EditionsEditionIdArtefactGroups(editionId: number): Promise<ArtefactGroupListDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactGroups', editionId);
+    }
+
+    /**
+	 * Gets the details of a specific artefact group in the edition
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param artefactGroupId - Id of the desired artefact group
+	 *
+	 */
+    public async getV1EditionsEditionIdArtefactGroupsArtefactGroupId(editionId: number, artefactGroupId: number): Promise<ArtefactGroupDTO> {
+        return await this._connection.invoke('GetV1EditionsEditionIdArtefactGroupsArtefactGroupId', editionId, artefactGroupId);
+    }
+
+    /**
+	 * Creates a new artefact group with the submitted data.
+	 *	 The new artefact must have a list of artefacts that belong to the group.
+	 *	 It is not necessary to give the group a name.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param payload - Parameters of the new artefact group
+	 *
+	 */
+    public async postV1EditionsEditionIdArtefactGroups(editionId: number, payload: CreateArtefactGroupDTO): Promise<ArtefactGroupDTO> {
+        return await this._connection.invoke('PostV1EditionsEditionIdArtefactGroups', editionId, payload);
+    }
+
+    /**
+	 * Updates the details of an artefact group.
+	 *	 The artefact group will now only contain the artefacts listed in the JSON payload.
+	 *	 If the name is null, no change will be made, otherwise the name will also be updated.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param artefactGroupId - Id of the artefact group to be updated
+	 * @param payload - Parameters that the artefact group should be changed to
+	 *
+	 */
+    public async putV1EditionsEditionIdArtefactGroupsArtefactGroupId(editionId: number, artefactGroupId: number, payload: UpdateArtefactGroupDTO): Promise<ArtefactGroupDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdArtefactGroupsArtefactGroupId', editionId, artefactGroupId, payload);
+    }
+
+    /**
+	 * Deletes the specified artefact group.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param artefactGroupId - Unique Id of the artefact group to be deleted
+	 *
+	 */
+    public async deleteV1EditionsEditionIdArtefactGroupsArtefactGroupId(editionId: number, artefactGroupId: number): Promise<DeleteIntIdDTO> {
+        return await this._connection.invoke('DeleteV1EditionsEditionIdArtefactGroupsArtefactGroupId', editionId, artefactGroupId);
+    }
+
+    /**
+	 * Replace the current transcription in the virtual artefact with the submitted
+	 *	 transcription and the related ROIs. The dictionary in textRois should map the
+	 *	 index of each character in the new transcription string to its corresponding
+	 *	 ROI shape/positional data. Some characters, like a space, need not have a
+	 *	 corresponding ROI shape/position.
+	 *
+	 * @param editionId - Unique Id of the desired edition
+	 * @param artefactId - Unique Id of the desired artefact (must be a virtual artefact)
+	 * @param payload - Details of the replacement transcription
+	 * @returns - Details concerning all changed data in the edition
+	 */
+    public async putV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription(editionId: number, artefactId: number, payload: DiffReplaceReconstructionRequestDTO): Promise<DiffReconstructedResponseDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactIdDiffReplaceTranscription', editionId, artefactId, payload);
     }
 
     /**
@@ -965,8 +1337,8 @@ export class SignalRUtilities {
 
     /**
 	 * Creates a new sign interpretation. This creates a new sign entity for the submitted
-	 *		 interpretation. This also takes care of inserting the sign interpretation into the
-	 *		 sign stream following the specifications in the newSignInterpretation.
+	 *	 interpretation. This also takes care of inserting the sign interpretation into the
+	 *	 sign stream following the specifications in the newSignInterpretation.
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param newSignInterpretation - New sign interpretation data to be added
@@ -978,15 +1350,15 @@ export class SignalRUtilities {
 
     /**
 	 * Creates a variant sign interpretation to the submitted sign interpretation id using
-	 *		 the character and attribute settings of the newSignInterpretation payload. It will
-	 *		 copy the ROIs from the original sign interpretation to the new one, but it will not
-	 *		 copy the attributes (or any commentaries associated with the attributes).
+	 *	 the character and attribute settings of the newSignInterpretation payload. It will
+	 *	 copy the ROIs from the original sign interpretation to the new one, but it will not
+	 *	 copy the attributes (or any commentaries associated with the attributes).
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param signInterpretationId - 
-	 *		  Id of the sign interpretation for which this variant
-	 *		  will be created
-	 *		 
+	 *	  Id of the sign interpretation for which this variant
+	 *	  will be created
+	 *	 
 	 * @param newSignInterpretation - New sign interpretation data to be added
 	 * @returns - The new sign interpretation
 	 */
@@ -996,15 +1368,15 @@ export class SignalRUtilities {
 
     /**
 	 * Creates a variant sign interpretation to the submitted sign interpretation id using
-	 *		 the character and attribute settings of the newSignInterpretation payload. It will
-	 *		 copy the ROIs from the original sign interpretation to the new one, but it will not
-	 *		 copy the attributes (or any commentaries associated with the attributes).
+	 *	 the character and attribute settings of the newSignInterpretation payload. It will
+	 *	 copy the ROIs from the original sign interpretation to the new one, but it will not
+	 *	 copy the attributes (or any commentaries associated with the attributes).
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param signInterpretationId - 
-	 *		  Id of the sign interpretation for which this variant
-	 *		  will be created
-	 *		 
+	 *	  Id of the sign interpretation for which this variant
+	 *	  will be created
+	 *	 
 	 * @param newSignInterpretationCharacter - New sign interpretation data to be added
 	 * @returns - The new sign interpretation
 	 */
@@ -1014,20 +1386,20 @@ export class SignalRUtilities {
 
     /**
 	 * Deletes the sign interpretation in the route. The endpoint automatically manages the
-	 *		 sign stream by connecting all the deleted sign's next and previous nodes. Adding
-	 *		 "delete-all-variants" to the optional query parameter will cause all variant sign
-	 *		 interpretations to be deleted as well.
+	 *	 sign stream by connecting all the deleted sign's next and previous nodes. Adding
+	 *	 "delete-all-variants" to the optional query parameter will cause all variant sign
+	 *	 interpretations to be deleted as well.
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param signInterpretationId - ID of the sign interpretation being deleted
 	 * @param optional - 
-	 *		  If the string "delete-all-variants" is submitted here, then
-	 *		  all variant readings to the submitted sign interpretation id will be deleted as well
-	 *		 
+	 *	  If the string "delete-all-variants" is submitted here, then
+	 *	  all variant readings to the submitted sign interpretation id will be deleted as well
+	 *	 
 	 * @returns - 
-	 *		  A list of all the sign interpretations that were deleted and changed as a result of
-	 *		  the deletion operation
-	 *		 
+	 *	  A list of all the sign interpretations that were deleted and changed as a result of
+	 *	  the deletion operation
+	 *	 
 	 */
     public async deleteV1EditionsEditionIdSignInterpretationsSignInterpretationId(editionId: number, signInterpretationId: number, optional: string[]): Promise<SignInterpretationDeleteDTO> {
         return await this._connection.invoke('DeleteV1EditionsEditionIdSignInterpretationsSignInterpretationId', editionId, signInterpretationId, optional);
@@ -1083,7 +1455,7 @@ export class SignalRUtilities {
 
     /**
 	 * This changes the values of the specified sign interpretation attribute,
-	 *		 mainly used to change commentary.
+	 *	 mainly used to change commentary.
 	 *
 	 * @param editionId - ID of the edition being changed
 	 * @param signInterpretationId - ID of the sign interpretation being altered
@@ -1109,391 +1481,19 @@ export class SignalRUtilities {
 
     /**
 	 * This is an admin endpoint used to trigger the generation of materialized sign streams.
-	 *		 These streams are generated on demand by the API, but it can happen that some do not
-	 *		 complete (a record in the database exists when a materialization was started but
-	 *		 never finished).
+	 *	 These streams are generated on demand by the API, but it can happen that some do not
+	 *	 complete (a record in the database exists when a materialization was started but
+	 *	 never finished).
 	 *
 	 * @param requestedEditions - 
-	 *		  A list of edition IDs for which to generate materialized
-	 *		  sign streams.  If the list is empty, then the system will look for any unfinished
-	 *		  jobs and complete those.
-	 *		 
+	 *	  A list of edition IDs for which to generate materialized
+	 *	  sign streams.  If the list is empty, then the system will look for any unfinished
+	 *	  jobs and complete those.
+	 *	 
 	 *
 	 */
     public async postV1MaterializeSignStreams(requestedEditions: RequestMaterializationDTO): Promise<void> {
         return await this._connection.invoke('PostV1MaterializeSignStreams', requestedEditions);
-    }
-
-    /**
-	 * Override the default OnConnectedAsync to add the connection to the user's user_id
-	 * group if the user is authenticated. The user_id group is used for messages that
-	 * are above the level of a single edition.
-	 *
-	 *
-	 *
-	 */
-    public async onConnectedAsync(): Promise<void> {
-        return await this._connection.invoke('OnConnectedAsync');
-    }
-
-    /**
-	 * The client subscribes to all changes for the specified editionId.
-	 *
-	 * @param editionId - The ID of the edition to receive updates
-	 *
-	 */
-    public async subscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection.invoke('SubscribeToEdition', editionId);
-    }
-
-    /**
-	 * The client unsubscribes to all changes for the specified editionId.
-	 *
-	 * @param editionId - The ID of the edition to stop receiving updates
-	 *
-	 */
-    public async unsubscribeToEdition(editionId: number): Promise<void> {
-        return await this._connection.invoke('UnsubscribeToEdition', editionId);
-    }
-
-    /**
-	 * Get a list of all editions the client is currently subscribed to.
-	 *
-	 *
-	 * @returns - A list of every editionId for which the client receives update
-	 */
-    public async listEditionSubscriptions(): Promise<number[]> {
-        return await this._connection.invoke('ListEditionSubscriptions');
-    }
-
-    /**
-	 * Creates a new text fragment in the given edition of a scroll
-	 *
-	 * @param createFragment - A JSON object with the details of the new text fragment to be created
-	 * @param editionId - Id of the edition
-	 *
-	 */
-    public async postV1EditionsEditionIdTextFragments(editionId: number, createFragment: CreateTextFragmentDTO): Promise<TextFragmentDataDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdTextFragments', editionId, createFragment);
-    }
-
-    /**
-	 * Updates the specified text fragment with the submitted properties
-	 *
-	 * @param editionId - Edition of the text fragment being updates
-	 * @param textFragmentId - Id of the text fragment being updates
-	 * @param updatedTextFragment - Details of the updated text fragment
-	 * @returns - The details of the updated text fragment
-	 */
-    public async putV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number, updatedTextFragment: UpdateTextFragmentDTO): Promise<TextFragmentDataDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId, updatedTextFragment);
-    }
-
-    /**
-	 * Retrieves the ids of all Fragments of all fragments in the given edition of a scroll
-	 *
-	 * @param editionId - Id of the edition
-	 * @returns - An array of the text fragment ids in correct sequence
-	 */
-    public async getV1EditionsEditionIdTextFragments(editionId: number): Promise<TextFragmentDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragments', editionId);
-    }
-
-    /**
-	 * Retrieves the ids of all Artefacts in the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - An array of the line ids in the proper sequence
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts(editionId: number, textFragmentId: number): Promise<ArtefactDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdArtefacts', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves the ids of all lines in the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - An array of the line ids in the proper sequence
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number): Promise<LineDataListDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves all signs and their data from the given textFragmentName
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - Id of the text fragment
-	 * @returns - 
-	 *		  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *		  sequence
-	 *		 
-	 */
-    public async getV1EditionsEditionIdTextFragmentsTextFragmentId(editionId: number, textFragmentId: number): Promise<TextEditionDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdTextFragmentsTextFragmentId', editionId, textFragmentId);
-    }
-
-    /**
-	 * Retrieves all signs and their data from the entire edition
-	 *
-	 * @param editionId - Id of the edition
-	 * @returns - 
-	 *		  A manuscript edition object including the fragments and their lines in a hierarchical order and in correct
-	 *		  sequence
-	 *		 
-	 */
-    public async getV1EditionsEditionIdFullText(editionId: number): Promise<TextEditionDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdFullText', editionId);
-    }
-
-    /**
-	 * Retrieves all signs and their data from the given line
-	 *
-	 * @param editionId - Id of the edition
-	 * @param lineId - Id of the line
-	 * @returns - 
-	 *		  A manuscript edition object including the fragments and their lines in a
-	 *		  hierarchical order and in correct sequence
-	 *		 
-	 */
-    public async getV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<LineTextDTO> {
-        return await this._connection.invoke('GetV1EditionsEditionIdLinesLineId', editionId, lineId);
-    }
-
-    /**
-	 * Changes the details of the line (currently the lines name)
-	 *
-	 * @param editionId - Id of the edition
-	 * @param lineId - Id of the line
-	 * @param lineData - The updated line data
-	 * @returns - 
-	 *		  The updated details concerning the line sequence
-	 *		 
-	 */
-    public async putV1EditionsEditionIdLinesLineId(editionId: number, lineId: number, lineData: UpdateLineDTO): Promise<LineDataDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdLinesLineId', editionId, lineId, lineData);
-    }
-
-    /**
-	 * Delete a full line from a text fragment
-	 *
-	 * @param editionId - Id of the edition
-	 * @param lineId - Id of the line to be deleted
-	 * @returns - 
-	 *		  The updated details concerning the line sequence
-	 *		 
-	 */
-    public async deleteV1EditionsEditionIdLinesLineId(editionId: number, lineId: number): Promise<void> {
-        return await this._connection.invoke('DeleteV1EditionsEditionIdLinesLineId', editionId, lineId);
-    }
-
-    /**
-	 * Creates a new line before or after another line.
-	 *
-	 * @param editionId - Id of the edition
-	 * @param textFragmentId - 
-	 *		  Id of the text fragment where the line will be
-	 *		  added
-	 *		 
-	 * @param lineData - The information about the line to be created
-	 * @returns - 
-	 *		  The details concerning the newly created line
-	 *		 
-	 */
-    public async postV1EditionsEditionIdTextFragmentsTextFragmentIdLines(editionId: number, textFragmentId: number, lineData: CreateLineDTO): Promise<LineDataDTO> {
-        return await this._connection.invoke('PostV1EditionsEditionIdTextFragmentsTextFragmentIdLines', editionId, textFragmentId, lineData);
-    }
-
-    /**
-	 * Alter the text between two sign interpretation ids.
-	 *		 The system will try as best it can to figure out
-	 *		 how the next text aligns with any text already
-	 *		 existing at that location in the edition.
-	 *
-	 * @param editionId - Id of the edition to be updated
-	 * @param payload - Details of the text replacement request
-	 * @returns - 
-	 *		  Information about all sign interpretations that were
-	 *		  created, updated, and deleted as a result of the operation.
-	 *		 
-	 */
-    public async putV1EditionsEditionIdDiffReplaceText(editionId: number, payload: DiffReplaceRequestDTO): Promise<DiffReplaceResponseDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdDiffReplaceText', editionId, payload);
-    }
-
-    /**
-	 * Provides a JWT bearer token for valid email and password
-	 *
-	 * @param payload - JSON object with an email and password parameter
-	 * @returns - 
-	 *		  A DetailedUserTokenDTO with a JWT for activated user accounts, or the email address of an unactivated user
-	 *		  account
-	 *		 
-	 */
-    public async postV1UsersLogin(payload: LoginRequestDTO): Promise<DetailedUserTokenDTO> {
-        return await this._connection.invoke('PostV1UsersLogin', payload);
-    }
-
-    /**
-	 * Allows a user who has not yet activated their account to change their email address. This will not work if the user
-	 *		 account associated with the email address has already been activated
-	 *
-	 * @param payload - JSON object with the current email address and the new desired email address
-	 *
-	 */
-    public async postV1UsersChangeUnactivatedEmail(payload: UnactivatedEmailUpdateRequestDTO): Promise<void> {
-        return await this._connection.invoke('PostV1UsersChangeUnactivatedEmail', payload);
-    }
-
-    /**
-	 * Uses the secret token from /users/forgot-password to validate a reset of the user's password
-	 *
-	 * @param payload - A JSON object with the secret token and the new password
-	 *
-	 */
-    public async postV1UsersChangeForgottenPassword(payload: ResetForgottenUserPasswordRequestDTO): Promise<void> {
-        return await this._connection.invoke('PostV1UsersChangeForgottenPassword', payload);
-    }
-
-    /**
-	 * Changes the password for the currently logged in user
-	 *
-	 * @param payload - A JSON object with the old password and the new password
-	 *
-	 */
-    public async postV1UsersChangePassword(payload: ResetLoggedInUserPasswordRequestDTO): Promise<void> {
-        return await this._connection.invoke('PostV1UsersChangePassword', payload);
-    }
-
-    /**
-	 * Updates a user's registration details. Note that the if the email address has changed, the account will be set to
-	 *		 inactive until the account is activated with the secret token.
-	 *
-	 * @param payload - 
-	 *		  A JSON object with all data necessary to update a user account.  Null fields (but not empty
-	 *		  strings!) will be populated with existing user data
-	 *		 
-	 * @returns - Returns a DetailedUserDTO with the updated user account details
-	 */
-    public async putV1Users(payload: UserUpdateRequestDTO): Promise<DetailedUserDTO> {
-        return await this._connection.invoke('PutV1Users', payload);
-    }
-
-    /**
-	 * Confirms registration of new user account.
-	 *
-	 * @param payload - JSON object with token from user registration email
-	 * @returns - Returns a DetailedUserDTO for the confirmed account
-	 */
-    public async postV1UsersConfirmRegistration(payload: AccountActivationRequestDTO): Promise<void> {
-        return await this._connection.invoke('PostV1UsersConfirmRegistration', payload);
-    }
-
-    /**
-	 * Sends a secret token to the user's email to allow password reset.
-	 *
-	 * @param payload - JSON object with the email address for the user who wants to reset a lost password
-	 *
-	 */
-    public async postV1UsersForgotPassword(payload: ResetUserPasswordRequestDTO): Promise<void> {
-        return await this._connection.invoke('PostV1UsersForgotPassword', payload);
-    }
-
-    /**
-	 * Provides the user details for a user with valid JWT in the Authorize header
-	 *
-	 *
-	 * @returns - A UserDTO for user account.
-	 */
-    public async getV1Users(): Promise<UserDTO> {
-        return await this._connection.invoke('GetV1Users');
-    }
-
-    /**
-	 * Creates a new user with the submitted data.
-	 *
-	 * @param payload - A JSON object with all data necessary to create a new user account
-	 * @returns - Returns a UserDTO for the newly created account
-	 */
-    public async postV1Users(payload: NewUserRequestDTO): Promise<UserDTO> {
-        return await this._connection.invoke('PostV1Users', payload);
-    }
-
-    /**
-	 * Sends a new activation email for the user's account. This will not work if the user account associated with the
-	 *		 email address has already been activated.
-	 *
-	 * @param payload - JSON object with the current email address and the new desired email address
-	 *
-	 */
-    public async postV1UsersResendActivationEmail(payload: ResendUserAccountActivationRequestDTO): Promise<void> {
-        return await this._connection.invoke('PostV1UsersResendActivationEmail', payload);
-    }
-
-    /**
-	 * Retrieve the information in the user's personal data store
-	 *
-	 *
-	 *
-	 */
-    public async getV1UsersDataStore(): Promise<UserDataStoreDTO> {
-        return await this._connection.invoke('GetV1UsersDataStore');
-    }
-
-    /**
-	 * Update the information in the user's personal data store
-	 *
-	 * @param data - A JSON object with the data to store for the user
-	 *
-	 */
-    public async putV1UsersDataStore(data: UserDataStoreDTO): Promise<void> {
-        return await this._connection.invoke('PutV1UsersDataStore', data);
-    }
-
-    /**
-	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	 *		 it attempts to construct a valid polygon that matches the original
-	 *		 as closely as possible.
-	 *
-	 * @param payload - JSON object with the WKT polygon to validate
-	 *
-	 */
-    public async postV1UtilsRepairWktPolygon(payload: WktPolygonDTO): Promise<WktPolygonDTO> {
-        return await this._connection.invoke('PostV1UtilsRepairWktPolygon', payload);
-    }
-
-    /**
-	 * Provides the current version designation of the database along with
-	 *		 the date it was updated to that version.
-	 *
-	 *
-	 *
-	 */
-    public async getV1UtilsDatabaseVersion(): Promise<DatabaseVersionDTO> {
-        return await this._connection.invoke('GetV1UtilsDatabaseVersion');
-    }
-
-    /**
-	 * Provides the current version designation of the API server along with
-	 *		 the date it was updated to that version.
-	 *
-	 *
-	 *
-	 */
-    public async getV1UtilsApiVersion(): Promise<APIVersionDTO> {
-        return await this._connection.invoke('GetV1UtilsApiVersion');
-    }
-
-    /**
-	 * Adds a new entry in Github issues
-	 *
-	 *
-	 *
-	 */
-    public async postV1UtilsReportGithubIssue(payload: GithubIssueReportDTO): Promise<void> {
-        return await this._connection.invoke('PostV1UtilsReportGithubIssue', payload);
     }
 
     /*

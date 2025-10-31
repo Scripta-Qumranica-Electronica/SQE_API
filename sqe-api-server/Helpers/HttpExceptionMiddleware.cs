@@ -5,55 +5,54 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using SQE.DatabaseAccess.Helpers;
 
-namespace SQE.API.Server.Helpers
+namespace SQE.API.Server.Helpers;
+
+public static class ApplicationBuilderExtensions
 {
-	public static class ApplicationBuilderExtensions
+	public static IApplicationBuilder UseHttpException(this IApplicationBuilder application)
+		=> application.UseMiddleware<HttpExceptionMiddleware>();
+}
+
+internal class HttpExceptionMiddleware
+{
+	private readonly RequestDelegate next;
+
+	public HttpExceptionMiddleware(RequestDelegate next) => this.next = next;
+
+	public async Task Invoke(HttpContext context)
 	{
-		public static IApplicationBuilder UseHttpException(this IApplicationBuilder application)
-			=> application.UseMiddleware<HttpExceptionMiddleware>();
+		try
+		{
+			await next.Invoke(context);
+		}
+		catch (ApiException httpException)
+		{
+			context.Response.StatusCode = (int)httpException.StatusCode;
+
+			context.Response.ContentType = "application/json; charset=utf-8";
+
+			await context.Response.WriteAsync(
+					JsonSerializer.Serialize(
+							new ApiExceptionError(
+									nameof(httpException)
+									, httpException.Error
+									, httpException is IExceptionWithData exceptionWithData
+											? exceptionWithData.CustomReturnedData
+											: null)));
+		}
 	}
 
-	internal class HttpExceptionMiddleware
+	public class ApiExceptionError
 	{
-		private readonly RequestDelegate next;
-
-		public HttpExceptionMiddleware(RequestDelegate next) => this.next = next;
-
-		public async Task Invoke(HttpContext context)
+		public ApiExceptionError(string internalErrorName, string msg, IDictionary data)
 		{
-			try
-			{
-				await next.Invoke(context);
-			}
-			catch (ApiException httpException)
-			{
-				context.Response.StatusCode = (int) httpException.StatusCode;
-
-				context.Response.ContentType = "application/json; charset=utf-8";
-
-				await context.Response.WriteAsync(
-						JsonSerializer.Serialize(
-								new ApiExceptionError(
-										nameof(httpException)
-										, httpException.Error
-										, httpException is IExceptionWithData exceptionWithData
-												? exceptionWithData.CustomReturnedData
-												: null)));
-			}
+			this.internalErrorName = internalErrorName;
+			this.msg = msg;
+			this.data = data;
 		}
 
-		public class ApiExceptionError
-		{
-			public ApiExceptionError(string internalErrorName, string msg, IDictionary data)
-			{
-				this.internalErrorName = internalErrorName;
-				this.msg = msg;
-				this.data = data;
-			}
-
-			public string      internalErrorName { get; }
-			public string      msg               { get; }
-			public IDictionary data              { get; }
-		}
+		public string      internalErrorName { get; }
+		public string      msg               { get; }
+		public IDictionary data              { get; }
 	}
 }
