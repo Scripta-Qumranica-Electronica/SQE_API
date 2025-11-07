@@ -322,7 +322,7 @@ public partial class WebControllerTest
 	{
 		// Arrange
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			/**
 			 * Create a new edition and also a new artefact group in it.
@@ -380,7 +380,7 @@ public partial class WebControllerTest
 	{
 		// Arrange
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			/**
 			 * Create new edition and a new artefact group
@@ -490,7 +490,7 @@ public partial class WebControllerTest
 	{
 		// Arrange
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			/**
 			 * Create new edition and a new artefact group
@@ -589,7 +589,7 @@ public partial class WebControllerTest
 	{
 		// Arrange
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			/**
 			 * Create a new edition and a new artefact group in it.

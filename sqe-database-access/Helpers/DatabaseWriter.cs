@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
@@ -185,6 +183,7 @@ public class DatabaseWriter : IDatabaseWriter
 			, DatabaseAccessor      dba)
 	{
 		var alteredRecords = new List<AlteredRecord>();
+
 		foreach (var mutationRequest in mutationRequests)
 		{
 			// Set the editionId for the mutation.
@@ -248,7 +247,9 @@ public class DatabaseWriter : IDatabaseWriter
 		// text fragments, then Union the results so there are no doubles.
 		var lineMutations = mutationRequests
 							.Where(x => x.Parameters.ParameterNames.Contains("line_id"))
-							.Select(x => x.Parameters.Get<uint>("line_id")).ToList();
+							.Select(x => x.Parameters.Get<uint>("line_id"))
+							.ToList();
+
 		var lineIds = new List<uint>(lineMutations.Count);
 
 		foreach (var lineMutationId in lineMutations)
@@ -260,6 +261,7 @@ public class DatabaseWriter : IDatabaseWriter
 										  .Select(x => x.Parameters.Get<uint>(
 														  "sign_interpretation_id"))
 										  .ToList();
+
 		var signInterpretationIds = new List<uint>(signInterpretationMutations.Count);
 
 		foreach (var signInterpretationMutationId in signInterpretationMutations)
@@ -272,8 +274,7 @@ public class DatabaseWriter : IDatabaseWriter
 		}
 
 		var textFragmentIds = mutationRequests
-							  .Where(x => x.Parameters.ParameterNames.Contains(
-											 "text_fragment_id"))
+							  .Where(x => x.Parameters.ParameterNames.Contains("text_fragment_id"))
 							  .Select(x => x.Parameters.Get<uint>("text_fragment_id"))
 							  .Distinct()
 							  .Union(lineIds)
@@ -567,17 +568,16 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 	private async Task _invalidateCachedTextEdition(
 			UserInfo           editionUser
 			, uint             textFragmentId
-			, DatabaseAccessor dba
-			)
+			, DatabaseAccessor dba)
 	{
 		await dba.ExecuteAsync(
-			RemoveCachedTextFragment.GetQuery
-			, new
-			{
-					editionUser.EditionId
-					, TextFragmentId = textFragmentId
-					,
-			});
+				RemoveCachedTextFragment.GetQuery
+				, new
+				{
+						editionUser.EditionId
+						, TextFragmentId = textFragmentId
+						,
+				});
 	}
 
 	private async Task<IEnumerable<uint>> _textEditionByLineId(

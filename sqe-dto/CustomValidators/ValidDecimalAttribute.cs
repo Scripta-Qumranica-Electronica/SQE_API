@@ -26,9 +26,7 @@ public class ValidDecimalAttribute : ValidationAttribute
 	public ValidDecimalAttribute(byte precision, byte scale)
 	{
 		if (scale > precision)
-		{
 			throw new ArgumentException("The scale must be less than or equal to the precision");
-		}
 
 		this.precision = precision;
 		this.scale = scale;

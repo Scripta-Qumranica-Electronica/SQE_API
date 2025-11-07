@@ -96,7 +96,7 @@ public partial class WebControllerTest
 	public async Task CanBatchUnplaceArtefacts()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -255,7 +255,7 @@ public partial class WebControllerTest
 	public async Task CanCreateArtefacts()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -377,7 +377,7 @@ public partial class WebControllerTest
 	public async Task CanCreateArtefactsWithoutMask()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -437,7 +437,7 @@ public partial class WebControllerTest
 	public async Task CanDeleteArtefacts()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -516,7 +516,7 @@ public partial class WebControllerTest
 	public async Task CannotCreateArtefactsOnUnownedEdition()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -575,7 +575,7 @@ public partial class WebControllerTest
 	public async Task CannotCreateMalformedArtefact()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -843,7 +843,7 @@ public partial class WebControllerTest
 	public async Task CannotDeleteUnownedArtefacts()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -873,7 +873,7 @@ public partial class WebControllerTest
 	public async Task CannotUpdateUnownedArtefacts()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -912,7 +912,7 @@ public partial class WebControllerTest
 	public async Task CanUpdateArtefacts()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -1124,7 +1124,7 @@ public partial class WebControllerTest
 	public async Task RejectsUpdateToImproperArtefactShape()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -1161,7 +1161,7 @@ public partial class WebControllerTest
 	public async Task CanGetEditionArtefactRois()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition

@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
-using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -59,14 +56,13 @@ public interface IUserRepository
 
 	Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password);
 
-	Task<string>          GetUserDataStoreAsync(uint userId);
-	Task                  SetUserDataStoreAsync(uint userId, string data);
+	Task<string>          GetUserDataStoreAsync(uint       userId);
+	Task                  SetUserDataStoreAsync(uint       userId, string data);
 	Task<DatabaseVersion> GetDatabaseVersion(IDbConnection connection = null);
 }
 
 public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 {
-
 	/// <summary>
 	///  Returns user information based on the submitted credentials.
 	/// </summary>
@@ -75,63 +71,63 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	/// <returns></returns>
 	public async Task<DetailedUserWithToken> GetUserByPasswordAsync(string email, string password)
 	{
-			var columns = new List<string>
-			{
-					"user_id"
-					, "email"
-					, "activated"
-					, "forename"
-					, "surname"
-					, "organization"
-					,
-			};
+		var columns = new List<string>
+		{
+				"user_id"
+				, "email"
+				, "activated"
+				, "forename"
+				, "surname"
+				, "organization"
+				,
+		};
 
-			var where = new List<string> { "email", "pw" };
+		var where = new List<string> { "email", "pw" };
 
-			try
-			{
-				return await dba.QuerySingleAsync<DetailedUserWithToken>(
-						UserDetails.GetQuery(columns, where)
-						, new {Email = email, Pw = password});
-			}
-			catch (InvalidOperationException)
-			{
-				throw new StandardExceptions.BadLoginException(email);
-			}
+		try
+		{
+			return await dba.QuerySingleAsync<DetailedUserWithToken>(
+					UserDetails.GetQuery(columns, where)
+					, new { Email = email, Pw = password });
+		}
+		catch (InvalidOperationException)
+		{
+			throw new StandardExceptions.BadLoginException(email);
+		}
 	}
 
 	public async Task<DetailedUserWithToken> GetDetailedUserByIdAsync(uint? userId)
 	{
-			var columns = new List<string>
-			{
-					"user_id"
-					, "email"
-					, "forename"
-					, "surname"
-					, "organization"
-					, "activated"
-					,
-			};
+		var columns = new List<string>
+		{
+				"user_id"
+				, "email"
+				, "forename"
+				, "surname"
+				, "organization"
+				, "activated"
+				,
+		};
 
-			var where = new List<string> { "user_id" };
+		var where = new List<string> { "user_id" };
 
-			return await dba.QuerySingleAsync<DetailedUserWithToken>(
-					UserDetails.GetQuery(columns, where)
-					, new { UserId = userId });
+		return await dba.QuerySingleAsync<DetailedUserWithToken>(
+				UserDetails.GetQuery(columns, where)
+				, new { UserId = userId });
 	}
 
 	public async Task<DetailedUser> GetDetailedUserByTokenAsync(string token)
 	{
-			try
-			{
-				return await dba.QuerySingleAsync<DetailedUser>(
-						UserByTokenQuery.GetQuery
-						, new { Token = Guid.Parse(token) });
-			}
-			catch (InvalidOperationException)
-			{
-				throw new StandardExceptions.DataNotFoundException("user", token, "token");
-			}
+		try
+		{
+			return await dba.QuerySingleAsync<DetailedUser>(
+					UserByTokenQuery.GetQuery
+					, new { Token = Guid.Parse(token) });
+		}
+		catch (InvalidOperationException)
+		{
+			throw new StandardExceptions.DataNotFoundException("user", token, "token");
+		}
 	}
 
 	/// <summary>
@@ -142,54 +138,54 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	/// <returns></returns>
 	public async Task<DetailedUserWithToken> GetUnactivatedUserByEmailAsync(string email)
 	{
-			// Generate our new secret token
-			var token = Guid.NewGuid().ToString();
+		// Generate our new secret token
+		var token = Guid.NewGuid().ToString();
 
-			await dba.ExecuteAsync(
-					CreateUserEmailTokenQuery.GetQuery(true)
+		await dba.ExecuteAsync(
+				CreateUserEmailTokenQuery.GetQuery(true)
+				, new
+				{
+						Email = email
+						, Token = Guid.Parse(token)
+						, Type = CreateUserEmailTokenQuery.Activate
+						,
+				});
+
+		// Prepare account details request
+		var columns = new List<string>
+		{
+				"email"
+				, "user_id"
+				, "forename"
+				, "surname"
+				, "token"
+				,
+		};
+
+		var where = new List<string>
+		{
+				"email"
+				, "activated"
+				, "token"
+				,
+		};
+
+		try
+		{
+			return await dba.QuerySingleAsync<DetailedUserWithToken>(
+					UserDetails.GetQuery(columns, where)
 					, new
 					{
 							Email = email
+							, Activated = 0
 							, Token = Guid.Parse(token)
-							, Type = CreateUserEmailTokenQuery.Activate
 							,
 					});
-
-			// Prepare account details request
-			var columns = new List<string>
-			{
-					"email"
-					, "user_id"
-					, "forename"
-					, "surname"
-					, "token"
-					,
-			};
-
-			var where = new List<string>
-			{
-					"email"
-					, "activated"
-					, "token"
-					,
-			};
-
-			try
-			{
-				return await dba.QuerySingleAsync<DetailedUserWithToken>(
-						UserDetails.GetQuery(columns, where)
-						, new
-						{
-								Email = email
-								, Activated = 0
-								, Token = Guid.Parse(token)
-								,
-						});
-			}
-			catch (InvalidOperationException)
-			{
-				throw new StandardExceptions.DataNotFoundException("user", email, email);
-			}
+		}
+		catch (InvalidOperationException)
+		{
+			throw new StandardExceptions.DataNotFoundException("user", email, email);
+		}
 	}
 
 	/// <summary>
@@ -199,23 +195,23 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	/// <returns>Returns the user's rights to read, write, and admin the edition and the users editor id for the edition</returns>
 	public async Task<UserEditionPermissions> GetUserEditionPermissionsAsync(UserInfo editionUser)
 	{
-			try
-			{
-				var results = await dba.QuerySingleAsync<UserEditionPermissions>(
-						UserPermissionQuery.GetQuery
-						, new
-						{
-								editionUser.EditionId
-								, UserId = editionUser.userId
-								,
-						});
+		try
+		{
+			var results = await dba.QuerySingleAsync<UserEditionPermissions>(
+					UserPermissionQuery.GetQuery
+					, new
+					{
+							editionUser.EditionId
+							, UserId = editionUser.userId
+							,
+					});
 
-				return results;
-			}
-			catch (InvalidOperationException e)
-			{
-				throw new StandardExceptions.NoPermissionsException(editionUser);
-			}
+			return results;
+		}
+		catch (InvalidOperationException e)
+		{
+			throw new StandardExceptions.NoPermissionsException(editionUser);
+		}
 	}
 
 	/// <summary>
@@ -225,34 +221,33 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	/// <returns>Returns the user's rights to read, write, and admin the edition and the users editor id for the edition</returns>
 	public async Task<List<UserSystemRoles>> GetUserSystemRolesAsync(UserInfo editionUser)
 	{
-			try
-			{
-				var results = await dba.QueryAsync<string>(
-						UserSystemRolesQuery.GetQuery
-						, new { UserId = editionUser.userId });
+		try
+		{
+			var results = await dba.QueryAsync<string>(
+					UserSystemRolesQuery.GetQuery
+					, new { UserId = editionUser.userId });
 
-				// Note, I could use Dapper to map the UserSystemRoles by internal database id.
-				// To do this make the enum `UserSystemRoles : uint`, but I like the string matching,
-				// since that decouples the systems. The system here will break down if the database is
-				// altered without matching changes made to the API (or the reverse).
-				return results.Select(x => x switch
-										   {
-												   "REGISTERED_USER" => UserSystemRoles
-														   .REGISTERED_USER
-												   , "CATALOGUE_CURATOR" => UserSystemRoles
-														   .CATALOGUE_CURATOR
-												   , "IMAGE_DATA_CURATOR" => UserSystemRoles
-														   .IMAGE_DATA_CURATOR
-												   , "USER_ADMIN" => UserSystemRoles.USER_ADMIN
-												   , _            => UserSystemRoles.REGISTERED_USER
-												   ,
-										   })
-							  .ToList();
-			}
-			catch (InvalidOperationException)
-			{
-				throw new StandardExceptions.NoPermissionsException(editionUser);
-			}
+			// Note, I could use Dapper to map the UserSystemRoles by internal database id.
+			// To do this make the enum `UserSystemRoles : uint`, but I like the string matching,
+			// since that decouples the systems. The system here will break down if the database is
+			// altered without matching changes made to the API (or the reverse).
+			return results.Select(x => x switch
+									   {
+											   "REGISTERED_USER" => UserSystemRoles.REGISTERED_USER
+											   , "CATALOGUE_CURATOR" => UserSystemRoles
+													   .CATALOGUE_CURATOR
+											   , "IMAGE_DATA_CURATOR" => UserSystemRoles
+													   .IMAGE_DATA_CURATOR
+											   , "USER_ADMIN" => UserSystemRoles.USER_ADMIN
+											   , _            => UserSystemRoles.REGISTERED_USER
+											   ,
+									   })
+						  .ToList();
+		}
+		catch (InvalidOperationException)
+		{
+			throw new StandardExceptions.NoPermissionsException(editionUser);
+		}
 	}
 
 	/// <summary>
@@ -278,45 +273,33 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 			, IDbConnection connection   = null)
 	{
 		await dba.BeginTransactionAsync();
-			// Find any users with either the same  email address.
-			await
-					ResolveExistingUserConflictAsync(
-							email);
 
-			// Ok, the input email is unique so create the record
-			var newUser =
-					await dba
-							.ExecuteAsync(
-									CreateNewUserQuery
-											.GetQuery
-									, new
-									{
-											Email =
-													email
-											, Password =
-													password
-											, Forename =
-													forename
-											, Surname =
-													surname
-											, Organization =
-													organization
-											,
-									});
+		// Find any users with either the same  email address.
+		await ResolveExistingUserConflictAsync(email);
 
-			if (newUser != 1) // Something strange must have gone wrong
-				throw new StandardExceptions.DataNotWrittenException("create user");
+		// Ok, the input email is unique so create the record
+		var newUser = await dba.ExecuteAsync(
+				CreateNewUserQuery.GetQuery
+				, new
+				{
+						Email = email
+						, Password = password
+						, Forename = forename
+						, Surname = surname
+						, Organization = organization
+						,
+				});
 
-			// Everything went well, so create the email token so the
-			// calling function can email the new user.
-			var newUserObject =
-					await
-							CreateUserActivateTokenAsync(
-									email);
+		if (newUser != 1) // Something strange must have gone wrong
+			throw new StandardExceptions.DataNotWrittenException("create user");
 
-			dba.CommitTransaction();
+		// Everything went well, so create the email token so the
+		// calling function can email the new user.
+		var newUserObject = await CreateUserActivateTokenAsync(email);
 
-			return newUserObject;
+		dba.CommitTransaction();
+
+		return newUserObject;
 	}
 
 	/// <summary>
@@ -329,37 +312,38 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	public async Task ResolveExistingUserConflictAsync(string email)
 	{
 		await dba.BeginTransactionAsync();
-			// Find any users with either the same email address.
-			var columns = new List<string>
+
+		// Find any users with either the same email address.
+		var columns = new List<string>
+		{
+				"user_id"
+				, "activated"
+				, "email"
+				,
+		};
+
+		var where = new List<string> { "email" };
+
+		var existingUser = (await dba.QueryAsync<DetailedUserWithToken>(
+				UserDetails.GetQuery(columns, where)
+				, new { Email = email })).ToList();
+
+		// Check if we need to send error because email already exist.
+		if (existingUser.Any())
+		{
+			foreach (var record in existingUser)
 			{
-					"user_id"
-					, "activated"
-					, "email"
-					,
-			};
+				if (record.Activated) // If this user record has been authenticated throw a conflict error
+					throw new StandardExceptions.ConflictingDataException("email");
 
-			var where = new List<string> { "email" };
+				await dba.ExecuteAsync(
+						DeleteUserEmailTokenQuery.GetUserIdQuery
+						, new { record.UserId });
 
-			var existingUser = (await dba.QueryAsync<DetailedUserWithToken>(
-					UserDetails.GetQuery(columns, where)
-					, new { Email = email })).ToList();
-
-			// Check if we need to send error because email already exist.
-			if (existingUser.Any())
-			{
-				foreach (var record in existingUser)
-				{
-					if (record
-						.Activated) // If this user record has been authenticated throw a conflict error
-						throw new StandardExceptions.ConflictingDataException("email");
-
-					await dba.ExecuteAsync(
-							DeleteUserEmailTokenQuery.GetUserIdQuery
-							, new { record.UserId });
-
-					await dba.ExecuteAsync(DeleteUserQuery.GetQuery, new { record.UserId });
-				}
+				await dba.ExecuteAsync(DeleteUserQuery.GetQuery, new { record.UserId });
 			}
+		}
+
 		dba.CommitTransaction();
 	}
 
@@ -390,24 +374,26 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 			, IDbConnection connection   = null)
 	{
 		await dba.BeginTransactionAsync();
-			if (resetActivation) // If email is new, make sure it is unique
-				await ResolveExistingUserConflictAsync(email);
 
-			var userUpdate = await dba.ExecuteAsync(
-					UpdateUserInfo.GetQuery(resetActivation)
-					, new
-					{
-							Pw = password
-							, Email = email
-							, Forename = forename
-							, Surname = surname
-							, Organization = organization
-							, UserId = userId
-							,
-					});
+		if (resetActivation) // If email is new, make sure it is unique
+			await ResolveExistingUserConflictAsync(email);
 
-			if (userUpdate != 1) // The password was wrong
-				throw new StandardExceptions.WrongPasswordException();
+		var userUpdate = await dba.ExecuteAsync(
+				UpdateUserInfo.GetQuery(resetActivation)
+				, new
+				{
+						Pw = password
+						, Email = email
+						, Forename = forename
+						, Surname = surname
+						, Organization = organization
+						, UserId = userId
+						,
+				});
+
+		if (userUpdate != 1) // The password was wrong
+			throw new StandardExceptions.WrongPasswordException();
+
 		dba.CommitTransaction();
 	}
 
@@ -433,6 +419,7 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 		var where = new List<string> { "email" };
 
 		await dba.BeginTransactionAsync();
+
 		var userObject = await dba.QuerySingleAsync<DetailedUserWithToken>(
 				UserDetails.GetQuery(columns, where)
 				, new { Email = email });
@@ -452,9 +439,7 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 				});
 
 		if (userEmailConfirmation != 1) // Something strange must have gone wrong
-		{
 			throw new StandardExceptions.DataNotWrittenException("create confirmation token");
-		}
 
 		dba.CommitTransaction();
 
@@ -473,48 +458,49 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	public async Task ConfirmAccountCreationAsync(string token)
 	{
 		await dba.BeginTransactionAsync();
-			var confirmRegistration = await dba.ExecuteAsync(
-					ConfirmNewUserAccount.GetQuery
-					, new { Token = Guid.Parse(token) });
 
-			if (confirmRegistration != 1)
-			{
-				throw new StandardExceptions.ImproperInputDataException(
-						"user account activation token");
-			}
+		var confirmRegistration = await dba.ExecuteAsync(
+				ConfirmNewUserAccount.GetQuery
+				, new { Token = Guid.Parse(token) });
 
-			// Set the user's system role
-			await SetNewUserRole(token);
+		if (confirmRegistration != 1)
+		{
+			throw new StandardExceptions.ImproperInputDataException(
+					"user account activation token");
+		}
 
-			// Create the user's data store
-			await dba.ExecuteAsync(
-					CreateUserDataStoreEntry.GetQuery
-					, new
-					{
-							Token = Guid.Parse(token)
-							, Data = "{}"
-							,
-					});
+		// Set the user's system role
+		await SetNewUserRole(token);
 
-			// Get all Activate tokens for this user
-			var tokens = await dba.QueryAsync<Guid>(
-					GetTokensQuery.GetQuery
-					, new
-					{
-							Token = Guid.Parse(token)
-							, Type = CreateUserEmailTokenQuery.Activate
-							,
-					});
+		// Create the user's data store
+		await dba.ExecuteAsync(
+				CreateUserDataStoreEntry.GetQuery
+				, new
+				{
+						Token = Guid.Parse(token)
+						, Data = "{}"
+						,
+				});
 
-			// Delete them all
-			await dba.ExecuteAsync(
-					DeleteUserEmailTokenQuery.GetTokenQuery
-					, new
-					{
-							Tokens = tokens
-							, Type = CreateUserEmailTokenQuery.Activate
-							,
-					});
+		// Get all Activate tokens for this user
+		var tokens = await dba.QueryAsync<Guid>(
+				GetTokensQuery.GetQuery
+				, new
+				{
+						Token = Guid.Parse(token)
+						, Type = CreateUserEmailTokenQuery.Activate
+						,
+				});
+
+		// Delete them all
+		await dba.ExecuteAsync(
+				DeleteUserEmailTokenQuery.GetTokenQuery
+				, new
+				{
+						Tokens = tokens
+						, Type = CreateUserEmailTokenQuery.Activate
+						,
+				});
 
 		dba.CommitTransaction();
 	}
@@ -528,19 +514,20 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	public async Task UpdateUnactivatedUserEmailAsync(string oldEmail, string newEmail)
 	{
 		await dba.BeginTransactionAsync();
-			await ResolveExistingUserConflictAsync(newEmail);
+		await ResolveExistingUserConflictAsync(newEmail);
 
-			var newEmailEntry = await dba.ExecuteAsync(
-					ChangeUnactivatedUserEmail.GetQuery
-					, new
-					{
-							OldEmail = oldEmail
-							, NewEmail = newEmail
-							,
-					});
+		var newEmailEntry = await dba.ExecuteAsync(
+				ChangeUnactivatedUserEmail.GetQuery
+				, new
+				{
+						OldEmail = oldEmail
+						, NewEmail = newEmail
+						,
+				});
 
-			if (newEmailEntry != 1)
-				throw new StandardExceptions.DataNotWrittenException("update email");
+		if (newEmailEntry != 1)
+			throw new StandardExceptions.DataNotWrittenException("update email");
+
 		dba.CommitTransaction();
 	}
 
@@ -553,19 +540,18 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	/// <returns></returns>
 	public async Task ChangePasswordAsync(uint userId, string oldPassword, string newPassword)
 	{
-			var changePassword = await dba.ExecuteAsync(
-					ChangePasswordQuery.GetQuery
-					, new
-					{
-							UserId = userId
-							, OldPassword = oldPassword
-							, NewPassword = newPassword
-							,
-					});
+		var changePassword = await dba.ExecuteAsync(
+				ChangePasswordQuery.GetQuery
+				, new
+				{
+						UserId = userId
+						, OldPassword = oldPassword
+						, NewPassword = newPassword
+						,
+				});
 
-			if (changePassword != 1)
-				throw new StandardExceptions.WrongPasswordException();
-
+		if (changePassword != 1)
+			throw new StandardExceptions.WrongPasswordException();
 	}
 
 	/// <summary>
@@ -576,85 +562,56 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	public async Task<DetailedUserWithToken> RequestResetForgottenPasswordAsync(string email)
 	{
 		await dba.BeginTransactionAsync();
-																		   try
-																		   {
-																			   // Get the user's details via the submitted email address
-																			   var columns =
-																					   new List<
-																									   string>
-																							   {
-																									   "email"
-																									   , "user_id"
-																									   , "forename"
-																									   , "surname"
-																									   , "organization"
-																									   ,
-																							   };
 
-																			   var where =
-																					   new List<
-																									   string>
-																							   {
-																									   "email",
-																							   };
+		try
+		{
+			// Get the user's details via the submitted email address
+			var columns = new List<string>
+			{
+					"email"
+					, "user_id"
+					, "forename"
+					, "surname"
+					, "organization"
+					,
+			};
 
-																			   var userInfo =
-																					   await
-																							   dba
-																									   .QuerySingleAsync
-																											   <DetailedUserWithToken>(
-																													   UserDetails
-																															   .GetQuery(
-																																	   columns
-																																	   , where)
-																													   , new
-																													   {
-																															   Email =
-																																	   email,
-																													   });
+			var where = new List<string> { "email" };
 
-																			   // Generate our secret token
-																			   var token =
-																					   Guid
-																							   .NewGuid();
+			var userInfo = await dba.QuerySingleAsync<DetailedUserWithToken>(
+					UserDetails.GetQuery(columns, where)
+					, new { Email = email });
 
-																			   // Write the token to the database
-																			   var tokenEntry =
-																					   await
-																							   dba
-																									   .ExecuteAsync(
-																											   CreateUserEmailTokenQuery
-																													   .GetQuery()
-																											   , new
-																											   {
-																													   Token =
-																															   token
-																													   , userInfo
-																															   .UserId
-																													   , Type =
-																															   CreateUserEmailTokenQuery
-																																	   .ResetPassword
-																													   ,
-																											   });
+			// Generate our secret token
+			var token = Guid.NewGuid();
 
-																			   if (tokenEntry != 1)
-																				   return null;
+			// Write the token to the database
+			var tokenEntry = await dba.ExecuteAsync(
+					CreateUserEmailTokenQuery.GetQuery()
+					, new
+					{
+							Token = token
+							, userInfo.UserId
+							, Type = CreateUserEmailTokenQuery.ResetPassword
+							,
+					});
 
-																			   // Cleanup
-																			   dba.CommitTransaction();
+			if (tokenEntry != 1)
+				return null;
 
-																			   // Pass the token back in the user info object
-																			   userInfo.Token =
-																					   token;
+			// Cleanup
+			dba.CommitTransaction();
 
-																			   return userInfo;
-																		   }
-																		   catch { } // Suppress errors here. We don't want to risk people fishing for valid email addresses,
+			// Pass the token back in the user info object
+			userInfo.Token = token;
 
-																		   // though any errors are suppressed in the controller too.
+			return userInfo;
+		}
+		catch { } // Suppress errors here. We don't want to risk people fishing for valid email addresses,
 
+		// though any errors are suppressed in the controller too.
 
-																	   return null;
+		return null;
 	}
 
 	/// <summary>
@@ -666,69 +623,68 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 	public async Task<DetailedUser> ResetForgottenPasswordAsync(string token, string password)
 	{
 		await dba.BeginTransactionAsync();
-			var detailedUserInfo = await GetDetailedUserByTokenAsync(token);
+		var detailedUserInfo = await GetDetailedUserByTokenAsync(token);
 
-			var resetPassword = await dba.ExecuteAsync(
-					UpdatePasswordByToken.GetQuery
-					, new
-					{
-							Token = Guid.Parse(token)
-							, Password = password
-							,
-					});
+		var resetPassword = await dba.ExecuteAsync(
+				UpdatePasswordByToken.GetQuery
+				, new
+				{
+						Token = Guid.Parse(token)
+						, Password = password
+						,
+				});
 
-			if (resetPassword != 1)
-				throw new StandardExceptions.DataNotWrittenException("reset password");
+		if (resetPassword != 1)
+			throw new StandardExceptions.DataNotWrittenException("reset password");
 
-			// Get all unused ResetPassword tokens
-			var tokens = await dba.QueryAsync<Guid>(
-					GetTokensQuery.GetQuery
-					, new
-					{
-							Token = Guid.Parse(token)
-							, Type = CreateUserEmailTokenQuery.ResetPassword
-							,
-					});
+		// Get all unused ResetPassword tokens
+		var tokens = await dba.QueryAsync<Guid>(
+				GetTokensQuery.GetQuery
+				, new
+				{
+						Token = Guid.Parse(token)
+						, Type = CreateUserEmailTokenQuery.ResetPassword
+						,
+				});
 
-			// Delete them all
-			await dba.ExecuteAsync(
-					DeleteUserEmailTokenQuery.GetTokenQuery
-					, new
-					{
-							Tokens = tokens
-							, Type = CreateUserEmailTokenQuery.ResetPassword
-							,
-					});
+		// Delete them all
+		await dba.ExecuteAsync(
+				DeleteUserEmailTokenQuery.GetTokenQuery
+				, new
+				{
+						Tokens = tokens
+						, Type = CreateUserEmailTokenQuery.ResetPassword
+						,
+				});
 
-			dba.CommitTransaction(); // Close the transaction
+		dba.CommitTransaction(); // Close the transaction
 
-			return detailedUserInfo;
+		return detailedUserInfo;
 	}
 
-	public async Task<string> GetUserDataStoreAsync(uint userId) => await dba.QuerySingleAsync<string>(
-			GetInformationFromUserDataStore.GetQuery
-			, new { UserId = userId });
+	public async Task<string> GetUserDataStoreAsync(uint userId)
+		=> await dba.QuerySingleAsync<string>(
+				GetInformationFromUserDataStore.GetQuery
+				, new { UserId = userId });
 
 	public async Task SetUserDataStoreAsync(uint userId, string data)
 	{
-			var insertData = await dba.ExecuteAsync(
-					SetInformationInUserDataStore.GetQuery
-					, new
-					{
-							UserId = userId
-							, Data = data
-							,
-					});
+		var insertData = await dba.ExecuteAsync(
+				SetInformationInUserDataStore.GetQuery
+				, new
+				{
+						UserId = userId
+						, Data = data
+						,
+				});
 
-			if (insertData != 1)
-			{
-				throw new StandardExceptions.DataNotWrittenException("INSERT INTO user data store");
-			}
+		if (insertData != 1)
+			throw new StandardExceptions.DataNotWrittenException("INSERT INTO user data store");
 	}
 
-	public async Task<List<EditorInfo>> GetEditionEditorsAsync(uint editionId) => (await dba.QueryAsync<EditorInfo>(
-			GetEditorInfo.GetQuery
-			, new { EditionId = editionId })).ToList();
+	public async Task<List<EditorInfo>> GetEditionEditorsAsync(uint editionId)
+		=> (await dba.QueryAsync<EditorInfo>(GetEditorInfo.GetQuery, new { EditionId = editionId }))
+				.ToList();
 
 	public async Task<DatabaseVersion> GetDatabaseVersion(IDbConnection connection = null)
 	{
@@ -751,17 +707,17 @@ LIMIT 1";
 	/// <exception cref="StandardExceptions.DataNotWrittenException">The role could not be added for the new user</exception>
 	private async Task SetNewUserRole(string token)
 	{
-			var setUserRole = await dba.ExecuteAsync(
-					SetUserSystemRole.GetQuery
-					, new
-					{
-							Token = Guid.Parse(token)
-							, SystemRole = "REGISTERED_USER"
-							,
-					});
+		var setUserRole = await dba.ExecuteAsync(
+				SetUserSystemRole.GetQuery
+				, new
+				{
+						Token = Guid.Parse(token)
+						, SystemRole = "REGISTERED_USER"
+						,
+				});
 
-			// Confirm the entry was written
-			if (setUserRole != 1)
-				throw new StandardExceptions.DataNotWrittenException("set user role");
-		}
+		// Confirm the entry was written
+		if (setUserRole != 1)
+			throw new StandardExceptions.DataNotWrittenException("set user role");
+	}
 }

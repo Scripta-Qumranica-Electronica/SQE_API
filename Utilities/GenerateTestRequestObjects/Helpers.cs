@@ -14,8 +14,10 @@ public static class Helpers
 	{
 		var sourceList = source.ToList();
 		var tasks = new List<TResult>(sourceList.Count);
+
 		foreach (var item in sourceList)
 			tasks.Add(await method(item));
+
 		return tasks;
 	}
 

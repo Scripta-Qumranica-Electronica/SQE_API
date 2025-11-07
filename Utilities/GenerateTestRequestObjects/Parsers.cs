@@ -427,8 +427,10 @@ called in method {
 																								  x
 																								  , out
 																								  namespaceDeclarationSyntax))
+																					 {
 																						 return
 																								 false;
+																					 }
 
 																					 return
 																							 namespaces

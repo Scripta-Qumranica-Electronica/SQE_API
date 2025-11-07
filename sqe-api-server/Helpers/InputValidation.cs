@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using MoreLinq;
 using NetTopologySuite.Algorithm;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
@@ -96,12 +95,13 @@ public static class GeometryValidation
 		var exteriorRing = polygon.ExteriorRing;
 
 		if (!Orientation.IsCCW(exteriorRing.Coordinates))
-			exteriorRing = (LinearRing)(((Geometry) exteriorRing).Reverse());
+			exteriorRing = (LinearRing)(exteriorRing.Reverse());
 
 		// Fix interior rings (holes) - should be CW (i.e., NOT CCW)
 		var interiorRings = polygon.InteriorRings.Select(x => Orientation.IsCCW(x.Coordinates)
-																 ? (LinearRing)(((Geometry) x).Reverse())
-																 : (LinearRing)x).ToArray();
+																 ? (LinearRing)(x.Reverse())
+																 : (LinearRing)x)
+								   .ToArray();
 
 		// Create a new polygon with corrected rings
 		return factory.CreatePolygon((LinearRing)exteriorRing, interiorRings);

@@ -1,9 +1,7 @@
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -16,14 +14,12 @@ public interface ISignInterpretationRepository
 {
 	Task<SignInterpretationData> GetSignInterpretationById(
 			UserInfo user
-			, uint   signInterpretationId
-			);
+			, uint   signInterpretationId);
 
 	Task<uint> GetQwbWordIfForSignInterpretationId(
 			UserInfo user
 			, uint   editionId
-			, uint   signInterpretationId
-			);
+			, uint   signInterpretationId);
 
 	Task UpdateSignInterpretationCharacterById(
 			UserInfo        user
@@ -35,19 +31,19 @@ public interface ISignInterpretationRepository
 }
 
 public class SignInterpretationRepository(
-		IDatabaseAccessor dba
-		, IAttributeRepository _attributeRepository
+		IDatabaseAccessor                         dba
+		, IAttributeRepository                    _attributeRepository
 		, ISignInterpretationCommentaryRepository _interpretationCommentaryRepository
-		, IRoiRepository _roiRepository) : ISignInterpretationRepository
+		, IRoiRepository                          _roiRepository) : ISignInterpretationRepository
 {
 	public async Task<SignInterpretationData> GetSignInterpretationById(
 			UserInfo user
-			, uint   signInterpretationId
-			)
+			, uint   signInterpretationId)
 	{
 		// We use several existing quick functions to get the specifics of a sign interpretation,
 		// so wrap it in a transaction to make sure the result is consistent.
 		await dba.BeginTransactionAsync();
+
 		//using (var transactionScope = Transaction.Current == null ? new TransactionScope(TransactionScopeAsyncFlowOption.Enabled) : null)
 		{
 			var attributes =
@@ -70,9 +66,7 @@ public class SignInterpretationRepository(
 			var rois = new SignInterpretationRoiData[roiIds.Count];
 
 			foreach (var (roiId, index) in roiIds.Select((x, idx) => (x, idx)))
-			{
 				rois[index] = await _roiRepository.GetSignInterpretationRoiByIdAsync(user, roiId);
-			}
 
 			SignInterpretationData returnSignInterpretation = null;
 
@@ -144,6 +138,7 @@ public class SignInterpretationRepository(
 			, IDbConnection connection       = null)
 	{
 		await dba.BeginTransactionAsync();
+
 		{
 			var signInterpretationCharacterIds = await dba.QueryAsync<uint>(
 					FindSignInterpretationCharacterId.GetQuery
@@ -203,6 +198,7 @@ public class SignInterpretationRepository(
 				|| signInterpretationAttribute.Any(x => x.AttributeValueId == attributeValueId))
 			{
 				dba.CommitTransaction();
+
 				return;
 			}
 
@@ -230,8 +226,7 @@ public class SignInterpretationRepository(
 	public async Task<uint> GetQwbWordIfForSignInterpretationId(
 			UserInfo user
 			, uint   editionId
-			, uint   signInterpretationId
-			)
+			, uint   signInterpretationId)
 	{
 		const string sql = @"
 SELECT sign_stream_section_to_qwb_word.qwb_word_id

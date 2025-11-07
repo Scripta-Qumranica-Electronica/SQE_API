@@ -1,12 +1,9 @@
 // TODO: Add all documentation
 
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
@@ -18,44 +15,39 @@ public interface IScriptRepository
 
 	Task<IEnumerable<KerningPair>> GetEditionScribalFontKernPairs(
 			UserInfo user
-			, uint   scribalFontId
-			);
+			, uint   scribalFontId);
 
 	Task<FontInfo> GetEditionScribalFontInfo(UserInfo user, uint scribalFontId);
 	Task<uint>     CreateNewScribalFontId(UserInfo    user);
 
 	Task SetScribalFontInfo(
-			UserInfo        user
-			, uint          scribalFontId
-			, ushort        wordSpace
-			, ushort        lineSpace
-			);
+			UserInfo user
+			, uint   scribalFontId
+			, ushort wordSpace
+			, ushort lineSpace);
 
 	Task DeleteScribalFont(UserInfo user, uint scribalFontId);
 
 	Task SetScribalFontKern(
-			UserInfo        user
-			, uint          scribalFontId
-			, string        firstCharacter
-			, string        secondCharacter
-			, short         xKern
-			, short         yKern
-			);
+			UserInfo user
+			, uint   scribalFontId
+			, string firstCharacter
+			, string secondCharacter
+			, short  xKern
+			, short  yKern);
 
 	Task DeleteScribalFontKern(
-			UserInfo        user
-			, uint          scribalFontId
-			, string        firstCharacter
-			, string        secondCharacter
-			);
+			UserInfo user
+			, uint   scribalFontId
+			, string firstCharacter
+			, string secondCharacter);
 
 	Task SetScribalFontGlyph(
-			UserInfo        user
-			, uint          scribalFontId
-			, string        character
-			, string        shape
-			, short         yOffset
-			);
+			UserInfo user
+			, uint   scribalFontId
+			, string character
+			, string shape
+			, short  yOffset);
 
 	Task DeleteScribalFontGlyph(UserInfo user, uint scribalFontId, string character);
 	Task<IEnumerable<uint>> GetEditionScribalFontIds(UserInfo user);
@@ -63,11 +55,9 @@ public interface IScriptRepository
 
 public class ScriptRepository(IDatabaseAccessor dba) : IScriptRepository
 {
-
 	public async Task<IEnumerable<Glyph>> GetEditionScribalFontGlyphs(
 			UserInfo user
-			, uint   scribalFontId
-			)
+			, uint   scribalFontId)
 	{
 		const string sql = @"
 SELECT 	unicode_char AS `Character`,
@@ -85,7 +75,6 @@ WHERE scribal_font_glyph_metrics.scribal_font_id = @ScribalFontId
 	AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
 
-
 		{
 			return await dba.QueryAsync<Glyph>(
 					sql
@@ -101,8 +90,7 @@ WHERE scribal_font_glyph_metrics.scribal_font_id = @ScribalFontId
 
 	public async Task<IEnumerable<KerningPair>> GetEditionScribalFontKernPairs(
 			UserInfo user
-			, uint   scribalFontId
-			)
+			, uint   scribalFontId)
 	{
 		const string sql = @"
 SELECT	first_unicode_char AS FirstCharacter,
@@ -120,7 +108,6 @@ WHERE scribal_font_kerning.scribal_font_id = @ScribalFontId
 	AND scribal_font_kerning_owner.edition_id = @EditionId
 	AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
-
 
 		{
 			return await dba.QueryAsync<KerningPair>(
@@ -152,7 +139,6 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
 
-
 		{
 			return (await dba.QueryAsync<FontInfo>(
 					sql
@@ -167,13 +153,11 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	}
 
 	public async Task SetScribalFontInfo(
-			UserInfo        user
-			, uint          scribalFontId
-			, ushort        wordSpace
-			, ushort        lineSpace
-			)
+			UserInfo user
+			, uint   scribalFontId
+			, ushort wordSpace
+			, ushort lineSpace)
 	{
-
 		await dba.BeginTransactionAsync();
 
 		{
@@ -225,18 +209,16 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 			var execute = await dba.WriteToDatabaseAsync(user, request);
 
 			if (!execute.Any())
-			{
 				throw new StandardExceptions.DataNotWrittenException("set scribal font metrics");
-			}
 
 			dba.CommitTransaction();
-
 		}
 	}
 
 	public async Task DeleteScribalFont(UserInfo user, uint scribalFontId)
 	{
 		await dba.BeginTransactionAsync();
+
 		{
 			var mutations = new List<MutationRequest>();
 
@@ -259,15 +241,15 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	}
 
 	public async Task SetScribalFontKern(
-			UserInfo        user
-			, uint          scribalFontId
-			, string        firstCharacter
-			, string        secondCharacter
-			, short         xKern
-			, short         yKern
-			)
+			UserInfo user
+			, uint   scribalFontId
+			, string firstCharacter
+			, string secondCharacter
+			, short  xKern
+			, short  yKern)
 	{
 		await dba.BeginTransactionAsync();
+
 		{
 			var scribalFontKernId = await _getScriptKernId(
 					user
@@ -301,13 +283,13 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	}
 
 	public async Task DeleteScribalFontKern(
-			UserInfo        user
-			, uint          scribalFontId
-			, string        firstCharacter
-			, string        secondCharacter
-			)
+			UserInfo user
+			, uint   scribalFontId
+			, string firstCharacter
+			, string secondCharacter)
 	{
 		await dba.BeginTransactionAsync();
+
 		{
 			var scribalFontKernId = await _getScriptKernId(
 					user
@@ -329,14 +311,14 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	}
 
 	public async Task SetScribalFontGlyph(
-			UserInfo        user
-			, uint          scribalFontId
-			, string        character
-			, string        shape
-			, short         yOffset
-			)
+			UserInfo user
+			, uint   scribalFontId
+			, string character
+			, string shape
+			, short  yOffset)
 	{
 		await dba.BeginTransactionAsync();
+
 		{
 			var scriptGlyphId = await _getScriptGlyphId(
 					user
@@ -370,6 +352,7 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	public async Task DeleteScribalFontGlyph(UserInfo user, uint scribalFontId, string character)
 	{
 		await dba.BeginTransactionAsync();
+
 		{
 			var scriptGlyphId = await _getScriptGlyphId(
 					user
@@ -416,7 +399,6 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	/// <returns></returns>
 	public async Task<IEnumerable<uint>> GetEditionScribalFontIds(UserInfo user)
 	{
-
 		{
 			const string sql = @"
 SELECT scribal_font_id
@@ -437,7 +419,6 @@ WHERE scribal_font_metrics_owner.edition_id = @EditionId";
 			, string secondCharacter
 			, bool   shouldExist)
 	{
-
 		{
 			const string scriptKernIdsSQL = @"
 SELECT scribal_font_kerning_id
@@ -481,7 +462,6 @@ WHERE scribal_font_kerning_owner.edition_id = @EditionId
 			, string character
 			, bool   shouldExist)
 	{
-
 		{
 			const string scriptKernIdsSQL = @"
 SELECT scribal_font_glyph_metrics_id
@@ -522,7 +502,6 @@ WHERE scribal_font_glyph_metrics_owner.edition_id = @EditionId
 			, uint   scribalFontId
 			, string tableName)
 	{
-
 		{
 			var sql = $@"
 SELECT {

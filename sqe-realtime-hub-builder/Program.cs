@@ -224,9 +224,7 @@ internal static class Program
 		}
 
 		if (!isControllerClass)
-		{
 			throw new Exception("This controller class must have the attribute [ApiController].");
-		}
 
 		if (!isAuthorized)
 			throw new Exception("This controller class must have the attribute [Authorize].");

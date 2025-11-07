@@ -1,5 +1,3 @@
-using System.Linq;
-using Dapper;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;

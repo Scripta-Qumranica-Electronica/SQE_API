@@ -8,42 +8,52 @@
 
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.Server.Services;
-using SQE.DatabaseAccess.Helpers;
-using System.Text.Json;
 
-namespace SQE.API.Server.RealtimeHubs
+namespace SQE.API.Server.RealtimeHubs;
+
+public partial class MainHub : Hub<ISQEClient>
 {
-    public partial class MainHub : Hub<ISQEClient>
-    {
-		private readonly ITextService _textService;
-		private readonly IUserService _userService;
-		private readonly IScriptService _scriptService;
-		private readonly IEditionService _editionService;
-		private readonly IWordService _wordService;
-		private readonly IImageService _imageService;
-		private readonly IImagedObjectService _imagedObjectService;
-		private readonly ISearchService _searchService;
-		private readonly IRoiService _roiService;
-		private readonly ISignInterpretationService _signInterpretationService;
-		private readonly ICatalogService _catalogueService;
-		private readonly IArtefactService _artefactService;
-		private readonly IUtilService _utilService;
+	private readonly IArtefactService           _artefactService;
+	private readonly ICatalogService            _catalogueService;
+	private readonly IEditionService            _editionService;
+	private readonly IImageService              _imageService;
+	private readonly IImagedObjectService       _imagedObjectService;
+	private readonly IRoiService                _roiService;
+	private readonly IScriptService             _scriptService;
+	private readonly ISearchService             _searchService;
+	private readonly ISignInterpretationService _signInterpretationService;
+	private readonly ITextService               _textService;
+	private readonly IUserService               _userService;
+	private readonly IUtilService               _utilService;
+	private readonly IWordService               _wordService;
 
-        public MainHub(ITextService textService, IUserService userService, IScriptService scriptService, IEditionService editionService, IWordService wordService, IImageService imageService, IImagedObjectService imagedObjectService, ISearchService searchService, IRoiService roiService, ISignInterpretationService signInterpretationService, ICatalogService catalogueService, IArtefactService artefactService, IUtilService utilService)
-        {
-			_textService = textService;
-			_userService = userService;
-			_scriptService = scriptService;
-			_editionService = editionService;
-			_wordService = wordService;
-			_imageService = imageService;
-			_imagedObjectService = imagedObjectService;
-			_searchService = searchService;
-			_roiService = roiService;
-			_signInterpretationService = signInterpretationService;
-			_catalogueService = catalogueService;
-			_artefactService = artefactService;
-			_utilService = utilService;
-        }
-     }
+	public MainHub(
+			ITextService                 textService
+			, IUserService               userService
+			, IScriptService             scriptService
+			, IEditionService            editionService
+			, IWordService               wordService
+			, IImageService              imageService
+			, IImagedObjectService       imagedObjectService
+			, ISearchService             searchService
+			, IRoiService                roiService
+			, ISignInterpretationService signInterpretationService
+			, ICatalogService            catalogueService
+			, IArtefactService           artefactService
+			, IUtilService               utilService)
+	{
+		_textService = textService;
+		_userService = userService;
+		_scriptService = scriptService;
+		_editionService = editionService;
+		_wordService = wordService;
+		_imageService = imageService;
+		_imagedObjectService = imagedObjectService;
+		_searchService = searchService;
+		_roiService = roiService;
+		_signInterpretationService = signInterpretationService;
+		_catalogueService = catalogueService;
+		_artefactService = artefactService;
+		_utilService = utilService;
+	}
 }

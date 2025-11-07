@@ -20,7 +20,7 @@ public partial class WebControllerTest
 	public async Task CanCreateEditionRoi()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
 
@@ -33,7 +33,7 @@ public partial class WebControllerTest
 	public async Task CanBatchCreateEditionRoi()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
 
@@ -50,7 +50,7 @@ public partial class WebControllerTest
 	public async Task CanGetEditionRoi()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -79,7 +79,7 @@ public partial class WebControllerTest
 	public async Task CanDeleteEditionRoi()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -161,7 +161,7 @@ public partial class WebControllerTest
 	private async Task UpdateEditionRoi(bool batch)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -274,7 +274,7 @@ public partial class WebControllerTest
 	public async Task CanBatchEditRois(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			// Create two new rois, one will get altered, one will be deleted

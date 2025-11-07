@@ -3,9 +3,6 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Transactions;
-using Dapper;
-using Microsoft.Extensions.Configuration;
 using MoreLinq.Extensions;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -24,37 +21,32 @@ public interface ISignStreamMaterializationRepository
 			uint                                                 editionId
 			, uint                                               signInterpretationId
 			, SignStreamGraph                                    graph    = null
-			, IReadOnlyDictionary<uint, BasicSignInterpretation> SignDict = null
-			);
+			, IReadOnlyDictionary<uint, BasicSignInterpretation> SignDict = null);
 
-	Task RequestMaterializationAsync(uint editionId);
+	Task RequestMaterializationAsync(uint             editionId);
 	Task MaterializeAllSignStreamsAsync(IDbConnection connection = null);
 
 	Task<bool> IsCycleAsync(
 			uint   editionId
 			, uint signInterpretationId
-			, uint nextSignInterpretationId
-			);
+			, uint nextSignInterpretationId);
 }
 
-public class SignStreamMaterializationRepository(IDatabaseAccessor dba) : ISignStreamMaterializationRepository
+public class SignStreamMaterializationRepository(IDatabaseAccessor dba)
+		: ISignStreamMaterializationRepository
 {
 	public bool RunMaterialization { get; set; } = true;
 
 	public async Task<IEnumerable<SignStreamMaterializationSchedule>>
 			GetAllScheduledSignStreamMaterializationsAsync(IDbConnection connection = null)
-	{
-		{
-			return await dba.QueryAsync<SignStreamMaterializationSchedule>(
-					QueuedMaterializationsQuery.GetQuery);
-		}
-	}
+		=> await dba.QueryAsync<SignStreamMaterializationSchedule>(
+				QueuedMaterializationsQuery.GetQuery);
 
 	public async Task RequestMaterializationAsync(
 			uint                                                 editionId
 			, uint                                               signInterpretationId
-			, SignStreamGraph                                    graph      = null
-			, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict   = null)
+			, SignStreamGraph                                    graph    = null
+			, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict = null)
 	{
 		if (!RunMaterialization)
 			return;
@@ -87,7 +79,7 @@ public class SignStreamMaterializationRepository(IDatabaseAccessor dba) : ISignS
 					, new { EditionId = editionId });
 
 			foreach (var startId in startIds)
-				await RequestMaterializationAsync(editionId, startId, null, null);
+				await RequestMaterializationAsync(editionId, startId);
 		}
 	}
 
@@ -128,8 +120,7 @@ public class SignStreamMaterializationRepository(IDatabaseAccessor dba) : ISignS
 	public async Task<bool> IsCycleAsync(
 			uint   editionId
 			, uint signInterpretationId
-			, uint nextSignInterpretationId
-			)
+			, uint nextSignInterpretationId)
 	{
 		{
 			// First do a fast check with OQGraph, if it says there is no cycle,
@@ -233,6 +224,7 @@ public class SignStreamMaterializationRepository(IDatabaseAccessor dba) : ISignS
 		// Wrap this in a transaction, we do not delete the materialization request
 		// from the queue until the materialization has actually been performed.
 		await dba.BeginTransactionAsync();
+
 		{
 			var streams = _parseGraph(signInterpretationId, graph, signDict);
 

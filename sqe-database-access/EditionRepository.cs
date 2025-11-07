@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -17,23 +15,21 @@ namespace SQE.DatabaseAccess;
 public interface IEditionRepository
 {
 	Task<IEnumerable<Edition>> ListEditionsAsync(
-			uint?           userId
-			, uint?         editionId
-			, bool          published  = true
-			, bool          personal   = true
-			);
+			uint?   userId
+			, uint? editionId
+			, bool  published = true
+			, bool  personal  = true);
 
 	Task<Edition> GetEditionAsync(uint? userId, uint editionId);
 
 	Task ChangeEditionNameAsync(UserInfo editionUser, string name);
 
 	Task UpdateEditionMetricsAsync(
-			UserInfo        editionUser
-			, uint          width
-			, uint          height
-			, int           xOrigin
-			, int           yOrigin
-			);
+			UserInfo editionUser
+			, uint   width
+			, uint   height
+			, int    xOrigin
+			, int    yOrigin);
 
 	Task<uint> CopyEditionAsync(
 			UserInfo        editionUser
@@ -53,13 +49,12 @@ public interface IEditionRepository
 	Task<string> GetArchiveToken(UserInfo editionUser);
 
 	Task<DetailedUserWithToken> RequestAddEditionEditorAsync(
-			UserInfo        editionUser
-			, string        editorEmail
-			, bool?         mayRead
-			, bool?         mayWrite
-			, bool?         mayLock
-			, bool?         isAdmin
-			);
+			UserInfo editionUser
+			, string editorEmail
+			, bool?  mayRead
+			, bool?  mayWrite
+			, bool?  mayLock
+			, bool?  isAdmin);
 
 	Task<DetailedEditionPermission> AddEditionEditorAsync(string token, uint userId);
 
@@ -70,13 +65,12 @@ public interface IEditionRepository
 			uint userId);
 
 	Task<Permission> ChangeEditionEditorRightsAsync(
-			UserInfo        editionUser
-			, string        editorEmail
-			, bool?         mayRead
-			, bool?         mayWrite
-			, bool?         mayLock
-			, bool?         isAdmin
-			);
+			UserInfo editionUser
+			, string editorEmail
+			, bool?  mayRead
+			, bool?  mayWrite
+			, bool?  mayLock
+			, bool?  isAdmin);
 
 	Task<List<uint>> GetEditionEditorUserIdsAsync(UserInfo editionUser);
 
@@ -91,29 +85,160 @@ public interface IEditionRepository
 public class EditionRepository(IDatabaseAccessor dba) : IEditionRepository
 {
 	public async Task<IEnumerable<Edition>> ListEditionsAsync(
-			uint?           userId
-			, uint?         editionId
-			, bool          published  = true
-			, bool          personal   = true
-			)
+			uint?   userId
+			, uint? editionId
+			, bool  published = true
+			, bool  personal  = true)
 	{
-			var editions = new List<Edition>();
-			Edition lastEdition;
+		var editions = new List<Edition>();
+		Edition lastEdition;
 
-			await dba.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
-					EditionListQuery.GetQuery(
-							userId.HasValue
-							, editionId.HasValue
-							, published
-							, personal)
-					, (editionGroup, editor) =>
+		await dba.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
+				EditionListQuery.GetQuery(
+						userId.HasValue
+						, editionId.HasValue
+						, published
+						, personal)
+				, (editionGroup, editor) =>
+				  {
+					  // Set the copyrights for the previous, and now complete, edition before making the new one
+					  if ((editions.LastOrDefault()?.EditionId != null)
+						  && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+					  {
+						  lastEdition = editions.Last();
+
+						  lastEdition.Copyright = Licence.printLicence(
+								  lastEdition.CopyrightHolder
+								  , string.IsNullOrEmpty(lastEdition.Collaborators)
+										  ? string.Join(
+												  ", "
+												  , lastEdition.Editors.Select(y =>
+																			   {
+																				   if ((y.Forename
+																						== null)
+																					   && (y.Surname
+																						   == null))
+																				   {
+																					   return y
+																							   .EditorEmail;
+																				   }
+
+																				   return $@"{
+																					   y.Forename
+																				   } {
+																					   y.Surname
+																				   }".Trim();
+																			   }))
+										  : lastEdition.Collaborators);
+					  }
+
+					  if ((editions.LastOrDefault()?.EditionId == null)
+						  || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+					  {
+						  // Now start building the new edition
+						  lastEdition = new Edition
+						  {
+								  Name = editionGroup.Name
+								  , Width = editionGroup.Width
+								  , Height = editionGroup.Height
+								  , XOrigin = editionGroup.XOrigin
+								  , YOrigin = editionGroup.YOrigin
+								  , PPI = editionGroup.PPI
+								  , ManuscriptMetricsEditor = editionGroup.ManuscriptMetricsEditor
+								  , Collaborators = editionGroup.Collaborators
+								  , Copyright = null
+								  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+								  CopyrightHolder = editionGroup.CopyrightHolder
+								  , EditionDataEditorId = editionGroup.EditionDataEditorId
+								  , EditionId = editionGroup.EditionId
+								  , IsPublic = editionGroup.IsPublic
+								  , PublicationDate = editionGroup.PublicationDate
+								  , LastEdit = editionGroup.LastEdit
+								  , Locked = editionGroup.Locked
+								  , Owner =
+										  new User
+										  {
+												  Email = editionGroup.CurrentEmail
+												  , UserId = editionGroup.CurrentUserId
+												  ,
+										  }
+								  , Permission =
+										  new Permission
+										  {
+												  IsAdmin = editionGroup.CurrentIsAdmin
+												  , MayLock = editionGroup.CurrentMayLock
+												  , MayWrite = editionGroup.CurrentMayWrite
+												  , MayRead = editionGroup.CurrentMayRead
+												  ,
+										  }
+								  , Thumbnail = editionGroup.Thumbnail
+								  , ManuscriptId = editionGroup.ManuscriptId
+								  , Editors = new List<EditorWithPermissions>()
+								  ,
+						  };
+
+						  editions.Add(lastEdition);
+					  }
+
+					  // Add the new editor to this edition
+					  editions.Last().Editors.Add(editor);
+
+					  return editions.Last();
+				  }
+				, new
+				{
+						UserId = userId
+						, EditionId = editionId
+						,
+				}
+				, splitOn: "EditorId");
+
+		if (editions.Count <= 0)
+			return editions;
+
+		{
+			lastEdition = editions.Last();
+
+			lastEdition.Copyright = Licence.printLicence(
+					lastEdition.CopyrightHolder
+					, string.IsNullOrEmpty(lastEdition.Collaborators)
+							? string.Join(
+									", "
+									, lastEdition.Editors.Select(y =>
+																 {
+																	 if ((y.Forename == null)
+																		 && (y.Surname == null))
+																	 {
+																		 return y.EditorEmail;
+																	 }
+
+																	 return $@"{
+																		 y.Forename
+																	 } {
+																		 y.Surname
+																	 }".Trim();
+																 }))
+							: lastEdition.Collaborators);
+		}
+
+		return editions;
+	}
+
+	public async Task<Edition> GetEditionAsync(uint? userId, uint editionId) //
+	{
+		var editionDictionary = new Dictionary<uint, Edition>();
+		Edition lastEdition = null;
+
+		await dba.QueryAsync<EditionQuery.Result, EditorWithPermissions, Edition>(
+				EditionQuery.GetQuery(userId.HasValue, true)
+				, (editionGroup, editor) =>
+				  {
+					  // Check if we have moved on to a new edition
+					  if (!editionDictionary.TryGetValue(editionGroup.EditionId, out lastEdition))
 					  {
 						  // Set the copyrights for the previous, and now complete, edition before making the new one
-						  if ((editions.LastOrDefault()?.EditionId != null)
-							  && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+						  if (lastEdition != null)
 						  {
-							  lastEdition = editions.Last();
-
 							  lastEdition.Copyright = Licence.printLicence(
 									  lastEdition.CopyrightHolder
 									  , string.IsNullOrEmpty(lastEdition.Collaborators)
@@ -141,210 +266,65 @@ public class EditionRepository(IDatabaseAccessor dba) : IEditionRepository
 											  : lastEdition.Collaborators);
 						  }
 
-						  if ((editions.LastOrDefault()?.EditionId == null)
-							  || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+						  // Now start building the new edition
+						  lastEdition = new Edition
 						  {
-							  // Now start building the new edition
-							  lastEdition = new Edition
-							  {
-									  Name = editionGroup.Name
-									  , Width = editionGroup.Width
-									  , Height = editionGroup.Height
-									  , XOrigin = editionGroup.XOrigin
-									  , YOrigin = editionGroup.YOrigin
-									  , PPI = editionGroup.PPI
-									  , ManuscriptMetricsEditor =
-											  editionGroup.ManuscriptMetricsEditor
-									  , Collaborators = editionGroup.Collaborators
-									  , Copyright = null
-									  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
-									  CopyrightHolder = editionGroup.CopyrightHolder
-									  , EditionDataEditorId = editionGroup.EditionDataEditorId
-									  , EditionId = editionGroup.EditionId
-									  , IsPublic = editionGroup.IsPublic
-									  , PublicationDate = editionGroup.PublicationDate
-									  , LastEdit = editionGroup.LastEdit
-									  , Locked = editionGroup.Locked
-									  , Owner =
-											  new User
-											  {
-													  Email = editionGroup.CurrentEmail
-													  , UserId = editionGroup.CurrentUserId
-													  ,
-											  }
-									  , Permission =
-											  new Permission
-											  {
-													  IsAdmin = editionGroup.CurrentIsAdmin
-													  , MayLock =
-															  editionGroup.CurrentMayLock
-													  , MayWrite =
-															  editionGroup.CurrentMayWrite
-													  , MayRead =
-															  editionGroup.CurrentMayRead
-													  ,
-											  }
-									  , Thumbnail = editionGroup.Thumbnail
-									  , ManuscriptId = editionGroup.ManuscriptId
-									  , Editors = new List<EditorWithPermissions>()
-									  ,
-							  };
+								  Name = editionGroup.Name
+								  , Width = editionGroup.Width
+								  , Height = editionGroup.Height
+								  , XOrigin = editionGroup.XOrigin
+								  , YOrigin = editionGroup.YOrigin
+								  , PPI = editionGroup.PPI
+								  , ManuscriptMetricsEditor = editionGroup.ManuscriptMetricsEditor
+								  , Collaborators = editionGroup.Collaborators
+								  , Copyright = null
+								  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+								  CopyrightHolder = editionGroup.CopyrightHolder
+								  , EditionDataEditorId = editionGroup.EditionDataEditorId
+								  , EditionId = editionGroup.EditionId
+								  , IsPublic = editionGroup.IsPublic
+								  , PublicationDate = editionGroup.PublicationDate
+								  , LastEdit = editionGroup.LastEdit
+								  , Locked = editionGroup.Locked
+								  , Owner =
+										  new User
+										  {
+												  Email = editionGroup.CurrentEmail
+												  , UserId = editionGroup.CurrentUserId
+												  ,
+										  }
+								  , Permission =
+										  new Permission
+										  {
+												  IsAdmin = editionGroup.CurrentIsAdmin
+												  , MayLock = editionGroup.CurrentMayLock
+												  , MayWrite = editionGroup.CurrentMayWrite
+												  , MayRead = editionGroup.CurrentMayRead
+												  ,
+										  }
+								  , Thumbnail = editionGroup.Thumbnail
+								  , ManuscriptId = editionGroup.ManuscriptId
+								  , Editors = new List<EditorWithPermissions>()
+								  ,
+						  };
 
-							  editions.Add(lastEdition);
-						  }
-
-						  // Add the new editor to this edition
-						  editions.Last().Editors.Add(editor);
-
-						  return editions.Last();
+						  editionDictionary.Add(lastEdition.EditionId, lastEdition);
 					  }
-					, new
-					{
-							UserId = userId
-							, EditionId = editionId
-							,
-					}
-					, splitOn: "EditorId");
 
-			if (editions.Count <= 0)
-				return editions;
+					  // Add the new editor to this edition
+					  lastEdition.Editors.Add(editor);
 
-			{
-				lastEdition = editions.Last();
+					  return lastEdition;
+				  }
+				, new
+				{
+						UserId = userId
+						, EditionId = editionId
+						,
+				}
+				, splitOn: "EditorId");
 
-				lastEdition.Copyright = Licence.printLicence(
-						lastEdition.CopyrightHolder
-						, string.IsNullOrEmpty(lastEdition.Collaborators)
-								? string.Join(
-										", "
-										, lastEdition.Editors.Select(y =>
-																	 {
-																		 if ((y.Forename == null)
-																			 && (y.Surname == null))
-																		 {
-																			 return y.EditorEmail;
-																		 }
-
-																		 return $@"{
-																			 y.Forename
-																		 } {
-																			 y.Surname
-																		 }".Trim();
-																	 }))
-								: lastEdition.Collaborators);
-			}
-
-			return editions;
-	}
-
-	public async Task<Edition> GetEditionAsync(uint? userId, uint editionId) //
-	{
-			var editionDictionary = new Dictionary<uint, Edition>();
-			Edition lastEdition = null;
-
-			await dba.QueryAsync<EditionQuery.Result, EditorWithPermissions, Edition>(
-					EditionQuery.GetQuery(userId.HasValue, true)
-					, (editionGroup, editor) =>
-					  {
-						  // Check if we have moved on to a new edition
-						  if (!editionDictionary.TryGetValue(
-									  editionGroup.EditionId
-									  , out lastEdition))
-						  {
-							  // Set the copyrights for the previous, and now complete, edition before making the new one
-							  if (lastEdition != null)
-							  {
-								  lastEdition.Copyright = Licence.printLicence(
-										  lastEdition.CopyrightHolder
-										  , string.IsNullOrEmpty(lastEdition.Collaborators)
-												  ? string.Join(
-														  ", "
-														  , lastEdition.Editors.Select(y =>
-																					   {
-																						   if
-																								   ((y
-																											 .Forename
-																									 == null)
-																									&& (
-																											y.Surname
-																											== null))
-																							   return
-																									   y.EditorEmail;
-
-																						   return
-																								   $@"{
-																									   y.Forename
-																								   } {
-																									   y.Surname
-																								   }"
-																										   .Trim();
-																					   }))
-												  : lastEdition.Collaborators);
-							  }
-
-							  // Now start building the new edition
-							  lastEdition = new Edition
-							  {
-									  Name = editionGroup.Name
-									  , Width = editionGroup.Width
-									  , Height = editionGroup.Height
-									  , XOrigin = editionGroup.XOrigin
-									  , YOrigin = editionGroup.YOrigin
-									  , PPI = editionGroup.PPI
-									  , ManuscriptMetricsEditor =
-											  editionGroup.ManuscriptMetricsEditor
-									  , Collaborators = editionGroup.Collaborators
-									  , Copyright = null
-									  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
-									  CopyrightHolder = editionGroup.CopyrightHolder
-									  , EditionDataEditorId = editionGroup.EditionDataEditorId
-									  , EditionId = editionGroup.EditionId
-									  , IsPublic = editionGroup.IsPublic
-									  , PublicationDate = editionGroup.PublicationDate
-									  , LastEdit = editionGroup.LastEdit
-									  , Locked = editionGroup.Locked
-									  , Owner =
-											  new User
-											  {
-													  Email = editionGroup.CurrentEmail
-													  , UserId = editionGroup.CurrentUserId
-													  ,
-											  }
-									  , Permission =
-											  new Permission
-											  {
-													  IsAdmin = editionGroup.CurrentIsAdmin
-													  , MayLock =
-															  editionGroup.CurrentMayLock
-													  , MayWrite =
-															  editionGroup.CurrentMayWrite
-													  , MayRead =
-															  editionGroup.CurrentMayRead
-													  ,
-											  }
-									  , Thumbnail = editionGroup.Thumbnail
-									  , ManuscriptId = editionGroup.ManuscriptId
-									  , Editors = new List<EditorWithPermissions>()
-									  ,
-							  };
-
-							  editionDictionary.Add(lastEdition.EditionId, lastEdition);
-						  }
-
-						  // Add the new editor to this edition
-						  lastEdition.Editors.Add(editor);
-
-						  return lastEdition;
-					  }
-					, new
-					{
-							UserId = userId
-							, EditionId = editionId
-							,
-					}
-					, splitOn: "EditorId");
-
-			return lastEdition ?? new Edition();
+		return lastEdition ?? new Edition();
 	}
 
 	public async Task ChangeEditionNameAsync(UserInfo editionUser, string name)
@@ -352,40 +332,41 @@ public class EditionRepository(IDatabaseAccessor dba) : IEditionRepository
 		EditionNameQuery.Result result;
 
 		await dba.BeginTransactionAsync();
-			try
-			{
-				// Here we get the data from the original scroll_data field, we need the scroll_id,
-				// which no one in the front end will generally have or care about.
-				result = await dba.QuerySingleAsync<EditionNameQuery.Result>(
-						EditionNameQuery.GetQuery()
-						, new { editionUser.EditionId });
-			}
-			catch (InvalidOperationException)
-			{
-				throw new StandardExceptions.DataNotFoundException(
-						"edition"
-						, editionUser.EditionId ?? 0);
-			}
 
-			// Now we create the mutation object for the requested action
-			// You will want to check the database to make sure you what you are doing.
-			var nameChangeParams = new DynamicParameters();
-			nameChangeParams.Add("@manuscript_id", result.ManuscriptId);
-			nameChangeParams.Add("@Name", name);
+		try
+		{
+			// Here we get the data from the original scroll_data field, we need the scroll_id,
+			// which no one in the front end will generally have or care about.
+			result = await dba.QuerySingleAsync<EditionNameQuery.Result>(
+					EditionNameQuery.GetQuery()
+					, new { editionUser.EditionId });
+		}
+		catch (InvalidOperationException)
+		{
+			throw new StandardExceptions.DataNotFoundException(
+					"edition"
+					, editionUser.EditionId ?? 0);
+		}
 
-			var nameChangeRequest = new MutationRequest(
-					MutateType.Update
-					, nameChangeParams
-					, "manuscript_data"
-					, result.ManuscriptDataId);
+		// Now we create the mutation object for the requested action
+		// You will want to check the database to make sure you what you are doing.
+		var nameChangeParams = new DynamicParameters();
+		nameChangeParams.Add("@manuscript_id", result.ManuscriptId);
+		nameChangeParams.Add("@Name", name);
 
-			// Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
-			// care of main_action and single_action.
-			await dba.WriteToDatabaseAsync(
-					editionUser
-					, new List<MutationRequest> { nameChangeRequest });
+		var nameChangeRequest = new MutationRequest(
+				MutateType.Update
+				, nameChangeParams
+				, "manuscript_data"
+				, result.ManuscriptDataId);
 
-			dba.CommitTransaction();
+		// Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
+		// care of main_action and single_action.
+		await dba.WriteToDatabaseAsync(
+				editionUser
+				, new List<MutationRequest> { nameChangeRequest });
+
+		dba.CommitTransaction();
 	}
 
 	/// <summary>
@@ -404,49 +385,48 @@ public class EditionRepository(IDatabaseAccessor dba) : IEditionRepository
 	/// </param>
 	/// <returns></returns>
 	public async Task UpdateEditionMetricsAsync(
-			UserInfo        editionUser
-			, uint          width
-			, uint          height
-			, int           xOrigin
-			, int           yOrigin
-			)
+			UserInfo editionUser
+			, uint   width
+			, uint   height
+			, int    xOrigin
+			, int    yOrigin)
 	{
 		await dba.BeginTransactionAsync();
-			var oldRecord = (await dba.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
-					GetEditionManuscriptMetricsDetails.GetQuery
-					, new { editionUser.EditionId })).ToList();
 
-			if (oldRecord.Count != 1)
-			{
-				throw new StandardExceptions.DataNotFoundException(
-						"manuscript metrics"
-						, editionUser.EditionId ?? 0
-						, "edition");
-			}
+		var oldRecord = (await dba.QueryAsync<GetEditionManuscriptMetricsDetails.Result>(
+				GetEditionManuscriptMetricsDetails.GetQuery
+				, new { editionUser.EditionId })).ToList();
 
-			var parameters = new DynamicParameters();
-			parameters.Add("width", width);
-			parameters.Add("height", height);
-			parameters.Add("x_origin", xOrigin);
-			parameters.Add("y_origin", yOrigin);
+		if (oldRecord.Count != 1)
+		{
+			throw new StandardExceptions.DataNotFoundException(
+					"manuscript metrics"
+					, editionUser.EditionId ?? 0
+					, "edition");
+		}
 
-			parameters.Add("manuscript_id", oldRecord.First().ManuscriptId);
+		var parameters = new DynamicParameters();
+		parameters.Add("width", width);
+		parameters.Add("height", height);
+		parameters.Add("x_origin", xOrigin);
+		parameters.Add("y_origin", yOrigin);
 
-			var mutation = new MutationRequest(
-					MutateType.Update
-					, parameters
-					, "manuscript_metrics"
-					, oldRecord.First().ManuscriptMetricsId);
+		parameters.Add("manuscript_id", oldRecord.First().ManuscriptId);
 
-			var results = await dba.WriteToDatabaseAsync(editionUser, mutation);
+		var mutation = new MutationRequest(
+				MutateType.Update
+				, parameters
+				, "manuscript_metrics"
+				, oldRecord.First().ManuscriptMetricsId);
 
-			if (results.Count() != 1)
-			{
-				throw new StandardExceptions.DataNotWrittenException("update manuscript metrics");
-			}
+		var results = await dba.WriteToDatabaseAsync(editionUser, mutation);
 
-			dba.CommitTransaction();
+		if (results.Count() != 1)
+		{
+			throw new StandardExceptions.DataNotWrittenException("update manuscript metrics");
+		}
 
+		dba.CommitTransaction();
 	}
 
 	/// <summary>
@@ -484,179 +464,112 @@ public class EditionRepository(IDatabaseAccessor dba) : IEditionRepository
 		// approach is about 4 times slower than the one here.
 		List<OwnerTables.Result> ownerTables;
 
-
-			ownerTables = (await dba.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery))
-					.ToList();
-
+		ownerTables = (await dba.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery)).ToList();
 
 		// In an effort to speed this up further, I tried disabling foreign keys and unique checks.
-																	   // It made no appreciable difference:
-																	   // await connection.ExecuteAsync("SET @@session.foreign_key_checks=0;");
-																	   // await connection.ExecuteAsync("SET @@session.unique_checks=0;");
+		// It made no appreciable difference:
+		// await connection.ExecuteAsync("SET @@session.foreign_key_checks=0;");
+		// await connection.ExecuteAsync("SET @@session.unique_checks=0;");
 		await dba.BeginTransactionAsync();
-																		   // Create a new edition
-																		   await dba
-																				   .ExecuteAsync(
-																						   CopyEditionQuery
-																								   .GetQuery
-																						   , new
-																						   {
-																								   editionUser
-																										   .EditionId
-																								   , CopyrightHolder =
-																										   copyrightHolder
-																								   , Collaborators =
-																										   collaborators
-																								   ,
-																						   });
 
-																		   var toEditionId =
-																				   await dba
-																						   .QuerySingleAsync
-																								   <uint>(
-																										   LastInsertId
-																												   .GetQuery);
+		// Create a new edition
+		await dba.ExecuteAsync(
+				CopyEditionQuery.GetQuery
+				, new
+				{
+						editionUser.EditionId
+						, CopyrightHolder = copyrightHolder
+						, Collaborators = collaborators
+						,
+				});
 
-																		   if (toEditionId == 0)
-																		   {
-																			   throw new
-																					   StandardExceptions
-																					   .DataNotWrittenException(
-																							   "create edition");
-																		   }
+		var toEditionId = await dba.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
-																		   // Create new edition_editor
-																		   await dba
-																				   .ExecuteAsync(
-																						   CreateEditionEditorQuery
-																								   .GetQuery
-																						   , new
-																						   {
-																								   EditionId =
-																										   toEditionId
-																								   , UserId =
-																										   editionUser
-																												   .userId
-																								   , MayLock =
-																										   1
-																								   , IsAdmin =
-																										   1
-																								   ,
-																						   });
+		if (toEditionId == 0)
+		{
+			throw new StandardExceptions.DataNotWrittenException("create edition");
+		}
 
-																		   var toEditionEditorId =
-																				   await dba
-																						   .QuerySingleAsync
-																								   <uint>(
-																										   LastInsertId
-																												   .GetQuery);
+		// Create new edition_editor
+		await dba.ExecuteAsync(
+				CreateEditionEditorQuery.GetQuery
+				, new
+				{
+						EditionId = toEditionId
+						, UserId = editionUser.userId
+						, MayLock = 1
+						, IsAdmin = 1
+						,
+				});
 
-																		   if (toEditionEditorId
-																			   == 0)
-																		   {
-																			   throw new
-																					   StandardExceptions
-																					   .DataNotWrittenException(
-																							   "create edition_editor");
-																		   }
+		var toEditionEditorId = await dba.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
-																		   uint? manuscriptDataId =
-																				   null;
+		if (toEditionEditorId == 0)
+		{
+			throw new StandardExceptions.DataNotWrittenException("create edition_editor");
+		}
 
-																		   if (!string
-																					   .IsNullOrEmpty(
-																							   name))
-																		   {
-																			   await dba
-																					   .ExecuteAsync(
-																							   @"
+		uint? manuscriptDataId = null;
+
+		if (!string.IsNullOrEmpty(name))
+		{
+			await dba.ExecuteAsync(
+					@"
                         INSERT INTO manuscript_data (manuscript_id, name, creator_id)
                         SELECT manuscript_id, @Name, @UserId
                         FROM edition
                         WHERE edition.edition_id = @EditionId
                         ON DUPLICATE KEY UPDATE manuscript_data_id=LAST_INSERT_ID(manuscript_data_id)"
-																							   , new
-																							   {
-																									   Name =
-																											   name
-																									   , UserId =
-																											   editionUser
-																													   .userId
-																									   , EditionId =
-																											   toEditionId
-																									   ,
-																							   });
+					, new
+					{
+							Name = name
+							, UserId = editionUser.userId
+							, EditionId = toEditionId
+							,
+					});
 
-																			   manuscriptDataId =
-																					   await
-																							   dba
-																									   .QuerySingleAsync
-																											   <uint>(
-																													   LastInsertId
-																															   .GetQuery);
-																		   }
+			manuscriptDataId = await dba.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+		}
 
-																		   foreach (var ownerTable
-																					in ownerTables)
-																		   {
-																			   var tableName =
-																					   ownerTable
-																							   .TableName;
+		foreach (var ownerTable in ownerTables)
+		{
+			var tableName = ownerTable.TableName;
 
-																			   var tableIdColumn =
-																					   tableName
-																							   .Substring(
-																									   0
-																									   , tableName
-																												 .Length
-																										 - 5)
-																					   + "id";
+			var tableIdColumn = tableName.Substring(0, tableName.Length - 5) + "id";
 
-																			   if ((tableName
-																					== "manuscript_data_owner")
-																				   && manuscriptDataId
-																						   .HasValue)
-																			   {
-																				   await dba
-																						   .ExecuteAsync(
-																								   @"
+			if ((tableName == "manuscript_data_owner")
+				&& manuscriptDataId.HasValue)
+			{
+				await dba.ExecuteAsync(
+						@"
 INSERT INTO manuscript_data_owner (manuscript_data_id, edition_id, edition_editor_id)
 VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
-																								   , new
-																								   {
-																										   EditionId =
-																												   toEditionId
-																										   , EditionEditorId =
-																												   toEditionEditorId
-																										   , ManuscriptDataId =
-																												   manuscriptDataId
-																														   .Value
-																										   ,
-																								   });
+						, new
+						{
+								EditionId = toEditionId
+								, EditionEditorId = toEditionEditorId
+								, ManuscriptDataId = manuscriptDataId.Value
+								,
+						});
 
-																				   continue;
-																			   }
+				continue;
+			}
 
-																			   // Should I do any error checking here?
-																			   await dba
-																					   .ExecuteAsync(
-																							   CopyTableQuery
-																									   .GetQuery(
-																											   tableName
-																											   , tableIdColumn
-																											   , toEditionId
-																											   , toEditionEditorId
-																											   , editionUser
-																												 .EditionId
-																												 .Value));
-																		   }
+			// Should I do any error checking here?
+			await dba.ExecuteAsync(
+					CopyTableQuery.GetQuery(
+							tableName
+							, tableIdColumn
+							, toEditionId
+							, toEditionEditorId
+							, editionUser.EditionId.Value));
+		}
 
-																		   var editorJsonDetails =
-																				   @"""editors"":{""@toEditionEditorId"":{""email"":"""",""forename"":null,""surname"":null,""organization"":null}}";
+		var editorJsonDetails =
+				@"""editors"":{""@toEditionEditorId"":{""email"":"""",""forename"":null,""surname"":null,""organization"":null}}";
 
-																		   //Copy cached transcriptions
-																		   const string
-																				   copyCacheQSL = @"
+		//Copy cached transcriptions
+		const string copyCacheQSL = @"
 INSERT INTO cached_text_fragment (edition_id, text_fragment_id, transcription_json, transcription_date)
 SELECT 	@NewEditionId,
         text_fragment_id,
@@ -679,30 +592,21 @@ SELECT 	@NewEditionId,
 FROM cached_text_fragment
 WHERE edition_id = @EditionId";
 
-																		   await dba
-																				   .ExecuteAsync(
-																						   copyCacheQSL
-																						   , new
-																						   {
-																								   EditionId =
-																										   editionUser
-																												   .EditionId
-																												   .Value
-																								   , NewEditionId =
-																										   toEditionId
-																								   , EditionEditorId =
-																										   toEditionEditorId
-																								   , UserId =
-																										   editionUser
-																												   .userId
-																								   ,
-																						   });
+		await dba.ExecuteAsync(
+				copyCacheQSL
+				, new
+				{
+						EditionId = editionUser.EditionId.Value
+						, NewEditionId = toEditionId
+						, EditionEditorId = toEditionEditorId
+						, UserId = editionUser.userId
+						,
+				});
 
-																		   //Cleanup
-																		   dba.CommitTransaction();
+		//Cleanup
+		dba.CommitTransaction();
 
-																		   return toEditionId;
-
+		return toEditionId;
 	}
 
 	/// <summary>
@@ -725,17 +629,15 @@ WHERE edition_id = @EditionId";
 		if (!editionUser.IsAdmin)
 			throw new StandardExceptions.NoAdminPermissionsException(editionUser);
 
-
-			await dba.ExecuteAsync(
-					UpdateEditionLegalDetailsQuery.GetQuery
-					, new
-					{
-							editionUser.EditionId
-							, CopyrightHolder = copyrightHolder
-							, Collaborators = collaborators
-							,
-					});
-
+		await dba.ExecuteAsync(
+				UpdateEditionLegalDetailsQuery.GetQuery
+				, new
+				{
+						editionUser.EditionId
+						, CopyrightHolder = copyrightHolder
+						, Collaborators = collaborators
+						,
+				});
 	}
 
 	/// <summary>
@@ -757,37 +659,34 @@ WHERE edition_id = @EditionId";
 		if (string.IsNullOrEmpty(token))
 			return await GetArchiveToken(editionUser);
 
+		// Verify that the token is still valid
+		var archiveToken = await dba.ExecuteAsync(
+				DeleteUserEmailTokenQuery.GetTokenQuery
+				, new
+				{
+						Tokens = new[] { token }
+						, Type = CreateUserEmailTokenQuery.DeleteEdition
+						,
+				});
 
-			// Verify that the token is still valid
-			var archiveToken = await dba.ExecuteAsync(
-					DeleteUserEmailTokenQuery.GetTokenQuery
-					, new
-					{
-							Tokens = new[] { token }
-							, Type = CreateUserEmailTokenQuery.DeleteEdition
-							,
-					});
+		if (archiveToken != 1)
+		{
+			throw new StandardExceptions.DataNotWrittenException(
+					"verifying the delete request token");
+		}
 
-			if (archiveToken != 1)
-			{
-				throw new StandardExceptions.DataNotWrittenException(
-						"verifying the delete request token");
-			}
+		const string archiveSql = "UPDATE edition SET archived = 1 WHERE edition_id = @EditionId";
 
-			const string archiveSql =
-					"UPDATE edition SET archived = 1 WHERE edition_id = @EditionId";
+		var archive = await dba.ExecuteAsync(archiveSql, new { editionUser.EditionId });
 
-			var archive = await dba.ExecuteAsync(archiveSql, new { editionUser.EditionId });
+		if (archive != 1)
+		{
+			throw new StandardExceptions.DataNotWrittenException(
+					"archive edition"
+					, "unknown reason");
+		}
 
-			if (archive != 1)
-			{
-				throw new StandardExceptions.DataNotWrittenException(
-						"archive edition"
-						, "unknown reason");
-			}
-
-			return null;
-
+		return null;
 	}
 
 	public async Task<string> GetArchiveToken(UserInfo editionUser)
@@ -795,21 +694,21 @@ WHERE edition_id = @EditionId";
 		// Generate our secret token
 		var token = Guid.NewGuid().ToString();
 
-			// Add the secret token to the database
-			var userEmailConfirmation = await dba.ExecuteAsync(
-					CreateUserEmailTokenQuery.GetQuery()
-					, new
-					{
-							UserId = editionUser.userId
-							, Token = token
-							, Type = CreateUserEmailTokenQuery.DeleteEdition
-							,
-					});
+		// Add the secret token to the database
+		var userEmailConfirmation = await dba.ExecuteAsync(
+				CreateUserEmailTokenQuery.GetQuery()
+				, new
+				{
+						UserId = editionUser.userId
+						, Token = token
+						, Type = CreateUserEmailTokenQuery.DeleteEdition
+						,
+				});
 
-			if (userEmailConfirmation != 1) // Something strange must have gone wrong
-			{
-				throw new StandardExceptions.DataNotWrittenException("create edition delete token");
-			}
+		if (userEmailConfirmation != 1) // Something strange must have gone wrong
+		{
+			throw new StandardExceptions.DataNotWrittenException("create edition delete token");
+		}
 
 		return token;
 	}
@@ -826,13 +725,12 @@ WHERE edition_id = @EditionId";
 	/// <param name="isAdmin">Permission to admin</param>
 	/// <returns></returns>
 	public async Task<DetailedUserWithToken> RequestAddEditionEditorAsync(
-			UserInfo        editionUser
-			, string        editorEmail
-			, bool?         mayRead
-			, bool?         mayWrite
-			, bool?         mayLock
-			, bool?         isAdmin
-			)
+			UserInfo editionUser
+			, string editorEmail
+			, bool?  mayRead
+			, bool?  mayWrite
+			, bool?  mayLock
+			, bool?  isAdmin)
 	{
 		// Make sure requesting user is admin; only an edition admin may perform this action
 		if (!editionUser.IsAdmin)
@@ -842,132 +740,126 @@ WHERE edition_id = @EditionId";
 		DetailedUserWithToken editorInfo;
 
 		await dba.BeginTransactionAsync();
-			// Check if the editor already exists, don't attempt to re-add
-			if ((await _getEditionEditors(editionUser.EditionId.Value)).Any(x => x.Email
-																				 == editorEmail))
-				throw new StandardExceptions.ConflictingDataException("editor email");
 
-			// Set the permissions object by coalescing with the default values
-			var permissions = new Permission
-			{
-					MayRead = mayRead ?? true
-					, MayWrite = mayWrite ?? false
-					, MayLock = mayLock ?? false
-					, IsAdmin = isAdmin ?? false
-					,
-			};
+		// Check if the editor already exists, don't attempt to re-add
+		if ((await _getEditionEditors(editionUser.EditionId.Value))
+			.Any(x => x.Email == editorEmail))
+			throw new StandardExceptions.ConflictingDataException("editor email");
 
-			// Check for invalid settings
-			if (permissions.IsAdmin
-				&& !permissions.MayRead)
-			{
-				throw new StandardExceptions.InputDataRuleViolationException(
-						"an edition admin must have read rights");
-			}
+		// Set the permissions object by coalescing with the default values
+		var permissions = new Permission
+		{
+				MayRead = mayRead ?? true
+				, MayWrite = mayWrite ?? false
+				, MayLock = mayLock ?? false
+				, IsAdmin = isAdmin ?? false
+				,
+		};
 
-			if (permissions.MayWrite
-				&& !permissions.MayRead)
-			{
-				throw new StandardExceptions.InputDataRuleViolationException(
-						"an editor with write rights must have read rights");
-			}
+		// Check for invalid settings
+		if (permissions.IsAdmin
+			&& !permissions.MayRead)
+		{
+			throw new StandardExceptions.InputDataRuleViolationException(
+					"an edition admin must have read rights");
+		}
 
+		if (permissions.MayWrite
+			&& !permissions.MayRead)
+		{
+			throw new StandardExceptions.InputDataRuleViolationException(
+					"an editor with write rights must have read rights");
+		}
 
-				// Find the editor
-				var editorInfoSearch = (await dba.QueryAsync<DetailedUserWithToken>(
-						UserDetails.GetQuery(
-								new List<string>
-								{
-										"user_id"
-										, "forename"
-										, "surname"
-										, "organization"
-										,
-								}
-								, new List<string> { "email" })
-						, new { Email = editorEmail })).ToList();
-
-				// Throw a meaningful error if the user's email was not found in the system.
-				if (!editorInfoSearch.Any())
-				{
-					throw new StandardExceptions.DataNotFoundException(
-							"editors"
-							, editorEmail
-							, "users");
-				}
-
-				editorInfo = editorInfoSearch.FirstOrDefault();
-
-				// Check for existing request
-				var existingRequestToken = (await dba.QueryAsync<string>(
-						FindEditionEditorRequestByEditorEdition.GetQuery
-						, new
+		// Find the editor
+		var editorInfoSearch = (await dba.QueryAsync<DetailedUserWithToken>(
+				UserDetails.GetQuery(
+						new List<string>
 						{
-								editionUser.EditionId
-								, AdminUserId = editionUser.userId
-								, EditorUserId = editorInfo.UserId
+								"user_id"
+								, "forename"
+								, "surname"
+								, "organization"
 								,
-						})).ToList();
+						}
+						, new List<string> { "email" })
+				, new { Email = editorEmail })).ToList();
 
-				// Add a GUID for this transaction (Reuse any pre-existing ones)
-				if (existingRequestToken.Any())
-					editorInfo.Token = Guid.Parse(existingRequestToken.FirstOrDefault());
-				else
+		// Throw a meaningful error if the user's email was not found in the system.
+		if (!editorInfoSearch.Any())
+		{
+			throw new StandardExceptions.DataNotFoundException("editors", editorEmail, "users");
+		}
+
+		editorInfo = editorInfoSearch.FirstOrDefault();
+
+		// Check for existing request
+		var existingRequestToken = (await dba.QueryAsync<string>(
+				FindEditionEditorRequestByEditorEdition.GetQuery
+				, new
 				{
-					editorInfo.Token = existingRequestToken.Any()
-							? Guid.Parse(existingRequestToken.FirstOrDefault())
-							: Guid.NewGuid();
+						editionUser.EditionId
+						, AdminUserId = editionUser.userId
+						, EditorUserId = editorInfo.UserId
+						,
+				})).ToList();
 
-					// Write the GUID token to the database
-					var writtenToken = await dba.ExecuteAsync(
-							CreateUserEmailTokenQuery.GetQuery()
-							, new
-							{
-									editorInfo.UserId
-									, editorInfo.Token
-									, Type = CreateUserEmailTokenQuery.EditorInvite
-									,
-							});
+		// Add a GUID for this transaction (Reuse any pre-existing ones)
+		if (existingRequestToken.Any())
+			editorInfo.Token = Guid.Parse(existingRequestToken.FirstOrDefault());
+		else
+		{
+			editorInfo.Token = existingRequestToken.Any()
+					? Guid.Parse(existingRequestToken.FirstOrDefault())
+					: Guid.NewGuid();
 
-					if (writtenToken != 1)
+			// Write the GUID token to the database
+			var writtenToken = await dba.ExecuteAsync(
+					CreateUserEmailTokenQuery.GetQuery()
+					, new
 					{
-						throw new StandardExceptions.DataNotWrittenException(
-								$"create editor invite token for {editorEmail}");
-					}
-				}
+							editorInfo.UserId
+							, editorInfo.Token
+							, Type = CreateUserEmailTokenQuery.EditorInvite
+							,
+					});
 
-				// Record the editor request in database
-				await dba.ExecuteAsync(
-						RecordEditionEditorRequest.GetQuery
-						, new
-						{
-								editorInfo.Token
-								, AdminUserId = editionUser.userId
-								, EditorUserId = editorInfo.UserId
-								, editionUser.EditionId
-								, permissions.IsAdmin
-								, permissions.MayLock
-								, permissions.MayWrite
-								,
-						});
-
-
-			// Complete the transaction
-			dba.CommitTransaction();
-
-
-		// Get datetime of request
-			var date = (await dba.QueryAsync<DateTime>(
-					GetEditionEditorRequestDate.GetQuery
-					, new { editorInfo.Token })).AsList();
-
-			if (date.Count != 1)
+			if (writtenToken != 1)
 			{
 				throw new StandardExceptions.DataNotWrittenException(
-						"generate edition share request");
+						$"create editor invite token for {editorEmail}");
 			}
+		}
 
-			editorInfo.Date = date.FirstOrDefault();
+		// Record the editor request in database
+		await dba.ExecuteAsync(
+				RecordEditionEditorRequest.GetQuery
+				, new
+				{
+						editorInfo.Token
+						, AdminUserId = editionUser.userId
+						, EditorUserId = editorInfo.UserId
+						, editionUser.EditionId
+						, permissions.IsAdmin
+						, permissions.MayLock
+						, permissions.MayWrite
+						,
+				});
+
+		// Complete the transaction
+		dba.CommitTransaction();
+
+		// Get datetime of request
+		var date = (await dba.QueryAsync<DateTime>(
+				GetEditionEditorRequestDate.GetQuery
+				, new { editorInfo.Token })).AsList();
+
+		if (date.Count != 1)
+		{
+			throw new StandardExceptions.DataNotWrittenException("generate edition share request");
+		}
+
+		editorInfo.Date = date.FirstOrDefault();
 
 		// Return the results
 		return editorInfo;
@@ -978,70 +870,70 @@ WHERE edition_id = @EditionId";
 		DetailedEditionPermission editorEditionPermission;
 
 		await dba.BeginTransactionAsync();
-			var editorEditionPermissions = (await dba.QueryAsync<DetailedEditionPermission>(
-					FindEditionEditorRequestByToken.GetQuery
-					, new
-					{
-							Token = token
-							, EditorUserId = userId
-							,
-					})).AsList();
 
-			// Make sure the token exists
-			if (!editorEditionPermissions.Any())
-				throw new StandardExceptions.DataNotFoundException("token", token);
+		var editorEditionPermissions = (await dba.QueryAsync<DetailedEditionPermission>(
+				FindEditionEditorRequestByToken.GetQuery
+				, new
+				{
+						Token = token
+						, EditorUserId = userId
+						,
+				})).AsList();
 
-			editorEditionPermission = editorEditionPermissions.First();
+		// Make sure the token exists
+		if (!editorEditionPermissions.Any())
+			throw new StandardExceptions.DataNotFoundException("token", token);
 
-			editorEditionPermission.MayRead = true; // Invited editors always have read access
+		editorEditionPermission = editorEditionPermissions.First();
 
-			// Check if the editor already exists, don't attempt to re-add
-			if ((await _getEditionEditors(editorEditionPermission.EditionId)).Any(x => x.Email
-																					   == editorEditionPermission
-																							   .Email))
-				throw new StandardExceptions.ConflictingDataException("editor email");
+		editorEditionPermission.MayRead = true; // Invited editors always have read access
 
-			// Add the editor
-			var editorUpdateExecution = await dba.ExecuteAsync(
-					CreateDetailedEditionEditorQuery.GetQuery
-					, new
-					{
-							editorEditionPermission.EditionId
-							, editorEditionPermission.Email
-							, editorEditionPermission.MayRead
-							, editorEditionPermission.MayWrite
-							, editorEditionPermission.MayLock
-							, editorEditionPermission.IsAdmin
-							,
-					});
+		// Check if the editor already exists, don't attempt to re-add
+		if ((await _getEditionEditors(editorEditionPermission.EditionId)).Any(x => x.Email
+																				   == editorEditionPermission
+																						   .Email))
+			throw new StandardExceptions.ConflictingDataException("editor email");
 
-			if (editorUpdateExecution != 1)
-			{
-				throw new StandardExceptions.DataNotWrittenException(
-						$"update permissions for {editorEditionPermission.Email}");
-			}
+		// Add the editor
+		var editorUpdateExecution = await dba.ExecuteAsync(
+				CreateDetailedEditionEditorQuery.GetQuery
+				, new
+				{
+						editorEditionPermission.EditionId
+						, editorEditionPermission.Email
+						, editorEditionPermission.MayRead
+						, editorEditionPermission.MayWrite
+						, editorEditionPermission.MayLock
+						, editorEditionPermission.IsAdmin
+						,
+				});
 
-			// Delete unneeded database entries
-			await dba.ExecuteAsync(
-					DeleteEditionEditorRequest.GetQuery
-					, new
-					{
-							Token = new Guid(token)
-							, EditorUserId = userId
-							,
-					});
+		if (editorUpdateExecution != 1)
+		{
+			throw new StandardExceptions.DataNotWrittenException(
+					$"update permissions for {editorEditionPermission.Email}");
+		}
 
-			await dba.ExecuteAsync(
-					DeleteUserEmailTokenQuery.GetTokenQuery
-					, new
-					{
-							Tokens = new List<Guid> { new(token) }
-							, Type = CreateUserEmailTokenQuery.EditorInvite
-							,
-					});
+		// Delete unneeded database entries
+		await dba.ExecuteAsync(
+				DeleteEditionEditorRequest.GetQuery
+				, new
+				{
+						Token = new Guid(token)
+						, EditorUserId = userId
+						,
+				});
 
-			dba.CommitTransaction();
+		await dba.ExecuteAsync(
+				DeleteUserEmailTokenQuery.GetTokenQuery
+				, new
+				{
+						Tokens = new List<Guid> { new(token) }
+						, Type = CreateUserEmailTokenQuery.EditorInvite
+						,
+				});
 
+		dba.CommitTransaction();
 
 		// Return the results
 		return editorEditionPermission;
@@ -1053,9 +945,10 @@ WHERE edition_id = @EditionId";
 	/// <param name="userId">Id of the admin who has issued the request for a user to become an editor</param>
 	/// <returns></returns>
 	public async Task<List<DetailedEditorRequestPermissions>>
-			GetOutstandingEditionEditorRequestsAsync(uint userId) => (await dba.QueryAsync<DetailedEditorRequestPermissions>(
-			FindEditionEditorRequestByAdminId.GetQuery
-			, new { AdminUserId = userId })).ToList();
+			GetOutstandingEditionEditorRequestsAsync(uint userId)
+		=> (await dba.QueryAsync<DetailedEditorRequestPermissions>(
+				FindEditionEditorRequestByAdminId.GetQuery
+				, new { AdminUserId = userId })).ToList();
 
 	/// <summary>
 	///  Requests a list of invitations to become an editor, which have been sent to the user
@@ -1063,18 +956,18 @@ WHERE edition_id = @EditionId";
 	/// <param name="userId">Id of the user who has been invited to become editor</param>
 	/// <returns></returns>
 	public async Task<List<DetailedEditorInvitationPermissions>>
-			GetOutstandingEditionEditorInvitationsAsync(uint userId) => (await dba.QueryAsync<DetailedEditorInvitationPermissions>(
-			FindEditionEditorRequestByEditorId.GetQuery
-			, new { EditorUserId = userId })).ToList();
+			GetOutstandingEditionEditorInvitationsAsync(uint userId)
+		=> (await dba.QueryAsync<DetailedEditorInvitationPermissions>(
+				FindEditionEditorRequestByEditorId.GetQuery
+				, new { EditorUserId = userId })).ToList();
 
 	public async Task<Permission> ChangeEditionEditorRightsAsync(
-			UserInfo        editionUser
-			, string        editorEmail
-			, bool?         mayRead
-			, bool?         mayWrite
-			, bool?         mayLock
-			, bool?         isAdmin
-			)
+			UserInfo editionUser
+			, string editorEmail
+			, bool?  mayRead
+			, bool?  mayWrite
+			, bool?  mayLock
+			, bool?  isAdmin)
 	{
 		// Make sure requesting user is admin when raising access, only and edition admin may perform this action
 		if (((mayRead ?? false) || (mayWrite ?? false) || (mayLock ?? false) || (isAdmin ?? false))
@@ -1122,41 +1015,40 @@ WHERE edition_id = @EditionId";
 					"read rights may not be revoked for an editor with write rights");
 		}
 
-			// If the last admin is giving up admin rights, return error message with token for complete delete
-			if (!editors.Any(x => ((x.Email == editorEmail) && permissions.IsAdmin)
-								  || ((x.Email != editorEmail) && x.IsAdmin)))
-			{
-				throw new StandardExceptions.InputDataRuleViolationException(
-						$@"an edition must have at least one admin.
+		// If the last admin is giving up admin rights, return error message with token for complete delete
+		if (!editors.Any(x => ((x.Email == editorEmail) && permissions.IsAdmin)
+							  || ((x.Email != editorEmail) && x.IsAdmin)))
+		{
+			throw new StandardExceptions.InputDataRuleViolationException(
+					$@"an edition must have at least one admin.
 Please give admin status to another editor before relinquishing admin status for the current user or deleting the edition.
 An admin may delete the edition for all editors with the request DELETE /v1/editions/{
 	editionUser.EditionId.ToString()
 }.");
-			}
+		}
 
-			// Perform the update
-			var editorUpdateExecution = await dba.ExecuteAsync(
-					UpdateEditionEditorPermissionsQuery.GetQuery
-					, new
-					{
-							editionUser.EditionId
-							, Email = editorEmail
-							, permissions.MayRead
-							, permissions.MayWrite
-							, permissions.MayLock
-							, permissions.IsAdmin
-							,
-					});
+		// Perform the update
+		var editorUpdateExecution = await dba.ExecuteAsync(
+				UpdateEditionEditorPermissionsQuery.GetQuery
+				, new
+				{
+						editionUser.EditionId
+						, Email = editorEmail
+						, permissions.MayRead
+						, permissions.MayWrite
+						, permissions.MayLock
+						, permissions.IsAdmin
+						,
+				});
 
-			if (editorUpdateExecution != 1)
-			{
-				throw new StandardExceptions.DataNotWrittenException(
-						$"update permissions for {editorEmail}");
-			}
+		if (editorUpdateExecution != 1)
+		{
+			throw new StandardExceptions.DataNotWrittenException(
+					$"update permissions for {editorEmail}");
+		}
 
-			// Return the results
-			return permissions;
-
+		// Return the results
+		return permissions;
 
 		// In the future should we email the editor about their change in status?
 	}
@@ -1169,166 +1061,156 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 	/// <param name="editionUser">User object requesting the delete</param>
 	/// <returns></returns>
 	public async Task<List<uint>> GetEditionEditorUserIdsAsync(UserInfo editionUser)
-	{
-			return (await dba.QueryAsync<uint>(
-					EditionEditorUserIds.GetQuery
-					, new
-					{
-							editionUser.EditionId
-							, UserId = editionUser.userId
-							,
-					})).ToList();
-	}
+		=> (await dba.QueryAsync<uint>(
+				EditionEditorUserIds.GetQuery
+				, new
+				{
+						editionUser.EditionId
+						, UserId = editionUser.userId
+						,
+				})).ToList();
 
 	public async Task<IEnumerable<Edition>> GetManuscriptEditions(uint? userId, uint manuscriptId)
 	{
-			var editions = new List<Edition>();
-			Edition lastEdition;
+		var editions = new List<Edition>();
+		Edition lastEdition;
 
-			await dba.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
-					EditionListQuery.GetQuery(userId.HasValue, false, searchByManuscript: true)
-					, (editionGroup, editor) =>
+		await dba.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
+				EditionListQuery.GetQuery(userId.HasValue, false, searchByManuscript: true)
+				, (editionGroup, editor) =>
+				  {
+					  // Set the copyrights for the previous, and now complete, edition before making the new one
+					  if ((editions.LastOrDefault()?.EditionId != null)
+						  && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
 					  {
-						  // Set the copyrights for the previous, and now complete, edition before making the new one
-						  if ((editions.LastOrDefault()?.EditionId != null)
-							  && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
-						  {
-							  lastEdition = editions.Last();
+						  lastEdition = editions.Last();
 
-							  lastEdition.Copyright = Licence.printLicence(
-									  lastEdition.CopyrightHolder
-									  , string.IsNullOrEmpty(lastEdition.Collaborators)
-											  ? string.Join(
-													  ", "
-													  , lastEdition.Editors.Select(y =>
+						  lastEdition.Copyright = Licence.printLicence(
+								  lastEdition.CopyrightHolder
+								  , string.IsNullOrEmpty(lastEdition.Collaborators)
+										  ? string.Join(
+												  ", "
+												  , lastEdition.Editors.Select(y =>
+																			   {
+																				   if ((y.Forename
+																						== null)
+																					   && (y.Surname
+																						   == null))
 																				   {
-																					   if ((y
-																									.Forename
-																							== null)
-																						   && (y
-																									   .Surname
-																							   == null))
-																					   {
-																						   return y
-																								   .EditorEmail;
-																					   }
+																					   return y
+																							   .EditorEmail;
+																				   }
 
-																					   return $@"{
-																						   y.Forename
-																					   } {
-																						   y.Surname
-																					   }".Trim();
-																				   }))
-											  : lastEdition.Collaborators);
-						  }
-
-						  if ((editions.LastOrDefault()?.EditionId == null)
-							  || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
-						  {
-							  // Now start building the new edition
-							  lastEdition = new Edition
-							  {
-									  Name = editionGroup.Name
-									  , Width = editionGroup.Width
-									  , Height = editionGroup.Height
-									  , XOrigin = editionGroup.XOrigin
-									  , YOrigin = editionGroup.YOrigin
-									  , PPI = editionGroup.PPI
-									  , ManuscriptMetricsEditor =
-											  editionGroup.ManuscriptMetricsEditor
-									  , Collaborators = editionGroup.Collaborators
-									  , Copyright = null
-									  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
-									  CopyrightHolder = editionGroup.CopyrightHolder
-									  , EditionDataEditorId = editionGroup.EditionDataEditorId
-									  , EditionId = editionGroup.EditionId
-									  , IsPublic = editionGroup.IsPublic
-									  , PublicationDate = editionGroup.PublicationDate
-									  , LastEdit = editionGroup.LastEdit
-									  , Locked = editionGroup.Locked
-									  , Owner =
-											  new User
-											  {
-													  Email = editionGroup.CurrentEmail
-													  , UserId = editionGroup.CurrentUserId
-													  ,
-											  }
-									  , Permission =
-											  new Permission
-											  {
-													  IsAdmin = editionGroup.CurrentIsAdmin
-													  , MayLock =
-															  editionGroup.CurrentMayLock
-													  , MayWrite =
-															  editionGroup.CurrentMayWrite
-													  , MayRead =
-															  editionGroup.CurrentMayRead
-													  ,
-											  }
-									  , Thumbnail = editionGroup.Thumbnail
-									  , ManuscriptId = editionGroup.ManuscriptId
-									  , Editors = new List<EditorWithPermissions>()
-									  ,
-							  };
-
-							  editions.Add(lastEdition);
-						  }
-
-						  // Add the new editor to this edition
-						  editions.Last().Editors.Add(editor);
-
-						  return editions.Last();
+																				   return $@"{
+																					   y.Forename
+																				   } {
+																					   y.Surname
+																				   }".Trim();
+																			   }))
+										  : lastEdition.Collaborators);
 					  }
-					, new
-					{
-							UserId = userId
-							, ManuscriptId = manuscriptId
-							,
-					}
-					, splitOn: "EditorId");
 
-			if (editions.Count <= 0)
-				return editions;
+					  if ((editions.LastOrDefault()?.EditionId == null)
+						  || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+					  {
+						  // Now start building the new edition
+						  lastEdition = new Edition
+						  {
+								  Name = editionGroup.Name
+								  , Width = editionGroup.Width
+								  , Height = editionGroup.Height
+								  , XOrigin = editionGroup.XOrigin
+								  , YOrigin = editionGroup.YOrigin
+								  , PPI = editionGroup.PPI
+								  , ManuscriptMetricsEditor = editionGroup.ManuscriptMetricsEditor
+								  , Collaborators = editionGroup.Collaborators
+								  , Copyright = null
+								  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+								  CopyrightHolder = editionGroup.CopyrightHolder
+								  , EditionDataEditorId = editionGroup.EditionDataEditorId
+								  , EditionId = editionGroup.EditionId
+								  , IsPublic = editionGroup.IsPublic
+								  , PublicationDate = editionGroup.PublicationDate
+								  , LastEdit = editionGroup.LastEdit
+								  , Locked = editionGroup.Locked
+								  , Owner =
+										  new User
+										  {
+												  Email = editionGroup.CurrentEmail
+												  , UserId = editionGroup.CurrentUserId
+												  ,
+										  }
+								  , Permission =
+										  new Permission
+										  {
+												  IsAdmin = editionGroup.CurrentIsAdmin
+												  , MayLock = editionGroup.CurrentMayLock
+												  , MayWrite = editionGroup.CurrentMayWrite
+												  , MayRead = editionGroup.CurrentMayRead
+												  ,
+										  }
+								  , Thumbnail = editionGroup.Thumbnail
+								  , ManuscriptId = editionGroup.ManuscriptId
+								  , Editors = new List<EditorWithPermissions>()
+								  ,
+						  };
 
-			{
-				lastEdition = editions.Last();
+						  editions.Add(lastEdition);
+					  }
 
-				lastEdition.Copyright = Licence.printLicence(
-						lastEdition.CopyrightHolder
-						, string.IsNullOrEmpty(lastEdition.Collaborators)
-								? string.Join(
-										", "
-										, lastEdition.Editors.Select(y =>
-																	 {
-																		 if ((y.Forename == null)
-																			 && (y.Surname == null))
-																		 {
-																			 return y.EditorEmail;
-																		 }
+					  // Add the new editor to this edition
+					  editions.Last().Editors.Add(editor);
 
-																		 return $@"{
-																			 y.Forename
-																		 } {
-																			 y.Surname
-																		 }".Trim();
-																	 }))
-								: lastEdition.Collaborators);
-			}
+					  return editions.Last();
+				  }
+				, new
+				{
+						UserId = userId
+						, ManuscriptId = manuscriptId
+						,
+				}
+				, splitOn: "EditorId");
 
+		if (editions.Count <= 0)
 			return editions;
+
+		{
+			lastEdition = editions.Last();
+
+			lastEdition.Copyright = Licence.printLicence(
+					lastEdition.CopyrightHolder
+					, string.IsNullOrEmpty(lastEdition.Collaborators)
+							? string.Join(
+									", "
+									, lastEdition.Editors.Select(y =>
+																 {
+																	 if ((y.Forename == null)
+																		 && (y.Surname == null))
+																	 {
+																		 return y.EditorEmail;
+																	 }
+
+																	 return $@"{
+																		 y.Forename
+																	 } {
+																		 y.Surname
+																	 }".Trim();
+																 }))
+							: lastEdition.Collaborators);
+		}
+
+		return editions;
 	}
 
 	public async Task<List<LetterShape>> GetEditionScriptCollectionAsync(UserInfo editonUser)
-	{
-			return (await dba.QueryAsync<LetterShape>(
-					EditionScriptQuery.GetQuery
-					, new
-					{
-							editonUser.EditionId
-							, UserId = editonUser.userId ?? 0
-							,
-					})).ToList();
-	}
+		=> (await dba.QueryAsync<LetterShape>(
+				EditionScriptQuery.GetQuery
+				, new
+				{
+						editonUser.EditionId
+						, UserId = editonUser.userId ?? 0
+						,
+				})).ToList();
 
 	public async Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser)
 	{
@@ -1341,139 +1223,138 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 		CharacterAttribute lastCharacterAttribute = null;
 		CharacterStreamPosition lastCharacterStreamPosition = null;
 
-			var scriptLines = await dba.QueryAsync(
-					EditionScriptLines.GetQuery
-					, new[]
-					{
-							typeof(ScriptTextFragment)
-							, typeof(ScriptLine)
-							, typeof(ScriptArtefactCharacters)
-							, typeof(Character)
-							, typeof(SpatialRoi)
-							, typeof(CharacterAttribute)
-							, typeof(CharacterStreamPosition)
-							,
-					}
-					, objects =>
+		var scriptLines = await dba.QueryAsync(
+				EditionScriptLines.GetQuery
+				, new[]
+				{
+						typeof(ScriptTextFragment)
+						, typeof(ScriptLine)
+						, typeof(ScriptArtefactCharacters)
+						, typeof(Character)
+						, typeof(SpatialRoi)
+						, typeof(CharacterAttribute)
+						, typeof(CharacterStreamPosition)
+						,
+				}
+				, objects =>
+				  {
+					  // Collect the mapped objects
+					  if (!(objects[0] is ScriptTextFragment scriptTextFragment))
+						  return null;
+
+					  if (!(objects[1] is ScriptLine scriptLine))
+						  return null;
+
+					  if (!(objects[2] is ScriptArtefactCharacters scriptArtefactCharacters))
+						  return null;
+
+					  if (!(objects[3] is Character character))
+						  return null;
+
+					  if (!(objects[4] is SpatialRoi spatialRoi))
+						  return null;
+
+					  if (!(objects[5] is CharacterAttribute characterAttribute))
+						  return null;
+
+					  if (!(objects[6] is CharacterStreamPosition characterStreamPosition))
+						  return null;
+
+					  // Construct the nestings
+					  var newTextFragment = scriptTextFragment.TextFragmentId
+											!= lastScriptTextFragment?.TextFragmentId;
+
+					  if (newTextFragment)
 					  {
-						  // Collect the mapped objects
-						  if (!(objects[0] is ScriptTextFragment scriptTextFragment))
-							  return null;
+						  lastScriptTextFragment = scriptTextFragment;
 
-						  if (!(objects[1] is ScriptLine scriptLine))
-							  return null;
-
-						  if (!(objects[2] is ScriptArtefactCharacters scriptArtefactCharacters))
-							  return null;
-
-						  if (!(objects[3] is Character character))
-							  return null;
-
-						  if (!(objects[4] is SpatialRoi spatialRoi))
-							  return null;
-
-						  if (!(objects[5] is CharacterAttribute characterAttribute))
-							  return null;
-
-						  if (!(objects[6] is CharacterStreamPosition characterStreamPosition))
-							  return null;
-
-						  // Construct the nestings
-						  var newTextFragment = scriptTextFragment.TextFragmentId
-												!= lastScriptTextFragment?.TextFragmentId;
-
-						  if (newTextFragment)
-						  {
-							  lastScriptTextFragment = scriptTextFragment;
-
-							  lastScriptTextFragment.Lines = new List<ScriptLine>();
-						  }
-
-						  if (scriptLine.LineId != lastScriptLine?.LineId)
-						  {
-							  lastScriptLine = scriptLine;
-
-							  lastScriptLine.Artefacts = new List<ScriptArtefactCharacters>();
-
-							  lastScriptTextFragment.Lines.Add(lastScriptLine);
-						  }
-
-						  if (scriptArtefactCharacters.ArtefactId
-							  != lastScriptArtefactCharacters?.ArtefactId)
-						  {
-							  lastScriptArtefactCharacters = scriptArtefactCharacters;
-
-							  lastScriptArtefactCharacters.Characters = new List<Character>();
-
-							  lastScriptLine.Artefacts.Add(lastScriptArtefactCharacters);
-						  }
-
-						  if (character.SignInterpretationId
-							  != lastCharacters?.SignInterpretationId)
-						  {
-							  lastCharacters = character;
-
-							  lastCharacters.Attributes = new List<CharacterAttribute>();
-
-							  lastCharacters.Rois = new List<SpatialRoi>();
-
-							  lastCharacters.NextCharacters = new List<CharacterStreamPosition>();
-
-							  lastScriptArtefactCharacters.Characters.Add(lastCharacters);
-						  }
-
-						  if (spatialRoi.SignInterpretationRoiId
-							  != lastSpatialRoi?.SignInterpretationRoiId)
-						  {
-							  lastSpatialRoi = spatialRoi;
-
-							  lastCharacters.Rois.Add(lastSpatialRoi);
-						  }
-
-						  if (characterAttribute.SignInterpretationAttributeId
-							  != lastCharacterAttribute?.SignInterpretationAttributeId)
-						  {
-							  lastCharacterAttribute = characterAttribute;
-
-							  lastCharacters.Attributes.Add(lastCharacterAttribute);
-						  }
-
-						  if (characterStreamPosition.PositionInStreamId
-							  == lastCharacterStreamPosition?.PositionInStreamId)
-							  return scriptTextFragment;
-
-						  lastCharacterStreamPosition = characterStreamPosition;
-
-						  lastCharacters.NextCharacters.Add(lastCharacterStreamPosition);
-
-						  return scriptTextFragment;
+						  lastScriptTextFragment.Lines = new List<ScriptLine>();
 					  }
-					, new
-					{
-							editionUser.EditionId
-							, UserId = editionUser.userId
-							,
-					}
-					, splitOn:
-					"LineId,ArtefactId,SignInterpretationId,SignInterpretationRoiId,SignInterpretationAttributeId,PositionInStreamId");
 
-			return scriptLines.Where(x => x != null).ToList();
+					  if (scriptLine.LineId != lastScriptLine?.LineId)
+					  {
+						  lastScriptLine = scriptLine;
+
+						  lastScriptLine.Artefacts = new List<ScriptArtefactCharacters>();
+
+						  lastScriptTextFragment.Lines.Add(lastScriptLine);
+					  }
+
+					  if (scriptArtefactCharacters.ArtefactId
+						  != lastScriptArtefactCharacters?.ArtefactId)
+					  {
+						  lastScriptArtefactCharacters = scriptArtefactCharacters;
+
+						  lastScriptArtefactCharacters.Characters = new List<Character>();
+
+						  lastScriptLine.Artefacts.Add(lastScriptArtefactCharacters);
+					  }
+
+					  if (character.SignInterpretationId != lastCharacters?.SignInterpretationId)
+					  {
+						  lastCharacters = character;
+
+						  lastCharacters.Attributes = new List<CharacterAttribute>();
+
+						  lastCharacters.Rois = new List<SpatialRoi>();
+
+						  lastCharacters.NextCharacters = new List<CharacterStreamPosition>();
+
+						  lastScriptArtefactCharacters.Characters.Add(lastCharacters);
+					  }
+
+					  if (spatialRoi.SignInterpretationRoiId
+						  != lastSpatialRoi?.SignInterpretationRoiId)
+					  {
+						  lastSpatialRoi = spatialRoi;
+
+						  lastCharacters.Rois.Add(lastSpatialRoi);
+					  }
+
+					  if (characterAttribute.SignInterpretationAttributeId
+						  != lastCharacterAttribute?.SignInterpretationAttributeId)
+					  {
+						  lastCharacterAttribute = characterAttribute;
+
+						  lastCharacters.Attributes.Add(lastCharacterAttribute);
+					  }
+
+					  if (characterStreamPosition.PositionInStreamId
+						  == lastCharacterStreamPosition?.PositionInStreamId)
+						  return scriptTextFragment;
+
+					  lastCharacterStreamPosition = characterStreamPosition;
+
+					  lastCharacters.NextCharacters.Add(lastCharacterStreamPosition);
+
+					  return scriptTextFragment;
+				  }
+				, new
+				{
+						editionUser.EditionId
+						, UserId = editionUser.userId
+						,
+				}
+				, splitOn:
+				"LineId,ArtefactId,SignInterpretationId,SignInterpretationRoiId,SignInterpretationAttributeId,PositionInStreamId");
+
+		return scriptLines.Where(x => x != null).ToList();
 	}
 
 	public async Task<EditionMetadata> GetEditionMetadata(UserInfo editionUser)
 	{
-			try
-			{
-				var metadata = await dba.QueryFirstAsync<EditionMetadata>(
-						GetManuscriptMetadataQuery.GetQuery
-						, new { editionUser.EditionId });
+		try
+		{
+			var metadata = await dba.QueryFirstAsync<EditionMetadata>(
+					GetManuscriptMetadataQuery.GetQuery
+					, new { editionUser.EditionId });
 
-				return metadata;
-			}
+			return metadata;
+		}
 
-			catch (InvalidOperationException) { }
+		catch (InvalidOperationException) { }
 
-			return new EditionMetadata();
+		return new EditionMetadata();
 	}
 
 	/// <summary>
@@ -1508,41 +1389,33 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 		// becoming unusable, not whether any data was left behind). It is a concern for those maintaining the
 		// database, and we should discuss what might be done for that.  We could check for this and other things
 		// with some "health check" services.
-			// Dynamically get all tables that can be part of an edition, that way we don't worry about
-			// this breaking due to future updates.
-			var dataTables = await dba.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
+		// Dynamically get all tables that can be part of an edition, that way we don't worry about
+		// this breaking due to future updates.
+		var dataTables = await dba.QueryAsync<OwnerTables.Result>(OwnerTables.GetQuery);
 
-			// Loop over every table and remove every entry with the requested editionId
-			// Each individual delete can be async and happen concurrently
-			foreach (var dataTable in dataTables)
-				await DeleteDataFromOwnerTable(dba, dataTable.TableName, editionUser);
+		// Loop over every table and remove every entry with the requested editionId
+		// Each individual delete can be async and happen concurrently
+		foreach (var dataTable in dataTables)
+			await DeleteDataFromOwnerTable(dba, dataTable.TableName, editionUser);
 	}
 
 	private static async Task DeleteDataFromOwnerTable(
-			IDatabaseAccessor   dba
-			, string        tableName
-			, UserInfo      editionUser)
+			IDatabaseAccessor dba
+			, string          tableName
+			, UserInfo        editionUser)
 	{
-		await
-				dba.ExecuteAsync(
-						DeleteEditionFromTable
-								.GetQuery(
-										tableName)
-						, new
-						{
-								editionUser
-										.EditionId
-								, UserId =
-										editionUser
-												.userId
-								,
-						});
+		await dba.ExecuteAsync(
+				DeleteEditionFromTable.GetQuery(tableName)
+				, new
+				{
+						editionUser.EditionId
+						, UserId = editionUser.userId
+						,
+				});
 	}
 
 	private async Task<List<EditorPermissions>> _getEditionEditors(uint editionId)
-	{
-			return (await dba.QueryAsync<EditorPermissions>(
-					GetEditionEditorsWithPermissionsQuery.GetQuery
-					, new { EditionId = editionId })).ToList();
-	}
+		=> (await dba.QueryAsync<EditorPermissions>(
+				GetEditionEditorsWithPermissionsQuery.GetQuery
+				, new { EditionId = editionId })).ToList();
 }

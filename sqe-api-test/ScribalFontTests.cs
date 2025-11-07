@@ -21,7 +21,7 @@ public partial class WebControllerTest
 	public async Task CanWriteToScribalFont(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();
@@ -47,7 +47,7 @@ public partial class WebControllerTest
 	public async Task CanChangeScribalFont(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();
@@ -104,7 +104,7 @@ public partial class WebControllerTest
 	public async Task CanDeleteScribalFont(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();
@@ -151,7 +151,7 @@ public partial class WebControllerTest
 	public async Task CanCreateGlyphForScribalFont(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();
@@ -180,7 +180,7 @@ public partial class WebControllerTest
 	public async Task CanDeleteGlyphForScribalFont(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();
@@ -238,7 +238,7 @@ public partial class WebControllerTest
 	public async Task CanCreateKernPairForScribalFont(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();
@@ -268,7 +268,7 @@ public partial class WebControllerTest
 	public async Task CanDeleteKernPairForScribalFont(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();

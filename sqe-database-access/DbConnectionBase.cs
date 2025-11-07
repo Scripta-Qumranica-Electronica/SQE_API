@@ -1,24 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
-using System.Threading;
-using System.Threading.Tasks;
-using Dapper;
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
-using Polly;
-using Serilog;
 
 namespace SQE.DatabaseAccess;
 
 public class DbConnectionBase
 {
-	private          IDbConnection  _connection;
-	private          IDbTransaction _transaction;
-	private          bool           _inTransaction   = false;
-	private          uint           _transactionNest = 0;
 	private readonly IConfiguration _config;
+	private          IDbConnection  _connection;
+	private          bool           _inTransaction;
+	private          IDbTransaction _transaction;
+	private          uint           _transactionNest = 0;
 
 	protected DbConnectionBase(IConfiguration config) => _config = config;
 
@@ -79,8 +72,18 @@ public class DbConnectionBase
 	}
 
 	/// <summary>
-	/// Manages a database connection, either using a provided connection or creating a new one.
-	/// Only disposes the connection if it was created by this struct (not if it was provided).
+	///  Gets a managed connection that will either use the provided connection or create a new one.
+	///  If a new connection is created, it will be disposed when the ManagedConnection is disposed.
+	///  If an existing connection is provided, it will not be disposed.
+	/// </summary>
+	/// <param name="connection">Optional existing connection to use</param>
+	/// <returns>A ManagedConnection that handles disposal correctly</returns>
+	protected ManagedConnection GetManagedConnection(IDbConnection connection = null)
+		=> new(connection);
+
+	/// <summary>
+	///  Manages a database connection, either using a provided connection or creating a new one.
+	///  Only disposes the connection if it was created by this struct (not if it was provided).
 	/// </summary>
 	protected struct ManagedConnection : IDisposable
 	{
@@ -105,21 +108,7 @@ public class DbConnectionBase
 		public void Dispose()
 		{
 			if (_shouldDispose)
-			{
 				Connection?.Dispose();
-			}
 		}
-	}
-
-	/// <summary>
-	/// Gets a managed connection that will either use the provided connection or create a new one.
-	/// If a new connection is created, it will be disposed when the ManagedConnection is disposed.
-	/// If an existing connection is provided, it will not be disposed.
-	/// </summary>
-	/// <param name="connection">Optional existing connection to use</param>
-	/// <returns>A ManagedConnection that handles disposal correctly</returns>
-	protected ManagedConnection GetManagedConnection(IDbConnection connection = null)
-	{
-		return new ManagedConnection(connection);
 	}
 }

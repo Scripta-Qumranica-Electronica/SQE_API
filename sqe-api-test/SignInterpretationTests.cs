@@ -58,7 +58,7 @@ public partial class WebControllerTest
 	public async Task CanAddAttributeToEdition()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -154,7 +154,7 @@ public partial class WebControllerTest
 	public async Task CanCreateNewAttributeForSignInterpretation()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -243,7 +243,7 @@ public partial class WebControllerTest
 			, bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -311,7 +311,7 @@ public partial class WebControllerTest
 			, uint?  attributeValueId)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -400,7 +400,7 @@ public partial class WebControllerTest
 	public async Task CanCreateVariantSignInterpretation()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -476,7 +476,7 @@ public partial class WebControllerTest
 	public async Task CanLinkSignInterpretations()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -550,7 +550,7 @@ public partial class WebControllerTest
 	public async Task CanUnlinkSignInterpretations()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -624,7 +624,7 @@ public partial class WebControllerTest
 	public async Task CanCreateSignInterpretationCommentary()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -740,7 +740,7 @@ public partial class WebControllerTest
 	public async Task CanDeleteAttributeFromEdition()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -803,7 +803,7 @@ public partial class WebControllerTest
 	public async Task CanDeleteAttributeFromSignInterpretation()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -960,7 +960,7 @@ public partial class WebControllerTest
 	public async Task CanGetAttributesOfSpecificSignInterpretation()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -1009,7 +1009,7 @@ public partial class WebControllerTest
 	public async Task CanUpdateAttributeInEdition()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();
@@ -1173,7 +1173,7 @@ public partial class WebControllerTest
 	public async Task CanUpdateAttributeOfSignInterpretation()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var editionId = await editionCreator.CreateEdition();

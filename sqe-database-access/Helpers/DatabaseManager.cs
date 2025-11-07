@@ -1,4 +1,3 @@
-using System;
 using System.Data.Common;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -8,12 +7,13 @@ namespace SQE.DatabaseAccess.Helpers;
 
 public interface IDatabaseManager
 {
-	DbConnection      GetConnection();
+	DbConnection       GetConnection();
 	Task<DbConnection> GetConnectionAsync();
 }
+
 public class DatabaseManager : IDatabaseManager
 {
-	private readonly string          _connectionString;
+	private readonly string _connectionString;
 
 	public DatabaseManager(IConfiguration config)
 	{
@@ -23,7 +23,7 @@ public class DatabaseManager : IDatabaseManager
 		var user = config.GetConnectionString("MysqlUsername");
 		var pwd = config.GetConnectionString("MysqlPassword");
 		var minConn = config.GetConnectionString("MysqlMinConnectionPoolSize") ?? "8";
-		var maxConn  = config.GetConnectionString("MysqlMaxConnectionPoolSize") ?? "16";
+		var maxConn = config.GetConnectionString("MysqlMaxConnectionPoolSize") ?? "16";
 
 		_connectionString = $"server={
 			host
@@ -42,11 +42,8 @@ public class DatabaseManager : IDatabaseManager
 		};DefaultCommandTimeout=120;ConnectionReset=true;";
 	}
 
-	public DbConnection GetConnection()
-	{
+	public DbConnection GetConnection() => new MySqlConnection(_connectionString);
 
-		return new MySqlConnection(_connectionString);
-	}
-
-	public async Task<DbConnection> GetConnectionAsync() => await Task.Run(() => new MySqlConnection(_connectionString));
+	public async Task<DbConnection> GetConnectionAsync()
+		=> await Task.Run(() => new MySqlConnection(_connectionString));
 }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -13,35 +12,29 @@ public interface IImagedObjectRepository
 {
 	Task<IEnumerable<ImagedObject>> GetEditionImagedObjectsAsync(
 			UserInfo editionUser
-			, string imagedObjectId
-			);
+			, string imagedObjectId);
 
 	Task<ImagedObject> CreateEditionImagedObjectsAsync(UserInfo editionUser, string imagedObjectId);
 
 	Task DeleteEditionImagedObjectsAsync(UserInfo editionUser, string imagedObjectId);
 
-	Task<IEnumerable<ImagedObjectImage>> GetImagedObjectImagesAsync(
-			string imagedObjectId
-			);
-	Task<IEnumerable<uint>> GetImagedObjectEditionsAsync(
-			uint? userId
-			, string imagedObjectId
-			);
+	Task<IEnumerable<ImagedObjectImage>> GetImagedObjectImagesAsync(string imagedObjectId);
+
+	Task<IEnumerable<uint>> GetImagedObjectEditionsAsync(uint? userId, string imagedObjectId);
 
 	Task<IEnumerable<AlteredRecord>> CreateEditionImagedObjectsBySqeImageIdAsync(
-			UserInfo        editionUser
-			, uint          sqeImageId
-			);
+			UserInfo editionUser
+			, uint   sqeImageId);
 }
 
 public class ImagedObjectRepository(IDatabaseAccessor dba) : IImagedObjectRepository
 {
 	public async Task<IEnumerable<ImagedObject>> GetEditionImagedObjectsAsync(
 			UserInfo editionUser
-			, string imagedObjectId
-			)
+			, string imagedObjectId)
 	{
 		var sql = EditionImagedObjectQueries.GetQuery(!string.IsNullOrEmpty(imagedObjectId));
+
 		var results = await dba.QueryAsync<ImagedObject>(
 				sql
 				, new
@@ -56,17 +49,15 @@ public class ImagedObjectRepository(IDatabaseAccessor dba) : IImagedObjectReposi
 	}
 
 	public async Task<IEnumerable<ImagedObjectImage>> GetImagedObjectImagesAsync(
-			string          imagedObjectId
-			) => await dba.QueryAsync<ImagedObjectImage>(
+			string imagedObjectId) => await dba.QueryAsync<ImagedObjectImage>(
 			ImagedObjectImageQuery.GetQuery
 			, new { ImagedObjectId = imagedObjectId });
 
 	public async Task<IEnumerable<uint>> GetImagedObjectEditionsAsync(
-			uint? userId
-			, string imagedObjectId
-			)
+			uint?    userId
+			, string imagedObjectId)
 	{
-			const string sql = @"
+		const string sql = @"
 SELECT DISTINCT edition_editor.edition_id
 FROM image_catalog
 JOIN SQE_image USING(image_catalog_id)
@@ -77,15 +68,14 @@ JOIN edition_editor USING(edition_id)
 WHERE image_catalog.object_id = @ImagedObjectId
 	AND (edition.public = 1 OR edition_editor.user_id = @UserId)";
 
-			return await dba.QueryAsync<uint>(
-					sql
-					, new { ImagedObjectId = imagedObjectId, UserId = userId ?? 0 });
+		return await dba.QueryAsync<uint>(
+				sql
+				, new { ImagedObjectId = imagedObjectId, UserId = userId ?? 0 });
 	}
 
 	public async Task<ImagedObject> CreateEditionImagedObjectsAsync(
-			UserInfo        editionUser
-			, string        imagedObjectId
-			)
+			UserInfo editionUser
+			, string imagedObjectId)
 	{
 		await dba.BeginTransactionAsync();
 
@@ -96,8 +86,7 @@ WHERE image_catalog.object_id = @ImagedObjectId
 
 		var createRequests = imageCatalogueIds.Select(x =>
 													  {
-														  var parameters =
-																  new DynamicParameters();
+														  var parameters = new DynamicParameters();
 
 														  parameters.Add("image_catalog_id", x);
 
@@ -108,20 +97,16 @@ WHERE image_catalog.object_id = @ImagedObjectId
 																  , x);
 													  });
 
-		var a = await dba.WriteToDatabaseAsync(
-				editionUser
-				, createRequests.AsList());
+		var a = await dba.WriteToDatabaseAsync(editionUser, createRequests.AsList());
 
 		dba.CommitTransaction();
 
-		return (await GetEditionImagedObjectsAsync(editionUser, imagedObjectId))
-				.FirstOrDefault();
+		return (await GetEditionImagedObjectsAsync(editionUser, imagedObjectId)).FirstOrDefault();
 	}
 
 	public async Task<IEnumerable<AlteredRecord>> CreateEditionImagedObjectsBySqeImageIdAsync(
-			UserInfo        editionUser
-			, uint          sqeImageId
-			)
+			UserInfo editionUser
+			, uint   sqeImageId)
 	{
 		await dba.BeginTransactionAsync();
 		var imageCatalogueIds = await _getRelatedImageCatalogIdsForSqeImage(sqeImageId);
@@ -135,8 +120,7 @@ WHERE image_catalog.object_id = @ImagedObjectId
 
 		var createRequests = imageCatalogueIds.Select(x =>
 													  {
-														  var parameters =
-																  new DynamicParameters();
+														  var parameters = new DynamicParameters();
 
 														  parameters.Add("image_catalog_id", x);
 
@@ -147,9 +131,7 @@ WHERE image_catalog.object_id = @ImagedObjectId
 																  , x);
 													  });
 
-		var result = await dba.WriteToDatabaseAsync(
-				editionUser
-				, createRequests.AsList());
+		var result = await dba.WriteToDatabaseAsync(editionUser, createRequests.AsList());
 
 		dba.CommitTransaction();
 
@@ -162,9 +144,7 @@ WHERE image_catalog.object_id = @ImagedObjectId
 		var imageCatalogueIds = await _getImageCatalogId(imagedObjectId);
 
 		if (!imageCatalogueIds.Any())
-		{
 			throw new StandardExceptions.DataNotFoundException("imaged object", imagedObjectId);
-		}
 
 		var deleteRequests = imageCatalogueIds.Select(x => new MutationRequest(
 															  MutateType.Delete
@@ -176,16 +156,14 @@ WHERE image_catalog.object_id = @ImagedObjectId
 		dba.CommitTransaction();
 	}
 
-	private async Task<IEnumerable<uint>> _getImageCatalogId(
-			string imagedObjectId)
+	private async Task<IEnumerable<uint>> _getImageCatalogId(string imagedObjectId)
 	{
 		const string sql = "SELECT image_catalog_id FROM image_catalog WHERE object_id = @ObjectId";
 
 		return await dba.QueryAsync<uint>(sql, new { ObjectId = imagedObjectId });
 	}
 
-	private async Task<IEnumerable<uint>> _getRelatedImageCatalogIdsForSqeImage(
-			uint sqeImageId)
+	private async Task<IEnumerable<uint>> _getRelatedImageCatalogIdsForSqeImage(uint sqeImageId)
 	{
 		const string sql = @"
 select im2.image_catalog_id

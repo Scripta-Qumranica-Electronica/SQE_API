@@ -591,13 +591,14 @@ HAVING COUNT(DISTINCT manuscript_to_text_fragment_id) > 3 AND COUNT(DISTINCT art
 	///  This class can be used in a using block to clone an edition for tests. At the end of the using block,
 	///  it will automatically delete the newly created edition.
 	/// </summary>
-	public class EditionCreator : IAsyncDisposable, IDisposable
+	public class EditionCreator : IAsyncDisposable
+								  , IDisposable
 	{
 		private readonly HttpClient                        _client;
 		private readonly string                            _name;
 		private readonly Func<string, Task<HubConnection>> _realtime;
 		private readonly Request.UserAuthDetails           _userAuthDetails;
-		private bool _disposed = false;
+		private          bool                              _disposed;
 
 		/// <summary>
 		/// </summary>
@@ -625,7 +626,7 @@ HAVING COUNT(DISTINCT manuscript_to_text_fragment_id) > 3 AND COUNT(DISTINCT art
 		private uint EditionId { get; set; }
 
 		/// <summary>
-		/// Async disposal - preferred method for proper async cleanup
+		///  Async disposal - preferred method for proper async cleanup
 		/// </summary>
 		public async ValueTask DisposeAsync()
 		{
@@ -635,23 +636,24 @@ HAVING COUNT(DISTINCT manuscript_to_text_fragment_id) > 3 AND COUNT(DISTINCT art
 			if (EditionId == 0)
 			{
 				_disposed = true;
+
 				return;
 			}
 
 			// shouldSucceed here is false, since we don't really care if it worked.
 			await DeleteEdition(
-				_client
-				, _realtime
-				, EditionId
-				, userAuthDetails: _userAuthDetails
-				, shouldSucceed: false);
+					_client
+					, _realtime
+					, EditionId
+					, userAuthDetails: _userAuthDetails
+					, shouldSucceed: false);
 
 			_disposed = true;
 		}
 
 		/// <summary>
-		/// Synchronous disposal - provided for compatibility but async disposal is preferred
-		/// Uses GetAwaiter().GetResult() which is safer than Task.Run().Wait()
+		///  Synchronous disposal - provided for compatibility but async disposal is preferred
+		///  Uses GetAwaiter().GetResult() which is safer than Task.Run().Wait()
 		/// </summary>
 		public void Dispose()
 		{

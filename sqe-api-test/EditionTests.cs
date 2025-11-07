@@ -578,7 +578,7 @@ public partial class WebControllerTest
 	public async Task CanNotWriteWithoutReadShareEdition()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -1348,7 +1348,7 @@ public partial class WebControllerTest
 	public async Task CanGetFilteredEditions(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();
@@ -1430,7 +1430,7 @@ public partial class WebControllerTest
 	public async Task CanGetEditionsByManuscript(bool realtime)
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition();
@@ -1478,7 +1478,7 @@ public partial class WebControllerTest
 	public async Task CanGetEditionScriptChart()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -1534,7 +1534,7 @@ public partial class WebControllerTest
 	public async Task CanGetEditionLineScriptChart()
 	{
 		await using (var editionCreator =
-			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
+					 new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition

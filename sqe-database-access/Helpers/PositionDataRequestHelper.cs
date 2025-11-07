@@ -120,9 +120,9 @@ public static class PositionDataRequestFactory
 	/// <returns></returns>
 	public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
 			IDatabaseAccessor dba
-			, StreamType     streamType
-			, uint           editionId
-			, bool           addExistingAnchors = false)
+			, StreamType      streamType
+			, uint            editionId
+			, bool            addExistingAnchors = false)
 	{
 		var newObject = new PositionDataRequestHelper(
 				dba
@@ -152,10 +152,10 @@ public static class PositionDataRequestFactory
 	/// <returns></returns>
 	public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
 			IDatabaseAccessor dba
-			, StreamType     streamType
-			, List<uint>     itemIds
-			, uint           editionId
-			, bool           addExistingAnchors = false)
+			, StreamType      streamType
+			, List<uint>      itemIds
+			, uint            editionId
+			, bool            addExistingAnchors = false)
 	{
 		var newObject = new PositionDataRequestHelper(
 				dba
@@ -186,10 +186,10 @@ public static class PositionDataRequestFactory
 	/// <returns></returns>
 	public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
 			IDatabaseAccessor dba
-			, StreamType     streamType
-			, uint           itemId
-			, uint           editionId
-			, bool           addExistingAnchors = false) => await CreateInstanceAsync(
+			, StreamType      streamType
+			, uint            itemId
+			, uint            editionId
+			, bool            addExistingAnchors = false) => await CreateInstanceAsync(
 			dba
 			, streamType
 			, new List<uint> { itemId }
@@ -202,14 +202,14 @@ public class PositionDataRequestHelper
 	private readonly List<PositionAction> _actions = new();
 
 	private readonly IDatabaseAccessor _dba;
-	private readonly uint             _editionId;
-	private readonly List<uint>       _itemIds;
-	private readonly string           _itemName;
-	private readonly string           _itemNameAt;
-	private readonly string           _nextName;
-	private readonly string           _nextNameAt;
-	private readonly StreamType       _streamType;
-	private readonly string           _tableName;
+	private readonly uint              _editionId;
+	private readonly List<uint>        _itemIds;
+	private readonly string            _itemName;
+	private readonly string            _itemNameAt;
+	private readonly string            _nextName;
+	private readonly string            _nextNameAt;
+	private readonly StreamType        _streamType;
+	private readonly string            _tableName;
 
 	/// <summary>
 	///  We only have private constructors because objects should always be created
@@ -221,9 +221,9 @@ public class PositionDataRequestHelper
 	/// <param name="editionId">Id of the edition we are dealing with</param>
 	internal PositionDataRequestHelper(
 			IDatabaseAccessor dba
-			, StreamType     streamType
-			, List<uint>     itemIds
-			, uint           editionId)
+			, StreamType      streamType
+			, List<uint>      itemIds
+			, uint            editionId)
 	{
 		_itemIds = itemIds ?? new List<uint>();
 		_editionId = editionId;
@@ -662,8 +662,7 @@ public class PositionDataRequestHelper
 		parameters.Add("@NextItemIds", nextItemIds);
 		parameters.Add("@EditionId", _editionId);
 
-		var result =
-				await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
+		var result = await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
 
 		return result == null
 				? new List<PositionDataPair>()
@@ -721,8 +720,7 @@ public class PositionDataRequestHelper
 		parameters.Add("@ItemIds", itemIds);
 		parameters.Add("@EditionId", _editionId);
 
-		var result =
-				await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
+		var result = await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
 
 		return result == null
 				? new List<PositionDataPair>()
@@ -764,8 +762,7 @@ public class PositionDataRequestHelper
 		parameters.Add("@NextItemIds", nextItemIds);
 		parameters.Add("@EditionId", _editionId);
 
-		var result =
-				await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
+		var result = await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
 
 		return result == null
 				? new List<PositionDataPair>()

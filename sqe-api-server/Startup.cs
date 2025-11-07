@@ -44,9 +44,8 @@ public class Startup
 
 		Log.CloseAndFlush(); // Close the old logger
 
-		Log.Logger = new LoggerConfiguration()
-			.ReadFrom.Configuration(configuration)
-			.CreateLogger(); // Create a new logger from the full configuration
+		Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration)
+											  .CreateLogger(); // Create a new logger from the full configuration
 
 		// Run the startup checks to ensure all necessary external services are available.
 		StartupChecks.RunAllChecks(configuration, env);
@@ -95,11 +94,15 @@ public class Startup
 
 		// Register DatabaseAccessor and wrap it with retry decorator
 		services.AddScoped<DatabaseAccessor>();
+
 		services.AddScoped<IDatabaseAccessor>(sp =>
-		{
-			var accessor = sp.GetRequiredService<DatabaseAccessor>();
-			return new DatabaseAccessorRetryDecorator(accessor);
-		});
+											  {
+												  var accessor =
+														  sp.GetRequiredService<DatabaseAccessor>();
+
+												  return new DatabaseAccessorRetryDecorator(
+														  accessor);
+											  });
 
 		services.AddTransient<IDatabaseWriter, DatabaseWriter>();
 
@@ -111,14 +114,18 @@ public class Startup
 		services.AddTransient<ITextRepository, TextRepository>();
 		services.AddTransient<IRoiRepository, RoiRepository>();
 		services.AddTransient<ISignInterpretationRepository, SignInterpretationRepository>();
+
 		services
 				.AddTransient<ISignInterpretationCommentaryRepository,
 						SignInterpretationCommentaryRepository>();
+
 		services.AddTransient<IAttributeRepository, AttributeRepository>();
 		services.AddTransient<ICatalogueRepository, CatalogueRepository>();
+
 		services
 				.AddTransient<ISignStreamMaterializationRepository,
 						SignStreamMaterializationRepository>();
+
 		services.AddTransient<ISearchRepository, SearchRepository>();
 		services.AddTransient<IScriptRepository, ScriptRepository>();
 
@@ -130,7 +137,8 @@ public class Startup
 																 // which is incredibly slow.  CompressionLevel.Fastest (level 1) gives a good balance of speed
 																 // and compression. On one test Brotli at Fastest compressed a 9.4 MB file well, gzip
 																 // compressed it to 2.45 MB (albeit a little bit faster).
-																 options.Level = CompressionLevel.Fastest;
+																 options.Level =
+																		 CompressionLevel.Fastest;
 															 });
 
 		services.Configure<GzipCompressionProviderOptions>(options =>

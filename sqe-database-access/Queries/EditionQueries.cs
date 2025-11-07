@@ -287,9 +287,7 @@ ORDER BY manuscript_data.name, edition.edition_id
 		else if (published)
 			userFilter = "AND (edition.public = 1)";
 		else if (personal)
-		{
 			userFilter = "AND (edition_editor.user_id = @UserId AND edition_editor.may_read = 1)";
-		}
 
 		// Build the WHERE clauses
 		var where = limitScrolls

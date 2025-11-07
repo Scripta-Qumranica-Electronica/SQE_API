@@ -15,13 +15,11 @@ namespace SQE.DatabaseAccess;
 public interface IAttributeRepository
 {
 	Task<IEnumerable<SignInterpretationAttributeEntry>> GetAllEditionAttributesAsync(
-			UserInfo editionUser
-			);
+			UserInfo editionUser);
 
 	Task<IEnumerable<SignInterpretationAttributeEntry>> GetEditionAttributeAsync(
 			UserInfo editionUser
-			, uint   attributeId
-			);
+			, uint   attributeId);
 
 	Task<uint> CreateEditionAttribute(
 			UserInfo                                             editionUser
@@ -70,35 +68,30 @@ public interface IAttributeRepository
 	// Task<List<uint>> DeleteSignInterpretationAttributesAsync(UserInfo editionUser, List<uint> deleteAttributeIds);
 
 	Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			, uint          attributeValueId
-			);
+			UserInfo editionUser
+			, uint   signInterpretationId
+			, uint   attributeValueId);
 
 	Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			);
+			UserInfo editionUser
+			, uint   signInterpretationId);
 
 	Task UpdateAttributeForSignInterpretationAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			, uint          attributeValueId
-			, byte?         sequence
-			);
+			UserInfo editionUser
+			, uint   signInterpretationId
+			, uint   attributeValueId
+			, byte?  sequence);
 
 	// Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(UserInfo editionUser,
 	//     uint signInterpretationAttributeId);
 
 	Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByDataAsync(
 			UserInfo                                    editionUser
-			, SignInterpretationAttributeDataSearchData dataSearchData
-			);
+			, SignInterpretationAttributeDataSearchData dataSearchData);
 
 	Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByInterpretationId(
 			UserInfo editionUser
-			, uint   signInterpretationId
-			);
+			, uint   signInterpretationId);
 
 	// Task<uint> GetSignInterpretationAttributeIdByIdAsync(UserInfo editionUser,
 	//     uint signInterpretationAttributeId);
@@ -120,23 +113,15 @@ public interface IAttributeRepository
 
 public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 {
-
 	/// <summary>
 	///  Get all attributes associated with a particular edition
 	/// </summary>
 	/// <param name="editionUser">The edition user details object</param>
 	/// <returns>The details of the attributes associated with a particular edition</returns>
 	public async Task<IEnumerable<SignInterpretationAttributeEntry>> GetAllEditionAttributesAsync(
-			UserInfo editionUser
-			)
-	{
-
-		{
-			return await adb.QueryAsync<SignInterpretationAttributeEntry>(
-					GetAllEditionSignInterpretationAttributesQuery.GetQuery()
-					, new { editionUser.EditionId });
-		}
-	}
+			UserInfo editionUser) => await adb.QueryAsync<SignInterpretationAttributeEntry>(
+			GetAllEditionSignInterpretationAttributesQuery.GetQuery()
+			, new { editionUser.EditionId });
 
 	/// <summary>
 	///  Get attributes associated with a particular edition by its unique id
@@ -146,21 +131,14 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <returns>The details of the desired attribute</returns>
 	public async Task<IEnumerable<SignInterpretationAttributeEntry>> GetEditionAttributeAsync(
 			UserInfo editionUser
-			, uint   attributeId
-			)
-	{
-
-		{
-			return await adb.QueryAsync<SignInterpretationAttributeEntry>(
-					GetAllEditionSignInterpretationAttributesQuery.GetQuery(attributeId)
-					, new
-					{
-							editionUser.EditionId
-							, AttributeId = attributeId
-							,
-					});
-		}
-	}
+			, uint   attributeId) => await adb.QueryAsync<SignInterpretationAttributeEntry>(
+			GetAllEditionSignInterpretationAttributesQuery.GetQuery(attributeId)
+			, new
+			{
+					editionUser.EditionId
+					, AttributeId = attributeId
+					,
+			});
 
 	/// <summary>
 	///  Create a new attribute for an edition. The attribute may have 0 or more
@@ -186,8 +164,8 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 			, IEnumerable<SignInterpretationAttributeValueInput> attributeValues
 			, IDbConnection                                      connection = null)
 	{
-
 		await adb.BeginTransactionAsync();
+
 		{
 			// First check for attribute name collisions
 			var existingAttribute = await GetAllEditionAttributesAsync(editionUser);
@@ -254,6 +232,7 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 			, IDbConnection                                      connection = null)
 	{
 		await adb.BeginTransactionAsync();
+
 		{
 			// First get the actual details of the attribute
 			var existingAttribute =
@@ -314,8 +293,7 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 						, updatedAttributeId
 						, createAttributeValue.AttributeStringValue
 						, createAttributeValue.AttributeStringValueDescription
-						, createAttributeValue.Css
-						, null);
+						, createAttributeValue.Css);
 			}
 
 			// Write the attribute value updates
@@ -358,6 +336,7 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	public async Task DeleteEditionAttributeAsync(UserInfo editionUser, uint attributeId)
 	{
 		await adb.BeginTransactionAsync();
+
 		{
 			// First get the actual details of the attribute
 			var existingAttributes =
@@ -408,6 +387,7 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 					, List<SignInterpretationAttributeData> newAttributes)
 	{
 		await adb.BeginTransactionAsync();
+
 		{
 			var response = await _createOrUpdateAttributesAsync(
 					editionUser
@@ -440,13 +420,11 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	public async Task<List<SignInterpretationAttributeData>>
 			GetSignInterpretationAttributesByDataAsync(
 					UserInfo                                    editionUser
-					, SignInterpretationAttributeDataSearchData dataSearchData
-					)
+					, SignInterpretationAttributeDataSearchData dataSearchData)
 	{
 		var query = GetSignInterpretationAttributesByDataQuery.GetQuery.Replace(
 				"@WhereData"
 				, dataSearchData.getSearchParameterString());
-
 
 		{
 			var result = await adb.QueryAsync<SignInterpretationAttributeData>(
@@ -468,8 +446,7 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	public async Task<List<SignInterpretationAttributeData>>
 			GetSignInterpretationAttributesByInterpretationId(
 					UserInfo editionUser
-					, uint   signInterpretationId
-					)
+					, uint   signInterpretationId)
 	{
 		var searchData = new SignInterpretationAttributeDataSearchData
 		{
@@ -487,10 +464,9 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <param name="attributeValueId">Id of attribute value to remove</param>
 	/// <returns>List of ids of delete attributes</returns>
 	public async Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			, uint          attributeValueId
-			)
+			UserInfo editionUser
+			, uint   signInterpretationId
+			, uint   attributeValueId)
 	{
 		var searchData = new SignInterpretationAttributeDataSearchData
 		{
@@ -515,9 +491,8 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <param name="signInterpretationId">Id of sign interpretation</param>
 	/// <returns>List of ids of delete attributes</returns>
 	public async Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			)
+			UserInfo editionUser
+			, uint   signInterpretationId)
 	{
 		var attributes =
 				await GetSignInterpretationAttributeIdsByInterpretationId(
@@ -539,11 +514,10 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <param name="sequence">Position of the attribute in the sequential hierarchy</param>
 	/// <returns>List of ids of delete attributes</returns>
 	public async Task UpdateAttributeForSignInterpretationAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			, uint          attributeValueId
-			, byte?         sequence
-			)
+			UserInfo editionUser
+			, uint   signInterpretationId
+			, uint   attributeValueId
+			, byte?  sequence)
 	{
 		if (!sequence.HasValue)
 			return;
@@ -716,15 +690,14 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <returns>Returns the list of Attributes which contain the new ids</returns>
 	public async Task<List<SignInterpretationAttributeData>>
 			UpdateSignInterpretationAttributesAsync(
-					UserInfo                                editionUser
-					, uint                                  signInterpretationId
+					UserInfo editionUser
+					, uint signInterpretationId
 					, List<SignInterpretationAttributeData> updateAttributes
-					, IDbConnection                         connection = null)
-		=> await _createOrUpdateAttributesAsync(
-				editionUser
-				, signInterpretationId
-				, updateAttributes
-				, MutateType.Update);
+					, IDbConnection connection = null) => await _createOrUpdateAttributesAsync(
+			editionUser
+			, signInterpretationId
+			, updateAttributes
+			, MutateType.Update);
 
 	/// <summary>
 	///  Deletes the attributes with the given ids.
@@ -734,10 +707,9 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <returns>The list of the ids of deleted Attributes or empty list if the given list was null.</returns>
 	/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 	public async Task<List<uint>> DeleteSignInterpretationAttributesAsync(
-			UserInfo        editionUser
-			, List<uint>    deleteAttributeIds
-			, uint          signInterpretationId
-			)
+			UserInfo     editionUser
+			, List<uint> deleteAttributeIds
+			, uint       signInterpretationId)
 	{
 		if (deleteAttributeIds == null)
 			return new List<uint>();
@@ -778,9 +750,8 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <returns>Sign interpretation attribute with the given id</returns>
 	/// <exception cref="DataNotFoundException"></exception>
 	public async Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationAttributeId
-			)
+			UserInfo editionUser
+			, uint   signInterpretationAttributeId)
 	{
 		var searchData = new SignInterpretationAttributeDataSearchData
 		{
@@ -807,13 +778,11 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <returns>List of sign interpretation attribute ids - if nothing had been found the list is empty.</returns>
 	public async Task<List<uint>> GetSignInterpretationAttributeIdsByDataAsync(
 			UserInfo                                    editionUser
-			, SignInterpretationAttributeDataSearchData dataSearchData
-			)
+			, SignInterpretationAttributeDataSearchData dataSearchData)
 	{
 		var query = GetSignInterpretationAttributeIdsByDataQuery.GetQuery.Replace(
 				"@WhereData"
 				, dataSearchData.getSearchParameterString());
-
 
 		{
 			var result = await adb.QueryAsync<uint>(query, new { editionUser.EditionId });
@@ -831,9 +800,8 @@ public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 	/// <param name="signInterpretationId">Id of sign interpretation</param>
 	/// <returns>List of sign interpretation attribute idss</returns>
 	public async Task<List<uint>> GetSignInterpretationAttributeIdsByInterpretationId(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			)
+			UserInfo editionUser
+			, uint   signInterpretationId)
 	{
 		var searchData = new SignInterpretationAttributeDataSearchData
 		{

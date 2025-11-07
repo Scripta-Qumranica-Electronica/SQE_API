@@ -41,7 +41,7 @@ public class DatabaseQuery
 
 			var pwd = connectionStrings.GetProperty("MysqlPassword").GetString();
 			var minConn = 10;
-			var maxConn  = 20;
+			var maxConn = 20;
 
 			_connection = $"server={
 				host

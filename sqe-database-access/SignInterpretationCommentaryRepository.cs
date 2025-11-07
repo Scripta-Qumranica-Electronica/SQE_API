@@ -3,7 +3,6 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -27,11 +26,10 @@ public interface ISignInterpretationCommentaryRepository
 			, IDbConnection                          connection = null);
 
 	Task<SignInterpretationCommentaryData> CreateOrUpdateCommentaryAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			, uint?         attributeValueId
-			, string        commentary
-			);
+			UserInfo editionUser
+			, uint   signInterpretationId
+			, uint?  attributeValueId
+			, string commentary);
 
 	Task<List<uint>> DeleteCommentariesAsync(
 			UserInfo        editionUser
@@ -40,26 +38,22 @@ public interface ISignInterpretationCommentaryRepository
 			, IDbConnection connection           = null);
 
 	Task<List<uint>> DeleteAllCommentariesForSignInterpretationAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			);
+			UserInfo editionUser
+			, uint   signInterpretationId);
 
 	Task<SignInterpretationCommentaryData> GetSignInterpretationCommentaryByIdAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationCommentaryId
-			);
+			UserInfo editionUser
+			, uint   signInterpretationCommentaryId);
 
 	Task<IEnumerable<SignInterpretationCommentaryData>>
 			GetSignInterpretationCommentariesByDataAsync(
 					UserInfo                                     editionUser
-					, SignInterpretationCommentaryDataSearchData dataSearchData
-					);
+					, SignInterpretationCommentaryDataSearchData dataSearchData);
 
 	Task<IEnumerable<SignInterpretationCommentaryData>>
 			GetSignInterpretationCommentariesByInterpretationId(
 					UserInfo editionUser
-					, uint   signInterpretationId
-					);
+					, uint   signInterpretationId);
 
 	Task<SignInterpretationCommentaryData> ReplaceSignInterpretationCommentary(
 			UserInfo                           editionUser
@@ -74,9 +68,10 @@ public interface ISignInterpretationCommentaryRepository
 			, IDbConnection                          connection = null);
 }
 
-public class SignInterpretationCommentaryRepository(IDatabaseAccessor dba, IAttributeRepository _attributeRepository) : ISignInterpretationCommentaryRepository
+public class SignInterpretationCommentaryRepository(
+		IDatabaseAccessor      dba
+		, IAttributeRepository _attributeRepository) : ISignInterpretationCommentaryRepository
 {
-
 	/// <summary>
 	///  Creates new commentary for a sign interpretation
 	/// </summary>
@@ -102,15 +97,14 @@ public class SignInterpretationCommentaryRepository(IDatabaseAccessor dba, IAttr
 	}
 
 	public async Task<List<SignInterpretationCommentaryData>> CreateCommentariesAsync(
-			UserInfo                                 editionUser
-			, uint                                   signInterpretationId
+			UserInfo editionUser
+			, uint signInterpretationId
 			, List<SignInterpretationCommentaryData> newCommentaries
-			, IDbConnection                          connection = null)
-		=> await _createOrUpdateCommentariesAsync(
-				editionUser
-				, signInterpretationId
-				, newCommentaries
-				, MutateType.Create);
+			, IDbConnection connection = null) => await _createOrUpdateCommentariesAsync(
+			editionUser
+			, signInterpretationId
+			, newCommentaries
+			, MutateType.Create);
 
 	/// <summary>
 	///  Update the given commentary
@@ -121,11 +115,10 @@ public class SignInterpretationCommentaryRepository(IDatabaseAccessor dba, IAttr
 	/// <param name="commentary"></param>
 	/// <returns>Sign interpretation commentary object with new commentary id set</returns>
 	public async Task<SignInterpretationCommentaryData> CreateOrUpdateCommentaryAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			, uint?         attributeValueId
-			, string        commentary
-			)
+			UserInfo editionUser
+			, uint   signInterpretationId
+			, uint?  attributeValueId
+			, string commentary)
 	{
 		uint? attributeId = null;
 
@@ -169,7 +162,7 @@ public class SignInterpretationCommentaryRepository(IDatabaseAccessor dba, IAttr
 												 .Select(x => x.SignInterpretationCommentaryId
 															   .Value);
 
-			await DeleteCommentariesAsync(editionUser, signInterpretationCommentaryId.AsList(), null);
+			await DeleteCommentariesAsync(editionUser, signInterpretationCommentaryId.AsList());
 
 			return null; // Early return, nothing more to do
 		}
@@ -262,9 +255,8 @@ public class SignInterpretationCommentaryRepository(IDatabaseAccessor dba, IAttr
 	/// <param name="signInterpretationId">Id of sign interpretation</param>
 	/// <returns>List of ids of delete commentaries</returns>
 	public async Task<List<uint>> DeleteAllCommentariesForSignInterpretationAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationId
-			)
+			UserInfo editionUser
+			, uint   signInterpretationId)
 	{
 		var commentaries =
 				await GetSignInterpretationCommentariesByInterpretationId(
@@ -288,9 +280,8 @@ public class SignInterpretationCommentaryRepository(IDatabaseAccessor dba, IAttr
 	/// <returns>Sign interpretation commentary with the given id</returns>
 	/// <exception cref="DataNotFoundException"></exception>
 	public async Task<SignInterpretationCommentaryData> GetSignInterpretationCommentaryByIdAsync(
-			UserInfo        editionUser
-			, uint          signInterpretationCommentaryId
-			)
+			UserInfo editionUser
+			, uint   signInterpretationCommentaryId)
 	{
 		var searchData = new SignInterpretationCommentaryDataSearchData
 		{
@@ -319,19 +310,15 @@ public class SignInterpretationCommentaryRepository(IDatabaseAccessor dba, IAttr
 	public async Task<IEnumerable<SignInterpretationCommentaryData>>
 			GetSignInterpretationCommentariesByDataAsync(
 					UserInfo                                     editionUser
-					, SignInterpretationCommentaryDataSearchData dataSearchData
-					)
+					, SignInterpretationCommentaryDataSearchData dataSearchData)
 	{
 		var query = GetSignInterpretationCommentaryByData.GetQuery.Replace(
 				"@WhereData"
 				, dataSearchData.getSearchParameterString());
 
-
-
-			return await dba.QueryAsync<SignInterpretationCommentaryData>(
-					query
-					, new { editionUser.EditionId });
-
+		return await dba.QueryAsync<SignInterpretationCommentaryData>(
+				query
+				, new { editionUser.EditionId });
 	}
 
 	/// <summary>
@@ -343,8 +330,7 @@ public class SignInterpretationCommentaryRepository(IDatabaseAccessor dba, IAttr
 	public async Task<IEnumerable<SignInterpretationCommentaryData>>
 			GetSignInterpretationCommentariesByInterpretationId(
 					UserInfo editionUser
-					, uint   signInterpretationId
-					)
+					, uint   signInterpretationId)
 	{
 		var searchData = new SignInterpretationCommentaryDataSearchData
 		{

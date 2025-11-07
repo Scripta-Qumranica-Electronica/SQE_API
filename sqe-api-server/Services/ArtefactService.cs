@@ -154,12 +154,11 @@ public class ArtefactService : IArtefactService
 
 		// Collect the updated artefacts
 		var updatedArtefacts = new List<ArtefactDTO>(updates.artefactPlacements.Count);
+
 		foreach (var artefactPlacement in updates.artefactPlacements)
 		{
-			updatedArtefacts.Add(await GetEditionArtefactAsync(
-										 editionUser
-										 , artefactPlacement.artefactId
-										 , []));
+			updatedArtefacts.Add(
+					await GetEditionArtefactAsync(editionUser, artefactPlacement.artefactId, []));
 		}
 
 		// Create the tasks to broadcast the change to all subscribers of the editionId.
@@ -206,22 +205,23 @@ public class ArtefactService : IArtefactService
 			, string            clientId = null)
 	{
 		var cleanedPoly = string.IsNullOrEmpty(updateArtefact.mask)
-		? null
-		: GeometryValidation.ValidatePolygon(updateArtefact.mask, "artefact");
+				? null
+				: GeometryValidation.ValidatePolygon(updateArtefact.mask, "artefact");
 
 		await _artefactRepository.UpdateArtefactAllAsync(
-				editionUser,
-				artefactId,
-				cleanedPoly,
-				null,
-				updateArtefact.statusMessage,
-				updateArtefact.name,
-				updateArtefact.placement?.scale,
-				updateArtefact.placement?.rotate,
-				updateArtefact.placement?.translate.x,
-				updateArtefact.placement?.translate.y,
-				updateArtefact.placement?.zIndex,
-				updateArtefact.placement?.mirrored ?? false);
+				editionUser
+				, artefactId
+				, cleanedPoly
+				, null
+				, updateArtefact.statusMessage
+				, updateArtefact.name
+				, updateArtefact.placement?.scale
+				, updateArtefact.placement?.rotate
+				, updateArtefact.placement?.translate.x
+				, updateArtefact.placement?.translate.y
+				, updateArtefact.placement?.zIndex
+				, updateArtefact.placement?.mirrored
+				  ?? false);
 
 		var updatedArtefact = await GetEditionArtefactAsync(
 				editionUser

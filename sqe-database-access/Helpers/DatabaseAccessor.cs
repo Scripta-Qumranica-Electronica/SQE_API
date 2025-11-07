@@ -1,14 +1,13 @@
 #nullable enable
 
 using System;
-using Dapper;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
+using Dapper;
 using SQE.DatabaseAccess.Models;
 
 namespace SQE.DatabaseAccess.Helpers;
@@ -16,18 +15,19 @@ namespace SQE.DatabaseAccess.Helpers;
 public interface IDatabaseAccessor
 {
 	void Dispose();
-	void               BeginTransaction();
-	Task               BeginTransactionAsync();
-	void               CommitTransaction();
-	void               RollbackTransaction();
+	void BeginTransaction();
+	Task BeginTransactionAsync();
+	void CommitTransaction();
+	void RollbackTransaction();
+
 	Task<IList<T>> QueryAsync<T>(
-			string sql
-			, object? param = null
-			, int? commandTimeout = null
-			, CommandType? commandType = null);
+			string         sql
+			, object?      param          = null
+			, int?         commandTimeout = null
+			, CommandType? commandType    = null);
 
 	Task<IList<TReturn>> QueryAsync<TFirst, TSecond, TReturn>(
-			string                         sql
+			string                           sql
 			, Func<TFirst, TSecond, TReturn> map
 			, object?                        param          = null
 			, IDbTransaction?                transaction    = null
@@ -37,7 +37,7 @@ public interface IDatabaseAccessor
 			, CommandType?                   commandType    = null);
 
 	Task<IList<TReturn>> QueryAsync<TReturn>(
-			string                  sql
+			string                    sql
 			, Type[]                  types
 			, Func<object[], TReturn> map
 			, object?                 param          = null
@@ -46,35 +46,36 @@ public interface IDatabaseAccessor
 			, string                  splitOn        = "Id"
 			, int?                    commandTimeout = null
 			, CommandType?            commandType    = null);
+
 	Task<T> QueryFirstAsync<T>(
-			string           sql
-			, object?          param          = null
-			, int?             commandTimeout = null
-			, CommandType?     commandType    = null);
+			string         sql
+			, object?      param          = null
+			, int?         commandTimeout = null
+			, CommandType? commandType    = null);
 
 	Task<T?> QueryFirstOrDefaultAsync<T>(
-			string           sql
-			, object?          param          = null
-			, int?             commandTimeout = null
-			, CommandType?     commandType    = null);
+			string         sql
+			, object?      param          = null
+			, int?         commandTimeout = null
+			, CommandType? commandType    = null);
 
 	Task<T> QuerySingleAsync<T>(
-			string           sql
-			, object?          param          = null
-			, int?             commandTimeout = null
-			, CommandType?     commandType    = null);
+			string         sql
+			, object?      param          = null
+			, int?         commandTimeout = null
+			, CommandType? commandType    = null);
 
 	Task<T?> QuerySingleOrDefaultAsync<T>(
-			string           sql
-			, object?          param          = null
-			, int?             commandTimeout = null
-			, CommandType?     commandType    = null);
+			string         sql
+			, object?      param          = null
+			, int?         commandTimeout = null
+			, CommandType? commandType    = null);
 
 	Task<int> ExecuteAsync(
-			string           sql
-			, object?          param          = null
-			, int?             commandTimeout = null
-			, CommandType?     commandType    = null);
+			string         sql
+			, object?      param          = null
+			, int?         commandTimeout = null
+			, CommandType? commandType    = null);
 
 	Task<List<AlteredRecord>> WriteToDatabaseAsync(
 			UserInfo                editionUser
@@ -87,50 +88,10 @@ public interface IDatabaseAccessor
 
 public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IDatabaseAccessor
 {
+	private readonly SemaphoreSlim   _transactionLock = new(1, 1);
 	private          DbConnection?   _connection;
 	private          IDbTransaction? _transaction;
-	private          uint            _transactionNest = 0;
-	private readonly SemaphoreSlim   _transactionLock = new(1, 1);
-
-	private DbConnection GetConnection()
-	{
-		_connection ??= dbm.GetConnection();
-
-		if (_connection.State != ConnectionState.Open)
-			_connection.Open();
-
-		return _connection;
-	}
-
-	private async Task<DbConnection> GetConnectionAsync()
-	{
-		_connection ??= await dbm.GetConnectionAsync();
-
-		if (_connection.State != ConnectionState.Open)
-			await _connection.OpenAsync();
-
-		return _connection;
-	}
-
-	private void CloseConnection()
-	{
-		if (_connection == null || _transaction != null)
-			return;
-
-		_connection.Close();
-		_connection.Dispose();
-		_connection = null;
-	}
-
-	private async Task CloseConnectionAsync()
-	{
-		if (_connection == null || _transaction != null)
-			return;
-
-		await _connection.CloseAsync();
-		_connection.Dispose();
-		_connection = null;
-	}
+	private          uint            _transactionNest;
 
 	public void Dispose()
 	{
@@ -140,13 +101,14 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 		_transactionLock.Dispose();
 	}
 
-
 	public void BeginTransaction()
 	{
 		_transactionLock.Wait();
+
 		try
 		{
 			var conn = GetConnection();
+
 			if (_transactionNest == 0)
 				_transaction = conn.BeginTransaction();
 
@@ -158,13 +120,14 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 		}
 	}
 
-
 	public async Task BeginTransactionAsync()
 	{
 		await _transactionLock.WaitAsync();
+
 		try
 		{
 			var conn = await GetConnectionAsync();
+
 			if (_transactionNest == 0)
 				_transaction = await conn.BeginTransactionAsync();
 
@@ -176,10 +139,10 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 		}
 	}
 
-
 	public void CommitTransaction()
 	{
 		_transactionLock.Wait();
+
 		try
 		{
 			_transactionNest--;
@@ -200,10 +163,10 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 		}
 	}
 
-
 	public void RollbackTransaction()
 	{
 		_transactionLock.Wait();
+
 		try
 		{
 			_transaction?.Rollback();
@@ -221,7 +184,6 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 			_transactionLock.Release();
 		}
 	}
-
 
 	public async Task<IList<T>> QueryAsync<T>(
 			string         sql
@@ -247,7 +209,6 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 			await CloseConnectionAsync();
 		}
 	}
-
 
 	public async Task<IList<TReturn>> QueryAsync<TFirst, TSecond, TReturn>(
 			string                           sql
@@ -280,7 +241,6 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 			await CloseConnectionAsync();
 		}
 	}
-
 
 	public async Task<IList<TReturn>> QueryAsync<TReturn>(
 			string                    sql
@@ -341,7 +301,6 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 		}
 	}
 
-
 	public async Task<T?> QueryFirstOrDefaultAsync<T>(
 			string         sql
 			, object?      param          = null
@@ -366,7 +325,6 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 			await CloseConnectionAsync();
 		}
 	}
-
 
 	public async Task<T> QuerySingleAsync<T>(
 			string         sql
@@ -393,7 +351,6 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 		}
 	}
 
-
 	public async Task<T?> QuerySingleOrDefaultAsync<T>(
 			string         sql
 			, object?      param          = null
@@ -418,7 +375,6 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 			await CloseConnectionAsync();
 		}
 	}
-
 
 	public async Task<int> ExecuteAsync(
 			string         sql
@@ -445,42 +401,87 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 		}
 	}
 
-
 	public async Task<List<AlteredRecord>> WriteToDatabaseAsync(
 			UserInfo                editionUser
 			, List<MutationRequest> mutationRequests)
 	{
 		await BeginTransactionAsync();
+
 		try
 		{
 			var result = await dbw.WriteToDatabaseAsync(editionUser, mutationRequests, this);
 			CommitTransaction();
+
 			return result;
 		}
 		catch
 		{
 			RollbackTransaction();
+
 			throw;
 		}
 	}
-
 
 	public async Task<List<AlteredRecord>> WriteToDatabaseAsync(
 			UserInfo          editionUser
 			, MutationRequest mutationRequest)
 	{
 		await BeginTransactionAsync();
+
 		try
 		{
 			var result = await dbw.WriteToDatabaseAsync(editionUser, mutationRequest, this);
 			CommitTransaction();
+
 			return result;
 		}
 		catch
 		{
 			RollbackTransaction();
+
 			throw;
 		}
 	}
 
+	private DbConnection GetConnection()
+	{
+		_connection ??= dbm.GetConnection();
+
+		if (_connection.State != ConnectionState.Open)
+			_connection.Open();
+
+		return _connection;
+	}
+
+	private async Task<DbConnection> GetConnectionAsync()
+	{
+		_connection ??= await dbm.GetConnectionAsync();
+
+		if (_connection.State != ConnectionState.Open)
+			await _connection.OpenAsync();
+
+		return _connection;
+	}
+
+	private void CloseConnection()
+	{
+		if (_connection == null
+			|| _transaction != null)
+			return;
+
+		_connection.Close();
+		_connection.Dispose();
+		_connection = null;
+	}
+
+	private async Task CloseConnectionAsync()
+	{
+		if (_connection == null
+			|| _transaction != null)
+			return;
+
+		await _connection.CloseAsync();
+		_connection.Dispose();
+		_connection = null;
+	}
 }

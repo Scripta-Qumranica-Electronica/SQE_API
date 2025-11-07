@@ -200,13 +200,13 @@ public static class StartupChecks
 
 			//using (var connection = Connection())
 			//{
-				var tableNames = Connection.Query<string>(sql, new { DbName = dbName });
+			var tableNames = Connection.Query<string>(sql, new { DbName = dbName });
 
-				if (!tableNames.Any())
-				{
-					throw new SystemException(
-							$"A database named {dbName} exists, but it is empty.");
-				}
+			if (!tableNames.Any())
+			{
+				throw new SystemException($"A database named {dbName} exists, but it is empty.");
+			}
+
 			//}
 		}
 	}
