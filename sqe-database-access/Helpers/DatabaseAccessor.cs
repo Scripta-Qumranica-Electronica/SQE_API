@@ -110,7 +110,7 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 			var conn = GetConnection();
 
 			if (_transactionNest == 0)
-				_transaction = conn.BeginTransaction();
+				_transaction = conn.BeginTransaction(IsolationLevel.ReadCommitted);
 
 			_transactionNest++;
 		}
@@ -129,7 +129,7 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 			var conn = await GetConnectionAsync();
 
 			if (_transactionNest == 0)
-				_transaction = await conn.BeginTransactionAsync();
+				_transaction = await conn.BeginTransactionAsync(IsolationLevel.ReadCommitted);
 
 			_transactionNest++;
 		}
