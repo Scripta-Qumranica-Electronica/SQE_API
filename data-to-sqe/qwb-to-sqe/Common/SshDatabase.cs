@@ -1,6 +1,6 @@
 using System.IO;
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 

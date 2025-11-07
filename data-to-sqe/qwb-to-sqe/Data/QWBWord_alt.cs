@@ -1,6 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace qwb_to_sqe;
 
