@@ -5,7 +5,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace SQE.ApiTest.Helpers;
 
@@ -40,6 +40,8 @@ public class DatabaseQuery
 			var user = connectionStrings.GetProperty("MysqlUsername").GetString();
 
 			var pwd = connectionStrings.GetProperty("MysqlPassword").GetString();
+			var minConn = 10;
+			var maxConn  = 20;
 
 			_connection = $"server={
 				host
@@ -51,7 +53,11 @@ public class DatabaseQuery
 				user
 			};password={
 				pwd
-			};charset=utf8;";
+			};charset=utf8mb4;AllowUserVariables=True;Pooling=true;MinPoolSize={
+				minConn
+			};MaxPoolSize={
+				maxConn
+			};";
 		}
 	}
 
@@ -59,20 +65,29 @@ public class DatabaseQuery
 
 	public async Task<IEnumerable<T>> RunQueryAsync<T>(string sql, DynamicParameters parameters)
 	{
-		using (var connection = OpenConnection())
-			return await connection.QueryAsync<T>(sql, parameters);
+		using var connection = OpenConnection();
+		var result = await connection.QueryAsync<T>(sql, parameters);
+		connection.Close();
+
+		return result;
 	}
 
 	public async Task<T> RunQuerySingleAsync<T>(string sql, DynamicParameters parameters)
 	{
-		using (var connection = OpenConnection())
-			return await connection.QuerySingleAsync<T>(sql, parameters);
+		using var connection = OpenConnection();
+		var result = await connection.QuerySingleAsync<T>(sql, parameters);
+		connection.Close();
+
+		return result;
 	}
 
 	public async Task<int> RunExecuteAsync(string sql, DynamicParameters parameters)
 	{
-		using (var connection = OpenConnection())
-			return await connection.ExecuteAsync(sql, parameters);
+		using var connection = OpenConnection();
+		var result = await connection.ExecuteAsync(sql, parameters);
+		connection.Close();
+
+		return result;
 	}
 
 	private class DatabaseSettings { }

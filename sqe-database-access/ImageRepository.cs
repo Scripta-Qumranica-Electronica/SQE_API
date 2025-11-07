@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.Extensions.Configuration;
+using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
@@ -19,71 +19,50 @@ public interface IImageRepository
 	Task<List<ImagedObjectTextFragmentMatch>> GetImageTextFragmentsAsync(string imagedObjectId);
 }
 
-public class ImageRepository : DbConnectionBase
-							   , IImageRepository
+public class ImageRepository(IDatabaseAccessor dba) : IImageRepository
 {
-	public ImageRepository(IConfiguration config) : base(config) { }
-
 	public async Task<IEnumerable<Image>> GetImagesAsync(
 			UserInfo editionUser
 			, string imagedObjectId)
 	{
 		var sql = ImageQueries.GetImageQuery(!string.IsNullOrEmpty(imagedObjectId));
 
-		using (var connection = OpenConnection())
-		{
-			var results = await connection.QueryAsync<ImageQueries.Result>(
-					sql
-					, new
-					{
-							UserId = editionUser.userId
-							, editionUser.EditionId
-							, ObjectId = imagedObjectId
-							,
-					});
+		var results = await dba.QueryAsync<ImageQueries.Result>(
+				sql
+				, new
+				{
+						UserId = editionUser.userId
+						, editionUser.EditionId
+						, ObjectId = imagedObjectId
+						,
+				});
 
-			var models = results.Select(CreateImage);
-
-			return models;
-		}
+		return results.Select(CreateImage);
 	}
 
 	public async Task<IEnumerable<ImageInstitution>> ListImageInstitutionsAsync()
 	{
 		var sql = ImageInstitutionQuery.GetQuery();
+		var results = await dba.QueryAsync<ImageInstitutionQuery.Result>(sql);
 
-		using (var connection = OpenConnection())
-		{
-			var results = await connection.QueryAsync<ImageInstitutionQuery.Result>(sql);
-
-			var models = results.Select(CreateInstitution);
-
-			return models;
-		}
+		return results.Select(CreateInstitution);
 	}
 
 	public async Task<IEnumerable<InstitutionImage>> InstitutionImages(string institution)
 	{
-		using (var connection = OpenConnection())
-		{
-			var results = await connection.QueryAsync<InstitutionImage>(
-					InstitutionImagesQuery.GetQuery
-					, new { Institution = institution });
+		var results = await dba.QueryAsync<InstitutionImage>(
+				InstitutionImagesQuery.GetQuery
+				, new { Institution = institution });
 
-			return results;
-		}
+		return results;
 	}
 
 	public async Task<List<ImagedObjectTextFragmentMatch>> GetImageTextFragmentsAsync(
-			string imagedObjectId)
-	{
-		using var connection = OpenConnection();
+			string imagedObjectId) => (await dba.QueryAsync<ImagedObjectTextFragmentMatch>(
+			ImagedObjectTextFragmentsQuery.GetQuery
+			, new { ImagedObjectId = imagedObjectId })).AsList();
 
-		return (await connection.QueryAsync<ImagedObjectTextFragmentMatch>(
-				ImagedObjectTextFragmentsQuery.GetQuery
-				, new { ImagedObjectId = imagedObjectId })).AsList();
-	}
-
+	//}
 	private Image CreateImage(ImageQueries.Result image)
 	{
 		var model = new Image

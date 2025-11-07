@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -12,7 +13,7 @@ namespace SQE.DatabaseAccess;
 
 public interface ICatalogueRepository
 {
-	Task<IEnumerable<CatalogueMatch>> GetAllMetchesAsync();
+	Task<IEnumerable<CatalogueMatch>> GetAllMetchesAsync(IDbConnection connection = null);
 
 	Task<IEnumerable<CatalogueMatch>> GetTextFragmentMatchesForImagedObjectAsync(
 			string imagedObjectId);
@@ -27,42 +28,41 @@ public interface ICatalogueRepository
 			uint editionId);
 
 	Task CreateNewImagedObjectTextFragmentMatchAsync(
-			uint     userId
-			, string imagedObjectId
-			, byte   imageSide
-			, uint   textFragmentId
-			, uint   editionId
-			, string canonicalEditionName
-			, string canonicalEditionVolume
-			, string canonicalEditionLoc1
-			, string canonicalEditionLoc2
-			, byte   canonicalEditionSide
-			, string comment
-			, string manuscriptName);
+			uint            userId
+			, string        imagedObjectId
+			, byte          imageSide
+			, uint          textFragmentId
+			, uint          editionId
+			, string        canonicalEditionName
+			, string        canonicalEditionVolume
+			, string        canonicalEditionLoc1
+			, string        canonicalEditionLoc2
+			, byte          canonicalEditionSide
+			, string        comment
+			, string        manuscriptName
+			);
 
 	Task ConfirmImagedObjectTextFragmentMatchAsync(
-			uint   userId
-			, uint editionCatalogToTextFragmentId
-			, bool confirm);
+			uint            userId
+			, uint          editionCatalogToTextFragmentId
+			, bool          confirm
+			);
 }
 
-public class CatalogueRepository : DbConnectionBase
-								   , ICatalogueRepository
+public class CatalogueRepository(IDatabaseAccessor adb) : ICatalogueRepository
 {
-	public CatalogueRepository(IConfiguration config) : base(config) { }
-
-	public async Task<IEnumerable<CatalogueMatch>> GetAllMetchesAsync()
+	public async Task<IEnumerable<CatalogueMatch>> GetAllMetchesAsync(IDbConnection connection = null)
 	{
-		using (var connection = OpenConnection())
-			return await connection.QueryAsync<CatalogueMatch>(FullCatalogueQuery.GetQuery);
+
+			return await adb.QueryAsync<CatalogueMatch>(FullCatalogueQuery.GetQuery);
 	}
 
 	public async Task<IEnumerable<CatalogueMatch>> GetTextFragmentMatchesForImagedObjectAsync(
 			string imagedObjectId)
 	{
-		using (var connection = OpenConnection())
+
 		{
-			return await connection.QueryAsync<CatalogueMatch>(
+			return await adb.QueryAsync<CatalogueMatch>(
 					CatalogueQuery.GetQuery(CatalogueQueryFilterType.ImagedObject)
 					, new { ImagedObjectId = imagedObjectId });
 		}
@@ -71,9 +71,9 @@ public class CatalogueRepository : DbConnectionBase
 	public async Task<IEnumerable<CatalogueMatch>> GetImagedObjectMatchesForTextFragmentAsync(
 			uint textFragmentId)
 	{
-		using (var connection = OpenConnection())
+
 		{
-			return await connection.QueryAsync<CatalogueMatch>(
+			return await adb.QueryAsync<CatalogueMatch>(
 					CatalogueQuery.GetQuery(CatalogueQueryFilterType.TextFragment)
 					, new { TextFragmentId = textFragmentId });
 		}
@@ -82,9 +82,9 @@ public class CatalogueRepository : DbConnectionBase
 	public async Task<IEnumerable<CatalogueMatch>>
 			GetImagedObjectAndTextFragmentMatchesForManuscriptAsync(uint manuscriptId)
 	{
-		using (var connection = OpenConnection())
+
 		{
-			return await connection.QueryAsync<CatalogueMatch>(
+			return await adb.QueryAsync<CatalogueMatch>(
 					CatalogueQuery.GetQuery(CatalogueQueryFilterType.Manuscript)
 					, new { ManuscriptId = manuscriptId });
 		}
@@ -93,32 +93,33 @@ public class CatalogueRepository : DbConnectionBase
 	public async Task<IEnumerable<CatalogueMatch>>
 			GetImagedObjectAndTextFragmentMatchesForEditionAsync(uint editionId)
 	{
-		using (var connection = OpenConnection())
+
 		{
-			return await connection.QueryAsync<CatalogueMatch>(
+			return await adb.QueryAsync<CatalogueMatch>(
 					CatalogueQuery.GetQuery(CatalogueQueryFilterType.Edition)
 					, new { EditionId = editionId });
 		}
 	}
 
 	public async Task CreateNewImagedObjectTextFragmentMatchAsync(
-			uint     userId
-			, string imagedObjectId
-			, byte   imageSide
-			, uint   textFragmentId
-			, uint   editionId
-			, string canonicalEditionName
-			, string canonicalEditionVolume
-			, string canonicalEditionLoc1
-			, string canonicalEditionLoc2
-			, byte   canonicalEditionSide
-			, string comment
-			, string manuscriptName)
+			uint            userId
+			, string        imagedObjectId
+			, byte          imageSide
+			, uint          textFragmentId
+			, uint          editionId
+			, string        canonicalEditionName
+			, string        canonicalEditionVolume
+			, string        canonicalEditionLoc1
+			, string        canonicalEditionLoc2
+			, byte          canonicalEditionSide
+			, string        comment
+			, string        manuscriptName
+			)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		using (var connection = OpenConnection())
+
+		await adb.BeginTransactionAsync();
 		{
-			var existingEditionCats = (await connection.QueryAsync<EditionCatalogueEntry>(
+			var existingEditionCats = (await adb.QueryAsync<EditionCatalogueEntry>(
 					EditionCatalogueQuery.GetQuery(
 							false
 							, !string.IsNullOrEmpty(manuscriptName)
@@ -145,13 +146,13 @@ public class CatalogueRepository : DbConnectionBase
 					})).AsList();
 
 			// TODO: if we get a match , make sure the comments match, if not then update the comment.
-			var editionCatalogueId = existingEditionCats.Any()
+			var editionCatalogueId = existingEditionCats.Count != 0
 					? existingEditionCats.First().IaaEditionCatalogId
 					: (uint?)null;
 
 			if (!editionCatalogueId.HasValue)
 			{
-				var writeEc = await connection.ExecuteAsync(
+				var writeEc = await adb.ExecuteAsync(
 						EditionCatalogueInsertQuery.GetQuery
 						, new
 						{
@@ -174,9 +175,9 @@ public class CatalogueRepository : DbConnectionBase
 				}
 
 				editionCatalogueId =
-						await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
+						await adb.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
 
-				writeEc = await connection.ExecuteAsync(
+				writeEc = await adb.ExecuteAsync(
 						EditionCatalogueAuthorInsertQuery.GetQuery
 						, new
 						{
@@ -192,7 +193,7 @@ public class CatalogueRepository : DbConnectionBase
 				}
 			}
 
-			await connection.ExecuteAsync(
+			await adb.ExecuteAsync(
 					EditionCatalogTextFragmentMatchInsertQuery.GetQuery
 					, new
 					{
@@ -203,12 +204,12 @@ public class CatalogueRepository : DbConnectionBase
 					});
 
 			var textFragmentImagedObjectMatchId =
-					await connection.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
+					await adb.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
 
 			// If no record was inserted, then it already exists.  So collect it from the DB
 			if (textFragmentImagedObjectMatchId == 0)
 			{
-				textFragmentImagedObjectMatchId = await connection.QuerySingleAsync<uint>(
+				textFragmentImagedObjectMatchId = await adb.QuerySingleAsync<uint>(
 						@"SELECT iaa_edition_catalog_to_text_fragment_id
 FROM iaa_edition_catalog_to_text_fragment
 WHERE text_fragment_id = @TextFragmentId
@@ -221,7 +222,7 @@ WHERE text_fragment_id = @TextFragmentId
 						});
 			}
 
-			await connection.ExecuteAsync(
+			await adb.ExecuteAsync(
 					EditionCatalogImageCatalogMatchInsertQuery.GetQuery
 					, new
 					{
@@ -232,7 +233,7 @@ WHERE text_fragment_id = @TextFragmentId
 							,
 					});
 
-			await connection.ExecuteAsync(
+			await adb.ExecuteAsync(
 					EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery
 					, new
 					{
@@ -243,7 +244,8 @@ WHERE text_fragment_id = @TextFragmentId
 							,
 					});
 
-			transactionScope.Complete();
+			adb.CommitTransaction();
+			adb.CommitTransaction();
 		}
 	}
 
@@ -255,12 +257,12 @@ WHERE text_fragment_id = @TextFragmentId
 	/// <param name="confirm">Boolean whether the match is confirmed (true) or rejected (false)</param>
 	/// <returns></returns>
 	public async Task ConfirmImagedObjectTextFragmentMatchAsync(
-			uint   userId
-			, uint editionCatalogToTextFragmentId
-			, bool confirm)
+			uint            userId
+			, uint          editionCatalogToTextFragmentId
+			, bool          confirm
+			)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		using (var connection = OpenConnection())
+		await adb.BeginTransactionAsync();
 		{
 			// Check if match exists
 			var existingMatches =
@@ -277,7 +279,7 @@ WHERE text_fragment_id = @TextFragmentId
 
 			if (existingMatches.OrderBy(x => x.MatchConfirmationDate).Last().Confirmed != confirm)
 			{
-				await connection.ExecuteAsync(
+				await adb.ExecuteAsync(
 						EditionCatalogTextFragmentMatchConfirmationInsertQuery.GetQuery
 						, new
 						{
@@ -289,7 +291,7 @@ WHERE text_fragment_id = @TextFragmentId
 						});
 			}
 
-			transactionScope.Complete();
+			adb.CommitTransaction();
 		}
 	}
 
@@ -317,9 +319,9 @@ WHERE text_fragment_id = @TextFragmentId
 	private async Task<IEnumerable<CatalogueMatch>> GetImagedObjectTextFragmentMatchById(
 			uint imagedObjectTextFragmentMatchId)
 	{
-		using (var connection = OpenConnection())
+
 		{
-			return await connection.QueryAsync<CatalogueMatch>(
+			return await adb.QueryAsync<CatalogueMatch>(
 					CatalogueQuery.GetQuery(CatalogueQueryFilterType.Match)
 					, new { MatchId = imagedObjectTextFragmentMatchId });
 		}

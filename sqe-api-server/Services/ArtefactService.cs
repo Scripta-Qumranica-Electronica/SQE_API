@@ -8,7 +8,6 @@ using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
-using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
 namespace SQE.API.Server.Services;
@@ -154,11 +153,14 @@ public class ArtefactService : IArtefactService
 				, updates.artefactPlacements);
 
 		// Collect the updated artefacts
-		var updatedArtefacts = await Task.WhenAll(
-				updates.artefactPlacements.Select(async x => await GetEditionArtefactAsync(
-														  editionUser
-														  , x.artefactId
-														  , new List<string>())));
+		var updatedArtefacts = new List<ArtefactDTO>(updates.artefactPlacements.Count);
+		foreach (var artefactPlacement in updates.artefactPlacements)
+		{
+			updatedArtefacts.Add(await GetEditionArtefactAsync(
+										 editionUser
+										 , artefactPlacement.artefactId
+										 , []));
+		}
 
 		// Create the tasks to broadcast the change to all subscribers of the editionId.
 		// Exclude the client (not the user), which made the request, that client directly received the response.
@@ -203,60 +205,28 @@ public class ArtefactService : IArtefactService
 			, UpdateArtefactDTO updateArtefact
 			, string            clientId = null)
 	{
-		var withMask = false;
-		var tasks = new List<Task<List<AlteredRecord>>>();
+		var cleanedPoly = string.IsNullOrEmpty(updateArtefact.mask)
+		? null
+		: GeometryValidation.ValidatePolygon(updateArtefact.mask, "artefact");
 
-		if (!string.IsNullOrEmpty(updateArtefact.mask))
-		{
-			var cleanedPoly = GeometryValidation.ValidatePolygon(updateArtefact.mask, "artefact");
-
-			tasks.Add(
-					_artefactRepository.UpdateArtefactShapeAsync(
-							editionUser
-							, artefactId
-							, cleanedPoly));
-
-			withMask = true;
-		}
-
-		if (!string.IsNullOrEmpty(updateArtefact.name))
-		{
-			tasks.Add(
-					_artefactRepository.UpdateArtefactNameAsync(
-							editionUser
-							, artefactId
-							, updateArtefact.name));
-		}
-
-		if (updateArtefact.placement != null)
-		{
-			tasks.Add(
-					_artefactRepository.UpdateArtefactPositionAsync(
-							editionUser
-							, artefactId
-							, updateArtefact.placement.scale
-							, updateArtefact.placement.rotate
-							, updateArtefact.placement.translate?.x
-							, updateArtefact.placement.translate?.y
-							, updateArtefact.placement.zIndex
-							, updateArtefact.placement.mirrored));
-		}
-
-		if (!string.IsNullOrEmpty(updateArtefact.statusMessage))
-		{
-			tasks.Add(
-					_artefactRepository.UpdateArtefactStatusAsync(
-							editionUser
-							, artefactId
-							, updateArtefact.statusMessage));
-		}
-
-		await Task.WhenAll(tasks);
+		await _artefactRepository.UpdateArtefactAllAsync(
+				editionUser,
+				artefactId,
+				cleanedPoly,
+				null,
+				updateArtefact.statusMessage,
+				updateArtefact.name,
+				updateArtefact.placement?.scale,
+				updateArtefact.placement?.rotate,
+				updateArtefact.placement?.translate.x,
+				updateArtefact.placement?.translate.y,
+				updateArtefact.placement?.zIndex,
+				updateArtefact.placement?.mirrored ?? false);
 
 		var updatedArtefact = await GetEditionArtefactAsync(
 				editionUser
 				, artefactId
-				, withMask
+				, !string.IsNullOrEmpty(cleanedPoly)
 						? new List<string> { "masks" }
 						: null);
 

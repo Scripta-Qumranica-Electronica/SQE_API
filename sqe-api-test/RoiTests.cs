@@ -19,7 +19,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Roi")]
 	public async Task CanCreateEditionRoi()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -32,7 +32,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Roi")]
 	public async Task CanBatchCreateEditionRoi()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			var newEdition = await editionCreator.CreateEdition(); // Clone new edition
@@ -49,7 +49,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Roi")]
 	public async Task CanGetEditionRoi()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -78,7 +78,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Roi")]
 	public async Task CanDeleteEditionRoi()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -160,7 +160,7 @@ public partial class WebControllerTest
 
 	private async Task UpdateEditionRoi(bool batch)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -189,7 +189,7 @@ public partial class WebControllerTest
 			{
 					artefactId = artefactId
 					, exceptional = true
-					, shape = "POLYGON((100 200,100 250,200 250,200 200,100 200))"
+					, shape = "POLYGON((100 200,200 200,200 250,100 250,100 200))"
 					, signInterpretationId = getRoi.signInterpretationId
 					, stanceRotation = 180
 					, translate = new TranslateDTO
@@ -206,7 +206,7 @@ public partial class WebControllerTest
 			{
 					artefactId = artefactId
 					, exceptional = true
-					, shape = "POLYGON((100 199,100 250,200 250,200 200,100 199))"
+					, shape = "POLYGON((100 199,200 200,200 250,100 250,100 199))"
 					, signInterpretationId = getRoi.signInterpretationId
 					, stanceRotation = 12
 					, translate = new TranslateDTO
@@ -273,7 +273,7 @@ public partial class WebControllerTest
 	[InlineData(false)]
 	public async Task CanBatchEditRois(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange

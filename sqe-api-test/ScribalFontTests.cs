@@ -20,7 +20,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Scribal Font")]
 	public async Task CanWriteToScribalFont(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -46,7 +46,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Scribal Font")]
 	public async Task CanChangeScribalFont(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -103,7 +103,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Scribal Font")]
 	public async Task CanDeleteScribalFont(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -150,7 +150,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Scribal Font")]
 	public async Task CanCreateGlyphForScribalFont(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -179,7 +179,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Scribal Font")]
 	public async Task CanDeleteGlyphForScribalFont(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -237,7 +237,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Scribal Font")]
 	public async Task CanCreateKernPairForScribalFont(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -267,7 +267,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Scribal Font")]
 	public async Task CanDeleteKernPairForScribalFont(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -16,11 +17,13 @@ public interface IRoiRepository
 {
 	Task<List<SignInterpretationRoiData>> CreateRoisAsync(
 			UserInfo                          editionUser
-			, List<SignInterpretationRoiData> newRois);
+			, List<SignInterpretationRoiData> newRois
+			, IDbConnection                   connection = null);
 
 	Task<List<SignInterpretationRoiData>> UpdateRoisAsync(
 			UserInfo                          editionUser
-			, List<SignInterpretationRoiData> updateRois);
+			, List<SignInterpretationRoiData> updateRois
+			, IDbConnection                   connection = null);
 
 	Task<(List<SignInterpretationRoiData>, List<SignInterpretationRoiData>, List<uint>)>
 			BatchEditRoisAsync(
@@ -30,13 +33,14 @@ public interface IRoiRepository
 					, List<uint>                      deleteRois);
 
 	Task<List<uint>> DeleteRoisAsync(
-			UserInfo     editionUser
-			, List<uint> deleteRoiIds
-			, uint?      signInterpretationId = null);
+			UserInfo        editionUser
+			, List<uint>    deleteRoiIds
+			, uint?         signInterpretationId = null);
 
 	Task<List<uint>> DeleteAllRoisForSignInterpretationAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId);
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			);
 
 	Task<SignInterpretationRoiData> GetSignInterpretationRoiByIdAsync(
 			UserInfo editionUser
@@ -63,14 +67,8 @@ public interface IRoiRepository
 			, List<SignInterpretationRoiData> rois);
 }
 
-public class RoiRepository : DbConnectionBase
-							 , IRoiRepository
+public class RoiRepository(IDatabaseAccessor adb) : IRoiRepository
 {
-	private readonly IDatabaseWriter _databaseWriter;
-
-	public RoiRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
-		=> _databaseWriter = databaseWriter;
-
 	/// <summary>
 	///  Creates a sign interpretation roi from a list.
 	/// </summary>
@@ -79,10 +77,10 @@ public class RoiRepository : DbConnectionBase
 	/// <returns></returns>
 	public async Task<List<SignInterpretationRoiData>> CreateRoisAsync(
 			UserInfo                          editionUser
-			, List<SignInterpretationRoiData> newRois)
+			, List<SignInterpretationRoiData> newRois
+			, IDbConnection                   connection = null)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		{
+		await adb.BeginTransactionAsync();
 			var response = new SignInterpretationRoiData[newRois.Count];
 
 			foreach (var (newRoi, index) in newRois.Select((x, idx) => (x, idx)))
@@ -108,10 +106,9 @@ public class RoiRepository : DbConnectionBase
 						, signInterpretationRoiId);
 			}
 
-			transactionScope.Complete();
+		adb.CommitTransaction();
 
 			return response.AsList();
-		}
 	}
 
 	public async
@@ -122,18 +119,17 @@ public class RoiRepository : DbConnectionBase
 					, List<SignInterpretationRoiData> updateRois
 					, List<uint>                      deleteRois)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		{
+		await adb.BeginTransactionAsync();
 			var createdRois = await CreateRoisAsync(editionUser, newRois);
 
 			var updatedRois = await UpdateRoisAsync(editionUser, updateRois);
 
-			var deletedRois = await DeleteRoisAsync(editionUser, deleteRois);
+			var deletedRois = await DeleteRoisAsync(editionUser, deleteRois, null);
 
-			transactionScope.Complete();
+			adb.CommitTransaction();
 
 			return (createdRois, updatedRois, deletedRois);
-		}
+
 	}
 
 	/// <summary>
@@ -144,12 +140,13 @@ public class RoiRepository : DbConnectionBase
 	/// <returns></returns>
 	public async Task<List<SignInterpretationRoiData>> UpdateRoisAsync(
 			UserInfo                          editionUser
-			, List<SignInterpretationRoiData> updateRois)
+			, List<SignInterpretationRoiData> updateRois
+			, IDbConnection                   connection = null)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		{
+
 			var response = new SignInterpretationRoiData[updateRois.Count];
 
+		await adb.BeginTransactionAsync();
 			foreach (var (updateRoi, index) in updateRois.Select((x, idx) => (x, idx)))
 			{
 				if (!updateRoi.SignInterpretationRoiId.HasValue)
@@ -212,10 +209,10 @@ public class RoiRepository : DbConnectionBase
 				response[index] = updatedRoi;
 			}
 
-			transactionScope.Complete();
+			adb.CommitTransaction();
 
 			return response.AsList();
-		}
+
 	}
 
 	/// <summary>
@@ -226,9 +223,9 @@ public class RoiRepository : DbConnectionBase
 	/// <param name="signInterpretationId"></param>
 	/// <returns></returns>
 	public async Task<List<uint>> DeleteRoisAsync(
-			UserInfo     editionUser
-			, List<uint> deleteRoiIds
-			, uint?      signInterpretationId = null)
+			UserInfo        editionUser
+			, List<uint>    deleteRoiIds
+			, uint?         signInterpretationId = null)
 	{
 		if (deleteRoiIds == null)
 			return new List<uint>();
@@ -248,8 +245,9 @@ public class RoiRepository : DbConnectionBase
 	/// <param name="signInterpretationId">Id of sign interpretation</param>
 	/// <returns>List of ids of deleted roiss</returns>
 	public async Task<List<uint>> DeleteAllRoisForSignInterpretationAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId)
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			)
 	{
 		var roiIds = await GetSignInterpretationRoisIdsByInterpretationId(
 				editionUser
@@ -262,9 +260,7 @@ public class RoiRepository : DbConnectionBase
 			UserInfo editionUser
 			, uint   signInterpretationRoiId)
 	{
-		using (var connection = OpenConnection())
-		{
-			var result = (await connection.QueryAsync<SignInterpretationRoiData>(
+			var result = (await adb.QueryAsync<SignInterpretationRoiData>(
 					GetSignInterpretationRoiDetailsQuery.GetQuery
 					, new
 					{
@@ -281,16 +277,14 @@ public class RoiRepository : DbConnectionBase
 			}
 
 			return result.First();
-		}
+
 	}
 
 	public async Task<List<SignInterpretationRoiData>> GetSignInterpretationRoisByArtefactIdAsync(
 			UserInfo editionUser
 			, uint   artefactId)
 	{
-		using (var connection = OpenConnection())
-		{
-			return (await connection.QueryAsync<SignInterpretationRoiData>(
+			return (await adb.QueryAsync<SignInterpretationRoiData>(
 					GetSignInterpretationRoiDetailsByArtefactIdQuery.GetQuery
 					, new
 					{
@@ -298,7 +292,7 @@ public class RoiRepository : DbConnectionBase
 							, ArtefactId = artefactId
 							,
 					})).ToList();
-		}
+
 	}
 
 	/// <summary>
@@ -315,16 +309,14 @@ public class RoiRepository : DbConnectionBase
 				"@WhereData"
 				, searchData.getSearchParameterString());
 
-		using (var connection = OpenConnection())
-		{
-			var result = await connection.QueryAsync<SignInterpretationRoiData>(
+			var result = await adb.QueryAsync<SignInterpretationRoiData>(
 					query
 					, new { editionUser.EditionId });
 
 			return result == null
 					? new List<SignInterpretationRoiData>()
 					: result.ToList();
-		}
+
 	}
 
 	public async Task<List<uint>> GetSignInterpretationRoisIdsByInterpretationId(
@@ -371,28 +363,25 @@ public class RoiRepository : DbConnectionBase
 								  .Replace("@WhereData", searchData.getSearchParameterString())
 								  .Replace("@JoinString", searchData.getJoinsString());
 
-		using (var connection = OpenConnection())
-		{
-			var result = await connection.QueryAsync<uint>(query, new { editionUser.EditionId });
+
+			var result = await adb.QueryAsync<uint>(query, new { editionUser.EditionId });
 
 			return result == null
 					? new List<uint>()
 					: result.ToList();
-		}
+
 	}
 
 	#region Private methods
 
 	private async Task<uint> CreateRoiShapeAsync(string path)
 	{
-		using (var connection = OpenConnection())
-		{
-			await connection.ExecuteAsync(CreateRoiShapeQuery.GetQuery, new { Path = path });
+			await adb.ExecuteAsync(CreateRoiShapeQuery.GetQuery, new { Path = path });
 
-			return await connection.QueryFirstAsync<uint>(
+			return await adb.QueryFirstAsync<uint>(
 					GetRoiShapeIdQuery.GetQuery
 					, new { Path = path });
-		}
+
 	}
 
 	private async Task<uint> CreateRoiPositionAsync(
@@ -401,9 +390,8 @@ public class RoiRepository : DbConnectionBase
 			, int    translateY
 			, ushort stanceRotate)
 	{
-		using (var connection = OpenConnection())
-		{
-			await connection.ExecuteAsync(
+
+			await adb.ExecuteAsync(
 					CreateRoiPositionQuery.GetQuery
 					, new
 					{
@@ -414,7 +402,7 @@ public class RoiRepository : DbConnectionBase
 							,
 					});
 
-			return await connection.QuerySingleAsync<uint>(
+			return await adb.QuerySingleAsync<uint>(
 					GetRoiPositionIdQuery.GetQuery
 					, new
 					{
@@ -424,16 +412,16 @@ public class RoiRepository : DbConnectionBase
 							, StanceRotation = stanceRotate
 							,
 					});
-		}
+
 	}
 
 	private async Task<uint> CreateSignInterpretationRoiAsync(
-			UserInfo editionUser
-			, uint?  signInterpretationId
-			, uint   roiShapeId
-			, uint   roiPositionId
-			, bool   valuesSet
-			, bool   exceptional)
+			UserInfo        editionUser
+			, uint?         signInterpretationId
+			, uint          roiShapeId
+			, uint          roiPositionId
+			, bool          valuesSet
+			, bool          exceptional)
 	{
 		var signInterpretationRoiParameters = new DynamicParameters();
 
@@ -452,7 +440,7 @@ public class RoiRepository : DbConnectionBase
 				, signInterpretationRoiParameters
 				, "sign_interpretation_roi");
 
-		var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+		var writeResults = await adb.WriteToDatabaseAsync(
 				editionUser
 				, new List<MutationRequest> { signInterpretationRoiRequest });
 
@@ -467,13 +455,13 @@ public class RoiRepository : DbConnectionBase
 	}
 
 	private async Task<AlteredRecord> UpdateSignInterpretationRoiAsync(
-			UserInfo editionUser
-			, uint?  signInterpretationId
-			, uint   roiShapeId
-			, uint   roiPositionId
-			, bool   valuesSet
-			, bool   exceptional
-			, uint   signInterpretationRoiId)
+			UserInfo        editionUser
+			, uint?         signInterpretationId
+			, uint          roiShapeId
+			, uint          roiPositionId
+			, bool          valuesSet
+			, bool          exceptional
+			, uint          signInterpretationRoiId)
 	{
 		var signInterpretationRoiParameters = new DynamicParameters();
 
@@ -493,7 +481,7 @@ public class RoiRepository : DbConnectionBase
 				, "sign_interpretation_roi"
 				, signInterpretationRoiId);
 
-		var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+		var writeResults = await adb.WriteToDatabaseAsync(
 				editionUser
 				, new List<MutationRequest> { signInterpretationRoiRequest });
 
@@ -507,9 +495,9 @@ public class RoiRepository : DbConnectionBase
 	}
 
 	private async Task DeleteSignInterpretationRoiAsync(
-			UserInfo editionUser
-			, uint   signInterpretationRoiId
-			, uint?  signInterpretationId = null)
+			UserInfo        editionUser
+			, uint          signInterpretationRoiId
+			, uint?         signInterpretationId = null)
 	{
 		// Make sure we have the sign interpretation id, so the cached transcription will be
 		// rebuilt
@@ -526,7 +514,7 @@ public class RoiRepository : DbConnectionBase
 				, "sign_interpretation_roi"
 				, signInterpretationRoiId);
 
-		var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+		var writeResults = await adb.WriteToDatabaseAsync(
 				editionUser
 				, new List<MutationRequest> { signInterpretationRoiRequest });
 
@@ -540,8 +528,7 @@ public class RoiRepository : DbConnectionBase
 			UserInfo editionUser
 			, uint   signInterpretationRoiId)
 	{
-		using (var conn = OpenConnection())
-		{
+
 			const string sql = @"
 SELECT sir.sign_interpretation_id
 FROM sign_interpretation_roi_owner
@@ -549,7 +536,7 @@ JOIN sign_interpretation_roi sir ON sign_interpretation_roi_owner.sign_interpret
 WHERE sign_interpretation_roi_owner.edition_id = @EditionId
 	AND sign_interpretation_roi_owner.sign_interpretation_roi_id = @SignInterpretationRoiId";
 
-			return await conn.QueryFirstAsync<uint>(
+			return await adb.QueryFirstAsync<uint>(
 					sql
 					, new
 					{
@@ -557,7 +544,7 @@ WHERE sign_interpretation_roi_owner.edition_id = @EditionId
 							, SignInterpretationRoiId = signInterpretationRoiId
 							,
 					});
-		}
+
 	}
 
 	#endregion Private methods

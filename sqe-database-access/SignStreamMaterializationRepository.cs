@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,35 +18,34 @@ namespace SQE.DatabaseAccess;
 public interface ISignStreamMaterializationRepository
 {
 	Task<IEnumerable<SignStreamMaterializationSchedule>>
-			GetAllScheduledSignStreamMaterializationsAsync();
+			GetAllScheduledSignStreamMaterializationsAsync(IDbConnection connection = null);
 
 	Task RequestMaterializationAsync(
 			uint                                                 editionId
 			, uint                                               signInterpretationId
 			, SignStreamGraph                                    graph    = null
-			, IReadOnlyDictionary<uint, BasicSignInterpretation> SignDict = null);
+			, IReadOnlyDictionary<uint, BasicSignInterpretation> SignDict = null
+			);
 
 	Task RequestMaterializationAsync(uint editionId);
-	Task MaterializeAllSignStreamsAsync();
+	Task MaterializeAllSignStreamsAsync(IDbConnection connection = null);
 
 	Task<bool> IsCycleAsync(
 			uint   editionId
 			, uint signInterpretationId
-			, uint nextSignInterpretationId);
+			, uint nextSignInterpretationId
+			);
 }
 
-public class SignStreamMaterializationRepository : DbConnectionBase
-												   , ISignStreamMaterializationRepository
+public class SignStreamMaterializationRepository(IDatabaseAccessor dba) : ISignStreamMaterializationRepository
 {
-	public SignStreamMaterializationRepository(IConfiguration config) : base(config) { }
 	public bool RunMaterialization { get; set; } = true;
 
 	public async Task<IEnumerable<SignStreamMaterializationSchedule>>
-			GetAllScheduledSignStreamMaterializationsAsync()
+			GetAllScheduledSignStreamMaterializationsAsync(IDbConnection connection = null)
 	{
-		using (var connection = OpenConnection())
 		{
-			return await connection.QueryAsync<SignStreamMaterializationSchedule>(
+			return await dba.QueryAsync<SignStreamMaterializationSchedule>(
 					QueuedMaterializationsQuery.GetQuery);
 		}
 	}
@@ -53,8 +53,8 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 	public async Task RequestMaterializationAsync(
 			uint                                                 editionId
 			, uint                                               signInterpretationId
-			, SignStreamGraph                                    graph    = null
-			, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict = null)
+			, SignStreamGraph                                    graph      = null
+			, IReadOnlyDictionary<uint, BasicSignInterpretation> signDict   = null)
 	{
 		if (!RunMaterialization)
 			return;
@@ -81,18 +81,17 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 		if (!RunMaterialization)
 			return;
 
-		using (var connection = OpenConnection())
 		{
-			var startIds = await connection.QueryAsync<uint>(
+			var startIds = await dba.QueryAsync<uint>(
 					InitialStreamSignInterpretationForEdition.GetQuery
 					, new { EditionId = editionId });
 
 			foreach (var startId in startIds)
-				await RequestMaterializationAsync(editionId, startId);
+				await RequestMaterializationAsync(editionId, startId, null, null);
 		}
 	}
 
-	public async Task MaterializeAllSignStreamsAsync()
+	public async Task MaterializeAllSignStreamsAsync(IDbConnection connection = null)
 	{
 		// Collect all materialization requests that were not successfully completed.
 		foreach (var materializationRequest in
@@ -129,13 +128,13 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 	public async Task<bool> IsCycleAsync(
 			uint   editionId
 			, uint signInterpretationId
-			, uint nextSignInterpretationId)
+			, uint nextSignInterpretationId
+			)
 	{
-		using (var conn = OpenConnection())
 		{
 			// First do a fast check with OQGraph, if it says there is no cycle,
 			// then that can be trusted
-			var oqGraphStreams = await conn.QueryAsync<uint>(
+			var oqGraphStreams = await dba.QueryAsync<uint>(
 					QuickConfirmExistingPath.GetQuery
 					, new
 					{
@@ -150,7 +149,7 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 			// If a cycle was found, it is not necessarily true that we have a cycle
 			// is this edition, we need to use the recursive CTE to verify that a cycle
 			// would indeed exist in this edition
-			var preciseGraphStreams = await conn.QueryAsync<uint>(
+			var preciseGraphStreams = await dba.QueryAsync<uint>(
 					PreciseConfirmExistingPath.GetQuery
 					, new
 					{
@@ -177,7 +176,6 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 		// and we don't really care at this point if it ever gets accomplished.  We will
 		// have a scheduled task to read the queue table and perform any materializations
 		// that failed for whatever reason.
-		using (var connection = OpenConnection())
 		{
 			// Check if the request already exists
 			var existingRequests =
@@ -207,7 +205,7 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 				return;
 
 			// Record the request for a materialization
-			await connection.ExecuteAsync(
+			await dba.ExecuteAsync(
 					CreateQueuedMaterializationsQuery.GetQuery
 					, new
 					{
@@ -234,15 +232,12 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 	{
 		// Wrap this in a transaction, we do not delete the materialization request
 		// from the queue until the materialization has actually been performed.
-		using (var transaction = new TransactionScope(
-					   TransactionScopeOption.Required
-					   , new TransactionOptions { IsolationLevel = IsolationLevel.Serializable }))
-		using (var connection = OpenConnection())
+		await dba.BeginTransactionAsync();
 		{
 			var streams = _parseGraph(signInterpretationId, graph, signDict);
 
 			// Delete preexisting materialized streams
-			await connection.ExecuteAsync(
+			await dba.ExecuteAsync(
 					DeleteMaterializationsQuery.GetQuery
 					, new
 					{
@@ -255,7 +250,7 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 			foreach (var (text, index) in streams)
 			{
 				// Write the materialized stream
-				await connection.ExecuteAsync(
+				await dba.ExecuteAsync(
 						CreateMaterializationsQuery.GetQuery
 						, new
 						{
@@ -267,13 +262,13 @@ public class SignStreamMaterializationRepository : DbConnectionBase
 
 				// Write the indices in large batches (I did not see the possibility to load
 				// from a DataTable with MysqlBulkLoader).
-				var materializedId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+				var materializedId = await dba.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
 				var sequences = index.Batch(900);
 
 				foreach (var sequence in sequences)
 				{
-					await connection.ExecuteAsync(
+					await dba.ExecuteAsync(
 							$@"
 INSERT IGNORE INTO materialized_sign_stream_indices (materialized_sign_stream_id, `index`, sign_interpretation_id)
 VALUES {
@@ -284,7 +279,7 @@ VALUES {
 			}
 
 			// Delete the request from the queue table
-			await connection.ExecuteAsync(
+			await dba.ExecuteAsync(
 					DeleteQueuedMaterializationQuery.GetQuery
 					, new
 					{
@@ -293,7 +288,7 @@ VALUES {
 							,
 					});
 
-			transaction.Complete();
+			dba.CommitTransaction();
 		}
 	}
 
@@ -347,9 +342,8 @@ VALUES {
 		var signDict = new Dictionary<uint, BasicSignInterpretation>();
 		var signGraph = new SignStreamGraph(null);
 
-		using (var connection = OpenConnection())
 		{
-			await connection
+			await dba
 					.QueryAsync<BasicSingleSignInterpretation, BasicSignInterpretationAttribute,
 							BasicSingleSignInterpretation>(
 							AllSignStreamPossibilities.GetQuery

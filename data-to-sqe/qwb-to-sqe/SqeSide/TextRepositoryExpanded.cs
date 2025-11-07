@@ -58,7 +58,7 @@ public class TextRepositoryExpanded : TextRepository
 
 	private Terminators _getWordTerminators(uint qwbWordId)
 	{
-		using (var connection = OpenConnection())
+		using (var connection = Connection())
 		{
 			return new Terminators(
 					connection.Query<uint>(_terminatorsQuery, new { QWBWorId = qwbWordId })

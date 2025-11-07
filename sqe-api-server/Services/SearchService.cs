@@ -7,6 +7,7 @@ using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
+using SQE.DatabaseAccess.Models;
 
 // ReSharper disable ArrangeRedundantParentheses
 
@@ -67,16 +68,18 @@ public class SearchService : ISearchService
 		// Find editions first
 		if (!string.IsNullOrEmpty(request.textDesignation))
 		{
-			var editionIds = await _searchRepository.SearchEditions(
+			var editionIds = (await _searchRepository.SearchEditions(
 					userId ?? 1
 					, request.textDesignation
-					, request.exactTextDesignation);
+					, request.exactTextDesignation)).ToList();
 
+			var editionList = new List<Edition>(editionIds.Count);
+
+			// These must not be run concurrently, because the database connection would be shared
+			// between calls.
 			// TODO: fix this so we have only one DB query to get all the editions
-			var editionList = await Task.WhenAll(
-					editionIds.Select(async x => await _editionRepo.GetEditionAsync(
-											  userId ?? 1
-											  , x)));
+			foreach (var editionId in editionIds)
+				editionList.Add(await _editionRepo.GetEditionAsync(userId ?? 1, editionId));
 
 			editions = new FlatEditionListDTO { editions = editionList.ToDTO() };
 		}

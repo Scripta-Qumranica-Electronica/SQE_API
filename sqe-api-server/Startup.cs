@@ -44,8 +44,9 @@ public class Startup
 
 		Log.CloseAndFlush(); // Close the old logger
 
-		Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration)
-											  .CreateLogger(); // Create a new logger from the full configuration
+		Log.Logger = new LoggerConfiguration()
+			.ReadFrom.Configuration(configuration)
+			.CreateLogger(); // Create a new logger from the full configuration
 
 		// Run the startup checks to ensure all necessary external services are available.
 		StartupChecks.RunAllChecks(configuration, env);
@@ -90,30 +91,34 @@ public class Startup
 		services.AddTransient<IWordService, WordService>();
 
 		services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+		services.AddSingleton<IDatabaseManager, DatabaseManager>();
+
+		// Register DatabaseAccessor and wrap it with retry decorator
+		services.AddScoped<DatabaseAccessor>();
+		services.AddScoped<IDatabaseAccessor>(sp =>
+		{
+			var accessor = sp.GetRequiredService<DatabaseAccessor>();
+			return new DatabaseAccessorRetryDecorator(accessor);
+		});
+
+		services.AddTransient<IDatabaseWriter, DatabaseWriter>();
+
 		services.AddTransient<IUserRepository, UserRepository>();
 		services.AddTransient<IEditionRepository, EditionRepository>();
-
 		services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();
-
 		services.AddTransient<IImageRepository, ImageRepository>();
 		services.AddTransient<IArtefactRepository, ArtefactRepository>();
-		services.AddTransient<IDatabaseWriter, DatabaseWriter>();
 		services.AddTransient<ITextRepository, TextRepository>();
 		services.AddTransient<IRoiRepository, RoiRepository>();
-
 		services.AddTransient<ISignInterpretationRepository, SignInterpretationRepository>();
-
 		services
 				.AddTransient<ISignInterpretationCommentaryRepository,
 						SignInterpretationCommentaryRepository>();
-
 		services.AddTransient<IAttributeRepository, AttributeRepository>();
 		services.AddTransient<ICatalogueRepository, CatalogueRepository>();
-
 		services
 				.AddTransient<ISignStreamMaterializationRepository,
 						SignStreamMaterializationRepository>();
-
 		services.AddTransient<ISearchRepository, SearchRepository>();
 		services.AddTransient<IScriptRepository, ScriptRepository>();
 
@@ -122,11 +127,10 @@ public class Startup
 		services.Configure<BrotliCompressionProviderOptions>(options =>
 															 {
 																 // A custom compression level makes a huge difference CompressionLevel.Optimal uses level 11,
-																 // which is incredibly slow.  A level between 5–7 gives a similarly sized result at a considerably
-																 // faster speed. On one test Broti (CompressionLevel)5 compressed a 9.4 MB file to 1.57 MB, gzip
+																 // which is incredibly slow.  CompressionLevel.Fastest (level 1) gives a good balance of speed
+																 // and compression. On one test Brotli at Fastest compressed a 9.4 MB file well, gzip
 																 // compressed it to 2.45 MB (albeit a little bit faster).
-																 options.Level =
-																		 (CompressionLevel)5;
+																 options.Level = CompressionLevel.Fastest;
 															 });
 
 		services.Configure<GzipCompressionProviderOptions>(options =>

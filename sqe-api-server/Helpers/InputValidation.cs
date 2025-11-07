@@ -83,8 +83,7 @@ public static class GeometryValidation
 	private static MultiPolygon _normalizeMultiPolygon(MultiPolygon mp)
 	{
 		var factory = mp.Factory;
-		var polygons = new Polygon[mp.NumGeometries];
-		polygons.Zip(mp).ForEach(x => x.First = _normalizePolygon((Polygon)x.Second));
+		var polygons = mp.Geometries.Select(x => _normalizePolygon((Polygon)x)).ToArray();
 
 		return factory.CreateMultiPolygon(polygons);
 	}
@@ -97,15 +96,12 @@ public static class GeometryValidation
 		var exteriorRing = polygon.ExteriorRing;
 
 		if (!Orientation.IsCCW(exteriorRing.Coordinates))
-			exteriorRing = (LinearRing)exteriorRing.Reverse();
+			exteriorRing = (LinearRing)(((Geometry) exteriorRing).Reverse());
 
 		// Fix interior rings (holes) - should be CW (i.e., NOT CCW)
-		var interiorRings = new LinearRing[polygon.NumInteriorRings];
-
-		interiorRings.Zip(polygon.InteriorRings)
-					 .ForEach(x => x.First = Orientation.IsCCW(x.Second.Coordinates)
-									  ? (LinearRing)x.Second.Reverse()
-									  : (LinearRing)x.Second);
+		var interiorRings = polygon.InteriorRings.Select(x => Orientation.IsCCW(x.Coordinates)
+																 ? (LinearRing)(((Geometry) x).Reverse())
+																 : (LinearRing)x).ToArray();
 
 		// Create a new polygon with corrected rings
 		return factory.CreatePolygon((LinearRing)exteriorRing, interiorRings);

@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
 namespace SQE.DatabaseAccess;
@@ -15,63 +17,58 @@ public interface ISearchRepository
 			uint                userId
 			, string            textFragmentName
 			, IEnumerable<uint> editionIds
-			, bool              exact);
+			, bool              exact
+			);
 
 	Task<List<EditionArtefact>> SearchArtefacts(
 			uint                userId
 			, string            artefactName
 			, IEnumerable<uint> editionIds
-			, bool              exact);
+			, bool              exact
+			);
 
 	Task<IEnumerable<SearchImagedObject>> SearchImagedObjects(string imagedObjectName, bool exact);
 }
 
-public class SearchRepository : DbConnectionBase
-								, ISearchRepository
+public class SearchRepository(IDatabaseAccessor dba) : ISearchRepository
 {
-	public SearchRepository(IConfiguration config) : base(config) { }
-
 	public async Task<IEnumerable<uint>> SearchEditions(uint userId, string editionName, bool exact)
 	{
-		using (var conn = OpenConnection())
-		{
-			var sql = @"
+		var sql = @"
 SELECT manuscript_data_owner.edition_id
 FROM manuscript_data
 JOIN manuscript_data_owner USING(manuscript_data_id)
 JOIN edition USING(edition_id)
 JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
 WHERE manuscript_data.name $Match
-    AND (edition.public = 1 OR edition_editor.user_id = @UserId)
+   AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 LIMIT 100
 ";
 
-			sql = sql.Replace(
-					"$Match"
-					, exact
-							? "= @ManuscriptName"
-							: "LIKE CONCAT('%', @ManuscriptName, '%')");
+		sql = sql.Replace(
+				"$Match"
+				, exact
+						? "= @ManuscriptName"
+						: "LIKE CONCAT('%', @ManuscriptName, '%')");
 
-			return await conn.QueryAsync<uint>(
-					sql
-					, new { ManuscriptName = editionName, UserId = userId });
-		}
+		return await dba.QueryAsync<uint>(
+				sql
+				, new { ManuscriptName = editionName, UserId = userId });
 	}
 
 	public async Task<List<TextFragmentSearch>> SearchTextFragments(
 			uint                userId
 			, string            textFragmentName
 			, IEnumerable<uint> editionIds
-			, bool              exact)
+			, bool              exact
+			)
 	{
-		using (var conn = OpenConnection())
-		{
-			var sql = @"
+		var sql = @"
 SELECT text_fragment_data_owner.edition_id AS EditionId,
-       manuscript_data.name AS EditionName,
-       text_fragment_data.text_fragment_id AS TextFragmentId,
-       text_fragment_data.name AS Name,
-       IF(GROUP_CONCAT(DISTINCT editors.name) = '', 'sqe_api', GROUP_CONCAT(DISTINCT editors.name)) AS Editors
+      manuscript_data.name AS EditionName,
+      text_fragment_data.text_fragment_id AS TextFragmentId,
+      text_fragment_data.name AS Name,
+      IF(GROUP_CONCAT(DISTINCT editors.name) = '', 'sqe_api', GROUP_CONCAT(DISTINCT editors.name)) AS Editors
 FROM text_fragment_data
 JOIN text_fragment_data_owner USING(text_fragment_data_id)
 JOIN edition USING(edition_id)
@@ -79,47 +76,45 @@ JOIN edition_editor USING(edition_id)
 JOIN manuscript_data_owner USING(edition_id)
 JOIN manuscript_data USING(manuscript_data_id)
 JOIN (
-    SELECT TRIM(CONCAT_WS('', forename, ' ', surname)) AS name, edition_id
-    FROM user
-    JOIN edition_editor USING(user_id)
+   SELECT TRIM(CONCAT_WS('', forename, ' ', surname)) AS name, edition_id
+   FROM user
+   JOIN edition_editor USING(user_id)
 ) AS editors USING(edition_id)
 WHERE text_fragment_data.name $Match
-   AND (edition.public = 1 OR edition_editor.user_id = @UserId)
+  AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 $Where
 GROUP BY text_fragment_data.text_fragment_id
 LIMIT 100";
 
-			sql = sql.Replace(
-							 "$Where"
-							 , editionIds.Any()
-									 ? "AND edition_id in @EditionIds"
-									 : "")
-					 .Replace(
-							 "$Match"
-							 , exact
-									 ? "= @TextFragmentName"
-									 : "LIKE CONCAT('%', @TextFragmentName, '%')");
+		sql = sql.Replace(
+						 "$Where"
+						 , editionIds.Any()
+								 ? "AND edition_id in @EditionIds"
+								 : "")
+				 .Replace(
+						 "$Match"
+						 , exact
+								 ? "= @TextFragmentName"
+								 : "LIKE CONCAT('%', @TextFragmentName, '%')");
 
-			return (await conn.QueryAsync<TextFragmentSearch>(
-					sql
-					, new
-					{
-							TextFragmentName = textFragmentName
-							, UserId = userId
-							, EditionIds = editionIds
-							,
-					})).AsList();
-		}
+		return (await dba.QueryAsync<TextFragmentSearch>(
+				sql
+				, new
+				{
+						TextFragmentName = textFragmentName
+						, UserId = userId
+						, EditionIds = editionIds
+						,
+				})).AsList();
 	}
 
 	public async Task<List<EditionArtefact>> SearchArtefacts(
 			uint                userId
 			, string            artefactName
 			, IEnumerable<uint> editionIds
-			, bool              exact)
+			, bool              exact
+			)
 	{
-		using (var conn = OpenConnection())
-		{
 			var sql = @"
 SELECT DISTINCT edition.edition_id AS EditionId,
                 artefact_data.artefact_id AS ArtefactId,
@@ -157,7 +152,7 @@ LIMIT 100";
 									 ? "= @ArtefactName"
 									 : "LIKE CONCAT('%', @ArtefactName, '%')");
 
-			return (await conn.QueryAsync<EditionArtefact>(
+			return (await dba.QueryAsync<EditionArtefact>(
 					sql
 					, new
 					{
@@ -166,15 +161,13 @@ LIMIT 100";
 							, EditionIds = editionIds
 							,
 					})).AsList();
-		}
 	}
 
 	public async Task<IEnumerable<SearchImagedObject>> SearchImagedObjects(
 			string imagedObjectName
-			, bool exact)
+			, bool exact
+			)
 	{
-		using (var conn = OpenConnection())
-		{
 			var sql = @"
 SELECT DISTINCT image_catalog.object_id AS Id,
                 CONCAT_WS('', image_urls.proxy, image_urls.url, SQE_image.filename, '/full/150,/0/', image_urls.suffix) AS RectoThumbnail,
@@ -198,9 +191,8 @@ LIMIT 100";
 							? "= @ImagedObjectName"
 							: "LIKE CONCAT('%', @ImagedObjectName, '%')");
 
-			return await conn.QueryAsync<SearchImagedObject>(
+			return await dba.QueryAsync<SearchImagedObject>(
 					sql
 					, new { ImagedObjectName = imagedObjectName });
 		}
-	}
 }

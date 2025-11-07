@@ -95,7 +95,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CanBatchUnplaceArtefacts()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -254,7 +254,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CanCreateArtefacts()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -308,7 +308,7 @@ public partial class WebControllerTest
 			// Assert
 			response.EnsureSuccessStatusCode();
 			Assert.Equal(newEdition, writtenArtefact.editionId);
-			Assert.Equal(newArtefact.mask, writtenArtefact.mask);
+			Assert.Equal(newArtefact.mask.Replace(", ", ","), writtenArtefact.mask);
 			Assert.Equal(newScale, writtenArtefact.placement.scale);
 			Assert.Equal(newRotate, writtenArtefact.placement.rotate);
 
@@ -356,7 +356,7 @@ public partial class WebControllerTest
 			// Assert
 			response.EnsureSuccessStatusCode();
 			Assert.Equal(newEdition, writtenArtefact.editionId);
-			Assert.Equal(newArtefact.mask, writtenArtefact.mask);
+			Assert.Equal(newArtefact.mask.Replace(", ", ","), writtenArtefact.mask);
 			Assert.Equal(newScale, writtenArtefact.placement.scale);
 			Assert.Equal(newRotate, writtenArtefact.placement.rotate);
 
@@ -376,7 +376,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CanCreateArtefactsWithoutMask()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -436,7 +436,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CanDeleteArtefacts()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -515,7 +515,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CannotCreateArtefactsOnUnownedEdition()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -574,7 +574,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CannotCreateMalformedArtefact()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -842,7 +842,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CannotDeleteUnownedArtefacts()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -872,7 +872,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CannotUpdateUnownedArtefacts()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -911,7 +911,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CanUpdateArtefacts()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1048,7 +1048,7 @@ public partial class WebControllerTest
 			// Assert (update shape)
 			shapeResponse.EnsureSuccessStatusCode();
 			Assert.NotEqual(artefact.mask, updatedShapeArtefact.mask);
-			Assert.Equal(newArtefactShape, updatedShapeArtefact.mask);
+			Assert.Equal(newArtefactShape.Replace(", ", ","), updatedShapeArtefact.mask);
 
 			Assert.Equal(newScale, updatedShapeArtefact.placement.scale);
 
@@ -1123,7 +1123,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task RejectsUpdateToImproperArtefactShape()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1160,7 +1160,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Artefact")]
 	public async Task CanGetEditionArtefactRois()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange

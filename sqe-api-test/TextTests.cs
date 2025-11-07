@@ -340,7 +340,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanAddTextFragmentAfter()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -417,7 +417,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanAddTextFragmentBefore()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -499,7 +499,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanAddTextFragmentBeforeAndAfter()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -568,7 +568,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanAddTextFragmentToEnd()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -613,7 +613,7 @@ public partial class WebControllerTest
 	public async Task CanGetEditionFullText(bool realtime)
 	{
 		// Arrange
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -693,7 +693,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanGetAnonymousArtefactsOfTextFragment()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -791,7 +791,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanMoveTextFragmentAfter()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -847,7 +847,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanMoveTextFragmentBefore()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -899,7 +899,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanMoveTextFragmentBeforeAndAfter()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -957,7 +957,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CanMoveTextFragmentBetweenNonsequentialTextFragments()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1004,7 +1004,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CannotAddTextFragmentAfterTextFragmentNotInEdition()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1046,7 +1046,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CannotAddTextFragmentBeforeTextFragmentNotInEdition()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1089,7 +1089,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CannotAddTextFragmentBetweenNonSequentialTextFragments()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1135,7 +1135,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CannotAddTextFragmentWithBlankName()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1177,7 +1177,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CannotAddTextFragmentWithNullName()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1219,7 +1219,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CannotAddTextFragmentWithoutPermission()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1243,7 +1243,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CannotMoveTextFragmentAfterTextFragmentNotInEdition()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1287,7 +1287,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Text")]
 	public async Task CannotMoveTextFragmentBeforeTextFragmentNotInEdition()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1333,7 +1333,7 @@ public partial class WebControllerTest
 	[InlineData(false)]
 	public async Task CanRenameLine(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1393,7 +1393,7 @@ public partial class WebControllerTest
 	[InlineData(false)]
 	public async Task CanPrependLine(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1464,7 +1464,7 @@ public partial class WebControllerTest
 	[InlineData(false)]
 	public async Task CanAppendLine(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1535,7 +1535,7 @@ public partial class WebControllerTest
 	[InlineData(false)]
 	public async Task CanDeleteLine(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1620,7 +1620,7 @@ public partial class WebControllerTest
 	[InlineData(false, "")]
 	public async Task CanUpdateTextChunk(bool realtime, string replacementString)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1782,7 +1782,7 @@ public partial class WebControllerTest
 			, uint   textFragmentId
 			, string replacementString)
 	{
-		using (var editionCreator = new EditionHelpers.EditionCreator(
+		await using (var editionCreator = new EditionHelpers.EditionCreator(
 					   _client
 					   , StartConnectionAsync
 					   , startingEditionId))
@@ -1951,7 +1951,7 @@ public partial class WebControllerTest
 	// [Fact]
 	// public async Task CanNotAddTwoTextFragmentsWithTheSameName()
 	// {
-	//     using (var editionCreator = new EditionHelpers.EditionCreator(_client))
+	//     await using (var editionCreator = new EditionHelpers.EditionCreator(_client))
 	//     {
 	//         // Arrange
 	//         var (editionId, textFragments) = await _createEditionWithTextFragments(editionCreator);

@@ -119,13 +119,13 @@ public static class PositionDataRequestFactory
 	/// </param>
 	/// <returns></returns>
 	public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
-			IDbConnection dbConnection
-			, StreamType  streamType
-			, uint        editionId
-			, bool        addExistingAnchors = false)
+			IDatabaseAccessor dba
+			, StreamType     streamType
+			, uint           editionId
+			, bool           addExistingAnchors = false)
 	{
 		var newObject = new PositionDataRequestHelper(
-				dbConnection
+				dba
 				, streamType
 				, new List<uint>()
 				, editionId);
@@ -151,14 +151,14 @@ public static class PositionDataRequestFactory
 	/// </param>
 	/// <returns></returns>
 	public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
-			IDbConnection dbConnection
-			, StreamType  streamType
-			, List<uint>  itemIds
-			, uint        editionId
-			, bool        addExistingAnchors = false)
+			IDatabaseAccessor dba
+			, StreamType     streamType
+			, List<uint>     itemIds
+			, uint           editionId
+			, bool           addExistingAnchors = false)
 	{
 		var newObject = new PositionDataRequestHelper(
-				dbConnection
+				dba
 				, streamType
 				, itemIds
 				, editionId);
@@ -185,12 +185,12 @@ public static class PositionDataRequestFactory
 	/// </param>
 	/// <returns></returns>
 	public static async Task<PositionDataRequestHelper> CreateInstanceAsync(
-			IDbConnection dbConnection
-			, StreamType  streamType
-			, uint        itemId
-			, uint        editionId
-			, bool        addExistingAnchors = false) => await CreateInstanceAsync(
-			dbConnection
+			IDatabaseAccessor dba
+			, StreamType     streamType
+			, uint           itemId
+			, uint           editionId
+			, bool           addExistingAnchors = false) => await CreateInstanceAsync(
+			dba
 			, streamType
 			, new List<uint> { itemId }
 			, editionId
@@ -201,15 +201,15 @@ public class PositionDataRequestHelper
 {
 	private readonly List<PositionAction> _actions = new();
 
-	private readonly IDbConnection _dbConnection;
-	private readonly uint          _editionId;
-	private readonly List<uint>    _itemIds;
-	private readonly string        _itemName;
-	private readonly string        _itemNameAt;
-	private readonly string        _nextName;
-	private readonly string        _nextNameAt;
-	private readonly StreamType    _streamType;
-	private readonly string        _tableName;
+	private readonly IDatabaseAccessor _dba;
+	private readonly uint             _editionId;
+	private readonly List<uint>       _itemIds;
+	private readonly string           _itemName;
+	private readonly string           _itemNameAt;
+	private readonly string           _nextName;
+	private readonly string           _nextNameAt;
+	private readonly StreamType       _streamType;
+	private readonly string           _tableName;
 
 	/// <summary>
 	///  We only have private constructors because objects should always be created
@@ -220,15 +220,15 @@ public class PositionDataRequestHelper
 	/// <param name="itemIds">Ids of items to be processed as stream</param>
 	/// <param name="editionId">Id of the edition we are dealing with</param>
 	internal PositionDataRequestHelper(
-			IDbConnection dbConnection
-			, StreamType  streamType
-			, List<uint>  itemIds
-			, uint        editionId)
+			IDatabaseAccessor dba
+			, StreamType     streamType
+			, List<uint>     itemIds
+			, uint           editionId)
 	{
-		_dbConnection = dbConnection;
 		_itemIds = itemIds ?? new List<uint>();
 		_editionId = editionId;
 		_streamType = streamType;
+		_dba = dba;
 
 		if (streamType == StreamType.SignInterpretationStream)
 		{
@@ -524,7 +524,7 @@ public class PositionDataRequestHelper
 					foreach (var looseNeighbourBefore in looseNeighboursBefore)
 					{
 						var tmpFactory = await PositionDataRequestFactory.CreateInstanceAsync(
-								_dbConnection
+								_dba
 								, _streamType
 								, new List<uint>
 								{
@@ -618,7 +618,7 @@ public class PositionDataRequestHelper
 		parameters.Add("@NextItemId", nextItemId);
 		parameters.Add("@EditionId", _editionId);
 
-		return await _dbConnection.QueryFirstAsync<uint>(queryForConnection, parameters);
+		return await _dba.QueryFirstAsync<uint>(queryForConnection, parameters);
 	}
 
 	/// <summary>
@@ -663,7 +663,7 @@ public class PositionDataRequestHelper
 		parameters.Add("@EditionId", _editionId);
 
 		var result =
-				await _dbConnection.QueryAsync<PositionDataPair>(queryForConnection, parameters);
+				await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
 
 		return result == null
 				? new List<PositionDataPair>()
@@ -722,7 +722,7 @@ public class PositionDataRequestHelper
 		parameters.Add("@EditionId", _editionId);
 
 		var result =
-				await _dbConnection.QueryAsync<PositionDataPair>(queryForConnection, parameters);
+				await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
 
 		return result == null
 				? new List<PositionDataPair>()
@@ -765,7 +765,7 @@ public class PositionDataRequestHelper
 		parameters.Add("@EditionId", _editionId);
 
 		var result =
-				await _dbConnection.QueryAsync<PositionDataPair>(queryForConnection, parameters);
+				await _dba.QueryAsync<PositionDataPair>(queryForConnection, parameters);
 
 		return result == null
 				? new List<PositionDataPair>()
@@ -822,7 +822,7 @@ public class PositionDataRequestHelper
 		parameters.Add("@ItemId", _itemIds.First());
 		parameters.Add("@EditionId", _editionId);
 
-		var result = await _dbConnection.QueryAsync<uint>(queryForConnection, parameters);
+		var result = await _dba.QueryAsync<uint>(queryForConnection, parameters);
 
 		return result == null
 				? new List<uint>()
@@ -858,7 +858,7 @@ public class PositionDataRequestHelper
 
 		parameters.Add("@EditionId", _editionId);
 
-		var result = await _dbConnection.QueryAsync<uint>(queryForConnection, parameters);
+		var result = await _dba.QueryAsync<uint>(queryForConnection, parameters);
 
 		return result == null
 				? new List<uint>()

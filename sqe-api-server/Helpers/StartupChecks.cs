@@ -6,7 +6,7 @@ using MailKit.Security;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Polly;
 using Serilog;
 using SQE.DatabaseAccess;
@@ -198,16 +198,16 @@ public static class StartupChecks
 			const string sql =
 					"SELECT table_name FROM information_schema.tables where table_schema=@DbName;";
 
-			using (var connection = OpenConnection())
-			{
-				var tableNames = connection.Query<string>(sql, new { DbName = dbName });
+			//using (var connection = Connection())
+			//{
+				var tableNames = Connection.Query<string>(sql, new { DbName = dbName });
 
 				if (!tableNames.Any())
 				{
 					throw new SystemException(
 							$"A database named {dbName} exists, but it is empty.");
 				}
-			}
+			//}
 		}
 	}
 }

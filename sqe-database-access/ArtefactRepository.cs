@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using Dapper;
-using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using SQE.API.DTO;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -20,97 +19,118 @@ public interface IArtefactRepository
 	Task<ArtefactModel> GetEditionArtefactAsync(
 			UserInfo editionUser
 			, uint   artefactId
-			, bool   withMask = false);
+			, bool   withMask = false
+			);
 
 	Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(
 			UserInfo editionUser
-			, bool   withMask = false);
+			, bool   withMask = false
+			);
+
+
+	Task<List<AlteredRecord>> UpdateArtefactAllAsync(
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        shape
+			, uint?         masterImageId = null
+			, string        workStatus    = null
+			, string        name          = null
+			, decimal?      scale         = null
+			, decimal?      rotate        = null
+			, int?          translateX    = null
+			, int?          translateY    = null
+			, int?          zIndex        = null
+			, bool?         mirrored      = null
+			, IDbConnection connection    = null);
 
 	Task<List<AlteredRecord>> UpdateArtefactShapeAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, string shape
-			, uint?  masterImageId = null);
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        shape
+			, uint?         masterImageId = null
+			, IDbConnection connection    = null);
 
 	Task<List<AlteredRecord>> UpdateArtefactStatusAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, string workStatus);
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        workStatus
+			);
 
 	Task<List<AlteredRecord>> UpdateArtefactNameAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, string name);
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        name
+			);
+
+	Task<List<AlteredRecord>> UpdateArtefactPositionAsync(
+			UserInfo        editionUser
+			, uint          artefactId
+			, decimal?      scale
+			, decimal?      rotate
+			, int?          translateX
+			, int?          translateY
+			, int?          zIndex
+			, bool          mirrored
+			);
 
 	Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(
 			UserInfo                           editionUser
-			, List<UpdateArtefactPlacementDTO> transforms);
-
-	Task<List<AlteredRecord>> UpdateArtefactPositionAsync(
-			UserInfo   editionUser
-			, uint     artefactId
-			, decimal? scale
-			, decimal? rotate
-			, int?     translateX
-			, int?     translateY
-			, int?     zIndex
-			, bool     mirrored);
+			, List<UpdateArtefactPlacementDTO> transforms
+			, IDbConnection                    connection = null);
 
 	Task<uint> CreateNewArtefactAsync(
-			UserInfo   editionUser
-			, uint?    masterImageId
-			, string   shape
-			, string   artefactName
-			, decimal? scale
-			, decimal? rotate
-			, int?     translateX
-			, int?     translateY
-			, int?     zIndex
-			, string   workStatus
-			, bool     mirrored);
+			UserInfo        editionUser
+			, uint?         masterImageId
+			, string        shape
+			, string        artefactName
+			, decimal?      scale
+			, decimal?      rotate
+			, int?          translateX
+			, int?          translateY
+			, int?          zIndex
+			, string        workStatus
+			, bool          mirrored
+			);
 
 	Task DeleteArtefactAsync(UserInfo editionUser, uint artefactId);
 
 	Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(UserInfo editionUser, uint artefactId);
 
 	Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(
-			UserInfo editionUser
-			, uint   artefactId);
+			UserInfo        editionUser
+			, uint          artefactId
+			);
 
 	Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(UserInfo editionUser);
 
 	Task<ArtefactGroup> GetArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId);
 
 	Task<ArtefactGroup> CreateArtefactGroupAsync(
-			UserInfo     editionUser
-			, string     artefactGroupName
-			, List<uint> artefactIds);
+			UserInfo        editionUser
+			, string        artefactGroupName
+			, List<uint>    artefactIds
+			);
 
 	Task<ArtefactGroup> UpdateArtefactGroupAsync(
-			UserInfo     editionUser
-			, uint       artefactGroupId
-			, string     artefactGroupName
-			, List<uint> artefactIds);
+			UserInfo        editionUser
+			, uint          artefactGroupId
+			, string        artefactGroupName
+			, List<uint>    artefactIds
+			);
 
 	Task DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId);
 }
 
-public class ArtefactRepository : DbConnectionBase
-								  , IArtefactRepository
+public class ArtefactRepository(IDatabaseAccessor adb) : IArtefactRepository
 {
-	private readonly IDatabaseWriter _databaseWriter;
-
-	public ArtefactRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
-		=> _databaseWriter = databaseWriter;
-
 	public async Task<ArtefactModel> GetEditionArtefactAsync(
 			UserInfo editionUser
 			, uint   artefactId
-			, bool   withMask = false)
+			, bool   withMask = false
+			)
 	{
-		using (var connection = OpenConnection())
-		{
-			var artefacts = (await connection.QueryAsync<ArtefactModel>(
+
+			var artefacts = (await adb.QueryAsync<ArtefactModel>(
 					ArtefactOfEditionQuery.GetQuery(editionUser.userId, withMask)
 					, new
 					{
@@ -129,7 +149,7 @@ public class ArtefactRepository : DbConnectionBase
 			}
 
 			return artefacts.First();
-		}
+
 	}
 
 	/// <summary>
@@ -140,11 +160,11 @@ public class ArtefactRepository : DbConnectionBase
 	/// <returns></returns>
 	public async Task<IEnumerable<ArtefactModel>> GetEditionArtefactListAsync(
 			UserInfo editionUser
-			, bool   withMask = false)
+			, bool   withMask = false
+			)
 	{
-		using (var connection = OpenConnection())
-		{
-			return await connection.QueryAsync<ArtefactModel>(
+
+			return await adb.QueryAsync<ArtefactModel>(
 					ArtefactsOfEditionQuery.GetQuery(editionUser.userId, withMask)
 					, new
 					{
@@ -152,14 +172,79 @@ public class ArtefactRepository : DbConnectionBase
 							, UserId = editionUser.userId
 							,
 					});
-		}
+
+	}
+
+	public async Task<List<AlteredRecord>> UpdateArtefactAllAsync(
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        shape
+			, uint?         masterImageId = null
+			, string        workStatus    = null
+			, string        name          = null
+			, decimal?      scale         = null
+			, decimal?      rotate        = null
+			, int?          translateX    = null
+			, int?          translateY    = null
+			, int?          zIndex        = null
+			, bool?         mirrored      = null
+			, IDbConnection connection    = null)
+	{
+		var tasks = new List<AlteredRecord>();
+
+
+			if (!string.IsNullOrEmpty(shape))
+			{
+				tasks.AddRange(
+						await UpdateArtefactShapeAsync(
+								editionUser
+								, artefactId
+								, shape
+								, null));
+			}
+
+			if (!string.IsNullOrEmpty(name))
+			{
+				tasks.AddRange(
+						await UpdateArtefactNameAsync(
+								editionUser
+								, artefactId
+								, name));
+			}
+
+			if (scale != null || rotate != null || translateX != null || translateY != null || zIndex != null)
+			{
+				tasks.AddRange(
+						await UpdateArtefactPositionAsync(
+								editionUser
+								, artefactId
+								, scale
+								, rotate
+								, translateX
+								, translateY
+								, zIndex
+								, mirrored ?? false));
+			}
+
+			if (!string.IsNullOrEmpty(workStatus))
+			{
+				tasks.AddRange(
+						await UpdateArtefactStatusAsync(
+								editionUser
+								, artefactId
+								, workStatus));
+			}
+			adb.CommitTransaction();
+			return tasks;
+
 	}
 
 	public async Task<List<AlteredRecord>> UpdateArtefactShapeAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, string shape
-			, uint?  masterImageId = null)
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        shape
+			, uint?         masterImageId = null
+			, IDbConnection connection    = null)
 	{
 		/* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
 write the value directly into the database, but it does not seem to work right yet.  Thus we currently
@@ -215,9 +300,10 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 	}
 
 	public async Task<List<AlteredRecord>> UpdateArtefactStatusAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, string workStatus)
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        workStatus
+			)
 	{
 		const string tableName = "artefact_status";
 
@@ -242,9 +328,10 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 	}
 
 	public async Task<List<AlteredRecord>> UpdateArtefactNameAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, string name)
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        name
+			)
 	{
 		const string tableName = "artefact_data";
 
@@ -273,12 +360,11 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 
 	public async Task<List<AlteredRecord>> BatchUpdateArtefactPositionAsync(
 			UserInfo                           editionUser
-			, List<UpdateArtefactPlacementDTO> transforms)
+			, List<UpdateArtefactPlacementDTO> transforms
+			, IDbConnection                    connection = null)
 	{
 		List<AlteredRecord> updates;
 
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		{
 			var updateMutations = new MutationRequest[transforms.Count];
 
 			foreach (var (transform, index) in transforms.Select((x, idx) => (x, idx)))
@@ -300,25 +386,26 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 						, transform.placement?.mirrored ?? false);
 			}
 
-			updates = await _databaseWriter.WriteToDatabaseAsync(
+			updates = await adb.WriteToDatabaseAsync(
 					editionUser
 					, updateMutations.AsList());
 
-			transactionScope.Complete();
-		}
+			adb.CommitTransaction();
+
 
 		return updates;
 	}
 
 	public async Task<List<AlteredRecord>> UpdateArtefactPositionAsync(
-			UserInfo   editionUser
-			, uint     artefactId
-			, decimal? scale
-			, decimal? rotate
-			, int?     translateX
-			, int?     translateY
-			, int?     zIndex
-			, bool     mirrored) => await WriteArtefactAsync(
+			UserInfo        editionUser
+			, uint          artefactId
+			, decimal?      scale
+			, decimal?      rotate
+			, int?          translateX
+			, int?          translateY
+			, int?          zIndex
+			, bool          mirrored
+			) => await WriteArtefactAsync(
 			editionUser
 			, await FormatArtefactPositionUpdateRequestAsync(
 					editionUser
@@ -331,17 +418,18 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 					, mirrored));
 
 	public async Task<uint> CreateNewArtefactAsync(
-			UserInfo   editionUser
-			, uint?    masterImageId
-			, string   shape
-			, string   artefactName
-			, decimal? scale
-			, decimal? rotate
-			, int?     translateX
-			, int?     translateY
-			, int?     zIndex
-			, string   workStatus
-			, bool     mirrored)
+			UserInfo        editionUser
+			, uint?         masterImageId
+			, string        shape
+			, string        artefactName
+			, decimal?      scale
+			, decimal?      rotate
+			, int?          translateX
+			, int?          translateY
+			, int?          zIndex
+			, string        workStatus
+			, bool          mirrored
+			)
 	{
 		/* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
 write the value directly into the database, but it does not seem to work right yet.  Thus we currently
@@ -350,23 +438,15 @@ use a workaround in the WriteToDatabaseAsync functionality to wrap the WKT in a 
 var binaryMask = Geometry.Deserialize<WktSerializer>(shape).SerializeByteArray<WkbSerializer>();
 var res = string.Join("", binaryMask);
 var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSerializer>();*/
-		return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
-																   {
-																	   using (var transactionScope =
-																			  new TransactionScope(
-																					  TransactionScopeAsyncFlowOption
-																							  .Enabled))
-																	   using (var connection =
-																			  OpenConnection())
-																	   {
+await adb.BeginTransactionAsync();
 																		   // TODO make sure the imaged object is part of the edition already (add it automatically)
 																		   // Create a new artefact
-																		   await connection
+																		   await adb
 																				   .ExecuteAsync(
 																						   "INSERT INTO artefact (artefact_id) VALUES(NULL)");
 
 																		   var artefactId =
-																				   await connection
+																				   await adb
 																						   .QuerySingleAsync
 																								   <uint>(
 																										   LastInsertId
@@ -426,19 +506,14 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 																		   }
 
 																		   //Cleanup
-																		   transactionScope
-																				   .Complete();
+																		   adb.CommitTransaction();
 
 																		   return artefactId;
-																	   }
-																   });
+
 	}
 
 	public async Task DeleteArtefactAsync(UserInfo editionUser, uint artefactId)
 	{
-		using (var transaction = new TransactionScope())
-		using (var conn = OpenConnection())
-		{
 			// First ensure that the artefact has no related ROIs
 			const string roiCheckSql = @"SELECT sign_interpretation_roi.roi_position_id
 FROM roi_position
@@ -447,7 +522,7 @@ JOIN sign_interpretation_roi_owner USING(sign_interpretation_roi_id)
 WHERE artefact_id = @ArtefactId
 AND edition_id = @EditionId";
 
-			var rois = await conn.QueryAsync<uint>(
+			var rois = await adb.QueryAsync<uint>(
 					roiCheckSql
 					, new { ArtefactId = artefactId, editionUser.EditionId });
 
@@ -489,18 +564,18 @@ AND edition_id = @EditionId";
 				}
 			}
 
-			var _ = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutations);
-			transaction.Complete();
-		}
+			var _ = await adb.WriteToDatabaseAsync(editionUser, mutations);
+			adb.CommitTransaction();
+
 	}
 
 	public async Task<List<TextFragmentData>> ArtefactTextFragmentsAsync(
-			UserInfo editionUser
-			, uint   artefactId)
+			UserInfo        editionUser
+			, uint          artefactId
+			)
 	{
-		using (var connection = OpenConnection())
-		{
-			return (await connection.QueryAsync<TextFragmentData>(
+
+			return (await adb.QueryAsync<TextFragmentData>(
 					FindArtefactTextFragments.GetQuery
 					, new
 					{
@@ -509,16 +584,16 @@ AND edition_id = @EditionId";
 							, ArtefactId = artefactId
 							,
 					})).ToList();
-		}
+
 	}
 
 	public async Task<List<TextFragmentData>> ArtefactSuggestedTextFragmentsAsync(
-			UserInfo editionUser
-			, uint   artefactId)
+			UserInfo        editionUser
+			, uint          artefactId
+			)
 	{
-		using (var connection = OpenConnection())
-		{
-			return (await connection.QueryAsync<TextFragmentData>(
+
+			return (await adb.QueryAsync<TextFragmentData>(
 					FindSuggestedArtefactTextFragments.GetQuery
 					, new
 					{
@@ -527,16 +602,15 @@ AND edition_id = @EditionId";
 							, ArtefactId = artefactId
 							,
 					})).ToList();
-		}
+
 	}
 
 	public async Task<List<ArtefactGroup>> ArtefactGroupsOfEditionAsync(UserInfo editionUser)
 	{
-		using (var connection = OpenConnection())
-		{
+
 			// The query gets a table with rows ArtefactGroupId, ArtefactGroupName, and ArtefactId
 			// for every artefact in a group.
-			return (await connection.QueryAsync<ArtefactGroupEntry>(
+			return (await adb.QueryAsync<ArtefactGroupEntry>(
 						   FindArtefactGroups.GetQuery
 						   , new { editionUser.EditionId }))
 
@@ -560,18 +634,18 @@ AND edition_id = @EditionId";
 								   ,
 						   })
 				   .ToList();
-		}
+
 	}
 
 	public async Task<ArtefactGroup> GetArtefactGroupAsync(
-			UserInfo editionUser
-			, uint   artefactGroupId)
+			UserInfo        editionUser
+			, uint          artefactGroupId
+			)
 	{
-		using (var connection = OpenConnection())
-		{
+
 			// The query gets a table with rows ArtefactGroupId, ArtefactGroupName, and ArtefactId
 			// for every artefact in a group.
-			return (await connection.QueryAsync<ArtefactGroupEntry>(
+			return (await adb.QueryAsync<ArtefactGroupEntry>(
 							FindArtefactGroup.GetQuery
 							, new
 							{
@@ -596,30 +670,29 @@ AND edition_id = @EditionId";
 											   ,
 									   })
 							   .FirstOrDefault();
-		}
+
 	}
 
 	public async Task<ArtefactGroup> CreateArtefactGroupAsync(
-			UserInfo     editionUser
-			, string     artefactGroupName
-			, List<uint> artefactIds)
+			UserInfo        editionUser
+			, string        artefactGroupName
+			, List<uint>    artefactIds
+			)
 	{
 		uint artefactGroupId;
 
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		using (var connection = OpenConnection())
-		{
 			// Check if the requested artefact IDs are already part of a group.
 			await _verifyArtefactsFreeForGroup(editionUser, artefactIds.ToList());
 
+		await adb.BeginTransactionAsync();
 			// Create a new artefact group
-			var insertedArtefactGroup = await connection.ExecuteAsync(
+			var insertedArtefactGroup = await adb.ExecuteAsync(
 					"INSERT INTO artefact_group (artefact_group_id) VALUES(NULL)");
 
 			if (insertedArtefactGroup != 1)
 				throw new StandardExceptions.DataNotWrittenException("create artefact group");
 
-			artefactGroupId = await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+			artefactGroupId = await adb.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
 			if (artefactGroupId == 0)
 				throw new StandardExceptions.DataNotWrittenException("create artefact group");
@@ -658,7 +731,7 @@ AND edition_id = @EditionId";
 								, "artefact_group_data"));
 			}
 
-			var responses = await _databaseWriter.WriteToDatabaseAsync(
+			var responses = await adb.WriteToDatabaseAsync(
 					editionUser
 					, createArtefactGroupInserts);
 
@@ -667,8 +740,8 @@ AND edition_id = @EditionId";
 				throw new StandardExceptions.DataNotWrittenException("create a new artefact group");
 			}
 
-			transactionScope.Complete();
-		}
+			adb.CommitTransaction();
+
 
 		// TODO: Consider returning return a manufactured object based on the method parameters without
 		// making a database query?
@@ -676,13 +749,12 @@ AND edition_id = @EditionId";
 	}
 
 	public async Task<ArtefactGroup> UpdateArtefactGroupAsync(
-			UserInfo     editionUser
-			, uint       artefactGroupId
-			, string     artefactGroupName
-			, List<uint> artefactIds)
+			UserInfo        editionUser
+			, uint          artefactGroupId
+			, string        artefactGroupName
+			, List<uint>    artefactIds
+			)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		{
 			// Get group members and name (if any)
 			var (members, groupData) =
 					await _getArtefactGroupInternalInfo(editionUser, artefactGroupId);
@@ -775,15 +847,15 @@ AND edition_id = @EditionId";
 				}
 			}
 
-			var responses = await _databaseWriter.WriteToDatabaseAsync(editionUser, alterations);
+			var responses = await adb.WriteToDatabaseAsync(editionUser, alterations);
 
-			if (responses.Count != alterations.Count())
+			if (responses.Count != alterations.Count)
 			{
 				throw new StandardExceptions.DataNotWrittenException("update an artefact group");
 			}
 
-			transactionScope.Complete();
-		}
+			adb.CommitTransaction();
+
 
 		// TODO: Consider returning return a manufactured object based on the method parameters without
 		// making a database query?
@@ -792,8 +864,6 @@ AND edition_id = @EditionId";
 
 	public async Task DeleteArtefactGroupAsync(UserInfo editionUser, uint artefactGroupId)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		{
 			// Get group members and name (if any)
 			var (members, groupData) =
 					await _getArtefactGroupInternalInfo(editionUser, artefactGroupId);
@@ -841,17 +911,17 @@ AND edition_id = @EditionId";
 								, groupData.ArtefactGroupDataId));
 			}
 
-			var responses = await _databaseWriter.WriteToDatabaseAsync(
+			var responses = await adb.WriteToDatabaseAsync(
 					editionUser
 					, alterations.AsList());
 
-			if (responses.Count != alterations.Count())
+			if (responses.Count != alterations.Count)
 			{
 				throw new StandardExceptions.DataNotWrittenException("delete an artefact group");
 			}
 
-			transactionScope.Complete();
-		}
+			adb.CommitTransaction();
+
 
 		// Verify the delete
 		var artGroup = await GetArtefactGroupAsync(editionUser, artefactGroupId);
@@ -861,14 +931,15 @@ AND edition_id = @EditionId";
 	}
 
 	private async Task<MutationRequest> FormatArtefactPositionUpdateRequestAsync(
-			UserInfo   editionUser
-			, uint     artefactId
-			, decimal? scale
-			, decimal? rotate
-			, int?     translateX
-			, int?     translateY
-			, int?     zIndex
-			, bool?    mirrored)
+			UserInfo        editionUser
+			, uint          artefactId
+			, decimal?      scale
+			, decimal?      rotate
+			, int?          translateX
+			, int?          translateY
+			, int?          zIndex
+			, bool?         mirrored
+			)
 	{
 		const string tableName = "artefact_position";
 
@@ -923,10 +994,11 @@ AND edition_id = @EditionId";
 	}
 
 	public async Task<List<AlteredRecord>> InsertArtefactShapeAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, uint?  masterImageId
-			, string shape)
+			UserInfo        editionUser
+			, uint          artefactId
+			, uint?         masterImageId
+			, string        shape
+			)
 	{
 		/* NOTE: I thought we could transform the WKT to a binary and prepend the SIMD byte 00000000, then
 write the value directly into the database, but it does not seem to work right yet.  Thus we currently
@@ -950,9 +1022,10 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 	}
 
 	public async Task<List<AlteredRecord>> InsertArtefactStatusAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, string workStatus)
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        workStatus
+			)
 	{
 		var artefactChangeParams = new DynamicParameters();
 		artefactChangeParams.Add("@artefact_id", artefactId);
@@ -969,9 +1042,10 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 	}
 
 	public async Task<List<AlteredRecord>> InsertArtefactNameAsync(
-			UserInfo editionUser
-			, uint   artefactId
-			, string name)
+			UserInfo        editionUser
+			, uint          artefactId
+			, string        name
+			)
 	{
 		var artefactChangeParams = new DynamicParameters();
 		artefactChangeParams.Add("@name", name);
@@ -986,14 +1060,15 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 	}
 
 	public async Task<List<AlteredRecord>> InsertArtefactPositionAsync(
-			UserInfo   editionUser
-			, uint     artefactId
-			, decimal? scale
-			, decimal? rotate
-			, int?     translateX
-			, int?     translateY
-			, int?     zIndex
-			, bool?    mirrored) => await WriteArtefactAsync(
+			UserInfo        editionUser
+			, uint          artefactId
+			, decimal?      scale
+			, decimal?      rotate
+			, int?          translateX
+			, int?          translateY
+			, int?          zIndex
+			, bool?         mirrored
+			) => await WriteArtefactAsync(
 			editionUser
 			, FormatArtefactPositionInsertion(
 					artefactId
@@ -1005,13 +1080,13 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 					, mirrored));
 
 	private static MutationRequest FormatArtefactPositionInsertion(
-			uint       artefactId
-			, decimal? scale
-			, decimal? rotate
-			, int?     translateX
-			, int?     translateY
-			, int?     zIndex
-			, bool?    mirrored)
+			uint            artefactId
+			, decimal?      scale
+			, decimal?      rotate
+			, int?          translateX
+			, int?          translateY
+			, int?          zIndex
+			, bool?         mirrored)
 	{
 		var artefactChangeParams = new DynamicParameters();
 
@@ -1041,19 +1116,19 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 
 	public async Task<List<AlteredRecord>> WriteArtefactAsync(
 			UserInfo          editionUser
-			, MutationRequest artefactChangeRequest) =>
+			, MutationRequest artefactChangeRequest
+			, IDbConnection   connection = null) =>
 
 			// Now TrackMutation will insert the data, make all relevant changes to the owner tables and take
 			// care of main_action and single_action.
-			await _databaseWriter.WriteToDatabaseAsync(
+			await adb.WriteToDatabaseAsync(
 					editionUser
 					, new List<MutationRequest> { artefactChangeRequest });
 
 	private async Task<uint> GetArtefactPkAsync(UserInfo editionUser, uint artefactId, string table)
 	{
-		using (var connection = OpenConnection())
-		{
-			return await connection.QueryFirstOrDefaultAsync<uint>(
+
+			return await adb.QueryFirstOrDefaultAsync<uint>(
 					FindArtefactComponentId.GetQuery(table)
 					, new
 					{
@@ -1061,17 +1136,17 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 							, ArtefactId = artefactId
 							,
 					});
-		}
+
 	}
 
 	private async Task<List<uint>> GetArtefactStackPksAsync(
 			UserInfo editionUser
 			, uint   artefactId
-			, string table)
+			, string table
+			)
 	{
-		using (var connection = OpenConnection())
-		{
-			var stacks = (await connection.QueryAsync<uint>(
+
+			var stacks = (await adb.QueryAsync<uint>(
 					FindArtefactComponentId.GetQuery(table, true)
 					, new
 					{
@@ -1081,14 +1156,13 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 					})).ToList();
 
 			return stacks;
-		}
+
 	}
 
 	private async Task<uint?> GetArtefactShapeSqeImageIdAsync(UserInfo editionUser, uint artefactId)
 	{
-		using (var connection = OpenConnection())
-		{
-			return await connection.QueryFirstOrDefaultAsync<uint?>(
+
+			return await adb.QueryFirstOrDefaultAsync<uint?>(
 					FindArtefactShapeSqeImageId.GetQuery
 					, new
 					{
@@ -1096,7 +1170,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 							, ArtefactId = artefactId
 							,
 					});
-		}
+
 	}
 
 	private async Task<uint?> SetWorkStatusAsync(string workStatus)
@@ -1104,23 +1178,21 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 		if (string.IsNullOrEmpty(workStatus))
 			return null;
 
-		using (var connection = OpenConnection())
-		{
-			await connection.ExecuteAsync(SetWorkStatus.GetQuery, new { WorkStatus = workStatus });
 
-			return await connection.QuerySingleAsync<uint>(
+			await adb.ExecuteAsync(SetWorkStatus.GetQuery, new { WorkStatus = workStatus });
+
+			return await adb.QuerySingleAsync<uint>(
 					GetWorkStatus.GetQuery
 					, new { WorkStatus = workStatus });
-		}
+
 	}
 
 	private async Task<(List<ArtefactGroupMember> groupMembers, ArtefactGroupData groupData)>
 			_getArtefactGroupInternalInfo(UserInfo editionUser, uint artefactGroupId)
 	{
-		using (var connection = OpenConnection())
-		{
+
 			// Get group members
-			var members = await connection.QueryAsync<ArtefactGroupMember>(
+			var members = await adb.QueryAsync<ArtefactGroupMember>(
 					FindArtefactGroupMembers.GetQuery
 					, new
 					{
@@ -1130,7 +1202,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 					});
 
 			// Get group name (if any)
-			var groupData = await connection.QuerySingleOrDefaultAsync<ArtefactGroupData>(
+			var groupData = await adb.QuerySingleOrDefaultAsync<ArtefactGroupData>(
 					FindArtefactGroupDataId.GetQuery
 					, new
 					{
@@ -1140,15 +1212,14 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 					});
 
 			return (members.ToList(), groupData);
-		}
+
 	}
 
 	private async Task _verifyArtefactsFreeForGroup(UserInfo editionUser, List<uint> artefactIds)
 	{
-		using (var connection = OpenConnection())
-		{
+
 			// Check if the desired artefacts are already used in another artefact group
-			var alreadyUsedArtefacts = (await connection.QueryAsync<uint>(
+			var alreadyUsedArtefacts = (await adb.QueryAsync<uint>(
 					ArtefactsAlreadyInGroups.GetQuery
 					, new
 					{
@@ -1157,7 +1228,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 							,
 					})).ToList();
 
-			if (alreadyUsedArtefacts.Any())
+			if (alreadyUsedArtefacts.Count != 0)
 			{
 				throw new StandardExceptions.InputDataRuleViolationException(
 						$"The artefact {
@@ -1174,7 +1245,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 			}
 
 			// Check to see if the artefact are in fact part of this edition
-			var artefactsInEdition = (await connection.QueryAsync<uint>(
+			var artefactsInEdition = (await adb.QueryAsync<uint>(
 					ArtefactsFromListInEdition.GetQuery
 					, new
 					{
@@ -1200,7 +1271,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 									: "is")
 						} not part of this edition");
 			}
-		}
+
 	}
 
 	private static class ArtefactTableNames

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Dapper;
 using DiffPlex;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -23,11 +22,11 @@ public interface ITextRepository
 
 	// TODO: Check if we can remove this (see PrependLineAsync and AppendLineAsync)
 	Task<LineData> CreateLineAsync(
-			UserInfo   editionUser
-			, LineData lineData
-			, uint     fragmentId
-			, uint     anchorBefore = 0
-			, uint     anchorAfter  = 0);
+			UserInfo        editionUser
+			, LineData      lineData
+			, uint          fragmentId
+			, uint          anchorBefore = 0
+			, uint          anchorAfter  = 0);
 
 	Task<TextEdition> GetLineByIdAsync(UserInfo editionUser, uint lineId);
 
@@ -38,16 +37,16 @@ public interface ITextRepository
 	Task<LineData> UpdateLineAsync(UserInfo editionUser, uint lineId, string lineName);
 
 	Task<LineData> PrependLineAsync(
-			UserInfo   editionUser
-			, uint     fragmentId
-			, LineData lineData
-			, uint?    subsequentLineId);
+			UserInfo        editionUser
+			, uint          fragmentId
+			, LineData      lineData
+			, uint?         subsequentLineId);
 
 	Task<LineData> AppendLineAsync(
-			UserInfo   editionUser
-			, uint     fragmentId
-			, LineData lineData
-			, uint?    previousLineId);
+			UserInfo        editionUser
+			, uint          fragmentId
+			, LineData      lineData
+			, uint?         previousLineId);
 
 	#endregion
 
@@ -68,14 +67,14 @@ public interface ITextRepository
 			, bool                  materializeSignStream   = true);
 
 	Task<(List<SignData> NewSigns, List<uint>AlteredSigns)> CreateSignWithSignInterpretationAsync(
-			UserInfo     editionUser
-			, uint?      lineId
-			, SignData   signs
-			, List<uint> anchorsBefore
-			, List<uint> anchorsAfter
-			, uint?      signInterpretationId
-			, bool       breakNeighboringAnchors = false
-			, bool       materializeSignStream   = true);
+			UserInfo        editionUser
+			, uint?         lineId
+			, SignData      signs
+			, List<uint>    anchorsBefore
+			, List<uint>    anchorsAfter
+			, uint?         signInterpretationId
+			, bool          breakNeighboringAnchors = false
+			, bool          materializeSignStream   = true);
 
 	Task LinkSignInterpretationsAsync(
 			UserInfo            editionUser
@@ -96,10 +95,10 @@ public interface ITextRepository
 			, bool              materializeSignStream = true);
 
 	Task LinkSignInterpretationsAsync(
-			UserInfo editionUser
-			, uint   firstSignInterpretationId
-			, uint   secondSignInterpretationId
-			, bool   materializeSignStream = true);
+			UserInfo        editionUser
+			, uint          firstSignInterpretationId
+			, uint          secondSignInterpretationId
+			, bool          materializeSignStream = true);
 
 	Task UnlinkSignInterpretationsAsync(
 			UserInfo            editionUser
@@ -120,20 +119,20 @@ public interface ITextRepository
 			, bool              materializeSignStream = true);
 
 	Task UnlinkSignInterpretationsAsync(
-			UserInfo editionUser
-			, uint   firstSignInterpretation
-			, uint   secondSignInterpretation
-			, bool   materializeSignStream = true);
+			UserInfo        editionUser
+			, uint          firstSignInterpretation
+			, uint          secondSignInterpretation
+			, bool          materializeSignStream = true);
 
 	Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(UserInfo editionUser, uint signId);
 
 	Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated, IEnumerable<uint> DeletedRois)>
 			RemoveSignInterpretationAsync(
-					UserInfo editionUser
-					, uint   signInterpretationId
-					, bool   deleteVariants
-					, bool   closePath
-					, bool   materializeSignStream = true);
+					UserInfo        editionUser
+					, uint          signInterpretationId
+					, bool          deleteVariants
+					, bool          closePath
+					, bool          materializeSignStream = true);
 
 	Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated, IEnumerable<uint> DeletedRois)>
 			RemoveSignAsync(UserInfo editionUser, uint signId);
@@ -164,25 +163,28 @@ public interface ITextRepository
 	Task<TextEdition> GetTextFragmentByIdAsync(UserInfo editionUser, uint textFragmentId);
 
 	Task<IEnumerable<CachedTextEdition>> GetCachedTextEdition(
-			UserInfo editionUser
-			, uint   textFragmentId);
+			UserInfo        editionUser
+			, uint          textFragmentId
+			);
 
 	Task SetCachedTextEdition(
-			UserInfo   editionUser
-			, uint     textFragmentId
-			, string   transcriptionJSON
-			, DateTime validTime);
+			UserInfo        editionUser
+			, uint          textFragmentId
+			, string        transcriptionJSON
+			, DateTime      validTime
+			);
 
 	Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo editionUser);
 
 	Task<uint> RemoveTextFragmentAsync(UserInfo editionUser, uint textFragmentId);
 
 	Task<TextFragmentData> UpdateTextFragmentAsync(
-			UserInfo editionUser
-			, uint   textFragmentId
-			, string fragmentName
-			, uint?  previousFragmentId
-			, uint?  nextFragmentId);
+			UserInfo        editionUser
+			, uint          textFragmentId
+			, string        fragmentName
+			, uint?         previousFragmentId
+			, uint?         nextFragmentId
+			);
 
 	Task<(List<uint> Created, List<uint> Updated, List<uint> Deleted, List<UpdateEntity> UpdatedRois
 			, List<uint> DeletedRois)> DiffReplaceText(
@@ -191,27 +193,21 @@ public interface ITextRepository
 			, uint?                              followingSignInterpretationId
 			, string                             replacementText
 			, Dictionary<uint, ReconstructedRoi> reconstructedRois
-			, ArtefactModel                      artefact = null);
+			, ArtefactModel                      artefact   = null);
 
 	#endregion
 }
 
-public class TextRepository : DbConnectionBase
-							  , ITextRepository
+public class TextRepository(
+		IDatabaseAccessor                         dba
+		, IAttributeRepository                    _attributeRepository
+		, ISignInterpretationRepository           _signInterpretationRepository
+		, ISignInterpretationCommentaryRepository _commentaryRepository
+		, IRoiRepository                          _roiRepository
+		, IArtefactRepository                     _artefactRepository
+		, ISignStreamMaterializationRepository    _materializationRepository) : ITextRepository
 {
-	#region Interna
-
-	private readonly IDatabaseWriter      _databaseWriter;
-	private readonly IAttributeRepository _attributeRepository;
-
-	private readonly ISignInterpretationRepository _signInterpretationRepository;
-
-	private readonly ISignInterpretationCommentaryRepository _commentaryRepository;
-
-	private readonly IRoiRepository      _roiRepository;
-	private readonly IArtefactRepository _artefactRepository;
-
-	private readonly ISignStreamMaterializationRepository _materializationRepository;
+	#region Internal
 
 	private readonly List<uint> _signAttributeControlCharacters = new()
 	{
@@ -223,29 +219,6 @@ public class TextRepository : DbConnectionBase
 			, 15
 			,
 	};
-
-	public TextRepository(
-			IConfiguration                            config
-			, IDatabaseWriter                         databaseWriter
-			, IAttributeRepository                    attributeRepository
-			, ISignInterpretationRepository           signInterpretationRepository
-			, ISignInterpretationCommentaryRepository commentaryRepository
-			, IRoiRepository                          roiRepository
-			, IArtefactRepository                     artefactRepository
-			, ISignStreamMaterializationRepository    materializationRepository) : base(config)
-	{
-		_databaseWriter = databaseWriter;
-
-		// Because some functions set or remove attributes, commentaries, or ROIs we sometimes need
-		// objects of the repositories. If we don't want to create them from the beginning,
-		// we would have to store the configuration to make it accessible for creation the object elsewhere
-		_attributeRepository = attributeRepository;
-		_signInterpretationRepository = signInterpretationRepository;
-		_commentaryRepository = commentaryRepository;
-		_roiRepository = roiRepository;
-		_artefactRepository = artefactRepository;
-		_materializationRepository = materializationRepository;
-	}
 
 	#endregion
 
@@ -268,18 +241,13 @@ public class TextRepository : DbConnectionBase
 	/// <param name="anchorAfter">The interpretation id anchor aftere</param>
 	/// <returns>An instance of Line</returns>
 	public async Task<LineData> CreateLineAsync(
-			UserInfo   editionUser
-			, LineData lineData
-			, uint     fragmentId
-			, uint     anchorBefore = 0
-			, uint     anchorAfter  = 0)
+			UserInfo        editionUser
+			, LineData      lineData
+			, uint          fragmentId
+			, uint          anchorBefore = 0
+			, uint          anchorAfter  = 0)
 	{
-		return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
-																   {
-																	   using (var transactionScope =
-																			  new TransactionScope(
-																					  TransactionScopeAsyncFlowOption
-																							  .Enabled))
+		await dba.BeginTransactionAsync();
 																	   {
 																		   // Create the new text fragment abstract id
 																		   var newLineId =
@@ -304,7 +272,8 @@ public class TextRepository : DbConnectionBase
 																				   editionUser
 																				   , newLineId
 																				   , lineData
-																						   .LineName);
+																						   .LineName
+																				   , true);
 
 																		   lineData.Signs.Insert(
 																				   0
@@ -357,17 +326,16 @@ public class TextRepository : DbConnectionBase
 																												   List
 																												   <uint>()
 																								   , null
+																								   , true
 																								   , true))
 																				   .NewSigns;
 
 																		   // End the transaction (it was all or nothing)
-																		   transactionScope
-																				   .Complete();
+																		   dba.CommitTransaction();
 
 																		   // Return the new line to user
 																		   return lineData;
 																	   }
-																   });
 	}
 
 	/// <summary>
@@ -398,9 +366,8 @@ public class TextRepository : DbConnectionBase
 	/// <returns>A list of lines in the text fragment</returns>
 	public async Task<List<LineData>> GetLineIdsAsync(UserInfo editionUser, uint textFragmentId)
 	{
-		using (var connection = OpenConnection())
 		{
-			return (await connection.QueryAsync<LineData>(
+			return (await dba.QueryAsync<LineData>(
 					GetLineData.Query
 					, new
 					{
@@ -420,14 +387,13 @@ public class TextRepository : DbConnectionBase
 	/// <returns>Id of removed line</returns>
 	public async Task<uint> RemoveLineAsync(UserInfo editionUser, uint lineId)
 	{
-		using (var transactionScope = new TransactionScope())
+		await dba.BeginTransactionAsync();
 		{
 			var signIds = await _getChildrenIds(editionUser, TableData.Table.line, lineId);
 
 			foreach (var signId in signIds)
 				await RemoveSignAsync(editionUser, signId);
 
-			using (var conn = OpenConnection())
 			{
 				// Delete line data
 				var lineIdentity = new
@@ -443,7 +409,7 @@ FROM line_data
     JOIN line_data_owner USING(line_data_id)
 WHERE line_data.line_id = @LineId AND line_data_owner.edition_id = @EditionId";
 
-				var lineDataIds = await conn.QueryAsync<uint>(lineDataSQL, lineIdentity);
+				var lineDataIds = await dba.QueryAsync<uint>(lineDataSQL, lineIdentity);
 
 				foreach (var lineDataId in lineDataIds)
 				{
@@ -455,7 +421,7 @@ WHERE line_data.line_id = @LineId AND line_data_owner.edition_id = @EditionId";
 							, "line_data"
 							, lineDataId);
 
-					await _databaseWriter.WriteToDatabaseAsync(
+					await dba.WriteToDatabaseAsync(
 							editionUser
 							, new List<MutationRequest> { removeRequest });
 				}
@@ -467,7 +433,7 @@ FROM line_to_sign
 JOIN line_to_sign_owner USING(line_to_sign_id)
 WHERE line_to_sign.line_id = @LineId AND line_to_sign_owner.edition_id = @EditionId";
 
-				var lineToSignIds = await conn.QueryAsync<uint>(lineToSignSQL, lineIdentity);
+				var lineToSignIds = await dba.QueryAsync<uint>(lineToSignSQL, lineIdentity);
 
 				foreach (var lineToSignId in lineToSignIds)
 				{
@@ -479,7 +445,7 @@ WHERE line_to_sign.line_id = @LineId AND line_to_sign_owner.edition_id = @Editio
 							, "line_to_sign"
 							, lineToSignId);
 
-					await _databaseWriter.WriteToDatabaseAsync(
+					await dba.WriteToDatabaseAsync(
 							editionUser
 							, new List<MutationRequest> { removeRequest });
 				}
@@ -491,7 +457,7 @@ FROM text_fragment_to_line
 JOIN text_fragment_to_line_owner USING(text_fragment_to_line_id)
 WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.edition_id = @EditionId";
 
-				var textFragmentToLineIds = await conn.QueryAsync<uint>(
+				var textFragmentToLineIds = await dba.QueryAsync<uint>(
 						textFragmentToLineSQL
 						, lineIdentity);
 
@@ -505,13 +471,13 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 							, "text_fragment_to_line"
 							, textFragmentToLineId);
 
-					await _databaseWriter.WriteToDatabaseAsync(
+					await dba.WriteToDatabaseAsync(
 							editionUser
 							, new List<MutationRequest> { removeRequest });
 				}
 			}
 
-			transactionScope.Complete();
+			dba.CommitTransaction();
 
 			return lineId;
 		}
@@ -537,20 +503,22 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <param name="fragmentId"></param>
 	/// <returns></returns>
 	public async Task<LineData> PrependLineAsync(
-			UserInfo   editionUser
-			, uint     fragmentId
-			, LineData lineData
-			, uint?    subsequentLineId = null)
+			UserInfo        editionUser
+			, uint          fragmentId
+			, LineData      lineData
+			, uint?         subsequentLineId = null)
 	{
 		var subsequentSignId = (subsequentLineId.HasValue
 						? await GetTerminators(
 								editionUser
 								, TableData.Table.line
-								, subsequentLineId.Value)
+								, subsequentLineId.Value
+								, false)
 						: await GetTerminators(
 								editionUser
 								, TableData.Table.text_fragment
-								, fragmentId))
+								, fragmentId
+								, false))
 				.StartId;
 
 		// Insert the line before the sign holding the start break of the text fragment
@@ -618,21 +586,23 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	}
 
 	public async Task<LineData> AppendLineAsync(
-			UserInfo   editionUser
-			, uint     fragmentId
-			, LineData lineData
-			, uint?    previousLineId = null)
+			UserInfo        editionUser
+			, uint          fragmentId
+			, LineData      lineData
+			, uint?         previousLineId = null)
 	{
 		// Get the SignInterpretationId of the of the end break of the previous line
 		var anchorBefore = (previousLineId.HasValue
 						? await GetTerminators(
 								editionUser
 								, TableData.Table.line
-								, previousLineId.Value)
+								, previousLineId.Value
+								, false)
 						: await GetTerminators(
 								editionUser
 								, TableData.Table.text_fragment
-								, fragmentId))
+								, fragmentId
+								, false))
 				.EndId;
 
 		// Try to get the SignInterpretationId of the start break of the next line
@@ -765,12 +735,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	}
 
 	public async Task<List<uint>> GetAllSignInterpretationIdsForSignIdAsync(
-			UserInfo editionUser
-			, uint   signId)
+			UserInfo        editionUser
+			, uint          signId
+			)
 	{
-		using (var connection = OpenConnection())
 		{
-			return (await connection.QueryAsync<uint>(
+			return (await dba.QueryAsync<uint>(
 					GetSignInterpretationIdsForSignIdQuery.GetQuery
 					, new
 					{
@@ -816,8 +786,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		var newlyCreatedSigns = new List<SignData>();
 		var updatedSignInterpretationIds = new List<uint>();
 
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		using (var connection = OpenConnection())
+		await dba.BeginTransactionAsync();
 		{
 			// Loop over each submitted sign interpretation
 			foreach (var newSign in newSigns)
@@ -831,7 +800,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				{
 					// Get the sign id of the signInterpretationId, it will be the same sign id
 					// for the newSignInterpretation (that makes it a variant)
-					signId = await connection.QuerySingleAsync<uint>(
+					signId = await dba.QuerySingleAsync<uint>(
 							SignInterpretationSignIdQuery.GetQuery
 							, new { SignInterpretationId = signInterpretationId.Value });
 
@@ -946,7 +915,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						{
 							foreach (var anchorAfter in anchorsAfter)
 							{
-								foreach (var possibleSignId in await connection.QueryAsync<uint>(
+								foreach (var possibleSignId in await dba.QueryAsync<uint>(
 												 PossibleIntermediarySignInSignStream.GetQuery
 												 , new
 												 {
@@ -977,7 +946,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 							if (adjacentSignInterpretationId != 0)
 							{
-								lineId = await connection.QuerySingleAsync<uint>(
+								lineId = await dba.QuerySingleAsync<uint>(
 										SignInterpretationLineIdQuery.GetQuery
 										, new
 										{
@@ -1074,7 +1043,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 																	   .GetValueOrDefault()));
 			}
 
-			transactionScope.Complete();
+			dba.CommitTransaction();
 		}
 
 		// Rebuild any affected materialized sign streams
@@ -1084,9 +1053,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		// it should be able to check how many sign streams would need a rebuild.
 		if (materializeSignStream && updatedSignInterpretationIds.Any())
 		{
-			_materializationRepository.RequestMaterializationAsync(
+			await _materializationRepository.RequestMaterializationAsync(
 					editionUser.EditionId.Value
-					, anchorsBefore.First());
+					, anchorsBefore.First()
+					, null
+					, null);
 		}
 
 		return (newlyCreatedSigns, updatedSignInterpretationIds);
@@ -1109,14 +1080,14 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <returns></returns>
 	public async Task<(List<SignData> NewSigns, List<uint>AlteredSigns)>
 			CreateSignWithSignInterpretationAsync(
-					UserInfo     editionUser
-					, uint?      lineId
-					, SignData   sign
-					, List<uint> anchorsBefore
-					, List<uint> anchorsAfter
-					, uint?      signInterpretationId
-					, bool       breakNeighboringAnchors = false
-					, bool       materializeSignStream   = true)
+					UserInfo        editionUser
+					, uint?         lineId
+					, SignData      sign
+					, List<uint>    anchorsBefore
+					, List<uint>    anchorsAfter
+					, uint?         signInterpretationId
+					, bool          breakNeighboringAnchors = false
+					, bool          materializeSignStream   = true)
 		=> await CreateSignsWithInterpretationsAsync(
 				editionUser
 				, lineId
@@ -1170,14 +1141,15 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			}
 		}
 
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		using (var connection = OpenConnection())
+		await dba.BeginTransactionAsync();
 		{
 			// Get a new PositionDataRequestFactory
-			var positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
-					connection
-					, StreamType.SignInterpretationStream
-					, editionUser.EditionId.Value);
+			var positionDataRequestFactory =
+					await PositionDataRequestFactory.CreateInstanceAsync(
+							dba
+							, StreamType.SignInterpretationStream
+							, editionUser.EditionId.Value);
+
 
 			// Feed the data to the request factory.
 			positionDataRequestFactory.AddAction(PositionAction.ConnectAnchors);
@@ -1189,9 +1161,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			// Get the mutation request and run it
 			var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
 
-			await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+			await dba.WriteToDatabaseAsync(editionUser, positionRequests);
 
-			transactionScope.Complete();
+			dba.CommitTransaction();
 		}
 
 		// Rebuild any affected materialized sign streams
@@ -1201,9 +1173,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		// it should be able to check how many sign streams would need a rebuild.
 		if (materializeSignStream)
 		{
-			_materializationRepository.RequestMaterializationAsync(
+			await _materializationRepository.RequestMaterializationAsync(
 					editionUser.EditionId.Value
-					, firstSignInterpretationIds.First());
+					, firstSignInterpretationIds.First()
+					, null
+					, null);
 		}
 	}
 
@@ -1269,10 +1243,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// </param>
 	/// <returns></returns>
 	public async Task LinkSignInterpretationsAsync(
-			UserInfo editionUser
-			, uint   firstSignInterpretationId
-			, uint   secondSignInterpretationId
-			, bool   materializeSignStream = true)
+			UserInfo        editionUser
+			, uint          firstSignInterpretationId
+			, uint          secondSignInterpretationId
+			, bool          materializeSignStream = true)
 	{
 		await LinkSignInterpretationsAsync(
 				editionUser
@@ -1326,12 +1300,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					"cannot unlink control sign interpretations");
 		}
 
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		using (var connection = OpenConnection())
+		await dba.BeginTransactionAsync();
 		{
 			// Get a new PositionDataRequestFactory
 			var positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
-					connection
+					dba
 					, StreamType.SignInterpretationStream
 					, secondSignInterpretationsList
 					, editionUser.EditionId.Value);
@@ -1344,9 +1317,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			// Get the mutation request and run it
 			var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
 
-			await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+			await dba.WriteToDatabaseAsync(editionUser, positionRequests);
 
-			transactionScope.Complete();
+			dba.CommitTransaction();
 		}
 
 		// Rebuild any affected materialized sign streams
@@ -1356,9 +1329,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		// it should be able to check how many sign streams would need a rebuild.
 		if (materializeSignStream)
 		{
-			_materializationRepository.RequestMaterializationAsync(
+			await _materializationRepository.RequestMaterializationAsync(
 					editionUser.EditionId.Value
-					, firstSignInterpretations.First());
+					, firstSignInterpretations.First()
+					, null
+					, null);
 		}
 	}
 
@@ -1422,10 +1397,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// </param>
 	/// <returns></returns>
 	public async Task UnlinkSignInterpretationsAsync(
-			UserInfo editionUser
-			, uint   firstSignInterpretation
-			, uint   secondSignInterpretation
-			, bool   materializeSignStream = true)
+			UserInfo        editionUser
+			, uint          firstSignInterpretation
+			, uint          secondSignInterpretation
+			, bool          materializeSignStream = true)
 	{
 		await UnlinkSignInterpretationsAsync(
 				editionUser
@@ -1454,7 +1429,6 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			, List<uint>                   anchorsAfter
 			, bool                         breakAnchors = false)
 	{
-		using (var connection = OpenConnection())
 		{
 			foreach (var signInterpretation in signInterpretations)
 			{
@@ -1474,7 +1448,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 				createSignInterpretationIdParameters.Add("@EditionId", editionUser.EditionId.Value);
 
-				var existingSignInterpretationId = await connection.QueryAsync<uint>(
+				var existingSignInterpretationId = await dba.QueryAsync<uint>(
 						GetSignInterpretationIdQuery.GetQuery
 						, createSignInterpretationIdParameters);
 
@@ -1485,7 +1459,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					signInterpretation.SignInterpretationId = existingSignInterpretationId.First();
 
 					signInterpretation.SignInterpretationId =
-							await connection.QuerySingleOrDefaultAsync<uint>(
+							await dba.QuerySingleOrDefaultAsync<uint>(
 									GetSignInterpretationIdQuery.GetQuery
 									, createSignInterpretationIdParameters);
 
@@ -1500,12 +1474,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				}
 				else // Store the new sign interpretation id
 				{
-					await connection.ExecuteAsync(
+					await dba.ExecuteAsync(
 							AddSignInterpretationQuery.GetQuery
 							, createSignInterpretationIdParameters);
 
 					signInterpretation.SignInterpretationId =
-							await connection.QuerySingleAsync<uint>(LastInsertId.GetQuery);
+							await dba.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 				}
 
 				if (breakAnchors && (signInterpretations.First() == signInterpretation))
@@ -1514,7 +1488,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				// Now insert the new sign interpretation into the path
 				var positionDataRequestFactory =
 						await PositionDataRequestFactory.CreateInstanceAsync(
-								connection
+								dba
 								, StreamType.SignInterpretationStream
 								, signInterpretation.SignInterpretationId.GetValueOrDefault()
 								, editionUser.EditionId.Value);
@@ -1530,7 +1504,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 				var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
 
-				await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+				await dba.WriteToDatabaseAsync(editionUser, positionRequests);
 
 				// Add the character
 				await _createSignInterpretationCharacterAsync(
@@ -1634,65 +1608,63 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			Task<(IEnumerable<uint> Deleted, IEnumerable<uint> Updated, IEnumerable<uint>
 					DeletedRois)>
 			RemoveSignInterpretationAsync(
-					UserInfo editionUser
-					, uint   signInterpretationId
-					, bool   deleteVariants
-					, bool   closePath
-					, bool   materializeSignStream = true)
+					UserInfo        editionUser
+					, uint          signInterpretationId
+					, bool          deleteVariants
+					, bool          closePath
+					, bool          materializeSignStream = true)
 	{
 		var alteredSignInterpretations = new List<uint>();
 		var deletedSignInterpretations = new List<uint>();
 		var deletedRois = new List<uint>();
 
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+		await dba.BeginTransactionAsync();
 		{
-			if (deleteVariants)
-			{ // If deleting all variants, then get the sign id and call RemoveSignAsync
-				using (var connection = OpenConnection())
-				{
-					var signId = await connection.QuerySingleAsync<uint>(
+			{
+				if (deleteVariants)
+				{ // If deleting all variants, then get the sign id and call RemoveSignAsync
+					var signId = await dba.QuerySingleAsync<uint>(
 							SignInterpretationSignIdQuery.GetQuery
 							, new { SignInterpretationId = signInterpretationId });
 
-					var (deleted, updated, currentDeletedRois) =
-							await RemoveSignAsync(editionUser, signId);
+					var (deleted, updated, currentDeletedRois) = await RemoveSignAsync(
+							editionUser
+							, signId);
 
 					alteredSignInterpretations.AddRange(updated);
 					deletedSignInterpretations.AddRange(deleted);
 					deletedRois.AddRange(currentDeletedRois);
 				}
-			}
-			else
-			{ // Else delete only the input signInterpretationId
+				else
+				{ // Else delete only the input signInterpretationId
 
-				// Remove all attributes
-				await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(
-						editionUser
-						, signInterpretationId);
+					// Remove all attributes
+					await _attributeRepository.DeleteAllAttributesForSignInterpretationAsync(
+							editionUser
+							, signInterpretationId);
 
-				// Remove all commentaries
-				await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(
-						editionUser
-						, signInterpretationId);
+					// Remove all commentaries
+					await _commentaryRepository.DeleteAllCommentariesForSignInterpretationAsync(
+							editionUser
+							, signInterpretationId);
 
-				// Remove all ROIs
-				deletedRois = await _roiRepository.DeleteAllRoisForSignInterpretationAsync(
-						editionUser
-						, signInterpretationId);
+					// Remove all ROIs
+					deletedRois = await _roiRepository.DeleteAllRoisForSignInterpretationAsync(
+							editionUser
+							, signInterpretationId);
 
-				// INGO added: Remove character
+					// INGO added: Remove character
 
-				await _removeSignInterpretationCharacterAsync(editionUser, signInterpretationId);
+					await _removeSignInterpretationCharacterAsync(
+							editionUser
+							, signInterpretationId);
 
-				using (var connection = OpenConnection())
-
-						// Take out from path
-				{
+					// Take out from path
 					if (closePath)
 					{
 						var positionDataRequest =
 								await PositionDataRequestFactory.CreateInstanceAsync(
-										connection
+										dba
 										, StreamType.SignInterpretationStream
 										, signInterpretationId
 										, editionUser.EditionId.Value
@@ -1700,7 +1672,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 						positionDataRequest.AddAction(PositionAction.TakeOutPathOfItems);
 						var requests = await positionDataRequest.CreateRequestsAsync();
-						await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+						await dba.WriteToDatabaseAsync(editionUser, requests);
 
 						alteredSignInterpretations.AddRange(positionDataRequest.AnchorsBefore);
 						deletedSignInterpretations.Add(signInterpretationId);
@@ -1717,12 +1689,13 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 						var positionDataRequest =
 								await PositionDataRequestFactory.CreateInstanceAsync(
-										connection
+										dba
 										, StreamType.SignInterpretationStream
 										, signInterpretationId
 										, editionUser.EditionId.Value);
 
-						positionDataRequest.AddAction(PositionAction.DisconnectNeighbouringAnchors);
+						positionDataRequest.AddAction(
+								PositionAction.DisconnectNeighbouringAnchors);
 
 						positionDataRequest.AnchorsAfter.Add(signInterpretationId);
 						positionDataRequest.AnchorsBefore.AddRange(previousInterpretationIds);
@@ -1735,13 +1708,13 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						positionDataRequest.AnchorsBefore.Add(signInterpretationId);
 						requests.AddRange(await positionDataRequest.CreateRequestsAsync());
 
-						await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+						await dba.WriteToDatabaseAsync(editionUser, requests);
 						deletedSignInterpretations.Add(signInterpretationId);
 					}
 				}
 			}
 
-			transactionScope.Complete();
+			dba.CommitTransaction();
 		}
 
 		if (!materializeSignStream)
@@ -1794,6 +1767,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					editionUser
 					, signInterpretationId
 					, false
+					, true
 					, true);
 
 			alteredSignInterpretations.AddRange(updates);
@@ -1856,12 +1830,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			, uint?            previousFragmentId
 			, uint?            nextFragmentId)
 	{
-		return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
-																   {
-																	   using (var transactionScope =
-																			  new TransactionScope(
-																					  TransactionScopeAsyncFlowOption
-																							  .Enabled))
+		await dba.BeginTransactionAsync();
 																	   {
 																		   // Create the new text fragment abstract id
 																		   var newTextFragmentId =
@@ -1883,7 +1852,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 																						   editionUser
 																						   , newTextFragmentId
 																						   , textFragmentData
-																								   .TextFragmentName);
+																								   .TextFragmentName
+																						   , true);
 
 																		   // Now set the position for the new text fragment
 																		   (previousFragmentId
@@ -1908,12 +1878,13 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 																							   CreateLineAsync(
 																									   editionUser
 																									   , line
-																									   , newTextFragmentId));
+																									   , newTextFragmentId
+																									   ,0U
+																									   , 0U));
 																		   }
 
 																		   // End the transaction (it was all or nothing)
-																		   transactionScope
-																				   .Complete();
+																		   dba.CommitTransaction();
 
 																		   // Set the new values to the text fragment
 																		   textFragmentData.Lines =
@@ -1930,7 +1901,6 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 																		   return textFragmentData;
 																	   }
-																   });
 	}
 
 	/// <summary>
@@ -1940,12 +1910,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <param name="textFragmentId">Text fragment id</param>
 	/// <returns>A list of artefacts</returns>
 	public async Task<List<ArtefactDataModel>> GetArtefactsAsync(
-			UserInfo editionUser
-			, uint   textFragmentId)
+			UserInfo        editionUser
+			, uint          textFragmentId
+			)
 	{
-		using (var connection = OpenConnection())
 		{
-			return (await connection.QueryAsync<ArtefactDataModel>(
+			return (await dba.QueryAsync<ArtefactDataModel>(
 					GetTextFragmentArtefacts.Query
 					, new
 					{
@@ -1964,8 +1934,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <param name="textFragmentId">Text fragment id</param>
 	/// <returns>A detailed text object</returns>
 	public async Task<TextEdition> GetTextFragmentByIdAsync(
-			UserInfo editionUser
-			, uint   textFragmentId)
+			UserInfo        editionUser
+			, uint          textFragmentId
+			)
 	{
 		var terminators = await GetTerminators(
 				editionUser
@@ -1980,12 +1951,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	}
 
 	public async Task<IEnumerable<CachedTextEdition>> GetCachedTextEdition(
-			UserInfo editionUser
-			, uint   textFragmentId)
+			UserInfo        editionUser
+			, uint          textFragmentId
+			)
 	{
-		using (var conn = OpenConnection())
 		{
-			return await conn.QueryAsync<CachedTextEdition>(
+			return await dba.QueryAsync<CachedTextEdition>(
 					GetCachedTextFragment.GetQuery
 					, new
 					{
@@ -1997,14 +1968,14 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	}
 
 	public async Task SetCachedTextEdition(
-			UserInfo   editionUser
-			, uint     textFragmentId
-			, string   transcriptionJSON
-			, DateTime validTime)
+			UserInfo        editionUser
+			, uint          textFragmentId
+			, string        transcriptionJSON
+			, DateTime      validTime
+			)
 	{
-		using (var conn = OpenConnection())
 		{
-			await conn.ExecuteAsync(
+			await dba.ExecuteAsync(
 					SetCachedTextFragment.GetQuery
 					, new
 					{
@@ -2024,9 +1995,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <returns>A list of all text fragments in the edition</returns>
 	public async Task<List<TextFragmentData>> GetFragmentDataAsync(UserInfo editionUser)
 	{
-		using (var connection = OpenConnection())
 		{
-			return (await connection.QueryAsync<TextFragmentData>(
+			return (await dba.QueryAsync<TextFragmentData>(
 					GetFragmentData.GetQuery
 					, new
 					{
@@ -2077,13 +2047,14 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// </param>
 	/// <returns>Details of the updated text fragment</returns>
 	public async Task<TextFragmentData> UpdateTextFragmentAsync(
-			UserInfo editionUser
-			, uint   textFragmentId
-			, string fragmentName
-			, uint?  previousFragmentId
-			, uint?  nextFragmentId)
+			UserInfo        editionUser
+			, uint          textFragmentId
+			, string        fragmentName
+			, uint?         previousFragmentId
+			, uint?         nextFragmentId
+			)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+		await dba.BeginTransactionAsync();
 		{
 			// Write the new name if it exists
 			if (!string.IsNullOrEmpty(fragmentName))
@@ -2096,9 +2067,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			}
 			else // Get the current name
 			{
-				using (var connection = OpenConnection())
 				{
-					fragmentName = await connection.QuerySingleAsync<string>(
+					fragmentName = await dba.QuerySingleAsync<string>(
 							GetFragmentNameById.GetQuery
 							, new
 							{
@@ -2122,7 +2092,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			}
 
 			// End the transaction (it was all or nothing)
-			transactionScope.Complete();
+			dba.CommitTransaction();
 
 			// Package the new text fragment to return to user
 			return new TextFragmentData
@@ -2167,10 +2137,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					, uint?                              followingSignInterpretationId
 					, string                             replacementText
 					, Dictionary<uint, ReconstructedRoi> reconstructedRois
-					, ArtefactModel                      artefact = null)
+					, ArtefactModel                      artefact   = null)
 	{
-		using (var transaction = new TransactionScope())
-		using (var conn = OpenConnection())
+		await dba.BeginTransactionAsync();
 		{
 			// Get the priorsignId and followingSignId if an artefactId is submitted
 			// also update the artefact.
@@ -2193,7 +2162,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				var textFragment = await GetTerminators(
 						user
 						, TableData.Table.text_fragment
-						, textFragmentIds.First().TextFragmentId.Value);
+						, textFragmentIds.First().TextFragmentId.Value
+						, false);
 
 				priorSignInterpretationId ??= textFragment.StartId;
 				followingSignInterpretationId ??= textFragment.EndId;
@@ -2203,7 +2173,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					await _artefactRepository.UpdateArtefactShapeAsync(
 							user
 							, artefact.ArtefactId
-							, artefact.Mask);
+							, artefact.Mask
+							, null);
 				}
 
 				if (artefact.Scale.HasValue
@@ -2231,7 +2202,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						"An artefact id must be submitted along with the ROIs.");
 			}
 
-			var primaryStream = (await conn.QueryAsync<GetBasicTextChunk.Model>(
+			var primaryStream = (await dba.QueryAsync<GetBasicTextChunk.Model>(
 					GetBasicTextChunk.GetQuery
 					, new
 					{
@@ -2392,7 +2363,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				}
 
 				updated.Add(priorSignInterpretationId.Value);
-				transaction.Complete();
+				dba.CommitTransaction();
 
 				return (new List<uint>(), updated.ToList(), deleted.ToList()
 						, new List<UpdateEntity>(), earlyDeletedRois);
@@ -2715,7 +2686,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				deletedRois.AddRange(deletedRois);
 			}
 
-			transaction.Complete();
+			dba.CommitTransaction();
 
 			var roiReplacements = replaceRoisResults
 								  .Select(x => new UpdateEntity(
@@ -2756,10 +2727,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
                         AND attribute_value_id in @Breaks
                         ORDER BY attribute_value_id";
 
-		using (var connection = OpenConnection())
+
 		{
 			return new Terminators(
-					(await connection.QueryAsync<uint>(
+					(await dba.QueryAsync<uint>(
 							query
 							, new
 							{
@@ -2780,16 +2751,15 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		SignData lastSignData = null;
 		SignInterpretationData lastSignInterpretation = null;
 
-		using (var connection = OpenConnection())
 		{
 			var attributeDict =
-					(await connection.QueryAsync<AttributeDefinition>(
+					(await dba.QueryAsync<AttributeDefinition>(
 							TextFragmentAttributes.GetQuery
 							, new { editionUser.EditionId })).ToDictionary(
 							row => row.attributeValueId
 							, row => row);
 
-			var scrolls = await connection.QueryAsync(
+			var scrolls = await dba.QueryAsync(
 					GetTextChunk.GetQuery
 					, new[]
 					{
@@ -2963,9 +2933,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			, TableData.Table table
 			, uint            elementId)
 	{
-		using (var connection = OpenConnection())
 		{
-			return (await connection.QueryAsync<uint>(
+			return (await dba.QueryAsync<uint>(
 					TableData.GetChildrenIdsQuery(table)
 					, new
 					{
@@ -2985,9 +2954,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <returns>Text fragment data id of the text fragment</returns>
 	private async Task<uint> _getElementDataId(UserInfo user, TableData.Table table, uint elementId)
 	{
-		using (var connection = OpenConnection())
 		{
-			return await connection.QuerySingleAsync<uint>(
+			return await dba.QuerySingleAsync<uint>(
 					TableData.GetDataIdQuery(table)
 					, new
 					{
@@ -2999,9 +2967,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	}
 
 	private async Task<uint> _removeElementAsync(
-			UserInfo editionUser
-			, string tableName
-			, uint   elementId)
+			UserInfo        editionUser
+			, string        tableName
+			, uint          elementId)
 	{
 		var parameters = new DynamicParameters();
 
@@ -3017,7 +2985,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				, tableName
 				, elementId);
 
-		var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+		var writeResults = await dba.WriteToDatabaseAsync(
 				editionUser
 				, new List<MutationRequest> { removeRequest });
 
@@ -3038,16 +3006,15 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		var tableName = TableData.Name(table);
 		var insertQuery = $"INSERT INTO {tableName} () VALUES ()";
 
-		using (var connection = OpenConnection())
 		{
 			// Create the new t id
-			var createTableId = await connection.ExecuteAsync(insertQuery);
+			var createTableId = await dba.ExecuteAsync(insertQuery);
 
 			if (createTableId == 0)
 				throw new StandardExceptions.DataNotWrittenException($"create new {tableName}");
 
 			// Get the new id
-			var getNewTableId = (await connection.QueryAsync<uint>(LastInsertId.GetQuery)).ToList();
+			var getNewTableId = (await dba.QueryAsync<uint>(LastInsertId.GetQuery)).ToList();
 
 			if (getNewTableId.Count != 1)
 				throw new StandardExceptions.DataNotWrittenException($"create new {tableName}");
@@ -3078,7 +3045,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		parentToElementParameters.Add($"@{parentTable}_id", parentId);
 		parentToElementParameters.Add($"@{table}_id", elementId);
 
-		var manuscriptToTextFragmentResults = await _databaseWriter.WriteToDatabaseAsync(
+		var manuscriptToTextFragmentResults = await dba.WriteToDatabaseAsync(
 				editionUser
 				, new List<MutationRequest>
 				{
@@ -3114,7 +3081,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			, TableData.Table table
 			, uint            elementId
 			, string          elementName
-			, bool            create = true)
+			, bool            create     = true)
 	{
 		// Set the parameters for the mutation object
 		var createTextFragmentParameters = new DynamicParameters();
@@ -3133,7 +3100,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						: await _getElementDataId(editionUser, table, elementId));
 
 		// Commit the mutation
-		var createElementResponse = await _databaseWriter.WriteToDatabaseAsync(
+		var createElementResponse = await dba.WriteToDatabaseAsync(
 				editionUser
 				, new List<MutationRequest> { createElementMutation });
 
@@ -3181,7 +3148,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					editionUser
 					, table
 					, newElementId
-					, elementName);
+					, elementName
+					, true);
 		}
 
 		return newElementId;
@@ -3199,9 +3167,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <param name="textFragmentId">Id of the text fragment to be added</param>
 	/// <returns></returns>
 	private async Task _addLineToTextFragment(
-			UserInfo editionUser
-			, uint   lineId
-			, uint   textFragmentId)
+			UserInfo        editionUser
+			, uint          lineId
+			, uint          textFragmentId)
 	{
 		await _addElementToParentAsync(
 				editionUser
@@ -3230,10 +3198,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	///  false if you are updating existing data.
 	/// </param>
 	private async Task _setLineDataAsync(
-			UserInfo editionUser
-			, uint   lineId
-			, string lineName
-			, bool   create = true)
+			UserInfo        editionUser
+			, uint          lineId
+			, string        lineName
+			, bool          create     = true)
 	{
 		await _setElementDataAsync(
 				editionUser
@@ -3248,14 +3216,13 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	#region Sign and sign interpretation
 
 	private async Task _breakSignStreamAsync(
-			UserInfo     editionUser
-			, List<uint> firstAnchors
-			, List<uint> secondAnchors)
+			UserInfo        editionUser
+			, List<uint>    firstAnchors
+			, List<uint>    secondAnchors)
 	{
-		using (var connection = OpenConnection())
 		{
 			var positionDataRequestFactory = await PositionDataRequestFactory.CreateInstanceAsync(
-					connection
+					dba
 					, StreamType.SignInterpretationStream
 					, editionUser.EditionId.Value);
 
@@ -3266,17 +3233,16 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 			var positionRequests = await positionDataRequestFactory.CreateRequestsAsync();
 
-			await _databaseWriter.WriteToDatabaseAsync(editionUser, positionRequests);
+			await dba.WriteToDatabaseAsync(editionUser, positionRequests);
 		}
 	}
 
 	public async Task _removeSignInterpretationCharacterAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId)
+			UserInfo        editionUser
+			, uint          signInterpretationId)
 	{
 		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
 		{
-			using (var connection = OpenConnection())
 			{
 				const string getCharIdsSQL = @"
 								SELECT sign_interpretation_character_id
@@ -3285,7 +3251,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 								WHERE sign_interpretation_id = @SignInterpretationId
 									AND edition_id = @EditionId";
 
-				var characterIds = await connection.QueryAsync<uint>(
+				var characterIds = await dba.QueryAsync<uint>(
 						getCharIdsSQL
 						, new
 						{
@@ -3305,7 +3271,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 							, "sign_interpretation_character"
 							, characterId);
 
-					var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+					var _ = await dba.WriteToDatabaseAsync(
 							editionUser
 							, signInterpretationCharacterRequest);
 				}
@@ -3323,12 +3289,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <param name="character">New character to be created</param>
 	/// <returns>List of new attributes</returns>
 	public async Task<uint> _createSignInterpretationCharacterAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId
-			, string character
-			, byte   priority = 0)
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			, string        character
+			, byte          priority   = 0)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+		await dba.BeginTransactionAsync();
 		{
 			var response = await _createOrUpdateCharacterAsync(
 					editionUser
@@ -3338,7 +3304,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					, null
 					, priority);
 
-			transactionScope.Complete();
+			dba.CommitTransaction();
 
 			return response;
 		}
@@ -3360,8 +3326,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	{
 		using (var transactionScope =
 				new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-		using (var conn = OpenConnection())
+		using (var managed = GetManagedConnection(null))
 		{
+			var conn = managed.Connection;
 			var signInterpretationCharacterIds = await conn.QueryAsync<uint>(
 					FindSignInterpretationCharacterId.GetQuery
 					, new
@@ -3405,12 +3372,12 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <returns>The new id of the sign interpretation character.</returns>
 	/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 	private async Task<uint> _createOrUpdateCharacterAsync(
-			UserInfo     editionUser
-			, uint       signInterpretationId
-			, string     character
-			, MutateType action
-			, uint?      signInterpretationCharacterId = null
-			, byte       priority                      = 0)
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			, string        character
+			, MutateType    action
+			, uint?         signInterpretationCharacterId = null
+			, byte          priority                      = 0)
 	{
 		// Throw if an update was requested without providing a sign interpretation character id
 		if ((action == MutateType.Update)
@@ -3438,7 +3405,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 						? signInterpretationCharacterId
 						: null);
 
-		var writeResults = await _databaseWriter.WriteToDatabaseAsync(
+		var writeResults = await dba.WriteToDatabaseAsync(
 				editionUser
 				, signInterpretationCharacterRequest);
 
@@ -3447,9 +3414,8 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		if ((writeResults.Count >= 1)
 			&& writeResults.First().NewId.HasValue)
 		{
-			using (var connection = OpenConnection())
 			{
-				await connection.ExecuteAsync(
+				await dba.ExecuteAsync(
 						$@"
 										update sign_interpretation_character_owner
 										set priority = {
@@ -3502,7 +3468,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		// return await DatabaseCommunicationRetryPolicy.ExecuteRetry(
 		//     async () =>
 		//     {
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+		await dba.BeginTransactionAsync();
 		{
 			// Create the new sign abstract id
 			var newSignId = await _simpleInsertAsync(TableData.Table.sign);
@@ -3512,7 +3478,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 				await _addSignToLine(editionUser, newSignId, lineId.Value);
 
 			// End the transaction (it was all or nothing)
-			transactionScope.Complete();
+			dba.CommitTransaction();
 
 			// Package the new sign to return to user
 			return newSignId;
@@ -3523,12 +3489,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	}
 
 	private async Task<IEnumerable<uint>> _getPreviousSignInterpretationIds(
-			uint   editionId
-			, uint signInterpretationId)
+			uint            editionId
+			, uint          signInterpretationId)
 	{
-		using (var conn = OpenConnection())
 		{
-			var result = await conn.QueryAsync<uint>(
+			var result = await dba.QueryAsync<uint>(
 					PreviousSignInterpretationsQuery.GetQuery
 					, new
 					{
@@ -3544,12 +3509,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	}
 
 	private async Task<IEnumerable<uint>> _getNextSignInterpretationIds(
-			uint   editionId
-			, uint signInterpretationId)
+			uint            editionId
+			, uint          signInterpretationId)
 	{
-		using (var conn = OpenConnection())
 		{
-			var result = await conn.QueryAsync<uint>(
+			var result = await dba.QueryAsync<uint>(
 					NextSignInterpretationsQuery.GetQuery
 					, new
 					{
@@ -3580,10 +3544,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// </param>
 	/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 	private async Task _setTextFragmentDataAsync(
-			UserInfo editionUser
-			, uint   textFragmentId
-			, string textFragmentName
-			, bool   create = true)
+			UserInfo        editionUser
+			, uint          textFragmentId
+			, string        textFragmentName
+			, bool          create     = true)
 	{
 		await _setElementDataAsync(
 				editionUser
@@ -3606,12 +3570,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 	private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)>
 			_createTextFragmentPosition(
-					UserInfo editionUser
-					, uint?  anchorBefore
-					, uint   textFragmentId
-					, uint?  anchorAfter)
+					UserInfo        editionUser
+					, uint?         anchorBefore
+					, uint          textFragmentId
+					, uint?         anchorAfter)
 	{
-		using (var connection = OpenConnection())
 		{
 			// Prepare the response object
 			PositionDataRequestHelper positionDataRequestHelper;
@@ -3621,8 +3584,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 							editionUser
 							, anchorBefore
 							, textFragmentId
-							, anchorAfter
-							, connection);
+							, anchorAfter);
 
 			positionDataRequestHelper.AddAction(PositionAction.DisconnectNeighbouringAnchors);
 
@@ -3632,7 +3594,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 			// Commit the mutation
 			var textFragmentMutationResults =
-					await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+					await dba.WriteToDatabaseAsync(editionUser, requests);
 
 			// Ensure that the entry was created
 			// Ingo: I changed First to Last, since now the first one normally is a delete-request
@@ -3659,10 +3621,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <returns>The id of the preceding and following text fragments</returns>
 	/// <exception cref="StandardExceptions.InputDataRuleViolationException"></exception>
 	private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(
-			UserInfo     editionUser
-			, List<uint> textFragmentIds
-			, uint?      newAnchorBefore
-			, uint?      newAnchorAfter)
+			UserInfo        editionUser
+			, List<uint>    textFragmentIds
+			, uint?         newAnchorBefore
+			, uint?         newAnchorAfter)
 	{
 		if (!newAnchorBefore.HasValue
 			&& !newAnchorAfter.HasValue)
@@ -3673,22 +3635,20 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 		PositionDataRequestHelper positionDataRequestHelper;
 
-		using (var connection = OpenConnection())
 		{
 			(positionDataRequestHelper, newAnchorBefore, newAnchorAfter) =
 					await _createTextFragmentPositionRequestFactory(
 							editionUser
 							, newAnchorBefore
 							, textFragmentIds
-							, newAnchorAfter
-							, connection);
+							, newAnchorAfter);
 
 			positionDataRequestHelper.AddAction(PositionAction.MoveInBetween);
 
 			var requests = await positionDataRequestHelper.CreateRequestsAsync();
 
 			var shiftTextFragmentMutationResults =
-					await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+					await dba.WriteToDatabaseAsync(editionUser, requests);
 
 			// Ensure that the entry was created
 			if (shiftTextFragmentMutationResults.Count != requests.Count)
@@ -3712,10 +3672,10 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <returns>The id of the preceding and following text fragments</returns>
 	/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 	private async Task<(uint? previousTextFragmentId, uint? nextTextFragmentId)> _moveTextFragments(
-			UserInfo editionUser
-			, uint   textFragmentId
-			, uint?  newAnchorBefore
-			, uint?  newAnchorAfter) => await _moveTextFragments(
+			UserInfo        editionUser
+			, uint          textFragmentId
+			, uint?         newAnchorBefore
+			, uint?         newAnchorAfter) => await _moveTextFragments(
 			editionUser
 			, new List<uint> { textFragmentId }
 			, newAnchorBefore
@@ -3730,7 +3690,6 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <param name="anchorBefore">Id of the text fragment preceding the text fragments being positioned, may be null</param>
 	/// <param name="textFragmentIds">Text fragments to be positioned</param>
 	/// <param name="anchorAfter">Id of the text fragment following the text fragments being positioned, may be null</param>
-	/// <param name="connection">IDbConnection to make requests</param>
 	/// <returns>A PositionDataRequestHelper along with the ids of the previous and next text fragments</returns>
 	private async
 			Task<(PositionDataRequestHelper positionDataRequestFactory, uint? previousTextFragmentId
@@ -3739,8 +3698,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					UserInfo        editionUser
 					, uint?         anchorBefore
 					, List<uint>    textFragmentIds
-					, uint?         anchorAfter
-					, IDbConnection connection)
+					, uint?         anchorAfter)
 	{
 		// Verify that anchorBefore and anchorAfter are valid values if they exist
 		var fragments = await GetFragmentDataAsync(editionUser);
@@ -3749,7 +3707,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 
 		// Set the current text fragment position factory
 		var positionDataRequestHelper = await PositionDataRequestFactory.CreateInstanceAsync(
-				connection
+				dba
 				, StreamType.TextFragmentStream
 				, textFragmentIds
 				, editionUser.EditionId.Value);
@@ -3771,7 +3729,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			{
 				// Use the position data factory with the anchorAfter text fragment
 				var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
-						connection
+						dba
 						, StreamType.TextFragmentStream
 						, anchorAfter.Value
 						, editionUser.EditionId.Value
@@ -3797,7 +3755,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 		{
 			// Use the position data factory with the anchorBefore text fragment
 			var tempFac = await PositionDataRequestFactory.CreateInstanceAsync(
-					connection
+					dba
 					, StreamType.TextFragmentStream
 					, anchorBefore.Value
 					, editionUser.EditionId.Value
@@ -3825,7 +3783,6 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	/// <param name="anchorBefore">Id of the text fragment preceding the text fragments being positioned, may be null</param>
 	/// <param name="textFragmentId">Text fragment to be positioned</param>
 	/// <param name="anchorAfter">Id of the text fragment following the text fragments being positioned, may be null</param>
-	/// <param name="connection">IDbConnection to make requests</param>
 	/// <returns>A PositionDataRequestHelper along with the ids of the previous and next text fragments</returns>
 	private async
 			Task<(PositionDataRequestHelper positionDataRequestFactory, uint? previousTextFragmentId
@@ -3834,13 +3791,11 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 					UserInfo        editionUser
 					, uint?         anchorBefore
 					, uint          textFragmentId
-					, uint?         anchorAfter
-					, IDbConnection connection) => await _createTextFragmentPositionRequestFactory(
+					, uint?         anchorAfter) => await _createTextFragmentPositionRequestFactory(
 			editionUser
 			, anchorBefore
-			, new List<uint> { textFragmentId }
-			, anchorAfter
-			, connection);
+			, [textFragmentId]
+			, anchorAfter);
 
 	/// <summary>
 	///  Ensures that anchorBefore and anchorAfter are either null or part of the current edition. If
@@ -3905,10 +3860,9 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 	{
 		uint manuscriptId;
 
-		using (var connection = OpenConnection())
 		{
 			// Get the manuscript id of the current edition
-			manuscriptId = await connection.QuerySingleAsync<uint>(
+			manuscriptId = await dba.QuerySingleAsync<uint>(
 					ManuscriptOfEdition.GetQuery
 					, new { editionUser.EditionId });
 		}

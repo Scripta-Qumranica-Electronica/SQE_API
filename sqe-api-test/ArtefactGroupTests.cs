@@ -321,7 +321,7 @@ public partial class WebControllerTest
 	public async Task CanCreateAndDeleteArtefactGroups(bool realtime)
 	{
 		// Arrange
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			/**
@@ -379,7 +379,7 @@ public partial class WebControllerTest
 	public async Task CannotPerformBadUpdateToArtefactGroup(bool realtime)
 	{
 		// Arrange
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			/**
@@ -489,7 +489,7 @@ public partial class WebControllerTest
 	public async Task CannotReuseArtefactsInArtefactGroup(bool realtime)
 	{
 		// Arrange
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			/**
@@ -588,7 +588,7 @@ public partial class WebControllerTest
 	public async Task CanUpdateArtefactGroups(bool realtime)
 	{
 		// Arrange
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			/**

@@ -12,7 +12,11 @@ public static class Helpers
 			this IEnumerable<TSource>      source
 			, Func<TSource, Task<TResult>> method)
 	{
-		return await Task.WhenAll(source.Select(async s => await method(s)));
+		var sourceList = source.ToList();
+		var tasks = new List<TResult>(sourceList.Count);
+		foreach (var item in sourceList)
+			tasks.Add(await method(item));
+		return tasks;
 	}
 
 	public static async Task<IEnumerable<T1>> SelectManyAsync<T, T1>(

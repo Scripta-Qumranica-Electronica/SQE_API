@@ -591,12 +591,13 @@ HAVING COUNT(DISTINCT manuscript_to_text_fragment_id) > 3 AND COUNT(DISTINCT art
 	///  This class can be used in a using block to clone an edition for tests. At the end of the using block,
 	///  it will automatically delete the newly created edition.
 	/// </summary>
-	public class EditionCreator : IDisposable
+	public class EditionCreator : IAsyncDisposable, IDisposable
 	{
 		private readonly HttpClient                        _client;
 		private readonly string                            _name;
 		private readonly Func<string, Task<HubConnection>> _realtime;
 		private readonly Request.UserAuthDetails           _userAuthDetails;
+		private bool _disposed = false;
 
 		/// <summary>
 		/// </summary>
@@ -623,19 +624,43 @@ HAVING COUNT(DISTINCT manuscript_to_text_fragment_id) > 3 AND COUNT(DISTINCT art
 
 		private uint EditionId { get; set; }
 
-		// This seems to work properly even though it is an antipattern.
-		// There is no async Dispose (Task.Run...Wait() is a hack) and it is supposed to be very short running anyway.
-		// Maybe using try/finally in the individual tests would ultimately be safer.
+		/// <summary>
+		/// Async disposal - preferred method for proper async cleanup
+		/// </summary>
+		public async ValueTask DisposeAsync()
+		{
+			if (_disposed)
+				return;
+
+			if (EditionId == 0)
+			{
+				_disposed = true;
+				return;
+			}
+
+			// shouldSucceed here is false, since we don't really care if it worked.
+			await DeleteEdition(
+				_client
+				, _realtime
+				, EditionId
+				, userAuthDetails: _userAuthDetails
+				, shouldSucceed: false);
+
+			_disposed = true;
+		}
+
+		/// <summary>
+		/// Synchronous disposal - provided for compatibility but async disposal is preferred
+		/// Uses GetAwaiter().GetResult() which is safer than Task.Run().Wait()
+		/// </summary>
 		public void Dispose()
 		{
-			// shouldSucceed here is false, since we don't really care if it worked.
-			Task.Run(async () => await DeleteEdition(
-							 _client
-							 , _realtime
-							 , EditionId
-							 , userAuthDetails: _userAuthDetails
-							 , shouldSucceed: false))
-				.Wait();
+			if (_disposed)
+				return;
+
+			// GetAwaiter().GetResult() is preferred over Task.Run().Wait() or .Result
+			// as it doesn't wrap exceptions in AggregateException
+			DisposeAsync().AsTask().GetAwaiter().GetResult();
 		}
 
 		public async Task<uint> CreateEdition()

@@ -750,8 +750,8 @@ export class SignalRUtilities {
 
     /**
 	 * Override the default OnConnectedAsync to add the connection to the user's user_id
-	 *	 group if the user is authenticated. The user_id group is used for messages that
-	 *	 are above the level of a single edition.
+	 * group if the user is authenticated. The user_id group is used for messages that
+	 * are above the level of a single edition.
 	 *
 	 *
 	 *

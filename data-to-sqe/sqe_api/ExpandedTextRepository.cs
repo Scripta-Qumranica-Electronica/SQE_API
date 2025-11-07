@@ -25,5 +25,5 @@ public class ExpandedTextRepository : TextRepository
 			, artefactRepository
 			, materializationRepository) { }
 
-	public IDbConnection GetConnection() => OpenConnection();
+	public IDbConnection GetConnection() => Connection();
 }

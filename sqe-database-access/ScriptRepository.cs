@@ -1,6 +1,7 @@
 // TODO: Add all documentation
 
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -17,55 +18,56 @@ public interface IScriptRepository
 
 	Task<IEnumerable<KerningPair>> GetEditionScribalFontKernPairs(
 			UserInfo user
-			, uint   scribalFontId);
+			, uint   scribalFontId
+			);
 
 	Task<FontInfo> GetEditionScribalFontInfo(UserInfo user, uint scribalFontId);
 	Task<uint>     CreateNewScribalFontId(UserInfo    user);
 
 	Task SetScribalFontInfo(
-			UserInfo user
-			, uint   scribalFontId
-			, ushort wordSpace
-			, ushort lineSpace);
+			UserInfo        user
+			, uint          scribalFontId
+			, ushort        wordSpace
+			, ushort        lineSpace
+			);
 
 	Task DeleteScribalFont(UserInfo user, uint scribalFontId);
 
 	Task SetScribalFontKern(
-			UserInfo user
-			, uint   scribalFontId
-			, string firstCharacter
-			, string secondCharacter
-			, short  xKern
-			, short  yKern);
+			UserInfo        user
+			, uint          scribalFontId
+			, string        firstCharacter
+			, string        secondCharacter
+			, short         xKern
+			, short         yKern
+			);
 
 	Task DeleteScribalFontKern(
-			UserInfo user
-			, uint   scribalFontId
-			, string firstCharacter
-			, string secondCharacter);
+			UserInfo        user
+			, uint          scribalFontId
+			, string        firstCharacter
+			, string        secondCharacter
+			);
 
 	Task SetScribalFontGlyph(
-			UserInfo user
-			, uint   scribalFontId
-			, string character
-			, string shape
-			, short  yOffset);
+			UserInfo        user
+			, uint          scribalFontId
+			, string        character
+			, string        shape
+			, short         yOffset
+			);
 
 	Task DeleteScribalFontGlyph(UserInfo user, uint scribalFontId, string character);
 	Task<IEnumerable<uint>> GetEditionScribalFontIds(UserInfo user);
 }
 
-public class ScriptRepository : DbConnectionBase
-								, IScriptRepository
+public class ScriptRepository(IDatabaseAccessor dba) : IScriptRepository
 {
-	private readonly IDatabaseWriter _databaseWriter;
-
-	public ScriptRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
-		=> _databaseWriter = databaseWriter;
 
 	public async Task<IEnumerable<Glyph>> GetEditionScribalFontGlyphs(
 			UserInfo user
-			, uint   scribalFontId)
+			, uint   scribalFontId
+			)
 	{
 		const string sql = @"
 SELECT 	unicode_char AS `Character`,
@@ -83,9 +85,9 @@ WHERE scribal_font_glyph_metrics.scribal_font_id = @ScribalFontId
 	AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
 
-		using (var conn = OpenConnection())
+
 		{
-			return await conn.QueryAsync<Glyph>(
+			return await dba.QueryAsync<Glyph>(
 					sql
 					, new
 					{
@@ -99,7 +101,8 @@ WHERE scribal_font_glyph_metrics.scribal_font_id = @ScribalFontId
 
 	public async Task<IEnumerable<KerningPair>> GetEditionScribalFontKernPairs(
 			UserInfo user
-			, uint   scribalFontId)
+			, uint   scribalFontId
+			)
 	{
 		const string sql = @"
 SELECT	first_unicode_char AS FirstCharacter,
@@ -118,9 +121,9 @@ WHERE scribal_font_kerning.scribal_font_id = @ScribalFontId
 	AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
 
-		using (var conn = OpenConnection())
+
 		{
-			return await conn.QueryAsync<KerningPair>(
+			return await dba.QueryAsync<KerningPair>(
 					sql
 					, new
 					{
@@ -149,9 +152,9 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	AND (edition.public = 1 OR edition_editor.user_id = @UserId)
 ";
 
-		using (var conn = OpenConnection())
+
 		{
-			return (await conn.QueryAsync<FontInfo>(
+			return (await dba.QueryAsync<FontInfo>(
 					sql
 					, new
 					{
@@ -164,13 +167,15 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	}
 
 	public async Task SetScribalFontInfo(
-			UserInfo user
-			, uint   scribalFontId
-			, ushort wordSpace
-			, ushort lineSpace)
+			UserInfo        user
+			, uint          scribalFontId
+			, ushort        wordSpace
+			, ushort        lineSpace
+			)
 	{
-		using (var transaction = new TransactionScope())
-		using (var conn = OpenConnection())
+
+		await dba.BeginTransactionAsync();
+
 		{
 			var fontInfoParameters = new DynamicParameters();
 			fontInfoParameters.Add("@scribal_font_id", scribalFontId);
@@ -188,7 +193,7 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	AND scribal_font_metrics_owner.edition_id = @EditionId
 	AND (edition.public = 1 OR edition_editor.user_id = @UserId)";
 
-			var scribalFontMetricsIds = await conn.QueryAsync<uint>(
+			var scribalFontMetricsIds = await dba.QueryAsync<uint>(
 					scribalFontMetricsIdSQL
 					, new
 					{
@@ -217,20 +222,21 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 						, ScribalFontTableNames.Metrics);
 			}
 
-			var execute = await _databaseWriter.WriteToDatabaseAsync(user, request);
+			var execute = await dba.WriteToDatabaseAsync(user, request);
 
 			if (!execute.Any())
 			{
 				throw new StandardExceptions.DataNotWrittenException("set scribal font metrics");
 			}
 
-			transaction.Complete();
+			dba.CommitTransaction();
+
 		}
 	}
 
 	public async Task DeleteScribalFont(UserInfo user, uint scribalFontId)
 	{
-		using (var transaction = new TransactionScope())
+		await dba.BeginTransactionAsync();
 		{
 			var mutations = new List<MutationRequest>();
 
@@ -246,21 +252,22 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 										   , pk)));
 			}
 
-			await _databaseWriter.WriteToDatabaseAsync(user, mutations);
+			await dba.WriteToDatabaseAsync(user, mutations);
 
-			transaction.Complete();
+			dba.CommitTransaction();
 		}
 	}
 
 	public async Task SetScribalFontKern(
-			UserInfo user
-			, uint   scribalFontId
-			, string firstCharacter
-			, string secondCharacter
-			, short  xKern
-			, short  yKern)
+			UserInfo        user
+			, uint          scribalFontId
+			, string        firstCharacter
+			, string        secondCharacter
+			, short         xKern
+			, short         yKern
+			)
 	{
-		using (var transaction = new TransactionScope())
+		await dba.BeginTransactionAsync();
 		{
 			var scribalFontKernId = await _getScriptKernId(
 					user
@@ -287,19 +294,20 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 							, kernParameters
 							, ScribalFontTableNames.Kerning);
 
-			await _databaseWriter.WriteToDatabaseAsync(user, request);
+			await dba.WriteToDatabaseAsync(user, request);
 
-			transaction.Complete();
+			dba.CommitTransaction();
 		}
 	}
 
 	public async Task DeleteScribalFontKern(
-			UserInfo user
-			, uint   scribalFontId
-			, string firstCharacter
-			, string secondCharacter)
+			UserInfo        user
+			, uint          scribalFontId
+			, string        firstCharacter
+			, string        secondCharacter
+			)
 	{
-		using (var transaction = new TransactionScope())
+		await dba.BeginTransactionAsync();
 		{
 			var scribalFontKernId = await _getScriptKernId(
 					user
@@ -314,20 +322,21 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 					, ScribalFontTableNames.Kerning
 					, scribalFontKernId);
 
-			await _databaseWriter.WriteToDatabaseAsync(user, request);
+			await dba.WriteToDatabaseAsync(user, request);
 
-			transaction.Complete();
+			dba.CommitTransaction();
 		}
 	}
 
 	public async Task SetScribalFontGlyph(
-			UserInfo user
-			, uint   scribalFontId
-			, string character
-			, string shape
-			, short  yOffset)
+			UserInfo        user
+			, uint          scribalFontId
+			, string        character
+			, string        shape
+			, short         yOffset
+			)
 	{
-		using (var transaction = new TransactionScope())
+		await dba.BeginTransactionAsync();
 		{
 			var scriptGlyphId = await _getScriptGlyphId(
 					user
@@ -352,15 +361,15 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 							, glyphParameters
 							, ScribalFontTableNames.Glyph);
 
-			await _databaseWriter.WriteToDatabaseAsync(user, request);
+			await dba.WriteToDatabaseAsync(user, request);
 
-			transaction.Complete();
+			dba.CommitTransaction();
 		}
 	}
 
 	public async Task DeleteScribalFontGlyph(UserInfo user, uint scribalFontId, string character)
 	{
-		using (var transaction = new TransactionScope())
+		await dba.BeginTransactionAsync();
 		{
 			var scriptGlyphId = await _getScriptGlyphId(
 					user
@@ -374,9 +383,9 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 					, ScribalFontTableNames.Glyph
 					, scriptGlyphId.Value);
 
-			await _databaseWriter.WriteToDatabaseAsync(user, request);
+			await dba.WriteToDatabaseAsync(user, request);
 
-			transaction.Complete();
+			dba.CommitTransaction();
 		}
 	}
 
@@ -387,14 +396,14 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	/// <returns></returns>
 	public async Task<uint> CreateNewScribalFontId(UserInfo user)
 	{
-		using (var transaction = new TransactionScope())
-		using (var conn = OpenConnection())
+		await dba.BeginTransactionAsync();
+
 		{
 			const string sql = "INSERT INTO scribal_font (scribal_font_id) VALUES(null)";
-			await conn.ExecuteAsync(sql);
+			await dba.ExecuteAsync(sql);
 
-			var newId = await conn.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
-			transaction.Complete();
+			var newId = await dba.QuerySingleAsync<uint>("SELECT LAST_INSERT_ID()");
+			dba.CommitTransaction();
 
 			return newId;
 		}
@@ -407,7 +416,7 @@ WHERE scribal_font_metrics.scribal_font_id = @ScribalFontId
 	/// <returns></returns>
 	public async Task<IEnumerable<uint>> GetEditionScribalFontIds(UserInfo user)
 	{
-		using (var conn = OpenConnection())
+
 		{
 			const string sql = @"
 SELECT scribal_font_id
@@ -415,7 +424,7 @@ FROM scribal_font_metrics
 JOIN scribal_font_metrics_owner USING(scribal_font_metrics_id)
 WHERE scribal_font_metrics_owner.edition_id = @EditionId";
 
-			var scribalFontIds = await conn.QueryAsync<uint>(sql, new { user.EditionId });
+			var scribalFontIds = await dba.QueryAsync<uint>(sql, new { user.EditionId });
 
 			return scribalFontIds;
 		}
@@ -428,7 +437,7 @@ WHERE scribal_font_metrics_owner.edition_id = @EditionId";
 			, string secondCharacter
 			, bool   shouldExist)
 	{
-		using (var conn = OpenConnection())
+
 		{
 			const string scriptKernIdsSQL = @"
 SELECT scribal_font_kerning_id
@@ -440,7 +449,7 @@ WHERE scribal_font_kerning_owner.edition_id = @EditionId
 	AND scribal_font_kerning.second_unicode_char = @SecondChar
 ";
 
-			var scriptKernIds = await conn.QueryAsync<uint>(
+			var scriptKernIds = await dba.QueryAsync<uint>(
 					scriptKernIdsSQL
 					, new
 					{
@@ -472,7 +481,7 @@ WHERE scribal_font_kerning_owner.edition_id = @EditionId
 			, string character
 			, bool   shouldExist)
 	{
-		using (var conn = OpenConnection())
+
 		{
 			const string scriptKernIdsSQL = @"
 SELECT scribal_font_glyph_metrics_id
@@ -483,7 +492,7 @@ WHERE scribal_font_glyph_metrics_owner.edition_id = @EditionId
 	AND scribal_font_glyph_metrics.unicode_char = @Character
 ";
 
-			var scriptGlyphIds = await conn.QueryAsync<uint>(
+			var scriptGlyphIds = await dba.QueryAsync<uint>(
 					scriptKernIdsSQL
 					, new
 					{
@@ -513,7 +522,7 @@ WHERE scribal_font_glyph_metrics_owner.edition_id = @EditionId
 			, uint   scribalFontId
 			, string tableName)
 	{
-		using (var conn = OpenConnection())
+
 		{
 			var sql = $@"
 SELECT {
@@ -530,7 +539,7 @@ JOIN {
 WHERE edition_id = @EditionId
 	AND scribal_font_id = @ScribalFontId";
 
-			return await conn.QueryAsync<uint>(
+			return await dba.QueryAsync<uint>(
 					sql
 					, new { user.EditionId, ScribalFontId = scribalFontId });
 		}

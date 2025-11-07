@@ -284,7 +284,7 @@ public partial class WebControllerTest
 			, bool realtime
 			, bool shouldSucceed)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -325,7 +325,7 @@ public partial class WebControllerTest
 			, bool realtime
 			, bool shouldSucceed)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange

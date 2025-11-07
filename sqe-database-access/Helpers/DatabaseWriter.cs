@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Models;
@@ -133,18 +132,17 @@ public interface IDatabaseWriter
 {
 	Task<List<AlteredRecord>> WriteToDatabaseAsync(
 			UserInfo                editionUser
-			, List<MutationRequest> mutationRequests);
+			, List<MutationRequest> mutationRequests
+			, DatabaseAccessor      dba);
 
 	Task<List<AlteredRecord>> WriteToDatabaseAsync(
-			UserInfo          editionUser
-			, MutationRequest mutationRequest);
+			UserInfo           editionUser
+			, MutationRequest  mutationRequest
+			, DatabaseAccessor dba);
 }
 
-public class DatabaseWriter : DbConnectionBase
-							  , IDatabaseWriter
+public class DatabaseWriter : IDatabaseWriter
 {
-	public DatabaseWriter(IConfiguration config) : base(config) { }
-
 	/// <summary>
 	///  Performs a list mutation requests for a single scroll version and user.
 	/// </summary>
@@ -154,9 +152,11 @@ public class DatabaseWriter : DbConnectionBase
 	/// </returns>
 	/// <param name="editionUser"></param>
 	/// <param name="mutationRequests">List of mutation requests.</param>
+	/// <param name="connection">Optional database connection to use. If null, a new connection will be created.</param>
 	public async Task<List<AlteredRecord>> WriteToDatabaseAsync(
 			UserInfo                editionUser
-			, List<MutationRequest> mutationRequests)
+			, List<MutationRequest> mutationRequests
+			, DatabaseAccessor      dba)
 	{
 		// Check if the edition is locked
 		if (editionUser.EditionLocked)
@@ -166,142 +166,121 @@ public class DatabaseWriter : DbConnectionBase
 		if (!editionUser.MayWrite)
 			throw new StandardExceptions.NoWritePermissionsException(editionUser);
 
-		// If there is no currently running transaction, start a new one
-		if (Transaction.Current == null)
-		{
-			return await DatabaseCommunicationRetryPolicy.ExecuteRetry(async () =>
-																	   {
-																		   // Grab a transaction scope, we roll back all changes if any transactions fail
-																		   // I could limit the transaction scope to each individual mutation request,
-																		   // but I fear the multiple requests may be dependent upon each other (i.e., all or nothing).
-																		   using
-																				   (var
-																					transactionScope =
-																					new
-																							TransactionScope(
-																									TransactionScopeAsyncFlowOption
-																											.Enabled))
-																		   {
-																			   var results =
-																					   await
-																							   _writeToDatabaseAsync(
-																									   editionUser
-																									   , mutationRequests);
+		var results = await _writeToDatabaseAsync(editionUser, mutationRequests, dba);
 
-																			   transactionScope
-																					   .Complete();
-
-																			   return results;
-																		   }
-																	   });
-		}
-
-		// There is already a transaction scope, so just run the write in the current scope
-		return await _writeToDatabaseAsync(editionUser, mutationRequests);
+		return results;
 	}
 
 	public async Task<List<AlteredRecord>> WriteToDatabaseAsync(
-			UserInfo          editionUser
-			, MutationRequest mutationRequest) => await WriteToDatabaseAsync(
+			UserInfo           editionUser
+			, MutationRequest  mutationRequest
+			, DatabaseAccessor dba) => await WriteToDatabaseAsync(
 			editionUser
-			, new List<MutationRequest> { mutationRequest });
+			, new List<MutationRequest> { mutationRequest }
+			, dba);
 
 	private async Task<List<AlteredRecord>> _writeToDatabaseAsync(
 			UserInfo                editionUser
-			, List<MutationRequest> mutationRequests)
+			, List<MutationRequest> mutationRequests
+			, DatabaseAccessor      dba)
 	{
 		var alteredRecords = new List<AlteredRecord>();
-
-		using (var connection = OpenConnection())
+		foreach (var mutationRequest in mutationRequests)
 		{
-			foreach (var mutationRequest in mutationRequests)
+			// Set the editionId for the mutation.
+			// Though we accept a List of mutations, we have the restriction that
+			// they all belong to the same editionId and userID.
+			// This way, we only do one permission check for the whole batch.
+			mutationRequest.Parameters.Add("@EditionId", editionUser.EditionId);
+
+			mutationRequest.Parameters.Add("@EditionEditorId", editionUser.EditionEditorId);
+
+			await AddMainActionAsync(dba, mutationRequest);
+
+			switch (mutationRequest.Action)
 			{
-				// Set the editionId for the mutation.
-				// Though we accept a List of mutations, we have the restriction that
-				// they all belong to the same editionId and userID.
-				// This way, we only do one permission check for the whole batch.
-				mutationRequest.Parameters.Add("@EditionId", editionUser.EditionId);
+				case MutateType.Create:
+					// Insert the record and add its response to the alteredRecords response.
+					var createdRecord = await InsertAsync(
+							dba
+							, mutationRequest
+							, editionUser.userId.Value);
 
-				mutationRequest.Parameters.Add("@EditionEditorId", editionUser.EditionEditorId);
+					//	System.Threading.Thread.Sleep(1000);
+					alteredRecords.Add(createdRecord);
 
-				await AddMainActionAsync(connection, mutationRequest);
+					break;
 
-				switch (mutationRequest.Action)
-				{
-					case MutateType.Create:
-						// Insert the record and add its response to the alteredRecords response.
-						var createdRecord = await InsertAsync(
-								connection
-								, mutationRequest
-								, editionUser.userId.Value);
+				case MutateType.Update:
+					// Update in our system is really Delete + Insert, the old record remains.
+					// Delete the old record
+					var priorDeletedRecord = await DeleteAsync(dba, mutationRequest);
 
-						//	System.Threading.Thread.Sleep(1000);
-						alteredRecords.Add(createdRecord);
+					// Insert the new record
+					var insertedRecord = await InsertAsync(
+							dba
+							, mutationRequest
+							, editionUser.userId.Value);
 
-						break;
+					// Merge the request responses by copying the deleted Id to the insertRecord object
+					insertedRecord.OldId = priorDeletedRecord.OldId;
 
-					case MutateType.Update:
-						// Update in our system is really Delete + Insert, the old record remains.
-						// Delete the old record
-						var priorDeletedRecord = await DeleteAsync(connection, mutationRequest);
+					// Add info to the return object
+					alteredRecords.Add(insertedRecord);
 
-						// Insert the new record
-						var insertedRecord = await InsertAsync(
-								connection
-								, mutationRequest
-								, editionUser.userId.Value);
+					break;
 
-						// Merge the request responses by copying the deleted Id to the insertRecord object
-						insertedRecord.OldId = priorDeletedRecord.OldId;
+				case MutateType.Delete:
+					// Delete the record and add its response to the alteredRecords response.
+					var deletedRecord = await DeleteAsync(dba, mutationRequest);
 
-						// Add info to the return object
-						alteredRecords.Add(insertedRecord);
+					alteredRecords.Add(deletedRecord);
 
-						break;
+					break;
 
-					case MutateType.Delete:
-						// Delete the record and add its response to the alteredRecords response.
-						var deletedRecord = await DeleteAsync(connection, mutationRequest);
-
-						alteredRecords.Add(deletedRecord);
-
-						break;
-
-					default:
-						throw new ArgumentOutOfRangeException();
-				}
+				default:
+					throw new ArgumentOutOfRangeException();
 			}
-
-			// Check if any operation here would invalidate a cached text transcription,
-			// if so, invalidate the cached transcription. First gather all referenced
-			// text fragments, then Union the results so there are no doubles.
-			var lineIds = (await Task.WhenAll(
-							mutationRequests
-									.Where(x => x.Parameters.ParameterNames.Contains("line_id"))
-									.Select(x => x.Parameters.Get<uint>("line_id"))
-									.Select(async x => await _textEditionByLineId(editionUser, x))))
-					.SelectMany(x => x);
-
-			var signInterpretationIds = (await Task.WhenAll(
-					mutationRequests
-							.Where(x => x.Parameters.ParameterNames.Contains(
-										   "sign_interpretation_id"))
-							.Select(x => x.Parameters.Get<uint>("sign_interpretation_id"))
-							.Select(async x => await _textEditionBySignInterpretationId(
-											editionUser
-											, x)))).SelectMany(x => x);
-
-			var textFragmentIds = mutationRequests
-								  .Where(x => x.Parameters.ParameterNames.Contains(
-												 "text_fragment_id"))
-								  .Select(x => x.Parameters.Get<uint>("text_fragment_id"))
-								  .Distinct()
-								  .Union(lineIds)
-								  .Union(signInterpretationIds);
-
-			foreach (var textFragmentId in textFragmentIds)
-				await _invalidateCachedTextEdition(editionUser, textFragmentId);
 		}
+
+		// Check if any operation here would invalidate a cached text transcription,
+		// if so, invalidate the cached transcription. First gather all referenced
+		// text fragments, then Union the results so there are no doubles.
+		var lineMutations = mutationRequests
+							.Where(x => x.Parameters.ParameterNames.Contains("line_id"))
+							.Select(x => x.Parameters.Get<uint>("line_id")).ToList();
+		var lineIds = new List<uint>(lineMutations.Count);
+
+		foreach (var lineMutationId in lineMutations)
+			lineIds.AddRange(await _textEditionByLineId(editionUser, lineMutationId, dba));
+
+		var signInterpretationMutations = mutationRequests
+										  .Where(x => x.Parameters.ParameterNames.Contains(
+														 "sign_interpretation_id"))
+										  .Select(x => x.Parameters.Get<uint>(
+														  "sign_interpretation_id"))
+										  .ToList();
+		var signInterpretationIds = new List<uint>(signInterpretationMutations.Count);
+
+		foreach (var signInterpretationMutationId in signInterpretationMutations)
+		{
+			signInterpretationIds.AddRange(
+					await _textEditionBySignInterpretationId(
+							editionUser
+							, signInterpretationMutationId
+							, dba));
+		}
+
+		var textFragmentIds = mutationRequests
+							  .Where(x => x.Parameters.ParameterNames.Contains(
+											 "text_fragment_id"))
+							  .Select(x => x.Parameters.Get<uint>("text_fragment_id"))
+							  .Distinct()
+							  .Union(lineIds)
+							  .Union(signInterpretationIds);
+
+		foreach (var textFragmentId in textFragmentIds)
+			await _invalidateCachedTextEdition(editionUser, textFragmentId, dba);
 
 		return alteredRecords;
 	}
@@ -314,18 +293,18 @@ public class DatabaseWriter : DbConnectionBase
 	/// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
 	/// <returns>The alteredRecord object to be added to the request response.</returns>
 	private static async Task<AlteredRecord> InsertAsync(
-			IDbConnection     connection
+			DatabaseAccessor  dba
 			, MutationRequest mutationRequest
 			, uint            userId)
 	{
 		// Insert the record (or return the id of a preexisting record matching the unique constraints.
-		var createInsertId = await InsertOwnedTableAsync(connection, mutationRequest, userId);
+		var createInsertId = await InsertOwnedTableAsync(dba, mutationRequest, userId);
 
 		// Insert the link to the editionId in the owner table
-		await InsertOwnerTableAsync(connection, mutationRequest, createInsertId);
+		await InsertOwnerTableAsync(dba, mutationRequest, createInsertId);
 
 		// Record the insert
-		await AddSingleActionAsync(connection, mutationRequest, SingleAction.Add);
+		await AddSingleActionAsync(dba, mutationRequest, SingleAction.Add);
 
 		// Create info for the request's return object
 		return new AlteredRecord(mutationRequest.TableName, null, createInsertId);
@@ -339,14 +318,14 @@ public class DatabaseWriter : DbConnectionBase
 	/// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
 	/// <returns>The alteredRecord object to be added to the request response.</returns>
 	private static async Task<AlteredRecord> DeleteAsync(
-			IDbConnection     connection
+			DatabaseAccessor  dba
 			, MutationRequest mutationRequest)
 	{
 		// Delete the link between this scrollVersionID and the record from the owner table
-		await DeleteOwnerTableAsync(connection, mutationRequest);
+		await DeleteOwnerTableAsync(dba, mutationRequest);
 
 		// Record the delete
-		await AddSingleActionAsync(connection, mutationRequest, SingleAction.Delete);
+		await AddSingleActionAsync(dba, mutationRequest, SingleAction.Delete);
 
 		// Create info for the request's return object
 		return new AlteredRecord(mutationRequest.TableName, mutationRequest.TablePkId, null);
@@ -358,12 +337,13 @@ public class DatabaseWriter : DbConnectionBase
 	/// </summary>
 	/// <param name="connection">An IDbConnection belonging to the current transaction</param>
 	/// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
+	/// <param name="userId">Identifier for the user who is making the insertion.</param>
 	/// <returns>
 	///  Returns the Id of the newly inserted record. If a record with the same data already existed,
 	///  then the Id of that record is returned.
 	/// </returns>
 	private static async Task<uint> InsertOwnedTableAsync(
-			IDbConnection     connection
+			DatabaseAccessor  dba
 			, MutationRequest mutationRequest
 			, uint            userId)
 	{
@@ -406,7 +386,7 @@ public class DatabaseWriter : DbConnectionBase
 		mutationRequest.Parameters.Add("@UserId", userId);
 
 		// Execute query
-		var alteredRecords = await connection.ExecuteAsync(query, mutationRequest.Parameters);
+		var alteredRecords = await dba.ExecuteAsync(query, mutationRequest.Parameters);
 
 		uint insertId;
 
@@ -452,12 +432,12 @@ public class DatabaseWriter : DbConnectionBase
 
 			query = query.Replace("$PrimaryKeyName", mutationRequest.TableName + "_id");
 
-			insertId = await connection.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
+			insertId = await dba.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
 		}
 		else // A new record was inserted.
 		{
 			// Get the id of the newly inserted record.
-			insertId = await LastInsertIdAsync(connection);
+			insertId = await LastInsertIdAsync(dba);
 		}
 
 		return insertId;
@@ -471,7 +451,7 @@ public class DatabaseWriter : DbConnectionBase
 	/// <param name="insertId">The primary key Id of the record that was just inserted.</param>
 	/// <returns></returns>
 	private static async Task InsertOwnerTableAsync(
-			IDbConnection     connection
+			DatabaseAccessor  dba
 			, MutationRequest mutationRequest
 			, uint            insertId)
 	{
@@ -486,11 +466,11 @@ public class DatabaseWriter : DbConnectionBase
 		mutationRequest.Parameters.Add("@OwnedTableId", insertId);
 
 		// Execute query
-		var result = await connection.ExecuteAsync(query, mutationRequest.Parameters);
+		var result = await dba.ExecuteAsync(query, mutationRequest.Parameters);
 
 		if (mutationRequest.TableName.Equals("position_in_stream"))
 		{
-			var r = connection.Query<uint>(
+			var r = await dba.QueryAsync<uint>(
 					$@"
 select position_in_stream_id from position_in_stream_owner where position_in_stream_id={
 	insertId
@@ -505,7 +485,7 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 	/// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
 	/// <returns></returns>
 	private static async Task DeleteOwnerTableAsync(
-			IDbConnection     connection
+			DatabaseAccessor  dba
 			, MutationRequest mutationRequest)
 	{
 		// Format query
@@ -516,7 +496,7 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 		query = query.Replace("$OwnedTablePkName", mutationRequest.TableName + "_id");
 
 		// Execute query
-		var results = await connection.ExecuteAsync(query, mutationRequest.Parameters);
+		var results = await dba.ExecuteAsync(query, mutationRequest.Parameters);
 
 		// If nothing was changed, then the data was not found, so throw an error.
 		if (results < 1)
@@ -532,11 +512,11 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 	/// </summary>
 	/// <param name="connection">An IDbConnection belonging to the current transaction</param>
 	/// <returns>Returns the Id of the last inserted record.</returns>
-	private static async Task<uint> LastInsertIdAsync(IDbConnection connection)
+	private static async Task<uint> LastInsertIdAsync(DatabaseAccessor dba)
 	{
 		const string sql = "SELECT LAST_INSERT_ID()";
 
-		return await connection.QuerySingleAsync<uint>(sql);
+		return await dba.QuerySingleAsync<uint>(sql);
 	}
 
 	/// <summary>
@@ -546,15 +526,15 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 	/// <param name="mutationRequest">A mutation request object with all the necessary data.</param>
 	/// <returns></returns>
 	private static async Task AddMainActionAsync(
-			IDbConnection     connection
+			DatabaseAccessor  dba
 			, MutationRequest mutationRequest)
 	{
 		// Format and execute the query
 		const string query = MainActionInsertQuery.GetQuery;
-		await connection.ExecuteAsync(query, mutationRequest.Parameters);
+		await dba.ExecuteAsync(query, mutationRequest.Parameters);
 
 		// Get id of new record.
-		var insertId = await LastInsertIdAsync(connection);
+		var insertId = await LastInsertIdAsync(dba);
 
 		// Insert the @MainActionId into the mutation object's query parameters.
 		mutationRequest.Parameters.Add("@MainActionId", insertId);
@@ -568,7 +548,7 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 	/// <param name="action"></param>
 	/// <returns></returns>
 	private static async Task AddSingleActionAsync(
-			IDbConnection     connection
+			DatabaseAccessor  dba
 			, MutationRequest mutationRequest
 			, SingleAction    action)
 	{
@@ -581,50 +561,43 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 		mutationRequest.Parameters.Add("@Action", action.ToString().ToLower());
 
 		// Execute query
-		await connection.ExecuteAsync(query, mutationRequest.Parameters);
+		await dba.ExecuteAsync(query, mutationRequest.Parameters);
 	}
 
-	private async Task _invalidateCachedTextEdition(UserInfo editionUser, uint textFragmentId)
+	private async Task _invalidateCachedTextEdition(
+			UserInfo           editionUser
+			, uint             textFragmentId
+			, DatabaseAccessor dba
+			)
 	{
-		using (var conn = OpenConnection())
-		{
-			await conn.ExecuteAsync(
-					RemoveCachedTextFragment.GetQuery
-					, new
-					{
-							editionUser.EditionId
-							, TextFragmentId = textFragmentId
-							,
-					});
-		}
+		await dba.ExecuteAsync(
+			RemoveCachedTextFragment.GetQuery
+			, new
+			{
+					editionUser.EditionId
+					, TextFragmentId = textFragmentId
+					,
+			});
 	}
 
-	private async Task<IEnumerable<uint>> _textEditionByLineId(UserInfo editionUser, uint lineId)
-	{
-		using (var conn = OpenConnection())
-		{
-			return await conn.QueryAsync<uint>(
-					GetTextFragmentIdFromLineId.GetQuery
-					, new { editionUser.EditionId, LineId = lineId });
-		}
-	}
+	private async Task<IEnumerable<uint>> _textEditionByLineId(
+			UserInfo           editionUser
+			, uint             lineId
+			, DatabaseAccessor dba) => await dba.QueryAsync<uint>(
+			GetTextFragmentIdFromLineId.GetQuery
+			, new { editionUser.EditionId, LineId = lineId });
 
-	public async Task<IEnumerable<uint>> _textEditionBySignInterpretationId(
-			UserInfo editionUser
-			, uint   signInterpretationId)
-	{
-		using (var conn = OpenConnection())
-		{
-			return await conn.QueryAsync<uint>(
-					GetTextFragmentIdFromSingInterpretationId.GetQuery
-					, new
-					{
-							editionUser.EditionId
-							, SignInterpretationId = signInterpretationId
-							,
-					});
-		}
-	}
+	private async Task<IEnumerable<uint>> _textEditionBySignInterpretationId(
+			UserInfo           editionUser
+			, uint             signInterpretationId
+			, DatabaseAccessor dba) => await dba.QueryAsync<uint>(
+			GetTextFragmentIdFromSingInterpretationId.GetQuery
+			, new
+			{
+					editionUser.EditionId
+					, SignInterpretationId = signInterpretationId
+					,
+			});
 
 	/// <summary>
 	///  Enum for allowed actions in the single_action database table.

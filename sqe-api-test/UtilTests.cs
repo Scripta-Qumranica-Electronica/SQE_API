@@ -20,7 +20,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Utilities")]
 	public async Task CanRecognizeValidWktPolygons()
 	{
-		var goodPolygon = new WktPolygonDTO { wktPolygon = "POLYGON((0 0,0 10,10 10,10 0,0 0))" };
+		var goodPolygon = new WktPolygonDTO { wktPolygon = "POLYGON((0 0,10 0,10 10,0 10,0 0))" };
 
 		var polygonValidation = new Post.V1_Utils_RepairWktPolygon(goodPolygon);
 

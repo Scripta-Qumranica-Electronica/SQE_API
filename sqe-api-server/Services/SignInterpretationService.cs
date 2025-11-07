@@ -263,14 +263,15 @@ public class SignInterpretationService : ISignInterpretationService
 						, signInterpretation.breakPreviousAndNextSignInterpretations);
 
 		// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
-		var createdSignInterpretations = await Task.WhenAll( // Await all async operations
-				// Concat all sign interpretation ids from createdSignInterpretation
-				createdSignInterpretation
-						.SelectMany(x => x.SignInterpretations
-										  .Where(y => y.SignInterpretationId.HasValue)
-										  .Select(y => y.SignInterpretationId.Value))
-						.Select( // Get the SignInterpretationDTO for each sign interpretation
-								async x => await GetEditionSignInterpretationAsync(user, x)));
+		var createSignInterpretationTasks =
+				createdSignInterpretation.SelectMany(x => x.SignInterpretations
+														   .Where(y => y.SignInterpretationId
+																		.HasValue)
+														   .Select(y => y.SignInterpretationId
+																		 .Value)).ToList();
+		var createdSignInterpretations = new List<SignInterpretationDTO>(createSignInterpretationTasks.Count);
+		foreach (var createSignInterpretationTask in createSignInterpretationTasks)
+			createdSignInterpretations.Add(await GetEditionSignInterpretationAsync(user, createSignInterpretationTask));
 
 		var response = new SignInterpretationListDTO
 		{
@@ -278,12 +279,14 @@ public class SignInterpretationService : ISignInterpretationService
 		};
 
 		// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
-		var formattedUpdates = await Task.WhenAll( // Await all async operations
-				updatedSignInterpretations.Select(async x
-														  => await
-																  GetEditionSignInterpretationAsync(
-																		  user
-																		  , x))); // Get the SignInterpretationDTO for each sign interpretation
+		var formattedUpdates = new List<SignInterpretationDTO>(updatedSignInterpretations.Count);
+		foreach (var updatedSignInterpretation in updatedSignInterpretations)
+		{
+			formattedUpdates.Add(await
+										 GetEditionSignInterpretationAsync(
+												 user
+												 , updatedSignInterpretation)); // Get the SignInterpretationDTO for each sign interpretation
+		}
 
 		var changes = new SignInterpretationListDTO
 		{
@@ -427,10 +430,14 @@ public class SignInterpretationService : ISignInterpretationService
 		var deletedList = deleted.ToArray();
 
 		// Prepare the response by gathering created sign interpretation(s) and previous sign interpretations
-		var formattedUpdates = await Task.WhenAll( // Await all async operations
-				updated.Select(async x => await GetEditionSignInterpretationAsync(
-									   user
-									   , x))); // Get the SignInterpretationDTO fpr each sign interpretation
+		var updateList = updated.ToList();
+		var formattedUpdates = new List<SignInterpretationDTO>(updateList.Count);
+		foreach (var update in updateList)
+		{
+			formattedUpdates.Add(await GetEditionSignInterpretationAsync(
+										 user
+										 , update)); // Get the SignInterpretationDTO fpr each sign interpretation
+		}
 
 		var changes = new SignInterpretationListDTO
 		{
@@ -465,7 +472,8 @@ public class SignInterpretationService : ISignInterpretationService
 		await _textRepository.LinkSignInterpretationsAsync(
 				user
 				, firstSignInterpretationId
-				, secondSignInterpretationId);
+				, secondSignInterpretationId
+				, false);
 
 		var changedSignInterpretation =
 				await GetEditionSignInterpretationAsync(user, firstSignInterpretationId);

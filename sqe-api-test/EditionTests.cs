@@ -577,7 +577,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Edition Sharing")]
 	public async Task CanNotWriteWithoutReadShareEdition()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1347,7 +1347,7 @@ public partial class WebControllerTest
 	[InlineData(true)]
 	public async Task CanGetFilteredEditions(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1429,7 +1429,7 @@ public partial class WebControllerTest
 	[InlineData(true)]
 	public async Task CanGetEditionsByManuscript(bool realtime)
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1477,7 +1477,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Edition Script")]
 	public async Task CanGetEditionScriptChart()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange
@@ -1522,9 +1522,10 @@ public partial class WebControllerTest
 			// Assert
 			request.HttpResponseObject.ShouldDeepEqual(request.SignalrResponseObject);
 
-			// TODO: perhaps verify that the shape is correct
-			request.HttpResponseObject.letters.Select(x => x.id)
-				   .ShouldDeepEqual(rois.Select(x => x.interpretationRoiId).First());
+			// TODO: perhaps verify that the shape is correct, I don't think this test is correct
+			var response = request.HttpResponseObject.letters.Select(x => x.id);
+
+			response.First().ShouldDeepEqual(rois.Select(x => x.signInterpretationId).First());
 		}
 	}
 
@@ -1532,7 +1533,7 @@ public partial class WebControllerTest
 	[Trait("Category", "Edition Script")]
 	public async Task CanGetEditionLineScriptChart()
 	{
-		using (var editionCreator =
+		await using (var editionCreator =
 			   new EditionHelpers.EditionCreator(_client, StartConnectionAsync))
 		{
 			// Arrange

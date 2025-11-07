@@ -305,7 +305,8 @@ public abstract class RequestObject<TInput, TOutput> : IRequestObject
 				SignalrResponseObject.ShouldDeepEqual(HttpResponseObject);
 
 			// Cleanup
-			signalR?.DisposeAsync();
+			if (signalR != null)
+				await signalR.DisposeAsync();
 		}
 
 		// If no listener is running, return the response from the request
@@ -325,7 +326,8 @@ public abstract class RequestObject<TInput, TOutput> : IRequestObject
 		}
 
 		// Dispose of the listener and check to see that all expected responses have been received
-		signalrListener?.DisposeAsync(); // Cleanup
+		if (signalrListener != null)
+			await signalrListener.DisposeAsync(); // Cleanup
 
 		if (shouldSucceed)
 		{

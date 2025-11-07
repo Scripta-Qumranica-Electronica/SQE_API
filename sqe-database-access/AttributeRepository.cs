@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
@@ -16,11 +15,13 @@ namespace SQE.DatabaseAccess;
 public interface IAttributeRepository
 {
 	Task<IEnumerable<SignInterpretationAttributeEntry>> GetAllEditionAttributesAsync(
-			UserInfo editionUser);
+			UserInfo editionUser
+			);
 
 	Task<IEnumerable<SignInterpretationAttributeEntry>> GetEditionAttributeAsync(
 			UserInfo editionUser
-			, uint   attributeId);
+			, uint   attributeId
+			);
 
 	Task<uint> CreateEditionAttribute(
 			UserInfo                                             editionUser
@@ -30,7 +31,8 @@ public interface IAttributeRepository
 			, bool                                               removable
 			, bool                                               repeatable
 			, bool                                               batchEditable
-			, IEnumerable<SignInterpretationAttributeValueInput> attributeValues);
+			, IEnumerable<SignInterpretationAttributeValueInput> attributeValues
+			, IDbConnection                                      connection = null);
 
 	Task<uint> UpdateEditionAttribute(
 			UserInfo editionUser
@@ -45,7 +47,8 @@ public interface IAttributeRepository
 					createAttributeValues
 			, IEnumerable<SignInterpretationAttributeValue>
 					updateAttributeValues
-			, IEnumerable<uint> deleteAttributeValues);
+			, IEnumerable<uint> deleteAttributeValues
+			, IDbConnection     connection = null);
 
 	Task DeleteEditionAttributeAsync(UserInfo editionUser, uint attributeId);
 
@@ -67,30 +70,35 @@ public interface IAttributeRepository
 	// Task<List<uint>> DeleteSignInterpretationAttributesAsync(UserInfo editionUser, List<uint> deleteAttributeIds);
 
 	Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId
-			, uint   attributeValueId);
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			, uint          attributeValueId
+			);
 
 	Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId);
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			);
 
 	Task UpdateAttributeForSignInterpretationAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId
-			, uint   attributeValueId
-			, byte?  sequence);
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			, uint          attributeValueId
+			, byte?         sequence
+			);
 
 	// Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(UserInfo editionUser,
 	//     uint signInterpretationAttributeId);
 
 	Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByDataAsync(
 			UserInfo                                    editionUser
-			, SignInterpretationAttributeDataSearchData dataSearchData);
+			, SignInterpretationAttributeDataSearchData dataSearchData
+			);
 
 	Task<List<SignInterpretationAttributeData>> GetSignInterpretationAttributesByInterpretationId(
 			UserInfo editionUser
-			, uint   signInterpretationId);
+			, uint   signInterpretationId
+			);
 
 	// Task<uint> GetSignInterpretationAttributeIdByIdAsync(UserInfo editionUser,
 	//     uint signInterpretationAttributeId);
@@ -106,16 +114,12 @@ public interface IAttributeRepository
 	Task<List<SignInterpretationAttributeData>> ReplaceSignInterpretationAttributesAsync(
 			UserInfo                                editionUser
 			, uint                                  signInterpretationId
-			, List<SignInterpretationAttributeData> newAttributes);
+			, List<SignInterpretationAttributeData> newAttributes
+			, IDbConnection                         connection = null);
 }
 
-public class AttributeRepository : DbConnectionBase
-								   , IAttributeRepository
+public class AttributeRepository(IDatabaseAccessor adb) : IAttributeRepository
 {
-	private readonly IDatabaseWriter _databaseWriter;
-
-	public AttributeRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
-		=> _databaseWriter = databaseWriter;
 
 	/// <summary>
 	///  Get all attributes associated with a particular edition
@@ -123,11 +127,12 @@ public class AttributeRepository : DbConnectionBase
 	/// <param name="editionUser">The edition user details object</param>
 	/// <returns>The details of the attributes associated with a particular edition</returns>
 	public async Task<IEnumerable<SignInterpretationAttributeEntry>> GetAllEditionAttributesAsync(
-			UserInfo editionUser)
+			UserInfo editionUser
+			)
 	{
-		using (var connection = OpenConnection())
+
 		{
-			return await connection.QueryAsync<SignInterpretationAttributeEntry>(
+			return await adb.QueryAsync<SignInterpretationAttributeEntry>(
 					GetAllEditionSignInterpretationAttributesQuery.GetQuery()
 					, new { editionUser.EditionId });
 		}
@@ -141,11 +146,12 @@ public class AttributeRepository : DbConnectionBase
 	/// <returns>The details of the desired attribute</returns>
 	public async Task<IEnumerable<SignInterpretationAttributeEntry>> GetEditionAttributeAsync(
 			UserInfo editionUser
-			, uint   attributeId)
+			, uint   attributeId
+			)
 	{
-		using (var connection = OpenConnection())
+
 		{
-			return await connection.QueryAsync<SignInterpretationAttributeEntry>(
+			return await adb.QueryAsync<SignInterpretationAttributeEntry>(
 					GetAllEditionSignInterpretationAttributesQuery.GetQuery(attributeId)
 					, new
 					{
@@ -177,9 +183,11 @@ public class AttributeRepository : DbConnectionBase
 			, bool                                               removable
 			, bool                                               repeatable
 			, bool                                               batchEditable
-			, IEnumerable<SignInterpretationAttributeValueInput> attributeValues)
+			, IEnumerable<SignInterpretationAttributeValueInput> attributeValues
+			, IDbConnection                                      connection = null)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+
+		await adb.BeginTransactionAsync();
 		{
 			// First check for attribute name collisions
 			var existingAttribute = await GetAllEditionAttributesAsync(editionUser);
@@ -210,7 +218,7 @@ public class AttributeRepository : DbConnectionBase
 			}
 
 			// Complete transaction and return the id of the new attribute
-			transactionScope.Complete();
+			adb.CommitTransaction();
 
 			return newAttributeId;
 		}
@@ -242,9 +250,10 @@ public class AttributeRepository : DbConnectionBase
 			, bool                                               batchEditable
 			, IEnumerable<SignInterpretationAttributeValueInput> createAttributeValues
 			, IEnumerable<SignInterpretationAttributeValue>      updateAttributeValues
-			, IEnumerable<uint>                                  deleteAttributeValues)
+			, IEnumerable<uint>                                  deleteAttributeValues
+			, IDbConnection                                      connection = null)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+		await adb.BeginTransactionAsync();
 		{
 			// First get the actual details of the attribute
 			var existingAttribute =
@@ -305,7 +314,8 @@ public class AttributeRepository : DbConnectionBase
 						, updatedAttributeId
 						, createAttributeValue.AttributeStringValue
 						, createAttributeValue.AttributeStringValueDescription
-						, createAttributeValue.Css);
+						, createAttributeValue.Css
+						, null);
 			}
 
 			// Write the attribute value updates
@@ -323,7 +333,7 @@ public class AttributeRepository : DbConnectionBase
 			// Write the attribute value deletes
 			foreach (var deleteAttributeValue in deleteAttributeValues)
 			{
-				await _databaseWriter.WriteToDatabaseAsync(
+				await adb.WriteToDatabaseAsync(
 						editionUser
 						, new MutationRequest(
 								MutateType.Delete
@@ -333,7 +343,7 @@ public class AttributeRepository : DbConnectionBase
 			}
 
 			// Complete transaction
-			transactionScope.Complete();
+			adb.CommitTransaction();
 
 			return updatedAttributeId;
 		}
@@ -347,7 +357,7 @@ public class AttributeRepository : DbConnectionBase
 	/// <returns></returns>
 	public async Task DeleteEditionAttributeAsync(UserInfo editionUser, uint attributeId)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+		await adb.BeginTransactionAsync();
 		{
 			// First get the actual details of the attribute
 			var existingAttributes =
@@ -361,7 +371,7 @@ public class AttributeRepository : DbConnectionBase
 			foreach (var attributeValueId in existingAttributes.Select(x => x.AttributeValueId)
 															   .Distinct())
 			{
-				await _databaseWriter.WriteToDatabaseAsync(
+				await adb.WriteToDatabaseAsync(
 						editionUser
 						, new MutationRequest(
 								MutateType.Delete
@@ -377,10 +387,10 @@ public class AttributeRepository : DbConnectionBase
 					, "attribute"
 					, attributeId);
 
-			await _databaseWriter.WriteToDatabaseAsync(editionUser, deleteAttributeRequest);
+			await adb.WriteToDatabaseAsync(editionUser, deleteAttributeRequest);
 
 			// Complete transaction
-			transactionScope.Complete();
+			adb.CommitTransaction();
 		}
 	}
 
@@ -397,7 +407,7 @@ public class AttributeRepository : DbConnectionBase
 					, uint                                  signInterpretationId
 					, List<SignInterpretationAttributeData> newAttributes)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+		await adb.BeginTransactionAsync();
 		{
 			var response = await _createOrUpdateAttributesAsync(
 					editionUser
@@ -405,7 +415,7 @@ public class AttributeRepository : DbConnectionBase
 					, newAttributes
 					, MutateType.Create);
 
-			transactionScope.Complete();
+			adb.CommitTransaction();
 
 			return response;
 		}
@@ -430,15 +440,16 @@ public class AttributeRepository : DbConnectionBase
 	public async Task<List<SignInterpretationAttributeData>>
 			GetSignInterpretationAttributesByDataAsync(
 					UserInfo                                    editionUser
-					, SignInterpretationAttributeDataSearchData dataSearchData)
+					, SignInterpretationAttributeDataSearchData dataSearchData
+					)
 	{
 		var query = GetSignInterpretationAttributesByDataQuery.GetQuery.Replace(
 				"@WhereData"
 				, dataSearchData.getSearchParameterString());
 
-		using (var connection = OpenConnection())
+
 		{
-			var result = await connection.QueryAsync<SignInterpretationAttributeData>(
+			var result = await adb.QueryAsync<SignInterpretationAttributeData>(
 					query
 					, new { editionUser.EditionId });
 
@@ -457,7 +468,8 @@ public class AttributeRepository : DbConnectionBase
 	public async Task<List<SignInterpretationAttributeData>>
 			GetSignInterpretationAttributesByInterpretationId(
 					UserInfo editionUser
-					, uint   signInterpretationId)
+					, uint   signInterpretationId
+					)
 	{
 		var searchData = new SignInterpretationAttributeDataSearchData
 		{
@@ -475,9 +487,10 @@ public class AttributeRepository : DbConnectionBase
 	/// <param name="attributeValueId">Id of attribute value to remove</param>
 	/// <returns>List of ids of delete attributes</returns>
 	public async Task<List<uint>> DeleteAttributeFromSignInterpretationAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId
-			, uint   attributeValueId)
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			, uint          attributeValueId
+			)
 	{
 		var searchData = new SignInterpretationAttributeDataSearchData
 		{
@@ -502,8 +515,9 @@ public class AttributeRepository : DbConnectionBase
 	/// <param name="signInterpretationId">Id of sign interpretation</param>
 	/// <returns>List of ids of delete attributes</returns>
 	public async Task<List<uint>> DeleteAllAttributesForSignInterpretationAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId)
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			)
 	{
 		var attributes =
 				await GetSignInterpretationAttributeIdsByInterpretationId(
@@ -525,10 +539,11 @@ public class AttributeRepository : DbConnectionBase
 	/// <param name="sequence">Position of the attribute in the sequential hierarchy</param>
 	/// <returns>List of ids of delete attributes</returns>
 	public async Task UpdateAttributeForSignInterpretationAsync(
-			UserInfo editionUser
-			, uint   signInterpretationId
-			, uint   attributeValueId
-			, byte?  sequence)
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			, uint          attributeValueId
+			, byte?         sequence
+			)
 	{
 		if (!sequence.HasValue)
 			return;
@@ -568,7 +583,8 @@ public class AttributeRepository : DbConnectionBase
 			ReplaceSignInterpretationAttributesAsync(
 					UserInfo                                editionUser
 					, uint                                  signInterpretationId
-					, List<SignInterpretationAttributeData> newAttributes)
+					, List<SignInterpretationAttributeData> newAttributes
+					, IDbConnection                         connection = null)
 	{
 		if ((newAttributes == null)
 			|| (newAttributes.Count <= 0))
@@ -594,14 +610,15 @@ public class AttributeRepository : DbConnectionBase
 	// }
 
 	private async Task<uint> _createOrUpdateEditionAttribute(
-			UserInfo editionUser
-			, string attributeName
-			, string attributeDescription
-			, bool   editable
-			, bool   removable
-			, bool   repeatable
-			, bool   batchEditable
-			, uint?  attributeId = null)
+			UserInfo        editionUser
+			, string        attributeName
+			, string        attributeDescription
+			, bool          editable
+			, bool          removable
+			, bool          repeatable
+			, bool          batchEditable
+			, uint?         attributeId = null
+			, IDbConnection connection  = null)
 	{
 		var createParams = new DynamicParameters();
 		createParams.Add("@name", attributeName);
@@ -619,7 +636,7 @@ public class AttributeRepository : DbConnectionBase
 				, "attribute"
 				, attributeId);
 
-		var writeRequest = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateRequest);
+		var writeRequest = await adb.WriteToDatabaseAsync(editionUser, mutateRequest);
 
 		var writtenRequest = writeRequest.First();
 
@@ -637,12 +654,13 @@ public class AttributeRepository : DbConnectionBase
 	}
 
 	private async Task _createOrUpdateEditionAttributeValue(
-			UserInfo editionUser
-			, uint   attributeId
-			, string attributeStringValue
-			, string attributeValueDescription
-			, string attributeValueCss
-			, uint?  attributeValueId = null)
+			UserInfo        editionUser
+			, uint          attributeId
+			, string        attributeStringValue
+			, string        attributeValueDescription
+			, string        attributeValueCss
+			, uint?         attributeValueId = null
+			, IDbConnection connection       = null)
 	{
 		var createParams = new DynamicParameters();
 		createParams.Add("@attribute_id", attributeId);
@@ -657,7 +675,7 @@ public class AttributeRepository : DbConnectionBase
 				, "attribute_value"
 				, attributeValueId);
 
-		var writeRequest = await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateRequest);
+		var writeRequest = await adb.WriteToDatabaseAsync(editionUser, mutateRequest);
 
 		var writtenRequest = writeRequest.First();
 
@@ -686,7 +704,7 @@ public class AttributeRepository : DbConnectionBase
 				, createCssParams
 				, "attribute_value_css");
 
-		await _databaseWriter.WriteToDatabaseAsync(editionUser, mutateCssRequest);
+		await adb.WriteToDatabaseAsync(editionUser, mutateCssRequest);
 	}
 
 	/// <summary>
@@ -700,7 +718,8 @@ public class AttributeRepository : DbConnectionBase
 			UpdateSignInterpretationAttributesAsync(
 					UserInfo                                editionUser
 					, uint                                  signInterpretationId
-					, List<SignInterpretationAttributeData> updateAttributes)
+					, List<SignInterpretationAttributeData> updateAttributes
+					, IDbConnection                         connection = null)
 		=> await _createOrUpdateAttributesAsync(
 				editionUser
 				, signInterpretationId
@@ -715,9 +734,10 @@ public class AttributeRepository : DbConnectionBase
 	/// <returns>The list of the ids of deleted Attributes or empty list if the given list was null.</returns>
 	/// <exception cref="StandardExceptions.DataNotWrittenException"></exception>
 	public async Task<List<uint>> DeleteSignInterpretationAttributesAsync(
-			UserInfo     editionUser
-			, List<uint> deleteAttributeIds
-			, uint       signInterpretationId)
+			UserInfo        editionUser
+			, List<uint>    deleteAttributeIds
+			, uint          signInterpretationId
+			)
 	{
 		if (deleteAttributeIds == null)
 			return new List<uint>();
@@ -738,7 +758,7 @@ public class AttributeRepository : DbConnectionBase
 												 })
 										 .ToList();
 
-		var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+		var writeResults = await adb.WriteToDatabaseAsync(editionUser, requests);
 
 		// Check whether for each attribute a request was processed.
 		if (writeResults.Count != deleteAttributeIds.Count)
@@ -758,8 +778,9 @@ public class AttributeRepository : DbConnectionBase
 	/// <returns>Sign interpretation attribute with the given id</returns>
 	/// <exception cref="DataNotFoundException"></exception>
 	public async Task<SignInterpretationAttributeData> GetSignInterpretationAttributeByIdAsync(
-			UserInfo editionUser
-			, uint   signInterpretationAttributeId)
+			UserInfo        editionUser
+			, uint          signInterpretationAttributeId
+			)
 	{
 		var searchData = new SignInterpretationAttributeDataSearchData
 		{
@@ -786,15 +807,16 @@ public class AttributeRepository : DbConnectionBase
 	/// <returns>List of sign interpretation attribute ids - if nothing had been found the list is empty.</returns>
 	public async Task<List<uint>> GetSignInterpretationAttributeIdsByDataAsync(
 			UserInfo                                    editionUser
-			, SignInterpretationAttributeDataSearchData dataSearchData)
+			, SignInterpretationAttributeDataSearchData dataSearchData
+			)
 	{
 		var query = GetSignInterpretationAttributeIdsByDataQuery.GetQuery.Replace(
 				"@WhereData"
 				, dataSearchData.getSearchParameterString());
 
-		using (var connection = OpenConnection())
+
 		{
-			var result = await connection.QueryAsync<uint>(query, new { editionUser.EditionId });
+			var result = await adb.QueryAsync<uint>(query, new { editionUser.EditionId });
 
 			return result == null
 					? new List<uint>()
@@ -809,8 +831,9 @@ public class AttributeRepository : DbConnectionBase
 	/// <param name="signInterpretationId">Id of sign interpretation</param>
 	/// <returns>List of sign interpretation attribute idss</returns>
 	public async Task<List<uint>> GetSignInterpretationAttributeIdsByInterpretationId(
-			UserInfo editionUser
-			, uint   signInterpretationId)
+			UserInfo        editionUser
+			, uint          signInterpretationId
+			)
 	{
 		var searchData = new SignInterpretationAttributeDataSearchData
 		{
@@ -872,7 +895,7 @@ public class AttributeRepository : DbConnectionBase
 			requests.Add(signInterpretationAttributeRequest);
 		}
 
-		var writeResults = await _databaseWriter.WriteToDatabaseAsync(editionUser, requests);
+		var writeResults = await adb.WriteToDatabaseAsync(editionUser, requests);
 
 		// Check whether for each attribute a request was processed.
 		if (writeResults.Count != attributes.Count)
@@ -886,7 +909,7 @@ public class AttributeRepository : DbConnectionBase
 		}
 
 		// A quick hack to ensure that an attribute and it's value has the edition set as owner
-		using (var connection = OpenConnection())
+
 		{
 			// Now set the new Ids
 			for (var i = 0; i < attributes.Count; i++)
@@ -896,7 +919,7 @@ public class AttributeRepository : DbConnectionBase
 				if (newId.HasValue)
 					attributes[i].SignInterpretationAttributeId = newId.Value;
 
-				connection.Execute(
+				await adb.ExecuteAsync(
 						@"insert ignore into attribute_value_owner
 					(attribute_value_id, edition_editor_id, edition_id)
 					values (@AttributeValueId, @EditionEditorId, @EditionId)"
@@ -908,7 +931,7 @@ public class AttributeRepository : DbConnectionBase
 								,
 						});
 
-				connection.Execute(
+				await adb.ExecuteAsync(
 						@"insert ignore into attribute_owner
 					(attribute_id, edition_editor_id, edition_id)
 					values (@AttributeId, @EditionEditorId, @EditionId)"

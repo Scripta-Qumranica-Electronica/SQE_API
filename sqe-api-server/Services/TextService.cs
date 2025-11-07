@@ -90,14 +90,17 @@ public class TextService : ITextService
 
 	public async Task<LineTextDTO> GetLineByIdAsync(UserInfo editionUser, uint lineId)
 	{
-		var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
+		if (!editionUser.EditionId.HasValue)
+			throw new StandardExceptions.DataNotFoundException("edition", lineId, "edition_id");
+
+		var editionEditors = await _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
 
 		var editionLine = await _textRepo.GetLineByIdAsync(editionUser, lineId);
 
 		if (editionLine.manuscriptId == 0)
 			throw new StandardExceptions.DataNotFoundException("line", lineId, "line_id");
 
-		return _textEditionLineToDTO(editionLine, await editionEditors);
+		return _textEditionLineToDTO(editionLine, editionEditors);
 	}
 
 	public async Task<LineDataDTO> UpdateLineByIdAsync(
@@ -200,7 +203,7 @@ public class TextService : ITextService
 		}
 
 		// Collect the text fragment manually, because it must have changed since the last cache
-		var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
+		var editionEditors = await _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
 
 		var edition = await _textRepo.GetTextFragmentByIdAsync(editionUser, fragmentId);
 
@@ -212,7 +215,7 @@ public class TextService : ITextService
 					, "text_fragment_id");
 		}
 
-		var response = _textEditionToDTO(edition, await editionEditors);
+		var response = _textEditionToDTO(edition, editionEditors);
 
 		// Now write the newly collected text fragment to the cache for quick access
 		// It will only get written if it really is up-to-date
@@ -244,9 +247,10 @@ public class TextService : ITextService
 				editionUser
 				, textFragments.textFragments.First().id);
 
-		var otherFrags = await Task.WhenAll(
-				textFragments.textFragments.Skip(1)
-							 .Select(x => GetFragmentByIdAsync(editionUser, x.id)));
+		var otherFrags = new List<TextEditionDTO>(textFragments.textFragments.Count - 1);
+
+		foreach (var textFragment in textFragments.textFragments.Skip(1))
+			otherFrags.Add(await GetFragmentByIdAsync(editionUser, textFragment.id));
 
 		response.textFragments.AddRange(otherFrags.SelectMany(x => x.textFragments));
 
