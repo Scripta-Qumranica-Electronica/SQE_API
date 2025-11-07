@@ -174,14 +174,10 @@ public class ArtefactRepository(IDatabaseAccessor adb) : IArtefactRepository
 		var tasks = new List<AlteredRecord>();
 
 		if (!string.IsNullOrEmpty(shape))
-		{
 			tasks.AddRange(await UpdateArtefactShapeAsync(editionUser, artefactId, shape));
-		}
 
 		if (!string.IsNullOrEmpty(name))
-		{
 			tasks.AddRange(await UpdateArtefactNameAsync(editionUser, artefactId, name));
-		}
 
 		if (scale != null
 			|| rotate != null
@@ -202,9 +198,7 @@ public class ArtefactRepository(IDatabaseAccessor adb) : IArtefactRepository
 		}
 
 		if (!string.IsNullOrEmpty(workStatus))
-		{
 			tasks.AddRange(await UpdateArtefactStatusAsync(editionUser, artefactId, workStatus));
-		}
 
 		adb.CommitTransaction();
 
@@ -412,9 +406,7 @@ var Mask = Geometry.Deserialize<WkbSerializer>(binaryMask).SerializeString<WktSe
 		var artefactId = await adb.QuerySingleAsync<uint>(LastInsertId.GetQuery);
 
 		if (artefactId == 0)
-		{
 			throw new StandardExceptions.DataNotWrittenException("create artefact");
-		}
 
 		if (!string.IsNullOrEmpty(shape))
 		{

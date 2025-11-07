@@ -1783,9 +1783,7 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			var newLines = new List<LineData>();
 
 			foreach (var line in textFragmentData.Lines)
-			{
 				newLines.Add(await CreateLineAsync(editionUser, line, newTextFragmentId));
-			}
 
 			// End the transaction (it was all or nothing)
 			dba.CommitTransaction();

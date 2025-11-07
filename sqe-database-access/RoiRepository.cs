@@ -190,9 +190,7 @@ public class RoiRepository(IDatabaseAccessor adb) : IRoiRepository
 
 			if (!signInterpretationRoiUpdate.NewId.HasValue
 				|| !signInterpretationRoiUpdate.OldId.HasValue)
-			{
 				throw new StandardExceptions.DataNotWrittenException("update sign interpretation");
-			}
 
 			var updatedRoi = await GetSignInterpretationRoiByIdAsync(
 					editionUser

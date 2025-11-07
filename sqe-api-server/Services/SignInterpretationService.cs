@@ -275,8 +275,10 @@ public class SignInterpretationService : ISignInterpretationService
 				new List<SignInterpretationDTO>(createSignInterpretationTasks.Count);
 
 		foreach (var createSignInterpretationTask in createSignInterpretationTasks)
+		{
 			createdSignInterpretations.Add(
 					await GetEditionSignInterpretationAsync(user, createSignInterpretationTask));
+		}
 
 		var response = new SignInterpretationListDTO
 		{
