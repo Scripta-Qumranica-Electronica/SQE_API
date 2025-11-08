@@ -35,11 +35,11 @@ public class DatabaseManager : IDatabaseManager
 			user
 		};password={
 			pwd
-		};charset=utf8mb4;AllowUserVariables=True;Pooling=true;MinPoolSize={
+		};MinPoolSize={
 			minConn
 		};MaxPoolSize={
 			maxConn
-		};DefaultCommandTimeout=120;ConnectionReset=true;";
+		};charset=utf8mb4;AllowUserVariables=True;Pooling=true;DefaultCommandTimeout=120;ConnectionReset=true;";
 	}
 
 	public DbConnection GetConnection() => new MySqlConnection(_connectionString);

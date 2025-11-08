@@ -1,4 +1,5 @@
-using Microsoft.Extensions.Configuration;
+using System.Linq;
+using System.Threading.Tasks;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
@@ -29,38 +30,32 @@ public class TextRepositoryExpanded : TextRepository
                 AND pistwr2.position_in_stream_id is null
 ";
 
+	private readonly IDatabaseAccessor dba;
+
 	public TextRepositoryExpanded(
-			IConfiguration                            config
-			, IDatabaseWriter                         databaseWriter
+			IDatabaseAccessor                         dba
 			, IAttributeRepository                    attributeRepository
 			, ISignInterpretationRepository           signInterpretationRepository
 			, ISignInterpretationCommentaryRepository commentaryRepository
 			, IRoiRepository                          roiRepository
 			, IArtefactRepository                     artefactRepository
 			, ISignStreamMaterializationRepository    materializationRepository) : base(
-			config
-			, databaseWriter
+			dba
 			, attributeRepository
 			, signInterpretationRepository
 			, commentaryRepository
 			, roiRepository
 			, artefactRepository
-			, materializationRepository) { }
+			, materializationRepository) => dba = dba;
 
-	public TextEdition GetSQEWord(UserInfo editionUser, uint qwbWordId)
+	public async Task<TextEdition> GetSQEWord(UserInfo editionUser, uint qwbWordId)
 	{
-		var terminators = _getWordTerminators(qwbWordId);
+		var terminators = await _getWordTerminators(qwbWordId);
 
 		return null; // _getEntityById(editionUser, terminators).Result;
 	}
 
-	private Terminators _getWordTerminators(uint qwbWordId)
-	{
-		using (var connection = Connection())
-		{
-			return new Terminators(
-					connection.Query<uint>(_terminatorsQuery, new { QWBWorId = qwbWordId })
-							  .ToArray());
-		}
-	}
+	private async Task<Terminators> _getWordTerminators(uint qwbWordId) => new(
+			(await dba.QueryAsync<uint>(_terminatorsQuery, new { QWBWorId = qwbWordId }))
+			.ToArray());
 }

@@ -28,6 +28,7 @@ public class SqeApi
 	private readonly uint?              _userId;
 	private readonly UserInfo           _userInfo;
 	private readonly UserRepository     _userRep;
+	private readonly DatabaseManager    dbm;
 
 	/// <summary>
 	///  Initialze with the id of the user to be used.
@@ -42,30 +43,30 @@ public class SqeApi
 							   .AddJsonFile("appsettings.json", false)
 							   .Build();
 
-		var dbw = new DatabaseWriter(sqeConfiguration);
-		_editionRep = new EditionRepository(sqeConfiguration, dbw);
-		var attrRep = new AttributeRepository(sqeConfiguration, dbw);
+		dbm = new DatabaseManager(sqeConfiguration);
+		var dbw = new DatabaseWriter();
+		var dba = new DatabaseAccessor(dbm, dbw);
+		_editionRep = new EditionRepository(dba);
+		var attrRep = new AttributeRepository(dba);
 
-		var commRep = new SignInterpretationCommentaryRepository(sqeConfiguration, dbw, attrRep);
+		var commRep = new SignInterpretationCommentaryRepository(dba, attrRep);
 
-		var roiRep = new RoiRepository(sqeConfiguration, dbw);
-		_artefactRep = new ArtefactRepository(sqeConfiguration, dbw);
+		var roiRep = new RoiRepository(dba);
+		_artefactRep = new ArtefactRepository(dba);
 
-		var matRepository = new SignStreamMaterializationRepository(sqeConfiguration)
+		var matRepository = new SignStreamMaterializationRepository(dba)
 		{
 				RunMaterialization = false,
 		};
 
 		var signIntRep = new SignInterpretationRepository(
-				sqeConfiguration
+				dba
 				, attrRep
 				, commRep
-				, roiRep
-				, dbw);
+				, roiRep);
 
-		TextRep = new ExpandedTextRepository(
-				sqeConfiguration
-				, dbw
+		TextRep = new TextRepository(
+				dba
 				, attrRep
 				, signIntRep
 				, commRep
@@ -73,12 +74,12 @@ public class SqeApi
 				, _artefactRep
 				, matRepository);
 
-		_userRep = new UserRepository(sqeConfiguration);
+		_userRep = new UserRepository(dba);
 		_userInfo = new UserInfo(userId, null, _userRep);
 	}
 
-	public  ExpandedTextRepository TextRep      { get; }
-	private IDbConnection          DbConnection => TextRep.GetConnection();
+	public  TextRepository TextRep      { get; }
+	private IDbConnection  DbConnection => dbm.GetConnection();
 
 	public void SetEditionId(uint editionId)
 	{
@@ -117,9 +118,9 @@ public class SqeApi
 		var oldArteFactId = GetArtefactId(fileInfo.SqeImageId, fileInfo.FileName);
 		_artefactRep.DeleteArtefactAsync(_userInfo, oldArteFactId);
 
-		var data = TextRep.GetConnection()
-						  .QueryFirst<ImageData>(
-								  $@"select native_width as NativeWidth,
+		var data = dbm.GetConnection()
+					  .QueryFirst<ImageData>(
+							  $@"select native_width as NativeWidth,
 											native_height as NativeHeight,
 											dpi as Dpi
 											from SQE_image where sqe_image_id = {
@@ -153,22 +154,21 @@ public class SqeApi
 						   .Result;
 	}
 
-	public uint GetArtefactId(uint sqeImageId, string name) => TextRep.GetConnection()
-																	  .QueryFirstOrDefault<uint>(
-																			  "select artefact_id"
-																			  + " from artefact_shape"
-																			  + " join artefact_shape_owner using (artefact_shape_id)"
-																			  + " join artefact_data using (artefact_id)"
-																			  + $" where sqe_image_id={
-																				  sqeImageId
-																			  }"
-																			  + $" and artefact_shape_owner.edition_id={
-																				  _userInfo
-																						  .EditionId
-																			  }"
-																			  + $" and artefact_data.name =\"{
-																				  name
-																			  }\"");
+	public uint GetArtefactId(uint sqeImageId, string name) => dbm.GetConnection()
+																  .QueryFirstOrDefault<uint>(
+																		  "select artefact_id"
+																		  + " from artefact_shape"
+																		  + " join artefact_shape_owner using (artefact_shape_id)"
+																		  + " join artefact_data using (artefact_id)"
+																		  + $" where sqe_image_id={
+																			  sqeImageId
+																		  }"
+																		  + $" and artefact_shape_owner.edition_id={
+																			  _userInfo.EditionId
+																		  }"
+																		  + $" and artefact_data.name =\"{
+																			  name
+																		  }\"");
 
 	public SignData CreateSigns(
 			uint             lineId

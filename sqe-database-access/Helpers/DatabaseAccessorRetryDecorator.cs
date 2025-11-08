@@ -198,16 +198,21 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 		// MySQL error codes that indicate transient errors
 		return ex.ErrorCode switch
 			   {
+					   // Error 1205: Lock wait timeout exceeded
 					   MySqlErrorCode.LockWaitTimeout => true
-					   , // Error 1205: Lock wait timeout exceeded
-					   MySqlErrorCode.LockDeadlock => true
-					   , // Error 1213: Deadlock found when trying to get lock
-					   MySqlErrorCode.ConnectionCountError => true
-					   , // Error 1203: User already has more than 'max_user_connections'
-					   MySqlErrorCode.LockOrActiveTransaction => true
-					   , _ when ex.Number == 1040             => true
-					   , // Error 1040: Too many connections (not in enum)
-					   _ => false
+
+					   // Error 1213: Deadlock found when trying to get lock
+					   , MySqlErrorCode.LockDeadlock => true
+
+					   // Error 1203: User already has more than 'max_user_connections'
+					   , MySqlErrorCode.ConnectionCountError => true
+
+					   // Error 1192
+					   , MySqlErrorCode.LockOrActiveTransaction => true
+
+					   // Error 1040: Too many connections (not in enum)
+					   , _ when ex.Number == 1040 => true
+					   , _                        => false
 					   ,
 			   };
 	}
