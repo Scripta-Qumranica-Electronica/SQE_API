@@ -722,6 +722,12 @@ export interface CatalogueMatchListDTO {
     matches: Array<CatalogueMatchDTO>;
 }
 
+export interface ServiceStatusDTO {
+    service?: string;
+    statusMessage?: string;
+    isHealthy: boolean;
+}
+
 export interface ImageStackDTO {
     id?: number;
     images: Array<ImageDTO>;

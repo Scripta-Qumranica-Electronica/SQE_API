@@ -132,6 +132,7 @@ import {
 	CatalogueMatchInputDTO,
 	CatalogueMatchDTO,
 	CatalogueMatchListDTO,
+	ServiceStatusDTO,
 	ImageStackDTO,
 	ImagedObjectDTO,
 	ImagedObjectListDTO,
@@ -454,6 +455,30 @@ export class SignalRUtilities {
 	 */
     public async putV1UsersDataStore(data: UserDataStoreDTO): Promise<void> {
         return await this._connection.invoke('PutV1UsersDataStore', data);
+    }
+
+    /**
+	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
+	 *	 it attempts to construct a valid polygon that matches the original
+	 *	 as closely as possible.
+	 *
+	 * @param payload - JSON object with the WKT polygon to validate
+	 *
+	 */
+    public async getV1AdminDbAccessible(): Promise<ServiceStatusDTO> {
+        return await this._connection.invoke('GetV1AdminDbAccessible');
+    }
+
+    /**
+	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
+	 *	 it attempts to construct a valid polygon that matches the original
+	 *	 as closely as possible.
+	 *
+	 * @param payload - JSON object with the WKT polygon to validate
+	 *
+	 */
+    public async getV1AdminEmailerFunctioning(): Promise<ServiceStatusDTO> {
+        return await this._connection.invoke('GetV1AdminEmailerFunctioning');
     }
 
     /**

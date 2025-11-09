@@ -75,6 +75,7 @@ public class Startup
 				});
 
 		// configure DI for application services
+		services.AddScoped<IAdminService, AdminService>();
 		services.AddScoped<IUserService, UserService>();
 		services.AddScoped<IEditionService, EditionService>();
 		services.AddScoped<IImagedObjectService, ImagedObjectService>();
@@ -106,6 +107,7 @@ public class Startup
 
 		services.AddTransient<IDatabaseWriter, DatabaseWriter>();
 
+		services.AddTransient<IAdminRepository, AdminRepository>();
 		services.AddTransient<IUserRepository, UserRepository>();
 		services.AddTransient<IEditionRepository, EditionRepository>();
 		services.AddTransient<IImagedObjectRepository, ImagedObjectRepository>();

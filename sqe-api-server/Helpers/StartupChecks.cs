@@ -96,8 +96,7 @@ public static class StartupChecks
 					, securityEnum);
 
 			client.Authenticate(user, pwd);
-			var dispose = client.DisconnectAsync(true);
-			dispose.Wait();
+			client.Disconnect(true);
 		}
 	}
 
