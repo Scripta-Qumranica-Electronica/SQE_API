@@ -20,22 +20,16 @@ public class AdminController : ControllerBase
 	}
 
 	/// <summary>
-	///  Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	///  it attempts to construct a valid polygon that matches the original
-	///  as closely as possible.
+	///  Runs a health check on the database.
 	/// </summary>
-	/// <param name="payload">JSON object with the WKT polygon to validate</param>
 	[HttpGet("v1/[controller]/db-accessible")]
 	public async Task<ActionResult<ServiceStatusDTO>> GetDatabaseStatusAsync()
 		=> await _adminService.GetDatabaseStatusAsync(
 				await _userService.GetCurrentUserObjectAsync(null));
 
 	/// <summary>
-	///  Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	///  it attempts to construct a valid polygon that matches the original
-	///  as closely as possible.
+	///  Attempts to send an email to the requesting user.
 	/// </summary>
-	/// <param name="payload">JSON object with the WKT polygon to validate</param>
 	[HttpGet("v1/[controller]/emailer-functioning")]
 	public async Task<ActionResult<ServiceStatusDTO>> GetEmailerStatusAsync()
 		=> await _adminService.GetEmailStatusAsync(

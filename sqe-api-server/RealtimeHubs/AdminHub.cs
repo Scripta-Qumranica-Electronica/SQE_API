@@ -19,11 +19,8 @@ namespace SQE.API.Server.RealtimeHubs;
 public partial class MainHub
 {
 	/// <summary>
-	///  Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	///  it attempts to construct a valid polygon that matches the original
-	///  as closely as possible.
+	///  Runs a health check on the database.
 	/// </summary>
-	/// <param name="payload">JSON object with the WKT polygon to validate</param>
 	[Authorize]
 	public async Task<ServiceStatusDTO> GetV1AdminDbAccessible()
 
@@ -47,11 +44,8 @@ public partial class MainHub
 	}
 
 	/// <summary>
-	///  Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	///  it attempts to construct a valid polygon that matches the original
-	///  as closely as possible.
+	///  Attempts to send an email to the requesting user.
 	/// </summary>
-	/// <param name="payload">JSON object with the WKT polygon to validate</param>
 	[Authorize]
 	public async Task<ServiceStatusDTO> GetV1AdminEmailerFunctioning()
 

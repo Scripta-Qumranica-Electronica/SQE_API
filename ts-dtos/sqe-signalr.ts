@@ -458,11 +458,9 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	 *	 it attempts to construct a valid polygon that matches the original
-	 *	 as closely as possible.
+	 * Runs a health check on the database.
 	 *
-	 * @param payload - JSON object with the WKT polygon to validate
+	 *
 	 *
 	 */
     public async getV1AdminDbAccessible(): Promise<ServiceStatusDTO> {
@@ -470,11 +468,9 @@ export class SignalRUtilities {
     }
 
     /**
-	 * Checks a WKT polygon to ensure validity. If the polygon is invalid,
-	 *	 it attempts to construct a valid polygon that matches the original
-	 *	 as closely as possible.
+	 * Attempts to send an email to the requesting user.
 	 *
-	 * @param payload - JSON object with the WKT polygon to validate
+	 *
 	 *
 	 */
     public async getV1AdminEmailerFunctioning(): Promise<ServiceStatusDTO> {

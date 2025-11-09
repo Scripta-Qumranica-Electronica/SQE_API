@@ -93,132 +93,274 @@ public class EditionRepository(IDatabaseAccessor dba) : IEditionRepository
 		var editions = new List<Edition>();
 		Edition lastEdition;
 
-		await dba.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
-				EditionListQuery.GetQuery(
-						userId.HasValue
-						, editionId.HasValue
-						, published
-						, personal)
-				, (editionGroup, editor) =>
-				  {
-					  // Set the copyrights for the previous, and now complete, edition before making the new one
-					  if ((editions.LastOrDefault()?.EditionId != null)
-						  && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
-					  {
-						  lastEdition = editions.Last();
-
-						  lastEdition.Copyright = Licence.printLicence(
-								  lastEdition.CopyrightHolder
-								  , string.IsNullOrEmpty(lastEdition.Collaborators)
-										  ? string.Join(
-												  ", "
-												  , lastEdition.Editors.Select(y =>
-																			   {
-																				   if ((y.Forename
-																						== null)
-																					   && (y.Surname
-																						   == null))
-																				   {
-																					   return y
-																							   .EditorEmail;
-																				   }
-
-																				   return $@"{
-																					   y.Forename
-																				   } {
-																					   y.Surname
-																				   }".Trim();
-																			   }))
-										  : lastEdition.Collaborators);
-					  }
-
-					  if ((editions.LastOrDefault()?.EditionId == null)
-						  || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
-					  {
-						  // Now start building the new edition
-						  lastEdition = new Edition
-						  {
-								  Name = editionGroup.Name
-								  , Width = editionGroup.Width
-								  , Height = editionGroup.Height
-								  , XOrigin = editionGroup.XOrigin
-								  , YOrigin = editionGroup.YOrigin
-								  , PPI = editionGroup.PPI
-								  , ManuscriptMetricsEditor = editionGroup.ManuscriptMetricsEditor
-								  , Collaborators = editionGroup.Collaborators
-								  , Copyright = null
-								  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
-								  CopyrightHolder = editionGroup.CopyrightHolder
-								  , EditionDataEditorId = editionGroup.EditionDataEditorId
-								  , EditionId = editionGroup.EditionId
-								  , IsPublic = editionGroup.IsPublic
-								  , PublicationDate = editionGroup.PublicationDate
-								  , LastEdit = editionGroup.LastEdit
-								  , Locked = editionGroup.Locked
-								  , Owner =
-										  new User
-										  {
-												  Email = editionGroup.CurrentEmail
-												  , UserId = editionGroup.CurrentUserId
-												  ,
-										  }
-								  , Permission =
-										  new Permission
-										  {
-												  IsAdmin = editionGroup.CurrentIsAdmin
-												  , MayLock = editionGroup.CurrentMayLock
-												  , MayWrite = editionGroup.CurrentMayWrite
-												  , MayRead = editionGroup.CurrentMayRead
-												  ,
-										  }
-								  , Thumbnail = editionGroup.Thumbnail
-								  , ManuscriptId = editionGroup.ManuscriptId
-								  , Editors = new List<EditorWithPermissions>()
-								  ,
-						  };
-
-						  editions.Add(lastEdition);
-					  }
-
-					  // Add the new editor to this edition
-					  editions.Last().Editors.Add(editor);
-
-					  return editions.Last();
-				  }
-				, new
-				{
-						UserId = userId
-						, EditionId = editionId
-						,
-				}
-				, splitOn: "EditorId");
-
-		if (editions.Count <= 0)
-			return editions;
-
+		if (published)
 		{
-			lastEdition = editions.Last();
+			await dba.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
+					PublishedEditionListQuery.GetQuery()
+					, (editionGroup, editor) =>
+					  {
+						  // Set the copyrights for the previous, and now complete, edition before making the new one
+						  if ((editions.LastOrDefault()?.EditionId != null)
+							  && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+						  {
+							  lastEdition = editions.Last();
 
-			lastEdition.Copyright = Licence.printLicence(
-					lastEdition.CopyrightHolder
-					, string.IsNullOrEmpty(lastEdition.Collaborators)
-							? string.Join(
-									", "
-									, lastEdition.Editors.Select(y =>
-																 {
-																	 if ((y.Forename == null)
-																		 && (y.Surname == null))
+							  lastEdition.Copyright = Licence.printLicence(
+									  lastEdition.CopyrightHolder
+									  , string.IsNullOrEmpty(lastEdition.Collaborators)
+											  ? string.Join(
+													  ", "
+													  , lastEdition.Editors.Select(y =>
+																				   {
+																					   if ((y
+																									.Forename
+																							== null)
+																						   && (y
+																									   .Surname
+																							   == null))
+																					   {
+																						   return y
+																								   .EditorEmail;
+																					   }
+
+																					   return $@"{
+																						   y.Forename
+																					   } {
+																						   y.Surname
+																					   }".Trim();
+																				   }))
+											  : lastEdition.Collaborators);
+						  }
+
+						  if ((editions.LastOrDefault()?.EditionId == null)
+							  || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+						  {
+							  // Now start building the new edition
+							  lastEdition = new Edition
+							  {
+									  Name = editionGroup.Name
+									  , Width = editionGroup.Width
+									  , Height = editionGroup.Height
+									  , XOrigin = editionGroup.XOrigin
+									  , YOrigin = editionGroup.YOrigin
+									  , PPI = editionGroup.PPI
+									  , ManuscriptMetricsEditor =
+											  editionGroup.ManuscriptMetricsEditor
+									  , Collaborators = editionGroup.Collaborators
+									  , Copyright = null
+									  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+									  CopyrightHolder = editionGroup.CopyrightHolder
+									  , EditionDataEditorId = editionGroup.EditionDataEditorId
+									  , EditionId = editionGroup.EditionId
+									  , IsPublic = editionGroup.IsPublic
+									  , PublicationDate = editionGroup.PublicationDate
+									  , LastEdit = editionGroup.LastEdit
+									  , Locked = editionGroup.Locked
+									  , Owner =
+											  new User
+											  {
+													  Email = editionGroup.CurrentEmail
+													  , UserId = editionGroup.CurrentUserId
+													  ,
+											  }
+									  , Permission =
+											  new Permission
+											  {
+													  IsAdmin = editionGroup.CurrentIsAdmin
+													  , MayLock =
+															  editionGroup.CurrentMayLock
+													  , MayWrite =
+															  editionGroup.CurrentMayWrite
+													  , MayRead =
+															  editionGroup.CurrentMayRead
+													  ,
+											  }
+									  , Thumbnail = editionGroup.Thumbnail
+									  , ManuscriptId = editionGroup.ManuscriptId
+									  , Editors = new List<EditorWithPermissions>()
+									  ,
+							  };
+
+							  editions.Add(lastEdition);
+						  }
+
+						  // Add the new editor to this edition
+						  editions.Last().Editors.Add(editor);
+
+						  return editions.Last();
+					  }
+					, new
+					{
+							UserId = userId
+							, EditionId = editionId
+							,
+					}
+					, splitOn: "EditorId");
+
+			if (editions.Count <= 0)
+				return editions;
+
+			{
+				lastEdition = editions.Last();
+
+				lastEdition.Copyright = Licence.printLicence(
+						lastEdition.CopyrightHolder
+						, string.IsNullOrEmpty(lastEdition.Collaborators)
+								? string.Join(
+										", "
+										, lastEdition.Editors.Select(y =>
 																	 {
-																		 return y.EditorEmail;
-																	 }
+																		 if ((y.Forename == null)
+																			 && (y.Surname == null))
+																		 {
+																			 return y.EditorEmail;
+																		 }
 
-																	 return $@"{
-																		 y.Forename
-																	 } {
-																		 y.Surname
-																	 }".Trim();
-																 }))
-							: lastEdition.Collaborators);
+																		 return $@"{
+																			 y.Forename
+																		 } {
+																			 y.Surname
+																		 }".Trim();
+																	 }))
+								: lastEdition.Collaborators);
+			}
+		}
+
+		if (personal)
+		{
+			await dba.QueryAsync<EditionListQuery.Result, EditorWithPermissions, Edition>(
+					EditionListQuery.GetQuery(
+							userId.HasValue
+							, editionId.HasValue
+							, false
+							, personal)
+					, (editionGroup, editor) =>
+					  {
+						  // Set the copyrights for the previous, and now complete, edition before making the new one
+						  if ((editions.LastOrDefault()?.EditionId != null)
+							  && (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+						  {
+							  lastEdition = editions.Last();
+
+							  lastEdition.Copyright = Licence.printLicence(
+									  lastEdition.CopyrightHolder
+									  , string.IsNullOrEmpty(lastEdition.Collaborators)
+											  ? string.Join(
+													  ", "
+													  , lastEdition.Editors.Select(y =>
+																				   {
+																					   if ((y
+																									.Forename
+																							== null)
+																						   && (y
+																									   .Surname
+																							   == null))
+																					   {
+																						   return y
+																								   .EditorEmail;
+																					   }
+
+																					   return $@"{
+																						   y.Forename
+																					   } {
+																						   y.Surname
+																					   }".Trim();
+																				   }))
+											  : lastEdition.Collaborators);
+						  }
+
+						  if ((editions.LastOrDefault()?.EditionId == null)
+							  || (editions.LastOrDefault()?.EditionId != editionGroup.EditionId))
+						  {
+							  // Now start building the new edition
+							  lastEdition = new Edition
+							  {
+									  Name = editionGroup.Name
+									  , Width = editionGroup.Width
+									  , Height = editionGroup.Height
+									  , XOrigin = editionGroup.XOrigin
+									  , YOrigin = editionGroup.YOrigin
+									  , PPI = editionGroup.PPI
+									  , ManuscriptMetricsEditor =
+											  editionGroup.ManuscriptMetricsEditor
+									  , Collaborators = editionGroup.Collaborators
+									  , Copyright = null
+									  , //Licence.printLicence(editionGroup.CopyrightHolder, editionGroup.Collaborators),
+									  CopyrightHolder = editionGroup.CopyrightHolder
+									  , EditionDataEditorId = editionGroup.EditionDataEditorId
+									  , EditionId = editionGroup.EditionId
+									  , IsPublic = editionGroup.IsPublic
+									  , PublicationDate = editionGroup.PublicationDate
+									  , LastEdit = editionGroup.LastEdit
+									  , Locked = editionGroup.Locked
+									  , Owner =
+											  new User
+											  {
+													  Email = editionGroup.CurrentEmail
+													  , UserId = editionGroup.CurrentUserId
+													  ,
+											  }
+									  , Permission =
+											  new Permission
+											  {
+													  IsAdmin = editionGroup.CurrentIsAdmin
+													  , MayLock =
+															  editionGroup.CurrentMayLock
+													  , MayWrite =
+															  editionGroup.CurrentMayWrite
+													  , MayRead =
+															  editionGroup.CurrentMayRead
+													  ,
+											  }
+									  , Thumbnail = editionGroup.Thumbnail
+									  , ManuscriptId = editionGroup.ManuscriptId
+									  , Editors = new List<EditorWithPermissions>()
+									  ,
+							  };
+
+							  editions.Add(lastEdition);
+						  }
+
+						  // Add the new editor to this edition
+						  editions.Last().Editors.Add(editor);
+
+						  return editions.Last();
+					  }
+					, new
+					{
+							UserId = userId
+							, EditionId = editionId
+							,
+					}
+					, splitOn: "EditorId");
+
+			if (editions.Count <= 0)
+				return editions;
+
+			{
+				lastEdition = editions.Last();
+
+				lastEdition.Copyright = Licence.printLicence(
+						lastEdition.CopyrightHolder
+						, string.IsNullOrEmpty(lastEdition.Collaborators)
+								? string.Join(
+										", "
+										, lastEdition.Editors.Select(y =>
+																	 {
+																		 if ((y.Forename == null)
+																			 && (y.Surname == null))
+																		 {
+																			 return y.EditorEmail;
+																		 }
+
+																		 return $@"{
+																			 y.Forename
+																		 } {
+																			 y.Surname
+																		 }".Trim();
+																	 }))
+								: lastEdition.Collaborators);
+			}
 		}
 
 		return editions;

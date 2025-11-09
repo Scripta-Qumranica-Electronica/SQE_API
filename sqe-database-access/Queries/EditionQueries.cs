@@ -331,6 +331,110 @@ ORDER BY manuscript_data.name, edition.edition_id
 	}
 }
 
+internal class PublishedEditionListQuery
+{
+	private const string _baseQuery = @"
+SELECT  edition.edition_id AS EditionId,
+        edition.copyright_holder AS CopyrightHolder,
+        edition.collaborators AS Collaborators,
+
+        edition_editor.user_id AS CurrentUserId,
+        user.email AS CurrentEmail,
+        edition_editor.is_admin AS CurrentIsAdmin,
+        edition_editor.may_lock AS CurrentMayLock,
+        edition_editor.may_write AS CurrentMayWrite,
+        edition_editor.may_read AS CurrentMayRead,
+
+        manuscript_data.name AS Name,
+        manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
+
+        manuscript_metrics.width AS Width,
+        manuscript_metrics.height AS Height,
+        manuscript_metrics.x_origin AS XOrigin,
+        manuscript_metrics.y_origin AS YOrigin,
+        manuscript_metrics.pixels_per_inch AS PPI,
+        manuscript_metrics_owner.edition_editor_id AS ManuscriptMetricsEditor,
+
+        im.thumbnail_url AS Thumbnail,
+
+        edition.manuscript_id AS ManuscriptId,
+        edition.locked AS Locked,
+        edition.public AS IsPublic,
+		edition.publication_date AS PublicationDate,
+        edition.manuscript_id AS ScrollId,
+        edition.publication_date AS LastEdit,
+
+        edition_editor.edition_editor_id EditorId,
+        user.email AS EditorEmail,
+        user.forename AS Forename,
+        user.surname AS Surname,
+        user.organization AS Organization,
+        edition_editor.is_admin AS IsAdmin,
+        edition_editor.may_lock AS MayLock,
+        edition_editor.may_write AS MayWrite,
+        edition_editor.may_read AS MayRead
+
+FROM edition
+    LEFT JOIN edition_editor ON edition_editor.edition_id = edition.edition_id
+        #AND edition_editor.user_id = @UserId
+    LEFT JOIN user ON user.user_id = edition_editor.user_id
+
+    # Get the edition manuscript information
+         JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = edition.edition_id
+         JOIN manuscript_data USING(manuscript_data_id)
+
+    # Get the edition manuscript metrics
+        JOIN manuscript_metrics_owner ON manuscript_metrics_owner.edition_id = edition.edition_id
+        JOIN manuscript_metrics USING(manuscript_metrics_id)
+
+    # Get a thumbnail if possible
+         LEFT JOIN (
+    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT_WS('', proxy, url, SQE_image.filename)) AS thumbnail_url
+    FROM iaa_edition_catalog
+             JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
+             JOIN SQE_image ON SQE_image.image_catalog_id = image_to_iaa_edition_catalog.image_catalog_id AND SQE_image.type = 0
+             JOIN image_urls USING(image_urls_id)
+    WHERE iaa_edition_catalog.edition_side = 0
+    GROUP BY manuscript_id
+    LIMIT 1
+) AS im ON im.manuscript_id = edition.manuscript_id
+
+WHERE edition.archived != 1 AND edition.public = 1
+
+# Add some ordering so sorting makes more sense (adding the ORDER BY surprisingly makes the query faster)
+ORDER BY manuscript_data.name, edition.edition_id
+";
+
+	public static string GetQuery() => _baseQuery;
+
+	internal class Result
+	{
+		public uint      EditionId               { get; set; }
+		public bool      CurrentIsAdmin          { get; set; }
+		public string    Name                    { get; set; }
+		public uint      EditionDataEditorId     { get; set; }
+		public uint      Width                   { get; set; }
+		public uint      Height                  { get; set; }
+		public int       XOrigin                 { get; set; }
+		public int       YOrigin                 { get; set; }
+		public uint      PPI                     { get; set; }
+		public uint      ManuscriptMetricsEditor { get; set; }
+		public uint      ManuscriptId            { get; set; }
+		public string    Thumbnail               { get; set; }
+		public bool      Locked                  { get; set; }
+		public bool      CurrentMayLock          { get; set; }
+		public bool      CurrentMayWrite         { get; set; }
+		public bool      CurrentMayRead          { get; set; }
+		public DateTime? LastEdit                { get; set; }
+		public uint      CurrentUserId           { get; set; }
+		public string    CurrentEmail            { get; set; }
+		public string    Collaborators           { get; set; }
+		public string    CopyrightHolder         { get; set; }
+		public bool      IsPublic                { get; set; }
+		public DateTime? PublicationDate         { get; set; }
+	}
+}
+
 internal class EditionQuery
 {
 	private const string _baseQuery = @"
