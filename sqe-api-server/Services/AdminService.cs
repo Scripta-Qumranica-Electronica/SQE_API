@@ -34,7 +34,8 @@ public class AdminService(
 			{
 					service = dbServiceName
 					, isHealthy = dbStatus
-					, statusMessage = "",
+					, statusMessage = ""
+					,
 			};
 		}
 		catch (Exception e)
@@ -43,7 +44,8 @@ public class AdminService(
 			{
 					service = dbServiceName
 					, isHealthy = false
-					, statusMessage = e.Message,
+					, statusMessage = e.Message
+					,
 			};
 		}
 	}
@@ -71,7 +73,8 @@ public class AdminService(
 			{
 					service = emailServiceName
 					, isHealthy = true
-					, statusMessage = "",
+					, statusMessage = ""
+					,
 			};
 		}
 		catch (Exception e)
@@ -80,7 +83,8 @@ public class AdminService(
 			{
 					service = emailServiceName
 					, isHealthy = false
-					, statusMessage = e.Message,
+					, statusMessage = e.Message
+					,
 			};
 		}
 	}

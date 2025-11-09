@@ -1,10 +1,10 @@
 # This Dockerfile builds the HTTP container.
 # Note that you need to supply .. as the build context when building an image
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS base
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine AS base
 WORKDIR /app
 EXPOSE 80
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 
 COPY ./sqe-api-server/sqe-api-server.csproj ./sqe-api-server/
