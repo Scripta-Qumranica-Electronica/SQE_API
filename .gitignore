@@ -5,6 +5,9 @@ obj/
 .idea
 .vscode
 .tool-versions
+.envrc
+NIX_SETUP.md
+shell.nix
 /api-test/Properties/launchSettings.json
 *.user
 /Utilities/GenerateTypescriptDTOs/Properties/launchSettings.json

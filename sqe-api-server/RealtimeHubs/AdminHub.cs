@@ -6,65 +6,57 @@
  * `sqe-realtime-hub-builder` is run.
  */
 
-using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
-using SQE.API.Server.Helpers;
+using SQE.API.Server.Services;
+using Microsoft.AspNetCore.SignalR;
+
 using SQE.DatabaseAccess.Helpers;
 
-namespace SQE.API.Server.RealtimeHubs;
+using System.Text.Json;
 
-public partial class MainHub
+using SQE.API.Server.Helpers;
+
+namespace SQE.API.Server.RealtimeHubs
 {
-	/// <summary>
+    public partial class MainHub
+    {
+/// <summary>
 	///  Runs a health check on the database.
 	/// </summary>
-	[Authorize]
-	public async Task<ServiceStatusDTO> GetV1AdminDbAccessible()
+[Authorize]
+public async Task<ServiceStatusDTO> GetV1AdminDbAccessible()
 
-	{
-		try
-		{
-			return await _adminService.GetDatabaseStatusAsync(
-					await _userService.GetCurrentUserObjectAsync(null));
-		}
-		catch (ApiException err)
-		{
-			throw new HubException(
-					JsonSerializer.Serialize(
-							new HttpExceptionMiddleware.ApiExceptionError(
-									nameof(err)
-									, err.Error
-									, err is IExceptionWithData exceptionWithData
-											? exceptionWithData.CustomReturnedData
-											: null)));
-		}
-	}
+    {
+        try
+        {
+             return  await _adminService.GetDatabaseStatusAsync(await _userService.GetCurrentUserObjectAsync(null));
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
 
-	/// <summary>
+
+/// <summary>
 	///  Attempts to send an email to the requesting user.
 	/// </summary>
-	[Authorize]
-	public async Task<ServiceStatusDTO> GetV1AdminEmailerFunctioning()
+[Authorize]
+public async Task<ServiceStatusDTO> GetV1AdminEmailerFunctioning()
 
-	{
-		try
-		{
-			return await _adminService.GetEmailStatusAsync(
-					await _userService.GetCurrentUserObjectAsync(null));
-		}
-		catch (ApiException err)
-		{
-			throw new HubException(
-					JsonSerializer.Serialize(
-							new HttpExceptionMiddleware.ApiExceptionError(
-									nameof(err)
-									, err.Error
-									, err is IExceptionWithData exceptionWithData
-											? exceptionWithData.CustomReturnedData
-											: null)));
-		}
+    {
+        try
+        {
+             return  await _adminService.GetEmailStatusAsync(await _userService.GetCurrentUserObjectAsync(null));
+        }
+        catch (ApiException err)
+        {
+            throw new HubException(JsonSerializer.Serialize(new HttpExceptionMiddleware.ApiExceptionError(nameof(err), err.Error, err is IExceptionWithData exceptionWithData ? exceptionWithData.CustomReturnedData : null)));
+        }
+    }
+
+
 	}
 }

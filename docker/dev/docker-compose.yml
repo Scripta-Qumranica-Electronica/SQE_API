@@ -5,13 +5,14 @@ version: '3.7'
 services:
     sqe-database:
         image: qumranica/sqe-database:0.32.3
+        platform: linux/amd64
         container_name: SQE_Database
         # These environment variables match the default db connection settings for the project.
         environment:
-            - MYSQL_ROOT_PASSWORD=none
-            - MYSQL_USER=sqe_user
-            - MYSQL_PASSWORD=mysecretpw
-            - MYSQL_DATABASE=SQE
+            MYSQL_ROOT_PASSWORD: none
+            MYSQL_USER: sqe_user
+            MYSQL_PASSWORD: mysecretpw
+            MYSQL_DATABASE: SQE
         expose:
             - "3306"
         ports:
