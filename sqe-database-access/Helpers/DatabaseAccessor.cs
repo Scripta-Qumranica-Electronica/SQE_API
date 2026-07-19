@@ -15,6 +15,15 @@ namespace SQE.DatabaseAccess.Helpers;
 public interface IDatabaseAccessor
 {
 	void Dispose();
+
+	/// <summary>
+	///  True when a transaction is currently open on this accessor (including a nested one).
+	///  Used to keep the retry policy at the transaction boundary: individual statements must not
+	///  be retried in isolation while a transaction is active, because a transient failure such as
+	///  a deadlock rolls back the whole transaction on the server.
+	/// </summary>
+	bool InTransaction { get; }
+
 	void BeginTransaction();
 	Task BeginTransactionAsync();
 	void CommitTransaction();
@@ -92,6 +101,8 @@ public class DatabaseAccessor(IDatabaseManager dbm, IDatabaseWriter dbw) : IData
 	private          DbConnection?   _connection;
 	private          IDbTransaction? _transaction;
 	private          uint            _transactionNest;
+
+	public bool InTransaction => _transactionNest > 0;
 
 	public void Dispose()
 	{

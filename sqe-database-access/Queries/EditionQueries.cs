@@ -2,171 +2,6 @@
 
 namespace SQE.DatabaseAccess.Queries;
 
-internal class EditionGroupQuery
-{
-	private const string _baseQuery = @"
-SELECT DISTINCTROW ed2.edition_id AS EditionId,
-        ed2.copyright_holder AS CopyrightHolder,
-        ed2.collaborators AS Collaborators,
-
-        ed2.user_id AS CurrentUserId,
-        ed2.email AS CurrentEmail,
-        ed2.is_admin AS CurrentIsAdmin,
-        ed2.may_lock AS CurrentMayLock,
-        ed2.may_write AS CurrentMayWrite,
-        ed2.may_read AS CurrentMayRead,
-
-        manuscript_data.name AS Name,
-        manuscript_data_owner.edition_editor_id AS EditionDataEditorId,
-
-        manuscript_metrics.width AS Width,
-        manuscript_metrics.height AS Height,
-        manuscript_metrics.x_origin AS XOrigin,
-        manuscript_metrics.y_origin AS YOrigin,
-        manuscript_metrics.pixels_per_inch AS PPI,
-        manuscript_metrics_owner.edition_editor_id AS ManuscriptMetricsEditor,
-
-        im.thumbnail_url AS Thumbnail,
-
-        ed2.manuscript_id AS ManuscriptId,
-        ed2.locked AS Locked,
-        ed2.public AS IsPublic,
-		ed2.publication_date AS PublicationDate,
-        ed2.manuscript_id AS ScrollId,
-        last.last_edit AS LastEdit,
-
-        other_editors.edition_editor_id EditorId,
-        other_editors.email AS EditorEmail,
-        other_editors.forename AS Forename,
-        other_editors.surname AS Surname,
-        other_editors.organization AS Organization,
-        other_editors.is_admin AS IsAdmin,
-        other_editors.may_lock AS MayLock,
-        other_editors.may_write AS MayWrite,
-        other_editors.may_read AS MayRead
-
-FROM edition AS ed1
-         # Get every edition of the same manuscript
-         JOIN (
-    SELECT  edition.edition_id,
-            edition.copyright_holder,
-            edition.collaborators,
-            edition.locked,
-            edition.manuscript_id,
-            edition.public,
-            user.user_id,
-            user.email,
-            user.forename,
-            user.surname,
-            user.organization,
-            edition_editor.edition_editor_id,
-            edition_editor.is_admin,
-            edition_editor.may_lock,
-            edition_editor.may_write,
-            edition_editor.may_read
-    FROM edition
-             JOIN edition_editor USING(edition_id)
-             JOIN user USING(user_id)
-) AS ed2 ON ed1.manuscript_id = ed2.manuscript_id
-             AND (ed2.public = 1 $UserFilter)
-
-
-    # Get the current user details
-         LEFT JOIN (
-    SELECT  user.user_id,
-            user.email,
-            user.forename,
-            user.surname,
-            user.organization,
-            edition_editor.is_admin,
-            edition_editor.may_lock,
-            edition_editor.may_write,
-            edition_editor.may_read,
-            edition_editor.edition_id,
-            edition_editor.edition_editor_id
-    FROM edition_editor
-             JOIN user USING(user_id)
-) AS other_editors ON other_editors.edition_id = ed2.edition_id
-
-    # Get the edition manuscript information
-         JOIN manuscript_data_owner ON manuscript_data_owner.edition_id = ed2.edition_id
-         JOIN manuscript_data USING(manuscript_data_id)
-
-    # Get the edition manuscript metrics
-        JOIN manuscript_metrics_owner ON manuscript_metrics_owner.edition_id = ed2.edition_id
-        JOIN manuscript_metrics USING(manuscript_metrics_id)
-
-    # Get the last edit date/time
-         LEFT JOIN (
-    SELECT edition_id, MAX(time) AS last_edit
-    FROM edition_editor
-             JOIN main_action USING(edition_id)
-    GROUP BY edition_id
-) AS last ON last.edition_id = ed2.edition_id
-
-    # Get a thumbnail if possible
-         LEFT JOIN (
-    SELECT iaa_edition_catalog.manuscript_id, MIN(CONCAT_WS('', proxy, url, SQE_image.filename)) AS thumbnail_url
-    FROM edition
-             JOIN iaa_edition_catalog USING(manuscript_id)
-             JOIN image_to_iaa_edition_catalog USING (iaa_edition_catalog_id)
-             JOIN SQE_image ON SQE_image.image_catalog_id = image_to_iaa_edition_catalog.image_catalog_id AND SQE_image.type = 0
-             JOIN image_urls USING(image_urls_id)
-    WHERE iaa_edition_catalog.edition_side = 0
-    GROUP BY manuscript_id
-) AS im ON im.manuscript_id = ed2.manuscript_id
-
-WHERE ed1.archived != 1 $Where
-
-# Add some ordering so sorting makes more sense (adding the ORDER BY surprisingly makes the query faster)
-ORDER BY manuscript_data.manuscript_id, ed2.edition_id
-";
-
-	public static string GetQuery(bool limitUser, bool limitScrolls)
-	{
-		// Build the WHERE clauses
-		var where = limitScrolls
-				? "AND (ed1.edition_id = @EditionId"
-				: "";
-
-		var userFilter = limitUser
-				? "OR (ed2.user_id = @UserId AND ed2.may_read = 1))"
-				: limitScrolls
-						? ")"
-						: "";
-
-		return _baseQuery.Replace("$Where", where).Replace("$UserFilter", userFilter);
-	}
-
-	internal class Result
-	{
-		public uint      EditionId               { get; set; }
-		public bool      CurrentIsAdmin          { get; set; }
-		public string    Name                    { get; set; }
-		public uint      EditionDataEditorId     { get; set; }
-		public uint      Width                   { get; set; }
-		public uint      Height                  { get; set; }
-		public int       XOrigin                 { get; set; }
-		public int       YOrigin                 { get; set; }
-		public uint      PPI                     { get; set; }
-		public uint      ManuscriptMetricsEditor { get; set; }
-		public uint      ManuscriptId            { get; set; }
-		public string    Thumbnail               { get; set; }
-		public bool      Locked                  { get; set; }
-		public bool      CurrentMayLock          { get; set; }
-		public bool      CurrentMayWrite         { get; set; }
-		public bool      CurrentMayRead          { get; set; }
-		public DateTime? LastEdit                { get; set; }
-		public uint      CurrentUserId           { get; set; }
-		public string    CurrentEmail            { get; set; }
-		public string    Collaborators           { get; set; }
-		public string    CopyrightHolder         { get; set; }
-		public bool      IsPublic                { get; set; }
-
-		public DateTime? PublicationDate { get; set; }
-	}
-}
-
 internal class EditionListQuery
 {
 	private const string _baseQuery = @"
@@ -590,6 +425,16 @@ WHERE edition_id = @EditionId";
 		public uint   ManuscriptId     { get; set; }
 		public string Name             { get; set; }
 	}
+}
+
+internal class EditionManuscriptIdQuery
+{
+	private const string _baseQuery = @"
+SELECT manuscript_id
+FROM edition
+WHERE edition_id = @EditionId AND archived != 1";
+
+	public static string GetQuery() => _baseQuery;
 }
 
 //     internal static class EditionLockQuery

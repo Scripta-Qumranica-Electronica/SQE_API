@@ -3107,43 +3107,53 @@ WHERE text_fragment_to_line.line_id = @LineId AND text_fragment_to_line_owner.ed
 			UserInfo editionUser
 			, uint   signInterpretationId)
 	{
-		using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+		// Use the DatabaseAccessor's reference-counted transaction (MySqlConnector no longer
+		// supports the ambient System.Transactions.TransactionScope pattern used previously).
+		// When this method is called inside an outer transaction (the usual case), Begin/Commit
+		// simply nest; a failure rolls the whole operation back.
+		await dba.BeginTransactionAsync();
+
+		try
 		{
-			{
-				const string getCharIdsSQL = @"
+			const string getCharIdsSQL = @"
 								SELECT sign_interpretation_character_id
 								FROM sign_interpretation_character
 								JOIN sign_interpretation_character_owner USING(sign_interpretation_character_id)
 								WHERE sign_interpretation_id = @SignInterpretationId
 									AND edition_id = @EditionId";
 
-				var characterIds = await dba.QueryAsync<uint>(
-						getCharIdsSQL
-						, new
-						{
-								SignInterpretationId = signInterpretationId
-								, EditionId = editionUser.EditionId.Value
-								,
-						});
+			var characterIds = await dba.QueryAsync<uint>(
+					getCharIdsSQL
+					, new
+					{
+							SignInterpretationId = signInterpretationId
+							, EditionId = editionUser.EditionId.Value
+							,
+					});
 
-				foreach (var characterId in characterIds)
-				{
-					var parameters = new DynamicParameters();
-					parameters.Add("@sign_interpretation_id", signInterpretationId);
+			foreach (var characterId in characterIds)
+			{
+				var parameters = new DynamicParameters();
+				parameters.Add("@sign_interpretation_id", signInterpretationId);
 
-					var signInterpretationCharacterRequest = new MutationRequest(
-							MutateType.Delete
-							, parameters
-							, "sign_interpretation_character"
-							, characterId);
+				var signInterpretationCharacterRequest = new MutationRequest(
+						MutateType.Delete
+						, parameters
+						, "sign_interpretation_character"
+						, characterId);
 
-					var _ = await dba.WriteToDatabaseAsync(
-							editionUser
-							, signInterpretationCharacterRequest);
-				}
+				var _ = await dba.WriteToDatabaseAsync(
+						editionUser
+						, signInterpretationCharacterRequest);
 			}
 
-			transactionScope.Complete();
+			dba.CommitTransaction();
+		}
+		catch
+		{
+			dba.RollbackTransaction();
+
+			throw;
 		}
 	}
 

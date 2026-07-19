@@ -63,6 +63,20 @@ public class DatabaseQuery
 
 	private IDbConnection OpenConnection() => new MySqlConnection(_connection);
 
+	/// <summary>
+	///  Opens a fresh, caller-owned connection to the test database. Unlike the RunQuery/RunExecute
+	///  helpers (which close the connection immediately), the caller keeps this one open - useful for
+	///  holding an explicit transaction / row lock, or setting a session/global server variable, for
+	///  the duration of a test. The caller is responsible for disposing it.
+	/// </summary>
+	public async Task<MySqlConnection> OpenNewConnectionAsync()
+	{
+		var connection = new MySqlConnection(_connection);
+		await connection.OpenAsync();
+
+		return connection;
+	}
+
 	public async Task<IEnumerable<T>> RunQueryAsync<T>(string sql, DynamicParameters parameters)
 	{
 		using var connection = OpenConnection();

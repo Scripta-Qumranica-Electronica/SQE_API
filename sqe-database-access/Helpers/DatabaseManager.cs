@@ -44,6 +44,8 @@ public class DatabaseManager : IDatabaseManager
 
 	public DbConnection GetConnection() => new MySqlConnection(_connectionString);
 
-	public async Task<DbConnection> GetConnectionAsync()
-		=> await Task.Run(() => new MySqlConnection(_connectionString));
+	// Constructing a MySqlConnection is cheap and synchronous (no I/O until Open), so there is no
+	// work to offload to a thread. Return it directly rather than paying a thread-pool hop.
+	public Task<DbConnection> GetConnectionAsync()
+		=> Task.FromResult<DbConnection>(new MySqlConnection(_connectionString));
 }

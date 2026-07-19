@@ -112,9 +112,21 @@ public class EditionService : IEditionService
 			, bool   artefacts = false
 			, bool   fragments = false)
 	{
-		var scrollModels = await _editionRepo.ListEditionsAsync(
+		if (!editionUser.EditionId.HasValue)
+			return null;
+
+		// Find the manuscript this edition belongs to, then fetch every edition of that
+		// manuscript which is public or readable by the current user. The requested edition
+		// becomes the "primary" and its variant editions (other editions of the same
+		// manuscript) become the "others".
+		var manuscriptId = await _editionRepo.GetEditionManuscriptIdAsync(editionUser.EditionId.Value);
+
+		if (manuscriptId == null) // The edition does not exist (or is archived)
+			return null;
+
+		var scrollModels = await _editionRepo.GetManuscriptEditions(
 				editionUser.userId
-				, editionUser.EditionId);
+				, manuscriptId.Value);
 
 		var primaryModel = scrollModels.FirstOrDefault(sv => sv.EditionId == editionUser.EditionId);
 

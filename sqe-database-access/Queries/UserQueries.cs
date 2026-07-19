@@ -101,6 +101,17 @@ DELETE FROM user WHERE user_id = @UserId AND activated = 0";
 }
 
 /// <summary>
+///  Removes the child rows an unactivated account may have accumulated before activation (the
+///  system role assigned at registration, and any profile data saved via the update-details
+///  flow) so that the user row can then be deleted without violating a foreign key constraint.
+/// </summary>
+internal static class DeleteUnactivatedUserChildrenQuery
+{
+	public const string SystemRoles = @"DELETE FROM users_system_roles WHERE user_id = @UserId";
+	public const string DataStore   = @"DELETE FROM user_data_store WHERE user_id = @UserId";
+}
+
+/// <summary>
 ///  Sets the user's password to @NewPassword, but only if the input @UserId and @OldPassword match the current record.
 /// </summary>
 internal static class ChangePasswordQuery

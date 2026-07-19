@@ -6,6 +6,7 @@ obj/
 .vscode
 .tool-versions
 .envrc
+.direnv/
 NIX_SETUP.md
 shell.nix
 /api-test/Properties/launchSettings.json

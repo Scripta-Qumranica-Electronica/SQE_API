@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Dapper;
 using DeepEqual.Syntax;
 using MoreLinq;
 using SQE.API.DTO;
@@ -209,6 +210,107 @@ public partial class WebControllerTest
 			// Cleanup
 			await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, newEdition);
 		}
+	}
+
+	/// <summary>
+	///  GET v1/editions/{id} must return the requested edition (as "primary") together with
+	///  *exactly* the variant editions of the same manuscript that the current user may see
+	///  (other public editions, or editions the user can read) - no editions of other
+	///  manuscripts, and no missing variants. This guards against a regression where the
+	///  endpoint returned every accessible edition in the database as "others".
+	/// </summary>
+	/// <param name="realtime">Run the request over SignalR (true) or HTTP (false).</param>
+	/// <returns></returns>
+	[Theory]
+	[Trait("Category", "Edition")]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task GetEditionOnlyReturnsEditionsOfTheSameManuscript(bool realtime)
+	{
+		// Arrange
+		// A copy shares its manuscript with the parent edition, so requesting the copy should
+		// return a group made up of the copy plus the (public) parent - and nothing else. The
+		// copy is owned by User1, so we make the request authenticated as User1.
+		var parentEdition = EditionHelpers.GetEditionId();
+
+		await using var editionCreator = new EditionHelpers.EditionCreator(
+				_client
+				, StartConnectionAsync
+				, parentEdition);
+
+		var copyEdition = await editionCreator.CreateEdition();
+
+		// Act
+		var editionRequest = new Get.V1_Editions_EditionId(copyEdition);
+
+		await editionRequest.SendAsync(
+				realtime
+						? null
+						: _client
+				, StartConnectionAsync
+				, true // auth (defaults to User1)
+				, requestRealtime: realtime);
+
+		var group = realtime
+				? editionRequest.SignalrResponseObject
+				: editionRequest.HttpResponseObject;
+
+		// The set of edition ids the endpoint actually returned (primary + others).
+		var returnedIds = new[] { group.primary }
+						  .Concat(group.others)
+						  .Select(e => e.id)
+						  .ToHashSet();
+
+		// The ground truth, queried straight from the database: every non-archived edition of
+		// this manuscript that is either public or readable by User1. This mirrors the endpoint's
+		// visibility contract, so the endpoint must return this exact set.
+		var groundTruthParams = new DynamicParameters();
+		groundTruthParams.Add("@ManuscriptId", group.primary.manuscriptId);
+		groundTruthParams.Add("@Email", Request.DefaultUsers.User1.Email);
+
+		var expectedIds = (await _db.RunQueryAsync<uint>(
+				@"
+SELECT DISTINCT e.edition_id
+FROM edition e
+WHERE e.manuscript_id = @ManuscriptId
+  AND e.archived != 1
+  AND (
+    e.public = 1
+    OR EXISTS (
+      SELECT 1
+      FROM edition_editor ee
+      JOIN user u ON u.user_id = ee.user_id
+      WHERE ee.edition_id = e.edition_id
+        AND ee.may_read = 1
+        AND u.email = @Email
+    )
+  )"
+				, groundTruthParams)).ToHashSet();
+
+		// Assert
+		// The requested edition is the primary.
+		Assert.Equal(copyEdition, group.primary.id);
+
+		// Every returned edition really belongs to the primary's manuscript (a readable,
+		// human-level statement of "no foreign editions", and a check that the DTO's
+		// manuscriptId is populated).
+		Assert.All(
+				new[] { group.primary }.Concat(group.others)
+				, e => Assert.Equal(group.primary.manuscriptId, e.manuscriptId));
+
+		// The public parent is a genuine variant of the same manuscript, so grouping must
+		// actually include it (proves we are grouping, not merely returning the primary).
+		Assert.Contains(group.others, e => e.id == parentEdition);
+
+		// The decisive check: the group is exactly the manuscript's visible editions - no
+		// incorrectly included editions (the original bug) and none missing.
+		Assert.True(
+				expectedIds.SetEquals(returnedIds)
+				, $"Edition group for manuscript {group.primary.manuscriptId} should be exactly "
+				+ $"[{string.Join(", ", expectedIds.OrderBy(x => x))}] but was "
+				+ $"[{string.Join(", ", returnedIds.OrderBy(x => x))}].");
+
+		// Cleanup is handled by editionCreator's DisposeAsync.
 	}
 
 	/// <summary>

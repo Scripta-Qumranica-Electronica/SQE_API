@@ -340,6 +340,16 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 						DeleteUserEmailTokenQuery.GetUserIdQuery
 						, new { record.UserId });
 
+				// Remove the child rows an unactivated account may hold (system role, profile data)
+				// before deleting the user row itself, otherwise the delete violates a foreign key.
+				await dba.ExecuteAsync(
+						DeleteUnactivatedUserChildrenQuery.SystemRoles
+						, new { record.UserId });
+
+				await dba.ExecuteAsync(
+						DeleteUnactivatedUserChildrenQuery.DataStore
+						, new { record.UserId });
+
 				await dba.ExecuteAsync(DeleteUserQuery.GetQuery, new { record.UserId });
 			}
 		}

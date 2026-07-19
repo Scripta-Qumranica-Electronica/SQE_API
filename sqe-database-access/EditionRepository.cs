@@ -76,6 +76,8 @@ public interface IEditionRepository
 
 	Task<IEnumerable<Edition>> GetManuscriptEditions(uint? userId, uint manuscriptId);
 
+	Task<uint?> GetEditionManuscriptIdAsync(uint editionId);
+
 	Task<List<LetterShape>> GetEditionScriptCollectionAsync(UserInfo editonUser);
 
 	Task<List<ScriptTextFragment>> GetEditionScriptLines(UserInfo editionUser);
@@ -1343,6 +1345,11 @@ An admin may delete the edition for all editors with the request DELETE /v1/edit
 
 		return editions;
 	}
+
+	public async Task<uint?> GetEditionManuscriptIdAsync(uint editionId)
+		=> await dba.QuerySingleOrDefaultAsync<uint?>(
+				EditionManuscriptIdQuery.GetQuery()
+				, new { EditionId = editionId });
 
 	public async Task<List<LetterShape>> GetEditionScriptCollectionAsync(UserInfo editonUser)
 		=> (await dba.QueryAsync<LetterShape>(

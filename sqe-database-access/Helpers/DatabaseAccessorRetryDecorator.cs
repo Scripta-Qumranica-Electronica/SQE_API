@@ -42,6 +42,18 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 									   });
 	}
 
+	public bool InTransaction => _inner.InTransaction;
+
+	// Apply the transient-error retry policy, but only when no transaction is open. Inside a
+	// transaction the retry must happen at the transaction boundary (see WriteToDatabaseAsync),
+	// never per statement: a transient failure such as a deadlock rolls back the whole transaction
+	// on the server, so retrying a single statement would run it against a dead transaction and
+	// could apply a partial, non-atomic write.
+	private Task<T> WithRetry<T>(Func<Task<T>> operation)
+		=> _inner.InTransaction
+				? operation()
+				: _retryPolicy.ExecuteAsync(operation);
+
 	public void Dispose() => _inner.Dispose();
 
 	public void BeginTransaction() => _inner.BeginTransaction();
@@ -58,7 +70,7 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			, int?         commandTimeout = null
 			, CommandType? commandType    = null)
 	{
-		return _retryPolicy.ExecuteAsync(() => _inner.QueryAsync<T>(
+		return WithRetry(() => _inner.QueryAsync<T>(
 												 sql
 												 , param
 												 , commandTimeout
@@ -75,7 +87,7 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			, int?                           commandTimeout = null
 			, CommandType?                   commandType    = null)
 	{
-		return _retryPolicy.ExecuteAsync(() => _inner.QueryAsync(
+		return WithRetry(() => _inner.QueryAsync(
 												 sql
 												 , map
 												 , param
@@ -97,7 +109,7 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			, int?                    commandTimeout = null
 			, CommandType?            commandType    = null)
 	{
-		return _retryPolicy.ExecuteAsync(() => _inner.QueryAsync(
+		return WithRetry(() => _inner.QueryAsync(
 												 sql
 												 , types
 												 , map
@@ -115,7 +127,7 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			, int?         commandTimeout = null
 			, CommandType? commandType    = null)
 	{
-		return _retryPolicy.ExecuteAsync(() => _inner.QueryFirstAsync<T>(
+		return WithRetry(() => _inner.QueryFirstAsync<T>(
 												 sql
 												 , param
 												 , commandTimeout
@@ -128,7 +140,7 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			, int?         commandTimeout = null
 			, CommandType? commandType    = null)
 	{
-		return _retryPolicy.ExecuteAsync(() => _inner.QueryFirstOrDefaultAsync<T>(
+		return WithRetry(() => _inner.QueryFirstOrDefaultAsync<T>(
 												 sql
 												 , param
 												 , commandTimeout
@@ -141,7 +153,7 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			, int?         commandTimeout = null
 			, CommandType? commandType    = null)
 	{
-		return _retryPolicy.ExecuteAsync(() => _inner.QuerySingleAsync<T>(
+		return WithRetry(() => _inner.QuerySingleAsync<T>(
 												 sql
 												 , param
 												 , commandTimeout
@@ -154,7 +166,7 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			, int?         commandTimeout = null
 			, CommandType? commandType    = null)
 	{
-		return _retryPolicy.ExecuteAsync(() => _inner.QuerySingleOrDefaultAsync<T>(
+		return WithRetry(() => _inner.QuerySingleOrDefaultAsync<T>(
 												 sql
 												 , param
 												 , commandTimeout
@@ -167,7 +179,7 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			, int?         commandTimeout = null
 			, CommandType? commandType    = null)
 	{
-		return _retryPolicy.ExecuteAsync(() => _inner.ExecuteAsync(
+		return WithRetry(() => _inner.ExecuteAsync(
 												 sql
 												 , param
 												 , commandTimeout
@@ -178,17 +190,18 @@ public class DatabaseAccessorRetryDecorator : IDatabaseAccessor
 			UserInfo                editionUser
 			, List<MutationRequest> mutationRequests) =>
 
-			// Note: Write operations typically should NOT be retried automatically due to potential side effects.
-			// We're passing these through without retry to avoid duplicate writes.
-			_inner.WriteToDatabaseAsync(editionUser, mutationRequests);
+			// A write is a whole transaction (BeginTransaction .. Commit, rolled back on failure), so
+			// it is safe and correct to retry it as a single unit: a transient failure replays every
+			// statement atomically from a fresh transaction. When already nested inside another
+			// transaction the outer boundary owns the retry, so WithRetry passes this through.
+			WithRetry(() => _inner.WriteToDatabaseAsync(editionUser, mutationRequests));
 
 	public Task<List<AlteredRecord>> WriteToDatabaseAsync(
 			UserInfo          editionUser
 			, MutationRequest mutationRequest) =>
 
-			// Note: Write operations typically should NOT be retried automatically due to potential side effects.
-			// We're passing these through without retry to avoid duplicate writes.
-			_inner.WriteToDatabaseAsync(editionUser, mutationRequest);
+			// See the list overload above: retried as one atomic transaction at the outermost boundary.
+			WithRetry(() => _inner.WriteToDatabaseAsync(editionUser, mutationRequest));
 
 	/// <summary>
 	///  Determines if a MySqlException is transient and should be retried.
