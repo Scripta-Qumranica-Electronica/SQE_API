@@ -1,1 +1,22 @@
+# Enforce LF line endings for all text files, in the repository and on checkout
+# (every platform). The team develops on Linux/macOS; modern Windows editors
+# (Rider, Visual Studio, VS Code) handle LF fine. `text=auto` lets git detect
+# text vs binary, so binary files are left untouched.
+* text=auto eol=lf
+
+# Shell scripts must always be LF (they are executed on Linux/COS).
 *.sh text eol=lf
+
+# Binary file types — never apply line-ending conversion (belt-and-suspenders;
+# harmless if a type is not present in the repo).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.dll  binary
+*.exe  binary
+*.psess binary
