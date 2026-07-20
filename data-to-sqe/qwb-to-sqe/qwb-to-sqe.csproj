@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>qwb_to_sqe</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Dapper" Version="2.1.66" />
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+      <PackageReference Include="MySql.Data" Version="9.5.0" />
+      <PackageReference Include="SSH.NET" Version="2025.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\sqe-api-server\sqe-api-server.csproj" />
+      <ProjectReference Include="..\..\sqe-database-access\sqe-database-access.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="appsettingsQWBlocal.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="appsettingsSQE.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="appsettingsQWB.json" />
+      <Content Include="appsettingsQWB.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+</Project>

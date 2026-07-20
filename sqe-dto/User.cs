@@ -1,151 +1,267 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace SQE.API.DTO
+namespace SQE.API.DTO;
+
+#region Request DTO's
+
+public class LoginRequestDTO
 {
-    #region Request DTO's
+	[Required]
+	[RegularExpression(
+			@"^.*@.*\..*$"
+			, ErrorMessage = "The email address appears to be improperly formatted")]
+	public string email { get; set; }
 
-    public class LoginRequestDTO
-    {
-        [Required]
-        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
-        public string email { get; set; }
+	[Required]
+	[StringLength(
+			1024
+			, MinimumLength = 4
+			, ErrorMessage = "Password must be more than 4 characters long")]
+	public string password { get; set; }
+}
 
-        [Required]
-        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
-        public string password { get; set; }
-    }
+#region Account update and registration DTO's
 
-    #region Account update and registration DTO's
+public class UserUpdateRequestDTO
+{
+	/// <summary>
+	///  An object containing all data necessary to create a new user account. This is also used
+	///  when updating existing user account details, since we need to verify the password in such instances.
+	/// </summary>
+	/// <param name="email">Email address for the new user account, must be unique</param>
+	/// <param name="password">Password for the new user account</param>
+	/// <param name="organization">Name of affiliated organization (if any)</param>
+	/// <param name="forename">The user's given name (may be empty)</param>
+	/// <param name="surname">The user's family name (may be empty)</param>
+	public UserUpdateRequestDTO(
+			string   email
+			, string password
+			, string organization
+			, string forename
+			, string surname)
+	{
+		this.password = password;
+		this.email = email;
+		this.organization = organization;
+		this.forename = forename;
+		this.surname = surname;
+	}
 
-    public class UserUpdateRequestDTO
-    {
-        /// <summary>
-        ///     An object containing all data necessary to create a new user account. This is also used
-        ///     when updating existing user account details, since we need to verify the password in such instances.
-        /// </summary>
-        /// <param name="email">Email address for the new user account, must be unique</param>
-        /// <param name="password">Password for the new user account</param>
-        /// <param name="organization">Name of affiliated organization (if any)</param>
-        /// <param name="forename">The user's given name (may be empty)</param>
-        /// <param name="surname">The user's family name (may be empty)</param>
-        public UserUpdateRequestDTO(string email, string password, string organization, string forename, string surname)
-        {
-            this.password = password;
-            this.email = email;
-            this.organization = organization;
-            this.forename = forename;
-            this.surname = surname;
-        }
+	public UserUpdateRequestDTO() : this(
+			string.Empty
+			, string.Empty
+			, string.Empty
+			, string.Empty
+			, string.Empty) { }
 
-        public string password { get; set; }
-        public string email { get; set; }
-        public string organization { get; set; }
-        public string forename { get; set; }
-        public string surname { get; set; }
-    }
+	[Required]
+	public string password { get; set; }
 
-    public class NewUserRequestDTO : UserUpdateRequestDTO
-    {
-        public NewUserRequestDTO(string email, string password, string organization, string forename, string surname)
-            : base(email, password, organization, forename, surname)
-        {
-            this.email = email;
-            this.password = password;
-        }
+	public string email        { get; set; }
+	public string organization { get; set; }
+	public string forename     { get; set; }
+	public string surname      { get; set; }
+}
 
-        [Required]
-        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
-        public new string email { get; set; }
+public class NewUserRequestDTO : UserUpdateRequestDTO
+{
+	public NewUserRequestDTO(
+			string   email
+			, string password
+			, string organization
+			, string forename
+			, string surname) : base(
+			email
+			, password
+			, organization
+			, forename
+			, surname)
+	{
+		this.email = email;
+		this.password = password;
+	}
 
-        [Required]
-        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
-        public new string password { get; set; }
-    }
+	public NewUserRequestDTO() : this(
+			string.Empty
+			, string.Empty
+			, string.Empty
+			, string.Empty
+			, string.Empty) { }
 
-    #endregion Account update and registration DTO's
+	[Required]
+	[RegularExpression(
+			@"^.*@.*\..*$"
+			, ErrorMessage = "The email address appears to be improperly formatted")]
+	public new string email { get; set; }
 
-    #region Account activation DTO's
+	[Required]
+	[StringLength(
+			1024
+			, MinimumLength = 4
+			, ErrorMessage = "Password must be more than 4 characters long")]
+	public new string password { get; set; }
+}
 
-    public class AccountActivationRequestDTO
-    {
-        [Required] public string token { get; set; }
-    }
+#endregion Account update and registration DTO's
 
-    public class ResendUserAccountActivationRequestDTO
-    {
-        [Required]
-        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
-        public string email { get; set; }
-    }
+#region Account activation DTO's
 
-    public class UnactivatedEmailUpdateRequestDTO : ResendUserAccountActivationRequestDTO
-    {
-        [Required]
-        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
-        public string newEmail { get; set; }
-    }
+public class AccountActivationRequestDTO
+{
+	[Required]
+	public string token { get; set; }
+}
 
-    #endregion Account activation DTO's
+public class ResendUserAccountActivationRequestDTO
+{
+	[Required]
+	[RegularExpression(
+			@"^.*@.*\..*$"
+			, ErrorMessage = "The email address appears to be improperly formatted")]
+	public string email { get; set; }
+}
 
-    #region Password management DTO's
+public class UnactivatedEmailUpdateRequestDTO : ResendUserAccountActivationRequestDTO
+{
+	[Required]
+	[RegularExpression(
+			@"^.*@.*\..*$"
+			, ErrorMessage = "The email address appears to be improperly formatted")]
+	public string newEmail { get; set; }
+}
 
-    public class ResetUserPasswordRequestDTO
-    {
-        [Required]
-        [RegularExpression(@"^.*@.*\..*$", ErrorMessage = "The email address appears to be improperly formatted")]
-        public string email { get; set; }
-    }
+#endregion Account activation DTO's
 
-    public class ResetForgottenUserPasswordRequestDTO : AccountActivationRequestDTO
-    {
-        [Required]
-        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
-        public string password { get; set; }
-    }
+#region Password management DTO's
 
-    public class ResetLoggedInUserPasswordRequestDTO
-    {
-        [Required] public string oldPassword { get; set; }
+public class ResetUserPasswordRequestDTO
+{
+	[Required]
+	[RegularExpression(
+			@"^.*@.*\..*$"
+			, ErrorMessage = "The email address appears to be improperly formatted")]
+	public string email { get; set; }
+}
 
-        [Required]
-        [StringLength(1024, MinimumLength = 4, ErrorMessage = "Password must be more than 4 characters long")]
-        public string newPassword { get; set; }
-    }
+public class ResetForgottenUserPasswordRequestDTO : AccountActivationRequestDTO
+{
+	[Required]
+	[StringLength(
+			1024
+			, MinimumLength = 4
+			, ErrorMessage = "Password must be more than 4 characters long")]
+	public string password { get; set; }
+}
 
-    #endregion Password management DTO's
+public class ResetLoggedInUserPasswordRequestDTO
+{
+	[Required]
+	public string oldPassword { get; set; }
 
-    #endregion Request DTO's
+	[Required]
+	[StringLength(
+			1024
+			, MinimumLength = 4
+			, ErrorMessage = "Password must be more than 4 characters long")]
+	public string newPassword { get; set; }
+}
 
-    #region Response DTO's
+#endregion Password management DTO's
 
-    // The minimal data necessary to identify a user
-    public class UserDTO
-    {
-        public uint userId { get; set; }
-        public string email { get; set; }
-    }
+#endregion Request DTO's
 
-    // More detailed user data, this could be seen by colleagues who share an edition
-    public class DetailedUserDTO : UserDTO
-    {
-        public string forename { get; set; }
-        public string surname { get; set; }
-        public string organization { get; set; }
-        public bool activated { get; set; }
-    }
+#region Response DTO's
 
-    // A user may only receive his or her own DetailedUserTokenDTO
-    public class DetailedUserTokenDTO : DetailedUserDTO
-    {
-        public string token { get; set; }
-    }
+// The minimal data necessary to identify a user
+public class UserDTO
+{
+	[Required]
+	public uint userId { get; set; }
 
-    public class EditorDTO
-    {
-        public string forename { get; set; }
-        public string surname { get; set; }
-        public string organization { get; set; }
-    }
+	[Required]
+	public string email { get; set; }
+}
 
-    #endregion Response DTO's
+// More detailed user data, this could be seen by colleagues who share an edition
+public class DetailedUserDTO : UserDTO
+{
+	public string forename     { get; set; }
+	public string surname      { get; set; }
+	public string organization { get; set; }
+
+	[Required]
+	public bool activated { get; set; }
+}
+
+// A user may only receive his or her own DetailedUserTokenDTO
+public class DetailedUserTokenDTO : DetailedUserDTO
+{
+	[Required]
+	public string token { get; set; }
+}
+
+public class EditorDTO
+{
+	[Required]
+	public string email { get; set; }
+
+	public string forename     { get; set; }
+	public string surname      { get; set; }
+	public string organization { get; set; }
+}
+
+public class UserDataStoreDTO
+{
+	[Required]
+	[StringLength(
+			1000000
+			, MinimumLength = 2
+			, ErrorMessage = "The submitted data may not be larger than 1000000 character")]
+	public string data { get; set; }
+}
+
+#endregion Response DTO's
+
+public class DatabaseVersionDTO
+{
+	public string   version     { get; set; }
+	public DateTime lastUpdated { get; set; }
+}
+
+public class APIVersionDTO : DatabaseVersionDTO { }
+
+// When user reports a problem in the app, a Github issue is created
+public class GithubIssueReportDTO
+{
+	[Required]
+	[StringLength(
+			100
+			, MinimumLength = 3
+			, ErrorMessage =
+					"The submitted title may not be less than 4 or larger than 100 characters")]
+	public string title { get; set; }
+
+	[Required]
+	[StringLength(
+			1000
+			, MinimumLength = 3
+			, ErrorMessage =
+					"The submitted title may not be less than 4 or larger than 1000 characters")]
+	public string comment { get; set; }
+
+	[Required]
+	[StringLength(
+			1000
+			, MinimumLength = 3
+			, ErrorMessage =
+					"The submitted title may not be less than 4 or larger than 1009 characters")]
+	public string url { get; set; }
+
+	[StringLength(
+			100
+			, MinimumLength = 3
+			, ErrorMessage =
+					"The submitted title may not be less than 4 or larger than 100 characters")]
+	public string username { get; set; }
 }

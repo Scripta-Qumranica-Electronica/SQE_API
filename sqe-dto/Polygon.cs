@@ -1,10 +1,9 @@
-﻿namespace SQE.API.DTO
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace SQE.API.DTO;
+
+public class WktPolygonDTO
 {
-    public class PolygonDTO
-    {
-        public string mask { get; set; }
-        public uint maskEditorId { get; set; }
-        public TransformationDTO transformation { get; set; }
-        public uint positionEditorId { get; set; }
-    }
+	[Required]
+	public string wktPolygon { get; set; }
 }

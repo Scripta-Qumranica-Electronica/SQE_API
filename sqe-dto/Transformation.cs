@@ -1,18 +1,41 @@
 using System.ComponentModel.DataAnnotations;
+using SQE.API.DTO.Validators;
 
-namespace SQE.API.DTO
+namespace SQE.API.DTO;
+
+public class PlacementDTO
 {
-    public class TransformationDTO
-    {
-        public float? scale { get; set; }
-        public float? rotate { get; set; }
-        public TranslateDTO translate { get; set; }
-    }
+	[Range(0.1, 99.9999, ErrorMessage = "The scale must be between 0.1 and 99.9999")]
+	[ValidDecimal(
+			6
+			, 4
+			, ErrorMessage =
+					"The scale cannot have more than 2 digits to the left of the decimal and 4 digits to the right")]
+	[Required]
+	public decimal scale { get; set; }
 
-    public class TranslateDTO
-    {
-        [Required] public uint x { get; set; }
+	[Range(0, 360, ErrorMessage = "The rotate must be between 0 and 360")]
+	[ValidDecimal(
+			6
+			, 2
+			, ErrorMessage =
+					"The rotate cannot have more than 4 digits to the left of the decimal and 2 digits to the right")]
+	[Required]
+	public decimal rotate { get; set; }
 
-        [Required] public uint y { get; set; }
-    }
+	[Required]
+	public int zIndex { get; set; }
+
+	public TranslateDTO translate { get; set; }
+
+	public bool mirrored { get; set; }
+}
+
+public class TranslateDTO
+{
+	[Required]
+	public int x { get; set; }
+
+	[Required]
+	public int y { get; set; }
 }

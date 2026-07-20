@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>data_to_sqe</RootNamespace>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../sqe-database-access/sqe-database-access.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MySqlConnector" Version="2.4.0" />
+        <PackageReference Include="EPPlus" Version="7.5.2" />
+        <PackageReference Include="SSH.NET" Version="2024.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Exclude files that are incompatible with new sqe-database-access architecture -->
+        <Compile Remove="from_goettingen/**/*.cs" />
+        <Compile Remove="qwb-to-sqe/**/*.cs" />
+        <Compile Remove="sqe_api/**/*.cs" />
+        <Compile Remove="comparer/**/*.cs" />
+    </ItemGroup>
+
+</Project>

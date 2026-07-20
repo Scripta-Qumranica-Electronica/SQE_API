@@ -1,308 +1,961 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
+using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 
-namespace SQE.API.Server.Services
+namespace SQE.API.Server.Services;
+
+public interface ITextService
 {
-    public interface ITextService
-    {
-        Task<LineTextDTO> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId);
-        Task<TextEditionDTO> GetFragmentByIdAsync(EditionUserInfo editionUser, uint fragmentId);
-        Task<ArtefactDataListDTO> GetArtefactsAsync(EditionUserInfo editionUser, uint fragmentId);
-        Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId);
-        Task<TextFragmentDataListDTO> GetFragmentDataAsync(EditionUserInfo editionUser);
+	Task<LineTextDTO> GetLineByIdAsync(UserInfo editionUser, uint lineId);
 
-        Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
-            CreateTextFragmentDTO createFragment,
-            string clientId = null);
-    }
+	Task<LineDataDTO> UpdateLineByIdAsync(
+			UserInfo        editionUser
+			, uint          lineId
+			, UpdateLineDTO lineData
+			, string        clientId = null);
 
-    public class TextService : ITextService
-    {
-        private readonly IHubContext<MainHub> _hubContext;
-        private readonly ITextRepository _textRepo;
-        private readonly IUserRepository _userRepo;
+	Task<NoContentResult> DeleteLineByIdAsync(
+			UserInfo editionUser
+			, uint   lineId
+			, string clientId = null);
 
-        public TextService(ITextRepository textRepo, IUserRepository userRepo, IHubContext<MainHub> hubContext)
-        {
-            _textRepo = textRepo;
-            _userRepo = userRepo;
-            _hubContext = hubContext;
-        }
+	Task<LineDataDTO> CreateLineAsync(
+			UserInfo        editionUser
+			, uint          textFragmentId
+			, CreateLineDTO lineData
+			, string        clientId = null);
 
-        public async Task<LineTextDTO> GetLineByIdAsync(EditionUserInfo editionUser, uint lineId)
-        {
-            var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId);
-            var editionLine = await _textRepo.GetLineByIdAsync(editionUser, lineId);
-            if (editionLine.manuscriptId == 0)
-                throw new StandardExceptions.DataNotFoundException("line", lineId, "line_id");
-            return _textEditionLineToDTO(editionLine, await editionEditors);
-        }
+	Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo       editionUser, uint fragmentId);
+	Task<TextEditionDTO> GetFragmentsOfEditionAsync(UserInfo editionUser);
 
-        public async Task<TextEditionDTO> GetFragmentByIdAsync(EditionUserInfo editionUser, uint fragmentId)
-        {
-            var editionEditors = _userRepo.GetEditionEditorsAsync(editionUser.EditionId);
-            var edition = await _textRepo.GetTextFragmentByIdAsync(editionUser, fragmentId);
-            if (edition.manuscriptId == 0) // TODO: describe missing data better here.
-                throw new StandardExceptions.DataNotFoundException(
-                    "text textFragmentName",
-                    fragmentId,
-                    "text_fragment_id"
-                );
-            return _textEditionToDTO(edition, await editionEditors);
-        }
+	Task<ArtefactDataListDTO> GetArtefactsAsync(UserInfo editionUser, uint fragmentId);
 
-        public async Task<ArtefactDataListDTO> GetArtefactsAsync(EditionUserInfo editionUser, uint fragmentId)
-        {
-            return new ArtefactDataListDTO(
-                (await _textRepo.GetArtefactsAsync(editionUser, fragmentId))
-                .Select(x => new ArtefactDataDTO { id = x.ArtefactId, name = x.Name })
-                .ToList()
-            );
-        }
+	Task<LineDataListDTO> GetLineIdsAsync(UserInfo editionUser, uint fragmentId);
 
-        public async Task<LineDataListDTO> GetLineIdsAsync(EditionUserInfo editionUser, uint fragmentId)
-        {
-            return new LineDataListDTO(
-                (await _textRepo.GetLineIdsAsync(editionUser, fragmentId))
-                .Select(x => new LineDataDTO(x.lineId, x.lineName))
-                .ToList()
-            );
-        }
+	Task<TextFragmentDataListDTO> GetFragmentDataAsync(UserInfo editionUser);
 
-        public async Task<TextFragmentDataListDTO> GetFragmentDataAsync(EditionUserInfo editionUser)
-        {
-            return new TextFragmentDataListDTO(
-                (await _textRepo.GetFragmentDataAsync(editionUser))
-                .Select(x => new TextFragmentDataDTO(x.TextFragmentId, x.TextFragmentName, x.EditionEditorId))
-                .ToList()
-            );
-        }
+	Task<TextFragmentDataDTO> CreateTextFragmentAsync(
+			UserInfo                editionUser
+			, CreateTextFragmentDTO createFragment
+			, string                clientId = null);
 
-        public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(EditionUserInfo editionUser,
-            CreateTextFragmentDTO createFragment,
-            string clientId = null)
-        {
-            var newFragment = await _textRepo.CreateTextFragmentAsync(
-                editionUser,
-                createFragment.name,
-                createFragment.previousTextFragmentId,
-                createFragment.nextTextFragmentId
-            );
+	Task<TextFragmentDataDTO> UpdateTextFragmentAsync(
+			UserInfo                editionUser
+			, uint                  textFragmentId
+			, UpdateTextFragmentDTO updatedFragment
+			, string                clientId = null);
 
-            var newTextFragmentData = new TextFragmentDataDTO(
-                newFragment.TextFragmentId,
-                newFragment.TextFragmentName,
-                newFragment.EditionEditorId
-            );
-            // Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
-            // made the request, that client directly received the response.
-            await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
-                .SendAsync("createTextFragment", newTextFragmentData);
-            return newTextFragmentData;
-        }
+	Task<DiffReplaceResponseDTO> DiffReplaceText(
+			UserInfo                editionUser
+			, DiffReplaceRequestDTO newTextData
+			, string                clientId = null);
 
-        private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)
-        {
-            var editorList = new Dictionary<uint, EditorDTO>();
-            foreach (var editor in editors)
-                editorList.Add(
-                    editor.UserId,
-                    new EditorDTO
-                    {
-                        forename = editor.Forename,
-                        surname = editor.Surname,
-                        organization = editor.Organization
-                    }
-                );
+	Task<DiffReconstructedResponseDTO> DiffReplaceReconstructedText(
+			UserInfo                              editionUser
+			, uint                                artefactId
+			, DiffReplaceReconstructionRequestDTO replacement
+			, string                              clientId = null);
+}
 
-            // Check if this edition has a proper collaborators field, if not dynamically add
-            // all edition editors to that field.
-            if (string.IsNullOrEmpty(ed.collaborators))
-                ed.AddLicence(editors);
+public class TextService : ITextService
+{
+	private readonly IArtefactService                 _artefactService;
+	private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+	private readonly ISignInterpretationService       _signIntService;
+	private readonly ITextRepository                  _textRepo;
+	private readonly IUserRepository                  _userRepo;
 
-            return new TextEditionDTO
-            {
-                editors = editorList,
-                licence = ed.licence,
-                manuscriptId = ed.manuscriptId,
-                editionName = ed.editionName,
-                editorId = ed.manuscriptAuthor,
+	public TextService(
+			ITextRepository                    textRepo
+			, IUserRepository                  userRepo
+			, ISignInterpretationService       signIntService
+			, IArtefactService                 artefactService
+			, IHubContext<MainHub, ISQEClient> hubContext)
+	{
+		_textRepo = textRepo;
+		_userRepo = userRepo;
+		_artefactService = artefactService;
+		_hubContext = hubContext;
+		_signIntService = signIntService;
+	}
 
-                textFragments = ed.fragments.Select(
-                        x => new TextFragmentDTO
-                        {
-                            textFragmentId = x.textFragmentId,
-                            textFragmentName = x.textFragmentName,
-                            editorId = x.textFragmentAuthor,
+	public async Task<LineTextDTO> GetLineByIdAsync(UserInfo editionUser, uint lineId)
+	{
+		if (!editionUser.EditionId.HasValue)
+			throw new StandardExceptions.DataNotFoundException("edition", lineId, "edition_id");
 
-                            lines = x.lines.Select(
-                                    y => new LineDTO
-                                    {
-                                        lineId = y.lineId,
-                                        lineName = y.line,
-                                        editorId = y.lineAuthor,
+		var editionEditors = await _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
 
-                                        signs = y.signs.Select(
-                                                z => new SignDTO
-                                                {
-                                                    signInterpretations = z.signInterpretations.Select(
-                                                            a => new SignInterpretationDTO
-                                                            {
-                                                                signInterpretationId = a.signInterpretationId,
-                                                                character = a.character,
+		var editionLine = await _textRepo.GetLineByIdAsync(editionUser, lineId);
 
-                                                                attributes = a.attributes.Select(
-                                                                        b => new InterpretationAttributeDTO
-                                                                        {
-                                                                            interpretationAttributeId =
-                                                                                b.interpretationAttributeId,
-                                                                            sequence = b.sequence,
-                                                                            attributeValueId = b.attributeValueId,
-                                                                            attributeValueString = b.attributeString,
-                                                                            editorId = b
-                                                                                .signInterpretationAttributeAuthor,
-                                                                            value = b.value
-                                                                        }
-                                                                    )
-                                                                    .ToList(),
+		if (editionLine.manuscriptId == 0)
+			throw new StandardExceptions.DataNotFoundException("line", lineId, "line_id");
 
-                                                                rois = a.signInterpretationRois.Select(
-                                                                        b => new InterpretationRoiDTO
-                                                                        {
-                                                                            interpretationRoiId =
-                                                                                b.SignInterpretationRoiId,
-                                                                            signInterpretationId =
-                                                                                b.SignInterpretationId,
-                                                                            editorId = b.SignInterpretationRoiAuthor,
-                                                                            artefactId = b.ArtefactId,
-                                                                            shape = b.Shape,
-                                                                            translate = new TranslateDTO
-                                                                            {
-                                                                                x = b.TranslateX,
-                                                                                y = b.TranslateY
-                                                                            },
-                                                                            exceptional = b.Exceptional,
-                                                                            valuesSet = b.ValuesSet
-                                                                        }
-                                                                    )
-                                                                    .ToList(),
+		return _textEditionLineToDTO(editionLine, editionEditors);
+	}
 
-                                                                nextSignInterpretations = a.nextSignInterpretations
-                                                                    .Select(
-                                                                        b => new NextSignInterpretationDTO
-                                                                        {
-                                                                            nextSignInterpretationId =
-                                                                                b.nextSignInterpretationId,
-                                                                            editorId = b.signSequenceAuthor
-                                                                        }
-                                                                    )
-                                                                    .ToList()
-                                                            }
-                                                        )
-                                                        .ToList()
-                                                }
-                                            )
-                                            .ToList()
-                                    }
-                                )
-                                .ToList()
-                        }
-                    )
-                    .ToList()
-            };
-        }
+	public async Task<LineDataDTO> UpdateLineByIdAsync(
+			UserInfo        editionUser
+			, uint          lineId
+			, UpdateLineDTO lineData
+			, string        clientId = null)
+	{
+		var updatedLine = await _textRepo.UpdateLineAsync(editionUser, lineId, lineData.lineName);
 
-        private static LineTextDTO _textEditionLineToDTO(TextEdition ed, List<EditorInfo> editors)
-        {
-            var editorList = new Dictionary<uint, EditorDTO>();
-            foreach (var editor in editors)
-                editorList.Add(
-                    editor.UserId,
-                    new EditorDTO
-                    {
-                        forename = editor.Forename,
-                        surname = editor.Surname,
-                        organization = editor.Organization
-                    }
-                );
+		var response = updatedLine.ToDTO();
 
-            // Check if this edition has a proper collaborators field, if not dynamically add
-            // all edition editors to that field.
-            if (string.IsNullOrEmpty(ed.collaborators))
-                ed.AddLicence(editors);
+		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+		// made the request, that client directly received the response.
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .UpdatedLine(response);
 
-            return new LineTextDTO
-            {
-                editors = editorList,
-                licence = ed.licence,
-                lineId = ed.fragments.First().lines.First().lineId,
-                lineName = ed.fragments.First().lines.First().line,
-                editorId = ed.fragments.First().lines.First().lineAuthor,
-                signs = ed.fragments.First()
-                    .lines.First()
-                    .signs.Select(
-                        z => new SignDTO
-                        {
-                            signInterpretations = z.signInterpretations.Select(
-                                    a => new SignInterpretationDTO
-                                    {
-                                        signInterpretationId = a.signInterpretationId,
-                                        character = a.character,
+		return response;
+	}
 
-                                        attributes = a.attributes.Select(
-                                                b => new InterpretationAttributeDTO
-                                                {
-                                                    interpretationAttributeId = b.interpretationAttributeId,
-                                                    sequence = b.sequence,
-                                                    attributeValueId = b.attributeValueId,
-                                                    attributeValueString = b.attributeString,
-                                                    editorId = b.signInterpretationAttributeAuthor,
-                                                    value = b.value
-                                                }
-                                            )
-                                            .ToList(),
+	public async Task<NoContentResult> DeleteLineByIdAsync(
+			UserInfo editionUser
+			, uint   lineId
+			, string clientId = null)
+	{
+		await _textRepo.RemoveLineAsync(editionUser, lineId);
 
-                                        rois = a.signInterpretationRois.Select(
-                                                b => new InterpretationRoiDTO
-                                                {
-                                                    interpretationRoiId = b.SignInterpretationRoiId,
-                                                    signInterpretationId = b.SignInterpretationId,
-                                                    editorId = b.SignInterpretationRoiAuthor,
-                                                    artefactId = b.ArtefactId,
-                                                    shape = b.Shape,
-                                                    translate = new TranslateDTO
-                                                    {
-                                                        x = b.TranslateX,
-                                                        y = b.TranslateY
-                                                    },
-                                                    exceptional = b.Exceptional,
-                                                    valuesSet = b.ValuesSet
-                                                }
-                                            )
-                                            .ToList(),
+		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+		// made the request, that client directly received the response.
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .DeletedLine(
+								 new DeleteIntIdDTO
+								 {
+										 entity = EditionEntities.line
+										 , ids = new List<uint> { lineId }
+										 ,
+								 });
 
-                                        nextSignInterpretations = a.nextSignInterpretations.Select(
-                                                b => new NextSignInterpretationDTO
-                                                {
-                                                    nextSignInterpretationId = b.nextSignInterpretationId,
-                                                    editorId = b.signSequenceAuthor
-                                                }
-                                            )
-                                            .ToList()
-                                    }
-                                )
-                                .ToList()
-                        }
-                    )
-                    .ToList()
-            };
-        }
-    }
+		return new NoContentResult();
+	}
+
+	public async Task<LineDataDTO> CreateLineAsync(
+			UserInfo        editionUser
+			, uint          textFragmentId
+			, CreateLineDTO lineData
+			, string        clientId = null)
+	{
+		var submittedData = new LineData
+		{
+				LineAuthor = null
+				, LineId = null
+				, LineName = lineData.lineName
+				, Signs = new List<SignData>()
+				,
+		};
+
+		var newLineData = true switch
+						  {
+								  true when lineData.previousLineId.HasValue => await
+										  _textRepo.AppendLineAsync(
+												  editionUser
+												  , textFragmentId
+												  , submittedData
+												  , lineData.previousLineId.Value)
+								  , true when lineData.subsequentLineId.HasValue =>
+										  await _textRepo.PrependLineAsync(
+												  editionUser
+												  , textFragmentId
+												  , submittedData
+												  , lineData.subsequentLineId.Value)
+								  , _ => await _textRepo.AppendLineAsync(
+										  editionUser
+										  , textFragmentId
+										  , submittedData
+										  , null)
+								  ,
+						  };
+
+		var response = newLineData.ToDTO();
+
+		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+		// made the request, that client directly received the response.
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .CreatedLine(response);
+
+		return response;
+	}
+
+	public async Task<TextEditionDTO> GetFragmentByIdAsync(UserInfo editionUser, uint fragmentId)
+	{
+		// Try to get a cached version of the text fragment
+		// If it needs to be rebuilt the value of the json string will be null
+		var cachedEdition = await _textRepo.GetCachedTextEdition(editionUser, fragmentId);
+
+		if (cachedEdition.Any()
+			&& !string.IsNullOrEmpty(cachedEdition.First().CachedTranscription))
+		{
+			return JsonSerializer.Deserialize<TextEditionDTO>(
+					cachedEdition.First().CachedTranscription);
+		}
+
+		// Collect the text fragment manually, because it must have changed since the last cache
+		var editionEditors = await _userRepo.GetEditionEditorsAsync(editionUser.EditionId.Value);
+
+		var edition = await _textRepo.GetTextFragmentByIdAsync(editionUser, fragmentId);
+
+		if (edition.manuscriptId == 0) // TODO: describe missing data better here.
+		{
+			throw new StandardExceptions.DataNotFoundException(
+					"text textFragmentName"
+					, fragmentId
+					, "text_fragment_id");
+		}
+
+		var response = _textEditionToDTO(edition, editionEditors);
+
+		// Now write the newly collected text fragment to the cache for quick access
+		// It will only get written if it really is up-to-date
+		await _textRepo.SetCachedTextEdition(
+				editionUser
+				, fragmentId
+				, JsonSerializer.Serialize(response)
+				, cachedEdition.First().QueryDate);
+
+		return response;
+	}
+
+	/// <summary>
+	///  Returns the full text of an edition
+	/// </summary>
+	/// <param name="editionUser"></param>
+	/// <returns></returns>
+	public async Task<TextEditionDTO> GetFragmentsOfEditionAsync(UserInfo editionUser)
+	{
+		// Note: I (Bronson) also tried caching the full-text of an edition,
+		// it did not appear to perform any faster than doing it this way.
+
+		// This simply finds all text fragments of an edition and then
+		// concatenates the results of getting the full text of each.
+		// Can we be faster?
+		var textFragments = await GetFragmentDataAsync(editionUser);
+
+		var response = await GetFragmentByIdAsync(
+				editionUser
+				, textFragments.textFragments.First().id);
+
+		var otherFrags = new List<TextEditionDTO>(textFragments.textFragments.Count - 1);
+
+		foreach (var textFragment in textFragments.textFragments.Skip(1))
+			otherFrags.Add(await GetFragmentByIdAsync(editionUser, textFragment.id));
+
+		response.textFragments.AddRange(otherFrags.SelectMany(x => x.textFragments));
+
+		return response;
+	}
+
+	public async Task<ArtefactDataListDTO> GetArtefactsAsync(UserInfo editionUser, uint fragmentId)
+	{
+		return new ArtefactDataListDTO
+		{
+				artefacts = (await _textRepo.GetArtefactsAsync(editionUser, fragmentId))
+							.Select(x => new ArtefactDataDTO
+							{
+									id = x.ArtefactId
+									, name = x.Name
+									,
+							})
+							.ToList()
+				,
+		};
+	}
+
+	public async Task<LineDataListDTO> GetLineIdsAsync(UserInfo editionUser, uint fragmentId)
+	{
+		return new LineDataListDTO(
+				(await _textRepo.GetLineIdsAsync(editionUser, fragmentId))
+				.Select(x => new LineDataDTO(x.LineId.GetValueOrDefault(), x.LineName))
+				.ToList());
+	}
+
+	public async Task<TextFragmentDataListDTO> GetFragmentDataAsync(UserInfo editionUser)
+	{
+		return new TextFragmentDataListDTO(
+				(await _textRepo.GetFragmentDataAsync(editionUser))
+				.Select(x => new TextFragmentDataDTO(
+								x.TextFragmentId.GetValueOrDefault()
+								, x.TextFragmentName
+								, x.TextFragmentEditorId.GetValueOrDefault()))
+				.ToList());
+	}
+
+	/// <summary>
+	///  Create a new text fragment in an edition.
+	/// </summary>
+	/// <param name="editionUser">Edition user object</param>
+	/// <param name="createFragment">Values for the new text fragment</param>
+	/// <param name="clientId">SignalR client Id</param>
+	/// <returns>
+	///  Details of the newly created text fragment.
+	///  TODO: decide if we will return info about the previous/next text fragment id's
+	/// </returns>
+	public async Task<TextFragmentDataDTO> CreateTextFragmentAsync(
+			UserInfo                editionUser
+			, CreateTextFragmentDTO createFragment
+			, string                clientId = null)
+	{
+		var fragmentData = new TextFragmentData { TextFragmentName = createFragment.name };
+
+		var newFragment = await _textRepo.CreateTextFragmentAsync(
+				editionUser
+				, fragmentData
+				, createFragment.previousTextFragmentId
+				, createFragment.nextTextFragmentId);
+
+		var newTextFragmentData = new TextFragmentDataDTO(
+				newFragment.TextFragmentId.GetValueOrDefault()
+				, newFragment.TextFragmentName
+				, newFragment.TextFragmentEditorId.GetValueOrDefault());
+
+		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+		// made the request, that client directly received the response.
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .CreatedTextFragment(newTextFragmentData);
+
+		return newTextFragmentData;
+	}
+
+	/// <summary>
+	///  Update the name and/or position of a text fragment
+	/// </summary>
+	/// <param name="editionUser">Edition user object</param>
+	/// <param name="textFragmentId">Text fragment to be updated</param>
+	/// <param name="updatedFragment">Details of the new values for the text fragment</param>
+	/// <param name="clientId">SignalR client Id</param>
+	/// <returns>
+	///  Details of the updated text fragment.
+	///  TODO: decide if we will return info about the previous/next text fragment id's
+	/// </returns>
+	public async Task<TextFragmentDataDTO> UpdateTextFragmentAsync(
+			UserInfo                editionUser
+			, uint                  textFragmentId
+			, UpdateTextFragmentDTO updatedFragment
+			, string                clientId = null)
+	{
+		var newFragment = await _textRepo.UpdateTextFragmentAsync(
+				editionUser
+				, textFragmentId
+				, updatedFragment.name
+				, updatedFragment.previousTextFragmentId
+				, updatedFragment.nextTextFragmentId);
+
+		var newTextFragmentData = new TextFragmentDataDTO(
+				newFragment.TextFragmentId.GetValueOrDefault()
+				, newFragment.TextFragmentName
+				, newFragment.TextFragmentEditorId.GetValueOrDefault());
+
+		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+		// made the request, that client directly received the response.
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .CreatedTextFragment(newTextFragmentData);
+
+		return newTextFragmentData;
+	}
+
+	public async Task<DiffReplaceResponseDTO> DiffReplaceText(
+			UserInfo                editionUser
+			, DiffReplaceRequestDTO newTextData
+			, string                clientId = null)
+	{
+		var (response, _, _) = await _diffReplaceText(
+				editionUser
+				, newTextData.newText
+				, newTextData.priorSignInterpretationId
+				, newTextData.followingSignInterpretationId);
+
+		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+		// made the request, that client directly received the response.
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .CreatedSignInterpretation(response.created);
+
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .DeletedSignInterpretation(response.deleted);
+
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .UpdatedSignInterpretations(response.updated);
+
+		return response;
+	}
+
+	public async Task<DiffReconstructedResponseDTO> DiffReplaceReconstructedText(
+			UserInfo                              editionUser
+			, uint                                artefactId
+			, DiffReplaceReconstructionRequestDTO replacement
+			, string                              clientId = null)
+	{
+		var (response, updatedRoisList, deletedRoisList) = await _diffReplaceText(
+				editionUser
+				, replacement.newText
+				, artefactId: artefactId
+				, textRois: replacement.textRois.FromDTO()
+				, virtualArtefactShape: replacement.virtualArtefactShape
+				, virtualArtefactPlacement: replacement.virtualArtefactPlacement);
+
+		response.virtualArtefact = await _artefactService.GetEditionArtefactAsync(
+				editionUser
+				, artefactId
+				, new List<string> { "masks" });
+
+		// Unpack the ROIs for separate messages, since they need to come to the Frontend in their own message
+		var createdRois = new InterpretationRoiDTOList
+		{
+				rois = response.created.signInterpretations.SelectMany(x => x.rois).ToList()
+				,
+		};
+
+		var updatedRois = new UpdatedInterpretationRoiDTOList
+		{
+				rois = response.updated.signInterpretations
+							   .SelectMany(x => x.rois.Select(y => new
+																	  UpdatedInterpretationRoiDTO
+																	  {
+																			  artefactId =
+																					  artefactId
+																			  , exceptional =
+																					  y.exceptional
+																			  , creatorId =
+																					  y.creatorId
+																			  , editorId =
+																					  y.editorId
+																			  , interpretationRoiId =
+																					  y.interpretationRoiId
+																			  , shape =
+																					  y.shape
+																			  , signInterpretationId =
+																					  y.signInterpretationId
+																			  , translate =
+																					  y.translate
+																			  , stanceRotation =
+																					  y.stanceRotation
+																			  , valuesSet =
+																					  y.valuesSet
+																			  , oldInterpretationRoiId =
+																					  updatedRoisList
+																							  .Where(z => z
+																												  .newId
+																										  == y
+																												  .interpretationRoiId)
+																							  .Select(z => z
+																											  .oldId)
+																							  .FirstOrDefault()
+																			  ,
+																	  }))
+							   .ToList()
+				,
+		};
+
+		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
+		// made the request, that client directly received the response.
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .CreatedSignInterpretation(response.created);
+
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .DeletedSignInterpretation(response.deleted);
+
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .UpdatedSignInterpretations(response.updated);
+
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .UpdatedArtefact(response.virtualArtefact);
+
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .CreatedRoisBatch(createdRois);
+
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .UpdatedRoisBatch(updatedRois);
+
+		await _hubContext.Clients.GroupExcept(editionUser.EditionId.ToString(), clientId)
+						 .DeletedRoi(new DeleteIntIdDTO(EditionEntities.roi, deletedRoisList));
+
+		return response;
+	}
+
+	private async
+			Task<(DiffReconstructedResponseDTO reconstruction, List<UpdateEntity> updatedRois,
+					List<uint> deletedRois)> _diffReplaceText(
+					UserInfo editionUser
+					, string newText
+					, uint? priorSignInterpretationId = null
+					, uint? followingSignInterpretationId = null
+					, uint? artefactId = null
+					, Dictionary<uint, SetReconstructedInterpretationRoiDTO> textRois = null
+					, string virtualArtefactShape = null
+					, PlacementDTO virtualArtefactPlacement = null)
+	{
+		textRois ??= new Dictionary<uint, SetReconstructedInterpretationRoiDTO>();
+
+		// Request the update
+		var (created, updated, deleted, updatedRois, deletedRois) = await _textRepo.DiffReplaceText(
+				editionUser
+				, priorSignInterpretationId
+				, followingSignInterpretationId
+				, newText
+				, textRois.toModel()
+				, artefactId.HasValue
+						? new ArtefactModel
+						{
+								ArtefactId = artefactId.Value
+								, Mask = virtualArtefactShape
+								, Scale = virtualArtefactPlacement.scale
+								, Rotate = virtualArtefactPlacement.rotate
+								, TranslateX = virtualArtefactPlacement.translate.x
+								, TranslateY = virtualArtefactPlacement.translate.y
+								, ZIndex = virtualArtefactPlacement.zIndex
+								, Mirror = virtualArtefactPlacement.mirrored
+								,
+						}
+						: null);
+
+		// Collect all data on the operations that were carried out
+		var deletedData = new DeleteIntIdDTO
+		{
+				entity = EditionEntities.signInterpretation
+				, ids = deleted
+				,
+		};
+
+		var updatedData = new List<SignInterpretationDTO>();
+
+		foreach (var update in updated)
+		{
+			updatedData.Add(
+					await _signIntService.GetEditionSignInterpretationAsync(editionUser, update));
+		}
+
+		var createdData = new List<SignInterpretationDTO>();
+
+		foreach (var create in created)
+		{
+			createdData.Add(
+					await _signIntService.GetEditionSignInterpretationAsync(editionUser, create));
+		}
+
+		var createdResults =
+				new SignInterpretationListDTO { signInterpretations = createdData.ToArray() };
+
+		var updatedResults =
+				new SignInterpretationListDTO { signInterpretations = updatedData.ToArray() };
+
+		return (
+				new DiffReconstructedResponseDTO
+				{
+						created = createdResults
+						, updated = updatedResults
+						, deleted = deletedData
+						,
+				}, updatedRois, deletedRois);
+	}
+
+	// TODO: rewrite this and the following method to use a ToDTO() serialization method instead.
+	/// <summary>
+	///  Serialize a TextEdition and the list of its editors to a TextEditionDTO.
+	/// </summary>
+	/// <param name="ed">Text edition to be serialized</param>
+	/// <param name="editors">List of edition editors</param>
+	/// <returns>A TextEditionDTO</returns>
+	private static TextEditionDTO _textEditionToDTO(TextEdition ed, List<EditorInfo> editors)
+	{
+		var editorList = editors.ToDictionary(
+				editor => editor.EditorId.ToString()
+				, editor => new EditorDTO
+				{
+						email = ""
+						, // For now we will hide the email address for privacy
+						forename = editor.Forename
+						, surname = editor.Surname
+						, organization = editor.Organization
+						,
+				});
+
+		// Check if this edition has a proper collaborators field, if not dynamically add
+		// all edition editors to that field.
+		if (string.IsNullOrEmpty(ed.collaborators))
+			ed.AddLicence(editors);
+
+		return new TextEditionDTO
+		{
+				editors = editorList
+				, licence = ed.licence
+				, manuscriptId = ed.manuscriptId
+				, editionName = ed.editionName
+				, editorId = ed.manuscriptAuthor
+				, textFragments = ed.fragments.Select(x => new TextFragmentDTO
+									{
+											textFragmentId = x.TextFragmentId.GetValueOrDefault()
+											, textFragmentName = x.TextFragmentName
+											, editorId = x.TextFragmentEditorId.GetValueOrDefault()
+											, lines = x.Lines.Select(y => new LineDTO
+													   {
+															   lineId = y.LineId.GetValueOrDefault()
+															   , lineName = y.LineName
+															   , editorId =
+																	   y.LineAuthor
+																		.GetValueOrDefault()
+															   , signs = y
+																		 .Signs
+																		 .Select(z => new SignDTO
+																		 {
+																				 signInterpretations =
+																						 z.SignInterpretations
+																						  .Select(a => new
+																										  SignInterpretationDTO
+																										  {
+																												  signId =
+																														  a.SignId
+																														  ?? 0
+																												  , signInterpretationId =
+																														  a.SignInterpretationId
+																														   .GetValueOrDefault()
+																												  , character =
+																														  a.Character
+																												  , isVariant =
+																														  a.IsVariant
+																												  , commentary =
+																														  string
+																																  .IsNullOrEmpty(
+																																		  a.InterpretationCommentary)
+																																  ? null
+																																  : new
+																																		  CommentaryDTO
+																																		  {
+																																				  commentary =
+																																						  a.InterpretationCommentary
+																																				  , creatorId =
+																																						  a.InterpretationCommentaryCreator
+																																						   .GetValueOrDefault()
+																																				  , editorId =
+																																						  a.InterpretationCommentaryEditor
+																																						   .GetValueOrDefault()
+																																				  ,
+																																		  }
+																												  ,
+
+																												  //editorID =
+
+																												  attributes =
+																														  a
+																																  .Attributes
+																																  .Select(b
+																																				  => new
+																																						  InterpretationAttributeDTO
+																																						  {
+																																								  interpretationAttributeId =
+																																										  b
+																																												  .SignInterpretationAttributeId
+																																												  .GetValueOrDefault()
+																																								  , sequence =
+																																										  b.Sequence
+																																										   .GetValueOrDefault()
+																																								  , attributeId =
+																																										  b.AttributeId
+																																										   .GetValueOrDefault()
+																																								  , attributeString =
+																																										  b.AttributeString
+																																								  , attributeValueId =
+																																										  b.AttributeValueId
+																																										   .GetValueOrDefault()
+																																								  , attributeValueString =
+																																										  b
+																																												  .AttributeValueString
+																																								  , editorId =
+																																										  b
+																																												  .SignInterpretationAttributeEditorId
+																																												  .GetValueOrDefault()
+																																								  , creatorId =
+																																										  b
+																																												  .SignInterpretationAttributeCreatorId
+																																												  .GetValueOrDefault()
+																																								  , commentary =
+																																										  string
+																																												  .IsNullOrEmpty(
+																																														  b
+																																																  .AttributeCommentary)
+																																												  ? null
+																																												  : new
+																																														  CommentaryDTO
+																																														  {
+																																																  commentary =
+																																																		  b
+																																																				  .AttributeCommentary
+																																																  , creatorId =
+																																																		  b
+																																																				  .AttributeCommentaryCreatorId
+																																																				  .GetValueOrDefault()
+																																																  , editorId =
+																																																		  b
+																																																				  .AttributeCommentaryEditorId
+																																																				  .GetValueOrDefault()
+																																																  ,
+																																														  }
+																																								  ,
+																																						  })
+																																  .ToArray()
+																												  , rois =
+																														  a
+																																  .SignInterpretationRois
+																																  .Select(b
+																																				  => new
+																																						  InterpretationRoiDTO
+																																						  {
+																																								  interpretationRoiId =
+																																										  b
+																																												  .SignInterpretationRoiId
+																																												  .GetValueOrDefault()
+																																								  , signInterpretationId =
+																																										  b
+																																												  .SignInterpretationId
+																																												  .GetValueOrDefault()
+																																								  , editorId =
+																																										  b
+																																												  .SignInterpretationRoiEditorId
+																																												  .GetValueOrDefault()
+																																								  , creatorId =
+																																										  b
+																																												  .SignInterpretationRoiCreatorId
+																																												  .GetValueOrDefault()
+																																								  , artefactId =
+																																										  b.ArtefactId
+																																										   .GetValueOrDefault()
+																																								  , shape =
+																																										  b.Shape
+																																								  , translate =
+																																										  new
+																																												  TranslateDTO
+																																												  {
+																																														  x =
+																																																  b
+																																																		  .TranslateX
+																																																		  .GetValueOrDefault()
+																																														  , y =
+																																																  b
+																																																		  .TranslateY
+																																																		  .GetValueOrDefault()
+																																														  ,
+																																												  }
+																																								  , exceptional =
+																																										  b.Exceptional
+																																										   .GetValueOrDefault()
+																																								  , valuesSet =
+																																										  b.ValuesSet
+																																										   .GetValueOrDefault()
+																																								  ,
+																																						  })
+																																  .ToArray()
+																												  , nextSignInterpretations =
+																														  a.NextSignInterpretations
+																														   .Select(b => new
+																																		   NextSignInterpretationDTO
+																																		   {
+																																				   nextSignInterpretationId =
+																																						   b.NextSignInterpretationId
+																																				   , editorId =
+																																						   b.SignSequenceAuthor
+																																				   , creatorId =
+																																						   b.PositionCreatorId
+																																				   ,
+																																		   })
+																														   .ToArray()
+																												  , qwbWordIds =
+																														  a.QwbWordIds
+																														   .ToArray()
+																												  , signStreamSectionIds =
+																														  a.SignStreamSectionIds
+																														   .ToArray()
+																												  ,
+																										  })
+																						  .ToList()
+																				 ,
+																		 })
+																		 .ToList()
+															   ,
+													   })
+													   .ToList()
+											,
+									})
+									.ToList()
+				,
+		};
+	}
+
+	private static LineTextDTO _textEditionLineToDTO(TextEdition ed, List<EditorInfo> editors)
+	{
+		var editorList = editors.ToDictionary(
+				editor => editor.EditorId.ToString()
+				, editor => new EditorDTO
+				{
+						email = ""
+						, // For now we will hide the email address for privacy
+						forename = editor.Forename
+						, surname = editor.Surname
+						, organization = editor.Organization
+						,
+				});
+
+		// Check if this edition has a proper collaborators field, if not dynamically add
+		// all edition editors to that field.
+		if (string.IsNullOrEmpty(ed.collaborators))
+			ed.AddLicence(editors);
+
+		return new LineTextDTO
+		{
+				editors = editorList
+				, licence = ed.licence
+				, lineId = ed.fragments.First().Lines.First().LineId.GetValueOrDefault()
+				, lineName = ed.fragments.First().Lines.First().LineName
+				, editorId = ed.fragments.First().Lines.First().LineAuthor.GetValueOrDefault()
+				, signs = ed.fragments.First()
+							.Lines.First()
+							.Signs.Select(z => new SignDTO
+							{
+									signInterpretations = z.SignInterpretations
+														   .Select(a => new SignInterpretationDTO
+														   {
+																   signId = a.SignId ?? 0
+																   , signInterpretationId =
+																		   a.SignInterpretationId
+																			.GetValueOrDefault()
+																   , character = a.Character
+																   , isVariant = a.IsVariant
+																   , commentary =
+																		   string.IsNullOrEmpty(
+																				   a.InterpretationCommentary)
+																				   ? null
+																				   : new
+																						   CommentaryDTO
+																						   {
+																								   commentary =
+																										   a.InterpretationCommentary
+																								   , creatorId =
+																										   a.InterpretationCommentaryCreator
+																											.GetValueOrDefault()
+																								   , editorId =
+																										   a.InterpretationCommentaryEditor
+																											.GetValueOrDefault()
+																								   ,
+																						   }
+																   , attributes = a.Attributes
+																				   .Select(b => new
+																								   InterpretationAttributeDTO
+																								   {
+																										   interpretationAttributeId =
+																												   b.SignInterpretationAttributeId
+																													.GetValueOrDefault()
+																										   , sequence =
+																												   b.Sequence
+																													.GetValueOrDefault()
+																										   , attributeString =
+																												   b.AttributeString
+																										   , attributeValueId =
+																												   b.AttributeValueId
+																													.GetValueOrDefault()
+																										   , attributeValueString =
+																												   b.AttributeValueString
+																										   , editorId =
+																												   b.SignInterpretationAttributeEditorId
+																													.GetValueOrDefault()
+																										   , commentary =
+																												   string
+																														   .IsNullOrEmpty(
+																																   b.AttributeCommentary)
+																														   ? null
+																														   : new
+																																   CommentaryDTO
+																																   {
+																																		   commentary =
+																																				   b.AttributeCommentary
+																																		   , creatorId =
+																																				   b.AttributeCommentaryCreatorId
+																																					.GetValueOrDefault()
+																																		   , editorId =
+																																				   b.AttributeCommentaryEditorId
+																																					.GetValueOrDefault()
+																																		   ,
+																																   }
+																										   ,
+																								   })
+																				   .ToArray()
+																   , rois =
+																		   a.SignInterpretationRois
+																			.Select(b => new
+																							InterpretationRoiDTO
+																							{
+																									interpretationRoiId =
+																											b.SignInterpretationRoiId
+																											 .GetValueOrDefault()
+																									, signInterpretationId =
+																											b.SignInterpretationId
+																											 .GetValueOrDefault()
+																									, editorId =
+																											b.SignInterpretationRoiEditorId
+																											 .GetValueOrDefault()
+																									, creatorId =
+																											b.SignInterpretationRoiCreatorId
+																											 .GetValueOrDefault()
+																									, artefactId =
+																											b.ArtefactId
+																											 .GetValueOrDefault()
+																									, shape =
+																											b.Shape
+																									, translate =
+																											new
+																													TranslateDTO
+																													{
+																															x =
+																																	b.TranslateX
+																																	 .GetValueOrDefault()
+																															, y =
+																																	b.TranslateY
+																																	 .GetValueOrDefault()
+																															,
+																													}
+																									, exceptional =
+																											b.Exceptional
+																											 .GetValueOrDefault()
+																									, valuesSet =
+																											b.ValuesSet
+																											 .GetValueOrDefault()
+																									,
+																							})
+																			.ToArray()
+																   , nextSignInterpretations =
+																		   a.NextSignInterpretations
+																			.Select(b => new
+																							NextSignInterpretationDTO
+																							{
+																									nextSignInterpretationId =
+																											b.NextSignInterpretationId
+																									, editorId =
+																											b.SignSequenceAuthor
+																									, creatorId =
+																											b.PositionCreatorId
+																									,
+																							})
+																			.ToArray()
+																   , qwbWordIds =
+																		   a.QwbWordIds.ToArray()
+																   , signStreamSectionIds =
+																		   a.SignStreamSectionIds
+																			.ToArray()
+																   ,
+														   })
+														   .ToList()
+									,
+							})
+							.ToList()
+				,
+		};
+	}
 }

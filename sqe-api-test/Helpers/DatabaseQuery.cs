@@ -2,65 +2,107 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
-using MySql.Data.MySqlClient;
-using Newtonsoft.Json;
+using MySqlConnector;
 
-namespace SQE.ApiTest.Helpers
+namespace SQE.ApiTest.Helpers;
+
+/// <summary>
+///  In general you should avoid using this in the tests.  It is mainly used to access/check the user_email_token
+///  table, since it is impractical to access emails during integration testing.
+/// </summary>
+public class DatabaseQuery
 {
-    /// <summary>
-    ///     In general you should avoid using this in the tests.  It is mainly used to access/check the user_email_token
-    ///     table, since it is impractical to access emails during integration testing.
-    /// </summary>
-    public class DatabaseQuery
-    {
-        private readonly string _connection;
+	private readonly string _connection;
 
-        public DatabaseQuery()
-        {
-            // TODO: Find a better way to get these settings.
-            var projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName;
-            using (var r = new StreamReader(projectDirectory + "/../../sqe-api-server/appsettings.json"))
-            {
-                var json = r.ReadToEnd();
-                dynamic settings = JsonConvert.DeserializeObject(json);
-                var db = settings.ConnectionStrings.MysqlDatabase;
-                var host = settings.ConnectionStrings.MysqlHost;
-                var port = settings.ConnectionStrings.MysqlPort;
-                var user = settings.ConnectionStrings.MysqlUsername;
-                var pwd = settings.ConnectionStrings.MysqlPassword;
-                _connection = $"server={host};port={port};database={db};username={user};password={pwd};charset=utf8;";
-            }
-        }
+	public DatabaseQuery()
+	{
+		// TODO: Find a better way to get these settings.
+		var projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName;
 
-        private IDbConnection OpenConnection()
-        {
-            return new MySqlConnection(_connection);
-        }
+		using (var r = new StreamReader(
+					   projectDirectory + "/../../sqe-api-server/appsettings.json"))
+		{
+			var json = r.ReadToEnd();
 
-        public async Task<IEnumerable<T>> RunQueryAsync<T>(string sql, DynamicParameters parameters)
-        {
-            using (var connection = OpenConnection())
-            {
-                return await connection.QueryAsync<T>(sql, parameters);
-            }
-        }
+			//dynamic settings = JsonSerializer.Deserialize<object>(json);
+			var connectionStrings = JsonDocument.Parse(json)
+												.RootElement.GetProperty("ConnectionStrings");
 
-        public async Task<T> RunQuerySingleAsync<T>(string sql, DynamicParameters parameters)
-        {
-            using (var connection = OpenConnection())
-            {
-                return await connection.QuerySingleAsync<T>(sql, parameters);
-            }
-        }
+			var db = connectionStrings.GetProperty("MysqlDatabase").GetString();
 
-        public async Task<int> RunExecuteAsync(string sql, DynamicParameters parameters)
-        {
-            using (var connection = OpenConnection())
-            {
-                return await connection.ExecuteAsync(sql, parameters);
-            }
-        }
-    }
+			var host = connectionStrings.GetProperty("MysqlHost").GetString();
+
+			var port = connectionStrings.GetProperty("MysqlPort").GetString();
+
+			var user = connectionStrings.GetProperty("MysqlUsername").GetString();
+
+			var pwd = connectionStrings.GetProperty("MysqlPassword").GetString();
+			var minConn = 10;
+			var maxConn = 20;
+
+			_connection = $"server={
+				host
+			};port={
+				port
+			};database={
+				db
+			};username={
+				user
+			};password={
+				pwd
+			};charset=utf8mb4;AllowUserVariables=True;Pooling=true;MinPoolSize={
+				minConn
+			};MaxPoolSize={
+				maxConn
+			};";
+		}
+	}
+
+	private IDbConnection OpenConnection() => new MySqlConnection(_connection);
+
+	/// <summary>
+	///  Opens a fresh, caller-owned connection to the test database. Unlike the RunQuery/RunExecute
+	///  helpers (which close the connection immediately), the caller keeps this one open - useful for
+	///  holding an explicit transaction / row lock, or setting a session/global server variable, for
+	///  the duration of a test. The caller is responsible for disposing it.
+	/// </summary>
+	public async Task<MySqlConnection> OpenNewConnectionAsync()
+	{
+		var connection = new MySqlConnection(_connection);
+		await connection.OpenAsync();
+
+		return connection;
+	}
+
+	public async Task<IEnumerable<T>> RunQueryAsync<T>(string sql, DynamicParameters parameters)
+	{
+		using var connection = OpenConnection();
+		var result = await connection.QueryAsync<T>(sql, parameters);
+		connection.Close();
+
+		return result;
+	}
+
+	public async Task<T> RunQuerySingleAsync<T>(string sql, DynamicParameters parameters)
+	{
+		using var connection = OpenConnection();
+		var result = await connection.QuerySingleAsync<T>(sql, parameters);
+		connection.Close();
+
+		return result;
+	}
+
+	public async Task<int> RunExecuteAsync(string sql, DynamicParameters parameters)
+	{
+		using var connection = OpenConnection();
+		var result = await connection.ExecuteAsync(sql, parameters);
+		connection.Close();
+
+		return result;
+	}
+
+	private class DatabaseSettings { }
 }

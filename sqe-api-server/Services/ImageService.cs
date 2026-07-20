@@ -1,93 +1,151 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.SignalR;
 using SQE.API.DTO;
 using SQE.API.Server.RealtimeHubs;
+using SQE.API.Server.Serialization;
 using SQE.DatabaseAccess;
 using SQE.DatabaseAccess.Models;
 
-namespace SQE.API.Server.Services
+// ReSharper disable ArrangeRedundantParentheses
+
+namespace SQE.API.Server.Services;
+
+public interface IImageService
 {
-    public interface IImageService
-    {
-        ImageDTO ImageToDTO(Image model);
-        Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
-    }
+	ImageDTO                      ImageToDTO(Image model);
+	Task<ImageInstitutionListDTO> GetImageInstitutionsAsync();
 
-    public class ImageService : IImageService
-    {
-        private readonly IHubContext<MainHub> _hubContext;
-        private readonly IImageRepository _repo;
+	Task<InstitutionalImageListDTO> GetInstitutionImagesAsync(string institution);
 
-        public ImageService(IImageRepository repo, IHubContext<MainHub> hubContext)
-        {
-            _repo = repo;
-            _hubContext = hubContext;
-        }
+	Task<ImagedObjectTextFragmentMatchListDTO> GetImageTextFragmentsAsync(string imagedObjectId);
+}
 
-        public ImageDTO ImageToDTO(Image model)
-        {
-            return new ImageDTO
-            {
-                id = model.Id,
-                url = model.URL,
-                imageToImageMapEditorId = model.ImageToImageMapEditorId,
-                waveLength = model.WaveLength,
-                type = GetType(model.Type),
-                regionInMasterImage = model.RegionInMaster,
-                regionInImage = model.RegionOfMaster,
-                lightingDirection = GetLightingDirection(model.Type),
-                lightingType = GetLightingType(model.Type),
-                side = model.Side,
-                transformToMaster = model.TransformMatrix,
-                catalogNumber = model.ImageCatalogId,
-                master = model.Master
-            };
-        }
+public class ImageService : IImageService
+{
+	private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+	private readonly IImageRepository                 _imageRepo;
 
-        public async Task<ImageInstitutionListDTO> GetImageInstitutionsAsync()
-        {
-            var institutions = await _repo.ListImageInstitutionsAsync();
+	public ImageService(IImageRepository imageRepo, IHubContext<MainHub, ISQEClient> hubContext)
+	{
+		_imageRepo = imageRepo;
+		_hubContext = hubContext;
+	}
 
-            return ImageInstitutionsToDTO(institutions);
-        }
+	public ImageDTO ImageToDTO(Image model) => new()
+	{
+			id = model.Id
+			, url = model.URL
+			, imageToImageMapEditorId = model.ImageToImageMapEditorId
+			, waveLength = model.WaveLength
+			, type = GetType(model.Type)
+			, ppi = model.PPI
+			, regionInMasterImage = model.RegionInMaster
+			, regionInImage = model.RegionOfMaster
+			, lightingDirection = GetLightingDirection(model.Type)
+			, lightingType = GetLightingType(model.Type)
+			, side = model.Side == "recto"
+					? SideDesignation.recto
+					: SideDesignation.verso
+			, imageManifest = model.ImageManifest
+			, catalogNumber = model.ImageCatalogId
+			, master = model.Master
 
-        private static string GetType(byte type)
-        {
-            if (type == 0)
-                return "color";
-            if (type == 1)
-                return "infrared";
-            if (type == 2)
-                return "rakingLeft";
-            if (type == 3)
-                return "rakingRight";
-            return null;
-        }
+			// There is no placement info for a master image, it maps to itself 1:1
+			, placement = model.Master
+					? null
+					: new PlacementDTO
+					{
+							scale = model.Scale
+							, rotate = model.Rotate
+							, translate = new TranslateDTO
+							{
+									x = model.TranslateX
+									, y = model.TranslateY
+									,
+							}
+							,
+					}
+			,
+	};
 
-        private static ImageDTO.Lighting GetLightingType(byte type)
-        {
-            if (type == 2
-                || type == 3) return ImageDTO.Lighting.raking;
-            return ImageDTO.Lighting.direct; // need to check..
-        }
+	public async Task<ImageInstitutionListDTO> GetImageInstitutionsAsync()
+	{
+		var institutions = await _imageRepo.ListImageInstitutionsAsync();
 
-        private static ImageDTO.Direction GetLightingDirection(byte type)
-        {
-            if (type == 2) return ImageDTO.Direction.left;
-            if (type == 3) return ImageDTO.Direction.right;
-            return ImageDTO.Direction.top; // need to check..
-        }
+		return ImageInstitutionsToDTO(institutions);
+	}
 
-        private static ImageInstitutionListDTO ImageInstitutionsToDTO(IEnumerable<ImageInstitution> imageInstitutions)
-        {
-            return new ImageInstitutionListDTO(
-                imageInstitutions.Select(
-                        imageInstitution => new ImageInstitutionDTO(imageInstitution.Name)
-                    )
-                    .ToList()
-            );
-        }
-    }
+	public async Task<InstitutionalImageListDTO> GetInstitutionImagesAsync(string institution)
+		=> (await _imageRepo.InstitutionImages(institution)).ToDTO();
+
+	public async Task<ImagedObjectTextFragmentMatchListDTO> GetImageTextFragmentsAsync(
+			string imagedObjectId)
+	{
+		imagedObjectId = HttpUtility.UrlDecode(imagedObjectId);
+
+		var textFragments = await _imageRepo.GetImageTextFragmentsAsync(imagedObjectId);
+
+		return new ImagedObjectTextFragmentMatchListDTO
+		{
+				matches = textFragments.Select(x => new ImagedObjectTextFragmentMatchDTO(
+													   x.EditionId
+													   , x.ManuscriptName
+													   , x.TextFragmentId
+													   , x.TextFragmentName
+													   , x.Side == 0
+															   ? SideDesignation.recto
+															   : SideDesignation.verso))
+									   .ToList()
+				,
+		};
+	}
+
+	private static string GetType(byte type)
+	{
+		if (type == 0)
+			return "color";
+
+		if (type == 1)
+			return "infrared";
+
+		if (type == 2)
+			return "rakingLeft";
+
+		if (type == 3)
+			return "rakingRight";
+
+		return null;
+	}
+
+	private static SimpleImageDTO.Lighting GetLightingType(byte type)
+	{
+		if ((type == 2)
+			|| (type == 3))
+			return SimpleImageDTO.Lighting.raking;
+
+		return SimpleImageDTO.Lighting.direct; // need to check..
+	}
+
+	private static SimpleImageDTO.Direction GetLightingDirection(byte type)
+	{
+		if (type == 2)
+			return SimpleImageDTO.Direction.left;
+
+		if (type == 3)
+			return SimpleImageDTO.Direction.right;
+
+		return SimpleImageDTO.Direction.top; // need to check..
+	}
+
+	private static ImageInstitutionListDTO ImageInstitutionsToDTO(
+			IEnumerable<ImageInstitution> imageInstitutions)
+	{
+		return new ImageInstitutionListDTO(
+				imageInstitutions
+						.Select(imageInstitution => new ImageInstitutionDTO(imageInstitution.Name))
+						.ToList());
+	}
 }

@@ -1,0 +1,51 @@
+using System.Data.Common;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using MySqlConnector;
+
+namespace SQE.DatabaseAccess.Helpers;
+
+public interface IDatabaseManager
+{
+	DbConnection       GetConnection();
+	Task<DbConnection> GetConnectionAsync();
+}
+
+public class DatabaseManager : IDatabaseManager
+{
+	private readonly string _connectionString;
+
+	public DatabaseManager(IConfiguration config)
+	{
+		var db = config.GetConnectionString("MysqlDatabase");
+		var host = config.GetConnectionString("MysqlHost");
+		var port = config.GetConnectionString("MysqlPort");
+		var user = config.GetConnectionString("MysqlUsername");
+		var pwd = config.GetConnectionString("MysqlPassword");
+		var minConn = config.GetConnectionString("MysqlMinConnectionPoolSize") ?? "8";
+		var maxConn = config.GetConnectionString("MysqlMaxConnectionPoolSize") ?? "16";
+
+		_connectionString = $"server={
+			host
+		};port={
+			port
+		};database={
+			db
+		};username={
+			user
+		};password={
+			pwd
+		};MinPoolSize={
+			minConn
+		};MaxPoolSize={
+			maxConn
+		};charset=utf8mb4;AllowUserVariables=True;Pooling=true;DefaultCommandTimeout=120;ConnectionReset=true;";
+	}
+
+	public DbConnection GetConnection() => new MySqlConnection(_connectionString);
+
+	// Constructing a MySqlConnection is cheap and synchronous (no I/O until Open), so there is no
+	// work to offload to a thread. Return it directly rather than paying a thread-pool hop.
+	public Task<DbConnection> GetConnectionAsync()
+		=> Task.FromResult<DbConnection>(new MySqlConnection(_connectionString));
+}

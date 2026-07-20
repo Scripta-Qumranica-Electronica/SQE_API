@@ -1,366 +1,520 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using SQE.DatabaseAccess.Helpers;
 using SQE.DatabaseAccess.Models;
 using SQE.DatabaseAccess.Queries;
 
-namespace SQE.DatabaseAccess
+// ReSharper disable ArrangeRedundantParentheses
+
+namespace SQE.DatabaseAccess;
+
+public interface IRoiRepository
 {
-    public interface IRoiRepository
-    {
-        Task<List<SignInterpretationROI>> CreateRoisAsync(EditionUserInfo editionUser,
-            List<SetSignInterpretationROI> newRois);
+	Task<List<SignInterpretationRoiData>> CreateRoisAsync(
+			UserInfo                          editionUser
+			, List<SignInterpretationRoiData> newRois
+			, IDbConnection                   connection = null);
 
-        Task<List<UpdatedSignInterpretationROI>> UpdateRoisAsync(EditionUserInfo editionUser,
-            List<SignInterpretationROI> updateRois);
+	Task<List<SignInterpretationRoiData>> UpdateRoisAsync(
+			UserInfo                          editionUser
+			, List<SignInterpretationRoiData> updateRois
+			, IDbConnection                   connection = null);
 
-        (Task<List<SignInterpretationROI>>, Task<List<UpdatedSignInterpretationROI>>, Task<List<uint>>)
-            BatchEditRoisAsync(EditionUserInfo editionUser,
-                List<SetSignInterpretationROI> newRois,
-                List<SignInterpretationROI> updateRois,
-                List<uint> deleteRois);
+	Task<(List<SignInterpretationRoiData>, List<SignInterpretationRoiData>, List<uint>)>
+			BatchEditRoisAsync(
+					UserInfo                          editionUser
+					, List<SignInterpretationRoiData> newRois
+					, List<SignInterpretationRoiData> updateRois
+					, List<uint>                      deleteRois);
 
-        Task<List<uint>> DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds);
+	Task<List<uint>> DeleteRoisAsync(
+			UserInfo     editionUser
+			, List<uint> deleteRoiIds
+			, uint?      signInterpretationId = null);
 
-        Task<DetailedSignInterpretationROI> GetSignInterpretationRoiByIdAsync(EditionUserInfo editionUser,
-            uint signInterpretationRoiId);
+	Task<List<uint>> DeleteAllRoisForSignInterpretationAsync(
+			UserInfo editionUser
+			, uint   signInterpretationId);
 
-        Task<List<DetailedSignInterpretationROI>> GetSignInterpretationRoisByArtefactIdAsync(
-            EditionUserInfo editionUser,
-            uint artefactId);
-    }
+	Task<SignInterpretationRoiData> GetSignInterpretationRoiByIdAsync(
+			UserInfo editionUser
+			, uint   signInterpretationRoiId);
 
-    public class RoiRepository : DbConnectionBase, IRoiRepository
-    {
-        private readonly IDatabaseWriter _databaseWriter;
+	Task<List<SignInterpretationRoiData>> GetSignInterpretationRoisByArtefactIdAsync(
+			UserInfo editionUser
+			, uint   artefactId);
 
-        public RoiRepository(IConfiguration config, IDatabaseWriter databaseWriter) : base(config)
-        {
-            _databaseWriter = databaseWriter;
-        }
+	Task<List<uint>> GetSignInterpretationRoiIdsByDataAsync(
+			UserInfo                          editionUser
+			, SignInterpretationROISearchData searchData);
 
-        /// <summary>
-        ///     Creates a sign interpretation roi from a list.
-        /// </summary>
-        /// <param name="editionUser">UserInfo object with user details and edition permissions</param>
-        /// <param name="newRois">List of rois to be added to the system.</param>
-        /// <returns></returns>
-        public async Task<List<SignInterpretationROI>> CreateRoisAsync(EditionUserInfo editionUser,
-            List<SetSignInterpretationROI> newRois)
-        {
-            return newRois != null && newRois.Any()
-                ? (await Task.WhenAll(
-                    newRois.Select(
-                        async x =>
-                        {
-                            var roiShapeId = CreateRoiShapeAsync(x.Shape);
-                            var roiPositionId = CreateRoiPositionAsync(
-                                x.ArtefactId,
-                                x.TranslateX,
-                                x.TranslateY,
-                                x.StanceRotation
-                            );
-                            var signInterpretationRoiId = await CreateSignInterpretationRoiAsync(
-                                editionUser,
-                                x.SignInterpretationId,
-                                await roiShapeId,
-                                await roiPositionId,
-                                x.ValuesSet,
-                                x.Exceptional
-                            );
-                            return (SignInterpretationROI)await GetSignInterpretationRoiByIdAsync(
-                                editionUser,
-                                signInterpretationRoiId
-                            );
-                        }
-                    )
-                )).ToList()
-                : new List<SignInterpretationROI>();
-        }
+	Task<List<SignInterpretationRoiData>> GetSignInterpretationRoisByDataAsync(
+			UserInfo                          editionUser
+			, SignInterpretationROISearchData searchData);
 
-        public (Task<List<SignInterpretationROI>>, Task<List<UpdatedSignInterpretationROI>>, Task<List<uint>>)
-            BatchEditRoisAsync(EditionUserInfo editionUser,
-                List<SetSignInterpretationROI> newRois,
-                List<SignInterpretationROI> updateRois,
-                List<uint> deleteRois)
-        {
-            using (var transactionScope = new TransactionScope())
-            using (var connection = OpenConnection())
-            {
-                var createdRois = CreateRoisAsync(editionUser, newRois);
-                var updatedRois = UpdateRoisAsync(editionUser, updateRois);
-                var deletedRois = DeletRoisAsync(editionUser, deleteRois);
-                transactionScope.Complete();
-                return (createdRois, updatedRois, deletedRois);
-            }
-        }
+	Task<List<uint>> GetSignInterpretationRoisIdsByInterpretationId(
+			UserInfo editionUser
+			, uint   signInterpretationId);
 
-        /// <summary>
-        ///     Updates each sign interpretation roi in a list.
-        /// </summary>
-        /// <param name="editionUser">UserInfo object with user details and edition permissions</param>
-        /// <param name="updateRois">List of rois to be added to the system.</param>
-        /// <returns></returns>
-        public async Task<List<UpdatedSignInterpretationROI>> UpdateRoisAsync(EditionUserInfo editionUser,
-            List<SignInterpretationROI> updateRois)
-        {
-            return updateRois != null && updateRois.Any()
-                ? (await Task.WhenAll(
-                    updateRois.Select(
-                        async x =>
-                        {
-                            var originalSignRoiInterpretation =
-                                await GetSignInterpretationRoiByIdAsync(editionUser, x.SignInterpretationRoiId);
+	Task<(List<SignInterpretationRoiData>, List<uint>)> ReplaceSignInterpretationRoisAsync(
+			UserInfo                          editionUser
+			, List<SignInterpretationRoiData> rois);
+}
 
-                            // TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
-                            var roiShapeId = originalSignRoiInterpretation.Shape == x.Shape
-                                ? originalSignRoiInterpretation.RoiShapeId
-                                : await CreateRoiShapeAsync(x.Shape);
+public class RoiRepository(IDatabaseAccessor adb) : IRoiRepository
+{
+	/// <summary>
+	///  Creates a sign interpretation roi from a list.
+	/// </summary>
+	/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
+	/// <param name="newRois">List of rois to be added to the system.</param>
+	/// <returns></returns>
+	public async Task<List<SignInterpretationRoiData>> CreateRoisAsync(
+			UserInfo                          editionUser
+			, List<SignInterpretationRoiData> newRois
+			, IDbConnection                   connection = null)
+	{
+		await adb.BeginTransactionAsync();
+		var response = new SignInterpretationRoiData[newRois.Count];
 
-                            var roiPositionId = originalSignRoiInterpretation.TranslateX == x.TranslateX
-                                                && originalSignRoiInterpretation.TranslateY == x.TranslateY
-                                                && originalSignRoiInterpretation.StanceRotation == x.StanceRotation
-                                                && originalSignRoiInterpretation.ArtefactId == x.ArtefactId
-                                ? originalSignRoiInterpretation.RoiPositionId
-                                : await CreateRoiPositionAsync(
-                                    x.ArtefactId,
-                                    x.TranslateX,
-                                    x.TranslateY,
-                                    x.StanceRotation
-                                );
+		foreach (var (newRoi, index) in newRois.Select((x, idx) => (x, idx)))
+		{
+			var roiShapeId = await CreateRoiShapeAsync(newRoi.Shape);
 
-                            var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
-                                editionUser,
-                                x.SignInterpretationId,
-                                roiShapeId,
-                                roiPositionId,
-                                x.ValuesSet,
-                                x.Exceptional,
-                                x.SignInterpretationRoiId
-                            );
-                            if (!signInterpretationRoiUpdate.NewId.HasValue
-                                || !signInterpretationRoiUpdate.OldId.HasValue)
-                                throw new StandardExceptions.DataNotWrittenException("update sign interpretation");
+			var roiPositionId = await CreateRoiPositionAsync(
+					newRoi.ArtefactId.GetValueOrDefault()
+					, newRoi.TranslateX.GetValueOrDefault()
+					, newRoi.TranslateY.GetValueOrDefault()
+					, newRoi.StanceRotation.GetValueOrDefault());
 
-                            var updatedRoi =
-                                (SignInterpretationROI)await GetSignInterpretationRoiByIdAsync(
-                                    editionUser,
-                                    signInterpretationRoiUpdate.NewId.Value
-                                );
-                            return new UpdatedSignInterpretationROI
-                            {
-                                ArtefactId = updatedRoi.ArtefactId,
-                                Exceptional = updatedRoi.Exceptional,
-                                OldSignInterpretationRoiId = signInterpretationRoiUpdate.OldId.Value,
-                                Position = updatedRoi.Position,
-                                Shape = updatedRoi.Shape,
-                                SignInterpretationId = updatedRoi.SignInterpretationId,
-                                SignInterpretationRoiAuthor = updatedRoi.SignInterpretationRoiAuthor,
-                                SignInterpretationRoiId = updatedRoi.SignInterpretationRoiId,
-                                ValuesSet = updatedRoi.ValuesSet
-                            };
-                        }
-                    )
-                )).ToList()
-                : new List<UpdatedSignInterpretationROI>();
-        }
+			var signInterpretationRoiId = await CreateSignInterpretationRoiAsync(
+					editionUser
+					, newRoi.SignInterpretationId
+					, roiShapeId
+					, roiPositionId
+					, newRoi.ValuesSet.GetValueOrDefault()
+					, newRoi.Exceptional.GetValueOrDefault());
 
-        /// <summary>
-        ///     Deletes the ROI's with the submitted roiIds from the edition
-        /// </summary>
-        /// <param name="editionUser">UserInfo object with user details and edition permissions</param>
-        /// <param name="deleteRoiIds">ROI ID's to be deleted'</param>
-        /// <returns></returns>
-        public async Task<List<uint>> DeletRoisAsync(EditionUserInfo editionUser, List<uint> deleteRoiIds)
-        {
-            if (deleteRoiIds == null)
-                return new List<uint>();
+			response[index] = await GetSignInterpretationRoiByIdAsync(
+					editionUser
+					, signInterpretationRoiId);
+		}
 
-            foreach (var deleteRoiId in deleteRoiIds) await DeleteSignInterpretationRoiAsync(editionUser, deleteRoiId);
-            return deleteRoiIds;
-        }
+		adb.CommitTransaction();
 
-        public async Task<DetailedSignInterpretationROI> GetSignInterpretationRoiByIdAsync(EditionUserInfo editionUser,
-            uint signInterpretationRoiId)
-        {
-            using (var connection = OpenConnection())
-            {
-                var result = (await connection.QueryAsync<DetailedSignInterpretationROI>(
-                    GetSignInterpretationRoiDetailsQuery.GetQuery,
-                    new
-                    {
-                        editionUser.EditionId,
-                        SignInterpretationRoiId = signInterpretationRoiId
-                    }
-                )).ToList();
+		return response.AsList();
+	}
 
-                if (result.Count != 1)
-                    throw new StandardExceptions.DataNotFoundException(
-                        "sign interpretation roi",
-                        signInterpretationRoiId
-                    );
-                return result.First();
-            }
-        }
+	public async
+			Task<(List<SignInterpretationRoiData>, List<SignInterpretationRoiData>, List<uint>)>
+			BatchEditRoisAsync(
+					UserInfo                          editionUser
+					, List<SignInterpretationRoiData> newRois
+					, List<SignInterpretationRoiData> updateRois
+					, List<uint>                      deleteRois)
+	{
+		await adb.BeginTransactionAsync();
+		var createdRois = await CreateRoisAsync(editionUser, newRois);
 
-        public async Task<List<DetailedSignInterpretationROI>> GetSignInterpretationRoisByArtefactIdAsync(
-            EditionUserInfo editionUser,
-            uint artefactId)
-        {
-            using (var connection = OpenConnection())
-            {
-                return (await connection.QueryAsync<DetailedSignInterpretationROI>(
-                    GetSignInterpretationRoiDetailsByArtefactIdQuery.GetQuery,
-                    new
-                    {
-                        editionUser.EditionId,
-                        ArtefactId = artefactId
-                    }
-                )).ToList();
-            }
-        }
+		var updatedRois = await UpdateRoisAsync(editionUser, updateRois);
 
-        #region Private methods
+		var deletedRois = await DeleteRoisAsync(editionUser, deleteRois);
 
-        private async Task<uint> CreateRoiShapeAsync(string path)
-        {
-            using (var connection = OpenConnection())
-            {
-                var insertedShape = await connection.ExecuteAsync(
-                    CreateRoiShapeQuery.GetQuery,
-                    new
-                    {
-                        Path = path
-                    }
-                );
+		adb.CommitTransaction();
 
-                return await connection.QuerySingleAsync<uint>(
-                    GetRoiShapeIdQuery.GetQuery,
-                    new
-                    {
-                        Path = path
-                    }
-                );
-            }
-        }
+		return (createdRois, updatedRois, deletedRois);
+	}
 
-        private async Task<uint> CreateRoiPositionAsync(uint artefactId,
-            uint translateX,
-            uint translateY,
-            ushort stanceRotate)
-        {
-            using (var connection = OpenConnection())
-            {
-                var insertedShape = await connection.ExecuteAsync(
-                    CreateRoiPositionQuery.GetQuery,
-                    new
-                    {
-                        ArtefactId = artefactId,
-                        TranslateX = translateX,
-                        TranslateY = translateY,
-                        StanceRotation = stanceRotate
-                    }
-                );
+	/// <summary>
+	///  Updates each sign interpretation roi in a list.
+	/// </summary>
+	/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
+	/// <param name="updateRois">List of rois to be added to the system.</param>
+	/// <returns></returns>
+	public async Task<List<SignInterpretationRoiData>> UpdateRoisAsync(
+			UserInfo                          editionUser
+			, List<SignInterpretationRoiData> updateRois
+			, IDbConnection                   connection = null)
+	{
+		var response = new SignInterpretationRoiData[updateRois.Count];
 
-                return await connection.QuerySingleAsync<uint>(
-                    GetRoiPositionIdQuery.GetQuery,
-                    new
-                    {
-                        ArtefactId = artefactId,
-                        TranslateX = translateX,
-                        TranslateY = translateY,
-                        StanceRotation = stanceRotate
-                    }
-                );
-            }
-        }
+		await adb.BeginTransactionAsync();
 
-        private async Task<uint> CreateSignInterpretationRoiAsync(
-            EditionUserInfo editionUser,
-            uint? signInterpretationId,
-            uint roiShapeId,
-            uint roiPositionId,
-            bool valuesSet,
-            bool exceptional)
-        {
-            var signInterpretationRoiParameters = new DynamicParameters();
-            signInterpretationRoiParameters.Add("@sign_interpretation_id", signInterpretationId);
-            signInterpretationRoiParameters.Add("@roi_shape_id", roiShapeId);
-            signInterpretationRoiParameters.Add("@roi_position_id", roiPositionId);
-            signInterpretationRoiParameters.Add("@values_set", valuesSet);
-            signInterpretationRoiParameters.Add("@exceptional", exceptional);
-            var signInterpretationRoiRequest = new MutationRequest(
-                MutateType.Create,
-                signInterpretationRoiParameters,
-                "sign_interpretation_roi"
-            );
+		foreach (var (updateRoi, index) in updateRois.Select((x, idx) => (x, idx)))
+		{
+			if (!updateRoi.SignInterpretationRoiId.HasValue)
+			{
+				var updatedRois = await CreateRoisAsync(
+						editionUser
+						, new List<SignInterpretationRoiData> { updateRoi });
 
-            var writeResults = await _databaseWriter.WriteToDatabaseAsync(
-                editionUser,
-                new List<MutationRequest> { signInterpretationRoiRequest }
-            );
+				response[index] = updatedRois.FirstOrDefault();
 
-            if (writeResults.Count != 1
-                || !writeResults.First().NewId.HasValue)
-                throw new StandardExceptions.DataNotWrittenException("create sign interpretation roi");
-            return writeResults.First().NewId.Value;
-        }
+				continue;
+			}
 
-        private async Task<AlteredRecord> UpdateSignInterpretationRoiAsync(
-            EditionUserInfo editionUser,
-            uint? signInterpretationId,
-            uint roiShapeId,
-            uint roiPositionId,
-            bool valuesSet,
-            bool exceptional,
-            uint signInterpretationRoiId)
-        {
-            var signInterpretationRoiParameters = new DynamicParameters();
-            signInterpretationRoiParameters.Add("@sign_interpretation_id", signInterpretationId);
-            signInterpretationRoiParameters.Add("@roi_shape_id", roiShapeId);
-            signInterpretationRoiParameters.Add("@roi_position_id", roiPositionId);
-            signInterpretationRoiParameters.Add("@values_set", valuesSet);
-            signInterpretationRoiParameters.Add("@exceptional", exceptional);
-            var signInterpretationRoiRequest = new MutationRequest(
-                MutateType.Update,
-                signInterpretationRoiParameters,
-                "sign_interpretation_roi",
-                signInterpretationRoiId
-            );
+			var originalSignRoiInterpretation = await GetSignInterpretationRoiByIdAsync(
+					editionUser
+					, updateRoi.SignInterpretationRoiId.Value);
 
-            var writeResults = await _databaseWriter.WriteToDatabaseAsync(
-                editionUser,
-                new List<MutationRequest> { signInterpretationRoiRequest }
-            );
+			// TODO: Maybe parse this better, because the strings can be non-equal, but the data may still be the same.
+			var roiShapeId = originalSignRoiInterpretation.Shape == updateRoi.Shape
+					? originalSignRoiInterpretation.RoiShapeId
+					: await CreateRoiShapeAsync(updateRoi.Shape);
 
-            if (writeResults.Count != 1
-                || !writeResults.First().NewId.HasValue)
-                throw new StandardExceptions.DataNotWrittenException("update sign interpretation roi");
-            return writeResults.First();
-        }
+			var roiPositionId = (originalSignRoiInterpretation.TranslateX == updateRoi.TranslateX)
+								&& (originalSignRoiInterpretation.TranslateY
+									== updateRoi.TranslateY)
+								&& (originalSignRoiInterpretation.StanceRotation
+									== updateRoi.StanceRotation)
+								&& (originalSignRoiInterpretation.ArtefactId
+									== updateRoi.ArtefactId)
+					? originalSignRoiInterpretation.RoiPositionId
+					: await CreateRoiPositionAsync(
+							updateRoi.ArtefactId.GetValueOrDefault()
+							, updateRoi.TranslateX.GetValueOrDefault()
+							, updateRoi.TranslateY.GetValueOrDefault()
+							, updateRoi.StanceRotation.GetValueOrDefault());
 
-        private async Task DeleteSignInterpretationRoiAsync(EditionUserInfo editionUser, uint signInterpretationRoiId)
-        {
-            var signInterpretationRoiRequest = new MutationRequest(
-                MutateType.Delete,
-                new DynamicParameters(),
-                "sign_interpretation_roi",
-                signInterpretationRoiId
-            );
+			var signInterpretationRoiUpdate = await UpdateSignInterpretationRoiAsync(
+					editionUser
+					, updateRoi.SignInterpretationId
+					, roiShapeId.GetValueOrDefault()
+					, roiPositionId.GetValueOrDefault()
+					, updateRoi.ValuesSet.GetValueOrDefault()
+					, updateRoi.Exceptional.GetValueOrDefault()
+					, updateRoi.SignInterpretationRoiId.GetValueOrDefault());
 
-            var writeResults = await _databaseWriter.WriteToDatabaseAsync(
-                editionUser,
-                new List<MutationRequest> { signInterpretationRoiRequest }
-            );
+			if (!signInterpretationRoiUpdate.NewId.HasValue
+				|| !signInterpretationRoiUpdate.OldId.HasValue)
+				throw new StandardExceptions.DataNotWrittenException("update sign interpretation");
 
-            if (writeResults.Count != 1)
-                throw new StandardExceptions.DataNotWrittenException("delete sign interpretation roi");
-        }
+			var updatedRoi = await GetSignInterpretationRoiByIdAsync(
+					editionUser
+					, signInterpretationRoiUpdate.NewId.Value);
 
-        #endregion Private methods
-    }
+			updatedRoi.SignInterpretationRoiId = signInterpretationRoiUpdate.NewId;
+
+			updatedRoi.OldSignInterpretationRoiId = signInterpretationRoiUpdate.OldId.Value;
+
+			response[index] = updatedRoi;
+		}
+
+		adb.CommitTransaction();
+
+		return response.AsList();
+	}
+
+	/// <summary>
+	///  Deletes the ROI's with the submitted roiIds from the edition
+	/// </summary>
+	/// <param name="editionUser">UserInfo object with user details and edition permissions</param>
+	/// <param name="deleteRoiIds">ROI ID's to be deleted'</param>
+	/// <param name="signInterpretationId"></param>
+	/// <returns></returns>
+	public async Task<List<uint>> DeleteRoisAsync(
+			UserInfo     editionUser
+			, List<uint> deleteRoiIds
+			, uint?      signInterpretationId = null)
+	{
+		if (deleteRoiIds == null)
+			return new List<uint>();
+
+		foreach (var deleteRoiId in deleteRoiIds)
+			await DeleteSignInterpretationRoiAsync(editionUser, deleteRoiId, signInterpretationId);
+
+		return deleteRoiIds;
+	}
+
+	/// <summary>
+	///  Deletes all rois for the sign interpretation referred by its id
+	/// </summary>
+	/// <param name="editionUser">Edition user object</param>
+	/// <param name="signInterpretationId">Id of sign interpretation</param>
+	/// <returns>List of ids of deleted roiss</returns>
+	public async Task<List<uint>> DeleteAllRoisForSignInterpretationAsync(
+			UserInfo editionUser
+			, uint   signInterpretationId)
+	{
+		var roiIds = await GetSignInterpretationRoisIdsByInterpretationId(
+				editionUser
+				, signInterpretationId);
+
+		return await DeleteRoisAsync(editionUser, roiIds, signInterpretationId);
+	}
+
+	public async Task<SignInterpretationRoiData> GetSignInterpretationRoiByIdAsync(
+			UserInfo editionUser
+			, uint   signInterpretationRoiId)
+	{
+		var result = (await adb.QueryAsync<SignInterpretationRoiData>(
+				GetSignInterpretationRoiDetailsQuery.GetQuery
+				, new
+				{
+						editionUser.EditionId
+						, SignInterpretationRoiId = signInterpretationRoiId
+						,
+				})).ToList();
+
+		if (result.Count != 1)
+		{
+			throw new StandardExceptions.DataNotFoundException(
+					"sign interpretation roi"
+					, signInterpretationRoiId);
+		}
+
+		return result.First();
+	}
+
+	public async Task<List<SignInterpretationRoiData>> GetSignInterpretationRoisByArtefactIdAsync(
+			UserInfo editionUser
+			, uint   artefactId) => (await adb.QueryAsync<SignInterpretationRoiData>(
+			GetSignInterpretationRoiDetailsByArtefactIdQuery.GetQuery
+			, new
+			{
+					editionUser.EditionId
+					, ArtefactId = artefactId
+					,
+			})).ToList();
+
+	/// <summary>
+	///  Retrieves all sign interpretation rois which match the data provided by searchData
+	/// </summary>
+	/// <param name="editionUser">Edition user object</param>
+	/// <param name="searchData">Sign interpretation roi search data object</param>
+	/// <returns>List of sign interpretation attribute data - if nothing had been found the list is empty.</returns>
+	public async Task<List<SignInterpretationRoiData>> GetSignInterpretationRoisByDataAsync(
+			UserInfo                          editionUser
+			, SignInterpretationROISearchData searchData)
+	{
+		var query = GetSignInterpretationRoiDetailsByDataQuery.GetQuery.Replace(
+				"@WhereData"
+				, searchData.getSearchParameterString());
+
+		var result = await adb.QueryAsync<SignInterpretationRoiData>(
+				query
+				, new { editionUser.EditionId });
+
+		return result == null
+				? new List<SignInterpretationRoiData>()
+				: result.ToList();
+	}
+
+	public async Task<List<uint>> GetSignInterpretationRoisIdsByInterpretationId(
+			UserInfo editionUser
+			, uint   signInterpretationId)
+	{
+		var searchData = new SignInterpretationROISearchData
+		{
+				SignInterpretationId = signInterpretationId,
+		};
+
+		return await GetSignInterpretationRoiIdsByDataAsync(editionUser, searchData);
+	}
+
+	public async Task<(List<SignInterpretationRoiData>, List<uint>)>
+			ReplaceSignInterpretationRoisAsync(
+					UserInfo                          editionUser
+					, List<SignInterpretationRoiData> rois)
+	{
+		var deletedRois = new List<uint>();
+
+		foreach (var signInterpretationId in rois.Select(r => r.SignInterpretationId).Distinct())
+		{
+			deletedRois.AddRange(
+					await DeleteAllRoisForSignInterpretationAsync(
+							editionUser
+							, signInterpretationId.GetValueOrDefault()));
+		}
+
+		return (await CreateRoisAsync(editionUser, rois), deletedRois);
+	}
+
+	/// <summary>
+	///  Retrieves all sign interpretation roi ids which match the data provided by searchData
+	/// </summary>
+	/// <param name="editionUser">Edition user object</param>
+	/// <param name="searchData">Sign interpretation roi search data object</param>
+	/// <returns>List of sign interpretation attribute data - if nothing had been found the list is empty.</returns>
+	public async Task<List<uint>> GetSignInterpretationRoiIdsByDataAsync(
+			UserInfo                          editionUser
+			, SignInterpretationROISearchData searchData)
+	{
+		var query = GetRoiIdByData.GetQuery
+								  .Replace("@WhereData", searchData.getSearchParameterString())
+								  .Replace("@JoinString", searchData.getJoinsString());
+
+		var result = await adb.QueryAsync<uint>(query, new { editionUser.EditionId });
+
+		return result == null
+				? new List<uint>()
+				: result.ToList();
+	}
+
+	#region Private methods
+
+	private async Task<uint> CreateRoiShapeAsync(string path)
+	{
+		await adb.ExecuteAsync(CreateRoiShapeQuery.GetQuery, new { Path = path });
+
+		return await adb.QueryFirstAsync<uint>(GetRoiShapeIdQuery.GetQuery, new { Path = path });
+	}
+
+	private async Task<uint> CreateRoiPositionAsync(
+			uint     artefactId
+			, int    translateX
+			, int    translateY
+			, ushort stanceRotate)
+	{
+		await adb.ExecuteAsync(
+				CreateRoiPositionQuery.GetQuery
+				, new
+				{
+						ArtefactId = artefactId
+						, TranslateX = translateX
+						, TranslateY = translateY
+						, StanceRotation = stanceRotate
+						,
+				});
+
+		return await adb.QuerySingleAsync<uint>(
+				GetRoiPositionIdQuery.GetQuery
+				, new
+				{
+						ArtefactId = artefactId
+						, TranslateX = translateX
+						, TranslateY = translateY
+						, StanceRotation = stanceRotate
+						,
+				});
+	}
+
+	private async Task<uint> CreateSignInterpretationRoiAsync(
+			UserInfo editionUser
+			, uint?  signInterpretationId
+			, uint   roiShapeId
+			, uint   roiPositionId
+			, bool   valuesSet
+			, bool   exceptional)
+	{
+		var signInterpretationRoiParameters = new DynamicParameters();
+
+		signInterpretationRoiParameters.Add("@sign_interpretation_id", signInterpretationId);
+
+		signInterpretationRoiParameters.Add("@roi_shape_id", roiShapeId);
+
+		signInterpretationRoiParameters.Add("@roi_position_id", roiPositionId);
+
+		signInterpretationRoiParameters.Add("@values_set", valuesSet);
+
+		signInterpretationRoiParameters.Add("@exceptional", exceptional);
+
+		var signInterpretationRoiRequest = new MutationRequest(
+				MutateType.Create
+				, signInterpretationRoiParameters
+				, "sign_interpretation_roi");
+
+		var writeResults = await adb.WriteToDatabaseAsync(
+				editionUser
+				, new List<MutationRequest> { signInterpretationRoiRequest });
+
+		var writtenResult = writeResults.First();
+
+		if (writtenResult?.NewId == null)
+			throw new StandardExceptions.DataNotWrittenException("create sign interpretation roi");
+
+		return writtenResult.NewId.Value;
+	}
+
+	private async Task<AlteredRecord> UpdateSignInterpretationRoiAsync(
+			UserInfo editionUser
+			, uint?  signInterpretationId
+			, uint   roiShapeId
+			, uint   roiPositionId
+			, bool   valuesSet
+			, bool   exceptional
+			, uint   signInterpretationRoiId)
+	{
+		var signInterpretationRoiParameters = new DynamicParameters();
+
+		signInterpretationRoiParameters.Add("@sign_interpretation_id", signInterpretationId);
+
+		signInterpretationRoiParameters.Add("@roi_shape_id", roiShapeId);
+
+		signInterpretationRoiParameters.Add("@roi_position_id", roiPositionId);
+
+		signInterpretationRoiParameters.Add("@values_set", valuesSet);
+
+		signInterpretationRoiParameters.Add("@exceptional", exceptional);
+
+		var signInterpretationRoiRequest = new MutationRequest(
+				MutateType.Update
+				, signInterpretationRoiParameters
+				, "sign_interpretation_roi"
+				, signInterpretationRoiId);
+
+		var writeResults = await adb.WriteToDatabaseAsync(
+				editionUser
+				, new List<MutationRequest> { signInterpretationRoiRequest });
+
+		if ((writeResults.Count != 1)
+			|| !writeResults.First().NewId.HasValue)
+			throw new StandardExceptions.DataNotWrittenException("update sign interpretation roi");
+
+		return writeResults.First();
+	}
+
+	private async Task DeleteSignInterpretationRoiAsync(
+			UserInfo editionUser
+			, uint   signInterpretationRoiId
+			, uint?  signInterpretationId = null)
+	{
+		// Make sure we have the sign interpretation id, so the cached transcription will be
+		// rebuilt
+		signInterpretationId ??= await _getSignInterpretationIdForRoi(
+				editionUser
+				, signInterpretationRoiId);
+
+		var parameters = new DynamicParameters();
+		parameters.Add("@sign_interpretation_id", signInterpretationId);
+
+		var signInterpretationRoiRequest = new MutationRequest(
+				MutateType.Delete
+				, parameters
+				, "sign_interpretation_roi"
+				, signInterpretationRoiId);
+
+		var writeResults = await adb.WriteToDatabaseAsync(
+				editionUser
+				, new List<MutationRequest> { signInterpretationRoiRequest });
+
+		if (writeResults.Count != 1)
+			throw new StandardExceptions.DataNotWrittenException("delete sign interpretation roi");
+	}
+
+	private async Task<uint> _getSignInterpretationIdForRoi(
+			UserInfo editionUser
+			, uint   signInterpretationRoiId)
+	{
+		const string sql = @"
+SELECT sir.sign_interpretation_id
+FROM sign_interpretation_roi_owner
+JOIN sign_interpretation_roi sir ON sign_interpretation_roi_owner.sign_interpretation_roi_id = sir.sign_interpretation_roi_id
+WHERE sign_interpretation_roi_owner.edition_id = @EditionId
+	AND sign_interpretation_roi_owner.sign_interpretation_roi_id = @SignInterpretationRoiId";
+
+		return await adb.QueryFirstAsync<uint>(
+				sql
+				, new
+				{
+						editionUser.EditionId
+						, SignInterpretationRoiId = signInterpretationRoiId
+						,
+				});
+	}
+
+	#endregion Private methods
 }

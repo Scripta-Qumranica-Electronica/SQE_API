@@ -1,131 +1,244 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace SQE.API.DTO
+namespace SQE.API.DTO;
+
+#region output DTOs
+
+public class TextFragmentDataDTO
 {
-    #region output DTOs
+	public TextFragmentDataDTO(uint id, string name, uint editorId)
+	{
+		this.id = id;
+		this.name = name;
+		this.editorId = editorId;
+	}
 
-    public class TextFragmentDataDTO
-    {
-        public TextFragmentDataDTO(uint id, string name, uint editorId)
-        {
-            this.id = id;
-            this.name = name;
-            this.editorId = editorId;
-        }
+	public TextFragmentDataDTO() : this(uint.MinValue, string.Empty, uint.MinValue) { }
 
-        public uint id { get; set; }
-        public string name { get; set; }
+	[Required]
+	public uint id { get; set; }
 
-        public uint editorId { get; set; }
-    }
+	[Required]
+	public string name { get; set; }
 
-    public class ArtefactTextFragmentMatchDTO : TextFragmentDataDTO
-    {
-        /// <summary>
-        ///     This DTO contains the data of a text fragment that has been requested via
-        ///     artefact id.
-        /// </summary>
-        /// <param name="id">Id of the text fragment</param>
-        /// <param name="name">Name of the text fragment</param>
-        /// <param name="editorId">Id of the editor who sefined the text fragment</param>
-        /// <param name="suggested">
-        ///     Whether this text fragment was suggest by the system (true)
-        ///     or is a definite match (false)
-        /// </param>
-        public ArtefactTextFragmentMatchDTO(uint id, string name, uint editorId, bool suggested) : base(
-            id,
-            name,
-            editorId
-        )
-        {
-            this.suggested = suggested;
-        }
-
-        public bool suggested { get; set; }
-    }
-
-    public class TextFragmentDataListDTO
-    {
-        public TextFragmentDataListDTO(List<TextFragmentDataDTO> textFragments)
-        {
-            this.textFragments = textFragments;
-        }
-
-        public List<TextFragmentDataDTO> textFragments { get; set; }
-    }
-
-    public class ArtefactTextFragmentMatchListDTO
-    {
-        public ArtefactTextFragmentMatchListDTO(List<ArtefactTextFragmentMatchDTO> textFragments)
-        {
-            this.textFragments = textFragments;
-        }
-
-        public List<ArtefactTextFragmentMatchDTO> textFragments { get; set; }
-    }
-
-    public class TextFragmentDTO
-    {
-        public uint textFragmentId { get; set; }
-        public string textFragmentName { get; set; }
-        public uint editorId { get; set; }
-        public List<LineDTO> lines { get; set; }
-    }
-
-    public class LineDataDTO
-    {
-        public LineDataDTO(uint lineId, string lineName)
-        {
-            this.lineId = lineId;
-            this.lineName = lineName;
-        }
-
-        public uint lineId { get; set; }
-        public string lineName { get; set; }
-    }
-
-    public class LineDataListDTO
-    {
-        public LineDataListDTO(List<LineDataDTO> lines)
-        {
-            this.lines = lines;
-        }
-
-        public List<LineDataDTO> lines { get; set; }
-    }
-
-    public class LineDTO
-    {
-        public uint lineId { get; set; }
-        public string lineName { get; set; }
-        public uint editorId { get; set; }
-        public List<SignDTO> signs { get; set; }
-    }
-
-    public class LineTextDTO : LineDTO
-    {
-        public string licence { get; set; }
-        public Dictionary<uint, EditorDTO> editors { get; set; }
-    }
-
-    #endregion output DTOs
-
-    #region Input DTOs
-
-    public class CreateTextFragmentDTO
-    {
-        [Required]
-        [StringLength(
-            255,
-            MinimumLength = 1,
-            ErrorMessage = "Text fragment names must be between 1 and 255 characters"
-        )]
-        public string name { get; set; }
-
-        public uint? previousTextFragmentId { get; set; }
-        public uint? nextTextFragmentId { get; set; }
-    }
-
-    #endregion
+	[Required]
+	public uint editorId { get; set; }
 }
+
+public class ArtefactTextFragmentMatchDTO : TextFragmentDataDTO
+{
+	/// <summary>
+	///  This DTO contains the data of a text fragment that has been requested via
+	///  artefact id.
+	/// </summary>
+	/// <param name="id">Id of the text fragment</param>
+	/// <param name="name">Name of the text fragment</param>
+	/// <param name="editorId">Id of the editor who defined the text fragment</param>
+	/// <param name="suggested">
+	///  Whether this text fragment was suggest by the system (true)
+	///  or is a definite match (false)
+	/// </param>
+	public ArtefactTextFragmentMatchDTO(
+			uint     id
+			, string name
+			, uint   editorId
+			, bool   suggested) : base(id, name, editorId)
+		=> this.suggested = suggested;
+
+	public ArtefactTextFragmentMatchDTO() : this(
+			uint.MinValue
+			, string.Empty
+			, uint.MinValue
+			, false) { }
+
+	[Required]
+	public bool suggested { get; set; }
+}
+
+public class ImagedObjectTextFragmentMatchDTO
+{
+	public ImagedObjectTextFragmentMatchDTO(
+			uint              editionId
+			, string          manuscriptName
+			, uint            textFragmentId
+			, string          textFragmentName
+			, SideDesignation side)
+	{
+		this.editionId = editionId;
+		this.manuscriptName = manuscriptName;
+		this.textFragmentId = textFragmentId;
+		this.textFragmentName = textFragmentName;
+		this.side = side;
+	}
+
+	public ImagedObjectTextFragmentMatchDTO() : this(
+			uint.MinValue
+			, null
+			, uint.MinValue
+			, null
+			, default) { }
+
+	[Required]
+	public uint editionId { get; set; }
+
+	[Required]
+	public string manuscriptName { get; set; }
+
+	[Required]
+	public uint textFragmentId { get; set; }
+
+	[Required]
+	public string textFragmentName { get; set; }
+
+	[Required]
+	public SideDesignation side { get; set; }
+}
+
+public class ImagedObjectTextFragmentMatchListDTO
+{
+	public List<ImagedObjectTextFragmentMatchDTO> matches { get; set; }
+}
+
+public class TextFragmentDataListDTO
+{
+	public TextFragmentDataListDTO(List<TextFragmentDataDTO> textFragments)
+		=> this.textFragments = textFragments;
+
+	public TextFragmentDataListDTO() : this(null) { }
+
+	[Required]
+	public List<TextFragmentDataDTO> textFragments { get; set; }
+}
+
+public class ArtefactTextFragmentMatchListDTO
+{
+	public ArtefactTextFragmentMatchListDTO(List<ArtefactTextFragmentMatchDTO> textFragments)
+		=> this.textFragments = textFragments;
+
+	public ArtefactTextFragmentMatchListDTO() : this(null) { }
+
+	[Required]
+	public List<ArtefactTextFragmentMatchDTO> textFragments { get; set; }
+}
+
+public class TextFragmentDTO
+{
+	[Required]
+	public uint textFragmentId { get; set; }
+
+	[Required]
+	public string textFragmentName { get; set; }
+
+	[Required]
+	public uint editorId { get; set; }
+
+	[Required]
+	public List<LineDTO> lines { get; set; }
+}
+
+public class LineDataDTO : UpdateLineDTO
+{
+	public LineDataDTO(uint lineId, string lineName) : base(lineName) => this.lineId = lineId;
+
+	public LineDataDTO() : this(uint.MinValue, string.Empty) { }
+
+	[Required]
+	public uint lineId { get; set; }
+
+	public uint editorId { get; set; }
+}
+
+public class LineDataListDTO
+{
+	public LineDataListDTO(List<LineDataDTO> lines) => this.lines = lines;
+
+	public LineDataListDTO() : this(null) { }
+
+	[Required]
+	public List<LineDataDTO> lines { get; set; }
+}
+
+public class LineDTO
+{
+	[Required]
+	public uint lineId { get; set; }
+
+	[Required]
+	public string lineName { get; set; }
+
+	[Required]
+	public uint editorId { get; set; }
+
+	[Required]
+	public List<SignDTO> signs { get; set; }
+}
+
+public class LineTextDTO : LineDTO
+{
+	[Required]
+	public string licence { get; set; }
+
+	[Required]
+	public Dictionary<string, EditorDTO> editors { get; set; }
+}
+
+#endregion output DTOs
+
+#region Input DTOs
+
+public class UpdateTextFragmentDTO
+{
+	public virtual string name                   { get; set; }
+	public         uint?  previousTextFragmentId { get; set; }
+	public         uint?  nextTextFragmentId     { get; set; }
+}
+
+public class CreateTextFragmentDTO : UpdateTextFragmentDTO
+{
+	[Required]
+	[StringLength(
+			255
+			, MinimumLength = 1
+			, ErrorMessage = "Text fragment names must be between 1 and 255 characters")]
+	public override string name { get; set; }
+}
+
+public class UpdateLineDTO
+{
+	public UpdateLineDTO(string lineName) => this.lineName = lineName;
+
+	public UpdateLineDTO() : this(string.Empty) { }
+
+	[Required]
+	[StringLength(
+			255
+			, MinimumLength = 1
+			, ErrorMessage = "Line names must be between 1 and 255 characters")]
+	public string lineName { get; set; }
+}
+
+public class CreateLineDTO : UpdateLineDTO
+{
+	public CreateLineDTO(
+			string  lineName
+			, uint? previousLineId   = null
+			, uint? subsequentLineId = null) : base(lineName)
+	{
+		this.previousLineId = previousLineId;
+		this.subsequentLineId = subsequentLineId;
+	}
+
+	public CreateLineDTO() : this(string.Empty) { }
+
+	public uint? previousLineId   { get; set; }
+	public uint? subsequentLineId { get; set; }
+}
+
+public class RequestMaterializationDTO
+{
+	[Required]
+	public uint[] editionIds { get; set; }
+}
+
+#endregion
