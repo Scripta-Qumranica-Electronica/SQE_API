@@ -23,5 +23,8 @@ jobs:
           REF: ${{ github.ref }}
         run: |
           export VERSION="${REF##*/v}"
-          docker build --no-cache -t qumranica/sqe-http-api:${VERSION} -f ./docker/Dockerfile .
+          docker build --no-cache \
+            --build-arg API_VERSION="${VERSION}" \
+            --build-arg API_UPDATE_DATE="$(date -u +'%Y-%m-%d %H:%M:%SZ')" \
+            -t qumranica/sqe-http-api:${VERSION} -f ./docker/Dockerfile .
           docker push qumranica/sqe-http-api:${VERSION}

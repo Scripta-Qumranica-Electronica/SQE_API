@@ -40,6 +40,10 @@ declare -A SETTINGS=(
 	## Github stuff
 	[GitHubUrl]=${GITHUB_URL}
 	[GitHubAPIToken]=${GITHUB_API_TOKEN}
+
+	## Api version/date (stamped from the docker image tag at build time, see docker/Dockerfile)
+	[ApiVersion]=${API_VERSION}
+	[ApiUpdateDate]=${API_UPDATE_DATE}
 )
 
 ## Iterate over each setting and update appsettings.json if the environment variable has a value

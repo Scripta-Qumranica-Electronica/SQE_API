@@ -28,6 +28,15 @@ RUN dotnet publish "sqe-api-server.csproj" -c Release -o /app
 
 FROM base AS final
 WORKDIR /app
+
+# The API version/date are stamped into appsettings.json at container start by startup.sh.
+# CI passes these from the git tag (see .github/workflows/docker.yaml); default empty for
+# local builds, in which case startup.sh leaves the values baked into appsettings.json.
+ARG API_VERSION=""
+ARG API_UPDATE_DATE=""
+ENV API_VERSION=${API_VERSION}
+ENV API_UPDATE_DATE=${API_UPDATE_DATE}
+
 COPY --from=publish /app .
 
 # startup.sh picks up settings in environment variables and inserts them
