@@ -333,7 +333,7 @@ public class Startup
 						redisPassword
 					},ssl=False,abortConnect=False";
 
-			services.AddSignalR(o => o.EnableDetailedErrors = true).AddRedis(redisConn);
+			services.AddSignalR(o => o.EnableDetailedErrors = true).AddStackExchangeRedis(redisConn);
 		}
 		else
 			services.AddSignalR(o => o.EnableDetailedErrors = true);
