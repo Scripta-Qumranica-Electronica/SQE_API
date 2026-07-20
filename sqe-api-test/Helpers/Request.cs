@@ -36,7 +36,7 @@ public static class Request
 		// HttpRequestMessage automatically decodes escaped URLs, so we need to
 		// double encode the "%2f" if it occurs in the path.
 		if (url.Contains("%2f"))
-			url = Uri.EscapeUriString(url);
+			url = url.Replace("%2f", "%252f");
 
 		// Create the request message.  Automatically disposed after the using block ends.
 		using (var requestMessage = new HttpRequestMessage(httpMethod, url))

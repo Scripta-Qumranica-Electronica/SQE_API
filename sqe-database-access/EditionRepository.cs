@@ -709,9 +709,6 @@ VALUES (@ManuscriptDataId, @EditionId, @EditionEditorId)"
 							, editionUser.EditionId.Value));
 		}
 
-		var editorJsonDetails =
-				@"""editors"":{""@toEditionEditorId"":{""email"":"""",""forename"":null,""surname"":null,""organization"":null}}";
-
 		//Copy cached transcriptions
 		const string copyCacheQSL = @"
 INSERT INTO cached_text_fragment (edition_id, text_fragment_id, transcription_json, transcription_date)

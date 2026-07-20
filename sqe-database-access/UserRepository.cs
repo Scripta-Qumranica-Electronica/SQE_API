@@ -208,7 +208,7 @@ public class UserRepository(IDatabaseAccessor dba) : IUserRepository
 
 			return results;
 		}
-		catch (InvalidOperationException e)
+		catch (InvalidOperationException)
 		{
 			throw new StandardExceptions.NoPermissionsException(editionUser);
 		}
