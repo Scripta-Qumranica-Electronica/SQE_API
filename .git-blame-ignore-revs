@@ -1,0 +1,4 @@
+# Line-ending normalization to LF via .gitattributes (no content changes).
+# Configure locally with: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# (GitHub uses this file automatically.)
+e6e1a926d21e723e7ee635e80a5fd86bd0d85221
