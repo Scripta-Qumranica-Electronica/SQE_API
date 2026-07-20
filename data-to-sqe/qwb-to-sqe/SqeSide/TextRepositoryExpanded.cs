@@ -46,7 +46,7 @@ public class TextRepositoryExpanded : TextRepository
 			, commentaryRepository
 			, roiRepository
 			, artefactRepository
-			, materializationRepository) => dba = dba;
+			, materializationRepository) => this.dba = dba;
 
 	public async Task<TextEdition> GetSQEWord(UserInfo editionUser, uint qwbWordId)
 	{

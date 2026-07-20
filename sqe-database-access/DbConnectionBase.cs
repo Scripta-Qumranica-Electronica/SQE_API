@@ -11,7 +11,6 @@ public class DbConnectionBase
 	private          IDbConnection  _connection;
 	private          bool           _inTransaction;
 	private          IDbTransaction _transaction;
-	private          uint           _transactionNest = 0;
 
 	protected DbConnectionBase(IConfiguration config) => _config = config;
 
