@@ -231,7 +231,6 @@ FROM edition
              JOIN image_urls USING(image_urls_id)
     WHERE iaa_edition_catalog.edition_side = 0
     GROUP BY manuscript_id
-    LIMIT 1
 ) AS im ON im.manuscript_id = edition.manuscript_id
 
 WHERE edition.archived != 1 AND edition.public = 1
