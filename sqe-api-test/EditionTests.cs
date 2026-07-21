@@ -1444,6 +1444,84 @@ WHERE e.manuscript_id = @ManuscriptId
 		await EditionHelpers.DeleteEdition(_client, StartConnectionAsync, editionId);
 	}
 
+	/// <summary>
+	///  An edition admin can publish an edition via PUT /v1/editions/{id} with isPublic = true.
+	///  Publishing must make the edition public and locked (frozen forever) and must cause it to
+	///  appear in the shared, cached published-editions list — proving the cache is invalidated on
+	///  publish.
+	/// </summary>
+	[Fact]
+	public async Task CanPublishEdition()
+	{
+		// ARRANGE: create a fresh, private copy that the default user administers.
+		var bearerToken = await Request.GetJwtViaHttpAsync(_client);
+		var editionId = await EditionHelpers.CreateCopyOfEdition(_client);
+		var url = "/v1/editions/" + editionId;
+
+		const string publishedListUrl = "/v1/editions?published=true&personal=false";
+
+		// The new edition must start out private: absent from the anonymous published list.
+		var (listBefore, listBeforeMsg) =
+				await Request.SendHttpRequestAsync<string, EditionListDTO>(
+						_client
+						, HttpMethod.Get
+						, publishedListUrl
+						, null
+						, null);
+
+		listBefore.EnsureSuccessStatusCode();
+
+		Assert.DoesNotContain(
+				listBeforeMsg.editions.SelectMany(x => x)
+				, e => e.id == editionId);
+
+		// ACT: publish it. name = null means "leave the name unchanged" (an empty string would fail
+		// the DTO's StringLength validation).
+		var publishRequest = new EditionUpdateRequestDTO { name = null, isPublic = true };
+
+		var (publishResponse, publishMsg) =
+				await Request.SendHttpRequestAsync<EditionUpdateRequestDTO, EditionDTO>(
+						_client
+						, HttpMethod.Put
+						, url
+						, publishRequest
+						, bearerToken);
+
+		publishResponse.EnsureSuccessStatusCode();
+
+		// ASSERT: the edition is now public and locked (immutable).
+		Assert.Equal(editionId, publishMsg.id);
+		Assert.True(publishMsg.isPublic);
+		Assert.True(publishMsg.locked);
+
+		// The published list (served from the shared cache) must now include it, proving the cache
+		// was invalidated by the publish.
+		var (listAfter, listAfterMsg) =
+				await Request.SendHttpRequestAsync<string, EditionListDTO>(
+						_client
+						, HttpMethod.Get
+						, publishedListUrl
+						, null
+						, null);
+
+		listAfter.EnsureSuccessStatusCode();
+
+		Assert.Contains(
+				listAfterMsg.editions.SelectMany(x => x)
+				, e => e.id == editionId);
+
+		// CLEANUP: a published edition is locked, so it cannot be archived through the API (the write
+		// permission check rejects it). Archive it directly in the database so we do not leave a
+		// public edition behind for other tests.
+		var db = new DatabaseQuery();
+		var cleanupParams = new DynamicParameters();
+		cleanupParams.Add("@EditionId", editionId);
+
+		await db.RunExecuteAsync(
+				"UPDATE edition SET archived = 1 WHERE edition_id = @EditionId"
+				, cleanupParams);
+	}
+
 	[Theory]
 	[InlineData(false)]
 	[InlineData(true)]

@@ -46,6 +46,8 @@ public interface IEditionRepository
 
 	Task<string> ArchiveEditionAsync(UserInfo editionUser, string token);
 
+	Task PublishEditionAsync(UserInfo editionUser);
+
 	Task<string> GetArchiveToken(UserInfo editionUser);
 
 	Task<DetailedUserWithToken> RequestAddEditionEditorAsync(
@@ -828,6 +830,28 @@ WHERE edition_id = @EditionId";
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	///  Publishes an edition, making it publicly visible. Only an edition admin may publish.
+	///  Publishing is irreversible: the edition is locked so that it can never be changed again
+	///  (a public edition is frozen forever; new work must be done on a copy).
+	/// </summary>
+	/// <param name="editionUser">User object requesting the publication</param>
+	public async Task PublishEditionAsync(UserInfo editionUser)
+	{
+		// Only admins may publish; publishing exposes the edition to the world and freezes it.
+		if (!editionUser.IsAdmin)
+			throw new StandardExceptions.NoAdminPermissionsException(editionUser);
+
+		// Setting locked = 1 is what actually enforces immutability: UserInfo.ReadPermissions
+		// computes MayWrite as (may_write AND NOT locked), so a locked edition can never be edited.
+		// The `public = 0` guard makes this a no-op for an already-published edition.
+		const string publishSql =
+				"UPDATE edition SET public = 1, locked = 1, publication_date = NOW() "
+				+ "WHERE edition_id = @EditionId AND public = 0";
+
+		await dba.ExecuteAsync(publishSql, new { editionUser.EditionId });
 	}
 
 	public async Task<string> GetArchiveToken(UserInfo editionUser)
