@@ -21,6 +21,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using StackExchange.Redis;
 using SQE.API.Server.Helpers;
 using SQE.API.Server.RealtimeHubs;
 using SQE.API.Server.Services;
@@ -92,6 +93,12 @@ public class Startup
 
 		services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 		services.AddSingleton<IDatabaseManager, DatabaseManager>();
+
+		// The published-editions cache is a singleton. It optionally uses the Redis multiplexer for
+		// cross-instance invalidation; GetService returns null when Redis is not configured, in
+		// which case the cache works locally only.
+		services.AddSingleton<IPublishedEditionsCache>(
+				sp => new PublishedEditionsCache(sp.GetService<IConnectionMultiplexer>()));
 
 		// Register DatabaseAccessor and wrap it with retry decorator
 		services.AddScoped<DatabaseAccessor>();
@@ -334,6 +341,10 @@ public class Startup
 					},ssl=False,abortConnect=False";
 
 			services.AddSignalR(o => o.EnableDetailedErrors = true).AddStackExchangeRedis(redisConn);
+
+			// Share a single multiplexer so the published-editions cache can broadcast/receive
+			// invalidations across API instances over the same backplane.
+			services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConn));
 		}
 		else
 			services.AddSignalR(o => o.EnableDetailedErrors = true);

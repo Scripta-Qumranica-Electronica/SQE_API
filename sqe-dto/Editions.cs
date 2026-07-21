@@ -299,6 +299,13 @@ public class EditionUpdateRequestDTO : EditionCopyDTO
 	public EditionUpdateRequestDTO() : this(string.Empty, string.Empty, string.Empty) { }
 
 	public UpdateEditionManuscriptMetricsDTO metrics { get; set; }
+
+	/// <summary>
+	///  Set to true to publish the edition. Publishing is performed by an edition admin only, is
+	///  irreversible, and freezes the edition (it is locked and can never be changed again). A null
+	///  or false value leaves the publication status unchanged.
+	/// </summary>
+	public bool? isPublic { get; set; }
 }
 
 public class EditionCopyDTO

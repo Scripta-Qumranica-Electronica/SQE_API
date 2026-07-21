@@ -856,6 +856,7 @@ export interface DeleteStringIdDTO extends DeleteDTO {
 
 export interface EditionUpdateRequestDTO extends EditionCopyDTO {
     metrics?: UpdateEditionManuscriptMetricsDTO;
+    isPublic?: boolean;
 }
 
 export interface EditionCopyDTO {

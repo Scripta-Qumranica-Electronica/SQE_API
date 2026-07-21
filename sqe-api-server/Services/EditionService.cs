@@ -85,6 +85,7 @@ public class EditionService : IEditionService
 	private readonly IEditionRepository               _editionRepo;
 	private readonly IEmailSender                     _emailSender;
 	private readonly IHubContext<MainHub, ISQEClient> _hubContext;
+	private readonly IPublishedEditionsCache          _publishedCache;
 	private readonly IUserRepository                  _userRepo;
 	private readonly IUserService                     _userService;
 	private readonly string                           webServer;
@@ -95,6 +96,7 @@ public class EditionService : IEditionService
 			, IUserService                     userService
 			, IHubContext<MainHub, ISQEClient> hubContext
 			, IEmailSender                     emailSender
+			, IPublishedEditionsCache          publishedCache
 			, IConfiguration                   config
 			, IOptions<AppSettings>            appSettings)
 	{
@@ -103,6 +105,7 @@ public class EditionService : IEditionService
 		_userService = userService;
 		_hubContext = hubContext;
 		_emailSender = emailSender;
+		_publishedCache = publishedCache;
 		webServer = config.GetConnectionString("WebsiteHost");
 		_appSettings = appSettings.Value;
 	}
@@ -163,13 +166,28 @@ public class EditionService : IEditionService
 		published ??= false;
 		personal ??= false;
 
+		var editionModels = new List<Edition>();
+
+		// The published list is identical for every user (the query ignores userId), so it is served
+		// from a shared in-memory cache that is only rebuilt when an edition is published/archived.
+		if (published.Value)
+		{
+			editionModels.AddRange(
+					await _publishedCache.GetAsync(
+							() => _editionRepo.ListEditionsAsync(null, null, true, false)));
+		}
+
+		// The personal list is per-user and must never be cached globally.
+		if (personal.Value
+			&& userId.HasValue)
+		{
+			editionModels.AddRange(
+					await _editionRepo.ListEditionsAsync(userId, null, false, true));
+		}
+
 		return new EditionListDTO
 		{
-				editions = (await _editionRepo.ListEditionsAsync(
-								   userId
-								   , null
-								   , published.Value
-								   , personal.Value))
+				editions = editionModels
 						   .OrderBy(
 								   x => x.Name
 								   , StringComparison.OrdinalIgnoreCase.WithNaturalSort())
@@ -195,9 +213,11 @@ public class EditionService : IEditionService
 			, EditionUpdateRequestDTO updatedEditionData
 			, string                  clientId = null)
 	{
+		// Select the edition actually being edited: the published branch of ListEditionsAsync returns
+		// every public edition, so a bare .First() could return an unrelated edition.
 		var editionBeforeChanges =
 				(await _editionRepo.ListEditionsAsync(editionUser.userId, editionUser.EditionId))
-				.First();
+				.First(x => x.EditionId == editionUser.EditionId);
 
 		if ((updatedEditionData.copyrightHolder != null)
 			|| ((updatedEditionData.collaborators != null)
@@ -224,6 +244,16 @@ public class EditionService : IEditionService
 					, updatedEditionData.metrics.height
 					, updatedEditionData.metrics.xOrigin
 					, updatedEditionData.metrics.yOrigin);
+		}
+
+		// Publish the edition if requested. Publishing is admin-only (enforced in the repository),
+		// irreversible, and freezes the edition forever. Since it changes the public list, tell the
+		// shared cache to invalidate on every API instance.
+		if ((updatedEditionData.isPublic == true)
+			&& !editionBeforeChanges.IsPublic)
+		{
+			await _editionRepo.PublishEditionAsync(editionUser);
+			await _publishedCache.NotifyChangedAsync();
 		}
 
 		var editions =
@@ -326,6 +356,11 @@ public class EditionService : IEditionService
 			// End the request with null for successful delete or a proper token for requests without a confirmation token
 			if (string.IsNullOrEmpty(newToken))
 			{
+				// Note: we deliberately do not invalidate the published-editions cache here. A public
+				// edition is locked and therefore cannot be archived through this endpoint (the write
+				// permission check rejects it), so archiving never changes the published list. Taking
+				// a public edition down is a manual DB operation, handled by restarting the servers.
+
 				// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 				// made the request, that client directly received the response.
 				foreach (var userId in editionUsers)
