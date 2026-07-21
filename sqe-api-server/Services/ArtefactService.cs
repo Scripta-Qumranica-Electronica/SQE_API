@@ -19,13 +19,9 @@ public interface IArtefactService
 			, uint         artefactId
 			, List<string> optional);
 
-	Task<ArtefactListDTO> GetEditionArtefactListingsAsync(
+	Task<ExtendedArtefactListDTO> GetEditionArtefactListingsAsync(
 			UserInfo       editionUser
 			, List<string> optional);
-
-	Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(
-			UserInfo editionUser
-			, bool   withMask = false);
 
 	Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(
 			UserInfo                          editionUser
@@ -79,14 +75,17 @@ public class ArtefactService : IArtefactService
 	private readonly IArtefactRepository              _artefactRepository;
 	private readonly IHubContext<MainHub, ISQEClient> _hubContext;
 	private readonly IImagedObjectRepository          _imagedObjectRepository;
+	private readonly IImageRepository                 _imageRepository;
 
 	public ArtefactService(
 			IImagedObjectRepository            imagedObjectRepository
 			, IArtefactRepository              artefactRepository
+			, IImageRepository                 imageRepository
 			, IHubContext<MainHub, ISQEClient> hubContext)
 	{
 		_imagedObjectRepository = imagedObjectRepository;
 		_artefactRepository = artefactRepository;
+		_imageRepository = imageRepository;
 		_hubContext = hubContext;
 	}
 
@@ -106,42 +105,75 @@ public class ArtefactService : IArtefactService
 		return artefact.ToDTO(editionUser.EditionId.Value);
 	}
 
-	public async Task<ArtefactListDTO> GetEditionArtefactListingsAsync(
+	public async Task<ExtendedArtefactListDTO> GetEditionArtefactListingsAsync(
 			UserInfo       editionUser
 			, List<string> optional)
 	{
 		ParseImageMaskOptionals(optional, out var withImages, out var withMask);
 
-		ArtefactListDTO artefacts;
+		var listings =
+				(await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMask))
+				.ToList();
+
+		var baseList = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
+				listings
+				, editionUser.EditionId.Value);
+
+		// When images are requested, fetch every edition image once and keep only
+		// the master per (imaged object, side) so each artefact can carry its
+		// master image URL + IIIF manifest (letting the client render the
+		// artefacts view without loading the edition's imaged objects).
+		Dictionary<(string, string), Image> masterImages = null;
 
 		if (withImages)
-			artefacts = await GetEditionArtefactListingsWithImagesAsync(editionUser, withMask);
-		else
+			masterImages =
+					(await _imageRepository.GetImagesAsync(editionUser, null))
+					.Where(i => i.Master)
+					.GroupBy(i => (i.ObjectId, i.Side))
+					.ToDictionary(g => g.Key, g => g.First());
+
+		var artefacts = baseList.artefacts.Select(a =>
 		{
-			var listings =
-					await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMask);
+			var dto = ToExtendedArtefactDTO(a);
 
-			artefacts = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
-					listings.ToList()
-					, editionUser.EditionId.Value);
-		}
+			if (masterImages != null)
+			{
+				var side = a.side == SideDesignation.recto
+						? "recto"
+						: "verso";
 
-		return artefacts;
+				if (masterImages.TryGetValue((a.imagedObjectId, side), out var image))
+				{
+					dto.url = image.URL;
+					dto.imageManifest = image.ImageManifest;
+					dto.ppi = image.PPI;
+				}
+			}
+
+			return dto;
+		}).ToList();
+
+		return new ExtendedArtefactListDTO { artefacts = artefacts };
 	}
 
-	public async Task<ArtefactListDTO> GetEditionArtefactListingsWithImagesAsync(
-			UserInfo editionUser
-			, bool   withMask = false)
-	{
-		var artefactListings =
-				await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMask);
-
-		//var imagedObjectIds = artefactListings.Select(x => x.ImageCatalogId);
-
-		return ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
-				artefactListings.ToList()
-				, editionUser.EditionId.Value);
-	}
+	private static ExtendedArtefactDTO ToExtendedArtefactDTO(ArtefactDTO a) =>
+			new ExtendedArtefactDTO
+			{
+					id = a.id
+					, name = a.name
+					, editionId = a.editionId
+					, imagedObjectId = a.imagedObjectId
+					, imageId = a.imageId
+					, artefactDataEditorId = a.artefactDataEditorId
+					, mask = a.mask
+					, artefactMaskEditorId = a.artefactMaskEditorId
+					, isPlaced = a.isPlaced
+					, placement = a.placement
+					, artefactPlacementEditorId = a.artefactPlacementEditorId
+					, side = a.side
+					, statusMessage = a.statusMessage
+					,
+			};
 
 	public async Task<BatchUpdatedArtefactTransformDTO> BatchUpdateArtefactTransformAsync(
 			UserInfo                          editionUser

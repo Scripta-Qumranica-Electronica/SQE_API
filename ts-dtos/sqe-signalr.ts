@@ -1176,7 +1176,7 @@ export class SignalRUtilities {
 	 * @param optional - Add "masks" to include artefact polygons and "images" to include image data
 	 *
 	 */
-    public async getV1EditionsEditionIdArtefacts(editionId: number, optional: string[]): Promise<ArtefactListDTO> {
+    public async getV1EditionsEditionIdArtefacts(editionId: number, optional: string[]): Promise<ExtendedArtefactListDTO> {
         return await this._connection.invoke('GetV1EditionsEditionIdArtefacts', editionId, optional);
     }
 

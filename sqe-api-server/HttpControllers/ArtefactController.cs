@@ -92,9 +92,12 @@ public class ArtefactController : ControllerBase
 	/// </summary>
 	/// <param name="editionId">Unique Id of the desired edition</param>
 	/// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
+	// Each artefact optionally carries its master image URL + IIIF manifest when
+	// "images" is requested (ExtendedArtefactListDTO); those fields are omitted
+	// otherwise, so the plain listing is unchanged.
 	[AllowAnonymous]
 	[HttpGet("v1/editions/{editionId}/[controller]s")]
-	public async Task<ActionResult<ArtefactListDTO>> GetArtefacts(
+	public async Task<ActionResult<ExtendedArtefactListDTO>> GetArtefacts(
 			[FromRoute]   uint         editionId
 			, [FromQuery] List<string> optional)
 		=> await _artefactService.GetEditionArtefactListingsAsync(

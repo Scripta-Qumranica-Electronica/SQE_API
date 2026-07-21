@@ -50,8 +50,14 @@ public class ArtefactDTO : ArtefactDataDTO
 
 public class ExtendedArtefactDTO : ArtefactDTO
 {
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	public string url { get; set; }
-	public uint   ppi { get; set; }
+
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public uint? ppi { get; set; }
+
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public string imageManifest { get; set; }
 }
 
 public class ArtefactListDTO

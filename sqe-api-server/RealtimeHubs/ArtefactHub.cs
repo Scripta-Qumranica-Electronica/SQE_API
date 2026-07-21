@@ -114,8 +114,11 @@ public async Task<InterpretationRoiDTOList> GetV1EditionsEditionIdArtefactsArtef
 	/// </summary>
 	/// <param name="editionId">Unique Id of the desired edition</param>
 	/// <param name="optional">Add "masks" to include artefact polygons and "images" to include image data</param>
+	// Each artefact optionally carries its master image URL + IIIF manifest when
+	// "images" is requested (ExtendedArtefactListDTO); those fields are omitted
+	// otherwise, so the plain listing is unchanged.
 [AllowAnonymous]
-public async Task<ArtefactListDTO> GetV1EditionsEditionIdArtefacts(uint editionId, List<string> optional)
+public async Task<ExtendedArtefactListDTO> GetV1EditionsEditionIdArtefacts(uint editionId, List<string> optional)
 
     {
         try
