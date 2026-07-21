@@ -95,8 +95,7 @@ public class ImagedObjectController : ControllerBase
 		=> await _imagedObjectService.GetEditionImagedObjectsAsync(
 				await _userService.GetCurrentUserObjectAsync(editionId)
 				, null
-				, optional
-				, true); // list view only needs the master image per side
+				, optional);
 
 	/// <summary>
 	///  Provides a list of all institutional image providers.

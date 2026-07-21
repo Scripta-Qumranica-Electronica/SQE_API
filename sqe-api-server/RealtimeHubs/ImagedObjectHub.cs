@@ -118,7 +118,7 @@ public async Task<ImagedObjectListDTO> GetV1EditionsEditionIdImagedObjects(uint 
     {
         try
         {
-             return  await _imagedObjectService.GetEditionImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), null, optional, true);
+             return  await _imagedObjectService.GetEditionImagedObjectsAsync(await _userService.GetCurrentUserObjectAsync(editionId), null, optional);
         }
         catch (ApiException err)
         {

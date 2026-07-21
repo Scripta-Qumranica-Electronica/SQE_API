@@ -20,13 +20,11 @@ public interface IImagedObjectService
 	Task<ImagedObjectListDTO> GetEditionImagedObjectsAsync(
 			UserInfo       editionUser
 			, string       imagedObjectId = null
-			, List<string> optional       = null
-			, bool         masterOnly     = false);
+			, List<string> optional       = null);
 
 	Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(
 			UserInfo editionUser
-			, bool   withMasks    = false
-			, bool   masterOnly   = false);
+			, bool   withMasks = false);
 
 	Task<ImagedObjectDTO> GetImagedObjectAsync(
 			UserInfo       editionUser
@@ -75,13 +73,12 @@ public class ImagedObjectService : IImagedObjectService
 	public async Task<ImagedObjectListDTO> GetEditionImagedObjectsAsync(
 			UserInfo       editionUser
 			, string       imagedObjectId = null
-			, List<string> optional       = null
-			, bool         masterOnly     = false)
+			, List<string> optional       = null)
 	{
 		ParseOptionals(optional, out var artefacts, out var masks);
 
 		if (artefacts)
-			return await GetImagedObjectsWithArtefactsAsync(editionUser, masks, masterOnly);
+			return await GetImagedObjectsWithArtefactsAsync(editionUser, masks);
 
 		var imagedObjects = await _repo.GetEditionImagedObjectsAsync(editionUser, imagedObjectId);
 
@@ -113,7 +110,7 @@ public class ImagedObjectService : IImagedObjectService
 		foreach (var i in imagedObjects)
 		{
 			if (imageDict.TryGetValue(i.Id, out var imagedFragment))
-				result.imagedObjects.Add(ImagedObjectModelToDTO(i, imagedFragment, masterOnly));
+				result.imagedObjects.Add(ImagedObjectModelToDTO(i, imagedFragment));
 		}
 
 		return result;
@@ -121,10 +118,9 @@ public class ImagedObjectService : IImagedObjectService
 
 	public async Task<ImagedObjectListDTO> GetImagedObjectsWithArtefactsAsync(
 			UserInfo editionUser
-			, bool   withMasks    = false
-			, bool   masterOnly   = false)
+			, bool   withMasks = false)
 	{
-		var result = await GetEditionImagedObjectsAsync(editionUser, masterOnly: masterOnly);
+		var result = await GetEditionImagedObjectsAsync(editionUser);
 
 		var artefacts = ArtefactListSerializationDTO.QueryArtefactListToArtefactListDTO(
 				(await _artefactRepository.GetEditionArtefactListAsync(editionUser, withMasks))
@@ -236,12 +232,9 @@ public class ImagedObjectService : IImagedObjectService
 		return new NoContentResult();
 	}
 
-	private static ImagedObjectDTO ImagedObjectModelToDTO(
-			ImagedObject    model
-			, List<ImageDTO> images
-			, bool           masterOnly = false)
+	private static ImagedObjectDTO ImagedObjectModelToDTO(ImagedObject model, List<ImageDTO> images)
 	{
-		var (recto, verso) = GetSides(images, masterOnly);
+		var (recto, verso) = GetSides(images);
 
 		return new ImagedObjectDTO
 		{
@@ -257,9 +250,7 @@ public class ImagedObjectService : IImagedObjectService
 	/// </summary>
 	/// <param name="images">List of ImageDTO to be organized into recto/verso</param>
 	/// <returns></returns>
-	private static (ImageStackDTO recto, ImageStackDTO verso) GetSides(
-			IEnumerable<ImageDTO> images
-			, bool                masterOnly = false)
+	private static (ImageStackDTO recto, ImageStackDTO verso) GetSides(IEnumerable<ImageDTO> images)
 	{
 		var recto = new List<ImageDTO>();
 		var verso = new List<ImageDTO>();
@@ -273,12 +264,6 @@ public class ImagedObjectService : IImagedObjectService
 
 				// Build the recto and verso Lists based on the "Side" value
 		{
-			// List/thumbnail views only need the master image; skip the non-master
-			// multispectral variants to keep the payload small (the single-object
-			// endpoint used by the editor keeps the full stack).
-			if (masterOnly && !image.master)
-				continue;
-
 			switch (image.side)
 			{
 				case SideDesignation.recto:
