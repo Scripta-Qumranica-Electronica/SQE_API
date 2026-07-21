@@ -37,7 +37,10 @@ services:
             - MYSQL_PASSWORD=mysecretpw
             - MYSQL_DATABASE=SQE
 
-            ## Email settings (account that mails user registration information), these are required.
+            ## Email settings (account that mails user registration information).
+            ## Set USE_EMAIL=false to run without SMTP connectivity (skips the email startup check and
+            ## disables outgoing mail); the MAILER_* settings below are then not required.
+            - USE_EMAIL=true
             #- MAILER_EMAIL_ADDRESS=
             #- MAILER_EMAIL_USERNAME=
             #- MAILER_EMAIL_PASSWORD=

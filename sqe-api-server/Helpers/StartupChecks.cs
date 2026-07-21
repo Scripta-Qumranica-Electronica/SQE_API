@@ -20,11 +20,28 @@ public static class StartupChecks
 		// Always test the database connection
 		DatabaseConnector(configuration);
 
-		// Only test the emailer in production
+		// Only test the emailer in production, and only when email is enabled. Setting UseEmail to
+		// "false" (env var USE_EMAIL=false) lets the API boot without SMTP connectivity — useful for
+		// dev/CI/e2e stacks and any deployment that does not send registration/notification emails.
 		if (env.IsProduction())
-			Emailer(configuration);
+		{
+			if (EmailEnabled(configuration))
+				Emailer(configuration);
+			else
+				Log.ForContext<Startup>()
+				   .Warning("UseEmail is false: skipping the SMTP startup check. Outgoing emails are disabled.");
+		}
 
 		// TO-DO add check for github credentials
+	}
+
+	// Email is enabled unless UseEmail is explicitly set to "false" (case-insensitive), so existing
+	// deployments that do not set the flag keep sending email exactly as before.
+	private static bool EmailEnabled(IConfiguration configuration)
+	{
+		var useEmail = configuration.GetSection("AppSettings")["UseEmail"];
+
+		return !string.Equals(useEmail, "false", StringComparison.OrdinalIgnoreCase);
 	}
 
 	private static void Emailer(IConfiguration configuration)

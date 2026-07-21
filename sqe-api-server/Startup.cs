@@ -158,7 +158,14 @@ public class Startup
 
 		// When running integration tests, we do not actually send out emails. This checks ASPNETCORE_ENVIRONMENT
 		// and if it is "IntegrationTests", then a Fake for IEmailSender is used instead of the real one.
-		if (Environment.IsEnvironment("IntegrationTests"))
+		// The same no-op sender is used when email is disabled (AppSettings:UseEmail = "false"), so the API
+		// can run without SMTP connectivity and any code path that sends email simply becomes a no-op.
+		var emailDisabled = string.Equals(
+				Configuration.GetSection("AppSettings")["UseEmail"]
+				, "false"
+				, StringComparison.OrdinalIgnoreCase);
+
+		if (Environment.IsEnvironment("IntegrationTests") || emailDisabled)
 			services.AddSingleton<IEmailSender, FakeEmailSender>();
 		else
 			services.AddSingleton<IEmailSender, EmailSender>();

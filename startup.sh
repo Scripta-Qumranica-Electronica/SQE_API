@@ -10,6 +10,7 @@ declare -A SETTINGS=(
     [MysqlDatabase]=${MYSQL_DATABASE}
 
     ## Email settings
+    [UseEmail]=${USE_EMAIL}
     [MailerEmailAddress]=${MAILER_EMAIL_ADDRESS}
     [MailerEmailUsername]=${MAILER_EMAIL_USERNAME}
     [MailerEmailPassword]=${MAILER_EMAIL_PASSWORD}
