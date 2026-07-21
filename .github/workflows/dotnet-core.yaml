@@ -49,7 +49,7 @@ jobs:
 
       - name: Report coverage
         if: success()
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./sqe-api-test/coverage.info
+          file: ./sqe-api-test/coverage.info
