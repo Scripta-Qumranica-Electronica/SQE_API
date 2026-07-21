@@ -116,7 +116,7 @@ public class UtilService : IUtilService
 		var data = new StringContent(json, Encoding.UTF8, "application/json");
 
 		var response = await httpClient.PostAsync(url, data);
-		var result = response.Content.ReadAsStringAsync().Result;
+		var result = await response.Content.ReadAsStringAsync();
 
 		if (!response.IsSuccessStatusCode)
 			log.Warning("Error returned from github: {result}", result);

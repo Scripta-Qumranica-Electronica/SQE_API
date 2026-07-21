@@ -386,12 +386,17 @@ public class DatabaseWriter : IDatabaseWriter
 
 		mutationRequest.Parameters.Add("@UserId", userId);
 
-		// Execute query
-		var alteredRecords = await dba.ExecuteAsync(query, mutationRequest.Parameters);
+		// Execute the insert and read back both the generated id and the rows-affected count in a
+		// single round-trip. ROW_COUNT() is 0 when the WHERE NOT EXISTS matched (record already
+		// existed) - in that case LAST_INSERT_ID() is stale and we fall through to the id lookup,
+		// exactly as before; only the round-trip is saved on the common (inserted) path.
+		var insertResult = await dba.QuerySingleAsync<OwnedTableInsertResult>(
+				query + "; SELECT LAST_INSERT_ID() AS InsertId, ROW_COUNT() AS Affected;"
+				, mutationRequest.Parameters);
 
 		uint insertId;
 
-		if (alteredRecords == 0) // Nothing was inserted because the exact record already existed.
+		if (insertResult.Affected == 0) // Nothing was inserted because the exact record already existed.
 		{
 			// Get id of new record (or the record matching the unique constraints of this request).
 			query = OwnedTableIdQuery.GetQuery();
@@ -437,8 +442,7 @@ public class DatabaseWriter : IDatabaseWriter
 		}
 		else // A new record was inserted.
 		{
-			// Get the id of the newly inserted record.
-			insertId = await LastInsertIdAsync(dba);
+			insertId = insertResult.InsertId;
 		}
 
 		return insertId;
@@ -509,15 +513,13 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 	}
 
 	/// <summary>
-	///  Convenience function to get the last insert Id. Throws on error.
+	///  Result of an owned-table insert: the generated primary key and the number of rows the
+	///  insert affected (0 when the WHERE NOT EXISTS matched an already-existing record).
 	/// </summary>
-	/// <param name="connection">An IDbConnection belonging to the current transaction</param>
-	/// <returns>Returns the Id of the last inserted record.</returns>
-	private static async Task<uint> LastInsertIdAsync(DatabaseAccessor dba)
+	private sealed class OwnedTableInsertResult
 	{
-		const string sql = "SELECT LAST_INSERT_ID()";
-
-		return await dba.QuerySingleAsync<uint>(sql);
+		public uint InsertId { get; set; }
+		public long Affected { get; set; }
 	}
 
 	/// <summary>
@@ -530,12 +532,10 @@ select position_in_stream_id from position_in_stream_owner where position_in_str
 			DatabaseAccessor  dba
 			, MutationRequest mutationRequest)
 	{
-		// Format and execute the query
-		const string query = MainActionInsertQuery.GetQuery;
-		await dba.ExecuteAsync(query, mutationRequest.Parameters);
-
-		// Get id of new record.
-		var insertId = await LastInsertIdAsync(dba);
+		// Insert the main_action and read back its generated id in a single round-trip
+		// (INSERT + SELECT LAST_INSERT_ID() as one command) instead of two.
+		const string query = MainActionInsertQuery.GetQuery + "; SELECT LAST_INSERT_ID();";
+		var insertId = await dba.QuerySingleAsync<uint>(query, mutationRequest.Parameters);
 
 		// Insert the @MainActionId into the mutation object's query parameters.
 		mutationRequest.Parameters.Add("@MainActionId", insertId);
