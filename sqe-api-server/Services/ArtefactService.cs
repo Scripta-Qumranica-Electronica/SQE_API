@@ -32,7 +32,8 @@ public interface IArtefactService
 			UserInfo            editionUser
 			, uint              artefactId
 			, UpdateArtefactDTO updateArtefact
-			, string            clientId = null);
+			, string            clientId = null
+			, string            operationId = null);
 
 	Task<ArtefactDTO> CreateArtefactAsync(
 			UserInfo            editionUser
@@ -234,7 +235,8 @@ public class ArtefactService : IArtefactService
 			UserInfo            editionUser
 			, uint              artefactId
 			, UpdateArtefactDTO updateArtefact
-			, string            clientId = null)
+			, string            clientId = null
+			, string            operationId = null)
 	{
 		var cleanedPoly = string.IsNullOrEmpty(updateArtefact.mask)
 				? null
@@ -261,6 +263,11 @@ public class ArtefactService : IArtefactService
 				, !string.IsNullOrEmpty(cleanedPoly)
 						? new List<string> { "masks" }
 						: null);
+
+		// Echo the client-supplied operation id on the broadcast so the originating
+		// client can recognise its own change (opId reconciliation) rather than
+		// treating the echo as a foreign edit.
+		updatedArtefact.operationId = operationId;
 
 		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 		// made the request, that client directly received the response.

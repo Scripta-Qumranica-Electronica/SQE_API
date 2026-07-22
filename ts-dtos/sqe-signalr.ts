@@ -1211,8 +1211,8 @@ export class SignalRUtilities {
 	 * @param payload - An UpdateArtefactDTO with the desired alterations to the artefact
 	 *
 	 */
-    public async putV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, payload: UpdateArtefactDTO): Promise<ArtefactDTO> {
-        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload);
+    public async putV1EditionsEditionIdArtefactsArtefactId(editionId: number, artefactId: number, payload: UpdateArtefactDTO, operationId: string): Promise<ArtefactDTO> {
+        return await this._connection.invoke('PutV1EditionsEditionIdArtefactsArtefactId', editionId, artefactId, payload, operationId);
     }
 
     /**

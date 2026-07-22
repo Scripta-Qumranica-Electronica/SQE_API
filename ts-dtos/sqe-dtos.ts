@@ -357,6 +357,7 @@ export interface ArtefactDTO extends ArtefactDataDTO {
     artefactPlacementEditorId?: number;
     side: SideDesignation;
     statusMessage?: string;
+    operationId?: string;
 }
 
 export interface ExtendedArtefactDTO extends ArtefactDTO {

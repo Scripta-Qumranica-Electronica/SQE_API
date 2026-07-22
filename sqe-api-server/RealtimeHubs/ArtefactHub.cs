@@ -171,12 +171,12 @@ public async Task<ArtefactTextFragmentMatchListDTO> GetV1EditionsEditionIdArtefa
 	/// <param name="editionId">Unique Id of the desired edition</param>
 	/// <param name="payload">An UpdateArtefactDTO with the desired alterations to the artefact</param>
 [Authorize]
-public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload)
+public async Task<ArtefactDTO> PutV1EditionsEditionIdArtefactsArtefactId(uint editionId, uint artefactId, UpdateArtefactDTO payload, string operationId)
 
     {
         try
         {
-             return  await _artefactService.UpdateArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactId, payload);
+             return  await _artefactService.UpdateArtefactAsync(await _userService.GetCurrentUserObjectAsync(editionId, true), artefactId, payload, operationId: operationId);
         }
         catch (ApiException err)
         {

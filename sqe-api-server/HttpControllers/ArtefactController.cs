@@ -142,10 +142,12 @@ public class ArtefactController : ControllerBase
 	public async Task<ActionResult<ArtefactDTO>> UpdateArtefact(
 			[FromRoute]   uint              editionId
 			, [FromRoute] uint              artefactId
-			, [FromBody]  UpdateArtefactDTO payload) => await _artefactService.UpdateArtefactAsync(
+			, [FromBody]  UpdateArtefactDTO payload
+			, [FromHeader(Name = "X-Operation-Id")] string operationId = null) => await _artefactService.UpdateArtefactAsync(
 			await _userService.GetCurrentUserObjectAsync(editionId, true)
 			, artefactId
-			, payload);
+			, payload
+			, operationId: operationId);
 
 	/// <summary>
 	///  Updates the positional data for a batch of artefacts

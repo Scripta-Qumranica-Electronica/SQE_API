@@ -46,6 +46,11 @@ public class ArtefactDTO : ArtefactDataDTO
 	public SideDesignation side { get; set; }
 
 	public string statusMessage { get; set; }
+
+	// Correlation id echoed on realtime broadcasts so the originating client can
+	// recognise its own change (opId reconciliation). Null on normal responses.
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public string operationId { get; set; }
 }
 
 public class ExtendedArtefactDTO : ArtefactDTO
