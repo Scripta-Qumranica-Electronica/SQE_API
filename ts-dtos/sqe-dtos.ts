@@ -391,6 +391,7 @@ export interface UpdateArtefactDTO {
     placement?: PlacementDTO;
     name?: string;
     statusMessage?: string;
+    masterImageId?: number;
 }
 
 export interface UpdateArtefactPlacementDTO {
@@ -412,7 +413,7 @@ export interface BatchUpdatedArtefactTransformDTO {
 }
 
 export interface CreateArtefactDTO extends UpdateArtefactDTO {
-    masterImageId?: number;
+    
 }
 
 export interface UpdateArtefactGroupDTO {

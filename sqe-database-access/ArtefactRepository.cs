@@ -174,7 +174,7 @@ public class ArtefactRepository(IDatabaseAccessor adb) : IArtefactRepository
 		var tasks = new List<AlteredRecord>();
 
 		if (!string.IsNullOrEmpty(shape))
-			tasks.AddRange(await UpdateArtefactShapeAsync(editionUser, artefactId, shape));
+			tasks.AddRange(await UpdateArtefactShapeAsync(editionUser, artefactId, shape, masterImageId));
 
 		if (!string.IsNullOrEmpty(name))
 			tasks.AddRange(await UpdateArtefactNameAsync(editionUser, artefactId, name));

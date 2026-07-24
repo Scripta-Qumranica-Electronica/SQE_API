@@ -107,6 +107,13 @@ public class UpdateArtefactDTO
 	public string name { get; set; }
 
 	public string statusMessage { get; set; }
+
+	// The master image the mask is drawn on. Needed the FIRST time a mask is written for an
+	// artefact (i.e. when its artefact_shape row is created) so the artefact's side (recto/verso)
+	// can be recorded — the side is derived from this image's catalog entry. Ignored once a shape
+	// already exists. New artefacts are created without a mask, so their side is only fixed on the
+	// first mask write.
+	public uint? masterImageId { get; set; }
 }
 
 /// <summary>
@@ -145,7 +152,7 @@ public class BatchUpdatedArtefactTransformDTO
 
 public class CreateArtefactDTO : UpdateArtefactDTO
 {
-	public uint? masterImageId { get; set; }
+	// masterImageId is inherited from UpdateArtefactDTO.
 
 	// Run a quick regex to make sure we have a the valid text for a WKT polygon (does not check polygon validity)
 	// [RegularExpression(

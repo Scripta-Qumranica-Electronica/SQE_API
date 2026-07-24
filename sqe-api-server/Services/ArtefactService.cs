@@ -246,7 +246,7 @@ public class ArtefactService : IArtefactService
 				editionUser
 				, artefactId
 				, cleanedPoly
-				, null
+				, updateArtefact.masterImageId
 				, updateArtefact.statusMessage
 				, updateArtefact.name
 				, updateArtefact.placement?.scale
