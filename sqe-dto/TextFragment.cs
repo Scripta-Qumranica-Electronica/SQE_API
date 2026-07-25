@@ -147,6 +147,10 @@ public class LineDataDTO : UpdateLineDTO
 	public uint lineId { get; set; }
 
 	public uint editorId { get; set; }
+
+	// The parent text fragment. Included so a realtime CreatedLine broadcast can be attached to
+	// the right fragment on the receiving client (0 when not populated by the producer).
+	public uint textFragmentId { get; set; }
 }
 
 public class LineDataListDTO

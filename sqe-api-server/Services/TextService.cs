@@ -180,6 +180,8 @@ public class TextService : ITextService
 						  };
 
 		var response = newLineData.ToDTO();
+		// Carry the parent fragment so realtime receivers can attach the new line to it.
+		response.textFragmentId = textFragmentId;
 
 		// Broadcast the change to all subscribers of the editionId. Exclude the client (not the user), which
 		// made the request, that client directly received the response.
