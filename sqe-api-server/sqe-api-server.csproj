@@ -14,7 +14,7 @@
     <PackageReference Include="geo_repair_polygon" Version="2.0.6" />
     <PackageReference Include="MailKit" Version="4.17.0" />
     <!-- Pin transitive MessagePack to a patched version (GHSA-hv8m-jj95-wg3x); pulled by SignalR.StackExchangeRedis. -->
-    <PackageReference Include="MessagePack" Version="2.5.302" />
+    <PackageReference Include="MessagePack" Version="2.5.303" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.0" />
